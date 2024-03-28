@@ -262,7 +262,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
 
     // Now walk the stack:
     auto buffer = Data();
-    auto count = unw_backtrace2((void**)buffer.data(), buffer.size(), context);
+    auto count = unw_backtrace2((void**)buffer.data(), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
 
     if (count == 0)
     {

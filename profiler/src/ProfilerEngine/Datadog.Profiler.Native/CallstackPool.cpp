@@ -3,7 +3,7 @@
 
 #include "CallstackPool.h"
 
-CallstackPool::CallstackPool(pmr::memory_resource* memory_resource) :
+CallstackPool::CallstackPool(shared::pmr::memory_resource* memory_resource) :
     _memory_resource{memory_resource}
 
 {
@@ -30,7 +30,14 @@ Callstack CallstackPool::Get()
     return Callstack(this);
 }
 
-inline void* allocateCallstack(pmr::memory_resource* allocator, std::size_t size)
+// TL;DR - This function is required to prevent the compiler from removing the null-check in Acquire
+//
+// On linux allocate has std::pmr::memory_resource::allocate function has the returns_nonnull attribute.
+// This allows the compiler to optimize the code, by removing the null-check.
+// We observed a segmentation fault in our CI with ASAN and UBSAN in the unit tests.
+// We still want to keep the null-check, because when we will use (for some profilers) the
+// ringbuffer-based memory_resource, it could return nullptr (when there is no more room)
+inline void* allocateCallstack(shared::pmr::memory_resource* allocator, std::size_t size)
 {
     return allocator->allocate(size);
 }
@@ -47,5 +54,11 @@ shared::span<std::uintptr_t> CallstackPool::Acquire()
 
 void CallstackPool::Release(shared::span<std::uintptr_t> buffer)
 {
-    _memory_resource->deallocate(buffer.data(), Callstack::MaxSize);
+    // buffer.data() can be null, and on Linux, the first parameter of deallocate function has non-null attribute.
+    // The compiler can be aggressive and remove the null-check in the deallocate function.
+    // To be safe, we check here if the buffer points to nullptr and call (or not) deallocate.
+    if (buffer.data() != nullptr)
+    {
+        _memory_resource->deallocate(buffer.data(), Callstack::MaxSize);
+    }
 }

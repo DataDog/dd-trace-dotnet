@@ -6,6 +6,7 @@
 #include "Callstack.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
+
 #include "shared/src/native-src/string.h"
 #include "shared/src/native-src/util.h"
 
@@ -16,7 +17,7 @@
 class CallstackPool
 {
 public:
-    CallstackPool(pmr::memory_resource* memory_resource);
+    CallstackPool(shared::pmr::memory_resource* memory_resource);
 
     ~CallstackPool() = default;
 
@@ -35,5 +36,5 @@ private:
 
     void* allocateCallStack();
 
-    pmr::memory_resource* _memory_resource;
+    shared::pmr::memory_resource* _memory_resource;
 };

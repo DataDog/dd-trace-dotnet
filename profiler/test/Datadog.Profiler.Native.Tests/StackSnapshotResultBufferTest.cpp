@@ -9,7 +9,7 @@
 
 TEST(StackSnapshotResultBufferTest, CheckAddedFrames)
 {
-    CallstackPool p(pmr::get_default_resource());
+    CallstackPool p(shared::pmr::get_default_resource());
     auto buffer = StackSnapshotResultBuffer();
     buffer.SetCallstack(p.Get());
 
@@ -27,7 +27,7 @@ TEST(StackSnapshotResultBufferTest, CheckAddedFrames)
 
 TEST(StackSnapshotResultBufferTest, CheckAddedFakeFrame)
 {
-    CallstackPool p(pmr::get_default_resource());
+    CallstackPool p(shared::pmr::get_default_resource());
     auto buffer = StackSnapshotResultBuffer();
     buffer.SetCallstack(p.Get());
 
@@ -52,7 +52,7 @@ TEST(StackSnapshotResultBufferTest, CheckAddedFakeFrame)
 
 TEST(StackSnapshotResultBufferTest, CheckIfWeReachTheBufferLimit)
 {
-    CallstackPool p(pmr::get_default_resource());
+    CallstackPool p(shared::pmr::get_default_resource());
     auto buffer = StackSnapshotResultBuffer();
     buffer.SetCallstack(p.Get());
 

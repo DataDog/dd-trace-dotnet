@@ -7,13 +7,13 @@
 
 #include <cassert>
 
-struct alignas(void*) BlockHeader
+struct BlockHeader
 {
     std::atomic<std::uint8_t> _lock;
 };
 
 // Maybe passe a options struct with those info
-FixedSizeAllocator::FixedSizeAllocator(std::size_t blockSize, std::size_t nbBlocks, pmr::memory_resource* upstreamResource) :
+FixedSizeAllocator::FixedSizeAllocator(std::size_t blockSize, std::size_t nbBlocks, shared::pmr::memory_resource* upstreamResource) :
     _upstreamResource{upstreamResource},
     _buffer{nullptr},
     _currentBlock(0),
@@ -39,14 +39,14 @@ struct BadBlockAllocationException : public std::bad_alloc
     }
 };
 
-void* FixedSizeAllocator::do_allocate(size_t _Bytes, size_t)
+void* FixedSizeAllocator::do_allocate(size_t _Bytes, size_t _Align)
 {
     if (_Bytes != _blockSize)
     {
         throw BadBlockAllocationException();
     }
 
-    constexpr auto headerSize = sizeof(BlockHeader);
+    const auto headerSize = ComputeAlignedSize(sizeof(BlockHeader), _Align);
     const auto blockSize = GetBlockAlignedSize();
 
     for (auto i = 0; i < MaxRetry; i++)
@@ -68,15 +68,13 @@ void* FixedSizeAllocator::do_allocate(size_t _Bytes, size_t)
     return nullptr;
 }
 
-void FixedSizeAllocator::do_deallocate(void* _Ptr, size_t _Bytes, size_t)
+void FixedSizeAllocator::do_deallocate(void* _Ptr, size_t _Bytes, size_t _Align)
 {
     // Like new, nullptr means no data to deallocate. No block was available at that time
     if (_Ptr == nullptr)
         return;
 
-    static_assert(sizeof(BlockHeader) % alignof(void*) == 0);
-
-    auto* header = reinterpret_cast<BlockHeader*>(reinterpret_cast<std::uint8_t*>(_Ptr) - sizeof(BlockHeader));
+    auto* header = reinterpret_cast<BlockHeader*>(reinterpret_cast<std::uint8_t*>(_Ptr) - ComputeAlignedSize(sizeof(BlockHeader), _Align));
     header->_lock.exchange(0, std::memory_order_seq_cst);
 }
 
@@ -87,15 +85,13 @@ bool FixedSizeAllocator::do_is_equal(const memory_resource& _That) const noexcep
 
 inline std::size_t FixedSizeAllocator::GetBlockAlignedSize() const
 {
-    static_assert(sizeof(BlockHeader) % alignof(void*) == 0);
-
-    static const auto alignedSize = ComputeAlignedSize(_blockSize) + sizeof(BlockHeader);
+    static const auto alignedSize = ComputeAlignedSize(_blockSize) + ComputeAlignedSize(sizeof(BlockHeader));
     return alignedSize;
 }
 
-inline std::size_t FixedSizeAllocator::ComputeAlignedSize(std::size_t x)
+inline std::size_t FixedSizeAllocator::ComputeAlignedSize(std::size_t x, std::size_t alignment)
 {
-    return ((x - 1) | (Alignment - 1)) + 1;
+    return ((x - 1) | (alignment - 1)) + 1;
 }
 
 inline std::size_t FixedSizeAllocator::GetBufferAlignedSize() const

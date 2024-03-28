@@ -14,7 +14,7 @@ class CallstackPoolManager
 public:
     static CallstackPool* GetDefault();
 
-    CallstackPool* Get(pmr::memory_resource* allocator);
+    CallstackPool* Get(shared::pmr::memory_resource* allocator);
 
 private:
 

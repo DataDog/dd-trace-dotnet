@@ -3,19 +3,25 @@
 
 #pragma once
 
+#ifdef LINUX
+#pragma clang attribute push(__attribute__((no_sanitize("returns-nonnull-attribute"))), apply_to = function)
+#endif
 #ifdef __has_include                 // Check if __has_include is present
 #if __has_include(<memory_resource>) // Check for a standard library
 #include <memory_resource>
-namespace pmr {
+namespace shared::pmr {
 using namespace std::pmr;
 }
 #elif __has_include(<experimental/memory_resource>) // Check for an experimental version
 #include <experimental/memory_resource>
-namespace pmr {
+namespace shared::pmr {
 using namespace std::experimental::pmr;
 }
 #else // Not found at all
 // cppcheck-suppress preprocessorErrorDirective
 #error "Missing <memory_resource>"
 #endif
+#endif
+#ifdef LINUX
+#pragma clang attribute pop
 #endif

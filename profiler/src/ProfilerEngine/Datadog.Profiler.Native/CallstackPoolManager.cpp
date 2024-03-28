@@ -5,7 +5,7 @@
 
 #include "shared/src/native-src/dd_span.hpp"
 
-CallstackPool* CallstackPoolManager::Get(pmr::memory_resource* allocator)
+CallstackPool* CallstackPoolManager::Get(shared::pmr::memory_resource* allocator)
 {
     auto pool = std::make_unique<CallstackPool>(allocator);
     _pools.push_back(std::move(pool));
@@ -14,6 +14,6 @@ CallstackPool* CallstackPoolManager::Get(pmr::memory_resource* allocator)
 
 CallstackPool* CallstackPoolManager::GetDefault()
 {
-    static auto instance = std::make_unique<CallstackPool>(pmr::get_default_resource());
+    static auto instance = std::make_unique<CallstackPool>(shared::pmr::get_default_resource());
     return instance.get();
 }

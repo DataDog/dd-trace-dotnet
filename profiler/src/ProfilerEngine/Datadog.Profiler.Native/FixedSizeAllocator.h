@@ -7,15 +7,15 @@
 
 #include <atomic>
 
-class FixedSizeAllocator final : public pmr::memory_resource
+class FixedSizeAllocator final : public shared::pmr::memory_resource
 {
 public:
 
-    FixedSizeAllocator(std::size_t chunckSize, std::size_t nbBlocks, pmr::memory_resource* main_resource = pmr::get_default_resource());
+    FixedSizeAllocator(std::size_t chunckSize, std::size_t nbBlocks, shared::pmr::memory_resource* main_resource = shared::pmr::get_default_resource());
     ~FixedSizeAllocator();
 
 private:
-    static std::size_t ComputeAlignedSize(std::size_t x);
+    static std::size_t ComputeAlignedSize(std::size_t x, std::size_t alignment = Alignment);
 
     // Inherited via memory_resource
     void* do_allocate(size_t _Bytes, size_t _Align) override;
@@ -26,9 +26,9 @@ private:
     std::size_t GetBufferAlignedSize() const;
 
     static constexpr std::uint8_t MaxRetry = 3;
-    static constexpr std::size_t Alignment = 8;
+    static constexpr std::size_t Alignment = alignof(max_align_t);
 
-    pmr::memory_resource* _upstreamResource;
+    shared::pmr::memory_resource* _upstreamResource;
     void* _buffer;
     std::atomic<std::uint64_t> _currentBlock;
     std::size_t _nbBlocks;

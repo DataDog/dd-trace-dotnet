@@ -24,7 +24,7 @@
 
 using namespace std::chrono_literals;
 
-CallstackPool pool(pmr::get_default_resource());
+CallstackPool pool(shared::pmr::get_default_resource());
 
 RawWallTimeSample GetWallTimeRawSample(
     std::uint64_t timeStamp,

@@ -269,7 +269,7 @@ private :
     std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
     bool _isETWStarted = false;
     std::unique_ptr<CallstackPoolManager> _callstackPoolManager;
-    std::unique_ptr<pmr::memory_resource> _callstackAllocator;
+    std::unique_ptr<shared::pmr::memory_resource> _callstackAllocator;
 
 private:
     static void ConfigureDebugLog();

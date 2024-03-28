@@ -59,7 +59,7 @@ TEST(CallstackTest, CheckAddApi)
 
 TEST(CallstackTest, CheckBufferSetCountApi)
 {
-    CallstackPool p(pmr::get_default_resource());
+    CallstackPool p(shared::pmr::get_default_resource());
 
     auto s = p.Get();
 

@@ -24,7 +24,7 @@ TEST(CallstackPoolTest, OnlyOneCallstackCanBeAcquiredWithFixedSizeAllocator)
 
 TEST(CallstackPoolTest, MakeSureWeCanAllocateAsWeWantWithDefaultAllocator)
 {
-    auto p = CallstackPool(pmr::get_default_resource());
+    auto p = CallstackPool(shared::pmr::get_default_resource());
 
     auto s1 = p.Get();
 
