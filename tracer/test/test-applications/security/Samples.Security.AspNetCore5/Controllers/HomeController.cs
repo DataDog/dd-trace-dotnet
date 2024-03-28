@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 
+#pragma warning disable ASP0019 // warning ASP0019: Use IHeaderDictionary.Append or the indexer to append or set headers. IDictionary.Add will throw an ArgumentException when attempting to add a duplicate key
 namespace Samples.Security.AspNetCore5.Controllers
 {
     public class HomeController : Controller

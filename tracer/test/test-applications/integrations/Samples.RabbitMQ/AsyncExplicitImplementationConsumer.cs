@@ -27,7 +27,9 @@ namespace Samples.RabbitMQ
 
         public event EventHandler<BasicDeliverEventArgs> Received;
 
+#pragma warning disable CS0067 // The event 'AsyncExplicitImplementationConsumer.ConsumerCancelled' is never used
         public event AsyncEventHandler<ConsumerEventArgs> ConsumerCancelled;
+#pragma warning restore CS0067
 
         Task IAsyncBasicConsumer.HandleBasicCancel(string consumerTag) => _consumer.HandleBasicCancel(consumerTag);
 
@@ -38,6 +40,7 @@ namespace Samples.RabbitMQ
 #if RABBITMQ_6_0
         async Task IAsyncBasicConsumer.HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
         {
+            await Task.Yield();
             Received?.Invoke(
                 this,
                 new BasicDeliverEventArgs(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body));
@@ -45,6 +48,7 @@ namespace Samples.RabbitMQ
 #else
         async Task IAsyncBasicConsumer.HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, byte[] body)
         {
+            await Task.Yield();
             Received?.Invoke(
                 this,
                 new BasicDeliverEventArgs(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body));

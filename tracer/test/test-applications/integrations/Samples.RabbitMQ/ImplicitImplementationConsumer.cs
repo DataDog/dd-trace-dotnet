@@ -23,7 +23,9 @@ namespace Samples.RabbitMQ
 
         public event EventHandler<BasicDeliverEventArgs> Received;
 
+#pragma warning disable CS0067 // The event 'SyncImplicitImplementationConsumer.ConsumerCancelled' is never used
         public event EventHandler<ConsumerEventArgs> ConsumerCancelled;
+#pragma warning restore CS0067
 
         public void HandleBasicCancel(string consumerTag) =>
             _consumer.HandleBasicCancel(consumerTag);
