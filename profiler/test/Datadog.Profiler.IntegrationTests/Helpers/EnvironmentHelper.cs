@@ -198,6 +198,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             {
                 environmentVariables[key] = CustomEnvironmentVariables[key];
             }
+
+            environmentVariables["LD_DEBUG"] = "all";
+            environmentVariables["LD_DEBUG_OUTPUT"] = Path.Combine(GetTestOutputPath(), "ld.debug.log");
         }
 
         internal string GetTestOutputPath()
