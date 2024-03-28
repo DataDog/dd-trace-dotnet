@@ -5,14 +5,16 @@
 
 #include "CallstackPool.h"
 
-#include <cstddef>
+#include "shared/src/native-src/dd_memory_resource.hpp"
+
 #include <vector>
-#include <memory>
 
 class CallstackPoolManager
 {
 public:
-    CallstackPool* Get(std::size_t nbCallstacks);
+    static CallstackPool* GetDefault();
+
+    CallstackPool* Get(pmr::memory_resource* allocator);
 
 private:
 

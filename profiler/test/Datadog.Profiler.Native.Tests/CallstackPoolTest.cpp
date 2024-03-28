@@ -3,13 +3,14 @@
 
 #include "CallstackPool.h"
 
-#include <fstream>
+#include "FixedSizeAllocator.h"
 
 #include "gtest/gtest.h"
 
-TEST(CallstackPoolTest, OnlyOneCallstackCanBeAcquired)
+TEST(CallstackPoolTest, OnlyOneCallstackCanBeAcquiredWithFixedSizeAllocator)
 {
-    auto p = CallstackPool(1);
+    auto allocator = FixedSizeAllocator(Callstack::MaxSize, 1);
+    auto p = CallstackPool(&allocator);
 
     auto s1 = p.Get();
 
@@ -20,37 +21,44 @@ TEST(CallstackPoolTest, OnlyOneCallstackCanBeAcquired)
     ASSERT_EQ(s2.Capacity(), 0);
 }
 
-TEST(CallstackPoolTest, MoreThanOneCallstackCanBeAcquired)
-{
-    auto p = CallstackPool(2);
 
-    // First callstack
+TEST(CallstackPoolTest, MakeSureWeCanAllocateAsWeWantWithDefaultAllocator)
+{
+    auto p = CallstackPool(pmr::get_default_resource());
+
     auto s1 = p.Get();
 
     ASSERT_EQ(s1.Capacity(), Callstack::MaxFrames);
 
-    // Second callstack
     auto s2 = p.Get();
 
     ASSERT_EQ(s2.Capacity(), Callstack::MaxFrames);
 
-    // No more available callstack
-    // unusable callstack is returned
     auto s3 = p.Get();
 
-    ASSERT_EQ(s3.Capacity(), 0);
+    ASSERT_EQ(s3.Capacity(), Callstack::MaxFrames);
 }
 
-TEST(CallstackPoolTest, MakeSureCallstackIsReleasedAndReused)
+TEST(CallstackPoolTest, MakeSureCanUseAFullBigBuffer)
 {
-    auto p = CallstackPool(1);
+    constexpr std::size_t nbCallstacks = 10000;
+    FixedSizeAllocator allocator(Callstack::MaxSize, nbCallstacks);
 
+    auto p = CallstackPool(&allocator);
+
+    std::vector<Callstack> v;
+    v.reserve(600);
+
+    for (auto i = 0; i < nbCallstacks; i++)
     {
-        auto s1 = p.Get();
-        ASSERT_EQ(s1.Capacity(), Callstack::MaxFrames);
+        v.push_back(p.Get());
+
+        auto& c = v.back();
+        ASSERT_EQ(c.Capacity(), Callstack::MaxFrames) << "Failed at " << i;
     }
 
-    auto s2 = p.Get();
 
-    ASSERT_EQ(s2.Capacity(), Callstack::MaxFrames);
+    // Check that we cannot insert
+    auto c = p.Get();
+    ASSERT_EQ(c.Capacity(), 0);
 }

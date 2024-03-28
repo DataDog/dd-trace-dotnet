@@ -440,8 +440,9 @@
     <ClInclude Include="CallstackPool.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="CallstackPoolManager.h">
-      <Filter>Profiler-Driver</Filter>
+    <ClInclude Include="CallstackPoolManager.h" />
+    <ClInclude Include="FixedSizeAllocator.h">
+      <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -665,7 +666,10 @@
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
     <ClCompile Include="CallstackPoolManager.cpp">
-      <Filter>Profiler-Driver</Filter>
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="FixedSizeAllocator.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

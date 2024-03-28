@@ -3,13 +3,14 @@
 
 #include "CallstackPool.h"
 #include "Callstack.h"
+#include "FixedSizeAllocator.h"
 
 #include "gtest/gtest.h"
 
-
 TEST(CallstackTest, CheckMoveAssignmentOperator)
 {
-    CallstackPool p(2);
+    auto allocator = FixedSizeAllocator(Callstack::MaxSize, 2);
+    CallstackPool p(&allocator);
 
     auto s = p.Get();
 
@@ -36,7 +37,8 @@ TEST(CallstackTest, CheckMoveAssignmentOperator)
 
 TEST(CallstackTest, CheckAddApi)
 {
-    CallstackPool p(1);
+    auto allocator = FixedSizeAllocator(Callstack::MaxSize, 1);
+    CallstackPool p(&allocator);
 
     auto s = p.Get();
 
@@ -57,7 +59,7 @@ TEST(CallstackTest, CheckAddApi)
 
 TEST(CallstackTest, CheckBufferSetCountApi)
 {
-    CallstackPool p(1);
+    CallstackPool p(pmr::get_default_resource());
 
     auto s = p.Get();
 

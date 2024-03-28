@@ -3,9 +3,17 @@
 
 #include "CallstackPoolManager.h"
 
-CallstackPool* CallstackPoolManager::Get(std::size_t nbCallstacks)
+#include "shared/src/native-src/dd_span.hpp"
+
+CallstackPool* CallstackPoolManager::Get(pmr::memory_resource* allocator)
 {
-    auto pool = std::make_unique<CallstackPool>(nbCallstacks);
+    auto pool = std::make_unique<CallstackPool>(allocator);
     _pools.push_back(std::move(pool));
     return _pools.back().get();
+}
+
+CallstackPool* CallstackPoolManager::GetDefault()
+{
+    static auto instance = std::make_unique<CallstackPool>(pmr::get_default_resource());
+    return instance.get();
 }

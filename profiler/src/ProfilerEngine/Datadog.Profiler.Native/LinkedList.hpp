@@ -3,28 +3,13 @@
 
 #pragma once
 
-#ifdef __has_include                 // Check if __has_include is present
-#if __has_include(<memory_resource>) // Check for a standard library
-#include <memory_resource>
-namespace pmr {
-using namespace std::pmr;
-}
-#elif __has_include(<experimental/memory_resource>) // Check for an experimental version
-#include <experimental/memory_resource>
-namespace pmr {
-using namespace std::experimental::pmr;
-}
-#else // Not found at all
-// cppcheck-suppress preprocessorErrorDirective
-#error "Missing <memory_resource>"
-#endif
-#endif
-
 #include <cassert>
 #include <cstdlib>
 #include <memory>
 #include <stdexcept>
 #include <utility>
+
+#include "shared/src/native-src/dd_memory_resource.hpp"
 
 #ifdef DD_TEST
 #define NOEXCEPT noexcept(false)

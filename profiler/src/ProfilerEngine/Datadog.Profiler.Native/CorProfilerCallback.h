@@ -13,6 +13,7 @@
 #include "CallstackPoolManager.h"
 #include "EventPipeEventsManager.h"
 #include "ExceptionsProvider.h"
+#include "FixedSizeAllocator.h"
 #include "IAppDomainStore.h"
 #include "IClrLifetime.h"
 #include "IConfiguration.h"
@@ -36,6 +37,8 @@
 #include "ThreadLifetimeProvider.h"
 #include "shared/src/native-src/string.h"
 #include "IEtwEventsManager.h"
+
+#include "shared/src/native-src/dd_memory_resource.hpp"
 
 #include <atomic>
 #include <memory>
@@ -266,6 +269,7 @@ private :
     std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
     bool _isETWStarted = false;
     std::unique_ptr<CallstackPoolManager> _callstackPoolManager;
+    std::unique_ptr<pmr::memory_resource> _callstackAllocator;
 
 private:
     static void ConfigureDebugLog();

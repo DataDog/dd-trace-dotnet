@@ -248,6 +248,7 @@
     <ClInclude Include="EventPipeEventsManager.h" />
     <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
+    <ClInclude Include="FixedSizeAllocator.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
     <ClInclude Include="LinkedList.hpp" />
     <ClInclude Include="RawSamples.hpp" />
@@ -390,6 +391,7 @@
     <ClCompile Include="EventPipeEventsManager.cpp" />
     <ClCompile Include="ExporterBuilder.cpp" />
     <ClCompile Include="FileHelper.cpp" />
+    <ClCompile Include="FixedSizeAllocator.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />

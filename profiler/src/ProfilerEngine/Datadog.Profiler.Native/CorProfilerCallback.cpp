@@ -31,6 +31,7 @@
 #include "EnabledProfilers.h"
 #include "EnvironmentVariables.h"
 #include "ExceptionsProvider.h"
+#include "CallstackPoolManager.h"
 #include "FrameStore.h"
 #include "GCThreadsCpuProvider.h"
 #include "IMetricsSender.h"
@@ -170,11 +171,6 @@ bool CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
-        auto limit = _pConfiguration->ExceptionSampleLimit();
-        // TODO: review this sizing: It looks like 2.5 times is enough for the tests and exceptions surge.
-        // Due to the current implementation of pool (new and no mmap/virtualalloc), this can have a significant overhead
-        // on the process memory
-        auto* pool = _callstackPoolManager->Get(2.5 * limit);
         _pExceptionsProvider = RegisterService<ExceptionsProvider>(
             valueTypeProvider,
             _pCorProfilerInfo,
@@ -185,7 +181,7 @@ bool CorProfilerCallback::InitializeServices()
             _pAppDomainStore.get(),
             pRuntimeIdStore,
             _metricsRegistry,
-            pool);
+            CallstackPoolManager::GetDefault());
     }
 
     // _pCorProfilerInfoEvents must have been set for any .NET 5+ CLR events-based profiler to work
@@ -207,7 +203,6 @@ bool CorProfilerCallback::InitializeServices()
                     _pConfiguration.get(),
                     _metricsRegistry);
 
-                auto* pool = _callstackPoolManager->Get(200);
                 _pAllocationsProvider = RegisterService<AllocationsProvider>(
                     valueTypeProvider,
                     _pCorProfilerInfo,
@@ -219,7 +214,7 @@ bool CorProfilerCallback::InitializeServices()
                     _pConfiguration.get(),
                     _pLiveObjectsProvider,
                     _metricsRegistry,
-                    pool
+                    CallstackPoolManager::GetDefault()
                     );
 
                 if (!_pConfiguration->IsAllocationProfilingEnabled())
@@ -236,7 +231,6 @@ bool CorProfilerCallback::InitializeServices()
         // check for allocations profiling only (without heap profiling)
         if (_pConfiguration->IsAllocationProfilingEnabled() && (_pAllocationsProvider == nullptr))
         {
-            auto* pool = _callstackPoolManager->Get(200);
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
                 valueTypeProvider,
                 _pCorProfilerInfo,
@@ -248,13 +242,12 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 nullptr, // no listener
                 _metricsRegistry,
-                pool
+                CallstackPoolManager::GetDefault()
                 );
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
-            auto* pool = _callstackPoolManager->Get(200);
             _pContentionProvider = RegisterService<ContentionProvider>(
                 valueTypeProvider,
                 _pCorProfilerInfo,
@@ -265,7 +258,7 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
-                pool
+                CallstackPoolManager::GetDefault()
                 );
         }
 
@@ -318,7 +311,6 @@ bool CorProfilerCallback::InitializeServices()
         // check for allocations profiling only (without heap profiling)
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
-            auto* pool = _callstackPoolManager->Get(200);
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
                 valueTypeProvider,
                 _pCorProfilerInfo,
@@ -330,12 +322,11 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 nullptr, // no listener
                 _metricsRegistry,
-                pool);
+                CallstackPoolManager::GetDefault());
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
-            auto* pool = _callstackPoolManager->Get(200);
             _pContentionProvider = RegisterService<ContentionProvider>(
                 valueTypeProvider,
                 _pCorProfilerInfo,
@@ -346,7 +337,7 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
-                pool);
+                CallstackPoolManager::GetDefault());
         }
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
@@ -424,11 +415,8 @@ bool CorProfilerCallback::InitializeServices()
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
-    // TODO review the sizing of this pool. We should take into account
-    // - Walltime events
-    // - Cpu time events
-    // - Code hotspot events
-    auto* pool = _callstackPoolManager->Get(500);
+    _callstackAllocator = std::make_unique<FixedSizeAllocator>(Callstack::MaxSize, 500);
+    auto* pool = _callstackPoolManager->Get(_callstackAllocator.get());
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
         _pConfiguration.get(),

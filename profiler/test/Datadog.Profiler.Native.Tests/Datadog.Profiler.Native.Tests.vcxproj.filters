@@ -166,6 +166,9 @@
     <ClCompile Include="CallstackTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="FixedSizeAllocatorTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">

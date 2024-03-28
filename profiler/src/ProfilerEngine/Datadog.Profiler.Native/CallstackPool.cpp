@@ -3,17 +3,14 @@
 
 #include "CallstackPool.h"
 
-CallstackPool::CallstackPool(std::size_t nbCallstacks) :
-    _nbCallstacks{nbCallstacks},
-    _callstacks{std::make_unique<std::uint8_t[]>(nbCallstacks * ComputeAlignedSize<CallstackLayout>())},
-    _current{0}
+CallstackPool::CallstackPool(pmr::memory_resource* memory_resource) :
+    _memory_resource{memory_resource}
+
 {
 }
 
 CallstackPool::CallstackPool(CallstackPool&& other) noexcept :
-    _nbCallstacks{0},
-    _callstacks{nullptr},
-    _current{0}
+    _memory_resource{nullptr}
 {
     *this = std::move(other);
 }
@@ -23,10 +20,7 @@ CallstackPool& CallstackPool::operator=(CallstackPool&& other) noexcept
     if (this == &other)
         return *this;
 
-    std::swap(other._nbCallstacks, _nbCallstacks);
-    std::swap(_callstacks, other._callstacks);
-    // weird but there is no swap for atomic objects
-    _current.exchange(other._current.exchange(_current));
+    std::swap(other._memory_resource, _memory_resource);
 
     return *this;
 }
@@ -36,34 +30,22 @@ Callstack CallstackPool::Get()
     return Callstack(this);
 }
 
+inline void* allocateCallstack(pmr::memory_resource* allocator, std::size_t size)
+{
+    return allocator->allocate(size);
+}
+
 shared::span<std::uintptr_t> CallstackPool::Acquire()
 {
-    constexpr auto callstackAlignedSize = ComputeAlignedSize<CallstackLayout>();
-    constexpr auto headerAlignedSize = ComputeAlignedSize<CallstackHeader>();
+    auto* buffer = allocateCallstack(_memory_resource, Callstack::MaxSize);
 
-    for (auto i = 0; i < MaxRetry; i++)
-    {
-        auto v = _current.fetch_add(1);
-        auto idx = v % _nbCallstacks;
-        auto offset = idx * callstackAlignedSize;
-        auto* callstack = reinterpret_cast<CallstackLayout*>(_callstacks.get() + offset);
+    if (buffer == nullptr)
+        return {};
 
-        if (callstack->_header._lock.exchange(1, std::memory_order_seq_cst) == 0)
-        {
-            // move past the header
-            auto* data = reinterpret_cast<std::uintptr_t*>(reinterpret_cast<std::uint8_t*>(callstack) + headerAlignedSize);
-            return {data, Callstack::MaxFrames};
-        }
-    }
-    return {};
+    return {reinterpret_cast<std::uintptr_t*>(buffer), Callstack::MaxFrames};
 }
 
 void CallstackPool::Release(shared::span<std::uintptr_t> buffer)
 {
-    // if called by a non-usable/viable callstack
-    if (buffer.data() == nullptr)
-        return;
-
-    auto* header = reinterpret_cast<CallstackHeader*>(reinterpret_cast<std::uint8_t*>(buffer.data()) - ComputeAlignedSize<CallstackHeader>());
-    header->_lock.exchange(0, std::memory_order_seq_cst);
+    _memory_resource->deallocate(buffer.data(), Callstack::MaxSize);
 }

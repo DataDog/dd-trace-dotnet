@@ -154,6 +154,7 @@ void StackFramesCollectorBase::PrepareForNextCollection()
     _pStackSnapshotResult->Reset();
     _pStackSnapshotResult->SetCallstack(_callstackPool->Get());
 
+
     // Clear the current collection thread pointer:
     _pCurrentCollectionThreadInfo = nullptr;
 

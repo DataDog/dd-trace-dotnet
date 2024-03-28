@@ -12,9 +12,15 @@ class CallstackPool;
 class Callstack
 {
 public:
+    static constexpr std::uint8_t FrameSize = sizeof(std::uintptr_t);
     static constexpr std::uint16_t MaxFrames = 1024;
+    static constexpr std::size_t MaxSize = MaxFrames * FrameSize;
 
+    // default ctor is needed because there are instances of Callstack that can
+    // be fields of classes. They will be replaced during the execution with
+    // ones from the pool.
     Callstack();
+
     ~Callstack();
 
 #ifdef DD_TEST

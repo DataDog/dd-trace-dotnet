@@ -270,6 +270,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
     }
 
     SetFrameCount(count);
+
     return S_OK;
 }
 
