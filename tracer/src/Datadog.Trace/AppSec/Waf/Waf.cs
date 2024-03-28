@@ -53,8 +53,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="obfuscationParameterValueRegex">the regex that will be used to obfuscate possible sensitive data in values that are highlighted WAF as potentially malicious,
         /// empty string means use default embedded in the WAF</param>
         /// <param name="embeddedRulesetPath">can be null, means use rules embedded in the manifest </param>
-        /// <param name="rulesFromRcm">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
-        /// <param name="setupWafSchemaExtraction">should we read the config file for schema extraction</param>
+        /// <param name="configurationStatus">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
         /// <param name="useUnsafeEncoder">use legacy encoder</param>
         /// <param name="wafDebugEnabled">if debug level logs should be enabled for the WAF</param>
         /// <returns>the waf wrapper around waf native</returns>
@@ -63,8 +62,7 @@ namespace Datadog.Trace.AppSec.Waf
             string obfuscationParameterKeyRegex,
             string obfuscationParameterValueRegex,
             string? embeddedRulesetPath = null,
-            JToken? rulesFromRcm = null,
-            bool setupWafSchemaExtraction = false,
+            ConfigurationStatus? configurationStatus = null,
             bool useUnsafeEncoder = false,
             bool wafDebugEnabled = false)
         {
@@ -73,8 +71,19 @@ namespace Datadog.Trace.AppSec.Waf
             // set the log level and setup the logger
             wafLibraryInvoker.SetupLogging(wafDebugEnabled);
 
-            var jtokenRoot = rulesFromRcm ?? WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
-            if (jtokenRoot is null)
+            object? configurationToEncode = null;
+            if (configurationStatus is not null)
+            {
+                var configFromRcm = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
+                if (configFromRcm.Count > 0)
+                {
+                    configurationToEncode = configFromRcm;
+                }
+            }
+
+            configurationToEncode ??= WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
+
+            if (configurationToEncode is null)
             {
                 return InitResult.FromUnusableRuleFile();
             }
@@ -90,14 +99,14 @@ namespace Datadog.Trace.AppSec.Waf
             if (useUnsafeEncoder)
             {
                 encoder = new Encoder();
-                result = encoder.Encode(jtokenRoot, applySafetyLimits: false);
+                result = encoder.Encode(configurationToEncode, applySafetyLimits: false);
                 rulesObj = result.Result;
                 configWafStruct.FreeWafFunction = IntPtr.Zero;
             }
             else
             {
                 encoder = new EncoderLegacy(wafLibraryInvoker);
-                var configObjWrapper = encoder.Encode(jtokenRoot, applySafetyLimits: false);
+                var configObjWrapper = encoder.Encode(configurationToEncode, applySafetyLimits: false);
                 rulesObj = configObjWrapper.Result;
                 configWafStruct.FreeWafFunction = wafLibraryInvoker.ObjectFreeFuncPtr;
             }
@@ -106,8 +115,8 @@ namespace Datadog.Trace.AppSec.Waf
 
             try
             {
-                var initResult = wafConfigurator.Configure(rulesObj, encoder, configWafStruct, ref diagnostics, rulesFromRcm == null ? embeddedRulesetPath : "RemoteConfig");
-                initResult.EmbeddedRules = jtokenRoot;
+                var initResult = wafConfigurator.Configure(rulesObj, encoder, configWafStruct, ref diagnostics, configurationStatus == null ? embeddedRulesetPath : "RemoteConfig");
+                initResult.EmbeddedRules = initResult.EmbeddedRules;
                 return initResult;
             }
             finally
