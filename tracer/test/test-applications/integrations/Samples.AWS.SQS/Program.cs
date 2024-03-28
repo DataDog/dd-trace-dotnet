@@ -16,7 +16,32 @@ namespace Samples.AWS.SQS
 #if NETFRAMEWORK
             SyncHelpers.SendAndReceiveMessages(sqsClient);
 #endif
-            await AsyncHelpers.SendAndReceiveMessages(sqsClient);
+            if (Environment.GetEnvironmentVariable("TEST_BATCH") is string batch &&
+                Environment.GetEnvironmentVariable("TEST_IN_THREAD") is string thread &&
+                Environment.GetEnvironmentVariable("TEST_INJECT") is string inject)
+            {
+                var scenario = AsyncHelpers.Scenario.None;
+                if (batch == "1")
+                {
+                    scenario |= AsyncHelpers.Scenario.Batch;
+                }
+
+                if (thread == "1")
+                {
+                    scenario |= AsyncHelpers.Scenario.InThread;
+                }
+
+                if (inject == "1")
+                {
+                    scenario |= AsyncHelpers.Scenario.Injected;
+                }
+
+                await AsyncHelpers.RunSpecificScenario(sqsClient, scenario);
+            }
+            else
+            {
+                await AsyncHelpers.RunAllScenarios(sqsClient);
+            }
         }
 
         private static AmazonSQSClient GetAmazonSQSClient()
