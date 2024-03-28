@@ -1,0 +1,70 @@
+﻿{
+  Env: integration_tests,
+  Service: Samples.AWS.SQS,
+  TracerVersion: <snip>,
+  Lang: dotnet,
+  Stats: [
+    {
+      Start: 1661520120000000000,
+      Duration: 10000000000,
+      Stats: [
+        {
+          EdgeTags: [
+            direction:out,
+            topic:MyAsyncSQSQueue,
+            type:sqs
+          ],
+          Hash: 16264089125033314072,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            topic:MyAsyncSQSQueue,
+            type:sqs
+          ],
+          Hash: 1683312031548079124,
+          ParentHash: 16264089125033314072,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        }
+      ]
+    },
+    {
+      Start: 1661520120000000000,
+      Duration: 10000000000,
+      Stats: [
+        {
+          EdgeTags: [
+            direction:out,
+            topic:MyAsyncSQSQueue,
+            type:sqs
+          ],
+          Hash: 16264089125033314072,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            topic:MyAsyncSQSQueue,
+            type:sqs
+          ],
+          Hash: 1683312031548079124,
+          ParentHash: 16264089125033314072,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: origin
+        }
+      ]
+    }
+  ]
+}
