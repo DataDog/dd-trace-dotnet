@@ -56,13 +56,22 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="rulesFromRcm">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
         /// <param name="setupWafSchemaExtraction">should we read the config file for schema extraction</param>
         /// <param name="useUnsafeEncoder">use legacy encoder</param>
+        /// <param name="wafDebugEnabled">if debug level logs should be enabled for the WAF</param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? embeddedRulesetPath = null, JToken? rulesFromRcm = null, bool setupWafSchemaExtraction = false, bool useUnsafeEncoder = false)
+        internal static InitResult Create(
+            WafLibraryInvoker wafLibraryInvoker,
+            string obfuscationParameterKeyRegex,
+            string obfuscationParameterValueRegex,
+            string? embeddedRulesetPath = null,
+            JToken? rulesFromRcm = null,
+            bool setupWafSchemaExtraction = false,
+            bool useUnsafeEncoder = false,
+            bool wafDebugEnabled = false)
         {
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
 
             // set the log level and setup the logger
-            wafLibraryInvoker.SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
+            wafLibraryInvoker.SetupLogging(wafDebugEnabled);
 
             var jtokenRoot = rulesFromRcm ?? WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
             if (jtokenRoot is null)

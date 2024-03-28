@@ -106,9 +106,14 @@ namespace Datadog.Trace.Configuration
             internal const string ApiSecuritySampleDelay = "DD_API_SECURITY_SAMPLE_DELAY";
 
             /// <summary>
-            /// Use legacy encoder for the waf
+            /// Use new unsafe encoder for the waf
             /// </summary>
             internal const string UseUnsafeEncoder = "DD_EXPERIMENTAL_APPSEC_USE_UNSAFE_ENCODER";
+
+            /// <summary>
+            /// Activate debug logs for the WAF
+            /// </summary>
+            internal const string WafDebugEnabled = "DD_APPSEC_WAF_DEBUG";
         }
     }
 }
