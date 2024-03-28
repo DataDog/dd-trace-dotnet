@@ -12,7 +12,6 @@ namespace Datadog.Trace.AppSec.WafEncoding
     // NOTE: this is referred to as ddwaf_object in the C++ code, we call it Obj to avoid a naming clash
     internal class Obj
     {
-        private GCHandle? _handle;
         private DdwafObjectStruct _innerObj;
 
         /// <summary>
@@ -20,16 +19,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
         /// Obj encapsulates a ddwaf_object struct
         /// </summary>
         /// <param name="innerObj">the ddwaf struct</param>
-        /// <param name="parentObj">if it's the top parent obj, we need to call the waf to dispose it otherwise we dont</param>
-        public Obj(ref DdwafObjectStruct innerObj, bool parentObj = false)
-        {
-            _innerObj = innerObj;
-            if (parentObj)
-            {
-                // we pin only the parent and the waf will dispose it as well as its children
-                _handle = GCHandle.Alloc(_innerObj, GCHandleType.Pinned);
-            }
-        }
+        public Obj(ref DdwafObjectStruct innerObj) => _innerObj = innerObj;
 
         public ObjType ArgsType
         {
@@ -56,14 +46,6 @@ namespace Datadog.Trace.AppSec.WafEncoding
             get { return ref _innerObj; }
         }
 
-        public void DisposeAllChildren(WafLibraryInvoker wafLibraryInvoker)
-        {
-            if (_handle is not null && _handle.Value.Target is not null)
-            {
-                var item = (DdwafObjectStruct)_handle.Value.Target;
-                wafLibraryInvoker.ObjectFree(ref item);
-                _handle.Value.Free();
-            }
-        }
+        public void DisposeAllChildren(WafLibraryInvoker wafLibraryInvoker) => wafLibraryInvoker.ObjectFree(ref _innerObj);
     }
 }

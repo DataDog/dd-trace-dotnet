@@ -98,7 +98,7 @@ internal class EncoderLegacy : IEncoder
                 _ => EncodeUnknownType(args, wafLibraryInvoker)
             };
 
-        return parentObj ? new Obj(ref value.InnerStruct, parentObj) : value;
+        return value;
     }
 
     private static Obj EncodeList<T>(IEnumerable<T> objEnumerator, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
