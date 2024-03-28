@@ -101,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         }
                         else
                         {
-                            Log.Warning("Scope was null in ReflectedHttpActionDescriptor_ExecuteAsync_Integration.OnAsyncMethodEnd, cannot check security");
+                            Log.Debug("Scope was null in ReflectedHttpActionDescriptor_ExecuteAsync_Integration.OnAsyncMethodEnd, cannot check security");
                         }
                     }
                 }

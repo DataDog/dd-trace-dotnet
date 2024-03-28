@@ -17,7 +17,7 @@ namespace Datadog.Trace.AspNet
         private static readonly Func<Stack<Scope>, Scope> Pop = stack => stack.Pop();
         private static readonly Func<Stack<Scope>, Scope> Peek = stack => stack.Peek();
 
-        internal static void PushScope(HttpContext? context, string key, Scope item)
+        internal static void PushScope(HttpContext context, string key, Scope item)
         {
             if (context is null)
             {

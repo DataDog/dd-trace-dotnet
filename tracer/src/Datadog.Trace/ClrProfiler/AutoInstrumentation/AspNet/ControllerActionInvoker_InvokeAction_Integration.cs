@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>Return value of the method</returns>
-        internal static CallTargetReturn<TResult?> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult? returnValue, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TResult?> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult? returnValue, Exception? exception, in CallTargetState state)
         {
             var security = Security.Instance;
             if (security.Enabled && returnValue is not null)
@@ -110,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         }
                         else
                         {
-                            Log.Warning("Scope was null in ControllerActionInvoker_InvokeAction_Integration.OnMethodEnd, cannot check security");
+                            Log.Debug("Scope was null in ControllerActionInvoker_InvokeAction_Integration.OnMethodEnd, cannot check security");
                         }
                     }
                 }
