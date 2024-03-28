@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSqs);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsSqs;
 
-        public static Scope? CreateScope(Tracer tracer, string operation, out AwsSqsTags? tags, ISpanContext? parentContext = null, string spanKind = SpanKinds.Client)
+        public static Scope? CreateScope(Tracer tracer, string operation, out AwsSqsTags? tags, ISpanContext? parentContext = null, string spanKind = SpanKinds.Client, DateTimeOffset? startTime = null)
         {
             tags = null;
 
@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAwsSqsTags(spanKind);
                 string serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsSqsServiceName);
                 string operationName = GetOperationName(tracer, spanKind);
-                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, parentContext, tags: tags, serviceName: serviceName, startTime: startTime);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;

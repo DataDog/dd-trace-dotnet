@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
@@ -22,7 +23,7 @@ internal class AwsSqsHeadersAdapters
         return new StringBuilderJsonAdapter(carrier);
     }
 
-    public static IBinaryHeadersCollection GetExtractionAdapter(IDictionary? messageAttributes)
+    public static MessageAttributesAdapter GetExtractionAdapter(IDictionary? messageAttributes)
     {
         return new MessageAttributesAdapter(messageAttributes);
     }
@@ -58,7 +59,7 @@ internal class AwsSqsHeadersAdapters
     /// <summary>
     /// The adapter to use to read attributes packed in a json string under the _datadog key
     /// </summary>
-    private readonly struct MessageAttributesAdapter : IBinaryHeadersCollection
+    internal readonly struct MessageAttributesAdapter : IBinaryHeadersCollection
     {
         private readonly Dictionary<string, string>? _ddAttributes;
 
@@ -70,6 +71,16 @@ internal class AwsSqsHeadersAdapters
             {
                 _ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.StringValue);
             }
+        }
+
+        public static IEnumerable<string> GetValue(MessageAttributesAdapter self, string key)
+        {
+            if (self._ddAttributes != null && self._ddAttributes.TryGetValue(key, out var val))
+            {
+                return [val];
+            }
+
+            return Enumerable.Empty<string>();
         }
 
         public byte[] TryGetLastBytes(string name)

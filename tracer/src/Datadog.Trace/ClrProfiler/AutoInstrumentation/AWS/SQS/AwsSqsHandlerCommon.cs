@@ -6,9 +6,12 @@
 #nullable enable
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
@@ -108,14 +111,6 @@ internal static class AwsSqsHandlerCommon
             return CallTargetState.GetDefault();
         }
 
-        var queueName = AwsSqsCommon.GetQueueName(request.QueueUrl);
-        var scope = AwsSqsCommon.CreateScope(Tracer.Instance, "ReceiveMessage", out var tags, spanKind: SpanKinds.Consumer);
-        if (tags is not null && request.QueueUrl is not null)
-        {
-            tags.QueueUrl = request.QueueUrl;
-            tags.QueueName = queueName;
-        }
-
         // request the message attributes that a datadog instrumentation might have set when sending
         if (request.MessageAttributeNames is null)
         {
@@ -135,17 +130,32 @@ internal static class AwsSqsHandlerCommon
             request.AttributeNames.AddDistinct("SentTimestamp");
         }
 
-        return new CallTargetState(scope, queueName);
+        return new CallTargetState(scope: null, request.QueueUrl, DateTimeOffset.UtcNow);
     }
 
     internal static TResponse AfterReceive<TResponse>(TResponse response, Exception? exception, in CallTargetState state)
         where TResponse : IReceiveMessageResponse
     {
-        if (response.Instance != null && response.Messages != null && response.Messages.Count > 0 && state.State != null)
+        const string spanOperationName = "ReceiveMessage";
+        if (state.State is string queueUrl)
         {
-            var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-            if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
+            var queueName = AwsSqsCommon.GetQueueName(queueUrl);
+
+            if (response.Instance == null || response.Messages == null || response.Messages.Count <= 0)
             {
+                // nothing consumed, create scope starting in the past (at the time of the method beginning), and close it immediately.
+                var scope = AwsSqsCommon.CreateScope(Tracer.Instance, spanOperationName, out var tags, spanKind: SpanKinds.Consumer, startTime: state.StartTime);
+                if (tags is not null)
+                {
+                    tags.QueueUrl = queueUrl;
+                    tags.QueueName = queueName;
+                }
+
+                scope.DisposeWithException(exception);
+            }
+            else
+            {
+                var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                 var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:sqs" };
                 foreach (var o in response.Messages)
                 {
@@ -155,20 +165,35 @@ internal static class AwsSqsHandlerCommon
                         continue; // should not happen
                     }
 
-                    var sentTime = 0;
-                    if (message.Attributes != null && message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
-                    {
-                        int.TryParse(sentTimeStr, out sentTime);
-                    }
-
+                    // open a new consume span that starts in the past at the time of beginning of the receive method,
+                    // with the context read from the message as parent (if present)
                     var adapter = AwsSqsHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
-                    var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
-                    state.Scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
+                    var traceContext = SpanContextPropagator.Instance.Extract(adapter, AwsSqsHeadersAdapters.MessageAttributesAdapter.GetValue);
+                    using (var scope = AwsSqsCommon.CreateScope(Tracer.Instance, spanOperationName, out var tags, traceContext, SpanKinds.Consumer, state.StartTime))
+                    {
+                        if (tags is not null)
+                        {
+                            tags.QueueUrl = queueUrl;
+                            tags.QueueName = queueName;
+                        }
+
+                        // then send data streams monitoring metrics
+                        if (dataStreamsManager != null && dataStreamsManager.IsEnabled && scope != null)
+                        {
+                            var sentTime = 0;
+                            if (message.Attributes != null && message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
+                            {
+                                int.TryParse(sentTimeStr, out sentTime);
+                            }
+
+                            var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
+                            scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
+                        }
+                    }
                 }
             }
         }
 
-        state.Scope.DisposeWithException(exception);
         return response;
     }
 
