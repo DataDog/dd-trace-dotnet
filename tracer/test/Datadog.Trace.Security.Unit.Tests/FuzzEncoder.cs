@@ -58,12 +58,7 @@ public class FuzzEncoder : WafLibraryRequiredTest
                 // check the object is valid
                 Assert.NotEqual(DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID, result.ResultDdwafObject.Type);
 
-                var argCache = new List<Obj>();
                 using var resultObj = _encoderLegacy.Encode(root, applySafetyLimits: true);
-                foreach (var arg in argCache)
-                {
-                    arg.Dispose();
-                }
 
                 Assert.NotEqual(DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID, result.ResultDdwafObject.Type);
             }
