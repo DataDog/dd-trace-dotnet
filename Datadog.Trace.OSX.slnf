@@ -119,6 +119,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.RabbitMQ\\Samples.RabbitMQ.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.RateLimiter\\Samples.RateLimiter.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.RuntimeMetrics\\Samples.RuntimeMetrics.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.Security.GrpcDotNet\\Samples.Security.GrpcDotNet.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Selenium\\Samples.Selenium.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.ServiceStack.Redis\\Samples.ServiceStack.Redis.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.SQLite.Core\\Samples.SQLite.Core.csproj",
