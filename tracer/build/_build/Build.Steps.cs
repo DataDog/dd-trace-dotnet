@@ -39,6 +39,7 @@ partial class Build
     AbsolutePath SharedDirectory => RootDirectory / "shared";
     AbsolutePath ProfilerDirectory => RootDirectory / "profiler";
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
+    AbsolutePath BuildArtifactsDirectory => RootDirectory / "artifacts";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
     AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
@@ -46,7 +47,7 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
-    AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
+    AbsolutePath BuildDataDirectory => BuildArtifactsDirectory / "build_data";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
@@ -1392,8 +1393,7 @@ partial class Build
                         .SetProperty("BuildInParallel", "true")
                         .SetProperty("CheckEolTargetFramework", "false")
                         .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
-                        .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                        // .SetProcessArgumentConfigurator(arg => arg.Add($"/bl:build_{DateTime.UtcNow.Ticks}.binlog"))
+                        .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701").Add($"/bl:\"{(BuildDataDirectory / $"build_{DateTime.UtcNow.Ticks}.binlog")}\""))
                         .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     );
