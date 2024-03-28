@@ -67,8 +67,11 @@ namespace Samples.MongoDB
                 newDocument.Add("largeKey",  largeTagValue);
                 
                 Run(collection, newDocument);
+#if MONGODB_2_2 || MONGODB_2_7 || MONGODB_2_15
+                // Not available in <2.2.0
                 collection.FindSync(newDocument).FirstOrDefault();
-                
+#endif
+
 #if MONGODB_2_2 && !MONGODB_2_15
                 WireProtocolExecuteIntegrationTest(client);
 #endif
