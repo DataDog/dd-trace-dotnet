@@ -4,6 +4,8 @@
 #include <signal.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 /* dl_iterate_phdr wrapper
 The .NET profiler on Linux uses a classic signal-based approach to collect thread callstack.
@@ -132,11 +134,6 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
     {
         __real_execve = dlsym(RTLD_NEXT, "execve");
 
-        if (__real_execve == null)
-        {
-            printf("failed to find the real execve :(\n");
-        }
-
         ddTracePath = getenv("DD_TRACE_CRASH_HANDLER");
 
         if (ddTracePath != NULL && ddTracePath[0] == '\0')
@@ -144,8 +141,6 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
             ddTracePath = NULL;
         }
     }
-
-    printf("LD - After initial check\n");
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wtautological-compare"
