@@ -87,7 +87,7 @@ internal class CreatedumpCommand : Command
 
         // extern "C" void __stdcall ReportCrash(int32_t pid, ResolveManagedMethod resolveCallback)
         var function = (delegate* unmanaged<int, IntPtr, void>)export;
-        var callback = (delegate* unmanaged<IntPtr, byte*, int, int*, int>)&ResolveManagedMethod;
+        var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
 
         function(pid.Value, (IntPtr)callback);
 
