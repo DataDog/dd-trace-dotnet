@@ -174,6 +174,51 @@ public abstract class AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEna
     }
 }
 
+public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTests
+{
+    public AspNetCore5IastTestsRestartedSampleIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled", redactionEnabled: true, samplingRate: 100)
+    {
+    }
+
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [InlineData(-1, 10)]
+    [InlineData(-1, 15)]
+    [InlineData(15, 15)]
+    [InlineData(5, 15)]
+    public async Task TestMaxRanges(int maxRanges, int nbrRangesCreated)
+    {
+        // Set the configuration (use default configuration if -1 is passed)
+        var maxRangesConfiguration = maxRanges == -1 ? IastSettings.MaxRangeCountDefault : maxRanges;
+        SetEnvironmentVariable(ConfigurationKeys.Iast.MaxRangeCount, maxRangesConfiguration.ToString());
+
+        var filename = "Iast.MaxRanges.AspNetCore5.IastEnabled." + maxRangesConfiguration + "." + nbrRangesCreated;
+        var url = "/Iast/MaxRanges?count=" + nbrRangesCreated + "&tainted=taintedString|";
+
+        IncludeAllHttpSpans = true;
+
+        // Using a new fixture here to use a new process that applies
+        // correctly the new environment variable value that is changing between tests
+        var newFixture = new AspNetCoreTestFixture();
+        newFixture.SetOutput(Output);
+        await TryStartApp(newFixture);
+
+        var agent = newFixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+
+        newFixture.Dispose();
+        newFixture.SetOutput(null);
+    }
+}
+
 public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsFullSampling
 {
     public AspNetCore5IastTestsFullSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
@@ -330,43 +375,6 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
-    }
-
-    [SkippableTheory]
-    [Trait("RunOnWindows", "True")]
-    [InlineData(-1, 10)]
-    [InlineData(-1, 15)]
-    [InlineData(15, 15)]
-    [InlineData(5, 15)]
-    public async Task TestMaxRanges(int maxRanges, int nbrRangesCreated)
-    {
-        // Set the configuration (use default configuration if -1 is passed)
-        var maxRangesConfiguration = maxRanges == -1 ? IastSettings.MaxRangeCountDefault : maxRanges;
-        SetEnvironmentVariable(ConfigurationKeys.Iast.MaxRangeCount, maxRangesConfiguration.ToString());
-
-        var filename = "Iast.MaxRanges.AspNetCore5.IastEnabled." + maxRangesConfiguration + "." + nbrRangesCreated;
-        var url = "/Iast/MaxRanges?count=" + nbrRangesCreated + "&tainted=taintedString|";
-
-        IncludeAllHttpSpans = true;
-
-        // Using a new fixture here to use a new process that applies
-        // correctly the new environment variable value that is changing between tests
-        var newFixture = new AspNetCoreTestFixture();
-        newFixture.SetOutput(Output);
-        await TryStartApp(newFixture);
-
-        var agent = newFixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
-
-        newFixture.Dispose();
-        newFixture.SetOutput(null);
     }
 
 #if !NETFRAMEWORK && NETCOREAPP3_1_OR_GREATER
@@ -945,6 +953,26 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestNHibernateSqlInjection()
+    {
+        var filename = "Iast.NHibernateSqlInjection.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/NHibernateQuery?username=TestUser";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
     }
 }
 

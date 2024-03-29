@@ -77,6 +77,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.XpathInjection => MetricTags.IntegrationName.XpathInjection,
             IntegrationId.ReflectionInjection => MetricTags.IntegrationName.ReflectionInjection,
             IntegrationId.Xss => MetricTags.IntegrationName.Xss,
+            IntegrationId.NHibernate => MetricTags.IntegrationName.NHibernate,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }
