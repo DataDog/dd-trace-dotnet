@@ -46,17 +46,12 @@ internal class CreatedumpCommand : Command
                 return -2;
             }
 
-            Console.WriteLine($"Resolving managed method at IP {ip:x2}");
-
             var method = _runtime.GetMethodByInstructionPointer((ulong)ip);
 
             if (method == null)
             {
-                Console.WriteLine($"Not found");
                 return 1;
             }
-
-            Console.WriteLine($"Found");
 
             methodData->SymbolAddress = method.NativeCode;
             methodData->ModuleAddress = method.Type.Module.ImageBase;
