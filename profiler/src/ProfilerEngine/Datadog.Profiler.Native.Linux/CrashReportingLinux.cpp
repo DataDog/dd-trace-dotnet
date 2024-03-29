@@ -33,7 +33,7 @@ CrashReportingLinux::~CrashReportingLinux()
     unw_destroy_addr_space(_addressSpace);
 }
 
-std::pair<std::string, uintptr_t> FindModule(uintptr_t ip)
+std::pair<std::string, uintptr_t> CrashReportingLinux::FindModule(uintptr_t ip)
 {
     for (auto& module : _modules)
     {
