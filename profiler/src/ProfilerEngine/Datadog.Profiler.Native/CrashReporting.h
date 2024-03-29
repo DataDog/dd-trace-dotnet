@@ -22,5 +22,5 @@ protected:
 
     virtual std::vector<int32_t> GetThreads() = 0;
     virtual std::vector<std::pair<uintptr_t, std::string>> GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod) = 0;
-    virtual std::pair<std::string, uintptr_t> FindModule(uint32_t ip) = 0;
+    virtual std::pair<std::string, uintptr_t> FindModule(uintptr_t ip) = 0;
 };

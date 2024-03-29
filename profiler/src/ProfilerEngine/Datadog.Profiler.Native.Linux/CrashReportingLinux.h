@@ -23,7 +23,7 @@ public:
 private:
     std::vector<int32_t> GetThreads() override;
     std::vector<std::pair<uintptr_t, std::string>> GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod) override;
-    std::pair<std::string, uintptr_t> FindModule(uint32_t ip) override;
+    std::pair<std::string, uintptr_t> FindModule(uintptr_t ip) override;
     std::vector<ModuleInfo> GetModules();
 
     unw_addr_space_t _addressSpace;
