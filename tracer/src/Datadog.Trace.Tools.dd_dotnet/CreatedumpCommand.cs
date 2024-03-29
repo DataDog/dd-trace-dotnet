@@ -38,33 +38,41 @@ internal class CreatedumpCommand : Command
     [UnmanagedCallersOnly]
     private static unsafe int ResolveManagedMethod(IntPtr ip, ResolveMethodData* methodData)
     {
-        if (_runtime == null)
+        try
         {
-            Console.WriteLine("Runtime is not initialized");
-            return -2;
+            if (_runtime == null)
+            {
+                Console.WriteLine("Runtime is not initialized");
+                return -2;
+            }
+
+            var method = _runtime.GetMethodByInstructionPointer((ulong)ip);
+
+            if (method == null)
+            {
+                return 1;
+            }
+
+            methodData->SymbolAddress = method.NativeCode;
+            methodData->ModuleAddress = method.Type.Module.ImageBase;
+
+            var name = $"{Path.GetFileName(method.Type.Module.AssemblyName)}!{method.Type}.{method.Name}";
+
+            var length = Math.Min(Encoding.ASCII.GetByteCount(name), MethodNameMaxLength - 1); // -1 to save space for the null terminator
+
+            var destination = new Span<byte>(methodData->Name, MethodNameMaxLength);
+
+            Encoding.ASCII.GetBytes(name, destination);
+
+            destination[length] = (byte)'\0';
+
+            return 0;
         }
-
-        var method = _runtime.GetMethodByInstructionPointer((ulong)ip);
-
-        if (method == null)
+        catch (Exception ex)
         {
-            return 1;
+            Console.WriteLine($"Error resolving managed method: {ex}");
+            return -1;
         }
-
-        methodData->SymbolAddress = method.NativeCode;
-        methodData->ModuleAddress = method.Type.Module.ImageBase;
-
-        var name = $"{Path.GetFileName(method.Type.Module.AssemblyName)}!{method.Type}.{method.Name}";
-
-        var length = Math.Min(Encoding.ASCII.GetByteCount(name), MethodNameMaxLength - 1); // -1 to save space for the null terminator
-
-        var destination = new Span<byte>(methodData->Name, MethodNameMaxLength);
-
-        Encoding.ASCII.GetBytes(name, destination);
-
-        destination[length] = (byte)'\0';
-
-        return 0;
     }
 
     private unsafe void Execute(InvocationContext context)
