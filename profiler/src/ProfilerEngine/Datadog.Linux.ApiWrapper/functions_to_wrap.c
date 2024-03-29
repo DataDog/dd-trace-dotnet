@@ -81,7 +81,7 @@ int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void
  * dlopen, dladdr issue happens mainly on Alpine
  */
 
-/* Function pointers to hold the value of the glibc functions */
+ /* Function pointers to hold the value of the glibc functions */
 static void* (*__real_dlopen)(const char* file, int mode) = NULL;
 
 void* dlopen(const char* file, int mode)
@@ -131,6 +131,12 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
     if (__real_execve == NULL)
     {
         __real_execve = dlsym(RTLD_NEXT, "execve");
+
+        if (__real_execve == null)
+        {
+            printf("failed to find the real execve :(\n");
+        }
+
         ddTracePath = getenv("DD_TRACE_CRASH_HANDLER");
 
         if (ddTracePath != NULL && ddTracePath[0] == '\0')
@@ -138,6 +144,8 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
             ddTracePath = NULL;
         }
     }
+
+    printf("LD - After initial check\n");
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wtautological-compare"
@@ -163,9 +171,27 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
             // Copy the remaining arguments
             memcpy(newArgv + 2, argv + 1, sizeof(char*) * (argc - 1));
 
-            int result = __real_execve(ddTracePath, newArgv, envp);
+            size_t envp_count;
+            for (envp_count = 0; envp[envp_count]; ++envp_count);
+            char** new_envp = malloc((envp_count + 1) * sizeof(char*)); // +1 for NULL terminator
+
+            for (size_t i = 0; i < envp_count; ++i) {
+                if (strncmp(envp[i], "LD_PRELOAD=", strlen("LD_PRELOAD=")) == 0) {
+                    continue;
+                }
+
+                if (strncmp(envp[i], "CORECLR_ENABLE_PROFILING=", strlen("CORECLR_ENABLE_PROFILING=")) == 0) {
+                    continue;
+                }
+
+                new_envp[i] = envp[i];
+            }
+            new_envp[envp_count] = NULL; // NULL terminate the array
+
+            int result = __real_execve(ddTracePath, newArgv, new_envp);
 
             free(newArgv);
+            free(new_envp);
 
             return result;
         }
@@ -275,6 +301,6 @@ pid_t fork()
     ((char*)&functions_entered_counter)[ENTERED_FORK]--;
 
     return result;
-}
+        }
 
 #endif
