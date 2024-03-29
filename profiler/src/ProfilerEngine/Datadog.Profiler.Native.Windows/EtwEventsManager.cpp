@@ -303,17 +303,23 @@ void EtwEventsManager::Stop()
         Log::Warn("Fail to unregister from the Datadog Agent...");
     }
 
-    if (_IpcClient->Disconnect())
+    if (_IpcClient != nullptr)
     {
-        Log::Info("Disconnected from the Datadog Agent named pipe");
-    }
-    else
-    {
-        Log::Warn("Failed to disconnect from the Datadog Agent named pipe...");
+        if (_IpcClient->Disconnect())
+        {
+            Log::Info("Disconnected from the Datadog Agent named pipe");
+        }
+        else
+        {
+            Log::Warn("Failed to disconnect from the Datadog Agent named pipe...");
+        }
     }
 
     // stop listening to incoming ETW events
-    _IpcServer->Stop();
+    if (_IpcServer != nullptr)
+    {
+        _IpcServer->Stop();
+    }
 }
 
 static void LogLastError(const char* msg, DWORD error = ::GetLastError())
