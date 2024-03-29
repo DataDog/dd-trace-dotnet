@@ -33,6 +33,19 @@ CrashReportingLinux::~CrashReportingLinux()
     unw_destroy_addr_space(_addressSpace);
 }
 
+std::pair<std::string, uintptr_t> FindModule(uintptr_t ip)
+{
+    for (auto& module : _modules)
+    {
+        if (ip >= module.startAddress && ip < module.endAddress)
+        {
+            return std::make_pair(module.path, module.baseAddress);
+        }
+    }
+
+    return std::make_pair("", 0);
+}
+
 std::vector<ModuleInfo> CrashReportingLinux::GetModules()
 {
     std::vector<ModuleInfo> modules;
