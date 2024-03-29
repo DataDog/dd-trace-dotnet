@@ -10,14 +10,17 @@ typedef int (*ResolveManagedMethod)(uintptr_t ip, char* buffer, int bufferSize, 
 class CrashReporting
 {
 public:
-    CrashReporting();
+    CrashReporting(int32_t pid);
     virtual ~CrashReporting();
 
-    static std::unique_ptr<CrashReporting> Create();
+    static std::unique_ptr<CrashReporting> Create(int32_t pid);
 
-    void ReportCrash(int32_t pid, ResolveManagedMethod resolveCallback);
+    void ReportCrash(ResolveManagedMethod resolveCallback);
 
-private:
-    virtual std::vector<int32_t> GetThreads(int32_t pid) = 0;
-    virtual std::vector<std::pair<uintptr_t, std::string>> GetThreadFrames(int32_t pid, int32_t tid, ResolveManagedMethod resolveManagedMethod) = 0;
+protected:
+    int32_t _pid;
+
+    virtual std::vector<int32_t> GetThreads() = 0;
+    virtual std::vector<std::pair<uintptr_t, std::string>> GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod) = 0;
+    virtual std::pair<std::string, uintptr_t> FindModule(uint32_t ip) = 0;
 };

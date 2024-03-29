@@ -17,12 +17,13 @@ extern "C" void __stdcall ReportCrash(int32_t pid, ResolveManagedMethod resolveC
 #ifdef _WIN32
     std::cout << "CrashReporting::ReportCrash not implemented on Windows" << std::endl;
 #else
-    auto crashReporting = CrashReporting::Create();
-    crashReporting->ReportCrash(pid, resolveCallback);
+    auto crashReporting = CrashReporting::Create(pid);
+    crashReporting->ReportCrash(resolveCallback);
 #endif
 }
 
-CrashReporting::CrashReporting()
+CrashReporting::CrashReporting(int32_t pid)
+        : _pid(pid)
 {
 }
 
@@ -30,7 +31,7 @@ CrashReporting::~CrashReporting()
 {
 }
 
-void CrashReporting::ReportCrash(int32_t pid, ResolveManagedMethod resolveCallback)
+void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
 {
     auto crashInfoResult = ddog_crashinfo_new();
 
@@ -41,13 +42,13 @@ void CrashReporting::ReportCrash(int32_t pid, ResolveManagedMethod resolveCallba
 
     auto* crashInfo = &crashInfoResult.ok;
 
-    auto threads = GetThreads(pid);
+    auto threads = GetThreads();
 
     for (auto threadId : threads)
     {
         std::cout << "Inspecting thread " << threadId << "\n";
 
-        auto frames = GetThreadFrames(pid, threadId, resolveCallback);
+        auto frames = GetThreadFrames(threadId, resolveCallback);
 
         ddog_prof_Slice_StackFrame stackTrace;
 
@@ -63,7 +64,11 @@ void CrashReporting::ReportCrash(int32_t pid, ResolveManagedMethod resolveCallba
 
         for (int i = 0; i < count; i++)
         {
-            strings[i] = frames.at(i).second;
+            auto frame = frames.at(i);
+
+            auto ip = frame.first;
+            strings[i] = frame.second;
+            auto module = FindModule(ip);
 
             stackFrameNames[i] = ddog_prof_StackFrameNames{
                 .colno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
@@ -73,8 +78,8 @@ void CrashReporting::ReportCrash(int32_t pid, ResolveManagedMethod resolveCallba
             };
 
             stackFrames[i] = ddog_prof_StackFrame{
-                .ip = frames.at(i).first,
-                .module_base_address = 2,
+                .ip = ip,
+                .module_base_address = module.second,
                 .names{
                     .ptr = &stackFrameNames[i],
                     .len = 1,
