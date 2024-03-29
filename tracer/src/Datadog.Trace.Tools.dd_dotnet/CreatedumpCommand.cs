@@ -20,14 +20,18 @@ internal class CreatedumpCommand : Command
 
     private static ClrRuntime? _runtime;
 
-    private readonly Argument<string?> _pathArgument = new("path") { Arity = ArgumentArity.ExactlyOne };
     private readonly Argument<int?> _pidArgument = new("pid") { Arity = ArgumentArity.ExactlyOne };
+    private readonly Option<bool> _fullOption = new("--full");
+    private readonly Option<int> _signalOption = new("--signal");
+    private readonly Option<int> _crashthreadOption = new("--crashthread");
 
     public CreatedumpCommand()
         : base("createdump")
     {
-        AddArgument(_pathArgument);
         AddArgument(_pidArgument);
+        AddOption(_fullOption);
+        AddOption(_signalOption);
+        AddOption(_crashthreadOption);
         this.SetHandler(Execute);
     }
 
@@ -65,10 +69,11 @@ internal class CreatedumpCommand : Command
 
     private unsafe void Execute(InvocationContext context)
     {
-        AnsiConsole.WriteLine("Createdump command");
-
-        var path = _pathArgument.GetValue(context)!;
         var pid = _pidArgument.GetValue(context)!;
+
+        AnsiConsole.WriteLine($"Capturing crash info for process {pid}");
+
+        const string path = @"/home/kgosse/git/dd-trace-dotnet/shared/bin/monitoring-home/linux-x64/";
 
         AnsiConsole.WriteLine($"Loading Datadog.Profiler.Native.so from {path}");
 
