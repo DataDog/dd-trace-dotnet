@@ -16,6 +16,8 @@ namespace Datadog.Trace.Tools.dd_dotnet;
 
 internal class CreatedumpCommand : Command
 {
+    private const int MethodNameMaxLength = 1024;
+
     private static ClrRuntime? _runtime;
 
     private readonly Argument<string?> _pathArgument = new("path") { Arity = ArgumentArity.ExactlyOne };
@@ -30,7 +32,7 @@ internal class CreatedumpCommand : Command
     }
 
     [UnmanagedCallersOnly]
-    private static unsafe int ResolveManagedMethod(IntPtr ip, byte* buffer, int bufferSize, int* requiredBufferSize)
+    private static unsafe int ResolveManagedMethod(IntPtr ip, ResolveMethodData* methodData)
     {
         if (_runtime == null)
         {
@@ -45,19 +47,18 @@ internal class CreatedumpCommand : Command
             return 1;
         }
 
-        string name = $"{Path.GetFileName(method.Type.Module.AssemblyName)}!{method.Type}.{method.Name} +{method.GetILOffset((ulong)ip):x2}";
+        methodData->SymbolAddress = method.NativeCode;
+        methodData->ModuleAddress = method.Type.Module.ImageBase;
 
-        var length = Encoding.ASCII.GetByteCount(name);
+        var name = $"{Path.GetFileName(method.Type.Module.AssemblyName)}!{method.Type}.{method.Name}";
 
-        if (bufferSize < length + 1)
-        {
-            *requiredBufferSize = length + 1;
-            return -1;
-        }
+        var length = Math.Min(Encoding.ASCII.GetByteCount(name), MethodNameMaxLength - 1); // -1 to save space for the null terminator
 
-        Encoding.ASCII.GetBytes(name, new Span<byte>(buffer, bufferSize));
+        var destination = new Span<byte>(methodData->Name, MethodNameMaxLength);
 
-        buffer[length] = (byte)'\0';
+        Encoding.ASCII.GetBytes(name, destination);
+
+        destination[length] = (byte)'\0';
 
         return 0;
     }
@@ -91,5 +92,13 @@ internal class CreatedumpCommand : Command
         function(pid.Value, (IntPtr)callback);
 
         AnsiConsole.WriteLine("Createdump command finished");
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private unsafe struct ResolveMethodData
+    {
+        public ulong SymbolAddress;
+        public ulong ModuleAddress;
+        public fixed byte Name[MethodNameMaxLength];
     }
 }

@@ -105,11 +105,11 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
     return modules;
 }
 
-std::vector<std::pair<uintptr_t, std::string>> CrashReportingLinux::GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod)
+std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod)
 {
     std::cout << "-------------- Inspecting thread " << tid << "\n";
 
-    std::vector<std::pair<uintptr_t, std::string>> frames;
+    std::vector<StackFrame> frames;
 
     // if (ptrace(PTRACE_ATTACH, tid, NULL, NULL) == -1)
     // {
@@ -145,34 +145,39 @@ std::vector<std::pair<uintptr_t, std::string>> CrashReportingLinux::GetThreadFra
     {
         unw_get_reg(&cursor, UNW_REG_IP, &ip);
 
-        std::string symbol;        
+        StackFrame stackFrame;
+        stackFrame.ip = ip;
 
-        char buffer[256];
+        ResolveMethodData methodData;
 
-        int requiredBufferSize;
+        auto resolved = resolveManagedMethod(ip, &methodData);
 
-        auto resolved = resolveManagedMethod(ip, buffer, sizeof(buffer), &requiredBufferSize);
-
-        if (resolved == 1)
+        if (resolved != 0)
         {
             // Not a managed method
             unw_word_t offset;
-            unw_get_proc_name(&cursor, buffer, sizeof(buffer), &offset);
-            symbol = buffer;
-        }
-        else if (resolved == -1)
-        {
-            char* dynamicBuffer = new char[requiredBufferSize];
-            resolveManagedMethod(ip, dynamicBuffer, requiredBufferSize, &requiredBufferSize);
-            symbol = dynamicBuffer;
-            delete[] dynamicBuffer;
+
+            // TODO: check if unw_get_proc_name fails
+            unw_get_proc_name(&cursor, methodData.symbolName, sizeof(methodData.symbolName), &offset);
+            stackFrame.method = std::string(methodData.symbolName);
+
+            unw_proc_info_t procInfo;
+            unw_get_proc_info(&cursor, &procInfo);
+
+            stackFrame.symbolAddress = procInfo.start_ip;
+
+            auto module = FindModule(ip);
+            stackFrame.moduleAddress = module.second;
+
         }
         else if (resolved == 0)
         {
-            symbol = buffer;
+            stackFrame.method = std::string(methodData.symbolName);
+            stackFrame.moduleAddress = methodData.moduleAddress;
+            stackFrame.symbolAddress = methodData.symbolAddress;
         }
 
-        frames.push_back(std::make_pair(ip, symbol));
+        frames.push_back(stackFrame);
 
     } while (unw_step(&cursor) > 0);
 

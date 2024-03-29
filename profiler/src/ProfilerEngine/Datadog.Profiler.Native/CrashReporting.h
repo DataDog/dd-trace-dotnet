@@ -5,7 +5,22 @@
 #include <string>
 #include <memory>
 
-typedef int (*ResolveManagedMethod)(uintptr_t ip, char* buffer, int bufferSize, int* requiredBufferSize);
+struct ResolveMethodData
+{
+    uint64_t symbolAddress;
+    uint64_t moduleAddress;
+    char symbolName[1024];
+};
+
+struct StackFrame 
+{
+    uint64_t ip;    
+    std::string method;
+    uint64_t symbolAddress;
+    uint64_t moduleAddress;
+};
+
+typedef int (*ResolveManagedMethod)(uintptr_t ip, ResolveMethodData* methodData);
 
 class CrashReporting
 {
@@ -21,6 +36,5 @@ protected:
     int32_t _pid;
 
     virtual std::vector<int32_t> GetThreads() = 0;
-    virtual std::vector<std::pair<uintptr_t, std::string>> GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod) = 0;
-    virtual std::pair<std::string, uintptr_t> FindModule(uintptr_t ip) = 0;
+    virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod) = 0;
 };

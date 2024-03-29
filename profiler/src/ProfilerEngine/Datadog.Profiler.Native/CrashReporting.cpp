@@ -46,8 +46,6 @@ void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
 
     for (auto threadId : threads)
     {
-        std::cout << "Inspecting thread " << threadId << "\n";
-
         auto frames = GetThreadFrames(threadId, resolveCallback);
 
         ddog_prof_Slice_StackFrame stackTrace;
@@ -66,9 +64,7 @@ void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
         {
             auto frame = frames.at(i);
 
-            auto ip = frame.first;
-            strings[i] = frame.second;
-            auto module = FindModule(ip);
+            strings[i] = frame.method;
 
             stackFrameNames[i] = ddog_prof_StackFrameNames{
                 .colno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
@@ -77,21 +73,23 @@ void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
                 .name = libdatadog::FfiHelper::StringToCharSlice(strings[i])
             };
 
+            auto ip = static_cast<uintptr_t>(frame.ip);
+            auto moduleAddress = static_cast<uintptr_t>(frame.moduleAddress);
+            auto symbolAddress = static_cast<uintptr_t>(frame.symbolAddress);
+
             stackFrames[i] = ddog_prof_StackFrame{
                 .ip = ip,
-                .module_base_address = module.second,
+                .module_base_address = moduleAddress,
                 .names{
                     .ptr = &stackFrameNames[i],
                     .len = 1,
                 },
-                .sp = 3,
-                .symbol_address = 4,
+                .sp = 0,
+                .symbol_address = symbolAddress,
             };
         }
 
         auto threadIdStr = std::to_string(threadId);
-
-        std::cout << "set_stacktrace\n";
 
         auto result = ddog_crashinfo_set_stacktrace(crashInfo, { threadIdStr.c_str(), threadIdStr.length() }, stackTrace);
 
@@ -101,13 +99,9 @@ void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
             return;
         }
 
-        std::cout << "freeing memory\n";
-
         delete[] stackFrames;
         delete[] stackFrameNames;
         delete[] strings;
-
-        std::cout << "Done inspecting thread " << threadId << "\n";
     }
 
     std::cout << "Finished inspecting threads\n";
