@@ -46,7 +46,7 @@ internal class CreatedumpCommand : Command
                 return -2;
             }
 
-            Console.WriteLine($"Resolving managed method at IP {ip}");
+            Console.WriteLine($"Resolving managed method at IP {ip:x2}");
 
             var method = _runtime.GetMethodByInstructionPointer((ulong)ip);
 
