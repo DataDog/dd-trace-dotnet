@@ -121,6 +121,60 @@ int dladdr(const void* addr_arg, Dl_info* info)
     return result;
 }
 
+/* Function pointers to hold the value of the glibc functions */
+static int (*__real_execve)(const char* pathname, char* const argv[], char* const envp[]) = NULL;
+
+static char* ddTracePath = NULL;
+
+int execve(const char* pathname, char* const argv[], char* const envp[])
+{
+    if (__real_execve == NULL)
+    {
+        __real_execve = dlsym(RTLD_NEXT, "execve");
+        ddTracePath = getenv("DD_TRACE_CRASH_HANDLER");
+
+        if (ddTracePath != NULL && ddTracePath[0] == '\0')
+        {
+            ddTracePath = NULL;
+        }
+    }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+    if (ddTracePath != NULL && pathname != NULL)
+    {
+        size_t length = strlen(pathname);
+
+        if (length >= 11 && strcmp(pathname + length - 11, "/createdump") == 0)
+        {
+            // Execute the alternative crash handler, and prepend "createdump" to the arguments
+
+            // Count the number of arguments (the list ends with a null pointer)
+            int argc = 0;
+            while (argv[argc++] != NULL);
+
+            char** newArgv = malloc((argc + 1) * sizeof(char*));
+
+            // By convention, argv[0] contains the name of the executable
+            // Insert createdump as the first actual argument
+            newArgv[0] = ddTracePath;
+            newArgv[1] = "createdump";
+
+            // Copy the remaining arguments
+            memcpy(newArgv + 2, argv + 1, sizeof(char*) * (argc - 1));
+
+            int result = __real_execve(ddTracePath, newArgv, envp);
+
+            free(newArgv);
+
+            return result;
+        }
+    }
+#pragma clang diagnostic pop
+
+    return __real_execve(pathname, argv, envp);
+}
+
 #ifdef DD_ALPINE
 
 /* Function pointers to hold the value of the glibc functions */
