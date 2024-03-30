@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http;
 
 namespace Samples.AspNetCoreMvc.Controllers
 {
@@ -11,20 +10,11 @@ namespace Samples.AspNetCoreMvc.Controllers
     {
         private const string CorrelationIdentifierHeaderName = "sample.correlation.identifier";
 
-
-        [HttpGet]
-        [Route("double/{number}")]
-        public ActionResult Double(int number)
-        {
-            return Ok(number * 2);
-        }
-        
         [HttpGet]
         [Route("delay/{seconds}")]
         public ActionResult Delay(int seconds)
         {
             HttpClient client = new HttpClient();
-            client.GetAsync("http://localhost:5003/api/double/15");
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
             AddCorrelationIdentifierToResponse();
             return Ok(seconds);

@@ -16,10 +16,11 @@ namespace WebService.Models
         public virtual int TeacherCount { get; set; }
         public virtual int TeacherAssistantCount { get; set; }
 
-        public virtual HashSet<string> LectureRequiredFeatures { get; set; }
+        public virtual ISet<string> LectureRequiredFeatures { get; set; }
 
-        public virtual HashSet<string> PracticeRequiredFeatures { get; set; }
+        public virtual ISet<string> PracticeRequiredFeatures { get; set; }
 
         public virtual CourseSchedule Schedule { get; set; }
+        
     }
 }
