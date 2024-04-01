@@ -172,9 +172,9 @@ public class SpanMessagePackFormatterTests
                     var samplingPriority = expectedSpanlink.Context.TraceContext?.SamplingPriority ?? expectedSpanlink.Context.SamplingPriority;
                     var expectedTraceFlags = samplingPriority switch
                     {
-                        null => 0u,
-                        > 0 => 1u + (1u << 31),
-                        <= 0 => 1u << 31,
+                        null => 0u,             // not set
+                        > 0 => 1u + (1u << 31), // keep
+                        <= 0 => 1u << 31,       // drop
                     };
                     if (expectedTraceFlags > 0)
                     {
