@@ -12,19 +12,13 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Coverage.Models.Global;
 
-internal sealed class ComponentCoverageInfo : CoverageInfo
+internal sealed class ComponentCoverageInfo(string? name) : CoverageInfo
 {
-    public ComponentCoverageInfo(string? name)
-    {
-        Name = name;
-        Files = new List<FileCoverageInfo>();
-    }
-
     [JsonProperty("name")]
-    public string? Name { get; set; }
+    public string? Name { get; set; } = name;
 
     [JsonProperty("files")]
-    public List<FileCoverageInfo> Files { get; }
+    public List<FileCoverageInfo> Files { get; } = new();
 
     public static ComponentCoverageInfo? operator +(ComponentCoverageInfo? a, ComponentCoverageInfo? b)
     {
@@ -32,15 +26,18 @@ internal sealed class ComponentCoverageInfo : CoverageInfo
         {
             return null;
         }
-        else if (b is null)
+
+        if (b is null)
         {
             return a;
         }
-        else if (a is null)
+
+        if (a is null)
         {
             return b;
         }
-        else if (a.Name == b.Name)
+
+        if (a.Name == b.Name)
         {
             var componentCoverageInfo = new ComponentCoverageInfo(a.Name);
 

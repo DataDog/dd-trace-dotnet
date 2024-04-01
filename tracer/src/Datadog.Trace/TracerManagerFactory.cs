@@ -156,31 +156,45 @@ namespace Datadog.Trace
 
             dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
 
-            if (remoteConfigurationManager == null)
+            if (ShouldEnableRemoteConfiguration(settings))
             {
-                var sw = Stopwatch.StartNew();
+                if (remoteConfigurationManager == null)
+                {
+                    var sw = Stopwatch.StartNew();
 
-                var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
-                var rcmApi = RemoteConfigurationApiFactory.Create(settings.ExporterInternal, rcmSettings, discoveryService);
+                    var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
+                    var rcmApi = RemoteConfigurationApiFactory.Create(settings.ExporterInternal, rcmSettings, discoveryService);
 
-                // Service Name must be lowercase, otherwise the agent will not be able to find the service
-                var serviceName = TraceUtil.NormalizeTag(settings.ServiceNameInternal ?? defaultServiceName);
+                    // Service Name must be lowercase, otherwise the agent will not be able to find the service
+                    var serviceName = TraceUtil.NormalizeTag(settings.ServiceNameInternal ?? defaultServiceName);
 
-                remoteConfigurationManager =
-                    RemoteConfigurationManager.Create(
-                        discoveryService,
-                        rcmApi,
-                        rcmSettings,
-                        serviceName,
-                        settings,
-                        gitMetadataTagsProvider,
-                        RcmSubscriptionManager.Instance);
+                    remoteConfigurationManager =
+                        RemoteConfigurationManager.Create(
+                            discoveryService,
+                            rcmApi,
+                            rcmSettings,
+                            serviceName,
+                            settings,
+                            gitMetadataTagsProvider,
+                            RcmSubscriptionManager.Instance);
 
-                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
+                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
+                }
+
+                dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
+                tracerFlareManager ??= new TracerFlareManager(discoveryService, RcmSubscriptionManager.Instance, telemetry, TracerFlareApi.Create(settings.ExporterInternal));
             }
+            else
+            {
+                remoteConfigurationManager ??= new NullRemoteConfigurationManager();
+                dynamicConfigurationManager ??= new NullDynamicConfigurationManager();
+                tracerFlareManager ??= new NullTracerFlareManager();
 
-            dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
-            tracerFlareManager ??= new TracerFlareManager(discoveryService, RcmSubscriptionManager.Instance, TracerFlareApi.Create(settings.ExporterInternal));
+                if (RcmSubscriptionManager.Instance.HasAnySubscription)
+                {
+                    Log.Debug($"{nameof(RcmSubscriptionManager)} has subscriptions but remote configuration is not available in this scenario.");
+                }
+            }
 
             return CreateTracerManagerFrom(
                 settings,
@@ -211,6 +225,9 @@ namespace Datadog.Trace
             return new GitMetadataTagsProvider(settings, scopeManager, TelemetryFactory.Config);
         }
 
+        protected virtual bool ShouldEnableRemoteConfiguration(ImmutableTracerSettings settings)
+            => settings.IsRemoteConfigurationAvailable;
+
         /// <summary>
         ///  Can be overriden to create a different <see cref="TracerManager"/>, e.g. <see cref="Ci.CITracerManager"/>
         /// </summary>
@@ -236,10 +253,12 @@ namespace Datadog.Trace
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
             var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
+            var samplingRules = settings.CustomSamplingRulesInternal;
+            var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
 
-            if (!string.IsNullOrWhiteSpace(settings.CustomSamplingRulesInternal))
+            if (patternFormatIsValid && !string.IsNullOrWhiteSpace(samplingRules))
             {
-                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(settings.CustomSamplingRulesInternal))
+                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(samplingRules, samplingRulesFormat))
                 {
                     sampler.RegisterRule(rule);
                 }
@@ -247,7 +266,7 @@ namespace Datadog.Trace
 
             if (settings.GlobalSamplingRateInternal != null)
             {
-                var globalRate = (float)settings.GlobalSamplingRateInternal;
+                var globalRate = (float)settings.GlobalSamplingRateInternal.Value;
 
                 if (globalRate < 0f || globalRate > 1f)
                 {
@@ -304,25 +323,20 @@ namespace Datadog.Trace
                 switch (settings.ExporterInternal.MetricsTransport)
                 {
                     case MetricsTransportType.NamedPipe:
-                        Log.Information("Using windows named pipes for metrics transport.");
                         config.PipeName = settings.ExporterInternal.MetricsPipeNameInternal;
+                        Log.Information("Using windows named pipes for metrics transport: {PipeName}.", config.PipeName);
                         break;
 #if NETCOREAPP3_1_OR_GREATER
                     case MetricsTransportType.UDS:
-                        Log.Information("Using unix domain sockets for metrics transport.");
                         config.StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.ExporterInternal.MetricsUnixDomainSocketPathInternal}";
+                        Log.Information("Using unix domain sockets for metrics transport: {Socket}.", config.StatsdServerName);
                         break;
 #endif
                     case MetricsTransportType.UDP:
                     default:
-                        // If the customer has enabled UDS traces but _not_ UDS metrics, then the AgentUri will have
-                        // the UDS path set for it, and the DnsSafeHost returns "". Ideally, we would expose
-                        // a TracesAgentUri and MetricsAgentUri or something like that instead. This workaround
-                        // is a horrible hack, but I can't bear to touch ExporterSettings until it's had an
-                        // extensive tidy up, so this should do for now
-                        var traceHostname = settings.ExporterInternal.AgentUriInternal.DnsSafeHost;
-                        config.StatsdServerName = string.IsNullOrEmpty(traceHostname) ? "127.0.0.1" : traceHostname;
+                        config.StatsdServerName = settings.ExporterInternal.MetricsHostname;
                         config.StatsdPort = settings.ExporterInternal.DogStatsdPortInternal;
+                        Log.Information<string, int>("Using UDP for metrics transport: {Hostname}:{Port}.", config.StatsdServerName, config.StatsdPort);
                         break;
                 }
 

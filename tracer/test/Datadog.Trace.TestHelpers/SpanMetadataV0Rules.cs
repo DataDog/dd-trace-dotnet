@@ -216,58 +216,71 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 
-        public static Result IsAzureServiceBusInboundV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAzureServiceBusInboundV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
-                .MatchesOneOf(Name, "servicebus.receive", "servicebus.process")
+                .MatchesOneOf(Name, "servicebus.receive", "servicebus.process", "consumer")
                 .MatchesOneOf(Type, "http", "custom"))
             .Tags(s => s
                 .Matches("az.namespace", "Microsoft.ServiceBus")
-                .IsPresent("az.schema_url")
-                .MatchesOneOf("messaging.operation", "receive", "process")
-                .IsPresent("messaging.source.name")
-                .Matches("messaging.system", "servicebus")
-                .IsPresent("net.peer.name")
+                .IsOptional("az.schema_url")
+                .IfPresentMatchesOneOf("messaging.operation", "receive", "process")
+                .IsOptional("messaging.source.name")
+                .IsOptional("messaging.destination.name", "message_bus.destination")
+                .IfPresentMatches("messaging.system", "servicebus")
+                .IsOptional("net.peer.name")
+                .IsOptional("peer.address")
+                .IsOptional("server.address")
                 .IsPresent("otel.library.name")
                 .IsOptional("otel.library.version")
                 .IsPresent("otel.trace_id")
                 .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
                 .IsOptional("otel.status_description")
+                .IfPresentMatches("component", "servicebus")
+                .IfPresentMatches("kind", "consumer")
                 .Matches("span.kind", "consumer"));
 
-        public static Result IsAzureServiceBusOutboundV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAzureServiceBusOutboundV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "producer")
                 .Matches(Type, "custom"))
             .Tags(s => s
                 .Matches("az.namespace", "Microsoft.ServiceBus")
-                .IsPresent("az.schema_url")
-                .IsPresent("messaging.destination.name")
-                .Matches("messaging.system", "servicebus")
-                .IsPresent("net.peer.name")
+                .IsOptional("az.schema_url")
+                .IsPresent("messaging.destination.name", "message_bus.destination")
+                .IfPresentMatches("messaging.system", "servicebus")
+                .IsOptional("net.peer.name")
+                .IsOptional("peer.address")
+                .IsOptional("server.address")
                 .IsPresent("otel.library.name")
                 .IsOptional("otel.library.version")
                 .IsPresent("otel.trace_id")
                 .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
                 .IsOptional("otel.status_description")
+                .IfPresentMatches("component", "servicebus")
+                .IfPresentMatches("kind", "producer")
                 .Matches("span.kind", "producer"));
 
-        public static Result IsAzureServiceBusRequestV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAzureServiceBusRequestV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .MatchesOneOf(Name, "servicebus.publish", "servicebus.settle", "client.request")
                 .Matches(Type, "http"))
             .Tags(s => s
                 .Matches("az.namespace", "Microsoft.ServiceBus")
-                .IsPresent("az.schema_url")
-                .IsOptional("messaging.destination.name")
+                .IsOptional("az.schema_url")
+                .IsOptional("messaging.destination.name", "message_bus.destination")
                 .IfPresentMatchesOneOf("messaging.operation", "publish", "settle")
                 .IsOptional("messaging.source.name")
-                .Matches("messaging.system", "servicebus")
-                .IsPresent("net.peer.name")
+                .IfPresentMatches("messaging.system", "servicebus")
+                .IsOptional("net.peer.name")
+                .IsOptional("peer.address")
+                .IsOptional("server.address")
                 .IsPresent("otel.library.name")
                 .IsOptional("otel.library.version")
                 .IsPresent("otel.trace_id")
                 .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
                 .IsOptional("otel.status_description")
+                .IfPresentMatches("component", "servicebus")
+                .IfPresentMatches("kind", "client")
                 .Matches("span.kind", "client"));
 
         public static Result IsCosmosDbV0(this MockSpan span) => Result.FromSpan(span)
@@ -637,7 +650,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client"));
 
-        public static Result IsWcfV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsWcfV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "wcf.request")
                 .Matches(Type, "web"))

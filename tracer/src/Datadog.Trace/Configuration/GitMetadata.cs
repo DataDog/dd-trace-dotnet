@@ -4,16 +4,18 @@
 // </copyright>
 
 #nullable enable
+using Datadog.Trace.Ci.CiEnvironment;
+
 namespace Datadog.Trace.Configuration;
 
 internal class GitMetadata
 {
-    public static readonly GitMetadata Empty = new GitMetadata(string.Empty, string.Empty);
+    public static readonly GitMetadata Empty = new(string.Empty, string.Empty);
 
     public GitMetadata(string commitSha, string repositoryUrl)
     {
         CommitSha = commitSha;
-        RepositoryUrl = repositoryUrl;
+        RepositoryUrl = CIEnvironmentValues.RemoveSensitiveInformationFromUrl(repositoryUrl) ?? string.Empty;
     }
 
     public string CommitSha { get; }

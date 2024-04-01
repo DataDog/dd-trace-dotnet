@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <OutputType>Library</OutputType>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.2.8</ApiVersion>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
+
+  <Choose>
+    <When Condition="'$(TargetFramework)' == 'netcoreapp2.1' OR '$(TargetFramework)' == 'netcoreapp3.0'">
+      <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+  
+  <ItemGroup>
+    <PackageReference Include="MSTest.TestAdapter" Version="$(ApiVersion)" />
+    <PackageReference Include="MSTest.TestFramework" Version="$(ApiVersion)" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\Samples.MSTestTests\TestSuite.cs">
+      <Link>TestSuite.cs</Link>
+    </Compile>
+  </ItemGroup>
+
+</Project>
+ 

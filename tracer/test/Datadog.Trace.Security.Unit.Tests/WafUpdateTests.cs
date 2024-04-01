@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -24,8 +25,6 @@ namespace Datadog.Trace.Security.Unit.Tests
 {
     public class WafUpdateTests : WafLibraryRequiredTest
     {
-        public const int TimeoutMicroSeconds = 1_000_000;
-
         [Fact]
         public void RulesUpdate()
         {
@@ -154,7 +153,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             if (spectedResult == WafReturnCode.Match)
             {
                 var rule = attackParts[2];
-                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
+                var jsonString = JsonConvert.SerializeObject(result.Data);
+                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
                 resultData.Rule.Id.Should().Be(rule);
                 resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);
             }

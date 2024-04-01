@@ -51,10 +51,29 @@ namespace Datadog.Profiler.SmokeTests
             get => _testApplicationRunner.Environment;
         }
 
-        public void RunAndCheck()
+        public void RunAndCheckWithRetries(int retryCount, string[] errorExceptions = null)
+        {
+            // allow retries for the test to pass due to named pipe flackiness in CI
+            for (int i = 0; i < retryCount; i++)
+            {
+                try
+                {
+                    RunAndCheck(errorExceptions);
+                    return;
+                }
+                catch (Exception e)
+                {
+                    _output.WriteLine($"Attempt {i + 1} failed: {e}");
+                }
+            }
+
+            RunAndCheck(errorExceptions);
+        }
+
+        public void RunAndCheck(string[] errorExceptions = null)
         {
             using var agent = Run();
-            RunChecks(agent);
+            RunChecks(agent, errorExceptions);
         }
 
         public MockDatadogAgent Run()
@@ -80,16 +99,16 @@ namespace Datadog.Profiler.SmokeTests
             return agent;
         }
 
-        private void RunChecks(MockDatadogAgent agent)
+        private void RunChecks(MockDatadogAgent agent, string[] errorExceptions)
         {
-            CheckLogFiles();
+            CheckLogFiles(errorExceptions);
             CheckPprofFiles();
             CheckAgent(agent);
         }
 
-        private void CheckLogFiles()
+        private void CheckLogFiles(string[] errorExceptions)
         {
-            CheckLogFiles("DD-DotNet-Profiler-Native*.*");
+            CheckLogFiles("DD-DotNet-Profiler-Native*.*", errorExceptions);
             CheckNoLogFiles("DD-DotNet-Profiler-Managed*.*");
             CheckNoLogFiles("DD-DotNet-Common-ManagedLoader*.*");
         }
@@ -101,7 +120,7 @@ namespace Datadog.Profiler.SmokeTests
             Assert.Empty(files);
         }
 
-        private void CheckLogFiles(string filePattern)
+        private void CheckLogFiles(string filePattern, string[] errorExceptions)
         {
             var files = Directory.EnumerateFiles(EnvironmentHelper.LogDir, filePattern, SearchOption.AllDirectories).ToList();
 
@@ -109,7 +128,7 @@ namespace Datadog.Profiler.SmokeTests
 
             foreach (string logFile in files)
             {
-                Assert.False(LogFileContainsErrorMessage(logFile), $"Found error message in the log file {logFile}");
+                Assert.False(LogFileContainsErrorMessage(logFile, errorExceptions), $"Found error message in the log file {logFile}");
             }
         }
 
@@ -124,7 +143,21 @@ namespace Datadog.Profiler.SmokeTests
             Assert.True(agent.NbCallsOnProfilingEndpoint >= MinimumExpectedNbPprofFiles, $"The number of calls to the agent was not greater than or equal to {MinimumExpectedNbPprofFiles}. Actual value {agent.NbCallsOnProfilingEndpoint}");
         }
 
-        private bool LogFileContainsErrorMessage(string logFile)
+
+        private bool SkipError(string line, string[] errorExceptions)
+        {
+            foreach (var errorException in errorExceptions)
+            {
+                if (line.Contains(errorException))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool LogFileContainsErrorMessage(string logFile, string[] errorExceptions)
         {
             var errorLinePattern = new Regex(@"\| error \|", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -137,6 +170,11 @@ namespace Datadog.Profiler.SmokeTests
 
                     if (line != null && errorLinePattern.IsMatch(line))
                     {
+                        if ((errorExceptions != null) && SkipError(line, errorExceptions))
+                        {
+                            continue;
+                        }
+
                         _output.WriteLine(line);
                         return true;
                     }

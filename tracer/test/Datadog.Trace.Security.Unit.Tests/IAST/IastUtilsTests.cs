@@ -27,14 +27,14 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         [Fact]
         public void GetStaticHashCode_Vulnerability_GetHashCode_IsDeterministic()
         {
-            var source = new Source(2, "name", "sqlvalue1");
-            var source2 = new Source(3, "name2", "sql_value2");
+            var source = new Source(SourceType.RequestParameterName, "name", "sqlvalue1");
+            var source2 = new Source(SourceType.RequestParameterValue, "name2", "sql_value2");
             var ranges = new Range[] { new Range(0, 2, source), new Range(2, 2, source2) };
             var evidence = new Evidence("sql_query", ranges);
             var vulnerability = new Vulnerability("sqli", new Location(), evidence);
 
             var i = vulnerability.GetHashCode();
-            i.Should().Be(453619706);
+            i.Should().Be(453421860);
         }
     }
 }

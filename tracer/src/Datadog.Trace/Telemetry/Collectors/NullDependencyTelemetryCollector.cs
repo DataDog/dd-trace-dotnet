@@ -18,4 +18,6 @@ internal class NullDependencyTelemetryCollector : IDependencyTelemetryCollector
     }
 
     public List<DependencyTelemetryData>? GetData() => null;
+
+    public List<DependencyTelemetryData>? GetFullData() => null;
 }

@@ -12,6 +12,7 @@ using System.IO.Compression;
 using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -35,42 +36,38 @@ internal readonly partial struct SecurityCoordinator
 
     public void MarkBlocked() => _httpTransport.MarkBlocked();
 
-    private static void LogMatchesIfDebugEnabled(string? result, bool blocked)
+    private static void LogMatchesIfDebugEnabled(IReadOnlyCollection<object>? results, bool blocked)
     {
-        if (Log.IsEnabled(LogEventLevel.Debug) && result != null)
+        if (Log.IsEnabled(LogEventLevel.Debug) && results != null)
         {
-            var results = JsonConvert.DeserializeObject<WafMatch[]>(result);
-            for (var i = 0; i < results?.Length; i++)
+            foreach (var result in results)
             {
-                var match = results[i];
-                if (blocked)
+                if (result is Dictionary<string, object?> match)
                 {
-                    Log.Debug("DDAS-0012-02: Blocking current transaction (rule: {RuleId})", match.Rule);
+                    if (blocked)
+                    {
+                        Log.Debug("DDAS-0012-02: Blocking current transaction (rule: {RuleId})", match["rule"]);
+                    }
+                    else
+                    {
+                        Log.Debug("DDAS-0012-01: Detecting an attack from rule {RuleId}", match["rule"]);
+                    }
                 }
                 else
                 {
-                    Log.Debug("DDAS-0012-01: Detecting an attack from rule {RuleId}", match.Rule);
+                    Log.Debug("{Result} not of expected type", result);
                 }
             }
         }
     }
 
-    public IResult? Scan(bool firstTime = false)
+    public IResult? Scan(bool lastTime = false)
     {
         var args = GetBasicRequestArgsForWaf();
-        if (firstTime)
-        {
-            var isApiSecurityProcessed = _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
-            if (isApiSecurityProcessed)
-            {
-                _localRootSpan.Context.TraceContext.MarkApiSecurity();
-            }
-        }
-
-        return RunWaf(args);
+        return RunWaf(args, lastTime);
     }
 
-    public IResult? RunWaf(Dictionary<string, object> args)
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false)
     {
         LogAddressIfDebugEnabled(args);
         IResult? result = null;
@@ -87,6 +84,8 @@ internal readonly partial struct SecurityCoordinator
                     _httpTransport.SetAdditiveContext(additiveContext);
                 }
             }
+
+            _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode.ToString(), _httpTransport.RouteData);
 
             if (additiveContext != null)
             {

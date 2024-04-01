@@ -76,6 +76,7 @@ private:
     std::unique_ptr<TracerRejitPreprocessor> tracer_integration_preprocessor = nullptr;
     bool trace_annotations_enabled = false;
     bool call_target_bubble_up_exception_available = false;
+    bool call_target_bubble_up_exception_function_available = false;
 
     //
     // Debugger Members
@@ -124,7 +125,9 @@ private:
     HRESULT EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules);
     static bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
-    static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata);
+    static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata, mdTypeDef* mdTypeDefToken);
+    static bool EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const ModuleMetadata& module_metadata, mdTypeDef typeDef);
+    
     //
     // Startup methods
     //
@@ -247,6 +250,13 @@ public:
     friend class MethodRewriter;
     friend class fault_tolerant::FaultTolerantMethodDuplicator;
     friend class fault_tolerant::FaultTolerantRewriter;
+
+    //
+    // Getters for exception filter
+    //
+
+    bool IsCallTargetBubbleUpExceptionTypeAvailable() const;
+    bool IsCallTargetBubbleUpFunctionAvailable() const;
 };
 
 // Note: Generally you should not have a single, global callback implementation,

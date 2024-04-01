@@ -47,5 +47,22 @@ namespace Datadog.Trace.Agent
             var length = apiResponse.ContentLength > 0 ? (int)apiResponse.ContentLength : 1024;
             return new StreamReader(stream, apiResponse.ContentEncoding, detectEncodingFromByteOrderMarks: false, length, leaveOpen: true);
         }
+
+        public static bool ShouldRetry(this IApiResponse response)
+        {
+            var shouldRetry = response.StatusCode switch
+            {
+                400 => false, // Bad request (likely an issue in the payload formatting)
+                401 => false, // Unauthorized (likely a missing API Key)
+                403 => false, // Permission issue (likely using an invalid API Key)
+                408 => true, // Request Timeout, request should be retried after some time
+                413 => false, // Payload too large (batch is above 5MB uncompressed)
+                429 => true, // Too Many Requests, request should be retried after some time
+                >= 400 and < 500 => false, // generic "client" error, don't retry
+                _ => true // Something else, probably server error, do retry
+            };
+
+            return shouldRetry;
+        }
     }
 }

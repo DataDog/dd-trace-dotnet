@@ -9,9 +9,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -34,9 +32,7 @@
       rpc.method: SetString,
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -55,9 +51,7 @@
       rpc.method: SetString,
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -78,9 +72,7 @@
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -113,9 +105,7 @@ at Samples.Remoting.RemoteClass.SetString(String input),
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -134,9 +124,7 @@ at Samples.Remoting.RemoteClass.SetString(String input),
     Tags: {
       env: integration_tests,
       language: dotnet,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   }
 ]

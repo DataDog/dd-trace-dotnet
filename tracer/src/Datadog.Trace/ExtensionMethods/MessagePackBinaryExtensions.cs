@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP
 using System;
 
 namespace Datadog.Trace.Vendors.MessagePack
@@ -106,4 +105,3 @@ namespace Datadog.Trace.Vendors.MessagePack
         }
     }
 }
-#endif

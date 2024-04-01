@@ -20,6 +20,8 @@
    <assembly fullname="HotChocolate.Execution" />
    <assembly fullname="log4net" />
    <assembly fullname="Microsoft.AspNetCore.Authentication.Abstractions" />
+   <assembly fullname="Microsoft.AspNetCore.Diagnostics" />
+   <assembly fullname="Microsoft.AspNetCore.Html.Abstractions" />
    <assembly fullname="Microsoft.AspNetCore.Http" />
    <assembly fullname="Microsoft.AspNetCore.Http.Abstractions">
       <type fullname="Microsoft.AspNetCore.Http.ConnectionInfo" />
@@ -68,6 +70,7 @@
       <type fullname="Microsoft.AspNetCore.Routing.IRoutingFeature" />
       <type fullname="Microsoft.AspNetCore.Routing.RouteData" />
       <type fullname="Microsoft.AspNetCore.Routing.RouteValueDictionary" />
+      <type fullname="Microsoft.AspNetCore.Routing.RoutingHttpContextExtensions" />
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Server.IIS" />
    <assembly fullname="Microsoft.AspNetCore.Server.Kestrel.Core" />
@@ -91,8 +94,12 @@
       <type fullname="Microsoft.Net.Http.Headers.SameSiteMode" />
       <type fullname="Microsoft.Net.Http.Headers.SetCookieHeaderValue" />
    </assembly>
+   <assembly fullname="Microsoft.VisualStudio.TestPlatform.Common" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
+   <assembly fullname="Microsoft.Win32.Primitives">
+      <type fullname="System.ComponentModel.Win32Exception" />
+   </assembly>
    <assembly fullname="MongoDB.Driver.Core" />
    <assembly fullname="MySql.Data" />
    <assembly fullname="MySqlConnector" />
@@ -132,6 +139,7 @@
       <type fullname="System.Collections.Generic.SortedDictionary`2" />
       <type fullname="System.Collections.Generic.SortedList`2" />
       <type fullname="System.Collections.Generic.SortedSet`1" />
+      <type fullname="System.Collections.Generic.SortedSet`1/Enumerator" />
       <type fullname="System.Collections.Generic.Stack`1" />
       <type fullname="System.Collections.Generic.Stack`1/Enumerator" />
    </assembly>
@@ -150,6 +158,7 @@
    </assembly>
    <assembly fullname="System.Collections.Specialized">
       <type fullname="System.Collections.Specialized.NameValueCollection" />
+      <type fullname="System.Collections.Specialized.OrderedDictionary" />
    </assembly>
    <assembly fullname="System.ComponentModel.Primitives">
       <type fullname="System.ComponentModel.BrowsableAttribute" />
@@ -185,17 +194,8 @@
       <type fullname="System.Data.CommandType" />
       <type fullname="System.Data.Common.DbCommand" />
       <type fullname="System.Data.Common.DbConnectionStringBuilder" />
-      <type fullname="System.Data.DataColumn" />
-      <type fullname="System.Data.DataColumnCollection" />
-      <type fullname="System.Data.DataRow" />
-      <type fullname="System.Data.DataRowCollection" />
-      <type fullname="System.Data.DataSet" />
-      <type fullname="System.Data.DataTable" />
-      <type fullname="System.Data.DataTableCollection" />
       <type fullname="System.Data.IDbCommand" />
       <type fullname="System.Data.IDbConnection" />
-      <type fullname="System.Data.InternalDataCollectionBase" />
-      <type fullname="System.Data.SqlTypes.SqlBinary" />
    </assembly>
    <assembly fullname="System.Data.SqlClient" />
    <assembly fullname="System.Data.SQLite" />
@@ -210,6 +210,7 @@
    </assembly>
    <assembly fullname="System.Diagnostics.DiagnosticSource">
       <type fullname="System.Diagnostics.DiagnosticListener" />
+      <type fullname="System.Diagnostics.DistributedContextPropagator" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
       <type fullname="System.Diagnostics.DataReceivedEventArgs" />
@@ -217,6 +218,7 @@
       <type fullname="System.Diagnostics.Process" />
       <type fullname="System.Diagnostics.ProcessStartInfo" />
       <type fullname="System.Diagnostics.ProcessThreadCollection" />
+      <type fullname="System.Diagnostics.ProcessWindowStyle" />
    </assembly>
    <assembly fullname="System.Diagnostics.StackTrace">
       <type fullname="System.Diagnostics.StackFrame" />
@@ -237,10 +239,13 @@
       <type fullname="System.Diagnostics.TraceListenerCollection" />
    </assembly>
    <assembly fullname="System.Diagnostics.Tracing">
+      <type fullname="System.Diagnostics.Tracing.EventAttribute" />
       <type fullname="System.Diagnostics.Tracing.EventKeywords" />
       <type fullname="System.Diagnostics.Tracing.EventLevel" />
       <type fullname="System.Diagnostics.Tracing.EventListener" />
       <type fullname="System.Diagnostics.Tracing.EventSource" />
+      <type fullname="System.Diagnostics.Tracing.EventSource/EventData" />
+      <type fullname="System.Diagnostics.Tracing.EventSourceAttribute" />
       <type fullname="System.Diagnostics.Tracing.EventSourceCreatedEventArgs" />
       <type fullname="System.Diagnostics.Tracing.EventWrittenEventArgs" />
    </assembly>
@@ -260,6 +265,12 @@
       <type fullname="System.IO.FileInfo" />
       <type fullname="System.IO.FileSystemInfo" />
       <type fullname="System.IO.SearchOption" />
+   </assembly>
+   <assembly fullname="System.IO.MemoryMappedFiles">
+      <type fullname="Microsoft.Win32.SafeHandles.SafeMemoryMappedViewHandle" />
+      <type fullname="System.IO.MemoryMappedFiles.MemoryMappedFile" />
+      <type fullname="System.IO.MemoryMappedFiles.MemoryMappedFileAccess" />
+      <type fullname="System.IO.MemoryMappedFiles.MemoryMappedViewAccessor" />
    </assembly>
    <assembly fullname="System.IO.Pipes">
       <type fullname="System.IO.Pipes.NamedPipeClientStream" />
@@ -320,6 +331,7 @@
       <type fullname="System.Buffers.Binary.BinaryPrimitives" />
       <type fullname="System.Buffers.StandardFormat" />
       <type fullname="System.Buffers.Text.Utf8Formatter" />
+      <type fullname="System.Buffers.Text.Utf8Parser" />
       <type fullname="System.MemoryExtensions" />
       <type fullname="System.Runtime.InteropServices.MemoryMarshal" />
    </assembly>
@@ -350,6 +362,7 @@
       <type fullname="System.Net.IPHostEntry" />
    </assembly>
    <assembly fullname="System.Net.Primitives">
+      <type fullname="System.Net.DecompressionMethods" />
       <type fullname="System.Net.DnsEndPoint" />
       <type fullname="System.Net.EndPoint" />
       <type fullname="System.Net.HttpStatusCode" />
@@ -429,6 +442,10 @@
       <type fullname="System.Reflection.Emit.OpCode" />
       <type fullname="System.Reflection.Emit.OpCodes" />
    </assembly>
+   <assembly fullname="System.Resources.ResourceManager">
+      <type fullname="System.Resources.MissingManifestResourceException" />
+      <type fullname="System.Resources.ResourceManager" />
+   </assembly>
    <assembly fullname="System.Runtime">
       <type fullname="Microsoft.Win32.SafeHandles.SafeFileHandle" />
       <type fullname="System.AccessViolationException" />
@@ -438,7 +455,6 @@
       <type fullname="System.Action`3" />
       <type fullname="System.Action`4" />
       <type fullname="System.Action`5" />
-      <type fullname="System.Action`6" />
       <type fullname="System.Activator" />
       <type fullname="System.AggregateException" />
       <type fullname="System.AppContext" />
@@ -449,6 +465,7 @@
       <type fullname="System.ArgumentOutOfRangeException" />
       <type fullname="System.Array" />
       <type fullname="System.ArraySegment`1" />
+      <type fullname="System.ArrayTypeMismatchException" />
       <type fullname="System.AssemblyLoadEventArgs" />
       <type fullname="System.AssemblyLoadEventHandler" />
       <type fullname="System.AsyncCallback" />
@@ -459,7 +476,6 @@
       <type fullname="System.BitConverter" />
       <type fullname="System.Boolean" />
       <type fullname="System.Buffer" />
-      <type fullname="System.Buffers.ArrayPool`1" />
       <type fullname="System.Buffers.SpanAction`2" />
       <type fullname="System.Byte" />
       <type fullname="System.Char" />
@@ -480,12 +496,14 @@
       <type fullname="System.Collections.Generic.KeyValuePair`2" />
       <type fullname="System.Collections.Hashtable" />
       <type fullname="System.Collections.ICollection" />
+      <type fullname="System.Collections.IComparer" />
       <type fullname="System.Collections.IDictionary" />
       <type fullname="System.Collections.IDictionaryEnumerator" />
       <type fullname="System.Collections.IEnumerable" />
       <type fullname="System.Collections.IEnumerator" />
       <type fullname="System.Collections.IEqualityComparer" />
       <type fullname="System.Collections.IList" />
+      <type fullname="System.Collections.IStructuralComparable" />
       <type fullname="System.Collections.IStructuralEquatable" />
       <type fullname="System.Collections.ObjectModel.Collection`1" />
       <type fullname="System.Collections.ObjectModel.ReadOnlyCollection`1" />
@@ -495,26 +513,24 @@
       <type fullname="System.ComponentModel.EditorBrowsableState" />
       <type fullname="System.Configuration.Assemblies.AssemblyHashAlgorithm" />
       <type fullname="System.Convert" />
-      <type fullname="System.Converter`2" />
       <type fullname="System.DateOnly" />
       <type fullname="System.DateTime" />
       <type fullname="System.DateTimeKind" />
       <type fullname="System.DateTimeOffset" />
-      <type fullname="System.DBNull" />
+      <type fullname="System.DayOfWeek" />
       <type fullname="System.Decimal" />
       <type fullname="System.Delegate" />
       <type fullname="System.Diagnostics.CodeAnalysis.AllowNullAttribute" />
-      <type fullname="System.Diagnostics.CodeAnalysis.DisallowNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.DoesNotReturnIfAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MaybeNullAttribute" />
+      <type fullname="System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MemberNotNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullWhenAttribute" />
-      <type fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute" />
       <type fullname="System.Diagnostics.ConditionalAttribute" />
       <type fullname="System.Diagnostics.DebuggableAttribute" />
       <type fullname="System.Diagnostics.DebuggableAttribute/DebuggingModes" />
@@ -539,6 +555,7 @@
       <type fullname="System.Exception" />
       <type fullname="System.FlagsAttribute" />
       <type fullname="System.FormatException" />
+      <type fullname="System.FormattableString" />
       <type fullname="System.Func`1" />
       <type fullname="System.Func`2" />
       <type fullname="System.Func`3" />
@@ -546,13 +563,10 @@
       <type fullname="System.Func`5" />
       <type fullname="System.Func`6" />
       <type fullname="System.GC" />
-      <type fullname="System.Globalization.CharUnicodeInfo" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />
       <type fullname="System.Globalization.NumberFormatInfo" />
       <type fullname="System.Globalization.NumberStyles" />
-      <type fullname="System.Globalization.TextInfo" />
-      <type fullname="System.Globalization.UnicodeCategory" />
       <type fullname="System.Guid" />
       <type fullname="System.HashCode" />
       <type fullname="System.IAsyncDisposable" />
@@ -574,6 +588,7 @@
       <type fullname="System.IntPtr" />
       <type fullname="System.InvalidCastException" />
       <type fullname="System.InvalidOperationException" />
+      <type fullname="System.InvalidProgramException" />
       <type fullname="System.IO.BinaryReader" />
       <type fullname="System.IO.BinaryWriter" />
       <type fullname="System.IO.Directory" />
@@ -588,6 +603,7 @@
       <type fullname="System.IO.FileShare" />
       <type fullname="System.IO.FileStream" />
       <type fullname="System.IO.FileSystemInfo" />
+      <type fullname="System.IO.HandleInheritability" />
       <type fullname="System.IO.IOException" />
       <type fullname="System.IO.MemoryStream" />
       <type fullname="System.IO.Path" />
@@ -600,6 +616,7 @@
       <type fullname="System.IO.StringWriter" />
       <type fullname="System.IO.TextReader" />
       <type fullname="System.IO.TextWriter" />
+      <type fullname="System.IO.UnmanagedMemoryStream" />
       <type fullname="System.IObservable`1" />
       <type fullname="System.IObserver`1" />
       <type fullname="System.Lazy`1" />
@@ -607,6 +624,7 @@
       <type fullname="System.MethodAccessException" />
       <type fullname="System.MidpointRounding" />
       <type fullname="System.MulticastDelegate" />
+      <type fullname="System.Net.WebUtility" />
       <type fullname="System.NonSerializedAttribute" />
       <type fullname="System.NotImplementedException" />
       <type fullname="System.NotSupportedException" />
@@ -620,17 +638,18 @@
       <type fullname="System.OperatingSystem" />
       <type fullname="System.OperationCanceledException" />
       <type fullname="System.OutOfMemoryException" />
+      <type fullname="System.OverflowException" />
       <type fullname="System.ParamArrayAttribute" />
       <type fullname="System.PlatformID" />
       <type fullname="System.PlatformNotSupportedException" />
       <type fullname="System.Predicate`1" />
       <type fullname="System.Random" />
-      <type fullname="System.ReadOnlyMemory`1" />
       <type fullname="System.ReadOnlySpan`1" />
       <type fullname="System.Reflection.AmbiguousMatchException" />
       <type fullname="System.Reflection.Assembly" />
       <type fullname="System.Reflection.AssemblyCompanyAttribute" />
       <type fullname="System.Reflection.AssemblyConfigurationAttribute" />
+      <type fullname="System.Reflection.AssemblyContentType" />
       <type fullname="System.Reflection.AssemblyCopyrightAttribute" />
       <type fullname="System.Reflection.AssemblyDescriptionAttribute" />
       <type fullname="System.Reflection.AssemblyFileVersionAttribute" />
@@ -649,9 +668,11 @@
       <type fullname="System.Reflection.CustomAttributeNamedArgument" />
       <type fullname="System.Reflection.CustomAttributeTypedArgument" />
       <type fullname="System.Reflection.DefaultMemberAttribute" />
+      <type fullname="System.Reflection.EventAttributes" />
       <type fullname="System.Reflection.EventInfo" />
       <type fullname="System.Reflection.FieldAttributes" />
       <type fullname="System.Reflection.FieldInfo" />
+      <type fullname="System.Reflection.GenericParameterAttributes" />
       <type fullname="System.Reflection.ICustomAttributeProvider" />
       <type fullname="System.Reflection.IntrospectionExtensions" />
       <type fullname="System.Reflection.LocalVariableInfo" />
@@ -674,6 +695,8 @@
       <type fullname="System.Reflection.TypeAttributes" />
       <type fullname="System.Reflection.TypeInfo" />
       <type fullname="System.ResolveEventArgs" />
+      <type fullname="System.Resources.MissingManifestResourceException" />
+      <type fullname="System.Resources.ResourceManager" />
       <type fullname="System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute" />
       <type fullname="System.Runtime.CompilerServices.AsyncStateMachineAttribute" />
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder" />
@@ -695,6 +718,8 @@
       <type fullname="System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1/ConfiguredValueTaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.DefaultInterpolatedStringHandler" />
       <type fullname="System.Runtime.CompilerServices.ExtensionAttribute" />
+      <type fullname="System.Runtime.CompilerServices.FixedBufferAttribute" />
+      <type fullname="System.Runtime.CompilerServices.FormattableStringFactory" />
       <type fullname="System.Runtime.CompilerServices.IAsyncStateMachine" />
       <type fullname="System.Runtime.CompilerServices.ICriticalNotifyCompletion" />
       <type fullname="System.Runtime.CompilerServices.INotifyCompletion" />
@@ -714,7 +739,10 @@
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter`1" />
       <type fullname="System.Runtime.CompilerServices.TupleElementNamesAttribute" />
-      <type fullname="System.Runtime.CompilerServices.TypeForwardedFromAttribute" />
+      <type fullname="System.Runtime.CompilerServices.UnsafeValueTypeAttribute" />
+      <type fullname="System.Runtime.CompilerServices.YieldAwaitable" />
+      <type fullname="System.Runtime.CompilerServices.YieldAwaitable/YieldAwaiter" />
+      <type fullname="System.Runtime.ConstrainedExecution.CriticalFinalizerObject" />
       <type fullname="System.Runtime.ExceptionServices.ExceptionDispatchInfo" />
       <type fullname="System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs" />
       <type fullname="System.Runtime.ExceptionServices.HandleProcessCorruptedStateExceptionsAttribute" />
@@ -722,6 +750,7 @@
       <type fullname="System.Runtime.InteropServices.GCHandle" />
       <type fullname="System.Runtime.InteropServices.GCHandleType" />
       <type fullname="System.Runtime.InteropServices.InAttribute" />
+      <type fullname="System.Runtime.InteropServices.SafeBuffer" />
       <type fullname="System.Runtime.InteropServices.SafeHandle" />
       <type fullname="System.Runtime.Serialization.IFormatterConverter" />
       <type fullname="System.Runtime.Serialization.ISerializable" />
@@ -739,8 +768,6 @@
       <type fullname="System.RuntimeMethodHandle" />
       <type fullname="System.RuntimeTypeHandle" />
       <type fullname="System.SByte" />
-      <type fullname="System.Security.Permissions.SecurityAction" />
-      <type fullname="System.Security.Permissions.SecurityPermissionAttribute" />
       <type fullname="System.Security.SecurityCriticalAttribute" />
       <type fullname="System.Security.SecurityException" />
       <type fullname="System.Security.SecurityRuleSet" />
@@ -757,7 +784,6 @@
       <type fullname="System.Text.Encoding" />
       <type fullname="System.Text.StringBuilder" />
       <type fullname="System.Text.StringBuilder/AppendInterpolatedStringHandler" />
-      <type fullname="System.Text.StringBuilder/ChunkEnumerator" />
       <type fullname="System.Threading.CancellationToken" />
       <type fullname="System.Threading.CancellationTokenRegistration" />
       <type fullname="System.Threading.CancellationTokenSource" />
@@ -790,6 +816,7 @@
       <type fullname="System.TypeCode" />
       <type fullname="System.TypedReference" />
       <type fullname="System.TypeInitializationException" />
+      <type fullname="System.TypeLoadException" />
       <type fullname="System.UInt16" />
       <type fullname="System.UInt32" />
       <type fullname="System.UInt64" />
@@ -802,6 +829,7 @@
       <type fullname="System.UriComponents" />
       <type fullname="System.UriCreationOptions" />
       <type fullname="System.UriFormat" />
+      <type fullname="System.UriHostNameType" />
       <type fullname="System.UriKind" />
       <type fullname="System.ValueTuple`1" />
       <type fullname="System.ValueTuple`2" />
@@ -815,7 +843,6 @@
       <type fullname="System.Version" />
       <type fullname="System.Void" />
       <type fullname="System.WeakReference" />
-      <type fullname="System.WeakReference`1" />
    </assembly>
    <assembly fullname="System.Runtime.CompilerServices.Unsafe">
       <type fullname="System.Runtime.CompilerServices.Unsafe" />
@@ -844,21 +871,21 @@
       <type fullname="System.IO.TextReader" />
       <type fullname="System.IO.TextWriter" />
       <type fullname="System.Math" />
+      <type fullname="System.Net.WebUtility" />
       <type fullname="System.Numerics.BitOperations" />
       <type fullname="System.OperatingSystem" />
       <type fullname="System.PlatformID" />
       <type fullname="System.Random" />
       <type fullname="System.ResolveEventHandler" />
       <type fullname="System.Runtime.CompilerServices.SwitchExpressionException" />
-      <type fullname="System.Security.Permissions.SecurityAction" />
-      <type fullname="System.Security.Permissions.SecurityPermissionAttribute" />
       <type fullname="System.StringComparer" />
       <type fullname="System.UriBuilder" />
    </assembly>
    <assembly fullname="System.Runtime.InteropServices">
       <type fullname="System.DllNotFoundException" />
+      <type fullname="System.IO.UnmanagedMemoryAccessor" />
+      <type fullname="System.IO.UnmanagedMemoryStream" />
       <type fullname="System.Runtime.InteropServices.CallingConvention" />
-      <type fullname="System.Runtime.InteropServices.CollectionsMarshal" />
       <type fullname="System.Runtime.InteropServices.COMException" />
       <type fullname="System.Runtime.InteropServices.ComInterfaceType" />
       <type fullname="System.Runtime.InteropServices.ComTypes.IStream" />
@@ -868,6 +895,7 @@
       <type fullname="System.Runtime.InteropServices.GuidAttribute" />
       <type fullname="System.Runtime.InteropServices.InterfaceTypeAttribute" />
       <type fullname="System.Runtime.InteropServices.Marshal" />
+      <type fullname="System.Runtime.InteropServices.SafeBuffer" />
       <type fullname="System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute" />
       <type fullname="System.Security.SecureString" />
    </assembly>
@@ -875,6 +903,16 @@
       <type fullname="System.Runtime.InteropServices.Architecture" />
       <type fullname="System.Runtime.InteropServices.OSPlatform" />
       <type fullname="System.Runtime.InteropServices.RuntimeInformation" />
+   </assembly>
+   <assembly fullname="System.Runtime.Intrinsics">
+      <type fullname="System.Runtime.Intrinsics.Arm.AdvSimd" />
+      <type fullname="System.Runtime.Intrinsics.Vector128" />
+      <type fullname="System.Runtime.Intrinsics.Vector128`1" />
+      <type fullname="System.Runtime.Intrinsics.Vector256" />
+      <type fullname="System.Runtime.Intrinsics.Vector256`1" />
+      <type fullname="System.Runtime.Intrinsics.X86.Avx" />
+      <type fullname="System.Runtime.Intrinsics.X86.Avx2" />
+      <type fullname="System.Runtime.Intrinsics.X86.Sse2" />
    </assembly>
    <assembly fullname="System.Runtime.Loader">
       <type fullname="System.Runtime.Loader.AssemblyLoadContext" />
@@ -920,6 +958,15 @@
       <type fullname="System.Text.UnicodeEncoding" />
       <type fullname="System.Text.UTF8Encoding" />
    </assembly>
+   <assembly fullname="System.Text.Json">
+      <type fullname="System.Text.Json.JsonDocument" />
+      <type fullname="System.Text.Json.JsonDocumentOptions" />
+      <type fullname="System.Text.Json.JsonElement" />
+      <type fullname="System.Text.Json.JsonElement/ArrayEnumerator" />
+      <type fullname="System.Text.Json.JsonElement/ObjectEnumerator" />
+      <type fullname="System.Text.Json.JsonProperty" />
+      <type fullname="System.Text.Json.JsonValueKind" />
+   </assembly>
    <assembly fullname="System.Text.RegularExpressions">
       <type fullname="System.Text.RegularExpressions.Capture" />
       <type fullname="System.Text.RegularExpressions.CaptureCollection" />
@@ -944,6 +991,7 @@
       <type fullname="System.Threading.Mutex" />
       <type fullname="System.Threading.ReaderWriterLockSlim" />
       <type fullname="System.Threading.SemaphoreSlim" />
+      <type fullname="System.Threading.SpinLock" />
       <type fullname="System.Threading.SpinWait" />
       <type fullname="System.Threading.SynchronizationContext" />
       <type fullname="System.Threading.ThreadLocal`1" />
@@ -970,6 +1018,9 @@
    <assembly fullname="System.Threading.Timer">
       <type fullname="System.Threading.Timer" />
       <type fullname="System.Threading.TimerCallback" />
+   </assembly>
+   <assembly fullname="System.Web.HttpUtility">
+      <type fullname="System.Web.HttpUtility" />
    </assembly>
    <assembly fullname="System.Xml.ReaderWriter">
       <type fullname="System.Xml.NameTable" />
@@ -999,4 +1050,5 @@
    </assembly>
    <assembly fullname="xunit.execution.desktop" />
    <assembly fullname="xunit.execution.dotnet" />
+   <assembly fullname="Yarp.ReverseProxy" />
 </linker>

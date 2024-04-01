@@ -305,7 +305,7 @@ namespace Datadog.Trace.ClrProfiler
               .Append(definition.TargetMethodName)
               .Append(@"""), ");
 
-            var paramLengths = (definition.TargetParameterTypes?.Length ?? 0) + 1;
+            var paramLengths = (definition.TargetParameterTypes.Count) + 1;
             if (paramLengths > 9)
             {
                 sb.Append(@"NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray(new[] { """)
@@ -329,7 +329,7 @@ namespace Datadog.Trace.ClrProfiler
                   .Append(definition.TargetReturnType)
                   .Append(@"""");
 
-                if (definition.TargetParameterTypes is { Length: > 0 } types)
+                if (definition.TargetParameterTypes is { Count: > 0 } types)
                 {
                     foreach (var parameterType in types)
                     {

@@ -19,14 +19,18 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "COMMAND_INJECTION",
+      "hash": 1200051503,
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore2.Pages.DataRazorIastPageModel",
+        "method": "OnPost"
+      },
       "evidence": {
         "valueParts": [
           {
@@ -68,9 +72,7 @@
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   }
 ]

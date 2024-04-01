@@ -803,13 +803,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         private static TTo UnwrapReturnValue<TFrom, TTo>(TFrom returnValue)
             where TFrom : IDuckType
         {
-            return (TTo)returnValue.Instance;
+            return returnValue.GetInternalDuckTypedInstance<TTo>();
         }
 
         private static async Task<TTo> UnwrapTaskReturnValue<TFrom, TTo>(Task<TFrom> returnValue, bool preserveContext)
             where TFrom : IDuckType
         {
-            return (TTo)(await returnValue.ConfigureAwait(preserveContext)).Instance;
+            return (await returnValue.ConfigureAwait(preserveContext)).GetInternalDuckTypedInstance<TTo>();
         }
 
         private static void WriteIntValue(ILGenerator il, int value)
@@ -888,14 +888,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
         private static T ConvertType<T>(object value)
         {
-            var conversionType = typeof(T);
-            if (value is null || conversionType == typeof(object))
-            {
-                return (T)value;
-            }
-
-            Type valueType = value.GetType();
-            if (valueType == conversionType || conversionType.IsAssignableFrom(valueType))
+            if (value is null or T)
             {
                 return (T)value;
             }

@@ -6,12 +6,12 @@
 #include <memory>
 
 // forward declarations
-class Sample;
+class SamplesEnumerator;
 
 class ISamplesProvider
 {
 public:
     virtual ~ISamplesProvider() = default;
-    virtual std::list<std::shared_ptr<Sample>> GetSamples() = 0;
+    virtual std::unique_ptr<SamplesEnumerator> GetSamples() = 0;
     virtual const char* GetName() = 0;
 };

@@ -2,8 +2,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Colorful;
 using Nuke.Common;
 using Nuke.Common.CI;
+using Nuke.Common.Execution;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
@@ -21,7 +23,7 @@ using Logger = Serilog.Log;
 // #pragma warning disable SA1400
 // #pragma warning disable SA1401
 
-[ShutdownDotNetAfterServerBuild]
+[ShutdownDotNetAfterServerBuild, BuildFinishedNotification]
 partial class Build : NukeBuild
 {
     /// Support plugins are available for:
@@ -57,7 +59,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.45.0";
+    readonly string Version = "2.50.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -74,9 +76,15 @@ partial class Build : NukeBuild
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
 
+    [Parameter("Override the default category filter for running benchmarks. (Optional)")]
+    readonly string BenchmarkCategory;
+
     [Parameter("Enables code coverage")]
     readonly bool CodeCoverage;
 
+    [Parameter("Enable or Disable fast developer loop")]
+    readonly bool FastDevLoop;
+    
     [Parameter("The directory containing the tool .nupkg file")]
     readonly AbsolutePath ToolSource;
 
@@ -150,17 +158,17 @@ partial class Build : NukeBuild
           });
 
     Target BuildNativeTracerHome => _ => _
-        .Unlisted()   
+        .Unlisted()
         .Description("Builds the native src ")
         .After(Clean, CompileManagedLoader)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(CompileNativeSrc)
         .DependsOn(BuildNativeLoader)
         .DependsOn(PublishNativeTracer);
-                                         
+
 
     Target BuildManagedTracerHome => _ => _
-        .Unlisted()   
+        .Unlisted()
         .Description("Builds the native and managed src, and publishes the tracer home directory")
         .After(Clean, BuildNativeTracerHome)
         .DependsOn(CreateRequiredDirectories)
@@ -366,7 +374,7 @@ partial class Build : NukeBuild
         .Unlisted()
         .Executes(() =>
         {
-            var framework = Framework ?? TargetFramework.NET8_0; 
+            var framework = Framework ?? TargetFramework.NET8_0;
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdDotnet))
                 .SetConfiguration(BuildConfiguration)
@@ -511,7 +519,7 @@ partial class Build : NukeBuild
                     .SetFramework(framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --iterationTime 2000")
+                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 2000")
                     .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                     .SetProcessEnvironmentVariable("DD_ENV", "CI")
                     .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
@@ -527,6 +535,8 @@ partial class Build : NukeBuild
                     CopyDirectoryRecursively(resultsDirectory, BuildDataDirectory / "benchmarks",
                                              DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                 }
+
+                CopyDumpsToBuildData();
             }
         });
 

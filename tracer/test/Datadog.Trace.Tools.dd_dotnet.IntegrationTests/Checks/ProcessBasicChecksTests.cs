@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -54,6 +55,20 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         const string expectedOutput = NetCoreRuntime;
 
+        console.Output.Should().Contain(expectedOutput);
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public void NoRuntime()
+    {
+        using var console = ConsoleHelper.Redirect();
+
+        var processInfo = new ProcessInfo("target", 100, new Dictionary<string, string>(), "mainModule", []);
+
+        ProcessBasicCheck.Run(processInfo, MockRegistryService([], ProfilerPath));
+
+        var expectedOutput = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? RuntimeDetectionFailedWindows : RuntimeDetectionFailedLinux;
         console.Output.Should().Contain(expectedOutput);
     }
 
@@ -477,6 +492,43 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         {
             // cleanup
             Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("DOTNET_EnableDiagnostics", "1")]
+    [InlineData("DOTNET_EnableDiagnostics", "0")]
+    [InlineData("COMPlus_EnableDiagnostics", "1")]
+    [InlineData("COMPlus_EnableDiagnostics", "0")]
+    [InlineData("DOTNET_EnableDiagnostics_Profiler", "0")]
+    [InlineData("DOTNET_EnableDiagnostics_Profiler", "1")]
+    [InlineData("COMPlus_EnableDiagnostics_Profiler", "0")]
+    [InlineData("COMPlus_EnableDiagnostics_Profiler", "1")]
+    public async Task EnableDiagnostics(string key, string value)
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        using var helper = await StartConsole(enableProfiler: true, (key, value));
+        var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
+
+        processInfo.Should().NotBeNull();
+
+        using var console = ConsoleHelper.Redirect();
+
+        var result = ProcessBasicCheck.Run(processInfo!, MockRegistryService(Array.Empty<string>(), ProfilerPath));
+
+        using var scope = new AssertionScope();
+        scope.AddReportable("Output", console.Output);
+
+        if (value == "1")
+        {
+            result.Should().BeTrue();
+            console.Output.Should().NotContain(EnableDiagnosticsSet(key));
+        }
+        else
+        {
+            result.Should().BeFalse();
+            console.Output.Should().Contain(EnableDiagnosticsSet(key));
         }
     }
 

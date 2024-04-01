@@ -27,7 +27,7 @@ namespace trace
 ///       - Invoke BeginMethod with object instance (or null if static method) and original method arguments
 ///       - Store result into CallTargetState local
 ///     }
-///     catch when exception is not Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException
+///     catch when (CallTargetBubbleUpException.IsCallTargetBubbleUpException(exception) == false)
 ///     {
 ///       - Invoke LogException(Exception)
 ///     }
@@ -51,7 +51,7 @@ namespace trace
 ///     - Store result into CallTargetReturn/CallTargetReturn<TReturn> local
 ///     - If non-void method, store CallTargetReturn<TReturn>.GetReturnValue() into TReturn local
 ///   }
-///   catch when exception is not Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException
+///     catch when (CallTargetBubbleUpException.IsCallTargetBubbleUpException(exception) == false)
 ///   {
 ///     - Invoke LogException(Exception)
 ///   }
@@ -393,10 +393,12 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     // *** Filter exception
     ILInstr* filter = nullptr;
     ILInstr* beginMethodCatchFirstInstr = nullptr;
-    if (m_corProfiler->call_target_bubble_up_exception_available)
+    mdTypeRef bubbleup_exception_typeref = tracerTokens->GetBubbleUpExceptionTypeRef();
+    if (m_corProfiler->call_target_bubble_up_exception_available && bubbleup_exception_typeref != mdTypeRefNil)
     {
         filter = CreateFilterForException(&reWriterWrapper, tracerTokens->GetExceptionTypeRef(),
                                           tracerTokens->GetBubbleUpExceptionTypeRef(),
+                                          tracerTokens->GetBubbleUpExceptionFunctionDef(),
                                           exceptionValueIndex);
         Logger::Debug("Creating filter for try / catch for CallTargetBubbleUpException. (begin method)");
         beginMethodCatchFirstInstr = reWriterWrapper.Pop();
@@ -560,6 +562,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         Logger::Debug("Creating filter for try / catch for CallTargetBubbleUpException (end method).");
         filterEnd = CreateFilterForException(&reWriterWrapper, tracerTokens->GetExceptionTypeRef(),
                                              tracerTokens->GetBubbleUpExceptionTypeRef(),
+                                             tracerTokens->GetBubbleUpExceptionFunctionDef(),
                                              exceptionValueEndIndex);
         endMethodCatchFirstInstr = reWriterWrapper.Pop();
         reWriterWrapper.LoadLocal(exceptionValueEndIndex);
@@ -787,7 +790,7 @@ TracerMethodRewriter::GetResourceNameAndOperationName(const ComPtr<IMetaDataImpo
 }
 
 ILInstr* trace::TracerMethodRewriter::CreateFilterForException(ILRewriterWrapper* rewriter, mdTypeRef exception,
-                                                               mdTypeRef type_ref, ULONG exceptionValueIndex) 
+                                                               mdTypeRef type_ref, mdMemberRef containsCallTargetBubbleUpMemberRef, ULONG exceptionValueIndex)
 {
     ILInstr* filter = rewriter->CreateInstr(CEE_ISINST);
     filter->m_Arg32 = exception;
@@ -796,14 +799,22 @@ ILInstr* trace::TracerMethodRewriter::CreateFilterForException(ILRewriterWrapper
     rewriter->CreateInstr(CEE_POP);
     rewriter->LoadInt32(0);
     ILInstr* endNotException = rewriter->CreateInstr(CEE_BR_S);
-
-    ILInstr* testBubbleUpPart = rewriter->StLocal(exceptionValueIndex);
+    ILInstr* storeExceptionInIndex = rewriter->StLocal(exceptionValueIndex);
+    isException->m_pTarget = storeExceptionInIndex;
     rewriter->LoadLocal(exceptionValueIndex);
-    ILInstr* testBubbleUp = rewriter->CreateInstr(CEE_ISINST);
-    testBubbleUp->m_Arg32 = type_ref;
-    isException->m_pTarget = testBubbleUpPart;
-    rewriter->LoadNull();
-    rewriter->CreateInstr(CEE_CGT_UN);
+
+    if (m_corProfiler->call_target_bubble_up_exception_function_available && containsCallTargetBubbleUpMemberRef != mdMemberRefNil)
+    {
+        rewriter->CallMember(containsCallTargetBubbleUpMemberRef, false);
+    }
+    else
+    {
+        ILInstr* testBubbleUp = rewriter->CreateInstr(CEE_ISINST);
+        testBubbleUp->m_Arg32 = type_ref;
+        rewriter->LoadNull();
+        rewriter->CreateInstr(CEE_CGT_UN);
+    }
+   
     rewriter->LoadInt32(0);
     rewriter->CreateInstr(CEE_CEQ);
     rewriter->LoadInt32(0);

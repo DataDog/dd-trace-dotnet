@@ -4,10 +4,13 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -136,10 +139,10 @@ namespace Datadog.Trace
         internal bool IsTopLevel => Context.ParentInternal == null
                                  || Context.ParentInternal.SpanId == 0
                                  || Context.ParentInternal switch
-                                    {
-                                        SpanContext s => s.ServiceNameInternal != ServiceName,
-                                        { } s => s.ServiceName != ServiceName,
-                                    };
+                                 {
+                                     SpanContext s => s.ServiceNameInternal != ServiceName,
+                                     { } s => s.ServiceName != ServiceName,
+                                 };
 
         /// <summary>
         /// Record the end time of the span and flushes it to the backend.
@@ -174,6 +177,7 @@ namespace Datadog.Trace
             sb.AppendLine($"Duration: {Duration}");
             sb.AppendLine($"End: {StartTime.Add(Duration).ToString("O")}");
             sb.AppendLine($"Error: {Error}");
+            sb.AppendLine($"TraceSamplingPriority: {(Context.TraceContext.SamplingPriority?.ToString(CultureInfo.InvariantCulture) ?? "not set")}");
             sb.AppendLine($"Meta: {Tags}");
 
             return StringBuilderCache.GetStringAndRelease(sb);
@@ -405,17 +409,30 @@ namespace Datadog.Trace
         {
             if (exception != null)
             {
-                // for AggregateException, use the first inner exception until we can support multiple errors.
-                // there will be only one error in most cases, and even if there are more and we lose
-                // the other ones, it's still better than the generic "one or more errors occurred" message.
-                if (exception is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
+                try
                 {
-                    exception = aggregateException.InnerExceptions[0];
-                }
+                    // for AggregateException, use the first inner exception until we can support multiple errors.
+                    // there will be only one error in most cases, and even if there are more and we lose
+                    // the other ones, it's still better than the generic "one or more errors occurred" message.
+                    if (exception is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
+                    {
+                        exception = aggregateException.InnerExceptions[0];
+                    }
 
-                SetTag(Trace.Tags.ErrorMsg, exception.Message);
-                SetTag(Trace.Tags.ErrorStack, exception.ToString());
-                SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
+                    SetTag(Trace.Tags.ErrorMsg, exception.Message);
+                    SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
+                    SetTag(Trace.Tags.ErrorStack, exception.ToString());
+
+                    if (IsRootSpan)
+                    {
+                        ExceptionDebugging.Report(this, exception);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // We have found rare cases where exception.ToString() throws an exception, such as in a FileNotFoundException
+                    Log.Warning(ex, "Error setting exception tags on span {SpanId} in trace {TraceId128}", SpanId, TraceId128);
+                }
             }
         }
 
@@ -450,6 +467,11 @@ namespace Datadog.Trace
             ResourceName ??= OperationName;
             if (Interlocked.CompareExchange(ref _isFinished, 1, 0) == 0)
             {
+                if (IsRootSpan)
+                {
+                    ExceptionDebugging.EndRequest();
+                }
+
                 Duration = duration;
                 if (Duration < TimeSpan.Zero)
                 {
@@ -479,6 +501,13 @@ namespace Datadog.Trace
             return this;
         }
 
+        internal Span SetMetaStruct(string key, byte[] value)
+        {
+            Tags.SetMetaStruct(key, value);
+
+            return this;
+        }
+
         internal void ResetStartTime()
         {
             StartTime = Context.TraceContext.Clock.UtcNow;
@@ -492,6 +521,11 @@ namespace Datadog.Trace
         internal void SetDuration(TimeSpan duration)
         {
             Duration = duration;
+        }
+
+        internal void MarkSpanForExceptionDebugging()
+        {
+            ExceptionDebugging.BeginRequest();
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

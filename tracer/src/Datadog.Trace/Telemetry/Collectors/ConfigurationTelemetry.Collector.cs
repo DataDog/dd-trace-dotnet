@@ -53,10 +53,7 @@ namespace Datadog.Trace.Configuration.Telemetry
             // There's a small race condition in the telemetry collector, which means that
             // the _backBuffer MAY contain "left over" config from the previous flush
             // this ensures that we don't lose it completely
-            while (_backBuffer.TryDequeue(out var entry))
-            {
-                data.Add(GetConfigKeyValue(entry));
-            }
+            GetData(_backBuffer, data);
 
             Debug.Assert(_backBuffer.IsEmpty, "The back buffer should be empty because nothing should be writing to it");
 
@@ -68,34 +65,39 @@ namespace Datadog.Trace.Configuration.Telemetry
                 return data;
             }
 
-            while (config.TryDequeue(out var entry))
-            {
-                data.Add(GetConfigKeyValue(entry));
-            }
+            GetData(config, data);
 
             return data;
+        }
 
-            static ConfigurationKeyValue GetConfigKeyValue(ConfigurationTelemetryEntry entry)
+        private static void GetData(ConcurrentQueue<ConfigurationTelemetryEntry> buffer, List<ConfigurationKeyValue> destination)
+        {
+            while (buffer.TryDequeue(out var entry))
             {
-                return new ConfigurationKeyValue(
-                    name: entry.Key,
-                    origin: entry.Origin.ToStringFast(),
-                    seqId: entry.SeqId,
-                    error: entry.Error,
-                    value: GetValue(entry));
+                destination.Add(GetConfigKeyValue(entry));
             }
+        }
 
-            static object? GetValue(ConfigurationTelemetryEntry entry)
+        private static object? GetValue(ConfigurationTelemetryEntry entry)
+        {
+            return entry.Type switch
             {
-                return entry.Type switch
-                {
-                    ConfigurationTelemetry.ConfigurationTelemetryEntryType.Bool => entry.BoolValue,
-                    ConfigurationTelemetry.ConfigurationTelemetryEntryType.Double => entry.DoubleValue,
-                    ConfigurationTelemetry.ConfigurationTelemetryEntryType.Int => entry.IntValue,
-                    ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted => "<redacted>",
-                    _ => entry.StringValue
-                };
-            }
+                ConfigurationTelemetry.ConfigurationTelemetryEntryType.Bool => entry.BoolValue,
+                ConfigurationTelemetry.ConfigurationTelemetryEntryType.Double => entry.DoubleValue,
+                ConfigurationTelemetry.ConfigurationTelemetryEntryType.Int => entry.IntValue,
+                ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted => "<redacted>",
+                _ => entry.StringValue
+            };
+        }
+
+        private static ConfigurationKeyValue GetConfigKeyValue(ConfigurationTelemetryEntry entry)
+        {
+            return new ConfigurationKeyValue(
+                name: entry.Key,
+                origin: entry.Origin.ToStringFast(),
+                seqId: entry.SeqId,
+                error: entry.Error,
+                value: GetValue(entry));
         }
 
         public void Clear()

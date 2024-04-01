@@ -5,7 +5,6 @@
 
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -27,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
         }
     }
 
-    public abstract class AspNetAsyncHandlerTests : TracingIntegrationTest, IClassFixture<IisFixture>
+    public abstract class AspNetAsyncHandlerTests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
 
@@ -38,7 +37,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/shutdown";
-            _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
@@ -63,6 +61,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
 
             customSpan.ParentId.Should().NotBeNull("traces should be correlated");
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 #endif
 }

@@ -28,6 +28,8 @@ private:
     std::shared_ptr<Sample> _sample;
     uintptr_t _address;
     ObjectHandleID _weakHandle;
+    // TODO This field is not yet used because the current implementation is incomple.
+    // Just keep to remind us to finish the implementation.
     int64_t _timestamp;
     uint64_t _gcCount;
 

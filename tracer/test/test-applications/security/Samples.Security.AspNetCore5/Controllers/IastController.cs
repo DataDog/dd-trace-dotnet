@@ -4,16 +4,29 @@ using System.ComponentModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.DirectoryServices;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Text.Json;
+#endif
+using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Primitives;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Samples.Security.Data;
 
 namespace Samples.Security.AspNetCore5.Controllers
@@ -48,13 +61,26 @@ namespace Samples.Security.AspNetCore5.Controllers
     [XContentTypeOptionsAttribute]
     [Route("[controller]")]
     [ApiController]
-    public class IastController : ControllerBase
+    public class IastController : Controller
     {
         static SQLiteConnection dbConnection = null;
+        static IMongoDatabase mongoDb = null;
 
         public IActionResult Index()
         {
             return Content("Ok\n");
+        }
+
+        private SQLiteConnection DbConnection 
+        {
+            get 
+            {
+                if (dbConnection is null)
+                {
+                    dbConnection = IastControllerHelper.CreateDatabase();
+                }
+                return dbConnection;
+            }
         }
 
         [HttpGet("HardcodedSecrets")]
@@ -91,21 +117,16 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-
                 if (!string.IsNullOrEmpty(username))
                 {
                     var taintedQuery = "SELECT Surname from Persons where name = '" + username + "'";
-                    var rname = new SQLiteCommand(taintedQuery, dbConnection).ExecuteScalar();
+                    var rname = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar();
                     return Content($"Result: " + rname);
                 }
 
                 if (!string.IsNullOrEmpty(query))
                 {
-                    var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+                    var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
                     return Content($"Result: " + rname);
                 }
             }
@@ -116,6 +137,111 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return BadRequest($"No query or username was provided");
         }
+        
+        [HttpGet("NoSqlQueryMongoDb")]
+        [Route("NoSqlQueryMongoDb")]
+        public IActionResult NoSqlQueryMongoDb(string price, string query)
+        {
+            try
+            {
+                if (mongoDb is null)
+                {
+                    mongoDb = MongoDbHelper.CreateMongoDb();
+                }
+
+                if (!string.IsNullOrEmpty(price))
+                {
+                    var taintedQuery = "{ \"Price\" :\"" + price + "\"}";
+                    var document = BsonDocument.Parse(taintedQuery);
+                    var collection = mongoDb.GetCollection<BsonDocument>("Books");
+                    var find = collection.Find(document).ToList();
+                    return Content($"Found {find.Count} books with price {price}");
+                }
+
+                if (!string.IsNullOrEmpty(query))
+                {
+                    var document = BsonDocument.Parse(query);
+                    var collection = mongoDb.GetCollection<BsonDocument>("Books");
+                    var find = collection.Find(document).ToList();
+                    return Content($"Found {find.Count} books with query {query}");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return BadRequest($"No price or query was provided");
+        }
+        
+        [HttpGet("NHibernateQuery")]
+        [Route("NHibernateQuery")]
+        public IActionResult NHibernateQuery(string username)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(username))
+                {
+                    var taintedQuery = "SELECT Value from FakeData where Name = '" + username + "'";
+                    var result = NHibernateHelper.CreateSqlQuery(taintedQuery);
+                    return Content($"Result: " + result.First());
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return BadRequest($"No username was provided");
+        }
+
+        [HttpGet("NewtonsoftJsonParseTainting")]
+        [Route("NewtonsoftJsonParseTainting")]
+        public IActionResult NewtonsoftJsonParseTainting(string json)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(json))
+                {
+                    var doc = JObject.Parse(json);
+                    var str = doc.Value<string>("key");
+
+                    // Trigger a vulnerability with the tainted string
+                    return ExecuteCommandInternal(str, "");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return BadRequest($"No json was provided");
+        }
+        
+#if NETCOREAPP3_0_OR_GREATER
+        [HttpGet("SystemTextJsonParseTainting")]
+        [Route("SystemTextJsonParseTainting")]
+        public IActionResult SystemTextJsonParseTainting(string json)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(json))
+                {
+                    var doc = JsonDocument.Parse(json);
+                    var str = doc.RootElement.GetProperty("key").GetString();
+                    
+                    // Trigger a vulnerability with the tainted string
+                    return ExecuteCommandInternal(str, "");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return BadRequest($"No json was provided");
+        }
+#endif
 
         [HttpGet("ExecuteCommand")]
         [Route("ExecuteCommand")]
@@ -154,11 +280,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-
                 return Query(query);
             }
             catch (Exception ex)
@@ -224,14 +345,9 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-
                 if (!string.IsNullOrEmpty(query))
                 {
-                    var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+                    var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
                     return Content($"Result: " + rname);
                 }
             }
@@ -248,11 +364,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-
                 if (!string.IsNullOrEmpty(queryjson))
                 {
                     var query = JsonConvert.DeserializeObject<QueryData>(queryjson);
@@ -419,6 +530,18 @@ namespace Samples.Security.AspNetCore5.Controllers
             Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
             return Content("Sending AllVulnerabilitiesCookie");
         }
+        
+        [HttpGet("InsecureAuthProtocol")]
+        [Route("InsecureAuthProtocol")]
+        public IActionResult InsecureAuthProtocol(bool forbidden = false)
+        {
+            if (forbidden)
+            {
+                return StatusCode(403);
+            }
+            
+            return Content("InsecureAuthProtocol page");
+        }
 
         [HttpGet("SSRF")]
         [Route("SSRF")]
@@ -446,7 +569,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         private ActionResult ExecuteQuery(string query)
         {
-            var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+            var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
             return Content($"Result: " + rname);
         }
 
@@ -512,9 +635,13 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("XContentTypeHeaderMissing")]
         public ActionResult XContentTypeHeaderMissing(string contentType = "text/html", int returnCode = 200, string xContentTypeHeaderValue = "")
         {
-            if (!string.IsNullOrEmpty(xContentTypeHeaderValue))
+            // We don't want a header injection vulnerability here, so we untaint the header values.
+            var xContentTypeHeaderValueUntainted = CopyStringAvoidTainting(xContentTypeHeaderValue);
+            var contentTypeUntainted = CopyStringAvoidTainting(contentType);
+
+            if (!string.IsNullOrEmpty(xContentTypeHeaderValueUntainted))
             {
-                Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValue);
+                Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValueUntainted);
             }
 
             if (returnCode != (int) HttpStatusCode.OK)
@@ -522,9 +649,9 @@ namespace Samples.Security.AspNetCore5.Controllers
                 return StatusCode(returnCode);
             }
 
-            if (!string.IsNullOrEmpty(contentType))
+            if (!string.IsNullOrEmpty(contentTypeUntainted))
             {
-                return Content("XContentTypeHeaderMissing", contentType);
+                return Content("XContentTypeHeaderMissing", contentTypeUntainted);
             }
             else
             {
@@ -587,14 +714,20 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("StrictTransportSecurity")]
         public ActionResult StrictTransportSecurity(string contentType = "text/html", int returnCode = 200, string hstsHeaderValue = "", string xForwardedProto ="")
         {
-            if (!string.IsNullOrEmpty(hstsHeaderValue))
+            // We don't want a header injection vulnerability here, so we untaint the header values by
+            // using reflection to access the private field "m_string" from the String class.
+            var hstsHeaderValueUntainted = CopyStringAvoidTainting(hstsHeaderValue);
+            var xForwardedProtoUntainted = CopyStringAvoidTainting(xForwardedProto);
+            var contentTypeUntainted = CopyStringAvoidTainting(contentType);
+
+            if (!string.IsNullOrEmpty(hstsHeaderValueUntainted))
             {
-                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValue);
+                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValueUntainted);
             }
 
-            if (!string.IsNullOrEmpty(xForwardedProto))
+            if (!string.IsNullOrEmpty(xForwardedProtoUntainted))
             {
-                Response.Headers.Add("X-Forwarded-Proto", xForwardedProto);
+                Response.Headers.Add("X-Forwarded-Proto", xForwardedProtoUntainted);
             }
 
             if (returnCode != (int)HttpStatusCode.OK)
@@ -602,14 +735,212 @@ namespace Samples.Security.AspNetCore5.Controllers
                 return StatusCode(returnCode);
             }
 
-            if (!string.IsNullOrEmpty(contentType))
+            if (!string.IsNullOrEmpty(contentTypeUntainted))
             {
-                return Content("StrictTransportSecurityMissing", contentType);
+                return Content("StrictTransportSecurityMissing", contentTypeUntainted);
             }
             else
             {
                 return Content("StrictTransportSecurityMissing");
             }
+        }
+
+        [HttpGet("StackTraceLeak")]
+        [Route("StackTraceLeak")]
+        public ActionResult StackTraceLeak()
+        {
+            throw new SystemException("Custom exception message");
+        }
+
+        // We should exclude some headers to prevent false positives:
+        // location: it is already reported in UNVALIDATED_REDIRECT vulnerability detection.
+        // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
+        // access-control-allow-origin: when the header is access-control-allow-origin and the source of the tainted range is the request header origin
+        // set-cookie: We should ignore set-cookie header if the source of all the tainted ranges are cookies
+        // We should exclude the injection when the tainted string only has one range which comes from a request header with the same name that the header that we are checking in the response.
+        // Headers could store sensitive information, we should redact whole <header_value> if:
+        // <header_name> matches with this RegExp
+        // <header_value> matches with  this RegExp
+        // We should redact the sensitive information from the evidence when:
+        // Tainted range is considered sensitive value
+
+        [HttpGet("HeaderInjection")]
+        [Route("HeaderInjection")]
+        public ActionResult HeaderInjection(bool UseValueFromOriginHeader = false)
+        {
+            string defaultHeaderName = "defaultName";
+            string defaultHeaderValue = "defaultValue";
+
+            string Combine(string name1, string name2, string defaultValue)
+            {
+                var null1 = string.IsNullOrWhiteSpace(name1);
+                var null2 = string.IsNullOrWhiteSpace(name2);
+
+                if (null1 && null2)
+                {
+                    return defaultValue;
+                }
+                if (!null1 && !null2) 
+                { 
+                    return name1 + name2;
+                }
+                else
+                {
+                    return null1 ? name2 : name1;
+                }
+            }
+
+            var originValue = Request.Headers["origin"];
+            var headerValue = Request.Headers["value"];
+            var cookieValue = Request.Cookies["value"];
+            var headerName = Request.Headers["name"];
+            var cookieName = Request.Cookies["name"];
+            string propagationHeader = Request.Headers["propagation"];
+
+            if (!string.IsNullOrEmpty(propagationHeader))
+            {
+                Response.Headers.Add("propagation", propagationHeader);
+                return Content($"returned propagation header");
+            }
+
+            var returnedName = Combine(headerName, cookieName, defaultHeaderName);
+            var returnedValue = UseValueFromOriginHeader ? originValue.ToString() : Combine(headerValue, cookieValue, defaultHeaderValue);
+
+            if (returnedName != "extraName")
+            {
+                Response.Headers.Add(returnedName, returnedValue);
+            }
+            else
+            {
+                Response.Headers.Add("extraName", new StringValues(new[] { returnedValue, "extraValue" }));
+            }
+            return Content($"returned header {returnedName},{returnedValue}");
+        }
+        
+        private readonly string xmlContent = @"<?xml version=""1.0"" encoding=""ISO-8859-1""?>
+                <data><user><name>jaime</name><password>1234</password><account>administrative_account</account></user>
+                <user><name>tom</name><password>12345</password><account>toms_acccount</account></user>
+                <user><name>guest</name><password>anonymous1234</password><account>guest_account</account></user>
+                </data>";
+
+        [HttpGet("XpathInjection")]
+        [Route("XpathInjection")]
+        public ActionResult XpathInjection(string user, string value)
+        {
+            var findUserXPath = "/data/user[name/text()='" + user + "' and password/text()='" + value + "}']";
+            var doc = new XmlDocument();
+            doc.LoadXml(xmlContent);
+            var result = doc.SelectSingleNode(findUserXPath);
+            return result is null ?
+                Content($"Invalid user/password") :
+                Content($"User " + result.ChildNodes[0].InnerText + " successfully logged.");
+        }
+
+        [HttpGet("TypeReflectionInjection")]
+        [Route("TypeReflectionInjection")]
+        public IActionResult TypeReflectionInjection(string type)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(type))
+                {
+                    var vulnerableType = Type.GetType(type);
+                    return Content($"Result: " + vulnerableType);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+            
+            return BadRequest($"No type was provided");
+        }
+        
+        [HttpGet("MaxRanges")]
+        [Route("MaxRanges")]
+        public ActionResult MaxRanges(int count, string tainted)
+        {
+            var str = string.Empty;
+            for (var i = 0; i < count; i++)
+            {
+                str += tainted;
+            }
+            
+            try
+            {
+                Type.GetType(str);
+            }
+            catch
+            {
+                // ignored
+            }
+
+            return Content(str, "text/html");
+        }
+
+        [HttpGet("CustomAttribute")]
+        [Route("CustomAttribute")]
+        public ActionResult CustomAttribute(string userName)
+        {
+            string result = GetCustomString(userName);
+            return Content(result, "text/html");
+        }
+
+        [Datadog.Trace.Annotations.Trace(OperationName = "span.custom.attribute", ResourceName = "IastController.GetCustomString")]
+        private string GetCustomString(string userName)
+        {
+            var fileInfo = new System.IO.FileInfo(userName);
+            return fileInfo.FullName;
+        }
+
+        [HttpGet("CustomManual")]
+        [Route("CustomManual")]
+        public ActionResult CustomManual(string userName)
+        {
+            string result = string.Empty;
+            try
+            {
+                using (var parentScope = SampleHelpers.CreateScope("span.custom.manual"))
+                {
+                    SampleHelpers.TrySetResourceName(parentScope, "<CUSTOM MANUAL PARENT RESOURCE NAME>");
+                    using (var childScope = SampleHelpers.CreateScope("new.FileInfo"))
+                    {
+                        // Nest using statements around the code to trace
+                        SampleHelpers.TrySetResourceName(childScope, "<CUSTOM MANUAL CHILD RESOURCE NAME>");
+                        _ = new System.IO.FileInfo(userName);
+                    }
+                }
+            }
+            catch
+            {
+                result = "Error in request.";
+            }
+
+            return Content(result, "text/html");
+        }
+
+
+        [HttpGet("ReflectedXss")]
+        [Route("ReflectedXss")]
+        public IActionResult ReflectedXss(string param)
+        {
+            ViewData["XSS"] = param + "<b>More Text</b>";
+            return View("ReflectedXss");
+        }
+
+        [HttpGet("ReflectedXssEscaped")]
+        [Route("ReflectedXssEscaped")]
+        public IActionResult ReflectedXssEscaped(string param)
+        {
+            var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
+                            + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
+            ViewData["XSS"] = escapedText;
+            return View("ReflectedXss");
+        }
+
+        static string CopyStringAvoidTainting(string original)
+        {
+            return new string(original.AsEnumerable().ToArray());
         }
     }
 }

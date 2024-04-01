@@ -16,13 +16,19 @@ internal static class SpanExtensions
     /// <param name="edgeTags">The edge tags for this checkpoint. NOTE: These MUST be sorted alphabetically</param>
     /// <param name="payloadSizeBytes">Payload size in bytes</param>
     /// <param name="timeInQueueMs">Edge start time extracted from the message metadata. Used only if this is start of the pathway</param>
-    internal static void SetDataStreamsCheckpoint(this Span span, DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags, long payloadSizeBytes, long timeInQueueMs)
+    /// <param name="parent">The parent context, if it was read from a message header for instance</param>
+    internal static void SetDataStreamsCheckpoint(this Span span, DataStreamsManager? manager, CheckpointKind checkpointKind, string[] edgeTags, long payloadSizeBytes, long timeInQueueMs, PathwayContext? parent = null)
     {
-       span.Context.SetCheckpoint(manager, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs);
-       var hash = span.Context.PathwayContext?.Hash.Value ?? 0;
-       if (hash != 0)
-       {
-           span.SetTag("pathway.hash", hash.ToString());
-       }
+        if (manager == null)
+        {
+            return;
+        }
+
+        span.Context.SetCheckpoint(manager, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs, parent);
+        var hash = span.Context.PathwayContext?.Hash.Value ?? 0;
+        if (hash != 0)
+        {
+            span.SetTag("pathway.hash", hash.ToString());
+        }
     }
 }

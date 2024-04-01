@@ -26,11 +26,25 @@
             body: data
         });
     }
+    
+    window.getWithHeaders = function (url, headers) {
+        return fetch(url, { method: 'GET', headers: headers, credentials: 'same-origin' });
+    }
 
     window.GetCookieData = function (cookie1, cookie2, url) {
         document.cookie = cookie1;
         document.cookie = cookie2;
         return fetch(url, { method: 'GET',headers: {'Content-Type': 'application/json'}, credentials: 'same-origin'});
+    }
+
+        window.GetCookieHeaderData = function (cookie, headerName, headerValue, headerName2, headerValue2, url) {
+        document.cookie = cookie;
+        let headers = {
+            'Content-Type': 'application/json',
+            [headerName]: headerValue,
+            [headerName2]: headerValue2
+        };
+        return fetch(url, { method: 'GET', headers: headers, credentials: 'same-origin' });
     }
 
 </script>
@@ -99,6 +113,30 @@
     <div><a href="/Iast/StrictTransportSecurity?contentType=text/html&returnCode=200&hstsHeaderValue=max-age=-10;value&xForwardedProto=https">GET /Iast/HstsHeader?contentType=text/html&returnCode=200&hstsHeaderValue=invalid&xForwardedProto=https</a></div>
 
 	<div><a href="/Iast/UnvalidatedRedirect?param=value">GET /Iast/UnvalidatedRedirect</a></div>
+
+    <div><a href="/Iast/StackTraceLeak">GET /Iast/StackTraceLeak</a></div>
+
+    <div><a href="/Iast/XpathInjection?user=James&password=Smith">GET /Iast/XpathInjection</a></div>
+
+    <div><a href="javascript:GetCookieHeaderData('file=value1', 'name', 'myName', 'value', 'myValue', '/Iast/HeaderInjection')">GET /HeaderInjection</a></div>
+
+    <div><a href="/Iast/NoSqlQueryMongoDb?price=42">GET /Iast/NoSqlQueryMongoDb</a></div>
+
+    <div><a href="/Iast/TypeReflectionInjection/?type=System.String">GET /Iast/ReflectionInjection [Type: System.String]</      a></div>
+    
+    <div><a href="/Iast/NewtonsoftJsonParseTainting?json=%7B%22key%22%3A%20%22value%22%7D">GET /Iast/NewtonsoftJsonParseTainting [Vuln CommandExecution]</a></div>
+
+    <div><a href="javascript:getWithHeaders('/Iast/InsecureAuthProtocol', {'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='})">GET /Iast/InsecureAuthProtocol [Basic Scheme]</a></div>
+    
+	<div><a href="/Iast/ReflectedXss/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXss </a></div>
+
+	<div><a href="/Iast/ReflectedXssEscaped/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXssEscaped with INJECTION</a></div>
+
+	<div><a href="/Iast/ReflectedXssEscaped/?param=Normal Texxt">GET /Iast/ReflectedXssEscaped with normal text</a></div>
+    
+    <div><a href="/Iast/JsonParseTainting?json=%7B%22key%22%3A%20%22value%22%7D">GET /Iast/JsonParseTainting [Vuln CommandExecution]</a></div>
+    
+    <div><a href="/Iast/NHibernateQuery?username=test">GET /Iast/NHibernateQuery [SQL Injection on NHibernate]</a></div>
 
     <div>
         @Html.Raw(Context.Request.Query["q"])

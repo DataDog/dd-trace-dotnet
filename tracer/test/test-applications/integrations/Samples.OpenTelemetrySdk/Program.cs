@@ -102,7 +102,8 @@ public static class Program
         using var nonActiveChildSpan = _tracer.StartSpan("StartSpan2", SpanKind.Internal);
         PrintSpanStartedInformation(nonActiveChildSpan);
 
-        // Confusingly, the new span is still a child of the active span. I expect this behavior to change later because this doesn't make sense.
+        // Prior to v1.7.0 the new span is still a child of the active span - this behavior appears to be a bug in OpenTelemetry.
+        // After v1.7.0 the new span is no longer a child of the active span.
         using var rootSpan = _tracer.StartRootSpan("StartRootSpan");
         PrintSpanStartedInformation(rootSpan);
 

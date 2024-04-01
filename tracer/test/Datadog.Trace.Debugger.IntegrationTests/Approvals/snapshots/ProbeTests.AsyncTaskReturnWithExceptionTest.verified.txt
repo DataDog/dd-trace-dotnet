@@ -1,9 +1,8 @@
-[
+﻿[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
     "ddsource": "dd_debugger",
-    "ddtags": "Unknown",
     "debugger": {
       "snapshot": {
         "captures": {
@@ -59,6 +58,33 @@
               }
             },
             "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233079"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "Sequence contains no matching element"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "System.Linq"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "InvalidOperationException",
+                "value": "InvalidOperationException"
+              },
               "room": {
                 "isNull": "true",
                 "type": "Room"

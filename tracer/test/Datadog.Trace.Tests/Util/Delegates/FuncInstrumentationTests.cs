@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Util.Delegates;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Util.Delegates;
@@ -59,6 +60,7 @@ public class FuncInstrumentationTests
                                                      Interlocked.Increment(ref value).Should().Be(3);
                                                      return ((int)returnValue) + 1;
                                                  }));
+        using var scope = new AssertionScope();
         func2().Should().Be(43);
         value.Should().Be(3);
     }
@@ -135,6 +137,7 @@ public class FuncInstrumentationTests
                                                      Interlocked.Increment(ref value).Should().Be(3);
                                                      return ((int)returnValue) + 1;
                                                  }));
+        using var scope = new AssertionScope();
         func2("Arg01").Should().Be(43);
         value.Should().Be(3);
     }
@@ -198,6 +201,7 @@ public class FuncInstrumentationTests
                                                      Interlocked.Increment(ref value).Should().Be(3);
                                                      return ((int)returnValue) + 1;
                                                  }));
+        using var scope = new AssertionScope();
         func2("Arg01", "Arg02").Should().Be(43);
         value.Should().Be(3);
     }
@@ -263,6 +267,7 @@ public class FuncInstrumentationTests
                                                      Interlocked.Increment(ref value).Should().Be(3);
                                                      return ((int)returnValue) + 1;
                                                  }));
+        using var scope = new AssertionScope();
         func2("Arg01", "Arg02", "Arg03").Should().Be(43);
         value.Should().Be(3);
     }
@@ -330,6 +335,7 @@ public class FuncInstrumentationTests
                                                      Interlocked.Increment(ref value).Should().Be(3);
                                                      return ((int)returnValue) + 1;
                                                  }));
+        using var scope = new AssertionScope();
         func2("Arg01", "Arg02", "Arg03", "Arg04").Should().Be(43);
         value.Should().Be(3);
     }
@@ -399,6 +405,7 @@ public class FuncInstrumentationTests
                                                      Interlocked.Increment(ref value).Should().Be(3);
                                                      return ((int)returnValue) + 1;
                                                  }));
+        using var scope = new AssertionScope();
         func2("Arg01", "Arg02", "Arg03", "Arg04", "Arg05").Should().Be(43);
         value.Should().Be(3);
     }
@@ -414,6 +421,7 @@ public class FuncInstrumentationTests
 
         public object OnDelegateBegin<TArg1, TArg2, TArg3, TArg4, TArg5>(object sender, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4, ref TArg5 arg5)
         {
+            using var scope = new AssertionScope();
             arg1.Should().Be("Arg01");
             arg2.Should().Be("Arg02");
             arg3.Should().Be("Arg03");
@@ -475,7 +483,128 @@ public class FuncInstrumentationTests
                                                      return ((int)returnValue) + 1;
                                                  }));
         result = await func2("Arg01").ConfigureAwait(false);
+        using var scope = new AssertionScope();
         result.Should().Be(43);
+        value.Should().Be(4);
+    }
+
+    [Fact]
+    public async Task Async1WithAsyncExceptionTest()
+    {
+        var result = new StrongBox<int>(0);
+        var callbacks = new Async1Callbacks();
+        Func<string, Task<int>> func = async (arg1) =>
+        {
+            callbacks.Count.Value++;
+            // force an exception
+            int x = 0, y = 0, z = 0;
+            z = x / y;
+            await Task.Yield();
+            return 42;
+        };
+        func = func.Instrument(callbacks);
+        await Assert.ThrowsAsync<DivideByZeroException>(
+            async () =>
+            {
+                result = new StrongBox<int>(await func("Arg01").ConfigureAwait(false));
+            }).ConfigureAwait(false);
+
+        callbacks.Count.Value.Should().Be(4);
+
+        var value = 0;
+        CustomFunc<string, Task<int>> func2 = async (arg1) =>
+        {
+            Interlocked.Increment(ref value).Should().Be(2);
+            // force an exception
+            int x = 0, y = 0, z = 0;
+            z = x / y;
+            await Task.Yield();
+            return 42;
+        };
+        func2 = DelegateInstrumentation.Wrap(func2, new DelegateFunc1Callbacks(
+                                                 (target, arg1) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(4);
+                                                     return returnValue;
+                                                 },
+                                                 onDelegateAsyncEnd: async (sender, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                     await Task.Delay(100).ConfigureAwait(false);
+                                                     return ((int)returnValue) + 1;
+                                                 }));
+        using var scope = new AssertionScope();
+        await Assert.ThrowsAsync<DivideByZeroException>(
+            async () =>
+            {
+                result = new StrongBox<int>(await func2("Arg01").ConfigureAwait(false));
+            }).ConfigureAwait(false);
+
+        value.Should().Be(4);
+    }
+
+    [Fact]
+    public async Task Async1WithExceptionTest()
+    {
+        var result = new StrongBox<int>(0);
+        var callbacks = new Async1Callbacks();
+        Func<string, Task<int>> func = (arg1) =>
+        {
+            callbacks.Count.Value++;
+            // force an exception
+            int x = 0, y = 0, z = 0;
+            z = x / y;
+            return Task.FromResult(42);
+        };
+        func = func.Instrument(callbacks);
+        await Assert.ThrowsAsync<DivideByZeroException>(
+            async () =>
+            {
+                result = new StrongBox<int>(await func("Arg01").ConfigureAwait(false));
+            }).ConfigureAwait(false);
+
+        callbacks.Count.Value.Should().Be(4);
+
+        var value = 0;
+        CustomFunc<string, Task<int>> func2 = (arg1) =>
+        {
+            Interlocked.Increment(ref value).Should().Be(2);
+            // force an exception
+            int x = 0, y = 0, z = 0;
+            z = x / y;
+            return Task.FromResult(42);
+        };
+        func2 = DelegateInstrumentation.Wrap(func2, new DelegateFunc1Callbacks(
+                                                 (target, arg1) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(4);
+                                                     return returnValue;
+                                                 },
+                                                 onDelegateAsyncEnd: async (sender, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                     await Task.Delay(100).ConfigureAwait(false);
+                                                     return ((int)returnValue) + 1;
+                                                 }));
+        using var scope = new AssertionScope();
+        await Assert.ThrowsAsync<DivideByZeroException>(
+            async () =>
+            {
+                result = new StrongBox<int>(await func2("Arg01").ConfigureAwait(false));
+            }).ConfigureAwait(false);
+
         value.Should().Be(4);
     }
 

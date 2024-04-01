@@ -22,6 +22,7 @@ namespace Samples
         private static readonly Type SpanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
         private static readonly Type TracerSettingsType = Type.GetType("Datadog.Trace.Configuration.TracerSettings, Datadog.Trace");
         private static readonly Type TracerConstantsType = Type.GetType("Datadog.Trace.TracerConstants, Datadog.Trace");
+        private static readonly Type ProcessHelpersType = Type.GetType("Datadog.Trace.Util.ProcessHelpers, Datadog.Trace");
         private static readonly PropertyInfo GetTracerManagerProperty = TracerType?.GetProperty("TracerManager", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo GetNativeTracerVersionMethod = InstrumentationType?.GetMethod("GetNativeTracerVersion");
         private static readonly MethodInfo GetTracerInstance = TracerType?.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)?.GetMethod;
@@ -44,6 +45,7 @@ namespace Samples
         private static readonly MethodInfo FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo SetServiceName = TracerSettingsType?.GetProperty("ServiceName")?.SetMethod;
         private static readonly MethodInfo GetMetricMethod = SpanType?.GetMethod("GetMetric", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo RunCommandMethod = ProcessHelpersType?.GetMethod("TestingOnly_RunCommand", BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly FieldInfo TracerThreePartVersionField = TracerConstantsType?.GetField("ThreePartVersion");
 
 
@@ -376,6 +378,11 @@ namespace Samples
 
             return result as Task ?? Task.CompletedTask;
         }
+        
+        public static void RunCommand(string cmd, string args = null)
+        {
+            RunCommandMethod?.Invoke(null, new object[] {cmd, args});
+        }    
 
         class NoOpDisposable : IDisposable
         {

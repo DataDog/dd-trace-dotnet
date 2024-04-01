@@ -19,7 +19,9 @@ internal class IastSettings
     public const string WeakHashAlgorithmsDefault = "HMACMD5,MD5,HMACSHA1,SHA1";
     public const int VulnerabilitiesPerRequestDefault = 2;
     public const int MaxConcurrentRequestDefault = 2;
+    public const int MaxRangeCountDefault = 10;
     public const int RequestSamplingDefault = 30;
+    public const int TruncationMaxValueLengthDefault = 250;
 
     /// <summary>
     /// Default keys readaction regex if none specified via env DD_IAST_REDACTION_KEYS_REGEXP
@@ -48,6 +50,10 @@ internal class IastSettings
                                .WithKeys(ConfigurationKeys.Iast.MaxConcurrentRequests)
                                .AsInt32(MaxConcurrentRequestDefault, x => x > 0)
                                .Value;
+        MaxRangeCount = config
+                        .WithKeys(ConfigurationKeys.Iast.MaxRangeCount)
+                        .AsInt32(MaxRangeCountDefault, x => x > 0)
+                        .Value;
         VulnerabilitiesPerRequest = config
                                    .WithKeys(ConfigurationKeys.Iast.VulnerabilitiesPerRequest)
                                    .AsInt32(VulnerabilitiesPerRequestDefault, x => x > 0)
@@ -63,10 +69,10 @@ internal class IastSettings
                                .AsString(DefaultRedactionValuesRegex);
         RegexTimeout = config
                                 .WithKeys(ConfigurationKeys.Iast.RegexTimeout)
-                                .AsDouble(200, val1 => val1 is > 0).Value;
+                                .AsDouble(200, val1 => val1 is >= 0).Value;
 
-        IastTelemetryVerbosity = config
-            .WithKeys(ConfigurationKeys.Iast.IastTelemetryVerbosity)
+        TelemetryVerbosity = config
+            .WithKeys(ConfigurationKeys.Iast.TelemetryVerbosity)
             .GetAs(
                 getDefaultValue: () => IastMetricsVerbosityLevel.Information,
                 converter: value => value.ToLowerInvariant() switch
@@ -78,6 +84,11 @@ internal class IastSettings
                     _ => ParsingResult<IastMetricsVerbosityLevel>.Failure()
                 },
                 validator: null);
+
+        TruncationMaxValueLength = config
+            .WithKeys(ConfigurationKeys.Iast.TruncationMaxValueLength)
+            .AsInt32(TruncationMaxValueLengthDefault, x => x > 0)
+            .Value;
     }
 
     public bool Enabled { get; set; }
@@ -96,6 +107,8 @@ internal class IastSettings
 
     public int MaxConcurrentRequests { get; }
 
+    public int MaxRangeCount { get; }
+
     public int VulnerabilitiesPerRequest { get; }
 
     public bool RedactionEnabled { get; }
@@ -106,7 +119,9 @@ internal class IastSettings
 
     public double RegexTimeout { get; }
 
-    public IastMetricsVerbosityLevel IastTelemetryVerbosity { get; }
+    public IastMetricsVerbosityLevel TelemetryVerbosity { get; }
+
+    public int TruncationMaxValueLength { get; }
 
     public static IastSettings FromDefaultSources()
     {

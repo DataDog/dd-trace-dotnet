@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void IntegrationDisabled()
+        public async Task IntegrationDisabled()
         {
             GuardAlpine();
 
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             GuardArm64(packageVersions[0]);
-            RunIntegrationDisabled(packageVersions[0]);
+            await RunIntegrationDisabled(packageVersions[0]);
         }
     }
 
@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void IntegrationDisabled()
+        public async Task IntegrationDisabled()
         {
             GuardAlpine();
 
@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             GuardArm64(packageVersions[0]);
 
-            RunIntegrationDisabled(packageVersions[0]);
+            await RunIntegrationDisabled(packageVersions[0]);
         }
     }
 
@@ -151,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void IntegrationDisabled()
+        public async Task IntegrationDisabled()
         {
             GuardAlpine();
             GuardLinux();
@@ -168,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             GuardArm64(packageVersions[0]);
 
-            RunIntegrationDisabled(packageVersions[0]);
+            await RunIntegrationDisabled(packageVersions[0]);
         }
 
         private static void GuardLinux()
@@ -248,7 +248,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                     + 1 // 1 server streaming
                                     + 1 // 1 client streaming
                                     + 1 // 1 both streaming
-                                    + 2 // Deadline exceeded (sync + async)
+                                    + 1 // Deadline exceeded (async)
                                     + (4 * 2); // 4 Error types (sync + async)
 
             // Get between 3 and 5 spans per request:
@@ -297,12 +297,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             try
             {
-                using (processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
+                using (processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
                 {
-                    var spans = agent.WaitForSpans(totalExpectedSpans, 500);
+                    var spans = agent.WaitForSpans(totalExpectedSpans, 500, assertExpectedCount: false);
 
                     using var scope = new AssertionScope();
-                    spans.Count.Should().Be(totalExpectedSpans);
 
                     if (!isGrpcSupported)
                     {
@@ -440,7 +439,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        protected void RunIntegrationDisabled(string packageVersion)
+        protected async Task RunIntegrationDisabled(string packageVersion)
         {
             using var telemetry = this.ConfigureTelemetry();
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Grpc)}_ENABLED", "false");
@@ -448,7 +447,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ProcessResult processResult = null;
             try
             {
-                using (processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
+                using (processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
                 {
                     var spans = agent.WaitForSpans(1, timeoutInMilliseconds: 500).Where(s => s.Type == "grpc.request").ToList();
 

@@ -38,7 +38,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
 
         using var assertionScope = new AssertionScope();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+        using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
             var spans = agent.WaitForSpans(31);
             spans.Should().HaveCount(31);
@@ -55,13 +55,13 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
     [SkippableTheory]
     [MemberData(nameof(PackageVersions.RabbitMQ), MemberType = typeof(PackageVersions))]
     [Trait("Category", "EndToEnd")]
-    public void ValidateSpanTags(string packageVersion)
+    public async Task ValidateSpanTags(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
 
         using var assertionScope = new AssertionScope();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+        using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
             var spans = agent.WaitForSpans(31);
             spans.Should().HaveCount(31);

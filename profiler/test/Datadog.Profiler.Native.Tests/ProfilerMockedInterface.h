@@ -13,6 +13,7 @@
 #include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
 #include "Sample.h"
+#include "SamplesEnumerator.h"
 #include "TagsHelper.h"
 
 #include <memory>
@@ -68,6 +69,9 @@ public:
     MOCK_METHOD(bool, IsSystemCallsShieldEnabled, (), (const override));
     MOCK_METHOD(bool, IsCIVisibilityEnabled, (), (const override));
     MOCK_METHOD(std::uint64_t, GetCIVisibilitySpanId, (), (const override));
+    MOCK_METHOD(bool, IsEtwEnabled, (), (const override));
+    MOCK_METHOD(bool, IsSsiDeployed, (), (const override));
+    MOCK_METHOD(bool, IsSsiActivated, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -90,7 +94,7 @@ public:
 class MockSampleProvider : public ISamplesProvider
 {
 public:
-    MOCK_METHOD(std::list<std::shared_ptr<Sample>>, GetSamples, (), (override));
+    MOCK_METHOD(std::unique_ptr<SamplesEnumerator>, GetSamples, (), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
 };
 
@@ -145,7 +149,7 @@ public:
 class MockProcessSamplesProvider : public ISamplesProvider
 {
 public:
-    MOCK_METHOD(std::list<std::shared_ptr<Sample>>, GetSamples, (), (override));
+    MOCK_METHOD(std::unique_ptr<SamplesEnumerator>, GetSamples, (), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
 };
 

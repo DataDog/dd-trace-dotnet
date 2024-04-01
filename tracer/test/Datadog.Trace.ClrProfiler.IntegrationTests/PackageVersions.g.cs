@@ -76,6 +76,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> MSTest => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTest : PackageVersionsLatestSpecific.MSTest;
 
+        public static IEnumerable<object[]> MSTest2 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTest2 : PackageVersionsLatestSpecific.MSTest2;
+
         public static IEnumerable<object[]> Kafka => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Kafka : PackageVersionsLatestSpecific.Kafka;
 
         public static IEnumerable<object[]> CosmosDb => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.CosmosDb : PackageVersionsLatestSpecific.CosmosDb;
@@ -99,5 +101,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> GrpcLegacy => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.GrpcLegacy : PackageVersionsLatestSpecific.GrpcLegacy;
 
         public static IEnumerable<object[]> OpenTelemetry => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.OpenTelemetry : PackageVersionsLatestSpecific.OpenTelemetry;
+
+        public static IEnumerable<object[]> Yarp => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Yarp : PackageVersionsLatestSpecific.Yarp;
+
+        public static IEnumerable<object[]> AzureServiceBus => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureServiceBus : PackageVersionsLatestSpecific.AzureServiceBus;
     }
 }

@@ -18,6 +18,8 @@
 #include "Windows32BitStackFramesCollector.h"
 #include "Windows64BitStackFramesCollector.h"
 #include "WindowsThreadInfo.h"
+#include "EtwEventsManager.h"
+
 #include "shared/src/native-src/loader.h"
 
 #include <memory>
@@ -326,6 +328,16 @@ std::string GetProcessStartTime()
         << "Z"; // for UTC
     return builder.str();
 
+}
+
+std::unique_ptr<IEtwEventsManager> CreateEtwEventsManager(
+    IAllocationsListener* pAllocationListener,
+    IContentionListener* pContentionListener,
+    IGCSuspensionsListener* pGCSuspensionsListener,
+    IConfiguration* pConfiguration)
+{
+    auto manager = std::make_unique<EtwEventsManager>(pAllocationListener, pContentionListener, pGCSuspensionsListener, pConfiguration);
+    return manager;
 }
 
 } // namespace OsSpecificApi

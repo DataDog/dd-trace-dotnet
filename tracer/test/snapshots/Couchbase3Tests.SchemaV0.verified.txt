@@ -13,9 +13,7 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -41,9 +39,7 @@
       env: integration_tests,
       error.msg: KeyNotFound,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -67,9 +63,7 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -93,9 +87,7 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -119,9 +111,7 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -145,9 +135,7 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -171,9 +159,7 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -197,9 +183,7 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -223,9 +207,7 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -249,9 +231,7 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -275,9 +255,7 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,
@@ -302,9 +280,7 @@
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       process_id: 0,

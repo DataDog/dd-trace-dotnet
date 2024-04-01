@@ -18,6 +18,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Configuration;
@@ -47,12 +48,12 @@ internal class IntelligentTestRunnerClient
     private const string SettingsType = "ci_app_test_service_libraries_settings";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntelligentTestRunnerClient));
-    private static readonly Regex ShaRegex = new Regex("[0-9a-f]+", RegexOptions.Compiled);
+    private static readonly Regex ShaRegex = new("[0-9a-f]+", RegexOptions.Compiled);
     private static readonly JsonSerializerSettings SerializerSettings = new() { DefaultValueHandling = DefaultValueHandling.Ignore };
 
     private readonly string _id;
     private readonly CIVisibilitySettings _settings;
-    private readonly string _workingDirectory;
+    private readonly string? _workingDirectory;
     private readonly string _environment;
     private readonly string _serviceName;
     private readonly Dictionary<string, string>? _customConfigurations;
@@ -61,12 +62,12 @@ internal class IntelligentTestRunnerClient
     private readonly Uri _searchCommitsUrl;
     private readonly Uri _packFileUrl;
     private readonly Uri _skippableTestsUrl;
-    private readonly bool _useEvpProxy;
+    private readonly EventPlatformProxySupport _eventPlatformProxySupport;
     private readonly Task<string> _getRepositoryUrlTask;
     private readonly Task<string> _getBranchNameTask;
-    private readonly Task<ProcessHelpers.CommandOutput?> _getShaTask;
+    private readonly Task<string> _getShaTask;
 
-    public IntelligentTestRunnerClient(string workingDirectory, CIVisibilitySettings? settings = null)
+    public IntelligentTestRunnerClient(string? workingDirectory, CIVisibilitySettings? settings = null)
     {
         _id = RandomIdGenerator.Shared.NextSpanId().ToString(CultureInfo.InvariantCulture);
         _settings = settings ?? CIVisibility.Settings;
@@ -81,7 +82,7 @@ internal class IntelligentTestRunnerClient
 
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _getBranchNameTask = GetBranchNameAsync();
-        _getShaTask = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory));
+        _getShaTask = GetCommitShaAsync();
         _apiRequestFactory = CIVisibility.GetRequestFactory(new ImmutableTracerSettings(_settings.TracerSettings, true), TimeSpan.FromSeconds(45));
 
         const string settingsUrlPath = "api/v2/libraries/tests/services/setting";
@@ -91,7 +92,7 @@ internal class IntelligentTestRunnerClient
 
         if (_settings.Agentless)
         {
-            _useEvpProxy = false;
+            _eventPlatformProxySupport = EventPlatformProxySupport.None;
             var agentlessUrl = _settings.AgentlessUrl;
             if (!string.IsNullOrWhiteSpace(agentlessUrl))
             {
@@ -130,12 +131,25 @@ internal class IntelligentTestRunnerClient
         else
         {
             // Use Agent EVP Proxy
-            _useEvpProxy = true;
             var agentUrl = _settings.TracerSettings.ExporterInternal.AgentUriInternal;
-            _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{settingsUrlPath}");
-            _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{searchCommitsUrlPath}");
-            _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{packFileUrlPath}");
-            _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{skippableTestsUrlPath}");
+            _eventPlatformProxySupport = CIVisibility.EventPlatformProxySupport;
+            switch (_eventPlatformProxySupport)
+            {
+                case EventPlatformProxySupport.V2:
+                    _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{settingsUrlPath}");
+                    _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{searchCommitsUrlPath}");
+                    _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{packFileUrlPath}");
+                    _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{skippableTestsUrlPath}");
+                    break;
+                case EventPlatformProxySupport.V4:
+                    _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{settingsUrlPath}");
+                    _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{searchCommitsUrlPath}");
+                    _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{packFileUrlPath}");
+                    _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{skippableTestsUrlPath}");
+                    break;
+                default:
+                    throw new NotSupportedException("Event platform proxy not supported by the agent.");
+            }
         }
     }
 
@@ -168,6 +182,27 @@ internal class IntelligentTestRunnerClient
     {
         Log.Debug("ITR: Uploading Repository Changes...");
 
+        // Let's first try get the commit data from local and remote
+        var initialCommitData = await GetCommitsAsync().ConfigureAwait(false);
+
+        // Let's check if we could retrieve commit data
+        if (!initialCommitData.IsOk)
+        {
+            return 0;
+        }
+
+        // If:
+        //   - We have local commits
+        //   - There are not missing commits (backend has the total number of local commits already)
+        // Then we are good to go with it, we don't need to check if we need to unshallow or anything and just go with that.
+        if (initialCommitData is { HasCommits: true, MissingCommits.Length: 0 })
+        {
+            Log.Debug("ITR: Initial commit data has everything already, we don't need to upload anything.");
+            return 0;
+        }
+
+        // There's some missing commits on the backend, first we need to check if we need to unshallow before sending anything...
+
         try
         {
             // We need to check if the git clone is a shallow one before uploading anything.
@@ -180,73 +215,80 @@ internal class IntelligentTestRunnerClient
                 return 0;
             }
 
-            if (gitRevParseShallowOutput.Output.IndexOf("true", StringComparison.OrdinalIgnoreCase) > -1)
+            var isShallow = gitRevParseShallowOutput.Output.IndexOf("true", StringComparison.OrdinalIgnoreCase) > -1;
+            if (!isShallow)
             {
-                // The git repo is a shallow clone, we need to double check if there are more than just 1 commit in the logs.
-                var gitShallowLogOutput = await RunGitCommandAsync("log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow).ConfigureAwait(false);
-                if (gitShallowLogOutput is null)
+                // Repo is not in a shallow state, we continue with the pack files upload with the initial commit data we retrieved earlier.
+                Log.Debug("ITR: Repository is not in a shallow state, uploading changes...");
+                return await SendObjectsPackFileAsync(initialCommitData.LocalCommits[0], initialCommitData.MissingCommits, initialCommitData.RemoteCommits).ConfigureAwait(false);
+            }
+
+            Log.Debug("ITR: Unshallowing the repository...");
+
+            // The git repo is a shallow clone, we need to double check if there are more than just 1 commit in the logs.
+            var gitShallowLogOutput = await RunGitCommandAsync("log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow).ConfigureAwait(false);
+            if (gitShallowLogOutput is null)
+            {
+                Log.Warning("ITR: 'git log --format=oneline -n 2' command is null");
+                return 0;
+            }
+
+            // After asking for 2 logs lines, if the git log command returns just one commit sha, we reconfigure the repo
+            // to ask for git commits and trees of the last month (no blobs)
+            var shallowLogArray = gitShallowLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
+            if (shallowLogArray.Length == 1)
+            {
+                // Just one commit SHA. Fetching previous commits
+
+                ProcessHelpers.CommandOutput? gitUnshallowOutput;
+
+                // ***
+                // Let's try to unshallow the repo:
+                // `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)`
+                // ***
+
+                // git config --default origin --get clone.defaultRemoteName
+                var originNameOutput = await RunGitCommandAsync("config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote).ConfigureAwait(false);
+                var originName = originNameOutput?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
+
+                // git rev-parse HEAD
+                var headOutput = await RunGitCommandAsync("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
+                var head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? await _getBranchNameTask.ConfigureAwait(false);
+
+                // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)
+                Log.Information("ITR: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
+                gitUnshallowOutput = await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
+
+                if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
                 {
-                    Log.Warning("ITR: 'git log --format=oneline -n 2' command is null");
-                    return 0;
+                    // ***
+                    // The previous command has a drawback: if the local HEAD is a commit that has not been pushed to the remote, it will fail.
+                    // If this is the case, we fallback to: `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})`
+                    // This command will attempt to use the tracked branch for the current branch in order to unshallow.
+                    // ***
+
+                    // originName = git config --default origin --get clone.defaultRemoteName
+                    // git rev-parse --abbrev-ref --symbolic-full-name @{upstream}
+                    headOutput = await RunGitCommandAsync("rev-parse --abbrev-ref --symbolic-full-name \"@{upstream}\"", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
+                    head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? await _getBranchNameTask.ConfigureAwait(false);
+
+                    // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})
+                    Log.Information("ITR: Previous unshallow command failed, refetching data with fallback 1 for {OriginName}|{Head}", originName, head);
+                    gitUnshallowOutput = await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
                 }
 
-                // After asking for 2 logs lines, if the git log command returns just one commit sha, we reconfigure the repo
-                // to ask for git commits and trees of the last month (no blobs)
-                var shallowLogArray = gitShallowLogOutput.Output.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
-                if (shallowLogArray.Length == 1)
+                if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
                 {
-                    // Just one commit SHA. Fetching previous commits
-
-                    ProcessHelpers.CommandOutput? gitUnshallowOutput;
-
                     // ***
-                    // Let's try to unshallow the repo:
-                    // `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)`
+                    // It could be that the CI is working on a detached HEAD or maybe branch tracking hasn’t been set up.
+                    // In that case, this command will also fail, and we will finally fallback to we just unshallow all the things:
+                    // `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName)`
                     // ***
 
-                    // git config --default origin --get clone.defaultRemoteName
-                    var originNameOutput = await RunGitCommandAsync("config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote).ConfigureAwait(false);
-                    var originName = originNameOutput?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
-
-                    // git rev-parse HEAD
-                    var headOutput = await RunGitCommandAsync("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
-                    var head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? await _getBranchNameTask.ConfigureAwait(false);
-
-                    // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)
-                    Log.Information("ITR: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
-                    gitUnshallowOutput = await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
-
-                    if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
-                    {
-                        // ***
-                        // The previous command has a drawback: if the local HEAD is a commit that has not been pushed to the remote, it will fail.
-                        // If this is the case, we fallback to: `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})`
-                        // This command will attempt to use the tracked branch for the current branch in order to unshallow.
-                        // ***
-
-                        // originName = git config --default origin --get clone.defaultRemoteName
-                        // git rev-parse --abbrev-ref --symbolic-full-name @{upstream}
-                        headOutput = await RunGitCommandAsync("rev-parse --abbrev-ref --symbolic-full-name \"@{upstream}\"", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
-                        head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? await _getBranchNameTask.ConfigureAwait(false);
-
-                        // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})
-                        Log.Information("ITR: Previous unshallow command failed, refetching data with fallback 1 for {OriginName}|{Head}", originName, head);
-                        gitUnshallowOutput = await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
-                    }
-
-                    if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
-                    {
-                        // ***
-                        // It could be that the CI is working on a detached HEAD or maybe branch tracking hasn’t been set up.
-                        // In that case, this command will also fail, and we will finally fallback to we just unshallow all the things:
-                        // `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName)`
-                        // ***
-
-                        // originName = git config --default origin --get clone.defaultRemoteName
-                        // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName)
-                        Log.Information("ITR: Previous unshallow command failed, refetching data with fallback 2 for {OriginName}", originName);
-                        await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
-                    }
+                    // originName = git config --default origin --get clone.defaultRemoteName
+                    // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName)
+                    Log.Information("ITR: Previous unshallow command failed, refetching data with fallback 2 for {OriginName}", originName);
+                    await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
                 }
             }
         }
@@ -255,24 +297,13 @@ internal class IntelligentTestRunnerClient
             Log.Error(ex, "Error detecting and reconfiguring git repository for shallow clone.");
         }
 
-        var gitLogOutput = await RunGitCommandAsync("log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits).ConfigureAwait(false);
-        if (gitLogOutput is null)
+        var commitsData = await GetCommitsAsync().ConfigureAwait(false);
+        if (!commitsData.IsOk)
         {
-            Log.Warning("ITR: 'git log...' command is null");
             return 0;
         }
 
-        var localCommits = gitLogOutput.Output.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
-        if (localCommits.Length == 0)
-        {
-            Log.Debug("ITR: Local commits not found. (since 1 month ago)");
-            return 0;
-        }
-
-        Log.Debug<int>("ITR: Local commits = {Count}", localCommits.Length);
-        var remoteCommitsData = await SearchCommitAsync(localCommits).ConfigureAwait(false);
-        var localCommitsData = localCommits.Except(remoteCommitsData).ToArray();
-        return await SendObjectsPackFileAsync(localCommits[0], localCommitsData, remoteCommitsData).ConfigureAwait(false);
+        return await SendObjectsPackFileAsync(commitsData.LocalCommits[0], commitsData.MissingCommits, commitsData.RemoteCommits).ConfigureAwait(false);
     }
 
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
@@ -281,14 +312,24 @@ internal class IntelligentTestRunnerClient
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var branchName = await _getBranchNameTask.ConfigureAwait(false);
-        var currentShaCommand = await _getShaTask.ConfigureAwait(false);
-        if (currentShaCommand is null)
+        var currentSha = await _getShaTask.ConfigureAwait(false);
+        if (string.IsNullOrEmpty(repository))
         {
-            Log.Warning("ITR: 'git rev-parse HEAD' command is null");
+            Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
             return default;
         }
 
-        var currentSha = currentShaCommand.Output.Replace("\n", string.Empty);
+        if (string.IsNullOrEmpty(branchName))
+        {
+            Log.Warning("ITR: 'git branch --show-current' command returned null or empty");
+            return default;
+        }
+
+        if (string.IsNullOrEmpty(currentSha))
+        {
+            Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
+            return default;
+        }
 
         var query = new DataEnvelope<Data<SettingsQuery>>(
             new Data<SettingsQuery>(
@@ -371,19 +412,23 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    public async Task<SkippableTest[]> GetSkippableTestsAsync()
+    public async Task<SkippableTestsResponse> GetSkippableTestsAsync()
     {
         Log.Debug("ITR: Getting skippable tests...");
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var currentShaCommand = await _getShaTask.ConfigureAwait(false);
-        if (currentShaCommand is null)
+        var currentSha = await _getShaTask.ConfigureAwait(false);
+        if (string.IsNullOrEmpty(repository))
         {
-            Log.Warning("ITR: 'git rev-parse HEAD' command is null");
-            return Array.Empty<SkippableTest>();
+            Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
+            return new SkippableTestsResponse();
         }
 
-        var currentSha = currentShaCommand.Output.Replace("\n", string.Empty);
+        if (string.IsNullOrEmpty(currentSha))
+        {
+            Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
+            return default;
+        }
 
         var query = new DataEnvelope<Data<SkippableTestsQuery>>(
             new Data<SkippableTestsQuery>(
@@ -409,7 +454,7 @@ internal class IntelligentTestRunnerClient
 
         return await WithRetries(InternalGetSkippableTestsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
 
-        async Task<SkippableTest[]> InternalGetSkippableTestsAsync(byte[] state, bool finalTry)
+        async Task<SkippableTestsResponse> InternalGetSkippableTestsAsync(byte[] state, bool finalTry)
         {
             var sw = Stopwatch.StartNew();
             try
@@ -445,13 +490,13 @@ internal class IntelligentTestRunnerClient
                 Log.Debug("ITR: JSON RS = {Json}", responseContent);
                 if (string.IsNullOrEmpty(responseContent))
                 {
-                    return Array.Empty<SkippableTest>();
+                    return new SkippableTestsResponse();
                 }
 
                 var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(responseContent!);
                 if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
                 {
-                    return Array.Empty<SkippableTest>();
+                    return new SkippableTestsResponse(deserializedResult.Meta?.CorrelationId, Array.Empty<SkippableTest>());
                 }
 
                 var testAttributes = new List<SkippableTest>(deserializedResult.Data.Length);
@@ -491,109 +536,11 @@ internal class IntelligentTestRunnerClient
 
                 var totalSkippableTests = testAttributes.ToArray();
                 TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsResponseTests(totalSkippableTests.Length);
-                return totalSkippableTests;
+                return new SkippableTestsResponse(deserializedResult.Meta?.CorrelationId, totalSkippableTests);
             }
             finally
             {
                 TelemetryFactory.Metrics.RecordDistributionCIVisibilityITRSkippableTestsRequestMs(sw.Elapsed.TotalMilliseconds);
-            }
-        }
-    }
-
-    private async Task<string[]> SearchCommitAsync(string[]? localCommits)
-    {
-        if (localCommits is null)
-        {
-            return Array.Empty<string>();
-        }
-
-        Log.Debug("ITR: Searching commits...");
-
-        Data<object>[] commitRequests;
-        if (localCommits.Length == 0)
-        {
-            commitRequests = Array.Empty<Data<object>>();
-        }
-        else
-        {
-            commitRequests = new Data<object>[localCommits.Length];
-            for (var i = 0; i < localCommits.Length; i++)
-            {
-                commitRequests[i] = new Data<object>(localCommits[i], CommitType, default);
-            }
-        }
-
-        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, repository), SerializerSettings);
-        Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
-        var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
-
-        return await WithRetries(InternalSearchCommitAsync, jsonPushedShaBytes, MaxRetries).ConfigureAwait(false);
-
-        async Task<string[]> InternalSearchCommitAsync(byte[] state, bool finalTry)
-        {
-            var sw = Stopwatch.StartNew();
-            try
-            {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommits();
-                var request = _apiRequestFactory.Create(_searchCommitsUrl);
-                SetRequestHeader(request);
-
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("ITR: Searching commits from: {Url}", _searchCommitsUrl.ToString());
-                }
-
-                string? responseContent;
-                try
-                {
-                    using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
-                    responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                    if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
-                    {
-                        TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(errorType);
-                    }
-
-                    CheckResponseStatusCode(response, responseContent, finalTry);
-                }
-                catch
-                {
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(MetricTags.CIVisibilityErrorType.Network);
-                    throw;
-                }
-
-                Log.Debug("ITR: JSON RS = {Json}", responseContent);
-                if (string.IsNullOrEmpty(responseContent))
-                {
-                    return Array.Empty<string>();
-                }
-
-                var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
-                if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
-                {
-                    return Array.Empty<string>();
-                }
-
-                var stringArray = new string[deserializedResult.Data.Length];
-                for (var i = 0; i < deserializedResult.Data.Length; i++)
-                {
-                    var value = deserializedResult.Data[i].Id;
-                    if (value is not null)
-                    {
-                        if (ShaRegex.Matches(value).Count != 1)
-                        {
-                            ThrowHelper.ThrowException($"The value '{value}' is not a valid Sha.");
-                        }
-
-                        stringArray[i] = value;
-                    }
-                }
-
-                return stringArray;
-            }
-            finally
-            {
-                TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(sw.Elapsed.TotalMilliseconds);
             }
         }
     }
@@ -609,6 +556,12 @@ internal class IntelligentTestRunnerClient
         }
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
+        if (string.IsNullOrEmpty(repository))
+        {
+            Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
+            return 0;
+        }
+
         var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository), SerializerSettings);
         Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
@@ -664,9 +617,9 @@ internal class IntelligentTestRunnerClient
 
                 try
                 {
-                    using var response = await multipartRequest.PostAsync(
+                    using var response = await multipartRequest.PostAsync([
                                                                     new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
-                                                                    new MultipartFormItem("packfile", "application/octet-stream", null, fileStream))
+                                                                    new MultipartFormItem("packfile", "application/octet-stream", null, fileStream)])
                                                                .ConfigureAwait(false);
                     var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
                     if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
@@ -691,6 +644,125 @@ internal class IntelligentTestRunnerClient
         }
     }
 
+    private async Task<SearchCommitResponse> GetCommitsAsync()
+    {
+        var gitLogOutput = await RunGitCommandAsync("log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits).ConfigureAwait(false);
+        if (gitLogOutput is null)
+        {
+            Log.Warning("ITR: 'git log...' command is null");
+            return new SearchCommitResponse(null, null, false);
+        }
+
+        var localCommits = gitLogOutput.Output.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
+        if (localCommits.Length == 0)
+        {
+            Log.Debug("ITR: Local commits not found. (since 1 month ago)");
+            return new SearchCommitResponse(null, null, false);
+        }
+
+        Log.Debug<int>("ITR: Local commits = {Count}", localCommits.Length);
+        var remoteCommitsData = await SearchCommitAsync(localCommits).ConfigureAwait(false);
+        return new SearchCommitResponse(localCommits, remoteCommitsData, true);
+
+        async Task<string[]> SearchCommitAsync(string[]? commits)
+        {
+            if (commits is null)
+            {
+                return Array.Empty<string>();
+            }
+
+            Log.Debug("ITR: Searching commits...");
+
+            Data<object>[] commitRequests;
+            if (commits.Length == 0)
+            {
+                commitRequests = Array.Empty<Data<object>>();
+            }
+            else
+            {
+                commitRequests = new Data<object>[commits.Length];
+                for (var i = 0; i < commits.Length; i++)
+                {
+                    commitRequests[i] = new Data<object>(commits[i], CommitType, default);
+                }
+            }
+
+            var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
+            var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, repository), SerializerSettings);
+            Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
+            var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
+
+            return await WithRetries(InternalSearchCommitAsync, jsonPushedShaBytes, MaxRetries).ConfigureAwait(false);
+
+            async Task<string[]> InternalSearchCommitAsync(byte[] state, bool finalTry)
+            {
+                var sw = Stopwatch.StartNew();
+                try
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommits();
+                    var request = _apiRequestFactory.Create(_searchCommitsUrl);
+                    SetRequestHeader(request);
+
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug("ITR: Searching commits from: {Url}", _searchCommitsUrl.ToString());
+                    }
+
+                    string? responseContent;
+                    try
+                    {
+                        using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                        responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                        if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                        {
+                            TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(errorType);
+                        }
+
+                        CheckResponseStatusCode(response, responseContent, finalTry);
+                    }
+                    catch
+                    {
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(MetricTags.CIVisibilityErrorType.Network);
+                        throw;
+                    }
+
+                    Log.Debug("ITR: JSON RS = {Json}", responseContent);
+                    if (string.IsNullOrEmpty(responseContent))
+                    {
+                        return Array.Empty<string>();
+                    }
+
+                    var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
+                    if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
+                    {
+                        return Array.Empty<string>();
+                    }
+
+                    var stringArray = new string[deserializedResult.Data.Length];
+                    for (var i = 0; i < deserializedResult.Data.Length; i++)
+                    {
+                        var value = deserializedResult.Data[i].Id;
+                        if (value is not null)
+                        {
+                            if (ShaRegex.Matches(value).Count != 1)
+                            {
+                                ThrowHelper.ThrowException($"The value '{value}' is not a valid Sha.");
+                            }
+
+                            stringArray[i] = value;
+                        }
+                    }
+
+                    return stringArray;
+                }
+                finally
+                {
+                    TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(sw.Elapsed.TotalMilliseconds);
+                }
+            }
+        }
+    }
+
     private async Task<ObjectPackFilesResult> GetObjectsPackFileFromWorkingDirectoryAsync(string[]? commitsToInclude, string[]? commitsToExclude)
     {
         Log.Debug("ITR: Getting objects...");
@@ -708,9 +780,30 @@ internal class IntelligentTestRunnerClient
             return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
         }
 
-        Log.Debug("ITR: Packing objects...");
+        // Sanitize object list (on some cases we get a "fatal: expected object ID, got garbage" error because the object list has invalid escape chars)
+        var objectsOutput = getObjectsCommand!.Output;
+        var matches = ShaRegex.Matches(objectsOutput);
+        var lstObjectsSha = new List<string>(matches.Count);
+        foreach (Match? match in matches)
+        {
+            if (match is not null)
+            {
+                lstObjectsSha.Add(match.Value);
+            }
+        }
+
+        if (lstObjectsSha.Count == 0)
+        {
+            // If not objects has been returned we skip the pack + upload.
+            Log.Debug("ITR: No valid objects were returned from the git rev-list command.");
+            return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
+        }
+
+        objectsOutput = string.Join("\n", lstObjectsSha) + "\n";
+
+        Log.Debug<int>("ITR: Packing {NumObjects} objects...", lstObjectsSha.Count);
         var getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-        var packObjectsResultCommand = await RunGitCommandAsync(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output).ConfigureAwait(false);
+        var packObjectsResultCommand = await RunGitCommandAsync(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, objectsOutput).ConfigureAwait(false);
         if (packObjectsResultCommand is null)
         {
             Log.Warning("ITR: 'git pack-objects...' command is null");
@@ -773,7 +866,7 @@ internal class IntelligentTestRunnerClient
     {
         request.AddHeader(HttpHeaderNames.TraceId, _id);
         request.AddHeader(HttpHeaderNames.ParentId, _id);
-        if (_useEvpProxy)
+        if (_eventPlatformProxySupport is EventPlatformProxySupport.V2 or EventPlatformProxySupport.V4)
         {
             request.AddHeader(EvpSubdomainHeader, "api");
         }
@@ -812,6 +905,10 @@ internal class IntelligentTestRunnerClient
 
     private async Task<T> WithRetries<T, TState>(Func<TState, bool, Task<T>> sendDelegate, TState state, int numOfRetries)
     {
+        // Because there's an integration to Http requests we need to make sure that if the AssemblyResolver.ctor of the TestPlatform started then it has finished
+        // before continuing to avoid a race condition.
+        await ClrProfiler.AutoInstrumentation.Testing.AssemblyResolverCtorIntegration.WaitForCallToBeCompletedAsync().ConfigureAwait(false);
+
         var retryCount = 1;
         var sleepDuration = 100; // in milliseconds
 
@@ -904,11 +1001,35 @@ internal class IntelligentTestRunnerClient
         return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
     }
 
+    private async Task<string> GetCommitShaAsync()
+    {
+        var gitOutput = await RunGitCommandAsync("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
+        var gitSha = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+        if (string.IsNullOrEmpty(gitSha) && CIEnvironmentValues.Instance.Commit is { Length: > 0 } commitSha)
+        {
+            return commitSha;
+        }
+
+        return gitSha;
+    }
+
     private async Task<ProcessHelpers.CommandOutput?> RunGitCommandAsync(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
     {
+        // Because there's an integration to Process.Start we need to make sure that if the AssemblyResolver.ctor of the TestPlatform started then it has finished
+        // before continuing to avoid a race condition.
+        await ClrProfiler.AutoInstrumentation.Testing.AssemblyResolverCtorIntegration.WaitForCallToBeCompletedAsync().ConfigureAwait(false);
+
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", arguments, _workingDirectory), input).ConfigureAwait(false);
+        var gitOutput = await ProcessHelpers.RunCommandAsync(
+                            new ProcessHelpers.Command(
+                                "git",
+                                arguments,
+                                _workingDirectory,
+                                outputEncoding: Encoding.Default,
+                                errorEncoding: Encoding.Default,
+                                inputEncoding: Encoding.Default),
+                            input).ConfigureAwait(false);
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
         if (gitOutput is null)
         {
@@ -921,6 +1042,24 @@ internal class IntelligentTestRunnerClient
         }
 
         return gitOutput;
+    }
+
+    private readonly struct SearchCommitResponse
+    {
+        public readonly string[] LocalCommits;
+        public readonly string[] RemoteCommits;
+        public readonly bool IsOk;
+
+        public SearchCommitResponse(string[]? localCommits, string[]? remoteCommits, bool isOk)
+        {
+            LocalCommits = localCommits ?? Array.Empty<string>();
+            RemoteCommits = remoteCommits ?? Array.Empty<string>();
+            IsOk = isOk;
+        }
+
+        public bool HasCommits => LocalCommits.Length > 0;
+
+        public string[] MissingCommits => LocalCommits.Except(RemoteCommits).ToArray();
     }
 
     private readonly struct DataEnvelope<T>
@@ -958,9 +1097,19 @@ internal class IntelligentTestRunnerClient
         [JsonProperty("repository_url")]
         public readonly string RepositoryUrl;
 
+        [JsonProperty("correlation_id")]
+        public readonly string? CorrelationId;
+
         public Metadata(string repositoryUrl)
         {
             RepositoryUrl = repositoryUrl;
+            CorrelationId = null;
+        }
+
+        public Metadata(string repositoryUrl, string? correlationId)
+        {
+            RepositoryUrl = repositoryUrl;
+            CorrelationId = correlationId;
         }
     }
 
@@ -1010,6 +1159,24 @@ internal class IntelligentTestRunnerClient
         }
     }
 
+    public readonly struct SkippableTestsResponse
+    {
+        public readonly string? CorrelationId;
+        public readonly SkippableTest[] Tests;
+
+        public SkippableTestsResponse()
+        {
+            CorrelationId = null;
+            Tests = Array.Empty<SkippableTest>();
+        }
+
+        public SkippableTestsResponse(string? correlationId, SkippableTest[] tests)
+        {
+            CorrelationId = correlationId;
+            Tests = tests;
+        }
+    }
+
     private readonly struct SettingsQuery
     {
         [JsonProperty("service")]
@@ -1049,6 +1216,9 @@ internal class IntelligentTestRunnerClient
 
         [JsonProperty("tests_skipping")]
         public readonly bool? TestsSkipping;
+
+        [JsonProperty("require_git")]
+        public readonly bool? RequireGit;
 #pragma warning restore CS0649
     }
 

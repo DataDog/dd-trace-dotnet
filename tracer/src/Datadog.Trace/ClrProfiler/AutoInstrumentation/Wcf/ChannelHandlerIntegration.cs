@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if NETFRAMEWORK
 using System;
 using System.ComponentModel;
@@ -48,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             }
 
             // webHttpResourceNames aren't available here, so no point in checking
-            return new CallTargetState(WcfCommon.CreateScope(request, useWebHttpResourceNames: false));
+            return new CallTargetState(WcfCommon.CreateScope(request.RequestMessage, useWebHttpResourceNames: false));
         }
 
         /// <summary>

@@ -131,6 +131,12 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\WindowsThreadInfo.cpp">
       <Filter>External Sources</Filter>
     </ClCompile>
+    <ClCompile Include="EnabledProfilersTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\EtwEventsManager.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
     <ClCompile Include="ProfileTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
@@ -141,6 +147,17 @@
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="ErrorCodeTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\ProfilerLogger.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.cpp" />
+    <ClCompile Include="FakeSamples.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="LinkedListTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
   </ItemGroup>
@@ -167,6 +184,10 @@
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="RuntimeInfoHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.h" />
+    <ClInclude Include="FakeSamples.h">
       <Filter>Helpers</Filter>
     </ClInclude>
   </ItemGroup>

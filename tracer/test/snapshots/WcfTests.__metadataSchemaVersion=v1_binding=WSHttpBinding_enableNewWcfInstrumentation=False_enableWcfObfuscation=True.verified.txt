@@ -9,6 +9,7 @@
     ParentId: Id_3,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -16,9 +17,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -37,6 +36,7 @@
     ParentId: Id_5,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -44,9 +44,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -65,6 +63,7 @@
     ParentId: Id_7,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -72,9 +71,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -93,6 +90,7 @@
     ParentId: Id_9,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -100,9 +98,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -121,6 +117,7 @@
     ParentId: Id_11,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -128,9 +125,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -149,6 +144,7 @@
     ParentId: Id_13,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -156,9 +152,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -177,6 +171,7 @@
     ParentId: Id_15,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -184,9 +179,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -205,6 +198,7 @@
     ParentId: Id_17,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -212,9 +206,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -233,6 +225,7 @@
     ParentId: Id_19,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -240,9 +233,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -261,6 +252,7 @@
     ParentId: Id_21,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -268,9 +260,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -289,6 +279,7 @@
     ParentId: Id_23,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -296,9 +287,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -317,6 +306,7 @@
     ParentId: Id_25,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -324,9 +314,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -345,6 +333,7 @@
     ParentId: Id_27,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -352,9 +341,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -378,9 +365,7 @@
       otel.trace_id: Guid_2,
       runtime-id: Guid_1,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,

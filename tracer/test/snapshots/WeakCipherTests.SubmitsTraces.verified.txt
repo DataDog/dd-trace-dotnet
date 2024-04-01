@@ -11,14 +11,17 @@
       language: dotnet,
       runtime-id: Guid_1,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
+      "hash": 1966097305,
+      "location": {
+        "path": "Samples.WeakCipher.Program",
+        "method": "VulnerableSection"
+      },
       "evidence": {
         "value": "DES"
       }
@@ -46,14 +49,17 @@
       language: dotnet,
       runtime-id: Guid_1,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
+      "hash": 1966097305,
+      "location": {
+        "path": "Samples.WeakCipher.Program",
+        "method": "VulnerableSection"
+      },
       "evidence": {
         "value": "DES"
       }
@@ -81,14 +87,17 @@
       language: dotnet,
       runtime-id: Guid_1,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
+      "hash": 1966097305,
+      "location": {
+        "path": "Samples.WeakCipher.Program",
+        "method": "VulnerableSection"
+      },
       "evidence": {
         "value": "RC2"
       }
@@ -116,14 +125,17 @@
       language: dotnet,
       runtime-id: Guid_1,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
+      "hash": 1966097305,
+      "location": {
+        "path": "Samples.WeakCipher.Program",
+        "method": "VulnerableSection"
+      },
       "evidence": {
         "value": "RC2"
       }
@@ -151,14 +163,17 @@
       language: dotnet,
       runtime-id: Guid_1,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
+      "hash": 1966097305,
+      "location": {
+        "path": "Samples.WeakCipher.Program",
+        "method": "VulnerableSection"
+      },
       "evidence": {
         "value": "TripleDES"
       }
@@ -186,14 +201,17 @@
       language: dotnet,
       runtime-id: Guid_1,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "WEAK_CIPHER",
+      "hash": 1966097305,
+      "location": {
+        "path": "Samples.WeakCipher.Program",
+        "method": "VulnerableSection"
+      },
       "evidence": {
         "value": "TripleDES"
       }

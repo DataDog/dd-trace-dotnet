@@ -45,7 +45,6 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         protected override MultipartFormItem CreateMultipartFormItem(EventsBuffer<IEvent> eventsBuffer)
         {
-            var totalEvents = eventsBuffer.Count;
             var index = Count;
             var eventInBytes = MessagePackSerializer.Serialize(new CoveragePayload(eventsBuffer), _formatterResolver);
             CIVisibility.Log.Debug<int, int>("CICodeCoveragePayload: Serialized {Count} test code coverage as a single multipart item with {Size} bytes.", eventsBuffer.Count, eventInBytes.Length);

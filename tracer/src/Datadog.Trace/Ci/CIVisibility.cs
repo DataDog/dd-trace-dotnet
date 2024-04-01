@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -29,7 +30,9 @@ namespace Datadog.Trace.Ci
         private static CIVisibilitySettings? _settings;
         private static int _firstInitialization = 1;
         private static Task? _skippableTestsTask;
+        private static string? _skippableTestsCorrelationId;
         private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
+        private static string? _osVersion;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
@@ -42,6 +45,8 @@ namespace Datadog.Trace.Ci
             get => LazyInitializer.EnsureInitialized(ref _settings, () => CIVisibilitySettings.FromDefaultSources())!;
             private set => _settings = value;
         }
+
+        public static EventPlatformProxySupport EventPlatformProxySupport { get; private set; } = EventPlatformProxySupport.None;
 
         public static CITracerManager? Manager
         {
@@ -75,7 +80,12 @@ namespace Datadog.Trace.Ci
             var eventPlatformProxyEnabled = false;
             if (!settings.Agentless)
             {
-                if (!settings.ForceAgentsEvpProxy)
+                if (settings.ForceAgentsEvpProxy)
+                {
+                    // if we force the evp proxy (internal switch)
+                    EventPlatformProxySupport = EventPlatformProxySupport.V2;
+                }
+                else
                 {
                     discoveryService = DiscoveryService.Create(
                         new ImmutableExporterSettings(settings.TracerSettings.ExporterInternal, true),
@@ -83,13 +93,10 @@ namespace Datadog.Trace.Ci
                         initialRetryDelayMs: 10,
                         maxRetryDelayMs: 1000,
                         recheckIntervalMs: int.MaxValue);
-                }
-                else
-                {
-                    Log.Information("Using the Event platform proxy through the agent.");
+                    EventPlatformProxySupport = IsEventPlatformProxySupportedByAgent(discoveryService);
                 }
 
-                eventPlatformProxyEnabled = settings.ForceAgentsEvpProxy || IsEventPlatformProxySupportedByAgent(discoveryService);
+                eventPlatformProxyEnabled = EventPlatformProxySupport != EventPlatformProxySupport.None;
             }
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
@@ -157,6 +164,7 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility from dd-trace / runner");
             Settings = settings;
+            EventPlatformProxySupport = settings.ForceAgentsEvpProxy ? EventPlatformProxySupport.V2 : IsEventPlatformProxySupportedByAgent(discoveryService);
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
@@ -316,16 +324,15 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        internal static bool HasSkippableTests()
-        {
-            return _skippableTestsBySuiteAndName?.Count > 0;
-        }
+        internal static bool HasSkippableTests() => _skippableTestsBySuiteAndName?.Count > 0;
 
-        internal static string GetServiceNameFromRepository(string repository)
+        internal static string? GetSkippableTestsCorrelationId() => _skippableTestsCorrelationId;
+
+        internal static string GetServiceNameFromRepository(string? repository)
         {
             if (!string.IsNullOrEmpty(repository))
             {
-                if (repository.EndsWith("/") || repository.EndsWith("\\"))
+                if (repository!.EndsWith("/") || repository.EndsWith("\\"))
                 {
                     repository = repository.Substring(0, repository.Length - 1);
                 }
@@ -361,7 +368,14 @@ namespace Datadog.Trace.Ci
 
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            factory = new HttpClientRequestFactory(tracerSettings.ExporterInternal.AgentUriInternal, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
+            factory = new HttpClientRequestFactory(
+                tracerSettings.ExporterInternal.AgentUriInternal,
+                AgentHttpHeaderNames.DefaultHeaders,
+                handler: new System.Net.Http.HttpClientHandler
+                {
+                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+                },
+                timeout: timeout);
 #else
             Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
             factory = new ApiWebRequestFactory(tracerSettings.ExporterInternal.AgentUriInternal, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
@@ -400,47 +414,54 @@ namespace Datadog.Trace.Ci
 
         internal static string GetOperatingSystemVersion()
         {
-            switch (FrameworkDescription.Instance.OSPlatform)
+            // we cache the OS version because is called multiple times during the test execution
+            // and we want to avoid multiple system calls for Linux and macOS
+            return _osVersion ??= GetOperatingSystemVersionInternal();
+
+            static string GetOperatingSystemVersionInternal()
             {
-                case OSPlatformName.Linux:
-                    if (!string.IsNullOrEmpty(HostMetadata.Instance.KernelRelease))
-                    {
-                        return HostMetadata.Instance.KernelRelease!;
-                    }
-
-                    break;
-                case OSPlatformName.MacOS:
-                    var context = SynchronizationContext.Current;
-                    try
-                    {
-                        if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
+                switch (FrameworkDescription.Instance.OSPlatform)
+                {
+                    case OSPlatformName.Linux:
+                        if (!string.IsNullOrEmpty(HostMetadata.Instance.KernelRelease))
                         {
-                            SynchronizationContext.SetSynchronizationContext(null);
+                            return HostMetadata.Instance.KernelRelease!;
                         }
 
-                        var osxVersionCommand = AsyncUtil.RunSync(() => ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")));
-                        var osxVersion = osxVersionCommand?.Output.Trim(' ', '\n');
-                        if (!string.IsNullOrEmpty(osxVersion))
+                        break;
+                    case OSPlatformName.MacOS:
+                        var context = SynchronizationContext.Current;
+                        try
                         {
-                            return osxVersion!;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning(ex, "Error getting OS version on macOS");
-                    }
-                    finally
-                    {
-                        if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
-                        {
-                            SynchronizationContext.SetSynchronizationContext(null);
-                        }
-                    }
+                            if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
+                            {
+                                SynchronizationContext.SetSynchronizationContext(null);
+                            }
 
-                    break;
+                            var osxVersionCommand = AsyncUtil.RunSync(() => ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")));
+                            var osxVersion = osxVersionCommand?.Output.Trim(' ', '\n');
+                            if (!string.IsNullOrEmpty(osxVersion))
+                            {
+                                return osxVersion!;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning(ex, "Error getting OS version on macOS");
+                        }
+                        finally
+                        {
+                            if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
+                            {
+                                SynchronizationContext.SetSynchronizationContext(null);
+                            }
+                        }
+
+                        break;
+                }
+
+                return Environment.OSVersion.VersionString;
             }
-
-            return Environment.OSVersion.VersionString;
         }
 
         /// <summary>
@@ -558,7 +579,7 @@ namespace Datadog.Trace.Ci
                 var settings = Settings;
                 var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, settings));
 
-                Task? uploadRepositoryChangesTask = null;
+                Task<long>? uploadRepositoryChangesTask = null;
                 if (settings.GitUploadEnabled != false)
                 {
                     // Upload the git metadata
@@ -570,6 +591,16 @@ namespace Datadog.Trace.Ci
                 if (settings.CodeCoverageEnabled == null || settings.TestsSkippingEnabled == null)
                 {
                     var itrSettings = await lazyItrClient.Value.GetSettingsAsync().ConfigureAwait(false);
+
+                    // we check if the backend require the git metadata first
+                    if (itrSettings.RequireGit == true && uploadRepositoryChangesTask is not null)
+                    {
+                        Log.Debug("ITR: require git received, awaiting for the git repository upload.");
+                        await uploadRepositoryChangesTask.ConfigureAwait(false);
+
+                        Log.Debug("ITR: calling the configuration api again.");
+                        itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+                    }
 
                     if (settings.CodeCoverageEnabled == null && itrSettings.CodeCoverage.HasValue)
                     {
@@ -598,10 +629,10 @@ namespace Datadog.Trace.Ci
                 if (settings.TestsSkippingEnabled == true)
                 {
                     var skippeableTests = await lazyItrClient.Value.GetSkippableTestsAsync().ConfigureAwait(false);
-                    Log.Information<int>("ITR: SkippableTests = {Length}.", skippeableTests.Length);
+                    Log.Information<string?, int>("ITR: CorrelationId = {CorrelationId}, SkippableTests = {Length}.", skippeableTests.CorrelationId, skippeableTests.Tests.Length);
 
                     var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
-                    foreach (var item in skippeableTests)
+                    foreach (var item in skippeableTests.Tests)
                     {
                         if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
                         {
@@ -618,6 +649,7 @@ namespace Datadog.Trace.Ci
                         name.Add(item);
                     }
 
+                    _skippableTestsCorrelationId = skippeableTests.CorrelationId;
                     _skippableTestsBySuiteAndName = skippableTestsBySuiteAndName;
                     Log.Debug("ITR: SkippableTests dictionary has been built.");
                 }
@@ -632,36 +664,76 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        private static bool IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService)
+        private static EventPlatformProxySupport IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService)
         {
-            var eventPlatformProxyEnabled = false;
-            AgentConfiguration? agentConfiguration = null;
-            ManualResetEventSlim manualResetEventSlim = new(false);
-            LifetimeManager.Instance.AddShutdownTask(() => manualResetEventSlim.Set());
-
-            Log.Debug("Waiting for agent configuration...");
-            discoveryService.SubscribeToChanges(CallBack);
-            void CallBack(AgentConfiguration aConfiguration)
+            if (discoveryService is NullDiscoveryService)
             {
-                agentConfiguration = aConfiguration;
-                manualResetEventSlim.Set();
-                discoveryService.RemoveSubscription(CallBack);
-                Log.Debug("Agent configuration received.");
+                return EventPlatformProxySupport.None;
             }
 
-            // We wait up to 5 seconds for the configuration to be retrieved.
-            manualResetEventSlim.Wait(5_000);
-            if (!string.IsNullOrEmpty(Volatile.Read(ref agentConfiguration)?.EventPlatformProxyEndpoint))
+            Log.Debug("Waiting for agent configuration...");
+            var agentConfiguration = new DiscoveryAgentConfigurationCallback(discoveryService).WaitAndGet(5_000);
+            if (agentConfiguration is null)
             {
-                Log.Information("Event platform proxy supported by agent.");
-                eventPlatformProxyEnabled = true;
+                Log.Warning("Discovery service could not retrieve the agent configuration after 5 seconds.");
+                return EventPlatformProxySupport.None;
+            }
+
+            var eventPlatformProxyEndpoint = agentConfiguration.EventPlatformProxyEndpoint;
+            if (!string.IsNullOrEmpty(eventPlatformProxyEndpoint))
+            {
+                if (eventPlatformProxyEndpoint?.Contains("/v2") == true)
+                {
+                    Log.Information("Event platform proxy V2 supported by agent.");
+                    return EventPlatformProxySupport.V2;
+                }
+
+                if (eventPlatformProxyEndpoint?.Contains("/v4") == true)
+                {
+                    Log.Information("Event platform proxy V4 supported by agent.");
+                    return EventPlatformProxySupport.V4;
+                }
+
+                Log.Information("EventPlatformProxyEndpoint: '{EVPEndpoint}' not supported.", eventPlatformProxyEndpoint);
             }
             else
             {
                 Log.Information("Event platform proxy is not supported by the agent. Falling back to the APM protocol.");
             }
 
-            return eventPlatformProxyEnabled;
+            return EventPlatformProxySupport.None;
+        }
+
+        private class DiscoveryAgentConfigurationCallback
+        {
+            private readonly ManualResetEventSlim _manualResetEventSlim;
+            private readonly Action<AgentConfiguration> _callback;
+            private readonly IDiscoveryService _discoveryService;
+            private AgentConfiguration? _agentConfiguration;
+
+            public DiscoveryAgentConfigurationCallback(IDiscoveryService discoveryService)
+            {
+                _manualResetEventSlim = new ManualResetEventSlim();
+                LifetimeManager.Instance.AddShutdownTask(() => _manualResetEventSlim.Set());
+                _discoveryService = discoveryService;
+                _callback = CallBack;
+                _agentConfiguration = null;
+                _discoveryService.SubscribeToChanges(_callback);
+            }
+
+            public AgentConfiguration? WaitAndGet(int timeoutInMs = 5_000)
+            {
+                _manualResetEventSlim.Wait(timeoutInMs);
+                return _agentConfiguration;
+            }
+
+            private void CallBack(AgentConfiguration agentConfiguration)
+            {
+                _agentConfiguration = agentConfiguration;
+                _manualResetEventSlim.Set();
+                _discoveryService.RemoveSubscription(_callback);
+                Log.Debug("Agent configuration received.");
+            }
         }
     }
 }

@@ -430,7 +430,7 @@ namespace Datadog.Trace.DuckTyping
 
             FieldBuilder instanceField = proxyTypeBuilder.DefineField("_currentInstance", instanceType, FieldAttributes.Private | FieldAttributes.InitOnly);
 
-            PropertyBuilder propInstance = proxyTypeBuilder.DefineProperty("Instance", PropertyAttributes.None, typeof(object), null);
+            PropertyBuilder propInstance = proxyTypeBuilder.DefineProperty(nameof(IDuckType.Instance), PropertyAttributes.None, typeof(object), null);
             MethodBuilder getPropInstance = proxyTypeBuilder.DefineMethod(
                 "get_Instance",
                 MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
@@ -447,7 +447,7 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ret);
             propInstance.SetGetMethod(getPropInstance);
 
-            PropertyBuilder propType = proxyTypeBuilder.DefineProperty("Type", PropertyAttributes.None, typeof(Type), null);
+            PropertyBuilder propType = proxyTypeBuilder.DefineProperty(nameof(IDuckType.Type), PropertyAttributes.None, typeof(Type), null);
             MethodBuilder getPropType = proxyTypeBuilder.DefineMethod(
                 "get_Type",
                 MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
@@ -459,10 +459,20 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ret);
             propType.SetGetMethod(getPropType);
 
-            var toStringTargetType = targetType.GetMethod("ToString", Type.EmptyTypes);
+            MethodBuilder getInstanceMethod = proxyTypeBuilder.DefineMethod(
+                nameof(IDuckType.GetInternalDuckTypedInstance),
+                MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot);
+            var getInstanceGenericTypeParameters = getInstanceMethod.DefineGenericParameters("TReturn");
+            getInstanceMethod.SetReturnType(getInstanceGenericTypeParameters[0].MakeByRefType());
+            il = getInstanceMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldflda, instanceField);
+            il.Emit(OpCodes.Ret);
+
+            var toStringTargetType = targetType.GetMethod(nameof(IDuckType.ToString), Type.EmptyTypes);
             if (toStringTargetType is not null)
             {
-                MethodBuilder toStringMethod = proxyTypeBuilder.DefineMethod("ToString", toStringTargetType.Attributes, typeof(string), Type.EmptyTypes);
+                MethodBuilder toStringMethod = proxyTypeBuilder.DefineMethod(nameof(IDuckType.ToString), toStringTargetType.Attributes, typeof(string), Type.EmptyTypes);
                 il = toStringMethod.GetILGenerator();
                 il.Emit(OpCodes.Ldarg_0);
                 if (instanceType.IsValueType)

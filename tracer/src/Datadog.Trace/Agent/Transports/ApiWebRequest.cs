@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -74,8 +75,9 @@ namespace Datadog.Trace.Agent.Transports
         /// WARNING: Name and FileName of each MultipartFormItem instance must be ASCII encoding compatible.
         /// </summary>
         /// <param name="items">Multipart form data items</param>
+        /// <param name="multipartCompression">Multipart compression</param>
         /// <returns>Task with the response</returns>
-        public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
+        public async Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
         {
             if (items is null)
             {
@@ -84,9 +86,26 @@ namespace Datadog.Trace.Agent.Transports
 
             Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
 
-            ResetRequest(method: "POST", contentType: "multipart/form-data; boundary=" + Boundary, contentEncoding: null);
+            ResetRequest(method: "POST", contentType: "multipart/form-data; boundary=" + Boundary, contentEncoding: multipartCompression == MultipartCompression.GZip ? "gzip" : null);
+            using (var reqStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
+            {
+                if (multipartCompression == MultipartCompression.GZip)
+                {
+                    Log.Debug("Using MultipartCompression.GZip");
+                    using var gzip = new GZipStream(reqStream, CompressionMode.Compress, leaveOpen: true);
+                    await WriteToStreamAsync(items, gzip).ConfigureAwait(false);
+                    await gzip.FlushAsync().ConfigureAwait(false);
+                    Log.Debug("Compressing multipart payload...");
+                }
+                else
+                {
+                    await WriteToStreamAsync(items, reqStream).ConfigureAwait(false);
+                }
+            }
 
-            using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
+            return await FinishAndGetResponse().ConfigureAwait(false);
+
+            async Task WriteToStreamAsync(MultipartFormItem[] multipartItems, Stream requestStream)
             {
                 // Write form request using the boundary
                 var boundaryBytes = _boundarySeparatorInBytes ??= Encoding.ASCII.GetBytes(BoundarySeparator);
@@ -94,7 +113,7 @@ namespace Datadog.Trace.Agent.Transports
 
                 // Write each MultipartFormItem
                 var itemsWritten = 0;
-                foreach (var item in items)
+                foreach (var item in multipartItems)
                 {
                     byte[] headerBytes = null;
 
@@ -159,8 +178,6 @@ namespace Datadog.Trace.Agent.Transports
                     await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
                 }
             }
-
-            return await FinishAndGetResponse().ConfigureAwait(false);
         }
 
         private void ResetRequest(string method, string contentType, string contentEncoding)

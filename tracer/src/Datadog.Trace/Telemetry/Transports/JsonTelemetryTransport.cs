@@ -28,6 +28,7 @@ namespace Datadog.Trace.Telemetry.Transports
         private readonly IApiRequestFactory _requestFactory;
         private readonly Uri _endpoint;
         private readonly string? _containerId;
+        private readonly string? _entityId;
         private readonly bool _enableDebug;
 
         protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug)
@@ -36,6 +37,7 @@ namespace Datadog.Trace.Telemetry.Transports
             _enableDebug = enableDebug;
             _endpoint = _requestFactory.GetEndpoint(TelemetryConstants.TelemetryPath);
             _containerId = ContainerMetadata.GetContainerId();
+            _entityId = ContainerMetadata.GetEntityId();
         }
 
         protected string GetEndpointInfo() => _requestFactory.Info(_endpoint);
@@ -63,6 +65,11 @@ namespace Datadog.Trace.Telemetry.Transports
                 if (_containerId is not null)
                 {
                     request.AddHeader(TelemetryConstants.ContainerIdHeader, _containerId);
+                }
+
+                if (_entityId is not null)
+                {
+                    request.AddHeader(TelemetryConstants.EntityIdHeader, _entityId);
                 }
 
                 TelemetryFactory.Metrics.RecordCountTelemetryApiRequests(endpointMetricTag);

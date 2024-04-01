@@ -1,0 +1,41 @@
+﻿using System;
+using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.Versioning;
+using System.Threading.Tasks;
+
+[assembly: CompilationRelaxations(8)]
+[assembly: RuntimeCompatibility(WrapNonExceptionThrows = true)]
+[assembly: Debuggable(DebuggableAttribute.DebuggingModes.Default | DebuggableAttribute.DebuggingModes.DisableOptimizations | DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints | DebuggableAttribute.DebuggingModes.EnableEditAndContinue)]
+[assembly: TargetFramework(".NETStandard,Version=v2.0", FrameworkDisplayName = "")]
+[assembly: AssemblyCompany("CoverageRewriterAssembly")]
+[assembly: AssemblyConfiguration("Debug")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyInformationalVersion("1.0.0")]
+[assembly: AssemblyProduct("CoverageRewriterAssembly")]
+[assembly: AssemblyTitle("CoverageRewriterAssembly")]
+[assembly: AssemblyVersion("1.0.0.0")]
+namespace CoverageRewriterAssembly
+{
+	public class Class1
+	{
+		public string MyProperty { get; set; }
+
+		public void Main()
+		{
+			Console.WriteLine("Main Method");
+			for (int i = 0; i < 100; i++)
+			{
+				Console.WriteLine(i);
+			}
+			MyProperty = "Value";
+			Console.WriteLine(MyProperty);
+		}
+
+		public async Task MainAsync()
+		{
+			await Task.Delay(100);
+		}
+	}
+}

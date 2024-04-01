@@ -48,7 +48,7 @@ public class DeduplicationTests : TestHelper
         var filename = deduplicationEnabled ? "iast.deduplication.deduplicated" : "iast.deduplication.duplicated";
 
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var process = RunSampleAndWaitForExit(agent, "5");
+        using var process = await RunSampleAndWaitForExit(agent, "5");
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();

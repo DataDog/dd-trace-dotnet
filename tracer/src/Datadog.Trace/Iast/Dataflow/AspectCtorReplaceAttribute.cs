@@ -5,23 +5,20 @@
 
 #nullable enable
 
+using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+
 namespace Datadog.Trace.Iast.Dataflow;
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal sealed class AspectCtorReplaceAttribute : AspectAttribute
 {
     public AspectCtorReplaceAttribute(string targetMethod)
-        : base(targetMethod)
+        : base(targetMethod, string.Empty, new int[0], new bool[0], new AspectFilter[0], AspectType.Default)
     {
     }
 
     public AspectCtorReplaceAttribute(string targetMethod, params AspectFilter[] filters)
-        : base(targetMethod, filters)
-    {
-    }
-
-    public AspectCtorReplaceAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
-        : base(targetMethod, aspectType, vulnerabilityTypes)
+        : base(targetMethod, string.Empty, new int[0], new bool[0], filters, AspectType.Default)
     {
     }
 }

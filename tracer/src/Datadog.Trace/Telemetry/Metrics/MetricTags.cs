@@ -217,6 +217,12 @@ internal static class MetricTags
         [Description("integration_name:remoting")]Remoting,
         [Description("integration_name:trustboundaryviolation")] TrustBoundaryViolation,
         [Description("integration_name:unvalidatedredirect")] UnvalidatedRedirect,
+        [Description("integration_name:testplatformassemblyresolver")] TestPlatformAssemblyResolver,
+        [Description("integration_name:stacktraceleak")] StackTraceLeak,
+        [Description("integration_name:xpathinjection")] XpathInjection,
+        [Description("integration_name:reflectioninjection")] ReflectionInjection,
+        [Description("integration_name:xss")] Xss,
+        [Description("integration_name:nhibernate")] NHibernate,
     }
 
     public enum InstrumentationError
@@ -237,6 +243,13 @@ internal static class MetricTags
         [Description("waf_version;rule_triggered:true;request_blocked:true;waf_timeout:false;request_excluded:false")]RuleTriggeredAndBlocked,
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:true;request_excluded:false")]WafTimeout,
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
+    }
+
+    public enum TruncationReason
+    {
+        [Description("truncation_reason:string_too_long")]StringTooLong = 1,
+        [Description("truncation_reason:list_or_map_too_large")]ListOrMapTooLarge = 2,
+        [Description("truncation_reason:object_too_deep")]ObjectTooDeep = 4,
     }
 
     [EnumExtensions]
@@ -276,6 +289,13 @@ internal static class MetricTags
         [Description("vulnerability_type:xcontenttype_header_missing")] XContentTypeHeaderMissing = 14,
         [Description("vulnerability_type:trust_boundary_violation")] TrustBoundaryViolation = 15,
         [Description("vulnerability_type:hsts_header_missing")] HstsHeaderMissing = 16,
+        [Description("vulnerability_type:header_injection")] HeaderInjection = 17,
+        [Description("vulnerability_type:stacktrace_leak")] StackTraceLeak = 18,
+        [Description("vulnerability_type:nosql_mongodb_injection")] NoSqlMongoDbInjection = 19,
+        [Description("vulnerability_type:xpath_injection")] XPathInjection = 20,
+        [Description("vulnerability_type:reflection_injection")] ReflectionInjection = 21,
+        [Description("vulnerability_type:insecure_auth_protocol")] InsecureAuthProtocol = 22,
+        [Description("vulnerability_type:xss")] Xss = 23,
     }
 
     public enum CIVisibilityTestFramework

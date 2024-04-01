@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Policy;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Telemetry;
@@ -68,6 +69,36 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
         var testName = "Security." + nameof(AspNetMvc5) + ".Integrated.IastEnabled";
         await TestStrictTransportSecurityHeaderMissingVulnerability(contentType, returnCode, hstsHeaderValue, xForwardedProto, testName);
     }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData("Vuln.SensitiveName", new string[] { "name", "private_token" }, new string[] { "value", "ShouldBeRedacted" })]
+    [InlineData("Vuln.SensitiveValue", new string[] { "name", "myName", "value", ":bearer secret" }, null)]
+    [InlineData("Vuln.SensitiveValueComplex", new string[] { "name", "myName", "value", ":bear" }, new string[] { "value", "er%20secret" })]
+    [InlineData("NotVulnerable", new string[] { "propagation", "noVulnValue" }, null)]
+    [InlineData("Vuln.NoSensitive", new string[] { "name", "Name", "value", "value" }, new string[] { "value", "moreText" })]
+    [InlineData("NotVulnerable", new string[] { "name", "Sec-WebSocket-Accept" }, new string[] { "value", "moreText" })]
+    [InlineData("Vuln.Origin", new string[] { "name", "access-control-allow-origin", "value", "https://example.com" }, null)]
+    [InlineData("NotVulnerable", new string[] { "name", "access-control-allow-origin", "origin", "NotVulnerable" }, null, true)] // Not vulnerable
+    [InlineData("Vuln.Cookie.SensitiveValue", new string[] { "name", "set-cookie", "value", "token=glpat-eFynewhuKJFGdfGDFGdw;max-age=31536000;Secure;HttpOnly;SameSite=Strict" }, null)]
+    [InlineData("NotVulnerable", null, new string[] { "name", "set-cookie", "value", "NotVulnerable%3D22%3Bmax-age%3D31536000%3BSecure%3BHttpOnly%3BSameSite%3DStrict" })]
+    [InlineData("Vuln.MultipleHeaderValues", new string[] { "name", "extraName", "value", "value2" }, null)]
+    public async Task TestIastHeaderInjectionRequest(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
+    {
+        await TestIastHeaderInjectionRequestVulnerability(testCase, headers, cookies, useValueFromOriginHeader);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/StackTraceLeak")]
+    public async Task TestStackTraceLeak(string test, string url)
+    {
+        await TestStrictTransportSecurityHeaderMissingVulnerability(test, url);
+    }
 }
 
 [Collection("IisTests")]
@@ -101,7 +132,7 @@ public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
 }
 
 [Collection("IisTests")]
-public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>
+public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
     private readonly string _testName;
@@ -118,10 +149,8 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
 
         _iisFixture = iisFixture;
-        _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
         _testName = "Security." + nameof(AspNetMvc5) + ".TelemetryEnabled" +
                  ".Classic" + ".enableIast=true";
-        SetHttpPort(iisFixture.HttpPort);
     }
 
     [Trait("Category", "EndToEnd")]
@@ -135,7 +164,7 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(true);
+        settings.AddIastScrubbing();
         var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{_testName}.path={sanitisedPath}")
@@ -153,12 +182,20 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(true);
+        settings.AddIastScrubbing();
         var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{_testName}.path={sanitisedPath}")
                           .DisableRequireUniquePrefix();
     }
+
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 }
 
 [Collection("IisTests")]
@@ -170,11 +207,12 @@ public class AspNetMvc5ClassicWithoutIast : AspNetMvc5IastTests
     }
 }
 
-public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>
+public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
     private readonly string _testName;
     private readonly bool _enableIast;
+    private readonly bool _classicMode;
 
     public AspNetMvc5IastTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableIast)
         : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
@@ -190,13 +228,20 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
         _iisFixture = iisFixture;
+        _classicMode = classicMode;
         _enableIast = enableIast;
-        _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         _testName = "Security." + nameof(AspNetMvc5)
                  + (classicMode ? ".Classic" : ".Integrated")
                  + ".enableIast=" + enableIast;
-        SetHttpPort(iisFixture.HttpPort);
     }
+
+    public async Task InitializeAsync()
+    {
+        await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        SetHttpPort(_iisFixture.HttpPort);
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
@@ -210,7 +255,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(false);
+        settings.AddIastScrubbing();
         var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{_testName}.path={sanitisedPath}")
@@ -405,6 +450,24 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/XpathInjection?user=klaus&value=pass")]
+    public async Task TestIastXpathInjectionRequest(string test, string url)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
+        var filename = GetFileName("XpathInjection");
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
     [InlineData(AddressesConstants.RequestQuery, "/Iast/UnvalidatedRedirect?param=value", null)]
     public async Task TestIastUnvalidatedRedirectRequest(string test, string url, string body)
     {
@@ -412,6 +475,81 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var filename = GetFileName("UnvalidatedRedirect");
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastReflectedXssRequest()
+    {
+        (Regex RegexPattern, string Replacement) pathScrubber = (new Regex("\"path\": \"AspNetCore[^\\.]+\\."), "\"path\": \"AspNetCore.");
+        (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": -953468592,"), "\"hash\": -623616875,");
+
+        var filename = GetFileName("ReflectedXss");
+        var url = "/Iast/ReflectedXss?param=<b>RawValue</b>";
+        IncludeAllHttpSpans = true;
+        var spans = await SendRequestsAsync(_iisFixture.Agent, 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        settings.AddRegexScrubber(pathScrubber);
+        settings.AddRegexScrubber(hashScrubber);
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastReflectedXssEscapedRequest()
+    {
+        var filename = GetFileName("ReflectedXssEscaped");
+        var url = "/Iast/ReflectedXssEscaped?param=<b>RawValue</b>";
+        IncludeAllHttpSpans = true;
+        var spans = await SendRequestsAsync(_iisFixture.Agent, 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/JavaScriptSerializerDeserializeObject?input=nonexisting.exe", null)]
+    public async Task TestJavaScriptSerializerDeserializeObject(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var filename = GetFileName("JavaScriptSerializerDeserializeObject");
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    protected async Task TestStrictTransportSecurityHeaderMissingVulnerability(string test, string url)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
+        var filename = GetFileName("StackTraceLeak");
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -429,13 +567,54 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(scrubHash: false);
+        settings.AddIastScrubbing();
         var filename = testName + "." + contentType.Replace("/", string.Empty) +
             "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(hstsHeaderValue) ? "empty" : hstsHeaderValue)
             + "." + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
+    }
+
+    protected async Task TestIastHeaderInjectionRequestVulnerability(string testCase, string[] headers, string[] cookies, bool useValueFromOriginHeader = false)
+    {
+        var notVulnerable = testCase.StartsWith("notvulnerable", StringComparison.OrdinalIgnoreCase) || !_enableIast;
+        var filename = "Iast.HeaderInjection.AspNetMvc." + (notVulnerable ? "NotVuln" : testCase) +
+            (useValueFromOriginHeader ? ".origin" : string.Empty);
+        if (!_enableIast) { filename += ".IastDisabled"; }
+        var url = $"/Iast/HeaderInjection?useValueFromOriginHeader={useValueFromOriginHeader}";
+        IncludeAllHttpSpans = true;
+
+        Dictionary<string, string> headersDic = new();
+        Dictionary<string, string> cookiesDic = new();
+
+        if (headers != null)
+        {
+            for (int i = 0; i < headers.Length; i = i + 2)
+            {
+                headersDic.Add(headers[i], headers[i + 1]);
+            }
+        }
+
+        if (cookies != null)
+        {
+            for (int i = 0; i < cookies.Length; i = i + 2)
+            {
+                cookiesDic.Add(cookies[i], cookies[i + 1]);
+            }
+        }
+
+        AddCookies(cookiesDic);
+        AddHeaders(headersDic);
+
+        var spans = await SendRequestsAsync(_iisFixture.Agent, 1, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
     }
 
     protected async Task TestXContentVulnerability(string contentType, int returnCode, string xContentTypeHeaderValue, string testName)
@@ -447,7 +626,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(scrubHash: false);
+        settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{testName}.path={sanitisedUrl}")
                           .DisableRequireUniquePrefix();

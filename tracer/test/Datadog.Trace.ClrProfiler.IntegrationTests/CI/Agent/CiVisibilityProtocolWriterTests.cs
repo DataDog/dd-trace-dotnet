@@ -6,9 +6,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
@@ -18,6 +24,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -99,16 +106,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                 SuiteId = 56,
                 SpanId = 84,
                 Files =
-                {
+                [
                     new FileCoverage
                     {
                         FileName = "MyFile",
-                        Segments =
-                        {
-                            new uint[] { 1, 2, 3, 4 }
-                        }
+                        Bitmap = [1, 2, 3, 4]
                     }
-                }
+                ]
             };
 
             var expectedPayload = new Ci.Agent.Payloads.CICodeCoveragePayload(settings);
@@ -139,6 +143,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                 Assert.True(finalItem.ContentInBytes.Value.ToArray().SequenceEqual(expectedItem.ContentInBytes.Value.ToArray()));
             }
         }
+
+#if NETCOREAPP3_1_OR_GREATER
+        [Fact]
+        public async Task AgentlessCodeCoverageCompressedPayloadTest()
+        {
+            var requestFactory = new HttpClientRequestFactory(new Uri("http://localhost"), Array.Empty<KeyValuePair<string, string>>(), new TestMessageHandler());
+            var apiRequest = (IMultipartApiRequest)requestFactory.Create(new Uri("http://localhost/api"));
+            var response = await apiRequest.PostAsync(
+                                          new[] { new MultipartFormItem("TestName", "application/binary", "TestFileName", "TestContent"u8.ToArray()) },
+                                          MultipartCompression.GZip)
+                                     .ConfigureAwait(false);
+            var stream = await response.GetStreamAsync().ConfigureAwait(false);
+            using var unzippedStream = new GZipStream(stream, CompressionMode.Decompress, leaveOpen: true);
+            var ms = new MemoryStream();
+            await unzippedStream.CopyToAsync(ms).ConfigureAwait(false);
+            ms.Position = 0;
+            using var rs = new StreamReader(ms, Encoding.UTF8);
+            var requestContent = await rs.ReadToEndAsync().ConfigureAwait(false);
+            requestContent.Should().Contain("Content-Type: application/binary");
+            requestContent.Should().Contain("Content-Disposition: form-data; name=TestName; filename=TestFileName; filename*=utf-8''TestFileName");
+            requestContent.Should().Contain("TestContent");
+        }
+#endif
 
         [Fact]
         public async Task SlowSenderTest()
@@ -295,16 +322,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                 SuiteId = 56,
                 SpanId = 84,
                 Files =
-                {
+                [
                     new FileCoverage
                     {
                         FileName = "MyFile",
-                        Segments =
-                        {
-                            new uint[] { 1, 2, 3, 4 }
-                        }
+                        Bitmap = [1, 2, 3, 4]
                     }
-                }
+                ]
             };
 
             var coveragePayloadInBytes = MessagePackSerializer.Serialize<Ci.IEvent>(coveragePayload, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
@@ -323,6 +347,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                 Assert.Equal(numItemsTrunc, payloadBuffer.Events.Count);
 
                 bufferSize *= 2;
+            }
+        }
+
+        internal class TestMessageHandler : HttpMessageHandler
+        {
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                var ms = new MemoryStream();
+                await request.Content.CopyToAsync(ms).ConfigureAwait(false);
+                var responseMessage = new HttpResponseMessage(HttpStatusCode.OK);
+                responseMessage.Content = new ByteArrayContent(ms.ToArray());
+                return responseMessage;
             }
         }
     }

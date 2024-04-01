@@ -45,6 +45,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static readonly BigInteger AsmCustomDataScanners = Create(17);
 
+        public static readonly BigInteger AsmExclusionData = Create(18);
+
+        public static readonly BigInteger ApmTracingTracingEnabled = Create(19);
+
         private static BigInteger Create(int index) => new(1UL << index);
     }
 }

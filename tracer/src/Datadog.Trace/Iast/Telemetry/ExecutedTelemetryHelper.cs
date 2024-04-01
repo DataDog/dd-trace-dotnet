@@ -19,7 +19,7 @@ internal class ExecutedTelemetryHelper
     private const string SinkExecutedTag = "executed.sink.";
     private const string PropagationExecutedTag = BasicExecutedTag + "executed.propagation";
     private const string RequestTaintedTag = BasicExecutedTag + "request.tainted";
-    private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.IastTelemetryVerbosity;
+    private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.TelemetryVerbosity;
     private int[] _executedSinks = new int[Trace.Telemetry.Metrics.IastInstrumentedSinksExtensions.Length];
     private int[] _executedSources = new int[Trace.Telemetry.Metrics.IastInstrumentedSourcesExtensions.Length];
     private int _executedPropagations = 0;
@@ -144,12 +144,19 @@ internal class ExecutedTelemetryHelper
             IastInstrumentedSinks.XContentTypeHeaderMissing => BasicExecutedTag + SinkExecutedTag + "xcontenttype_header_missing",
             IastInstrumentedSinks.TrustBoundaryViolation => BasicExecutedTag + SinkExecutedTag + "trust_boundary_violation",
             IastInstrumentedSinks.HstsHeaderMissing => BasicExecutedTag + SinkExecutedTag + "hsts_header_missing",
+            IastInstrumentedSinks.HeaderInjection => BasicExecutedTag + SinkExecutedTag + "header_injection",
+            IastInstrumentedSinks.StackTraceLeak => BasicExecutedTag + SinkExecutedTag + "stacktrace_leak",
+            IastInstrumentedSinks.NoSqlMongoDbInjection => BasicExecutedTag + SinkExecutedTag + "nosql_mongodb_injection",
+            IastInstrumentedSinks.XPathInjection => BasicExecutedTag + SinkExecutedTag + "xpath_injection",
+            IastInstrumentedSinks.ReflectionInjection => BasicExecutedTag + SinkExecutedTag + "reflection_injection",
+            IastInstrumentedSinks.InsecureAuthProtocol => BasicExecutedTag + SinkExecutedTag + "insecure_auth_protocol",
+            IastInstrumentedSinks.Xss => BasicExecutedTag + SinkExecutedTag + "xss",
             IastInstrumentedSinks.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
             _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
         };
 
     private string? GetSourceTag(IastInstrumentedSources source)
     {
-        return SourceType.GetAsTag((SourceTypeName)source);
+        return SourceTypeUtils.GetAsTag((SourceType)source);
     }
 }

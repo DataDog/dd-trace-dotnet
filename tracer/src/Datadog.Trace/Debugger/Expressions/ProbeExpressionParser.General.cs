@@ -17,6 +17,8 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
+    private const BindingFlags GetMemberFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy;
+
     private static Expression ConvertToDouble(Expression expr)
     {
         if (expr.Type == typeof(double))
@@ -76,10 +78,46 @@ internal partial class ProbeExpressionParser<T>
                        Expression.Constant(NumberFormatInfo.CurrentInfo));
     }
 
+    private Expression IsInstanceOf(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    {
+        var value = ParseTree(reader, parameters, itParameter);
+        var instanceOf = (ConstantExpression)ParseTree(reader, parameters, itParameter);
+        var typeName = instanceOf.Value?.ToString();
+        if (string.IsNullOrEmpty(typeName))
+        {
+            AddError($"{value} is ?", "failed to parse type name");
+            return Expression.Constant(false);
+        }
+
+        Type type = null;
+        try
+        {
+            type = Type.GetType(typeName);
+        }
+        catch (Exception e)
+        {
+            AddError($"{value} is {typeName}", e.Message);
+            return Expression.Constant(false);
+        }
+
+        if (type == null)
+        {
+            AddError($"{value} is {typeName}", $"'{typeName}' is unknown type");
+            return Expression.Constant(false);
+        }
+
+        return Expression.TypeIs(value, type);
+    }
+
     private Expression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var value = ParseTree(reader, parameters, itParameter);
         return Expression.TypeEqual(value, ProbeExpressionParserHelper.UndefinedValueType);
+    }
+
+    private Expression IsDefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    {
+        return Expression.Not(IsUndefined(reader, parameters, itParameter));
     }
 
     private Expression GetMember(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -101,7 +139,7 @@ internal partial class ProbeExpressionParser<T>
                 return refMember;
             }
 
-            var constantValue = constant.Value.ToString();
+            var constantValue = constant.Value?.ToString();
 
             if (Redaction.ShouldRedact(constantValue, constant.Type, out _))
             {
@@ -127,7 +165,12 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression MemberPathExpression(Expression expression, ConstantExpression propertyOrField)
     {
-        var propertyOrFieldValue = propertyOrField.Value.ToString();
+        var propertyOrFieldValue = propertyOrField.Value?.ToString();
+        if (string.IsNullOrEmpty(propertyOrFieldValue))
+        {
+            AddError($"{expression}.{propertyOrFieldValue}", "Property or field name is empty.");
+            return UndefinedValue();
+        }
 
         try
         {
@@ -137,19 +180,16 @@ internal partial class ProbeExpressionParser<T>
                 return RedactedValue();
             }
 
-            var memberInfo = expression.Type.GetMember(
-                propertyOrFieldValue,
-                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
-                .FirstOrDefault();
+            var memberInfo = expression.Type.GetMember(propertyOrFieldValue, GetMemberFlags).FirstOrDefault();
 
             if (memberInfo == null)
             {
-                AddError($"{expression}.{propertyOrFieldValue}", "The property or field does not exist.");
+                AddError($"{expression}.{propertyOrFieldValue}", $"The property or field does not exist in {expression.Type}");
                 return UndefinedValue();
             }
 
-            bool isStatic = (memberInfo is PropertyInfo && ((PropertyInfo)memberInfo).GetGetMethod(true)?.IsStatic == true) ||
-                            (memberInfo is FieldInfo && ((FieldInfo)memberInfo).IsStatic);
+            bool isStatic = (memberInfo is PropertyInfo propertyInfo && propertyInfo.GetGetMethod(true)?.IsStatic == true) ||
+                            memberInfo is FieldInfo { IsStatic: true };
 
             if (isStatic)
             {

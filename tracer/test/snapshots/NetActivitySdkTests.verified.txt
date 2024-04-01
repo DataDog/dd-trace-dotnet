@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -14,9 +14,7 @@
       otel.trace_id: Guid_1,
       runtime-id: Guid_2,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -41,9 +39,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_3,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -68,9 +64,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_3,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       attribute-int: 1.0,
@@ -96,9 +90,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_3,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       attribute-int: 1.0
@@ -121,9 +113,7 @@
       otel.trace_id: Guid_4,
       runtime-id: Guid_2,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -148,9 +138,7 @@
       otel.status_code: STATUS_CODE_OK,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -168,9 +156,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -188,9 +174,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -207,9 +191,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -227,9 +209,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -246,9 +226,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -266,9 +244,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -285,9 +261,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -303,9 +277,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       runtime-id: Guid_2,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -328,9 +300,7 @@
       language: dotnet,
       otel.status_code: STATUS_CODE_UNSET,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -349,9 +319,7 @@
       otel.trace_id: Guid_5,
       runtime-id: Guid_2,
       span.kind: server,
-      _dd.base_service: Samples.NetActivitySdk,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: Samples.NetActivitySdk
     },
     Metrics: {
       process_id: 0,
@@ -377,9 +345,7 @@
       otel.trace_id: Guid_6,
       runtime-id: Guid_2,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -414,9 +380,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       attribute-double: 2.0,
@@ -449,9 +413,7 @@
       otel.trace_id: Guid_6,
       set-string: str,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       attribute-double: 2.0,
@@ -473,9 +435,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -493,9 +453,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -514,9 +472,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -535,9 +491,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: client,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -556,9 +510,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: client,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -578,9 +530,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: client,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -600,9 +550,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -622,9 +570,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: producer,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -644,9 +590,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: consumer,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -666,9 +610,7 @@
       rpc.service: S3,
       rpc.system: aws-api,
       span.kind: client,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -687,9 +629,7 @@
       otel.trace_id: Guid_6,
       rpc.system: aws-api,
       span.kind: client,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -708,9 +648,7 @@
       otel.trace_id: Guid_6,
       rpc.system: GRPC,
       span.kind: client,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -729,9 +667,7 @@
       otel.trace_id: Guid_6,
       rpc.system: GRPC,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -751,9 +687,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: client,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -772,9 +706,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -793,9 +725,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -814,9 +744,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -834,9 +762,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -855,9 +781,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: client,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -875,9 +799,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: client,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -895,9 +817,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -915,9 +835,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: consumer,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -935,9 +853,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: producer,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -955,9 +871,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -975,9 +889,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -995,9 +907,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -1015,9 +925,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -1035,9 +943,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_6,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   }
 ]

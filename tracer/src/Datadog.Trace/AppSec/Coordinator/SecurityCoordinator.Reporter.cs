@@ -106,14 +106,19 @@ internal readonly partial struct SecurityCoordinator
 
             LogMatchesIfDebugEnabled(result.Data, blocked);
 
-            _localRootSpan.SetTag(Tags.AppSecJson, "{\"triggers\":" + result.Data + "}");
+            var traceContext = _localRootSpan.Context.TraceContext;
+            if (result.Data != null)
+            {
+                traceContext.AddWafSecurityEvents(result.Data);
+            }
+
             var clientIp = _localRootSpan.GetTag(Tags.HttpClientIp);
             if (!string.IsNullOrEmpty(clientIp))
             {
                 _localRootSpan.SetTag(Tags.ActorIp, clientIp);
             }
 
-            if (_localRootSpan.Context.TraceContext is { Origin: null } traceContext)
+            if (traceContext is { Origin: null })
             {
                 _localRootSpan.SetTag(Tags.Origin, "appsec");
                 traceContext.Origin = "appsec";
@@ -136,7 +141,7 @@ internal readonly partial struct SecurityCoordinator
             foreach (var derivative in result.Derivatives)
             {
                 var serializeObject = JsonConvert.SerializeObject(derivative.Value);
-                var bytes = Encoding.UTF8.GetBytes(serializeObject);
+                var bytes = System.Text.Encoding.UTF8.GetBytes(serializeObject);
                 if (bytes.Length <= MaxApiSecurityTagValueLength)
                 {
                     var memoryStream = new MemoryStream();

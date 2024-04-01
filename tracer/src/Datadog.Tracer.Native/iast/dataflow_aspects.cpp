@@ -255,8 +255,15 @@ namespace iast
                                 int paramTypeRef = 0;
                                 if (_boxParam[x])
                                 {
-                                    auto paramIndex = sig->_params.size() - (_paramShift[x] + 1);
-                                    paramTypeRef = sig->_params[paramIndex]->GetToken();
+                                    int paramIndex = ((int)sig->_params.size() - (_paramShift[x] + 1));
+                                    if (paramIndex >= 0)
+                                    {
+                                        paramTypeRef = sig->_params[paramIndex]->GetToken();
+                                    }
+                                    else // Instance param (first, but not counted in signature)
+                                    {
+                                        paramTypeRef = memberRefInfo->GetTypeDef();
+                                    }
                                 }
                                 paramTypeRefs.push_back(paramTypeRef);
                             }
@@ -490,6 +497,29 @@ namespace iast
                 }
                 else //Replace
                 {
+                    if (_aspect->_paramShift.size() > 0)
+                    {
+                        for (unsigned int x = 0; x < _aspect->_paramShift.size(); x++)
+                        {
+                            if (!_aspect->_boxParam[x])
+                            {
+                                continue;
+                            }
+
+                            auto instructionInfo = processor->StackAnalysis()->GetInstruction(instructionToProcess.instruction);
+                            auto methodSig = instructionInfo->GetArgumentSignature();
+                            int paramCount = methodSig->GetEffectiveParamCount();
+                            for (auto iInfo : processor->StackAnalysis()->LocateCallParamInstructions(
+                                     instruction,
+                                     paramCount - _aspect->_paramShift[x] - 1)) // Locate param load instruction
+                            {
+                                auto paramType = _targetParamTypeToken[x];
+                                processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_BOX, paramType));
+                                iInfo->ConvertToNonAddressLoad();
+                            }
+                        }
+                    }
+
                     aspectInstruction = instructionToProcess.instruction;
                     instructionToProcess.instruction->m_opcode = CEE_CALL;
                     instructionToProcess.instruction->m_Arg32 = methodRef;

@@ -12,11 +12,11 @@ namespace Datadog.Trace.Configuration
 {
     internal class ImmutableDynamicSettings : IEquatable<ImmutableDynamicSettings>
     {
+        public bool? TraceEnabled { get; init; }
+
         public bool? RuntimeMetricsEnabled { get; init; }
 
         public bool? DataStreamsMonitoringEnabled { get; init; }
-
-        public string? CustomSamplingRules { get; init; }
 
         public double? GlobalSamplingRate { get; init; }
 
@@ -43,9 +43,9 @@ namespace Datadog.Trace.Configuration
             }
 
             return
-                RuntimeMetricsEnabled == other.RuntimeMetricsEnabled
+                TraceEnabled == other.TraceEnabled
+             && RuntimeMetricsEnabled == other.RuntimeMetricsEnabled
              && DataStreamsMonitoringEnabled == other.DataStreamsMonitoringEnabled
-             && CustomSamplingRules == other.CustomSamplingRules
              && Nullable.Equals(GlobalSamplingRate, other.GlobalSamplingRate)
              && SpanSamplingRules == other.SpanSamplingRules
              && LogsInjectionEnabled == other.LogsInjectionEnabled
@@ -76,7 +76,13 @@ namespace Datadog.Trace.Configuration
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(RuntimeMetricsEnabled, DataStreamsMonitoringEnabled, CustomSamplingRules, GlobalSamplingRate, SpanSamplingRules, LogsInjectionEnabled);
+            return HashCode.Combine(
+                TraceEnabled,
+                RuntimeMetricsEnabled,
+                DataStreamsMonitoringEnabled,
+                GlobalSamplingRate,
+                SpanSamplingRules,
+                LogsInjectionEnabled);
         }
 
         private static bool AreEqual(IReadOnlyDictionary<string, string>? dictionary1, IReadOnlyDictionary<string, string>? dictionary2)

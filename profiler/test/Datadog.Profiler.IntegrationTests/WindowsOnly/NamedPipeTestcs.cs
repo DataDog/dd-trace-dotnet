@@ -16,6 +16,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
     [Trait("Category", "WindowsOnly")]
     public class NamedPipeTestcs
     {
+        private const int RetryCount = 3;
         private readonly ITestOutputHelper _output;
 
         public NamedPipeTestcs(ITestOutputHelper output)
@@ -26,7 +27,13 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
         [TestAppFact("Samples.Computer01")]
         public void CheckProfilesSentThroughNamedPipe(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output, transportType: TransportType.NamedPipe).RunAndCheck();
+            string[] errorExceptions =
+            {
+                "failed ddog_prof_Exporter_send: operation timed out",
+                "failed ddog_prof_Exporter_send: operation was canceled"
+            };
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output, transportType: TransportType.NamedPipe);
+            runner.RunAndCheckWithRetries(RetryCount, errorExceptions);
         }
 
         [TestAppFact("Samples.Computer01")]

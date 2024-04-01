@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Expressions;
@@ -220,6 +221,12 @@ namespace Datadog.Trace.Debugger.Helpers
             var kickoffMethod = GetAsyncKickoffMethod(stateMachineType);
             var kickoffParentType = kickoffParentObject?.GetType() ?? kickoffMethod.DeclaringType;
             return new AsyncKickoffMethodInfo(kickoffParentObject, kickoffParentType, kickoffMethod);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool IsAsync(MethodBase method)
+        {
+            return method?.DeclaringType?.GetInterfaces().Any(i => i == typeof(IAsyncStateMachine)) == true;
         }
 
         internal readonly ref struct AsyncKickoffMethodInfo

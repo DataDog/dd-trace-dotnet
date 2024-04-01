@@ -1,0 +1,50 @@
+name: "Lib Injection Test"
+on:
+  workflow_call:
+    secrets:
+      DOCKER_REGISTRY_GITHUB_TOKEN:
+        required: true
+    inputs:
+      commit_id:
+        description: 'The commit ID to run the test against'
+        required: true
+        type: string
+      lib_injection_connection:
+        description: 'The connection type to use for the lib-injection test (e.g. network, uds)'
+        required: true
+        type: string
+      lib_injection_use_admission_controller:
+        description: 'Whether to use the admission controller'
+        type: boolean
+        required: true
+      runtime:
+        description: 'The runtime to use to run the tests (e.g. bullseye-slim, alpine)'
+        required: true
+        type: string
+
+jobs:
+  test-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      TEST_LIBRARY: dotnet
+      WEBLOG_VARIANT: 'dd-lib-dotnet-init-test-app'
+      LIBRARY_INJECTION_CONNECTION: ${{ inputs.lib_injection_connection }}
+      LIBRARY_INJECTION_ADMISSION_CONTROLLER: ${{ inputs.lib_injection_use_admission_controller == true && 'use-admission-controller' || '' }}
+      DOCKER_REGISTRY_IMAGES_PATH: ghcr.io/datadog
+      DOCKER_IMAGE_TAG: ${{ inputs.commit_id }}${{ inputs.runtime == 'alpine' && '-musl' || '' }}
+      DOCKER_IMAGE_WEBLOG_TAG: ${{ inputs.commit_id }}-${{ inputs.runtime }}
+      RUNTIME: ${{ inputs.runtime }}
+      BUILDX_PLATFORMS: linux/amd64
+      MODE: manual
+    steps:
+      - name: lib-injection test runner
+        id: lib-injection-test-runner
+        uses: DataDog/system-tests/lib-injection/runner@main
+        with:
+          docker-registry: ghcr.io
+          docker-registry-username: ${{ github.repository_owner }}
+          docker-registry-password: ${{ secrets.DOCKER_REGISTRY_GITHUB_TOKEN }}
+          test-script: ./lib-injection/run-manual-lib-injection.sh

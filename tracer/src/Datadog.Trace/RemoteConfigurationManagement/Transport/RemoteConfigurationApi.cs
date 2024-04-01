@@ -23,6 +23,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly string _containerId;
+        private readonly string _entityId;
         private string _configEndpoint = null;
 
         private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
@@ -35,6 +36,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 });
 
             _containerId = ContainerMetadata.GetContainerId();
+            _entityId = ContainerMetadata.GetEntityId();
         }
 
         public static RemoteConfigurationApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
@@ -62,6 +64,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             if (_containerId != null)
             {
                 apiRequest.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
+            }
+
+            if (_entityId != null)
+            {
+                apiRequest.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
             }
 
             using var apiResponse = await apiRequest.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);

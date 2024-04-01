@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -21,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         [SkippableFact]
         [Trait("Category", "Smoke")]
-        public void NoExceptions()
+        public async Task NoExceptions()
         {
             if (EnvironmentTools.IsWindows())
             {
@@ -29,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 return;
             }
 
-            CheckForSmoke(shouldDeserializeTraces: false);
+            await CheckForSmoke(shouldDeserializeTraces: false);
         }
     }
 }

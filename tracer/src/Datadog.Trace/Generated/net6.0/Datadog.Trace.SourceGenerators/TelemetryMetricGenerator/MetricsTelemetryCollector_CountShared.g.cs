@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int CountSharedLength = 192;
+    private const int CountSharedLength = 210;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountShared" /> values.
@@ -212,6 +212,24 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:unvalidatedredirect", "error_type:duck_typing" }),
             new(new[] { "integration_name:unvalidatedredirect", "error_type:invoker" }),
             new(new[] { "integration_name:unvalidatedredirect", "error_type:execution" }),
+            new(new[] { "integration_name:testplatformassemblyresolver", "error_type:duck_typing" }),
+            new(new[] { "integration_name:testplatformassemblyresolver", "error_type:invoker" }),
+            new(new[] { "integration_name:testplatformassemblyresolver", "error_type:execution" }),
+            new(new[] { "integration_name:stacktraceleak", "error_type:duck_typing" }),
+            new(new[] { "integration_name:stacktraceleak", "error_type:invoker" }),
+            new(new[] { "integration_name:stacktraceleak", "error_type:execution" }),
+            new(new[] { "integration_name:xpathinjection", "error_type:duck_typing" }),
+            new(new[] { "integration_name:xpathinjection", "error_type:invoker" }),
+            new(new[] { "integration_name:xpathinjection", "error_type:execution" }),
+            new(new[] { "integration_name:reflectioninjection", "error_type:duck_typing" }),
+            new(new[] { "integration_name:reflectioninjection", "error_type:invoker" }),
+            new(new[] { "integration_name:reflectioninjection", "error_type:execution" }),
+            new(new[] { "integration_name:xss", "error_type:duck_typing" }),
+            new(new[] { "integration_name:xss", "error_type:invoker" }),
+            new(new[] { "integration_name:xss", "error_type:execution" }),
+            new(new[] { "integration_name:nhibernate", "error_type:duck_typing" }),
+            new(new[] { "integration_name:nhibernate", "error_type:invoker" }),
+            new(new[] { "integration_name:nhibernate", "error_type:execution" }),
         };
 
     /// <summary>
@@ -220,7 +238,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountSharedEntryCounts { get; }
-        = new int[]{ 192, };
+        = new int[]{ 210, };
 
     public void RecordCountSharedIntegrationsError(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationError tag2, int increment = 1)
     {

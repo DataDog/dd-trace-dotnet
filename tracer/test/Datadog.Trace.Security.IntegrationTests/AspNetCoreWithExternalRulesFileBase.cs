@@ -37,7 +37,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestBlockedHeader(string test, HttpStatusCode expectedStatusCode, string url)
         {
-            TryStartApp();
+            await TryStartApp();
             var agent = Fixture.Agent;
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl);
@@ -157,11 +157,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             base.Dispose();
         }
 
-        public void TryStartApp()
+        public async Task TryStartApp()
         {
             SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, RuleFile);
             SetEnvironmentVariable(ConfigurationKeys.AppSec.Enabled, EnableSecurity.ToString());
-            Fixture.TryStartIis(this, AppType);
+            await Fixture.TryStartIis(this, AppType);
             SetHttpPort(Fixture.HttpPort);
         }
     }

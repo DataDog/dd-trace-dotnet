@@ -31,25 +31,40 @@ internal class SqlInjectionTokenizer : ITokenizer
     private const string HexNumber = "x'[0-9a-f]+'|0x[0-9a-f]+";
     private const string BinNumber = "b'[0-9a-f]+'|0b[0-9a-f]+";
     private static string numericLiteral = $"[-+]?(?:{string.Join("|", HexNumber, BinNumber, DecimalNumber + Exponent, IntegerNumber + Exponent)})";
+    private static string _ansiDialectPattern = string.Join("|", numericLiteral, StringLiteral, LineComment, BlockComment);
+    private static string _oracleDialectPattern = string.Join("|", numericLiteral, OracleEscapedLiteral, StringLiteral, LineComment, BlockComment);
+    private static string _postgresqlDialectPattern = string.Join("|", numericLiteral, PostgresqlEscapedLiteral, StringLiteral, LineComment, BlockComment);
+    private static string _mySqlDialectPattern = string.Join("|", numericLiteral, MysqlStringLiteral, StringLiteral, LineComment, BlockComment);
+    private Regex _ansiDialectRegex;
+    private Regex _oracleDialectRegex;
+    private Regex _postgresqlDialectRegex;
+    private Regex _mySqlDialectRegex;
+    private Dictionary<IntegrationId, Regex> _dialectPatterns;
 
-    private static Regex _ansiDialectPattern = new Regex(string.Join("|", numericLiteral, StringLiteral, LineComment, BlockComment), RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static Regex _oracleDialectPattern = new Regex(string.Join("|", numericLiteral, OracleEscapedLiteral, StringLiteral, LineComment, BlockComment), RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static Regex _postgresqlDialectPattern = new Regex(string.Join("|", numericLiteral, PostgresqlEscapedLiteral, StringLiteral, LineComment, BlockComment), RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static Regex _mySqlDialectPattern = new Regex(string.Join("|", numericLiteral, MysqlStringLiteral, StringLiteral, LineComment, BlockComment), RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-    private static Dictionary<IntegrationId, Regex> _dialectPatterns = new Dictionary<IntegrationId, Regex>
+    public SqlInjectionTokenizer(TimeSpan timeout)
     {
-        { IntegrationId.Oracle, _oracleDialectPattern },
-        { IntegrationId.Npgsql, _postgresqlDialectPattern },
-        { IntegrationId.MySql, _mySqlDialectPattern },
-        { IntegrationId.Sqlite, _mySqlDialectPattern }
-    };
+        _ansiDialectRegex = new Regex(_ansiDialectPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
+        _oracleDialectRegex = new Regex(_oracleDialectPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
+        _postgresqlDialectRegex = new Regex(_postgresqlDialectPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
+        _mySqlDialectRegex = new Regex(_mySqlDialectPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
 
-    public List<Range> GetTokens(string value, IntegrationId? integrationId = null)
+        _dialectPatterns = new Dictionary<IntegrationId, Regex>
+        {
+            { IntegrationId.Oracle, _oracleDialectRegex },
+            { IntegrationId.Npgsql, _postgresqlDialectRegex },
+            { IntegrationId.MySql, _mySqlDialectRegex },
+            { IntegrationId.Sqlite, _mySqlDialectRegex }
+        };
+    }
+
+    public List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null)
     {
+        var value = evidence.Value;
+        if (value is null) { return []; }
+
         Regex? pattern = null;
         if (integrationId != null) { _dialectPatterns.TryGetValue(integrationId.Value, out pattern); }
-        if (pattern == null) { pattern = _ansiDialectPattern; }
+        if (pattern == null) { pattern = _ansiDialectRegex; }
 
         var res = new List<Range>(5);
         var matches = pattern.Matches(value);

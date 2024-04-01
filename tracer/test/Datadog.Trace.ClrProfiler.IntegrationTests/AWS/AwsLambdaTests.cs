@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET6_OR_GREATER
+#if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using var extensionNoContext = new MockLambdaExtension(shouldSendContext: false, port: 9003, Output);
             using var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002);
             agent.Output = Output;
-            using (RunSampleAndWaitForExit(agent))
+            using (await RunSampleAndWaitForExit(agent))
             {
                 var requests = 9 // param tests
                                   + 3 // param with context
@@ -97,6 +97,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         private static MockSpan ToMockSpan(MockLambdaExtension.EndExtensionRequest endInvocation, DateTimeOffset? startTime)
         {
             var start = startTime ?? endInvocation.Created.AddMilliseconds(100);
+            var tags = new Dictionary<string, string> { { "_sampling_priority_v1", endInvocation.SamplingPriority?.ToString("N1") } };
+            if (endInvocation.IsError)
+            {
+                tags["error.msg"] = endInvocation.ErrorMsg ?? string.Empty;
+                tags["error.type"] = endInvocation.ErrorType ?? string.Empty;
+                tags["error.stack"] = endInvocation.ErrorStack ?? string.Empty;
+            }
+
             return new MockSpan
             {
                 Duration = endInvocation.Created.Subtract(start).ToNanoseconds(),
@@ -107,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 SpanId = endInvocation.SpanId ?? 0,
                 Start = start.ToUnixTimeNanoseconds(),
                 Error = endInvocation.IsError ? (byte)1 : (byte)0,
-                Tags = new Dictionary<string, string> { { "_sampling_priority_v1", endInvocation.SamplingPriority?.ToString("N1") } }
+                Tags = tags
             };
         }
     }

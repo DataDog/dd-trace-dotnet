@@ -156,7 +156,7 @@ public class InstrumentationTestsBase : IDisposable
         {
             var range = (_evidenceRangesField.GetValue(evidence) as Array).GetValue(0);
             var source = _sourceProperty.Invoke(range, Array.Empty<object>());
-            var origin = _sourceOriginField.GetValue(source) as byte?;
+            var origin = (byte)_sourceOriginField.GetValue(source);
             origin.Should().Be(sourceType);
         }
 
@@ -358,14 +358,14 @@ public class InstrumentationTestsBase : IDisposable
         }
     }
 
-    public static bool IsLinux()
+    public static bool IsWindows()
     {
-        return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux);
+        return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
     }
 
     public static object TestRealDDBBLocalCall(Func<object> expression)
     {
-        if (IsLinux())
+        if (!IsWindows())
         {
             try
             {

@@ -123,7 +123,7 @@ namespace Datadog.Trace.Agent.Transports
             return new HttpClientResponse(response);
         }
 
-        public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
+        public async Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
         {
             if (items is null)
             {
@@ -133,8 +133,6 @@ namespace Datadog.Trace.Agent.Transports
             Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
 
             using var formDataContent = new MultipartFormDataContent(boundary: Boundary);
-            _postRequest.Content = formDataContent;
-
             foreach (var item in items)
             {
                 HttpContent content = null;
@@ -164,6 +162,16 @@ namespace Datadog.Trace.Agent.Transports
                 {
                     formDataContent.Add(content, item.Name);
                 }
+            }
+
+            if (multipartCompression == MultipartCompression.GZip)
+            {
+                Log.Debug("Using MultipartCompression.GZip");
+                _postRequest.Content = new GzipCompressedContent(formDataContent);
+            }
+            else
+            {
+                _postRequest.Content = formDataContent;
             }
 
             var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);

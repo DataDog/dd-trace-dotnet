@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json.Serialization;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.RuntimeSupport;
 using Amazon.Lambda.Serialization.SystemTextJson;
@@ -20,7 +21,7 @@ void MakeRequest(string url)
 }
 
 // The function handler that will be called for each Lambda event
-var handler = (string input, ILambdaContext context) =>
+var handler = (CustomInput input, ILambdaContext context) =>
 {
     using var scope = SampleHelpers.CreateScope("manual.ToplevelStatements");
     var host = Environment.GetEnvironmentVariable("DUMMY_API_HOST")!;
@@ -37,3 +38,9 @@ var handler = (string input, ILambdaContext context) =>
 await LambdaBootstrapBuilder.Create(handler, new DefaultLambdaJsonSerializer())
         .Build()
         .RunAsync();
+
+public class CustomInput
+{
+    public string Field1 { get; set; }
+    public int Field2 { get; set; }
+}

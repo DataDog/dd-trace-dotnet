@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Helpdesk support
+    url: https://help.datadoghq.com/hc/en-us/requests/new?tf_1260824651490=pt_product_type:apm&tf_1900004146284=pt_apm_language:.net
+    about: This option creates an expedited Bug Report via the helpdesk (no login required). This will allow us to look up your account and allows you to provide additional information in private.

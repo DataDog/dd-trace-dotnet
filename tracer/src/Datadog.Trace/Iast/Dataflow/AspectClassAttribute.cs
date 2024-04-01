@@ -31,16 +31,11 @@ internal sealed class AspectClassAttribute : Attribute
     {
     }
 
-    public AspectClassAttribute(string defaultAssembly, AspectFilter filter, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
-        : this(defaultAssembly, new AspectFilter[] { filter }, defaultAspectType, defaultVulnerabilityTypes)
-    {
-    }
-
     public AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
     {
         if (filters.Length == 0) { filters = new AspectFilter[] { AspectFilter.None }; }
 
-        parameters.Add(defaultAssembly.Quote());
+        parameters.Add(defaultAssembly);
         parameters.Add(filters);
         parameters.Add(defaultAspectType);
         parameters.Add(defaultVulnerabilityTypes ?? new VulnerabilityType[0]);
@@ -58,9 +53,4 @@ internal sealed class AspectClassAttribute : Attribute
     public AspectType DefaultAspectType { get; private set; }
 
     public VulnerabilityType[] DefaultVulnerabilityTypes { get; private set; }
-
-    public override string ToString()
-    {
-        return string.Format("[{0}({1})]", GetType().Name.Replace("Attribute", string.Empty), string.Join(",", parameters.Select(i => AspectAttribute.ConvertToString(i)).ToArray()));
-    }
 }

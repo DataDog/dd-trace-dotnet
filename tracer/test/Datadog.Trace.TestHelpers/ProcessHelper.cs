@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -22,9 +23,19 @@ namespace Datadog.Trace.TestHelpers
         private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly StringBuilder _outputBuffer = new();
         private readonly StringBuilder _errorBuffer = new();
+        private readonly ReadOnlyDictionary<string, string> _environmentVariables;
 
         public ProcessHelper(Process process, Action<string> onDataReceived = null, Action<string> onErrorReceived = null)
         {
+            try
+            {
+                _environmentVariables = new(process.StartInfo.Environment);
+            }
+            catch
+            {
+                // ...
+            }
+
             Task = Task.WhenAll(_outputTask.Task, _errorTask.Task, _processExit.Task);
 
             Task.Factory.StartNew(
@@ -45,6 +56,8 @@ namespace Datadog.Trace.TestHelpers
         public string StandardOutput => _outputBuffer.ToString();
 
         public string ErrorOutput => _errorBuffer.ToString();
+
+        public ReadOnlyDictionary<string, string> EnvironmentVariables => _environmentVariables;
 
         public Task Task { get; }
 

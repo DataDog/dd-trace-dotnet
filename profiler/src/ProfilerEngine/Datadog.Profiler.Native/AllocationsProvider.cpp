@@ -62,9 +62,9 @@ AllocationsProvider::AllocationsProvider(
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
-    _sampleLimit(pConfiguration->AllocationSampleLimit()),
-    _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval()),
     _pListener(pListener),
+    _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval()),
+    _sampleLimit(pConfiguration->AllocationSampleLimit()),
     _pConfiguration(pConfiguration)
 {
     _allocationsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_allocations");

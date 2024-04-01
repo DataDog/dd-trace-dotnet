@@ -26,5 +26,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string DebugInfoEnabled = "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED";
         public const string GcThreadsCpuTimeEnabled = "DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED";
         public const string ThreadLifetimeEnabled = "DD_INTERNAL_THREAD_LIFETIME_ENABLED";
+        public const string SsiDeployed = "DD_INJECTION_ENABLED";
     }
 }

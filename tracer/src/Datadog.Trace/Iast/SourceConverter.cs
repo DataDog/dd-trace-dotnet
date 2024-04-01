@@ -26,8 +26,11 @@ internal class SourceConverter : JsonConverter<Source>
     // When redacted output is:
     // { "origin": "http.request.parameter.name", "name": "name", "redacted": true }
 
-    public SourceConverter()
+    private int _maxValueLength;
+
+    public SourceConverter(int maxValueLength)
     {
+        _maxValueLength = maxValueLength;
     }
 
     public override bool CanRead => true;
@@ -36,11 +39,11 @@ internal class SourceConverter : JsonConverter<Source>
     {
         // { "origin": "http.request.parameter", "name": "$1", "value": "table" }
         JObject jo = JObject.Load(reader);
-        var origin = SourceType.FromString(jo["origin"]?.ToString());
+        var origin = SourceTypeUtils.FromString(jo["origin"]?.ToString());
         var name = jo["name"]?.ToString();
         var value = jo["value"]?.ToString();
 
-        return new Source((byte)origin, name, value);
+        return new Source(origin, name, value);
     }
 
     public override void WriteJson(JsonWriter writer, Source? source, JsonSerializer serializer)
@@ -49,27 +52,27 @@ internal class SourceConverter : JsonConverter<Source>
         {
             writer.WriteStartObject();
             writer.WritePropertyName("origin");
-            writer.WriteValue(source.Origin);
+            writer.WriteValue(SourceTypeUtils.GetString(source.Origin));
             if (source.Name != null)
             {
                 writer.WritePropertyName("name");
                 writer.WriteValue(source.Name);
             }
 
-            if (source.IsRedacted)
+            if (source.IsRedacted && source.Value != null)
             {
                 writer.WritePropertyName("redacted");
                 writer.WriteValue(true);
                 if (source.RedactedValue != null)
                 {
                     writer.WritePropertyName("pattern");
-                    writer.WriteValue(source.RedactedValue);
+                    writer.WriteTruncatableValue(source.RedactedValue, _maxValueLength);
                 }
             }
             else if (source.Value != null)
             {
                 writer.WritePropertyName("value");
-                writer.WriteValue(source.Value);
+                writer.WriteTruncatableValue(source.Value, _maxValueLength);
             }
 
             writer.WriteEndObject();

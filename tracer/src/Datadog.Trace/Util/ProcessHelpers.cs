@@ -4,9 +4,11 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 
@@ -15,6 +17,9 @@ namespace Datadog.Trace.Util
     internal static class ProcessHelpers
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessHelpers));
+
+        [ThreadStatic]
+        private static bool _doNotTrace;
 
         /// <summary>
         /// Wrapper around <see cref="Process.GetCurrentProcess"/> and <see cref="Process.ProcessName"/>
@@ -53,6 +58,66 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>
+        /// Gets (and clears) the "do not trace" state for the current thread's call to <see cref="Process.Start()"/>
+        /// </summary>
+        /// <returns>True if the <see cref="Process.Start()"/> call should be traced, False if "do not trace" is set</returns>
+        public static bool ShouldTraceProcessStart() => !_doNotTrace;
+
+        /// <summary>
+        /// Run a command and get the standard output content as a string
+        /// </summary>
+        /// <param name="command">Command to run</param>
+        /// <param name="input">Standard input content</param>
+        /// <returns>The output of the command</returns>
+        public static CommandOutput? RunCommand(Command command, string? input = null)
+        {
+            Log.Debug("Running command: {Command} {Args}", command.Cmd, command.Arguments);
+            var processStartInfo = GetProcessStartInfo(command);
+            if (input is not null)
+            {
+                processStartInfo.RedirectStandardInput = true;
+#if NETCOREAPP
+                processStartInfo.StandardInputEncoding = command.InputEncoding ?? processStartInfo.StandardInputEncoding;
+#endif
+            }
+
+            using var processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
+            if (processInfo is null)
+            {
+                return null;
+            }
+
+            if (input is not null)
+            {
+                processInfo.StandardInput.Write(input);
+                processInfo.StandardInput.Flush();
+                processInfo.StandardInput.Close();
+            }
+
+            var outputStringBuilder = new StringBuilder();
+            var errorStringBuilder = new StringBuilder();
+            while (!processInfo.HasExited)
+            {
+                if (!processStartInfo.UseShellExecute)
+                {
+                    outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
+                    errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
+                }
+
+                Thread.Sleep(15);
+            }
+
+            if (!processStartInfo.UseShellExecute)
+            {
+                outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
+                errorStringBuilder.Append(processInfo.StandardError.ReadToEnd());
+            }
+
+            Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
+            return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode);
+        }
+
+        /// <summary>
         /// Run a command and get the standard output content as a string
         /// </summary>
         /// <param name="command">Command to run</param>
@@ -65,9 +130,12 @@ namespace Datadog.Trace.Util
             if (input is not null)
             {
                 processStartInfo.RedirectStandardInput = true;
+#if NETCOREAPP
+                processStartInfo.StandardInputEncoding = command.InputEncoding ?? processStartInfo.StandardInputEncoding;
+#endif
             }
 
-            using var processInfo = Process.Start(processStartInfo);
+            using var processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
             if (processInfo is null)
             {
                 return null;
@@ -84,16 +152,31 @@ namespace Datadog.Trace.Util
             var errorStringBuilder = new StringBuilder();
             while (!processInfo.HasExited)
             {
-                outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
-                errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
+                if (!processStartInfo.UseShellExecute)
+                {
+                    outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
+                    errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
+                }
+
                 await Task.Delay(15).ConfigureAwait(false);
             }
 
-            outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
-            errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
+            if (!processStartInfo.UseShellExecute)
+            {
+                outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
+                errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
+            }
 
             Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
             return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode);
+        }
+
+        /// <summary>
+        /// Internal for testing to make it easier to call using reflection from a sample app
+        /// </summary>
+        internal static void TestingOnly_RunCommand(string cmd, string? args)
+        {
+            RunCommand(new Command(cmd, args));
         }
 
         private static ProcessStartInfo GetProcessStartInfo(Command command)
@@ -102,9 +185,20 @@ namespace Datadog.Trace.Util
                                        new ProcessStartInfo(command.Cmd) :
                                        new ProcessStartInfo(command.Cmd, command.Arguments);
             processStartInfo.CreateNoWindow = true;
-            processStartInfo.UseShellExecute = false;
-            processStartInfo.RedirectStandardOutput = true;
-            processStartInfo.RedirectStandardError = true;
+            processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            processStartInfo.Verb = command.Verb;
+            if (command.Verb is null)
+            {
+                processStartInfo.UseShellExecute = false;
+                processStartInfo.RedirectStandardOutput = true;
+                processStartInfo.RedirectStandardError = true;
+                processStartInfo.StandardOutputEncoding = command.OutputEncoding ?? processStartInfo.StandardOutputEncoding;
+                processStartInfo.StandardErrorEncoding = command.ErrorEncoding ?? processStartInfo.StandardErrorEncoding;
+            }
+            else
+            {
+                processStartInfo.UseShellExecute = true;
+            }
 
             if (command.WorkingDirectory is not null)
             {
@@ -114,17 +208,40 @@ namespace Datadog.Trace.Util
             return processStartInfo;
         }
 
+        private static Process? StartWithDoNotTrace(ProcessStartInfo startInfo, bool doNotTrace)
+        {
+            try
+            {
+                _doNotTrace = doNotTrace;
+                return Process.Start(startInfo);
+            }
+            finally
+            {
+                _doNotTrace = false;
+            }
+        }
+
         public readonly struct Command
         {
             public readonly string Cmd;
             public readonly string? Arguments;
             public readonly string? WorkingDirectory;
+            public readonly string? Verb;
+            public readonly Encoding? OutputEncoding;
+            public readonly Encoding? ErrorEncoding;
+            public readonly Encoding? InputEncoding;
+            public readonly bool DoNotTrace;
 
-            public Command(string cmd, string? arguments = null, string? workingDirectory = null)
+            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null, bool doNotTrace = true)
             {
                 Cmd = cmd;
                 Arguments = arguments;
                 WorkingDirectory = workingDirectory;
+                Verb = verb;
+                OutputEncoding = outputEncoding;
+                ErrorEncoding = errorEncoding;
+                InputEncoding = inputEncoding;
+                DoNotTrace = doNotTrace;
             }
         }
 

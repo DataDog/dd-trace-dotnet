@@ -7,6 +7,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using VendoredUnsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
@@ -26,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 #if NETCOREAPP3_1_OR_GREATER
             return Unsafe.As<TFrom, TReturn>(ref returnValue);
 #else
-            return ContinuationsHelper.Convert<TFrom, TReturn>(returnValue);
+            return VendoredUnsafe.As<TFrom, TReturn>(ref returnValue);
 #endif
         }
 
@@ -36,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 #if NETCOREAPP3_1_OR_GREATER
             return Unsafe.As<TReturn, TTo>(ref returnValue);
 #else
-            return ContinuationsHelper.Convert<TReturn, TTo>(returnValue);
+            return VendoredUnsafe.As<TReturn, TTo>(ref returnValue);
 #endif
         }
 

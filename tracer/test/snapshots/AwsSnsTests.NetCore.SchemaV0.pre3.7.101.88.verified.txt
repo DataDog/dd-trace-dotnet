@@ -8,9 +8,7 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      runtime-id: Guid_1
     },
     Metrics: {
       process_id: 0,
@@ -37,9 +35,7 @@
       http.url: http://localhost:00000/,
       out.host: aws_sns,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -68,9 +64,7 @@
       http.url: http://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      topicname: MyTopic,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      topicname: MyTopic
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -93,9 +87,7 @@
       http.url: http://localhost:00000/,
       out.host: aws_sns,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0

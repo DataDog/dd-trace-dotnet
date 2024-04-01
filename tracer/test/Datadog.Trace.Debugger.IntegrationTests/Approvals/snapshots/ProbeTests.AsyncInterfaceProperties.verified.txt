@@ -3,7 +3,6 @@
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
     "ddsource": "dd_debugger",
-    "ddtags": "Unknown",
     "debugger": {
       "snapshot": {
         "captures": {
@@ -113,7 +112,6 @@
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
     "ddsource": "dd_debugger",
-    "ddtags": "Unknown",
     "debugger": {
       "snapshot": {
         "captures": {

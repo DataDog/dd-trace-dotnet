@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
@@ -145,7 +146,7 @@ public sealed class TestModule
             else
             {
                 Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
-                _fakeSession = TestSession.InternalGetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, null, startDate, false);
+                _fakeSession = TestSession.InternalGetOrCreate(System.Environment.CommandLine, System.Environment.CurrentDirectory, null, startDate, false);
                 if (_fakeSession.Tags is { } fakeSessionTags)
                 {
                     tags.SessionId = fakeSessionTags.SessionId;
@@ -419,13 +420,14 @@ public sealed class TestModule
             CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler &&
             coverageHandler.GetCodeCoveragePercentage() is { } globalCoverage)
         {
-            // We only report global code coverage if we don't skip any test
-            if (!CIVisibility.HasSkippableTests())
+            // We only report global code coverage if ITR is disabled and we are in a fake session (like the internal testlogger scenario)
+            // For a normal customer session we never report the percentage of total lines on modules
+            if (!CIVisibility.Settings.IntelligentTestRunnerEnabled && _fakeSession is not null)
             {
                 // Adds the global code coverage percentage to the module
                 var codeCoveragePercentage = globalCoverage.GetTotalPercentage();
                 SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
-                _fakeSession?.SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
+                _fakeSession.SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
             }
 
             // If the code coverage path environment variable is set, we store the json file

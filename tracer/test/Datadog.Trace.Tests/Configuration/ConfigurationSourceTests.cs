@@ -80,8 +80,8 @@ namespace Datadog.Trace.Tests.Configuration
             yield return (CreateFunc(s => s.MaxTracesSubmittedPerSecond), 100);
             yield return (CreateFunc(s => s.TracerMetricsEnabled), false);
             yield return (CreateFunc(s => s.Exporter.DogStatsdPort), 8125);
-            yield return (CreateFunc(s => s.PropagationStyleInject), new[] { "tracecontext", "Datadog" });
-            yield return (CreateFunc(s => s.PropagationStyleExtract), new[] { "tracecontext", "Datadog" });
+            yield return (CreateFunc(s => s.PropagationStyleInject), new[] { "Datadog", "tracecontext" });
+            yield return (CreateFunc(s => s.PropagationStyleExtract), new[] { "Datadog", "tracecontext" });
             yield return (CreateFunc(s => s.ServiceNameMappings), null);
 
             yield return (CreateFunc(s => s.TraceId128BitGenerationEnabled), true);

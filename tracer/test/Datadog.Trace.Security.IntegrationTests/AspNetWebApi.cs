@@ -52,10 +52,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 
-    public abstract class AspNetWebApi : AspNetBase, IClassFixture<IisFixture>
+    public abstract class AspNetWebApi : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
+        private readonly bool _classicMode;
 
         public AspNetWebApi(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
             : base("WebApi", output, "/api/home/shutdown", @"test\test-applications\security\aspnet")
@@ -63,12 +64,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
+            _classicMode = classicMode;
             _iisFixture = iisFixture;
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = "Security." + nameof(AspNetWebApi)
                      + (classicMode ? ".Classic" : ".Integrated")
                      + ".enableSecurity=" + enableSecurity; // assume that arm is the same
-            SetHttpPort(iisFixture.HttpPort);
         }
 
         [Trait("Category", "EndToEnd")]
@@ -103,6 +103,14 @@ namespace Datadog.Trace.Security.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
+
+        public async Task InitializeAsync()
+        {
+            await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+            SetHttpPort(_iisFixture.HttpPort);
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
 
         protected override string GetTestName() => _testName;
     }

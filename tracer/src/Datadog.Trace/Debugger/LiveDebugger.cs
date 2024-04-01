@@ -4,6 +4,7 @@
 // </copyright>
 
 #pragma warning disable SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
+#nullable disable
 
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,7 @@ using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -38,6 +40,7 @@ namespace Datadog.Trace.Debugger
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ISubscription _subscription;
         private readonly IDebuggerSink _debuggerSink;
+        private readonly ISymbolsUploader _symbolsUploader;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
         private readonly IProbeStatusPoller _probeStatusPoller;
@@ -54,6 +57,7 @@ namespace Datadog.Trace.Debugger
             IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
             IDebuggerSink debuggerSink,
+            ISymbolsUploader symbolsUploader,
             IProbeStatusPoller probeStatusPoller,
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
@@ -62,6 +66,7 @@ namespace Datadog.Trace.Debugger
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
             _debuggerSink = debuggerSink;
+            _symbolsUploader = symbolsUploader;
             _probeStatusPoller = probeStatusPoller;
             _subscriptionManager = remoteConfigurationManager;
             _configurationUpdater = configurationUpdater;
@@ -90,13 +95,14 @@ namespace Datadog.Trace.Debugger
             IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
             IDebuggerSink debuggerSink,
+            ISymbolsUploader symbolsUploader,
             IProbeStatusPoller probeStatusPoller,
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
         {
             lock (GlobalLock)
             {
-                return Instance ??= new LiveDebugger(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater, dogStats);
+                return Instance ??= new LiveDebugger(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, configurationUpdater, dogStats);
             }
         }
 
@@ -155,6 +161,7 @@ namespace Datadog.Trace.Debugger
                 AddShutdownTask();
 
                 _probeStatusPoller.StartPolling();
+                _symbolsUploader.StartExtractingAssemblySymbolsAsync();
                 return _debuggerSink.StartFlushingAsync();
             }
 
@@ -165,6 +172,7 @@ namespace Datadog.Trace.Debugger
                 LifetimeManager.Instance.AddShutdownTask(_probeStatusPoller.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(_dogStats.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(() => _subscriptionManager.Unsubscribe(_subscription));
+                LifetimeManager.Instance.AddShutdownTask(_symbolsUploader.Dispose);
             }
         }
 
@@ -452,7 +460,7 @@ namespace Datadog.Trace.Debugger
             _debuggerSink.AddErrorProbeStatus(probeId, probeVersion, exception, errorMessage);
         }
 
-        internal void SendMetrics(MetricKind metricKind, string metricName, double value)
+        internal void SendMetrics(MetricKind metricKind, string metricName, double value, string probeId)
         {
             if (_dogStats is NoOpStatsd)
             {
@@ -462,13 +470,13 @@ namespace Datadog.Trace.Debugger
             switch (metricKind)
             {
                 case MetricKind.COUNT:
-                    _dogStats.Counter(statName: metricName, value: value);
+                    _dogStats.Counter(statName: metricName, value: value, tags: new[] { $"probe-id:{probeId}" });
                     break;
                 case MetricKind.GAUGE:
-                    _dogStats.Gauge(statName: metricName, value: value);
+                    _dogStats.Gauge(statName: metricName, value: value, tags: new[] { $"probe-id:{probeId}" });
                     break;
                 case MetricKind.HISTOGRAM:
-                    _dogStats.Histogram(statName: metricName, value: value);
+                    _dogStats.Histogram(statName: metricName, value: value, tags: new[] { $"probe-id:{probeId}" });
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(

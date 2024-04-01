@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -13,9 +13,7 @@
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: internal,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: internal
     },
     Metrics: {
       process_id: 0,
@@ -42,9 +40,7 @@ Path=testPath
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: internal,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: internal
     },
     Metrics: {
       process_id: 0,
@@ -71,9 +67,7 @@ Path=testPath
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: internal,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: internal
     },
     Metrics: {
       process_id: 0,
@@ -100,9 +94,7 @@ Path=testPath
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: internal,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: internal
     },
     Metrics: {
       process_id: 0,
@@ -129,9 +121,7 @@ Path=testPath
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: internal,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: internal
     },
     Metrics: {
       process_id: 0,

@@ -124,13 +124,15 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="operationName">The integration we're testing</param>
         /// <param name="minDateTime">Minimum time to check for spans from</param>
         /// <param name="returnAllOperations">When true, returns every span regardless of operation name</param>
+        /// <param name="assertExpectedCount">When true, asserts that the number of spans to return matches the count</param>
         /// <returns>The list of spans.</returns>
         public IImmutableList<MockSpan> WaitForSpans(
             int count,
             int timeoutInMilliseconds = 20000,
             string operationName = null,
             DateTimeOffset? minDateTime = null,
-            bool returnAllOperations = false)
+            bool returnAllOperations = false,
+            bool assertExpectedCount = true)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
             var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
@@ -171,7 +173,10 @@ namespace Datadog.Trace.TestHelpers
                 Thread.Sleep(500);
             }
 
-            relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent");
+            if (assertExpectedCount)
+            {
+                relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent");
+            }
 
             foreach (var headers in TraceRequestHeaders)
             {
@@ -303,7 +308,7 @@ namespace Datadog.Trace.TestHelpers
                 timeoutInMilliseconds,
                 (stats) =>
                 {
-                    return stats.Sum(s => s.Stats.Sum(bucket => bucket.Stats.Length)) == statsCount;
+                    return stats.Sum(s => s.Stats.Sum(bucket => bucket.Stats.Length)) >= statsCount;
                 });
         }
 
@@ -507,9 +512,13 @@ namespace Datadog.Trace.TestHelpers
                 HandlePotentialDataStreams(request);
                 responseType = MockTracerResponseType.DataStreams;
             }
-            else if (request.PathAndQuery.StartsWith("/evp_proxy/v2/"))
+            else if (request.PathAndQuery.StartsWith("/evp_proxy/v2/") || request.PathAndQuery.StartsWith("/evp_proxy/v4/"))
             {
-                HandleEvpProxyPayload(request);
+                if (HandleEvpProxyPayload(request) is { } customResponse)
+                {
+                    return customResponse;
+                }
+
                 responseType = MockTracerResponseType.EvpProxy;
             }
             else if (request.PathAndQuery.StartsWith("/tracer_flare/v1"))
@@ -744,7 +753,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandleEvpProxyPayload(MockHttpParser.MockHttpRequest request)
+        private MockTracerResponse HandleEvpProxyPayload(MockHttpParser.MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
@@ -757,6 +766,18 @@ namespace Datadog.Trace.TestHelpers
                         headerCollection.Add(header.Name, header.Value);
                     }
 
+                    if (headerCollection["Content-Encoding"] == "gzip")
+                    {
+                        var bodyMs = new MemoryStream(body);
+                        var uncompressedStream = new MemoryStream();
+                        using (var gzipStream = new GZipStream(bodyMs, CompressionMode.Decompress))
+                        {
+                            gzipStream.CopyTo(uncompressedStream);
+                        }
+
+                        body = uncompressedStream.ToArray();
+                    }
+
                     var bodyAsJson = headerCollection["Content-Type"] switch
                     {
                         "application/msgpack" => MessagePackSerializer.ToJson(body),
@@ -764,7 +785,9 @@ namespace Datadog.Trace.TestHelpers
                         _ => Encoding.UTF8.GetString(body), // e.g. multipart form data, currently we don't do anything with this so meh
                     };
 
-                    EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(new EvpProxyPayload(request.PathAndQuery, headerCollection, bodyAsJson)));
+                    var evpProxyPayload = new EvpProxyPayload(request.PathAndQuery, headerCollection, bodyAsJson);
+                    EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(evpProxyPayload));
+                    return evpProxyPayload.Response;
                 }
                 catch (Exception ex)
                 {
@@ -774,12 +797,14 @@ namespace Datadog.Trace.TestHelpers
                     {
                         // Accept call is likely interrupted by a dispose
                         // Swallow the exception and let the test finish
-                        return;
+                        return null;
                     }
 
                     throw;
                 }
             }
+
+            return null;
         }
 
         private void HandleTracerFlarePayload(MockHttpParser.MockHttpRequest request)
@@ -960,18 +985,23 @@ namespace Datadog.Trace.TestHelpers
             Snapshots = Snapshots.AddRange(snapshots);
         }
 
-        public readonly struct EvpProxyPayload
+        public class EvpProxyPayload
         {
-            public readonly string PathAndQuery;
-            public readonly NameValueCollection Headers;
-            public readonly string BodyInJson;
-
             public EvpProxyPayload(string pathAndQuery, NameValueCollection headers, string bodyInJson)
             {
                 PathAndQuery = pathAndQuery;
                 Headers = headers;
                 BodyInJson = bodyInJson;
+                Response = null;
             }
+
+            public string PathAndQuery { get; }
+
+            public NameValueCollection Headers { get; }
+
+            public string BodyInJson { get; }
+
+            public MockTracerResponse Response { get; set; }
         }
 
         public class AgentConfiguration

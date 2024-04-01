@@ -196,9 +196,8 @@ namespace Datadog.Trace.Ci.Agent
             MemoryStream agentlessMemoryStream = null;
             try
             {
-                if (!payload.UseEvpProxy)
+                if (payload.UseGZip)
                 {
-                    // If we are in agentless mode (no EVP Proxy) then we use gzip compression, supported by the intake
                     agentlessMemoryStream = new MemoryStream();
                     int uncompressedSize;
                     using (var gzipStream = new GZipStream(agentlessMemoryStream, CompressionLevel.Fastest, true))
@@ -226,7 +225,7 @@ namespace Datadog.Trace.Ci.Agent
 
                 await SendPayloadAsync(
                         payload,
-                        static (request, payload, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, payload.UseEvpProxy ? null : "gzip"),
+                        static (request, payload, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, payload.UseGZip ? "gzip" : null),
                         payloadArraySegment)
                    .ConfigureAwait(false);
             }
@@ -255,7 +254,7 @@ namespace Datadog.Trace.Ci.Agent
                 {
                     if (request is IMultipartApiRequest multipartRequest)
                     {
-                        return multipartRequest.PostAsync(payloadArray);
+                        return multipartRequest.PostAsync(payloadArray, payload.UseGZip ? MultipartCompression.GZip : MultipartCompression.None);
                     }
 
                     MultipartApiRequestNotSupported.Throw();

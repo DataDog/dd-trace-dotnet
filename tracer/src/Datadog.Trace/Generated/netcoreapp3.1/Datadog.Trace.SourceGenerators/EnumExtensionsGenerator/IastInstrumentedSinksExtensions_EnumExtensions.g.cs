@@ -17,7 +17,7 @@ internal static partial class IastInstrumentedSinksExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 17;
+    public const int Length = 24;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks"/> value.
@@ -47,6 +47,13 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing => "vulnerability_type:xcontenttype_header_missing",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation => "vulnerability_type:trust_boundary_violation",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing => "vulnerability_type:hsts_header_missing",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection => "vulnerability_type:header_injection",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak => "vulnerability_type:stacktrace_leak",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection => "vulnerability_type:nosql_mongodb_injection",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection => "vulnerability_type:xpath_injection",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.ReflectionInjection => "vulnerability_type:reflection_injection",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureAuthProtocol => "vulnerability_type:insecure_auth_protocol",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss => "vulnerability_type:xss",
             _ => value.ToString(),
         };
 
@@ -77,6 +84,13 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.ReflectionInjection,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureAuthProtocol,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss,
         };
 
     /// <summary>
@@ -107,6 +121,13 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.ReflectionInjection),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureAuthProtocol),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss),
         };
 
     /// <summary>
@@ -137,5 +158,12 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:xcontenttype_header_missing",
             "vulnerability_type:trust_boundary_violation",
             "vulnerability_type:hsts_header_missing",
+            "vulnerability_type:header_injection",
+            "vulnerability_type:stacktrace_leak",
+            "vulnerability_type:nosql_mongodb_injection",
+            "vulnerability_type:xpath_injection",
+            "vulnerability_type:reflection_injection",
+            "vulnerability_type:insecure_auth_protocol",
+            "vulnerability_type:xss",
         };
 }

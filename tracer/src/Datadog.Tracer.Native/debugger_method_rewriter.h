@@ -99,7 +99,7 @@ private:
                                         const shared::WSTRING& methodProbeId, const ILRewriterWrapper& rewriterWrapper,
                                         ILInstr** outLoadStrInstr);
     static void LogDebugCallerInfo(const FunctionInfo* caller, int instrumentedMethodIndex) ;
-    HRESULT ApplyAsyncMethodProbe(const MethodProbeDefinitions& methodProbes, ModuleID module_id,
+    HRESULT ApplyAsyncMethodProbe(MethodProbeDefinitions& methodProbes, ModuleID module_id,
                                   ModuleMetadata& module_metadata,
                                   FunctionInfo* caller, DebuggerTokens* debugger_tokens, mdToken function_token,
                                   bool isStatic, TypeSignature* methodReturnType,
@@ -138,6 +138,8 @@ public:
                                bool& isAsyncMethod) const;
     static HRESULT GetTaskReturnType(const ILInstr* instruction, ModuleMetadata& moduleMetadata,
                                      const std::vector<TypeSignature>& methodLocals, TypeSignature* returnType);
+    static void MarkAllProbesAsInstrumented(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
+                                     SpanProbeOnMethodDefinitions& spanOnMethodProbes);
     static void MarkAllProbesAsError(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
                                      SpanProbeOnMethodDefinitions& spanOnMethodProbes,
                                      const WSTRING& reasoning);
