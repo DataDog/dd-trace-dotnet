@@ -63,9 +63,86 @@ namespace Samples.ExceptionGenerator
                     Name = nameof(TimeoutException),
                     Thrower = ThrowTimeout
                 },
+                new ExceptionStats()
+                {
+                    Count = 0,
+                    Name = nameof(BadImageFormatException),
+                    Thrower = ThrowBadImageFormat
+                },
+                new ExceptionStats()
+                {
+                    Count = 0,
+                    Name = nameof(NotImplementedException),
+                    Thrower = ThrowNotImplemented
+                },
+                new ExceptionStats()
+                {
+                    Count = 0,
+                    Name = nameof(ArithmeticException),
+                    Thrower = ThrowArithmetic
+                },
+                new ExceptionStats()
+                {
+                    Count = 0,
+                    Name = nameof(IndexOutOfRangeException),
+                    Thrower = ThrowIndexOutOfRange
+                },
+                new ExceptionStats()
+                {
+                    Count = 0,
+                    Name = nameof(NotSupportedException),
+                    Thrower = ThrowNotSupported
+                },
+                new ExceptionStats()
+                {
+                    Count = 0,
+                    Name = nameof(RankException),
+                    Thrower = ThrowRank
+                },
+                new ExceptionStats()
+                {
+                    Count = 0,
+                    Name = nameof(UnauthorizedAccessException),
+                    Thrower = ThrowUnauthorizedAccess
+                },
             };
 
             return exceptions;
+        }
+
+        private void ThrowUnauthorizedAccess()
+        {
+            try { throw new UnauthorizedAccessException(); } catch { }
+        }
+
+        private void ThrowRank()
+        {
+            try { throw new RankException(); } catch { }
+        }
+
+        private void ThrowNotSupported()
+        {
+            try { throw new NotSupportedException("Too heavy"); } catch { }
+        }
+
+        private void ThrowIndexOutOfRange()
+        {
+            try { throw new IndexOutOfRangeException("Not in range"); } catch { }
+        }
+
+        private void ThrowArithmetic()
+        {
+            try { throw new ArithmeticException("don't know how to count"); } catch { }
+        }
+
+        private void ThrowNotImplemented()
+        {
+            try { throw new NotImplementedException(); } catch { }
+        }
+
+        private void ThrowBadImageFormat()
+        {
+            try { throw new BadImageFormatException("Baaad format", "foo.dll"); } catch { }
         }
 
         private void ThrowArgument()

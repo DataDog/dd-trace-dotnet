@@ -3,13 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -38,7 +32,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        public Task IntegrationDisabled() => IntegrationDisabledMethod();
 
-        public void IntegrationDisabled() => IntegrationDisabledMethod();
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task DoesNotCollectWhenExplicitlySkipped()
+        {
+            // This _shouldn't_ make any difference, it's only if it's explicitly passed to the StartInfo
+            SetEnvironmentVariable("DO_NOT_TRACE_PROCESS", "1");
+
+            using var telemetry = this.ConfigureTelemetry();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var process = await RunSampleAndWaitForExit(agent);
+            var spans = agent.WaitForSpans(1);
+
+            // could snapshot this, but really doesn't seem worth it, as all we
+            // really want to test is that we don't get _2_ spans
+            spans.Should().ContainSingle(x => x.Name == "command_execution");
+        }
     }
 }

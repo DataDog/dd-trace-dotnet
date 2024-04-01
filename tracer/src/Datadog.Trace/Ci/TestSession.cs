@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
@@ -27,7 +28,7 @@ public sealed class TestSession
 {
     private static readonly AsyncLocal<TestSession?> CurrentSession = new();
     private readonly Span _span;
-    private readonly Dictionary<string, string>? _environmentVariablesToRestore = null;
+    private readonly Dictionary<string, string?>? _environmentVariablesToRestore = null;
     private int _finished;
 
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)

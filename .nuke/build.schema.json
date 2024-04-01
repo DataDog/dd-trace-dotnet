@@ -26,6 +26,10 @@
           "type": "integer",
           "description": "The specific Azure DevOps Build ID to use"
         },
+        "BenchmarkCategory": {
+          "type": "string",
+          "description": "Override the default category filter for running benchmarks. (Optional)"
+        },
         "BuildConfiguration": {
           "type": "string",
           "description": "Configuration to build - Default is 'Release'",
@@ -107,6 +111,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "FastDevLoop": {
+          "type": "boolean",
+          "description": "Enable or Disable fast developer loop"
         },
         "Filter": {
           "type": "string",

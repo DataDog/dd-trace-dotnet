@@ -205,6 +205,17 @@ internal class CheckIisCommand : Command
                     return 1;
                 }
             }
+            else if (process.Modules.Any(m => Path.GetFileName(m).Equals("aspnetcorev2.dll", StringComparison.OrdinalIgnoreCase)))
+            {
+                // aspnetcorev2 is found but not aspnetcorev2_outofprocess
+                // It could mean that the process is using in-process hosting,
+                // but it could also mean that it's using out-of-process hosting and hasn't received a request yet.
+                if (process.DotnetRuntime == ProcessInfo.Runtime.Unknown)
+                {
+                    Utils.WriteError(AspNetCoreOutOfProcessNotFound);
+                    return 1;
+                }
+            }
 
             if (!ProcessBasicCheck.Run(process, registryService))
             {

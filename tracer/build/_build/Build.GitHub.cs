@@ -442,6 +442,7 @@ partial class Build
                 "tracer/samples/ConsoleApp/Alpine3.10.dockerfile",
                 "tracer/samples/ConsoleApp/Alpine3.9.dockerfile",
                 "tracer/samples/ConsoleApp/Debian.dockerfile",
+                "tracer/samples/OpenTelemetry/Debian.dockerfile",
                 "tracer/samples/WindowsContainer/Dockerfile",
                 "tracer/src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
                 "tracer/src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
@@ -872,6 +873,7 @@ partial class Build
          .Requires(() => AzureDevopsToken)
          .Requires(() => GitHubRepositoryName)
          .Requires(() => GitHubToken)
+         .Requires(() => BenchmarkCategory)
          .Executes(async () =>
          {
              if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
@@ -883,7 +885,7 @@ partial class Build
              var masterDir = BuildDataDirectory / "previous_benchmarks";
              var prDir = BuildDataDirectory / "benchmarks";
 
-             FileSystemTasks.EnsureCleanDirectory(masterDir);
+             EnsureCleanDirectory(masterDir);
 
              // Connect to Azure DevOps Services
              var connection = new VssConnection(
@@ -891,12 +893,25 @@ partial class Build
                  new VssBasicCredential(string.Empty, AzureDevopsToken));
 
              using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+             var artifactName = string.Empty;
+             switch (BenchmarkCategory)
+             {
+                 case  "tracer": artifactName = "benchmarks_results"; break;
+                 case  "appsec": artifactName = "benchmarks_appsec_results"; break;
+                 default: Logger.Warning("Unknown benchmark category {BenchmarkCategory}. Skipping comparison", BenchmarkCategory); break;
+             }
 
-             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
+             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", _ => artifactName, masterDir, buildReason: null);
 
-             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName);
+             if (oldBuild is null)
+             {
+                    Logger.Warning("Old build is null");
+                    return;
+             }
 
-             await ReplaceCommentInPullRequest(prNumber, "## Benchmarks Report", markdown);
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName, BenchmarkCategory);
+
+             await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report for " + BenchmarkCategory, markdown);
          });
 
     Target CompareThroughputResults => _ => _
@@ -1211,7 +1226,7 @@ partial class Build
         }
 
         var successfulBuilds = completedBuilds
-                              .Where(x => x.Result == BuildResult.Succeeded || x.Result == BuildResult.PartiallySucceeded)
+                              .Where(x => x.Result is BuildResult.Succeeded or BuildResult.PartiallySucceeded)
                               .ToList();
 
         if (!successfulBuilds.Any())

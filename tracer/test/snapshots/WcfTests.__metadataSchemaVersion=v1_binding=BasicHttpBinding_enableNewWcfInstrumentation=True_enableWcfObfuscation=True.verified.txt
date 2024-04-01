@@ -9,6 +9,7 @@
     ParentId: Id_3,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -16,9 +17,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -37,6 +36,7 @@
     ParentId: Id_5,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -44,9 +44,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -65,6 +63,7 @@
     ParentId: Id_7,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -72,9 +71,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -94,6 +91,7 @@
     Error: 1,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       error.msg: Something happened,
       error.stack:
@@ -106,9 +104,7 @@ at Samples.Wcf.Server.CalculatorService.EndServerAsyncAdd(IAsyncResult asyncResu
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -127,6 +123,7 @@ at Samples.Wcf.Server.CalculatorService.EndServerAsyncAdd(IAsyncResult asyncResu
     ParentId: Id_11,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -134,9 +131,7 @@ at Samples.Wcf.Server.CalculatorService.EndServerAsyncAdd(IAsyncResult asyncResu
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -156,6 +151,7 @@ at Samples.Wcf.Server.CalculatorService.EndServerAsyncAdd(IAsyncResult asyncResu
     Error: 1,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       error.msg: Something happened,
       error.stack:
@@ -168,9 +164,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -189,6 +183,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_15,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -196,9 +191,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -217,6 +210,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_17,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -224,9 +218,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -245,6 +237,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_19,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -252,9 +245,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -273,6 +264,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_21,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -280,9 +272,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -301,6 +291,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_23,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -308,9 +299,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -329,6 +318,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_25,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -336,9 +326,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -357,6 +345,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
     ParentId: Id_27,
     Tags: {
       component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
@@ -364,9 +353,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -390,9 +377,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
       otel.trace_id: Guid_2,
       runtime-id: Guid_1,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,

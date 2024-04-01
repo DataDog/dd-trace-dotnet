@@ -191,11 +191,18 @@ namespace Datadog.Trace.Configuration
         public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
 
         /// <summary>
-        /// Configuration key for setting custom <em>span</em> sampling rules based on regular expressions.
+        /// Configuration key for setting the format of <see cref="CustomSamplingRules"/>.
+        /// Valid values are <c>regex</c> or <c>glob</c>.
+        /// If the value is not recognized, trace sampling rules are disabled.
+        /// </summary>
+        public const string CustomSamplingRulesFormat = "DD_TRACE_SAMPLING_RULES_FORMAT";
+
+        /// <summary>
+        /// Configuration key for setting custom <em>span</em> sampling rules based on glob patterns.
         /// Comma separated list of span sampling rules.
         /// The rule is matched in order of specification. The first match in a list is used.
         /// The supported glob pattern characters are '*' and '?'.
-        /// A '*' mactches any contiguous substring.
+        /// A '*' matches any contiguous substring.
         /// A '?' matches exactly one character.
         ///
         /// Per entry:
@@ -480,6 +487,11 @@ namespace Datadog.Trace.Configuration
             public const string CodeCoverageEnableJitOptimizations = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS";
 
             /// <summary>
+            /// Configuration key for selecting the code coverage mode LineExecution or LineCallCount
+            /// </summary>
+            public const string CodeCoverageMode = "DD_CIVISIBILITY_CODE_COVERAGE_MODE";
+
+            /// <summary>
             /// Configuration key for setting the code coverage jsons destination path.
             /// </summary>
             public const string CodeCoveragePath = "DD_CIVISIBILITY_CODE_COVERAGE_PATH";
@@ -510,6 +522,11 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for setting the external code coverage file path
             /// </summary>
             public const string ExternalCodeCoveragePath = "DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Datadog.Trace GAC installation
+            /// </summary>
+            public const string InstallDatadogTraceInGac = "DD_CIVISIBILITY_GAC_INSTALL_ENABLED";
         }
 
         /// <summary>

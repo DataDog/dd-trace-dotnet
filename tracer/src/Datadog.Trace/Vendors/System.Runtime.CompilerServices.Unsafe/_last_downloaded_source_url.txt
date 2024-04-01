@@ -1,0 +1,1 @@
+https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip

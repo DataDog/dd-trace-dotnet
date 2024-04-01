@@ -26,3 +26,15 @@ HANDLE WindowsThreadInfo::GetOsThreadHandle() const
 {
     return _handle;
 }
+
+std::string WindowsThreadInfo::GetProfileThreadId()
+{
+    assert(false); // not supposed to be called on Windows
+    return "??ProfilerThreadId??";
+}
+
+std::string WindowsThreadInfo::GetProfileThreadName()
+{
+    assert(false); // not supposed to be called on Windows
+    return "??ProfilerThreadName??";
+}

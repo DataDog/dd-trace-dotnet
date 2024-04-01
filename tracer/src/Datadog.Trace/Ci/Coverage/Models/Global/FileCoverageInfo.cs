@@ -8,23 +8,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Coverage.Models.Global;
 
-internal sealed class FileCoverageInfo : CoverageInfo
+internal sealed class FileCoverageInfo(string? path) : CoverageInfo
 {
-    public FileCoverageInfo(string? path)
-    {
-        Path = path;
-        Segments = new List<uint[]>();
-    }
-
     [JsonProperty("path")]
-    public string? Path { get; set; }
+    public string? Path { get; set; } = path;
 
-    [JsonProperty("segments")]
-    public List<uint[]> Segments { get; set; }
+    [JsonProperty("executableBitmap")]
+    public byte[]? ExecutableBitmap { get; set; }
+
+    [JsonProperty("executedBitmap")]
+    public byte[]? ExecutedBitmap { get; set; }
 
     public static FileCoverageInfo? operator +(FileCoverageInfo? a, FileCoverageInfo? b)
     {
@@ -32,25 +30,38 @@ internal sealed class FileCoverageInfo : CoverageInfo
         {
             return null;
         }
-        else if (b is null)
+
+        if (b is null)
         {
             return a;
         }
-        else if (a is null)
+
+        if (a is null)
         {
             return b;
         }
-        else if (a.Path == b.Path)
+
+        if (a.Path == b.Path)
         {
             var fcInfo = new FileCoverageInfo(a.Path);
-            var aSegments = a.Segments ?? Enumerable.Empty<uint[]>();
-            var bSegments = b.Segments ?? Enumerable.Empty<uint[]>();
-
-            fcInfo.Segments.AddRange(aSegments);
-
-            foreach (var segment in bSegments)
+            if (a.ExecutableBitmap is { } aExecutableBitmap)
             {
-                fcInfo.Add(segment);
+                fcInfo.AggregateExecutableBitmap(aExecutableBitmap);
+            }
+
+            if (b.ExecutableBitmap is { } bExecutableBitmap)
+            {
+                fcInfo.AggregateExecutableBitmap(bExecutableBitmap);
+            }
+
+            if (a.ExecutedBitmap is { } aExecutedBitmap)
+            {
+                fcInfo.AggregateExecutedBitmap(aExecutedBitmap);
+            }
+
+            if (b.ExecutedBitmap is { } bExecutedBitmap)
+            {
+                fcInfo.AggregateExecutedBitmap(bExecutedBitmap);
             }
 
             return fcInfo;
@@ -59,23 +70,48 @@ internal sealed class FileCoverageInfo : CoverageInfo
         throw new InvalidOperationException("The operation cannot be executed. Instances are incompatibles.");
     }
 
-    public void Add(uint[] segment)
+    public void AggregateExecutableBitmap(byte[] bitmapBytes)
     {
-        if (segment?.Length == 5)
+        if (ExecutableBitmap is { } currentBitmapBytes)
         {
-            foreach (var eSegment in Segments)
-            {
-                if (eSegment[0] == segment[0] &&
-                    eSegment[1] == segment[1] &&
-                    eSegment[2] == segment[2] &&
-                    eSegment[3] == segment[3])
-                {
-                    eSegment[4] += segment[4];
-                    return;
-                }
-            }
+            using var currentBitmap = new FileBitmap(currentBitmapBytes);
+            using var bitmap = new FileBitmap(bitmapBytes);
+            using var newBitmap = currentBitmap | bitmap;
+            ExecutableBitmap = newBitmap.GetInternalArrayOrToArrayAndDispose();
+        }
+        else
+        {
+            ExecutableBitmap = bitmapBytes;
+        }
+    }
 
-            Segments.Add(segment);
+    public void AggregateExecutedBitmap(byte[] bitmapBytes)
+    {
+        if (ExecutedBitmap is { } currentBitmapBytes)
+        {
+            using var currentBitmap = new FileBitmap(currentBitmapBytes);
+            using var bitmap = new FileBitmap(bitmapBytes);
+            using var newBitmap = currentBitmap | bitmap;
+            ExecutedBitmap = newBitmap.GetInternalArrayOrToArrayAndDispose();
+        }
+        else
+        {
+            ExecutedBitmap = bitmapBytes;
+        }
+    }
+
+    public void IncrementCounts(ref double total, ref double executed)
+    {
+        if (ExecutableBitmap is { } executableBitmap)
+        {
+            using var fileBitmap = new FileBitmap(executableBitmap);
+            total += fileBitmap.CountActiveBits();
+        }
+
+        if (ExecutedBitmap is { } executedBitmap)
+        {
+            using var fileBitmap = new FileBitmap(executedBitmap);
+            executed += fileBitmap.CountActiveBits();
         }
     }
 }

@@ -5,13 +5,15 @@
 #include "gtest/gtest.h"
 
 #include "EnabledProfilers.h"
-#include "ProfileExporter.h"
 #include "OpSysTools.h"
+#include "ProfileExporter.h"
 
+#include "FakeSamples.h"
+#include "IMetadataProvider.h"
 #include "MetricsRegistry.h"
 #include "ProfilerMockedInterface.h"
 #include "RuntimeInfoHelper.h"
-#include "IMetadataProvider.h"
+#include "SamplesEnumerator.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 
@@ -79,8 +81,7 @@ TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo,
-                                      &enabledProfilers, metricsRegistry, metadataProvider, allocRecorder);
-
+                                    &enabledProfilers, metricsRegistry, metadataProvider, allocRecorder);
 
     // Add samples to only one application
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
@@ -130,7 +131,6 @@ TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
 
     fs::remove_all(pprofTempDir);
 }
-
 
 // ----------------------------------------------------------------------------------------------
 // This test is done in 2 steps:
@@ -196,7 +196,7 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                      metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -251,7 +251,6 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     fs::remove_all(pprofTempDir);
 }
 
-
 TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
@@ -304,7 +303,7 @@ TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                      metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -396,7 +395,7 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                      metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder);
 }
 
 TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
@@ -441,7 +440,7 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                      metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder);
 }
 
 TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
@@ -479,7 +478,7 @@ TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                      metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder);
 }
 
 TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
@@ -517,9 +516,9 @@ TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
     IAllocationsRecorder* allocRecorder = nullptr;
     MockProcessSamplesProvider processSamplesProvider;
     IMetadataProvider* metadataProvider = nullptr;
-    EXPECT_CALL(processSamplesProvider, GetSamples()).Times(1).WillOnce(Return(std::list<std::shared_ptr<Sample>>()));
+    EXPECT_CALL(processSamplesProvider, GetSamples()).Times(1).WillOnce(Return(::testing::ByMove(std::make_unique<FakeSamples>())));
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                      metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder);
 
     exporter.RegisterProcessSamplesProvider(static_cast<ISamplesProvider*>(&processSamplesProvider));
 
@@ -562,7 +561,7 @@ TEST(ProfileExporterTest, MakeSureNoCrashForReallyLongCallstack)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                      metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, allocRecorder);
 
     std::string runtimeId = "MyRid";
     auto callstack = CreateCallstack(2048);
@@ -756,7 +755,7 @@ TEST(ProfileExporterTest, CheckHeapIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
-    EnabledProfilers enabledProfilers(configuration.get(), false, true);  // this should never happen but test it anyway
+    EnabledProfilers enabledProfilers(configuration.get(), false, true); // this should never happen but test it anyway
 
     std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 

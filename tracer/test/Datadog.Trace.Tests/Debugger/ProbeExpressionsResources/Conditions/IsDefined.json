@@ -1,0 +1,9 @@
+{
+  "dsl": "isDefined(ref Nested, NestedString)",
+  "isDefined": [
+    {
+      "ref": "Nested"
+    },
+    "NestedString"
+  ]
+}

@@ -10,9 +10,6 @@ include:
 
 variables:
   GIT_PROFILER_REF: master
-  DEPLOY_TO_DEBUGGER_BACKEND:
-    value: "false"
-    description: "Set to true to deploy to debugger backend demo application"
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
 
@@ -156,20 +153,6 @@ deploy_latest_musl_tag_to_docker_registries:
     IMG_DESTINATIONS: dd-lib-dotnet-init:latest-musl
     IMG_SIGNING: "false"
 
-deploy_to_debugger_backend:
-  stage: deploy
-  rules:
-    - if: '$DEPLOY_TO_DEBUGGER_BACKEND == "true"'
-  trigger:
-    project: DataDog/debugger-demos
-    branch: main
-  variables:
-    UPSTREAM_PACKAGE_JOB: build
-    UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
-    UPSTREAM_BRANCH: $CI_COMMIT_BRANCH
-    UPSTREAM_TAG: $DEPLOY_TAG
-
-
 package:
   extends: .package
   rules:
@@ -195,6 +178,23 @@ package-arm:
     - ../.gitlab/build-deb-rpm.sh
   variables:
     ARCH: arm64
+
+package-oci:
+  stage: package
+  extends: .package-oci
+  rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: on_success
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: manual
+      allow_failure: false
+  script:
+    - ../.gitlab/build-oci.sh
+  parallel:
+    matrix:
+      - ARCH:
+        - arm64
+        - amd64
 
 .release-package:
   stage: deploy

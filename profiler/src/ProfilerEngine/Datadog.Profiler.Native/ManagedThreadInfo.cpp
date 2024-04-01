@@ -31,6 +31,8 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HAN
     _osThreadHandle(osThreadHandle),
     _pThreadName(std::move(pThreadName)),
     _lastSampleHighPrecisionTimestampNanoseconds{0},
+    _cpuConsumptionMilliseconds{0},
+    _timestamp{0},
     _lastKnownSampleUnixTimeUtc{0},
     _highPrecisionNanosecsAtLastUnixTimeUpdate{0},
     _snapshotsPerformedSuccessCount{0},
@@ -41,8 +43,6 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HAN
     _stackWalkLock(1),
     _isThreadDestroyed{false},
     _traceContextTrackingInfo{},
-    _cpuConsumptionMilliseconds{0},
-    _timestamp{0},
     _sharedMemoryArea{nullptr}
 {
 }

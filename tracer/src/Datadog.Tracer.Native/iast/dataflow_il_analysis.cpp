@@ -169,6 +169,31 @@ namespace iast
     bool InstructionInfo::IsSwitch() { return _instruction->m_opcode == CEE_SWITCH; }
     bool InstructionInfo::IsRet() { return _instruction->m_opcode == CEE_RET; }
     bool InstructionInfo::IsDup() { return _instruction->m_opcode == CEE_DUP; }
+    bool InstructionInfo::IsAddressLoad()
+    {
+        return _instruction->m_opcode == CEE_LDARGA || _instruction->m_opcode == CEE_LDARGA_S ||
+               _instruction->m_opcode == CEE_LDLOCA || _instruction->m_opcode == CEE_LDLOCA_S;
+    }
+
+    void InstructionInfo::ConvertToNonAddressLoad()
+    {
+        if (_instruction->m_opcode == CEE_LDARGA_S)
+        {
+            _instruction->m_opcode = CEE_LDARG_S;
+        }
+        else if (_instruction->m_opcode == CEE_LDLOCA_S)
+        {
+            _instruction->m_opcode = CEE_LDLOC_S;
+        }
+        else if (_instruction->m_opcode == CEE_LDARGA)
+        {
+            _instruction->m_opcode = CEE_LDARG;
+        }
+        else if (_instruction->m_opcode == CEE_LDLOCA)
+        {
+            _instruction->m_opcode = CEE_LDLOC;
+        }
+    }
 
     bool InstructionInfo::IsField() { return (_instructionFlags[_instruction->m_opcode] & OPCODEFLAGS_Field) == OPCODEFLAGS_Field; }
     bool InstructionInfo::IsLocal()

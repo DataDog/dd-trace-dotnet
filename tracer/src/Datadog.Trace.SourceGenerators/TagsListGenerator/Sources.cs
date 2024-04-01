@@ -89,19 +89,11 @@ namespace ");
 
                     sb.Append(
                             @"
-#if NETCOREAPP
         private static ReadOnlySpan<byte> ")
                         .Append(property.PropertyName)
                         .Append(@"Bytes => new byte[] { ")
                         .Append(tagByteArray)
-                        .Append(@" };
-#else
-        private static readonly byte[] ")
-                        .Append(property.PropertyName)
-                        .Append(@"Bytes = new byte[] { ")
-                        .Append(tagByteArray)
-                        .Append(@" };
-#endif");
+                        .Append(@" };");
                 }
             }
 
@@ -121,19 +113,11 @@ namespace ");
 
                     sb.Append(
                             @"
-#if NETCOREAPP
         private static ReadOnlySpan<byte> ")
                         .Append(property.PropertyName)
                         .Append(@"Bytes => new byte[] { ")
                         .Append(tagByteArray)
-                        .Append(@" };
-#else
-        private static readonly byte[] ")
-                        .Append(property.PropertyName)
-                        .Append(@"Bytes = new byte[] { ")
-                        .Append(tagByteArray)
-                        .Append(@" };
-#endif");
+                        .Append(@" };");
                 }
 
                 sb.Append(

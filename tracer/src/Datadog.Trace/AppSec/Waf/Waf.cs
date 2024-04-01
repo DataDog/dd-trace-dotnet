@@ -8,12 +8,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -28,12 +29,14 @@ namespace Datadog.Trace.AppSec.Waf
 
         private readonly WafLibraryInvoker _wafLibraryInvoker;
         private readonly Concurrency.ReaderWriterLock _wafLocker = new();
+        private readonly IEncoder _encoder;
         private IntPtr _wafHandle;
 
-        internal Waf(IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker)
+        internal Waf(IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
         {
             _wafLibraryInvoker = wafLibraryInvoker;
             _wafHandle = wafHandle;
+            _encoder = encoder;
         }
 
         internal bool Disposed { get; private set; }
@@ -51,33 +54,71 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="embeddedRulesetPath">can be null, means use rules embedded in the manifest </param>
         /// <param name="rulesFromRcm">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
         /// <param name="setupWafSchemaExtraction">should we read the config file for schema extraction</param>
+        /// <param name="useUnsafeEncoder">use legacy encoder</param>
+        /// <param name="wafDebugEnabled">if debug level logs should be enabled for the WAF</param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? embeddedRulesetPath = null, JToken? rulesFromRcm = null, bool setupWafSchemaExtraction = false)
+        internal static InitResult Create(
+            WafLibraryInvoker wafLibraryInvoker,
+            string obfuscationParameterKeyRegex,
+            string obfuscationParameterValueRegex,
+            string? embeddedRulesetPath = null,
+            JToken? rulesFromRcm = null,
+            bool setupWafSchemaExtraction = false,
+            bool useUnsafeEncoder = false,
+            bool wafDebugEnabled = false)
         {
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
 
             // set the log level and setup the logger
-            wafLibraryInvoker.SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
+            wafLibraryInvoker.SetupLogging(wafDebugEnabled);
+
             var jtokenRoot = rulesFromRcm ?? WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
+            if (jtokenRoot is null)
+            {
+                return InitResult.FromUnusableRuleFile();
+            }
 
-            var argCache = new List<Obj>();
-            var configObj = Encoder.Encode(jtokenRoot, wafLibraryInvoker, argCache, applySafetyLimits: false);
+            DdwafConfigStruct configWafStruct = default;
+            var keyRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterKeyRegex);
+            var valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
+            configWafStruct.KeyRegex = keyRegex;
+            configWafStruct.ValueRegex = valueRegex;
+            IEncoder encoder = useUnsafeEncoder ? new Encoder() : new EncoderLegacy(wafLibraryInvoker);
+            var result = encoder.Encode(jtokenRoot, applySafetyLimits: false);
+            var rulesObj = result.ResultDdwafObject;
 
-            var ruleSetFile = rulesFromRcm != null ? embeddedRulesetPath : "RemoteConfig";
-            var initResult = wafConfigurator.ConfigureAndDispose(configObj, ruleSetFile, argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
-            initResult.EmbeddedRules = jtokenRoot;
+            var diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
 
-            return initResult;
-        }
-
-        private UpdateResult UpdateWafAndDisposeItems(Obj updateData, IEnumerable<Obj> argsToDispose)
-        {
-            UpdateResult res;
-            Obj? diagnostics = null;
             try
             {
-                diagnostics = new Obj(_wafLibraryInvoker.ObjectMap());
-                var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData.RawPtr, diagnostics.RawPtr);
+                var initResult = wafConfigurator.Configure(ref rulesObj, encoder, configWafStruct, ref diagnostics, rulesFromRcm == null ? embeddedRulesetPath : "RemoteConfig");
+                initResult.EmbeddedRules = jtokenRoot;
+                return initResult;
+            }
+            finally
+            {
+                if (keyRegex != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(keyRegex);
+                }
+
+                if (valueRegex != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(valueRegex);
+                }
+
+                wafLibraryInvoker.ObjectFree(ref diagnostics);
+                result.Dispose();
+            }
+        }
+
+        private unsafe UpdateResult UpdateWafAndDispose(IEncodeResult updateData)
+        {
+            UpdateResult? res = null;
+            var diagnosticsValue = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
+            try
+            {
+                var newHandle = _wafLibraryInvoker.Update(_wafHandle, ref updateData.ResultDdwafObject, ref diagnosticsValue);
                 if (newHandle != IntPtr.Zero)
                 {
                     var oldHandle = _wafHandle;
@@ -86,9 +127,7 @@ namespace Datadog.Trace.AppSec.Waf
                         _wafHandle = newHandle;
                         _wafLocker.ExitWriteLock();
                         _wafLibraryInvoker.Destroy(oldHandle);
-                        res = new UpdateResult(diagnostics, true);
-                        DisposeItems(updateData, argsToDispose, diagnostics);
-                        return res;
+                        return new(diagnosticsValue, true);
                     }
 
                     _wafLibraryInvoker.Destroy(newHandle);
@@ -98,21 +137,14 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 Log.Error(e, "An exception occurred while trying to update waf with new data");
             }
-
-            res = new UpdateResult(diagnostics, false);
-            DisposeItems(updateData, argsToDispose, diagnostics);
-            return res;
-        }
-
-        private void DisposeItems(Obj updateData, IEnumerable<Obj> argsToDispose, Obj? diagnostics)
-        {
-            diagnostics?.Dispose(_wafLibraryInvoker);
-            updateData.Dispose(_wafLibraryInvoker);
-
-            foreach (var arg in argsToDispose)
+            finally
             {
-                arg.Dispose();
+                res ??= new(diagnosticsValue, false);
+                _wafLibraryInvoker.ObjectFree(ref diagnosticsValue);
+                updateData.Dispose();
             }
+
+            return res;
         }
 
         public UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus)
@@ -142,7 +174,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
             else
             {
-                Log.Warning("Context couldn't be created as we couldnt acquire a reader lock");
+                Log.Warning("Context couldn't be created as we couldn't acquire a reader lock");
                 return null;
             }
 
@@ -152,24 +184,22 @@ namespace Datadog.Trace.AppSec.Waf
                 throw new Exception(InitContextError);
             }
 
-            return Context.GetContext(contextHandle, this, _wafLibraryInvoker);
+            return Context.GetContext(contextHandle, this, _wafLibraryInvoker, _encoder);
         }
 
-        public UpdateResult Update(IDictionary<string, object> arguments)
+        private UpdateResult Update(IDictionary<string, object> arguments)
         {
-            var argsToDispose = new List<Obj>();
             UpdateResult updated;
             try
             {
-                var encodedArgs = Encoder.Encode(arguments, _wafLibraryInvoker, argsToDispose, false);
+                var encodedArgs = _encoder.Encode(arguments, applySafetyLimits: false);
+                updated = UpdateWafAndDispose(encodedArgs);
 
                 // only if rules are provided will the waf give metrics
                 if (arguments.ContainsKey("rules"))
                 {
                     TelemetryFactory.Metrics.RecordCountWafUpdates();
                 }
-
-                updated = UpdateWafAndDisposeItems(encodedArgs, argsToDispose);
             }
             catch
             {
@@ -180,8 +210,8 @@ namespace Datadog.Trace.AppSec.Waf
         }
 
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
-        public WafReturnCode Run(IntPtr contextHandle, IntPtr rawPersistentData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds)
-            => _wafLibraryInvoker.Run(contextHandle, rawPersistentData, IntPtr.Zero, ref retNative, timeoutMicroSeconds);
+        public unsafe WafReturnCode Run(IntPtr contextHandle, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds)
+            => _wafLibraryInvoker.Run(contextHandle, rawPersistentData, rawEphemeralData, ref retNative, timeoutMicroSeconds);
 
         internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
         {

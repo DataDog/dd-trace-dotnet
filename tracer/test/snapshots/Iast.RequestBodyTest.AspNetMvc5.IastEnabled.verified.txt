@@ -23,6 +23,12 @@
   "vulnerabilities": [
     {
       "type": "SQL_INJECTION",
+      "hash": -209503571,
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "ExecuteQuery"
+      },
       "evidence": {
         "valueParts": [
           {

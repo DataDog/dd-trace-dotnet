@@ -10,23 +10,28 @@ using System.IO;
 using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
-using Encoder = Datadog.Trace.AppSec.Waf.Encoder;
+using Encoder = Datadog.Trace.AppSec.WafEncoding.Encoder;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
 public class FuzzEncoder : WafLibraryRequiredTest
 {
     private readonly ITestOutputHelper _outputHelper;
+    private readonly Encoder _encoder;
+    private readonly EncoderLegacy _encoderLegacy;
 
     public FuzzEncoder(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
+        _encoder = new Encoder();
+        _encoderLegacy = new EncoderLegacy(WafLibraryInvoker!);
     }
 
     [Fact]
@@ -38,7 +43,7 @@ public class FuzzEncoder : WafLibraryRequiredTest
 
         var errorOccured = false;
 
-        for (int i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             var buffer = jsonGenerator.GenerateJsonBuffer();
             try
@@ -48,13 +53,14 @@ public class FuzzEncoder : WafLibraryRequiredTest
                 using var jsonReader = new JsonTextReader(streamReader);
                 var root = JToken.ReadFrom(jsonReader);
 
-                var l = new List<Obj>();
-                using var result = Encoder.Encode(root, WafLibraryInvoker!, l, applySafetyLimits: true);
+                using var result = _encoder.Encode(root, applySafetyLimits: true);
 
                 // check the object is valid
-                Assert.NotEqual(ObjType.Invalid, result.ArgsType);
+                Assert.NotEqual(DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID, result.ResultDdwafObject.Type);
 
-                l.ForEach(x => x.Dispose());
+                using var resultObj = _encoderLegacy.Encode(root, applySafetyLimits: true);
+
+                Assert.NotEqual(DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID, result.ResultDdwafObject.Type);
             }
             catch (Exception ex)
             {

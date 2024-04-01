@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Trace.Coverage.Collector;
@@ -30,18 +31,18 @@ public class CoverageRewriteTests
 
     public static IEnumerable<object[]> FiltersData()
     {
-        yield return new object[]
-        {
+        yield return
+        [
             "CoverageRewriteTests.Rewritten.CoverletFilterByAttribute",
             @"<?xml version=""1.0"" encoding=""utf-8""?>
             <Configuration>
                 <!-- Coverlet configuration -->
                 <ExcludeByAttribute>CompilerGeneratedAttribute</ExcludeByAttribute>
-            </Configuration>",
-        };
+            </Configuration>"
+        ];
 
-        yield return new object[]
-        {
+        yield return
+        [
             "CoverageRewriteTests.Rewritten.NetFrameworkSettingsFilterByAttribute",
             @"<?xml version=""1.0"" encoding=""utf-8""?>
             <Configuration>
@@ -53,21 +54,21 @@ public class CoverageRewriteTests
                         </Exclude>
                     </Attributes>
                 </CodeCoverage>
-            </Configuration>",
-        };
+            </Configuration>"
+        ];
 
-        yield return new object[]
-        {
+        yield return
+        [
             "CoverageRewriteTests.Rewritten.CoverletFilterBySourceFile",
             @"<?xml version=""1.0"" encoding=""utf-8""?>
             <Configuration>
                 <!-- Coverlet configuration -->
                 <ExcludeByFile>**/CoverageRewriterAssembly/Class1.cs</ExcludeByFile>
-            </Configuration>",
-        };
+            </Configuration>"
+        ];
 
-        yield return new object[]
-        {
+        yield return
+        [
             "CoverageRewriteTests.Rewritten.NetFrameworkSettingsFilterBySourceFile",
             @"<?xml version=""1.0"" encoding=""utf-8""?>
             <Configuration>
@@ -79,32 +80,50 @@ public class CoverageRewriteTests
                         </Exclude>
                     </Sources>
                 </CodeCoverage>
-            </Configuration>",
-        };
+            </Configuration>"
+        ];
 
-        yield return new object[]
-        {
+        yield return
+        [
             "CoverageRewriteTests.Rewritten.CoverletFilterByAssemblyType",
             @"<?xml version=""1.0"" encoding=""utf-8""?>
             <Configuration>
                 <!-- Coverlet configuration -->
                 <Exclude>[*]CoverageRewriterAssembly.Class1</Exclude>
-            </Configuration>",
-        };
+            </Configuration>"
+        ];
 
-        yield return new object[]
-        {
+        yield return
+        [
             "CoverageRewriteTests.Rewritten.CoverletFilterByAssemblyAttribute",
             @"<?xml version=""1.0"" encoding=""utf-8""?>
             <Configuration>
                 <!-- Coverlet configuration -->
                 <ExcludeByAttribute>AssemblyFileVersionAttribute</ExcludeByAttribute>
-            </Configuration>",
-        };
+            </Configuration>"
+        ];
     }
 
-    [Fact]
-    public async Task NoFilter()
+    public static IEnumerable<object[]> CoverageModeData()
+    {
+        yield return ["LineExecution"];
+        yield return ["LineCallCount"];
+    }
+
+    public static IEnumerable<object[]> FiltersByCoverageModeData()
+    {
+        foreach (var filter in FiltersData())
+        {
+            foreach (var coverageMode in CoverageModeData())
+            {
+                yield return filter.Concat(coverageMode).ToArray();
+            }
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(CoverageModeData))]
+    public async Task NoFilter(string coverageMode)
     {
         var tempFileName = GetTempFile();
 
@@ -116,11 +135,13 @@ public class CoverageRewriteTests
         var originalCode = decompilerOriginalCode.DecompileWholeModuleAsString();
 
         var originalVerifySettings = new VerifySettings();
+        originalVerifySettings.DisableRequireUniquePrefix();
         originalVerifySettings.UseFileName("CoverageRewriteTests.Original");
         await Verifier.Verify(originalCode, originalVerifySettings);
 
         // Apply rewriter process
         var covSettings = new CoverageSettings(null, string.Empty);
+        covSettings.CIVisibility.SetCodeCoverageMode(coverageMode);
         var asmProcessor = new AssemblyProcessor(tempFileName, covSettings);
         asmProcessor.Process();
 
@@ -129,13 +150,13 @@ public class CoverageRewriteTests
         var transCode = decompilerTransCode.DecompileWholeModuleAsString();
 
         var transVerifySettings = new VerifySettings();
-        transVerifySettings.UseFileName("CoverageRewriteTests.Rewritten");
+        transVerifySettings.UseFileName($"CoverageRewriteTests.Rewritten.{coverageMode}");
         await Verifier.Verify(transCode, transVerifySettings);
     }
 
     [Theory]
-    [MemberData(nameof(FiltersData))]
-    public async Task WithFilters(string targetSnapshot, string configurationSettingsXml)
+    [MemberData(nameof(FiltersByCoverageModeData))]
+    public async Task WithFilters(string targetSnapshot, string configurationSettingsXml, string coverageMode)
     {
         var tempFileName = GetTempFile();
 
@@ -146,6 +167,7 @@ public class CoverageRewriteTests
         configurationElement.LoadXml(configurationSettingsXml);
 
         var covSettings = new CoverageSettings(configurationElement.DocumentElement, string.Empty);
+        covSettings.CIVisibility.SetCodeCoverageMode(coverageMode);
         var asmProcessor = new AssemblyProcessor(tempFileName, covSettings);
         asmProcessor.Process();
 
@@ -154,7 +176,7 @@ public class CoverageRewriteTests
         var transCode = decompilerTransCode.DecompileWholeModuleAsString();
 
         var transVerifySettings = new VerifySettings();
-        transVerifySettings.UseFileName(targetSnapshot);
+        transVerifySettings.UseFileName($"{targetSnapshot}.{coverageMode}");
         await Verifier.Verify(transCode, transVerifySettings);
     }
 

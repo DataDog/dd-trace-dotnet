@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
 #if NETFRAMEWORK
                 var expectedCount = 10;

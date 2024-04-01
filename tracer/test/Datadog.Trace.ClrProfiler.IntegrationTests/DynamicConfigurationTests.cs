@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -47,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory);
-            using var sample = StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
+            using var sample = await StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
 
             try
             {
@@ -58,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     logEntryWatcher,
                     new Config
                     {
+                        TraceEnabled = false,
                         // RuntimeMetricsEnabled = true,
                         // DebugLogsEnabled = true,
                         // DataStreamsEnabled = true,
@@ -71,6 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     },
                     new Config
                     {
+                        TraceEnabled = false,
                         // RuntimeMetricsEnabled = true,
                         // DebugLogsEnabled = true,
                         // DataStreamsEnabled = true,
@@ -106,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory);
 
             SetEnvironmentVariable("DD_TRACE_SAMPLE_RATE", "0.9");
-            using var sample = StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
+            using var sample = await StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
 
             try
             {
@@ -117,6 +120,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     logEntryWatcher,
                     new Config
                     {
+                        TraceEnabled = false,
                         TraceSampleRate = .5,
                     });
 
@@ -126,7 +130,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     config: new Config(),
                     expectedConfig: new Config
                     {
-                        TraceSampleRate = .9 // When clearing the key from dynamic configuration, it should revert back to the initial value
+                        // When clearing the key from dynamic configuration,
+                        // it should revert back to the initial value
+                        TraceEnabled = true,
+                        TraceSampleRate = .9
                     });
             }
             finally
@@ -166,47 +173,50 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             capabilities[13].Should().BeTrue(); // APM_TRACING_LOGS_INJECTION
             capabilities[14].Should().BeTrue(); // APM_TRACING_HTTP_HEADER_TAGS
             capabilities[15].Should().BeTrue(); // APM_TRACING_CUSTOM_TAGS
+            capabilities[19].Should().BeTrue(); // APM_TRACING_TRACING_ENABLED
 
             request.Client.State.ConfigStates.Should().ContainSingle(f => f.Id == fileId)
                .Subject.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
 
-            var log = await logEntryWatcher.WaitForLogEntries(new[] { DiagnosticLog });
+            var log = await logEntryWatcher.WaitForLogEntries([DiagnosticLog]);
 
-            using var context = new AssertionScope();
-
-            for (int i = 0; i < log.Length; i++)
+            using (var context = new AssertionScope())
             {
-                context.AddReportable($"log {i}", log[i]);
-            }
-
-            var diagnosticLog = log.First(l => l.Contains(DiagnosticLog));
-
-            var match = Regex.Match(diagnosticLog, diagnosticLogRegex);
-
-            match.Success.Should().BeTrue();
-
-            var json = JObject.Parse(match.Groups["diagnosticLog"].Value);
-
-            static string FlattenJsonArray(JToken json)
-            {
-                if (json is JArray array)
+                for (int i = 0; i < log.Length; i++)
                 {
-                    return string.Join(";", array);
+                    context.AddReportable($"log {i}", log[i]);
                 }
 
-                return string.Empty;
+                var diagnosticLog = log.First(l => l.Contains(DiagnosticLog));
+
+                var match = Regex.Match(diagnosticLog, diagnosticLogRegex);
+
+                match.Success.Should().BeTrue();
+
+                var json = JObject.Parse(match.Groups["diagnosticLog"].Value);
+
+                static string FlattenJsonArray(JToken json)
+                {
+                    if (json is JArray array)
+                    {
+                        return string.Join(";", array);
+                    }
+
+                    return string.Empty;
+                }
+
+                // json["runtime_metrics_enabled"]?.Value<bool>().Should().Be(expectedConfig.RuntimeMetricsEnabled);
+                // json["debug"]?.Value<bool>().Should().Be(expectedConfig.DebugLogsEnabled);
+                json["log_injection_enabled"]?.Value<bool>().Should().Be(expectedConfig.LogInjectionEnabled);
+                json["sample_rate"]?.Value<double?>().Should().Be(expectedConfig.TraceSampleRate);
+                // json["sampling_rules"]?.Value<string>().Should().Be(expectedConfig.CustomSamplingRules);
+                // json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
+                // json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
+                FlattenJsonArray(json["header_tags"]).Should().Be(expectedConfig.TraceHeaderTags ?? string.Empty);
+                // FlattenJsonArray(json["service_mapping"]).Should().Be(expectedConfig.ServiceNameMapping ?? string.Empty);
+                json["tags"]?.ToString(Formatting.None).Should().Be(expectedConfig.GlobalTags ?? "[]");
             }
 
-            // json["runtime_metrics_enabled"]?.Value<bool>().Should().Be(expectedConfig.RuntimeMetricsEnabled);
-            // json["debug"]?.Value<bool>().Should().Be(expectedConfig.DebugLogsEnabled);
-            json["log_injection_enabled"]?.Value<bool>().Should().Be(expectedConfig.LogInjectionEnabled);
-            json["sample_rate"]?.Value<double?>().Should().Be(expectedConfig.TraceSampleRate);
-            // json["sampling_rules"]?.Value<string>().Should().Be(expectedConfig.CustomSamplingRules);
-            // json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
-            // json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
-            FlattenJsonArray(json["header_tags"]).Should().Be(expectedConfig.TraceHeaderTags ?? string.Empty);
-            // FlattenJsonArray(json["service_mapping"]).Should().Be(expectedConfig.ServiceNameMapping ?? string.Empty);
-            json["tags"]?.ToString(Formatting.None).Should().Be(expectedConfig.GlobalTags ?? "[]");
             WaitForTelemetry(agent);
 
             AssertConfigurationChanged(agent.Telemetry, config);
@@ -234,8 +244,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private void AssertConfigurationChanged(ConcurrentStack<object> events, Config config)
         {
-            var expectedKeys = new (string Key, object Value)[]
+            var expectedKeys = new List<(string Key, object Value)>
             {
+                (ConfigurationKeys.TraceEnabled, config.TraceEnabled),
                 // (ConfigurationKeys.RuntimeMetricsEnabled, config.RuntimeMetricsEnabled),
                 // (ConfigurationKeys.DebugEnabled, config.DebugLogsEnabled),
                 (ConfigurationKeys.LogsInjectionEnabled, config.LogInjectionEnabled),
@@ -243,9 +254,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // (ConfigurationKeys.CustomSamplingRules, config.CustomSamplingRules),
                 // (ConfigurationKeys.SpanSamplingRules, config.SpanSamplingRules),
                 // (ConfigurationKeys.DataStreamsMonitoring.Enabled, config.DataStreamsEnabled),
-                (ConfigurationKeys.HeaderTags, config.TraceHeaderTags == null ? string.Empty : JToken.Parse(config.TraceHeaderTags).ToString()),
+                (ConfigurationKeys.HeaderTags, config.TraceHeaderTags == null ? null : JToken.Parse(config.TraceHeaderTags).ToString()),
                 // (ConfigurationKeys.ServiceNameMappings, config.ServiceNameMapping == null ? string.Empty : JToken.Parse(config.ServiceNameMapping).ToString())
-                (ConfigurationKeys.GlobalTags, config.GlobalTags == null ? string.Empty : JToken.Parse(config.GlobalTags).ToString())
+                (ConfigurationKeys.GlobalTags, config.GlobalTags == null ? null : JToken.Parse(config.GlobalTags).ToString())
             };
 
             var expectedCount = expectedKeys.Count(k => k.Value is not null);
@@ -258,7 +269,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 while (events.TryPop(out var obj))
                 {
-                    var wrapper = ((TelemetryData)obj);
+                    var wrapper = (TelemetryData)obj;
 
                     if (!wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
                     {
@@ -324,6 +335,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         internal record Config
         {
+            [JsonProperty("tracing_enabled")]
+            public bool TraceEnabled { get; init; }
+
             // [JsonProperty("runtime_metrics_enabled")]
             // public bool RuntimeMetricsEnabled { get; init; }
 

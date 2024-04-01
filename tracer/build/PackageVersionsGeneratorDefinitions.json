@@ -42,7 +42,7 @@
     ],
     "VersionConditions": [{
       "MinVersion": "1.4.0",
-      "IncludeOnlyTargetFrameworks": ["net6.0","net7.0"]
+      "IncludeOnlyTargetFrameworks": ["net6.0","net7.0","net8.0"]
     }]
   },
   {
@@ -407,6 +407,18 @@
     ]
   },
   {
+    "IntegrationName": "MSTest2",
+    "SampleProjectName": "Samples.MSTestTests2",
+    "NugetPackageSearchName": "MSTest.TestFramework",
+    "MinVersion": "2.0.0",
+    "MaxVersionExclusive": "4.0.0",
+    "SpecificVersions": [
+      "2.0.*",
+      "2.*.*",
+      "3.*.*"
+    ]
+  },
+  {
     "IntegrationName": "Kafka",
     "SampleProjectName": "Samples.Kafka",
     "NugetPackageSearchName": "Confluent.Kafka",
@@ -596,6 +608,36 @@
     "SpecificVersions": [
       "1.0.1",
       "1.*.*"
+    ]
+  },
+  {
+    "IntegrationName": "Yarp",
+    "SampleProjectName": "Samples.Yarp.DistributedTracing",
+    "NugetPackageSearchName": "Yarp.ReverseProxy",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "3.0.0",
+    "SpecificVersions": [
+      "1.0.*",
+      "1.1.0",
+      "2.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "2.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp3.1", "net5.0"]
+    }
+    ]
+  },
+  {
+    "IntegrationName": "AzureServiceBus",
+    "SampleProjectName": "Samples.AzureServiceBus",
+    "NugetPackageSearchName": "Azure.Messaging.ServiceBus",
+    "MinVersion": "7.4.0",
+    "MaxVersionExclusive": "7.18.0",
+    "SpecificVersions": [
+      "7.4.*",
+      "7.10.*",
+      "7.13.*",
+      "7.*.*"
     ]
   }
 ]

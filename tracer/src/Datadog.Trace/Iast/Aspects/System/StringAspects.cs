@@ -16,7 +16,7 @@ using static Datadog.Trace.Iast.Propagation.StringModuleImpl;
 namespace Datadog.Trace.Iast.Aspects.System;
 
 /// <summary> String class aspects </summary>
-[AspectClass("mscorlib,netstandard,System.Private.CoreLib,System.Runtime", AspectFilter.StringOptimization)]
+[AspectClass("mscorlib,netstandard,System.Private.CoreLib,System.Runtime", [AspectFilter.StringOptimization])]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class StringAspects

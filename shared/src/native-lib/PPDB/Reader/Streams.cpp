@@ -266,7 +266,7 @@ SequencePoints BlobHeapReader::GetAsSequencePoints(size_t initalDocumentIndex, s
 
     auto seqBlob = Get(offset);
     if (seqBlob.empty())
-        return std::move(result);
+        return result;
 
     auto curr = std::begin(seqBlob);
     result.LocalSignature = DecompressU32(&curr, std::end(seqBlob) - curr);
@@ -369,7 +369,7 @@ SequencePoints BlobHeapReader::GetAsSequencePoints(size_t initalDocumentIndex, s
         prevNonHiddenIdx = static_cast<int>(result.Points.size() - 1);
     }
 
-    return std::move(result);
+    return result;
 }
 
 std::vector<Import> BlobHeapReader::GetAsImports(size_t offset) const
@@ -394,14 +394,14 @@ std::vector<Import> BlobHeapReader::GetAsImports(size_t offset) const
         case ImportKind::ImportFromNamespace:
         {
             uint32_t nsIdx = DecompressU32(&curr, std::end(importBlob) - curr);
-            imp.TargetNamespace = std::move(GetAsStringUtf8(nsIdx));
+            imp.TargetNamespace = GetAsStringUtf8(nsIdx);
             break;
         }
         case ImportKind::ImportFromNamespaceInAssembly:
         {
             imp.TargetAssembly = DecompressU32(&curr, std::end(importBlob) - curr);
             uint32_t nsIdx = DecompressU32(&curr, std::end(importBlob) - curr);
-            imp.TargetNamespace = std::move(GetAsStringUtf8(nsIdx));
+            imp.TargetNamespace = GetAsStringUtf8(nsIdx);
             break;
         }
         case ImportKind::ImportFromTargetType:
@@ -412,44 +412,44 @@ std::vector<Import> BlobHeapReader::GetAsImports(size_t offset) const
         case ImportKind::ImportFromNamespaceWithAlias:
         {
             uint32_t aliasIdx = DecompressU32(&curr, std::end(importBlob) - curr);
-            imp.Alias = std::move(GetAsStringUtf8(aliasIdx));
+            imp.Alias = GetAsStringUtf8(aliasIdx);
             uint32_t nsIdx = DecompressU32(&curr, std::end(importBlob) - curr);
-            imp.TargetNamespace = std::move(GetAsStringUtf8(nsIdx));
+            imp.TargetNamespace = GetAsStringUtf8(nsIdx);
             break;
         }
         case ImportKind::ImportAssemblyAlias:
         {
             uint32_t aliasIdx = DecompressU32(&curr, std::end(importBlob) - curr);
-            imp.Alias = std::move(GetAsStringUtf8(aliasIdx));
+            imp.Alias = GetAsStringUtf8(aliasIdx);
             break;
         }
         case ImportKind::DefineAssemblyAlias:
         {
             uint32_t aliasIdx = DecompressU32(&curr, std::end(importBlob) - curr);
-            imp.Alias = std::move(GetAsStringUtf8(aliasIdx));
+            imp.Alias = GetAsStringUtf8(aliasIdx);
             imp.TargetAssembly = DecompressU32(&curr, std::end(importBlob) - curr);
             break;
         }
         case ImportKind::DefineNamespaceAlias:
         {
             uint32_t aliasIdx = DecompressU32(&curr, std::end(importBlob) - curr);
-            imp.Alias = std::move(GetAsStringUtf8(aliasIdx));
+            imp.Alias = GetAsStringUtf8(aliasIdx);
             uint32_t nsIdx = DecompressU32(&curr, std::end(importBlob) - curr);
-            imp.TargetNamespace = std::move(GetAsStringUtf8(nsIdx));
+            imp.TargetNamespace = GetAsStringUtf8(nsIdx);
             break;
         }
         case ImportKind::DefineNamespaceAliasFromAssembly:
         {
             uint32_t aliasIdx = DecompressU32(&curr, std::end(importBlob) - curr);
-            imp.Alias = std::move(GetAsStringUtf8(aliasIdx));
+            imp.Alias = GetAsStringUtf8(aliasIdx);
             imp.TargetAssembly = DecompressU32(&curr, std::end(importBlob) - curr);
             uint32_t nsIdx = DecompressU32(&curr, std::end(importBlob) - curr);
-            imp.TargetNamespace = std::move(GetAsStringUtf8(nsIdx));
+            imp.TargetNamespace = GetAsStringUtf8(nsIdx);
             break;
         }
         case ImportKind::DefineTargetTypeAlias:
             uint32_t aliasIdx = DecompressU32(&curr, std::end(importBlob) - curr);
-            imp.Alias = std::move(GetAsStringUtf8(aliasIdx));
+            imp.Alias = GetAsStringUtf8(aliasIdx);
             imp.TargetType = DecompressTypeDefOrRefOrSpecEncoded(&curr, std::end(importBlob) - curr);
             break;
         }
@@ -457,7 +457,7 @@ std::vector<Import> BlobHeapReader::GetAsImports(size_t offset) const
         imports.push_back(std::move(imp));
     }
 
-    return std::move(imports);
+    return imports;
 }
 
 LocalConstantSig BlobHeapReader::GetAsLocalConstantSig(size_t offset) const
@@ -568,7 +568,7 @@ LocalConstantSig BlobHeapReader::GetAsLocalConstantSig(size_t offset) const
     if (curr != std::end(sigBlob))
         throw Exception{ ErrorCode::CorruptFormat, MetadataTable::LocalConstant };
 
-    return std::move(sig);
+    return sig;
 }
 
 namespace
@@ -676,8 +676,8 @@ const std::string MetadataStreamReader::Name = "#~";
 
 MetadataStreamReader::MetadataStreamReader(std::shared_ptr<PortablePdbReader> reader, plat::data_view<uint8_t> view)
     : _view{ view }
-    , _tableReaders{}
     , _reader{ std::move(reader) }
+    , _tableReaders{}
 {
     if (_view.size() < sizeof(MetadataStreamMin))
         throw Exception{ ErrorCode::CorruptFormat, Name };
@@ -777,5 +777,5 @@ std::shared_ptr<TableReader> MetadataStreamReader::GetTableReader(MetadataTable 
     auto reader = _tableReaders[static_cast<size_t>(table)];
 
     assert(reader == nullptr || reader->GetTableId() == table);
-    return std::move(reader);
+    return reader;
 }

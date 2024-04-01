@@ -71,5 +71,11 @@ namespace Datadog.Trace.Configuration
         Remoting,
         TrustBoundaryViolation,
         UnvalidatedRedirect,
+        TestPlatformAssemblyResolver,
+        StackTraceLeak,
+        XpathInjection,
+        ReflectionInjection,
+        Xss,
+        NHibernate,
     }
 }

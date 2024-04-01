@@ -21,6 +21,7 @@ namespace Datadog.Trace.HttpOverStreams
         /// </summary>
         private const int MaxRequestHeadersBufferSize = 4096;
         private const string ContentLengthHeaderKey = "Content-Length";
+        private const string TransferEncodingHeaderKey = "Transfer-Encoding";
 
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogHttpClient>();
 
@@ -226,9 +227,21 @@ namespace Datadog.Trace.HttpOverStreams
             }
             while (true);
 
+            var isChunked = false;
+            foreach (var encoding in headers.GetValues(TransferEncodingHeaderKey))
+            {
+                if ("chunked".Equals(encoding, StringComparison.OrdinalIgnoreCase))
+                {
+                    isChunked = true;
+                    break;
+                }
+            }
+
             var length = long.TryParse(headers.GetValue(ContentLengthHeaderKey), out var headerValue) ? headerValue : (long?)null;
 
-            return new HttpResponse(statusCode, reasonPhrase, headers, new StreamContent(responseStream, length));
+            var stream = isChunked ? new ChunkedEncodingReadStream(responseStream) : responseStream;
+
+            return new HttpResponse(statusCode, reasonPhrase, headers, new StreamContent(stream, length));
         }
     }
 }

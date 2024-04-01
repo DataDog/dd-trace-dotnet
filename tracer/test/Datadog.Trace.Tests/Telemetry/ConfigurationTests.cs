@@ -43,6 +43,7 @@ public class ConfigurationTests
         "DD_PIPELINE_EXECUTION_ID",
         "DD_TESTSESSION_COMMAND",
         "DD_TESTSESSION_WORKINGDIRECTORY",
+        "DD_CIVISIBILITY_CODE_COVERAGE_MODE",
         // Internal env vars that we only ever read from environment
         "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH",
         "DD_DOTNET_TRACER_HOME",

@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Datadog.Trace.TestHelpers
@@ -26,23 +27,20 @@ namespace Datadog.Trace.TestHelpers
 
         public bool UseGac { get; set; } = true;
 
-        public void TryStartIis(TestHelper helper, IisAppType appType)
+        public async Task TryStartIis(TestHelper helper, IisAppType appType)
         {
-            lock (this)
+            if (IisExpress.Process == null)
             {
-                if (IisExpress.Process == null)
+                if (UseGac)
                 {
-                    if (UseGac)
-                    {
-                        AddAssembliesToGac();
-                    }
-
-                    var initialAgentPort = TcpPortProvider.GetOpenPort();
-                    Agent = MockTracerAgent.Create(null, initialAgentPort);
-
-                    HttpPort = TcpPortProvider.GetOpenPort();
-                    IisExpress = helper.StartIISExpress(Agent, HttpPort, appType, VirtualApplicationPath);
+                    AddAssembliesToGac();
                 }
+
+                var initialAgentPort = TcpPortProvider.GetOpenPort();
+                Agent = MockTracerAgent.Create(null, initialAgentPort);
+
+                HttpPort = TcpPortProvider.GetOpenPort();
+                IisExpress = await helper.StartIISExpress(Agent, HttpPort, appType, VirtualApplicationPath);
             }
         }
 
@@ -56,43 +54,40 @@ namespace Datadog.Trace.TestHelpers
 
             Agent?.Dispose();
 
-            lock (this)
+            if (IisExpress.Process != null)
             {
-                if (IisExpress.Process != null)
+                try
                 {
-                    try
+                    if (!IisExpress.Process.HasExited)
                     {
-                        if (!IisExpress.Process.HasExited)
-                        {
-                            // sending "Q" to standard input does not work because
-                            // iisexpress is scanning console key press, so just kill it.
-                            // maybe try this in the future:
-                            // https://github.com/roryprimrose/Headless/blob/master/Headless.IntegrationTests/IisExpress.cs
-                            IisExpress.Process.Kill();
-                            IisExpress.Process.WaitForExit(8000);
-                        }
+                        // sending "Q" to standard input does not work because
+                        // iisexpress is scanning console key press, so just kill it.
+                        // maybe try this in the future:
+                        // https://github.com/roryprimrose/Headless/blob/master/Headless.IntegrationTests/IisExpress.cs
+                        IisExpress.Process.Kill();
+                        IisExpress.Process.WaitForExit(8000);
                     }
-                    catch
-                    {
-                        // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
-                    }
+                }
+                catch
+                {
+                    // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
+                }
 
-                    IisExpress.Process.Dispose();
+                IisExpress.Process.Dispose();
 
-                    try
-                    {
-                        File.Delete(IisExpress.ConfigFile);
-                    }
-                    catch
-                    {
-                    }
+                try
+                {
+                    File.Delete(IisExpress.ConfigFile);
+                }
+                catch
+                {
+                }
 
-                    // If the operation fails, it could leave files in the GAC and impact the next tests
-                    // Therefore, we don't wrap this in a try/catch
-                    if (UseGac)
-                    {
-                        RemoveAssembliesFromGac();
-                    }
+                // If the operation fails, it could leave files in the GAC and impact the next tests
+                // Therefore, we don't wrap this in a try/catch
+                if (UseGac)
+                {
+                    RemoveAssembliesFromGac();
                 }
             }
         }

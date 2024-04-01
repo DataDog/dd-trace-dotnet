@@ -20,4 +20,9 @@ internal interface ITestClassInfo : IDuckType
     /// Gets or sets the class cleanup method.
     /// </summary>
     public MethodInfo ClassCleanupMethod { get; set; }
+
+    /// <summary>
+    /// Gets the parent <see cref="ITestAssemblyInfo"/>.
+    /// </summary>
+    ITestAssemblyInfo Parent { get; }
 }

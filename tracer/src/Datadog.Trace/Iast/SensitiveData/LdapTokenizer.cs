@@ -19,12 +19,21 @@ namespace Datadog.Trace.Iast.SensitiveData;
 /// </summary>
 internal class LdapTokenizer : ITokenizer
 {
-    private static Regex _pattern = new Regex(@"\(.*?(?:~=|=|<=|>=)(?<LITERAL>[^)]+)\)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+    private const string _ldapPattern = @"\(.*?(?:~=|=|<=|>=)(?<LITERAL>[^)]+)\)";
+    private Regex _ldapRegex;
 
-    public List<Range> GetTokens(string value, IntegrationId? integrationId = null)
+    public LdapTokenizer(TimeSpan timeout)
     {
+        _ldapRegex = new Regex(_ldapPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline, timeout);
+    }
+
+    public List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null)
+    {
+        var value = evidence.Value;
+        if (value is null) { return []; }
+
         var res = new List<Range>(5);
-        foreach (Match? match in _pattern.Matches(value))
+        foreach (Match? match in _ldapRegex.Matches(value))
         {
             if (match != null && match.Success)
             {

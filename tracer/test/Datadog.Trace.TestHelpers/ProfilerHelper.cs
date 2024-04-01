@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -20,7 +21,7 @@ namespace Datadog.Trace.TestHelpers
 
         private static string _corFlagsExe;
 
-        public static Process StartProcessWithProfiler(
+        public static async Task<Process> StartProcessWithProfiler(
             string executable,
             EnvironmentHelper environmentHelper,
             MockTracerAgent agent,
@@ -68,19 +69,22 @@ namespace Datadog.Trace.TestHelpers
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
             startInfo.RedirectStandardInput = redirectStandardInput;
+
             if (!string.IsNullOrEmpty(workingDirectory))
             {
                 startInfo.WorkingDirectory = workingDirectory;
             }
 
-            var process = Process.Start(startInfo);
-
-            if (process != null)
+            if (EnvironmentTools.IsWindows())
             {
-                MemoryDumpHelper.MonitorCrashes(process.Id);
+                using var suspendedProcess = NativeProcess.CreateProcess.StartSuspendedProcess(startInfo);
+
+                await MemoryDumpHelper.MonitorCrashes(suspendedProcess.Id);
+
+                return suspendedProcess.ResumeProcess();
             }
 
-            return process;
+            return Process.Start(startInfo);
         }
 
         public static void SetCorFlags(string executable, ITestOutputHelper output, bool require32Bit)

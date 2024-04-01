@@ -20,8 +20,6 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1
     },
     Metrics: {
@@ -47,9 +45,7 @@
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   },
   {
@@ -73,14 +69,18 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "UNVALIDATED_REDIRECT",
+      "hash": 403854644,
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "UnvalidatedRedirect"
+      },
       "evidence": {
         "valueParts": [
           {
@@ -128,9 +128,7 @@
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   }
 ]

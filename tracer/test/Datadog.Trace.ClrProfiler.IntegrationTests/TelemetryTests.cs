@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
@@ -68,8 +68,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             telemetry.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "tracecontext,Datadog");
-            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "tracecontext,Datadog");
+            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext");
+            telemetry.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext");
 
             AssertService(telemetry, "Samples.Telemetry", ServiceVersion);
             AssertDependencies(telemetry, enableDependencies);
@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
@@ -100,8 +100,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "tracecontext,Datadog");
-            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "tracecontext,Datadog");
+            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext");
+            agent.AssertConfiguration(ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext");
 
             AssertService(agent, "Samples.Telemetry", ServiceVersion);
             AssertDependencies(agent, enableDependencies);
@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
@@ -172,7 +172,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 int httpPort = TcpPortProvider.GetOpenPort();
                 Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-                using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+                using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
                 {
                     ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
@@ -208,7 +208,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-            using (var processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
@@ -237,7 +237,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
@@ -314,7 +314,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
@@ -339,7 +339,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             allLogs.Should()
                    .ContainSingle()
                    .Which.Message.Should()
-                   .Be("Unable to parse custom sampling rules");
+                   .Be("Unable to parse the trace sampling rules.");
         }
 
         [SkippableFact]
@@ -361,7 +361,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var httpPort = TcpPortProvider.GetOpenPort();
 
-            using (var processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
                 ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 

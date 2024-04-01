@@ -5,12 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-#if NETCOREAPP3_1_OR_GREATER
-using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
-#else
 using System.Text.RegularExpressions;
-#endif
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -23,22 +18,34 @@ namespace Datadog.Trace.Sampling
     internal class SpanSamplingRule : ISpanSamplingRule
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanSamplingRule>();
-        private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
+
+        private readonly bool _alwaysMatch;
 
         // TODO consider moving toward this https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/SimpleRegex.cs
         private readonly Regex _serviceNameRegex;
         private readonly Regex _operationNameRegex;
+        private readonly Regex _resourceNameRegex;
+        private readonly List<KeyValuePair<string, Regex>> _tagRegexes;
 
         private readonly IRateLimiter _limiter;
+        private bool _regexTimedOut;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanSamplingRule"/> class.
         /// </summary>
         /// <param name="serviceNameGlob">The glob pattern for the <see cref="Span.ServiceName"/>.</param>
         /// <param name="operationNameGlob">The glob pattern for the <see cref="Span.OperationName"/>.</param>
+        /// <param name="resourceNameGlob">The glob pattern for the <see cref="Span.ResourceName"/>.</param>
+        /// <param name="tagGlobs">The glob pattern for the <see cref="Span.Tags"/>.</param>
         /// <param name="samplingRate">The proportion of spans that are kept. <c>1.0</c> indicates keep all where <c>0.0</c> would be drop all.</param>
         /// <param name="maxPerSecond">The maximum number of spans allowed to be kept per second - <see langword="null"/> indicates that there is no limit</param>
-        public SpanSamplingRule(string serviceNameGlob, string operationNameGlob, float samplingRate = 1.0f, float? maxPerSecond = null)
+        public SpanSamplingRule(
+            string serviceNameGlob,
+            string operationNameGlob,
+            string resourceNameGlob,
+            ICollection<KeyValuePair<string, string>> tagGlobs,
+            float samplingRate = 1.0f,
+            float? maxPerSecond = null)
         {
             if (string.IsNullOrWhiteSpace(serviceNameGlob))
             {
@@ -53,18 +60,29 @@ namespace Datadog.Trace.Sampling
             SamplingRate = samplingRate;
             MaxPerSecond = maxPerSecond;
 
-            _serviceNameRegex = ConvertGlobToRegex(serviceNameGlob);
-            _operationNameRegex = ConvertGlobToRegex(operationNameGlob);
-
             // null/absent for MaxPerSecond indicates unlimited, which is a negative value in the limiter
             _limiter = MaxPerSecond is null ? new SpanRateLimiter(-1) : new SpanRateLimiter((int?)MaxPerSecond);
+
+            _serviceNameRegex = RegexBuilder.Build(serviceNameGlob, SamplingRulesFormat.Glob);
+            _operationNameRegex = RegexBuilder.Build(operationNameGlob, SamplingRulesFormat.Glob);
+            _resourceNameRegex = RegexBuilder.Build(resourceNameGlob, SamplingRulesFormat.Glob);
+            _tagRegexes = RegexBuilder.Build(tagGlobs, SamplingRulesFormat.Glob);
+
+            if (_serviceNameRegex is null &&
+                _operationNameRegex is null &&
+                _resourceNameRegex is null &&
+                (_tagRegexes is null || _tagRegexes.Count == 0))
+            {
+                // if no patterns were specified, this rule always matches (i.e. catch-all)
+                _alwaysMatch = true;
+            }
         }
 
         /// <inheritdoc/>
-        public float SamplingRate { get; } = 1.0f;
+        public float SamplingRate { get; }
 
         /// <inheritdoc/>
-        public float? MaxPerSecond { get; } = null;
+        public float? MaxPerSecond { get; }
 
         /// <summary>
         ///     Creates <see cref="SpanSamplingRule"/>s from the supplied JSON <paramref name="configuration"/>.
@@ -73,38 +91,63 @@ namespace Datadog.Trace.Sampling
         /// <returns><see cref="IEnumerable{T}"/> of <see cref="SpanSamplingRule"/>.</returns>
         public static IEnumerable<SpanSamplingRule> BuildFromConfigurationString(string configuration)
         {
-            if (string.IsNullOrWhiteSpace(configuration))
-            {
-                return Enumerable.Empty<SpanSamplingRule>();
-            }
-
             try
             {
-                var rules = JsonConvert.DeserializeObject<List<SpanSamplingRuleConfig>>(configuration);
-                return rules?.Select(
-                                  rule => new SpanSamplingRule(
-                                      rule.ServiceNameGlob,
-                                      rule.OperationNameGlob,
-                                      rule.SampleRate,
-                                      rule.MaxPerSecond))
-                             ?? Enumerable.Empty<SpanSamplingRule>();
+                if (!string.IsNullOrWhiteSpace(configuration) &&
+                    JsonConvert.DeserializeObject<List<SpanSamplingRuleConfig>>(configuration) is { Count: > 0 } rules)
+                {
+                    var samplingRules = new List<SpanSamplingRule>(rules.Count);
+
+                    foreach (var rule in rules)
+                    {
+                        samplingRules.Add(
+                            new SpanSamplingRule(
+                                rule.ServiceNameGlob,
+                                rule.OperationNameGlob,
+                                rule.ResourceNameGlob,
+                                rule.TagGlobs,
+                                rule.SampleRate,
+                                rule.MaxPerSecond));
+                    }
+
+                    return samplingRules;
+                }
             }
             catch (Exception e)
             {
-                Log.Error(e, "Unable to parse the span sampling rule.");
-                return Enumerable.Empty<SpanSamplingRule>();
+                Log.Error(e, "Unable to parse the span sampling rules.");
             }
+
+            return [];
         }
 
         /// <inheritdoc/>
         public bool IsMatch(Span span)
         {
-            if (span is null)
+            if (span == null!)
             {
                 return false;
             }
 
-            return _serviceNameRegex.Match(span.ServiceName).Success && _operationNameRegex.Match(span.OperationName).Success;
+            if (_alwaysMatch)
+            {
+                // the rule is a catch-all
+                return true;
+            }
+
+            if (_regexTimedOut)
+            {
+                // the regex had a valid format, but it timed out previously. stop trying to use it.
+                return false;
+            }
+
+            return SamplingRuleHelper.IsMatch(
+                span,
+                serviceNameRegex: _serviceNameRegex,
+                operationNameRegex: _operationNameRegex,
+                resourceNameRegex: _resourceNameRegex,
+                tagRegexes: _tagRegexes,
+                out _regexTimedOut);
         }
 
         /// <inheritdoc/>
@@ -127,19 +170,6 @@ namespace Datadog.Trace.Sampling
             return limitKeep;
         }
 
-        private static Regex ConvertGlobToRegex(string glob)
-        {
-            // TODO default glob (maybe null/empty/whitespace) should be *
-            var regexPattern = "^" + Regex.Escape(glob).Replace("\\?", ".").Replace("\\*", ".*") + "$";
-#if NETCOREAPP3_1_OR_GREATER
-            var regex = new Regex(regexPattern, RegexOptions.Compiled | RegexOptions.NonBacktracking, RegexTimeout);
-#else
-            var regex = new Regex(regexPattern, RegexOptions.Compiled, RegexTimeout);
-#endif
-
-            return regex;
-        }
-
         [Serializable]
         internal class SpanSamplingRuleConfig
         {
@@ -148,6 +178,12 @@ namespace Datadog.Trace.Sampling
 
             [JsonProperty(PropertyName = "name")]
             public string OperationNameGlob { get; set; } = "*";
+
+            [JsonProperty(PropertyName = "resource")]
+            public string ResourceNameGlob { get; set; }
+
+            [JsonProperty(PropertyName = "tags")]
+            public Dictionary<string, string> TagGlobs { get; set; }
 
             [JsonProperty(PropertyName = "sample_rate")]
             public float SampleRate { get; set; } = 1.0f; // default to accept all

@@ -20,5 +20,12 @@ namespace Datadog.Trace.Tagging
 
         void EnumerateMetrics<TProcessor>(ref TProcessor processor)
             where TProcessor : struct, IItemProcessor<double>;
+
+        void SetMetaStruct(string key, byte[] value);
+
+        bool HasMetaStruct();
+
+        void EnumerateMetaStruct<TProcessor>(ref TProcessor processor)
+            where TProcessor : struct, IItemProcessor<byte[]>;
     }
 }

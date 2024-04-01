@@ -55,17 +55,24 @@ namespace Datadog.Trace.Tests.CallTarget
             info.Value.Should().Be(IntegrationId.MongoDb);
         }
 
-        [Theory]
-        [InlineData(typeof(System.Data.SqlClient.SqlCommand), (int)IntegrationId.SqlClient)]
-        [InlineData(typeof(System.Data.SQLite.SQLiteCommand), (int)IntegrationId.Sqlite)]
-        public void CanGetIntegrationIdForAdoNetAttribute(Type targetType, int expected)
+        [Fact]
+        public void CanGetIntegrationIdForAdoNetAttribute()
         {
-            var integrationType = typeof(CommandExecuteNonQueryIntegration).FullName;
+            var types = new[]
+            {
+                (typeof(System.Data.SqlClient.SqlCommand), (int)IntegrationId.SqlClient),
+                (typeof(System.Data.SQLite.SQLiteCommand), (int)IntegrationId.Sqlite),
+            };
 
-            var info = InstrumentationDefinitions.GetIntegrationId(integrationType, targetType);
+            foreach (var (targetType, expected) in types)
+            {
+                var integrationType = typeof(CommandExecuteNonQueryIntegration).FullName;
 
-            info.Should().NotBeNull();
-            info.Value.Should().Be((IntegrationId)expected);
+                var info = InstrumentationDefinitions.GetIntegrationId(integrationType, targetType);
+
+                info.Should().NotBeNull();
+                info.Value.Should().Be((IntegrationId)expected);
+            }
         }
 
         [Fact]

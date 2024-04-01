@@ -10,13 +10,17 @@ namespace Datadog.Trace.Iast.Helpers;
 
 internal static class StringExtensions
 {
-    public static string Quote(this string? text)
+    public static unsafe string? CreateNewReference(this string? text)
     {
-        if (text != null && !text.StartsWith("\"") && !text.EndsWith("\""))
+        if (text is null) { return null; }
+        if (text.Length == 0) { return string.Empty; }
+#if NET6_0_OR_GREATER
+        return new string(text.AsSpan());
+#else
+        fixed (char* c = text)
         {
-            text = "\"" + text + "\"";
+            return new string(c, 0, text.Length);
         }
-
-        return text ?? string.Empty;
+#endif
     }
 }

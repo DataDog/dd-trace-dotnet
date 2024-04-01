@@ -20,14 +20,18 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
+      "hash": -1696363463,
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "TrustBoundaryViolation"
+      },
       "evidence": {
         "valueParts": [
           {
@@ -39,6 +43,12 @@
     },
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
+      "hash": -1696363463,
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "TrustBoundaryViolation"
+      },
       "evidence": {
         "valueParts": [
           {
@@ -50,6 +60,12 @@
     },
     {
       "type": "TRUST_BOUNDARY_VIOLATION",
+      "hash": -1696363463,
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "TrustBoundaryViolation"
+      },
       "evidence": {
         "valueParts": [
           {
@@ -68,12 +84,14 @@
     },
     {
       "type": "NO_SAMESITE_COOKIE",
+      "hash": -1222453805,
       "evidence": {
         "value": ".AspNetCore.Session"
       }
     },
     {
       "type": "INSECURE_COOKIE",
+      "hash": 1343789722,
       "evidence": {
         "value": ".AspNetCore.Session"
       }
@@ -116,9 +134,7 @@
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,
-      span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      span.kind: server
     }
   }
 ]

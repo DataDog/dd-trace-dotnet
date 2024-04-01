@@ -17,6 +17,9 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.XPath;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -84,6 +87,21 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(DirectorySearcher), null, new string[] { "Void set_AttributeScopeQuery(System.String)" }, true)]
     [InlineData(typeof(PrincipalContext), null, new string[] { "Void .ctor(System.DirectoryServices.AccountManagement.ContextType, System.String)", "Boolean ValidateCredentials(System.String, System.String, System.DirectoryServices.AccountManagement.ContextOptions)", "Boolean ValidateCredentials(System.String, System.String)" }, true)]
     [InlineData(typeof(SearchRequest), null, new string[] { "Void .ctor(System.String, System.Xml.XmlDocument, System.DirectoryServices.Protocols.SearchScope, System.String[])", "void set_RequestId(System.String)", "void set_DistinguishedName(System.String)" }, true)]
+    [InlineData(typeof(XmlNode), null, null, true)]
+    [InlineData(typeof(Extensions), null, null, true)]
+    [InlineData(typeof(XPathExpression), null, null, true)]
+    [InlineData(typeof(Activator), "CreateInstance", new string[] { "System.Object CreateInstance(System.Type, System.Reflection.BindingFlags, System.Reflection.Binder, System.Object[], System.Globalization.CultureInfo)", "System.Object CreateInstance(System.Type, System.Object[])", "System.Object CreateInstance(System.Type, System.Object[], System.Object[])", "System.Object CreateInstance(System.Type, System.Reflection.BindingFlags, System.Reflection.Binder, System.Object[], System.Globalization.CultureInfo, System.Object[])", "System.Runtime.Remoting.ObjectHandle CreateInstance(System.ActivationContext, System.String[])" }, true)]
+#if NETCOREAPP3_0_OR_GREATER
+    [InlineData(typeof(Activator), "CreateInstanceFrom")]
+#endif
+#if NETFRAMEWORK
+    [InlineData(typeof(Activator), "CreateComInstanceFrom")]
+#endif
+    [InlineData(typeof(Type), "GetType", null, true)]
+    [InlineData(typeof(Type), "GetMethod")]
+    [InlineData(typeof(Type), "InvokeMember", null, true)]
+    [InlineData(typeof(Assembly), "Load", null, true)]
+    [InlineData(typeof(Assembly), "LoadFrom", null, true)]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
@@ -203,6 +221,23 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(PrincipalContext))]
     [InlineData(typeof(SearchRequest))]
     [InlineData(typeof(Random))]
+    [InlineData(typeof(XmlNode))]
+    [InlineData(typeof(Extensions))]
+    [InlineData(typeof(XPathExpression))]
+    [InlineData(typeof(Activator), new string[] { "System.Activator::CreateInstance(System.AppDomain,System.String,System.String)" })]
+#if !NETFRAMEWORK
+    #if NET6_0_OR_GREATER
+    [InlineData(typeof(Type))]
+    #else
+    [InlineData(typeof(Type), new string[] { "System.Type::GetMethod(System.String,System.Reflection.BindingFlags,System.Type[])" })]
+    #endif
+#else
+    [InlineData(typeof(Type), new string[] { "System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Reflection.Binder,System.Reflection.CallingConventions,System.Type[],System.Reflection.ParameterModifier[])", "System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Reflection.Binder,System.Type[],System.Reflection.ParameterModifier[])", "System.Type::GetMethod(System.String,System.Int32,System.Type[],System.Reflection.ParameterModifier[])", "System.Type::GetMethod(System.String,System.Reflection.BindingFlags,System.Type[])", "System.Type::GetMethod(System.String,System.Int32,System.Type[])" })]
+#endif
+#if NETFRAMEWORK
+    [InlineData(typeof(Assembly))]
+#endif
+    [InlineData(typeof(Assembly), new string[] { "System.Reflection.Assembly::Load(System.String,System.Security.Policy.Evidence)" })]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestAllAspectsHaveACorrespondingMethod(Type type, string[] aspectsToExclude = null)
@@ -239,7 +274,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public void TestInstrumentedUnitTests()
+    public async Task TestInstrumentedUnitTests()
     {
         using (var agent = EnvironmentHelper.GetMockAgent())
         {
@@ -251,7 +286,7 @@ public class IastInstrumentationUnitTests : TestHelper
 #if NET462
             arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
 #else
-            if (EnvironmentTools.IsLinux())
+            if (!EnvironmentTools.IsWindows())
             {
                 if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
                 {
@@ -266,7 +301,7 @@ public class IastInstrumentationUnitTests : TestHelper
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "0"); // without this key, ci visibility is enabled for the samples, which we don't really want
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
             SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
-            ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
+            ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
     }
@@ -315,7 +350,7 @@ public class IastInstrumentationUnitTests : TestHelper
     private void TestMethodOverloads(Type typeToCheck, string methodToCheck, List<string> overloadsToExclude = null, bool excludeParameterlessMethods = false)
     {
         var overloadsToExcludeNormalized = overloadsToExclude?.Select(NormalizeName).ToList();
-        var aspects = ClrProfiler.AspectDefinitions.Aspects.Where(x => x.Contains(typeToCheck.FullName + "::")).ToList();
+        var aspects = ClrProfiler.AspectDefinitions.GetAspects().Where(x => x.Contains(typeToCheck.FullName + "::")).ToList();
         List<MethodBase> typeMethods = new();
         typeMethods.AddRange(string.IsNullOrEmpty(methodToCheck) ?
             typeToCheck?.GetMethods().Where(x => x.IsPublic && !x.IsVirtual) :
@@ -345,7 +380,7 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         var aspectsToExcludeNormalized = aspectsToExclude?.Select(NormalizeName).ToList();
 
-        foreach (var aspect in ClrProfiler.AspectDefinitions.Aspects)
+        foreach (var aspect in ClrProfiler.AspectDefinitions.GetAspects())
         {
             if (aspectsToExcludeNormalized?.FirstOrDefault(x => NormalizeName(x).Contains(x)) is null)
             {

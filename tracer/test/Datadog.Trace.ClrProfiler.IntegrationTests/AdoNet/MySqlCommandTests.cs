@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void IntegrationDisabled()
+        public async Task IntegrationDisabled()
         {
             const int totalSpanCount = 21;
             const string expectedOperationName = "mysql.query";
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // don't use the first package version which is 6.x and is not supported on ARM64.
             // use the default package version for the sample, currently 8.0.17.
             // string packageVersion = PackageVersions.MySqlData.First()[0] as string;
-            using var process = RunSampleAndWaitForExit(agent /* , packageVersion: packageVersion */);
+            using var process = await RunSampleAndWaitForExit(agent /* , packageVersion: packageVersion */);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
@@ -147,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
             var filteredSpans = spans.Where(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)).ToList();
 

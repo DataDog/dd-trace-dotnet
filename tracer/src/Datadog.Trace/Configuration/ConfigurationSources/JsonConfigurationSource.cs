@@ -58,6 +58,8 @@ namespace Datadog.Trace.Configuration
             _origin = origin;
         }
 
+        internal bool TreatNullDictionaryAsEmpty { get; set; } = true;
+
         /// <summary>
         /// Creates a new <see cref="JsonConfigurationSource"/> instance
         /// by loading the JSON string from the specified file.
@@ -381,6 +383,11 @@ namespace Datadog.Trace.Configuration
         {
             var token = SelectToken(key);
             if (token == null)
+            {
+                return null;
+            }
+
+            if (!TreatNullDictionaryAsEmpty && !token.HasValues)
             {
                 return null;
             }

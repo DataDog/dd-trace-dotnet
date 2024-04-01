@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  #
+  # Shared agent
+  datadog-agent:
+    image: "gcr.io/datadoghq/agent:7"
+    ports:
+      - "8126"
+      - "4317"
+      - "4318"
+    environment:
+      DD_HOSTNAME: "dev-datadog-agent"
+      DD_API_KEY: "${DD_API_KEY:?Set DD_API_KEY in your shell to send traces to Datadog}"
+      DD_APM_ENABLED: "true"
+      DD_APM_NON_LOCAL_TRAFFIC: "true"
+
+  #
+  # Application containers
+  debian:
+    build:
+      context: ./
+      dockerfile: ./Debian.dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - datadog-agent
+    environment:
+      DD_AGENT_HOST: "datadog-agent"
+      DD_ENV: "apm-docker-samples"
+      ASPNETCORE_ENVIRONMENT: Production

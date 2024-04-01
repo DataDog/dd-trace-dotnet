@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=http"))
+            using (await RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=http"))
             {
                 const int expectedSpanCount = 8;
                 var spans = agent.WaitForSpans(expectedSpanCount);
@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=tcp"))
+            using (await RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=tcp"))
             {
                 const int expectedSpanCount = 6;
                 var spans = agent.WaitForSpans(expectedSpanCount);
@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=ipc"))
+            using (await RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=ipc"))
             {
                 const int expectedSpanCount = 6;
                 var spans = agent.WaitForSpans(expectedSpanCount);

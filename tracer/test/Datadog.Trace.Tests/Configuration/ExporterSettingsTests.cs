@@ -34,11 +34,9 @@ namespace Datadog.Trace.Tests.Configuration
 
             AssertHttpIsConfigured(settingsFromSource, uri);
             // The Uri is used to connect to dogstatsd as well, by getting the host from the uri
-            Assert.Equal(expected: MetricsTransportType.UDP, actual: settingsFromSource.MetricsTransport);
-            Assert.Equal(expected: ExporterSettings.DefaultDogstatsdPort, actual: settingsFromSource.DogStatsdPort);
+            AssertMetricsUdpIsConfigured(settingsFromSource, "someurl");
             AssertHttpIsConfigured(settings, uri);
-            Assert.Equal(expected: MetricsTransportType.UDP, actual: settings.MetricsTransport);
-            Assert.Equal(expected: ExporterSettings.DefaultDogstatsdPort, actual: settings.DogStatsdPort);
+            AssertMetricsUdpIsConfigured(settings, "someurl");
         }
 
         [Theory]
@@ -52,6 +50,8 @@ namespace Datadog.Trace.Tests.Configuration
             AssertUdsIsConfigured(settingsFromSource, path.Replace("\\", "/"));
             settingsFromSource.AgentUri.Should().Be(uri);
             settingsFromSource.ValidationWarnings.Should().BeEmpty();
+            // Without additional settings, metrics defaults to UDP even if DD_TRACE_AGENT_URL is UDS
+            AssertMetricsUdpIsConfigured(settingsFromSource);
         }
 
         [Fact]
@@ -69,8 +69,8 @@ namespace Datadog.Trace.Tests.Configuration
         public void RelativeAgentUrlShouldWarn(string param, string expectedSocket)
         {
             var settingsFromSource = Setup("DD_TRACE_AGENT_URL", param);
-            Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: settingsFromSource.TracesTransport);
-            Assert.Equal(expected: expectedSocket, actual: settingsFromSource.TracesUnixDomainSocketPath);
+            settingsFromSource.TracesTransport.Should().Be(TracesTransportType.UnixDomainSocket);
+            settingsFromSource.TracesUnixDomainSocketPath.Should().Be(expectedSocket);
             Assert.Equal(new Uri(param), settingsFromSource.AgentUri);
             CheckDefaultValues(settingsFromSource, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
             settingsFromSource.ValidationWarnings.Should().Contain($"The provided Uri {param} contains a relative path which may not work. This is the path to the socket that will be used: /socket.soc");
@@ -84,9 +84,9 @@ namespace Datadog.Trace.Tests.Configuration
             var settingsFromSource = Setup("DD_APM_RECEIVER_SOCKET", param);
             var uri = new Uri(ExporterSettings.UnixDomainSocketPrefix + param);
 
-            Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: settingsFromSource.TracesTransport);
-            Assert.Equal(expected: expectedSocket, actual: settingsFromSource.TracesUnixDomainSocketPath);
-            Assert.Equal(uri, settingsFromSource.AgentUri);
+            settingsFromSource.TracesTransport.Should().Be(TracesTransportType.UnixDomainSocket);
+            settingsFromSource.TracesUnixDomainSocketPath.Should().Be(expectedSocket);
+            settingsFromSource.AgentUri.Should().Be(uri);
             CheckDefaultValues(settingsFromSource, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
             settingsFromSource.ValidationWarnings.Should().Contain($"The provided Uri {uri.AbsoluteUri} contains a relative path which may not work. This is the path to the socket that will be used: {expectedSocket}");
             settingsFromSource.ValidationWarnings.Should().Contain($"The socket provided {expectedSocket} cannot be found. The tracer will still rely on this socket to send traces.");
@@ -99,6 +99,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settingsFromSource = Setup("DD_AGENT_HOST", param);
 
             AssertHttpIsConfigured(settingsFromSource, new Uri("http://SomeHost:8126"));
+            AssertMetricsUdpIsConfigured(settingsFromSource, "SomeHost");
         }
 
         [Fact]
@@ -108,6 +109,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settingsFromSource = Setup("DD_TRACE_AGENT_PORT", param.ToString());
 
             AssertHttpIsConfigured(settingsFromSource, new Uri("http://127.0.0.1:9333"));
+            AssertMetricsUdpIsConfigured(settingsFromSource);
         }
 
         [Fact]
@@ -119,6 +121,8 @@ namespace Datadog.Trace.Tests.Configuration
 
             AssertPipeIsConfigured(settingsFromSource, param);
             settings.TracesPipeName.Should().Be(param);
+            // metrics default to UDP
+            AssertMetricsUdpIsConfigured(settingsFromSource);
         }
 
         [Fact]
@@ -203,12 +207,16 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var settingsFromSource = Setup("DD_TRACE_AGENT_URL", "unix:///var/datadog/myscocket.soc");
             AssertUdsIsConfigured(settingsFromSource, "/var/datadog/myscocket.soc");
+            AssertMetricsUdpIsConfigured(settingsFromSource);
 
             var settings = new ExporterSettings();
             AssertHttpIsConfigured(settings, new Uri("http://127.0.0.1:8126/"));
+            AssertMetricsUdpIsConfigured(settingsFromSource);
 
             settings.AgentUri = new Uri("unix:///var/datadog/myscocket.soc");
             AssertUdsIsConfigured(settings, "/var/datadog/myscocket.soc");
+            // Note that this _doesn't_ switch metrics back to UDS
+            AssertMetricsUdpIsConfigured(settingsFromSource);
         }
 
         [Fact]
@@ -216,6 +224,8 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var settings = Setup(DefaultTraceSocketFilesExist());
             AssertUdsIsConfigured(settings, ExporterSettings.DefaultTracesUnixDomainSocket);
+            // Uses UDP by default
+            AssertMetricsUdpIsConfigured(settings);
         }
 
         [Fact]
@@ -225,6 +235,7 @@ namespace Datadog.Trace.Tests.Configuration
             var expectedUri = new Uri($"http://{agentHost}:8126");
             var settings = Setup(DefaultSocketFilesExist(), "DD_AGENT_HOST:someotherhost");
             AssertHttpIsConfigured(settings, expectedUri);
+            AssertMetricsUdpIsConfigured(settings, "someotherhost");
         }
 
         [Fact]
@@ -233,6 +244,7 @@ namespace Datadog.Trace.Tests.Configuration
             var expectedUri = new Uri($"http://127.0.0.1:8111");
             var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_AGENT_PORT:8111");
             AssertHttpIsConfigured(settings, expectedUri);
+            AssertMetricsUdpIsConfigured(settings);
         }
 
         [Fact]
@@ -240,6 +252,8 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_PIPE_NAME:somepipe");
             AssertPipeIsConfigured(settings, "somepipe");
+            // Metrics defaults to UDP
+            AssertMetricsUdpIsConfigured(settings);
         }
 
         /// <summary>
@@ -251,6 +265,8 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
             AssertPipeIsConfigured(settings, "somepipe");
+            // Metrics defaults to udp
+            AssertMetricsUdpIsConfigured(settings);
         }
 
         [Fact]
@@ -258,6 +274,89 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_AGENT_URL:http://toto:1234", "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
             AssertHttpIsConfigured(settings, new Uri("http://toto:1234"));
+            AssertMetricsUdpIsConfigured(settings, "toto");
+        }
+
+        [Theory]
+        [InlineData("udp://someurl", ExporterSettings.DefaultDogstatsdPort)]
+        [InlineData("udp://someurl:1234", 1234)]
+        [InlineData("udp://someurl:8125", 8125)]
+        [InlineData("udp://someurl:0", ExporterSettings.DefaultDogstatsdPort)]
+        public void Metrics_DogStatsdUrl_UDP(string sourceUrl, int expectedPort)
+        {
+            var settingsFromSource = Setup("DD_DOGSTATSD_URL", sourceUrl);
+            AssertMetricsUdpIsConfigured(settingsFromSource, "someurl", expectedPort);
+        }
+
+        [Fact]
+        public void Metrics_DogStatsdUrl_UdsOnWindows()
+        {
+            var path = @"C:\temp\someval";
+            var socketPath = path.Replace("\\", "/");
+            var settingsFromSource = Setup(FileExistsMock(socketPath), $"DD_DOGSTATSD_URL:unix://{path}", "DD_TRACE_AGENT_URL:http://localhost:8126");
+            AssertMetricsUdsIsConfigured(settingsFromSource, socketPath);
+            settingsFromSource.ValidationWarnings.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Metrics_DogStatsdUrl_UdsOnLinux()
+        {
+            var socketPath = @"/some/socket.soc";
+            var settingsFromSource = Setup(FileExistsMock(socketPath), $"DD_DOGSTATSD_URL:unix://{socketPath}", "DD_TRACE_AGENT_URL:http://localhost:8126");
+            AssertMetricsUdsIsConfigured(settingsFromSource, socketPath);
+            settingsFromSource.ValidationWarnings.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Metrics_DogStatsdUrl_InvalidUrlShouldNotThrow()
+        {
+            var param = "http://Invalid=%Url!!";
+            var settingsFromSource = Setup(DefaultSocketFilesExist(), $"DD_DOGSTATSD_URL:{param}", "DD_TRACE_AGENT_URL:http://localhost:8126");
+            CheckDefaultValues(settingsFromSource);
+            settingsFromSource.ValidationWarnings.Should().Contain($"The Uri: '{param}' in {ConfigurationKeys.MetricsUri} is not valid. It won't be taken into account to send metrics. Note that only absolute urls are accepted.");
+        }
+
+        [Theory]
+        [InlineData("unix://some/socket.soc", "/socket.soc")]
+        [InlineData("unix://./socket.soc", "/socket.soc")]
+        public void Metrics_DogStatsdUrl_RelativeAgentUrlShouldWarn(string param, string expectedSocket)
+        {
+            var settingsFromSource = Setup(DefaultSocketFilesExist(), $"DD_DOGSTATSD_URL:{param}", "DD_TRACE_AGENT_URL:http://localhost:8126");
+            AssertMetricsUdsIsConfigured(settingsFromSource, expectedSocket);
+            settingsFromSource.ValidationWarnings.Should().Contain($"The provided metrics Uri {param} contains a relative path which may not work. This is the path to the socket that will be used: {expectedSocket}");
+        }
+
+        [Theory(Skip = "Currently we _don't_ normalise the uds path when it's set directly, so this test is invalid. If we fix it, then we can unskip and delete Metrics_DogStatsdSocket_RelativeDomainSocketShouldNotWarn")]
+        [InlineData("some/socket.soc", "/socket.soc")]
+        [InlineData("./socket.soc", "/socket.soc")]
+        public void Metrics_DogStatsdSocket_RelativeDomainSocketShouldWarn(string param, string expectedSocket)
+        {
+            var settingsFromSource = Setup("DD_DOGSTATSD_SOCKET", param);
+            var uri = new Uri(ExporterSettings.UnixDomainSocketPrefix + param);
+
+            settingsFromSource.MetricsTransport.Should().Be(MetricsTransportType.UDS);
+            settingsFromSource.MetricsUnixDomainSocketPath.Should().Be(expectedSocket);
+            CheckDefaultValues(settingsFromSource, "MetricsUnixDomainSocketPath", "AgentUri", "MetricsTransport");
+            settingsFromSource.ValidationWarnings.Should().Contain($"The provided metrics Uri {uri.AbsolutePath} contains a relative path which may not work. This is the path to the socket that will be used: {expectedSocket}");
+            settingsFromSource.ValidationWarnings.Should().Contain($"The socket {expectedSocket} provided in '{ConfigurationKeys.MetricsUnixDomainSocketPath}' cannot be found. The tracer will still rely on this socket to send metrics.");
+        }
+
+        [Theory]
+        [InlineData("some/socket.soc")]
+        [InlineData("./socket.soc")]
+        public void Metrics_DogStatsdSocket_RelativeDomainSocketShouldNotWarn(string param)
+        {
+            var settingsFromSource = Setup("DD_DOGSTATSD_SOCKET", param);
+            var uri = new Uri(ExporterSettings.UnixDomainSocketPrefix + param);
+
+            settingsFromSource.MetricsTransport.Should().Be(MetricsTransportType.UDS);
+            settingsFromSource.MetricsUnixDomainSocketPath.Should().Be(param);
+            CheckDefaultValues(settingsFromSource, "MetricsUnixDomainSocketPath", "AgentUri", "MetricsTransport");
+
+            // TODO: This isn't really the behaviour we _want_, but it's what we have
+            // if we fix it, we can unskip Metrics_DogStatsdSocket_RelativeDomainSocketShouldWarn
+            settingsFromSource.ValidationWarnings.Should().NotContainMatch("The provided metrics Uri.*");
+            settingsFromSource.ValidationWarnings.Should().Contain($"The socket {param} provided in '{ConfigurationKeys.MetricsUnixDomainSocketPath}' cannot be found. The tracer will still rely on this socket to send metrics.");
         }
 
         [Fact]
@@ -272,8 +371,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var expectedPort = 11125;
             var config = Setup(DefaultSocketFilesExist(), "DD_DOGSTATSD_PORT:11125");
-            Assert.Equal(expected: MetricsTransportType.UDP, actual: config.MetricsTransport);
-            Assert.Equal(expected: expectedPort, actual: config.DogStatsdPort);
+            AssertMetricsUdpIsConfigured(config, port: expectedPort);
         }
 
         [Fact]
@@ -291,10 +389,29 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void Metrics_SocketFilesExist_ExplicitConfigForAll_UsesDefaultTcp()
+        public void Metrics_SocketFilesExist_ExplicitConfigForAll_UsesUdp()
         {
             var config = Setup(DefaultSocketFilesExist(), "DD_AGENT_HOST:someotherhost", "DD_DOGSTATSD_PIPE_NAME:somepipe", "DD_DOGSTATSD_SOCKET:somesocket");
-            Assert.Equal(expected: TracesTransportType.Default, actual: config.TracesTransport);
+            AssertMetricsUdpIsConfigured(config, "someotherhost");
+        }
+
+        [Fact]
+        public void Metrics_SocketFilesExist_DogstatsdUrl_ExplicitConfigForAll_UsesUdp()
+        {
+            var config = Setup(
+                DefaultSocketFilesExist(),
+                "DD_DOGSTATSD_URL:unix:///var/datadog/mysocket.soc",
+                "DD_AGENT_HOST:someotherhost",
+                "DD_DOGSTATSD_PIPE_NAME:somepipe",
+                "DD_DOGSTATSD_SOCKET:somesocket");
+            AssertMetricsUdsIsConfigured(config, "/var/datadog/mysocket.soc");
+        }
+
+        [Fact]
+        public void Metrics_SocketFilesExist_TraceAgentUrlAndAgentHostIsSet_UsesCorrectHost()
+        {
+            var settingsFromSource = Setup(DefaultSocketFilesExist(), "DD_TRACE_AGENT_URL:unix:///var/datadog/myscocket.soc", "DD_AGENT_HOST:someotherhost");
+            AssertMetricsUdpIsConfigured(settingsFromSource, hostname: "someotherhost");
         }
 
         private ExporterSettings Setup(string key, string value)
@@ -322,40 +439,48 @@ namespace Datadog.Trace.Tests.Configuration
 
         private void AssertHttpIsConfigured(ExporterSettings settings, Uri expectedUri)
         {
-            Assert.Equal(expected: TracesTransportType.Default, actual: settings.TracesTransport);
-            Assert.Equal(expected: expectedUri, actual: settings.AgentUri);
-            Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
-            CheckDefaultValues(settings, "AgentUri", "TracesTransport");
+            settings.TracesTransport.Should().Be(TracesTransportType.Default);
+            settings.AgentUri.Should().Be(expectedUri);
+            settings.AgentUri.Host.Should().NotBeEquivalentTo("localhost");
+            CheckDefaultValues(settings, "AgentUri", "TracesTransport", nameof(settings.MetricsHostname));
+        }
+
+        private void AssertMetricsUdpIsConfigured(ExporterSettings settings, string hostname = ExporterSettings.DefaultDogstatsdHostname, int port = ExporterSettings.DefaultDogstatsdPort)
+        {
+            settings.MetricsTransport.Should().Be(MetricsTransportType.UDP);
+            settings.MetricsHostname.Should().Be(hostname);
+            settings.DogStatsdPort.Should().Be(port);
+            settings.MetricsHostname.Should().NotBeEquivalentTo("localhost");
         }
 
         private void AssertUdsIsConfigured(ExporterSettings settings, string socketPath)
         {
-            Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: settings.TracesTransport);
-            Assert.Equal(expected: socketPath, actual: settings.TracesUnixDomainSocketPath);
-            Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
+            settings.TracesTransport.Should().Be(TracesTransportType.UnixDomainSocket);
+            settings.TracesUnixDomainSocketPath.Should().Be(socketPath);
+            settings.AgentUri.Host.Should().NotBeEquivalentTo("localhost");
             CheckDefaultValues(settings, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
         }
 
         private void AssertMetricsUdsIsConfigured(ExporterSettings settings, string socketPath)
         {
-            Assert.Equal(expected: MetricsTransportType.UDS, actual: settings.MetricsTransport);
-            Assert.Equal(expected: socketPath, actual: settings.MetricsUnixDomainSocketPath);
-            CheckDefaultValues(settings, "MetricsUnixDomainSocketPath", "MetricsTransport", "DogStatsdPort");
+            settings.MetricsTransport.Should().Be(MetricsTransportType.UDS);
+            settings.MetricsUnixDomainSocketPath.Should().Be(socketPath);
+            CheckDefaultValues(settings, "MetricsUnixDomainSocketPath", "MetricsTransport", "DogStatsdPort", "AgentUri");
         }
 
         private void AssertPipeIsConfigured(ExporterSettings settings, string pipeName)
         {
-            Assert.Equal(expected: TracesTransportType.WindowsNamedPipe, actual: settings.TracesTransport);
-            Assert.Equal(expected: pipeName, actual: settings.TracesPipeName);
-            Assert.NotNull(settings.AgentUri);
-            Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
+            settings.TracesTransport.Should().Be(TracesTransportType.WindowsNamedPipe);
+            settings.TracesPipeName.Should().Be(pipeName);
+            settings.AgentUri.Should().NotBeNull();
+            settings.AgentUri.Host.Should().NotBeEquivalentTo("localhost");
             CheckDefaultValues(settings, "TracesPipeName", "AgentUri", "TracesTransport", "TracesPipeTimeoutMs");
         }
 
         private void AssertMetricsPipeIsConfigured(ExporterSettings settings, string pipeName)
         {
-            Assert.Equal(expected: MetricsTransportType.NamedPipe, actual: settings.MetricsTransport);
-            Assert.Equal(expected: pipeName, actual: settings.MetricsPipeName);
+            settings.MetricsTransport.Should().Be(MetricsTransportType.NamedPipe);
+            settings.MetricsPipeName.Should().Be(pipeName);
             CheckDefaultValues(settings, "MetricsTransport", "MetricsPipeName", "DogStatsdPort");
         }
 
@@ -432,6 +557,11 @@ namespace Datadog.Trace.Tests.Configuration
             if (!paramToIgnore.Contains("DogStatsdPort"))
             {
                 settings.DogStatsdPort.Should().Be(ExporterSettings.DefaultDogstatsdPort);
+            }
+
+            if (!paramToIgnore.Contains(nameof(settings.MetricsHostname)))
+            {
+                settings.MetricsHostname.Should().Be(ExporterSettings.DefaultDogstatsdHostname);
             }
 
             if (!paramToIgnore.Contains("PartialFlushEnabled"))

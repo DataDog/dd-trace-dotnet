@@ -17,7 +17,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 59;
+    public const int Length = 65;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -89,6 +89,12 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Remoting => nameof(Datadog.Trace.Configuration.IntegrationId.Remoting),
             Datadog.Trace.Configuration.IntegrationId.TrustBoundaryViolation => nameof(Datadog.Trace.Configuration.IntegrationId.TrustBoundaryViolation),
             Datadog.Trace.Configuration.IntegrationId.UnvalidatedRedirect => nameof(Datadog.Trace.Configuration.IntegrationId.UnvalidatedRedirect),
+            Datadog.Trace.Configuration.IntegrationId.TestPlatformAssemblyResolver => nameof(Datadog.Trace.Configuration.IntegrationId.TestPlatformAssemblyResolver),
+            Datadog.Trace.Configuration.IntegrationId.StackTraceLeak => nameof(Datadog.Trace.Configuration.IntegrationId.StackTraceLeak),
+            Datadog.Trace.Configuration.IntegrationId.XpathInjection => nameof(Datadog.Trace.Configuration.IntegrationId.XpathInjection),
+            Datadog.Trace.Configuration.IntegrationId.ReflectionInjection => nameof(Datadog.Trace.Configuration.IntegrationId.ReflectionInjection),
+            Datadog.Trace.Configuration.IntegrationId.Xss => nameof(Datadog.Trace.Configuration.IntegrationId.Xss),
+            Datadog.Trace.Configuration.IntegrationId.NHibernate => nameof(Datadog.Trace.Configuration.IntegrationId.NHibernate),
             _ => value.ToString(),
         };
 
@@ -161,6 +167,12 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Remoting,
             Datadog.Trace.Configuration.IntegrationId.TrustBoundaryViolation,
             Datadog.Trace.Configuration.IntegrationId.UnvalidatedRedirect,
+            Datadog.Trace.Configuration.IntegrationId.TestPlatformAssemblyResolver,
+            Datadog.Trace.Configuration.IntegrationId.StackTraceLeak,
+            Datadog.Trace.Configuration.IntegrationId.XpathInjection,
+            Datadog.Trace.Configuration.IntegrationId.ReflectionInjection,
+            Datadog.Trace.Configuration.IntegrationId.Xss,
+            Datadog.Trace.Configuration.IntegrationId.NHibernate,
         };
 
     /// <summary>
@@ -233,5 +245,11 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.Remoting),
             nameof(Datadog.Trace.Configuration.IntegrationId.TrustBoundaryViolation),
             nameof(Datadog.Trace.Configuration.IntegrationId.UnvalidatedRedirect),
+            nameof(Datadog.Trace.Configuration.IntegrationId.TestPlatformAssemblyResolver),
+            nameof(Datadog.Trace.Configuration.IntegrationId.StackTraceLeak),
+            nameof(Datadog.Trace.Configuration.IntegrationId.XpathInjection),
+            nameof(Datadog.Trace.Configuration.IntegrationId.ReflectionInjection),
+            nameof(Datadog.Trace.Configuration.IntegrationId.Xss),
+            nameof(Datadog.Trace.Configuration.IntegrationId.NHibernate),
         };
 }

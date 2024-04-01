@@ -338,21 +338,29 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // iast stuff
-    if (IsIastEnabled())
+    
+    bool isRaspEnabled = IsRaspEnabled();
+    bool isIastEnabled = IsIastEnabled();
+
+    Logger::Info(isIastEnabled ? "IAST Callsite instrumentation is enabled."
+                               : "IAST Callsite instrumentation is disabled.");
+
+    Logger::Info(isRaspEnabled ? "RASP Callsite instrumentation is enabled."
+                               : "RASP Callsite instrumentation is disabled.");
+
+    if (isIastEnabled || isRaspEnabled)
     {
-        Logger::Info("IAST Callsite instrumentation is enabled.");
         _dataflow = new iast::Dataflow(info_);
         if (FAILED(_dataflow->Init()))
         {
-            Logger::Error("IAST Dataflow failed to initialize");
+            Logger::Error("Callsite Dataflow failed to initialize");
             DEL(_dataflow);
         }
     }
     else
     {
-        Logger::Info("IAST Callsite instrumentation is disabled.");
+        Logger::Info("Callsite instrumentation is disabled.");
     }
-
 
     // we're in!
     Logger::Info("Profiler filepath: ", currentModuleFileName);
@@ -888,8 +896,13 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
 #endif // _WIN32
 
-        call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata);
-        
+        mdTypeDef bubbleUpTypeDef;
+        call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata, &bubbleUpTypeDef);
+        if(call_target_bubble_up_exception_available)
+        {
+            call_target_bubble_up_exception_function_available = EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(module_metadata, bubbleUpTypeDef);
+        }
+
         auto native_loader_library_path = GetNativeLoaderFilePath();
         if (fs::exists(native_loader_library_path))
         {
@@ -1191,6 +1204,16 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
     }
 
     return S_OK;
+}
+
+bool CorProfiler::IsCallTargetBubbleUpExceptionTypeAvailable() const
+{
+    return call_target_bubble_up_exception_available;
+}
+
+bool CorProfiler::IsCallTargetBubbleUpFunctionAvailable() const
+{
+    return call_target_bubble_up_exception_function_available;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
@@ -2002,13 +2025,13 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
 
     if (_dataflow != nullptr)
     {
-        Logger::Info("Registerubg IAST Aspects.");
+        Logger::Info("Registering Callsite Aspects.");
         _dataflow->LoadAspects(aspects, aspectsLength);
         return aspectsLength;
     }
     else
     {
-        Logger::Info("IAST is disabled.");
+        Logger::Info("Callsite instrumentation is disabled.");
     }
     return 0;
 }
@@ -2950,15 +2973,27 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
     return orig_sstream.str();
 }
 
-bool CorProfiler::EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata)
+bool CorProfiler::EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata, mdTypeDef* typeDef)
 {
     // *** Ensure Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException available
-    mdTypeDef bubbleUpException;
     const auto bubble_up_type_name = calltargetbubbleexception_tracer_type_name.c_str();
-    const auto found_call_target_bubble_up_exception_type = module_metadata.metadata_import->FindTypeDefByName(bubble_up_type_name, mdTokenNil, &bubbleUpException);
+    const auto found_call_target_bubble_up_exception_type = module_metadata.metadata_import->FindTypeDefByName(bubble_up_type_name, mdTokenNil, typeDef);
     Logger::Debug("CallTargetBubbleUpException type available test, hresult is: ", found_call_target_bubble_up_exception_type);
     return SUCCEEDED(found_call_target_bubble_up_exception_type);
 }
+
+bool CorProfiler::EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const ModuleMetadata& module_metadata, mdTypeDef typeDef)
+{
+    const auto bubble_up_function_name = calltargetbubbleexception_tracer_function_name.c_str();
+
+    mdMethodDef methodDef = mdTokenNil;
+    const auto found_call_target_bubble_up_exception_function = module_metadata.metadata_import->FindMethod(typeDef, bubble_up_function_name, 0, 0, &methodDef);
+
+    auto res = SUCCEEDED(found_call_target_bubble_up_exception_function);
+    Logger::Debug("CallTargetBubbleUpException.IsCallTargetBubbleUpException method found: ", res);
+    return res;
+}
+
 //
 // Startup methods
 //
@@ -3156,7 +3191,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
                                                     ELEMENT_TYPE_U1};
     ULONG start_length = sizeof(appdomain_load_signature_start);
     ULONG end_length = sizeof(appdomain_load_signature_end);
-
+    
     BYTE system_reflection_assembly_type_ref_compressed_token[4];
     ULONG token_length =
         CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
@@ -3863,10 +3898,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID funct
 HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId,
                                                   HRESULT hrStatus)
 {
+    Logger::Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId, ", methodId: ", methodId,
+                 ", hrStatus: ", hrStatus, "]");
+
     if (!is_attached_)
     {
-        Logger::Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId, ", methodId: ", methodId,
-                     ", hrStatus: ", hrStatus, "]");
         return S_OK;
     }
 

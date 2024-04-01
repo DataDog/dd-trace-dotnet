@@ -5,6 +5,7 @@
 
 #if NETCOREAPP3_1_OR_GREATER
 
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,10 +22,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTraces()
+        public async Task SubmitsTraces()
         {
             EnvironmentHelper.EnableUnixDomainSockets();
-            RunTest();
+            await RunTest();
         }
     }
 }

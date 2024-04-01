@@ -61,9 +61,9 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.15.1";
+    const string LibDdwafVersion = "1.16.0";
 
-    string[] OlderLibDdwafVersions = new[] { "1.3.0", "1.10.0", "1.14.0" };
+    string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0" };
 
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
@@ -212,6 +212,11 @@ partial class Build
         .Unlisted()
         .Executes(() =>
         {
+            if (FastDevLoop)
+            {
+                return;
+            }
+
             if (IsWin)
             {
                 NuGetTasks.NuGetRestore(s => s
@@ -278,8 +283,10 @@ partial class Build
         {
             DeleteDirectory(NativeTracerProject.Directory / "build");
 
+            var finalArchs = FastDevLoop ? new[]  { "arm64" } : OsxArchs;
+            
             var lstNativeBinaries = new List<string>();
-            foreach (var arch in OsxArchs)
+            foreach (var arch in finalArchs)
             {
                 var buildDirectory = NativeBuildDirectory + "_" + arch;
                 EnsureExistingDirectory(buildDirectory);
@@ -883,7 +890,7 @@ partial class Build
     Target ZipMonitoringHomeLinux => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
-        .DependsOn(PrepareMonitoringHomeLinux, BuildDdDotnet)
+        .DependsOn(PrepareMonitoringHomeLinux)
         .OnlyWhenStatic(() => IsLinux)
         .Requires(() => Version)
         .Executes(() =>
@@ -1001,6 +1008,12 @@ partial class Build
             {
                 foreach (var targetFramework in TestingFrameworks.Where(x => x == Framework || Framework is null))
                 {
+                    if (IsArm64 && Framework is null && targetFramework == TargetFramework.NETCOREAPP2_1)
+                    {
+                        // Skip .NET Core 2.1 on ARM64 unless enabled explicitly - Some unit tests crash and it's not supported anyway
+                        continue;
+                    }
+
                     try
                     {
                         DotNetTest(x => x
@@ -1239,6 +1252,7 @@ partial class Build
                         .SetProperty("TargetFramework", Framework.ToString())
                         .SetProperty("BuildInParallel", "true")
                         .SetProperty("CheckEolTargetFramework", "false")
+                        .SetProperty("SampleName", SampleName ?? string.Empty)
                         .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
                         .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                         .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
@@ -2411,6 +2425,8 @@ partial class Build
            knownPatterns.Add(new(@".*Profiler call failed with result Unspecified-Failure \(80131351\): pInfo..GetModuleInfo\(moduleId, nullptr, 0, nullptr, nullptr, .assemblyId\)", RegexOptions.Compiled));
            // avoid any issue with CLR events that are not supported before 5.1 or .NET Framework
            knownPatterns.Add(new(@".*Event-based profilers \(Allocation, LockContention\) are not supported for", RegexOptions.Compiled));
+           // There's a race in the profiler where unwinding when the thread is running
+           knownPatterns.Add(new(@".*Failed to walk \d+ stacks for sampled exception:\s+CORPROF_E_STACKSNAPSHOT_UNSAFE", RegexOptions.Compiled));
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });

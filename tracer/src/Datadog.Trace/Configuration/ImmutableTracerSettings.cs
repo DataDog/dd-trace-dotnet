@@ -28,6 +28,7 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public partial record ImmutableTracerSettings
     {
+        private readonly bool _traceEnabled;
         private readonly DomainMetadata _domainMetadata;
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly bool _logsInjectionEnabled;
@@ -38,7 +39,6 @@ namespace Datadog.Trace.Configuration
         private readonly double? _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
         private readonly string? _spanSamplingRules;
-        private readonly string? _customSamplingRules;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class
@@ -91,13 +91,14 @@ namespace Datadog.Trace.Configuration
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
             ServiceNameInternal = settings.ServiceNameInternal;
-            TraceEnabledInternal = settings.TraceEnabledInternal;
+            _traceEnabled = settings.TraceEnabledInternal;
             ExporterInternal = new ImmutableExporterSettings(settings.ExporterInternal, true);
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
 #pragma warning restore 618
             MaxTracesSubmittedPerSecondInternal = settings.MaxTracesSubmittedPerSecondInternal;
-            _customSamplingRules = settings.CustomSamplingRulesInternal;
+            CustomSamplingRulesInternal = settings.CustomSamplingRulesInternal;
+            CustomSamplingRulesFormat = settings.CustomSamplingRulesFormat;
             _spanSamplingRules = settings.SpanSamplingRules;
             _globalSamplingRate = settings.GlobalSamplingRateInternal;
             IntegrationsInternal = new ImmutableIntegrationSettingsCollection(settings.IntegrationsInternal, settings.DisabledIntegrationNamesInternal);
@@ -137,8 +138,7 @@ namespace Datadog.Trace.Configuration
             IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
-            // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
-            _logsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled ?? LogSubmissionSettings.IsEnabled;
+            _logsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled;
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
@@ -243,7 +243,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether we should tag every telemetry event with git metadata.
-        /// Defaul value is true (enabled).
+        /// Default value is true (enabled).
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GitMetadataEnabled"/>
         internal bool GitMetadataEnabled { get; }
@@ -254,7 +254,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_TraceEnabled_Get)]
-        internal bool TraceEnabledInternal { get; }
+        internal bool TraceEnabledInternal => DynamicSettings.TraceEnabled ?? _traceEnabled;
 
         /// <summary>
         /// Gets the exporter settings that dictate how the tracer exports data.
@@ -297,7 +297,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_CustomSamplingRules_Get)]
-        internal string? CustomSamplingRulesInternal => DynamicSettings.CustomSamplingRules ?? _customSamplingRules;
+        internal string? CustomSamplingRulesInternal { get; }
+
+        /// <summary>
+        /// Gets a value indicating the format for custom sampling rules ("regex" or "glob").
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.CustomSamplingRulesFormat"/>
+        internal string CustomSamplingRulesFormat { get; }
 
         /// <summary>
         /// Gets a value indicating the span sampling rules.
@@ -609,6 +615,16 @@ namespace Datadog.Trace.Configuration
         /// Gets the telemetry that was collected from <see cref="TracerSettings"/> when this instance was built
         /// </summary>
         internal IConfigurationTelemetry Telemetry { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether remote configuration is potentially available.
+        /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios
+        /// </summary>
+        internal bool IsRemoteConfigurationAvailable =>
+            !(IsRunningInAzureAppService
+           || IsRunningInAzureFunctionsConsumptionPlan
+           || IsRunningInGCPFunctions
+           || LambdaMetadata.IsRunningInLambda);
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

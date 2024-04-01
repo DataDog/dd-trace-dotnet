@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -46,12 +47,14 @@ namespace Datadog.Trace.Tools.Runner
         private async Task ExecuteAsync(InvocationContext context)
         {
             // CI Visibility mode is enabled.
+            var ciVisibilitySettings = CIVisibility.Settings;
+
             var args = _runSettings.Command.GetValue(context);
             var program = args[0];
             var arguments = args.Length > 1 ? Utils.GetArgumentsAsString(args.Skip(1)) : string.Empty;
 
             // Get profiler environment variables
-            if (!RunHelper.TryGetEnvironmentVariables(_applicationContext, context, _runSettings, out var profilerEnvironmentVariables))
+            if (!RunHelper.TryGetEnvironmentVariables(_applicationContext, context, _runSettings, new Utils.CIVisibilityOptions(ciVisibilitySettings.InstallDatadogTraceInGac, true), out var profilerEnvironmentVariables))
             {
                 context.ExitCode = 1;
                 return;
@@ -61,7 +64,6 @@ namespace Datadog.Trace.Tools.Runner
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
 
             // We check the settings and merge with the command settings options
-            var ciVisibilitySettings = CIVisibility.Settings;
             var agentless = ciVisibilitySettings.Agentless;
             var apiKey = ciVisibilitySettings.ApiKey;
 
@@ -131,14 +133,15 @@ namespace Datadog.Trace.Tools.Runner
                 Log.Debug("RunCiCommand: Uploading repository changes.");
 
                 // Change the .git search folder to the CurrentDirectory or WorkingFolder
-                CIEnvironmentValues.Instance.GitSearchFolder = Environment.CurrentDirectory;
-                if (string.IsNullOrEmpty(CIEnvironmentValues.Instance.WorkspacePath))
+                var ciValues = CIEnvironmentValues.Instance;
+                ciValues.GitSearchFolder = Environment.CurrentDirectory;
+                if (string.IsNullOrEmpty(ciValues.WorkspacePath))
                 {
                     // In case we cannot get the WorkspacePath we fallback to the default configuration.
-                    CIEnvironmentValues.Instance.GitSearchFolder = null;
+                    ciValues.GitSearchFolder = null;
                 }
 
-                var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings));
+                var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(ciValues.WorkspacePath, ciVisibilitySettings));
                 if (ciVisibilitySettings.GitUploadEnabled != false || ciVisibilitySettings.IntelligentTestRunnerEnabled)
                 {
                     // If we are in git upload only then we can defer the await until the child command exits.
@@ -178,6 +181,17 @@ namespace Datadog.Trace.Tools.Runner
 
                         // we skip the framework info because we are interested in the target projects info not the runner one.
                         var itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+
+                        // we check if the backend require the git metadata first
+                        if (itrSettings.RequireGit == true)
+                        {
+                            Log.Debug("RunCiCommand: require git received, awaiting for the git repository upload.");
+                            await uploadRepositoryChangesTask.ConfigureAwait(false);
+
+                            Log.Debug("RunCiCommand: calling the configuration api again.");
+                            itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+                        }
+
                         codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
                         testSkippingEnabled = itrSettings.TestsSkipping == true;
                     }
@@ -232,25 +246,28 @@ namespace Datadog.Trace.Tools.Runner
                         arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
                     }
 
-                    // Sets the code coverage path to store the json files for each module.
-                    var outputFolders = new[] { Environment.CurrentDirectory, Path.GetTempPath(), };
-                    foreach (var folder in outputFolders)
+                    // Sets the code coverage path to store the json files for each module in case we are not skipping test (global coverage is reliable).
+                    if (!testSkippingEnabled)
                     {
-                        var outputPath = Path.Combine(folder, $"datadog-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}");
-                        if (!Directory.Exists(outputPath))
+                        var outputFolders = new[] { Environment.CurrentDirectory, Path.GetTempPath(), };
+                        foreach (var folder in outputFolders)
                         {
-                            try
+                            var outputPath = Path.Combine(folder, $"datadog-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}");
+                            if (!Directory.Exists(outputPath))
                             {
-                                Directory.CreateDirectory(outputPath);
-                                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath] = outputPath;
-                                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, outputPath);
-                                codeCoveragePath = outputPath;
-                                break;
-                            }
-                            catch (Exception ex)
-                            {
-                                Utils.WriteError("Error creating folder for the global code coverage files:");
-                                AnsiConsole.WriteException(ex);
+                                try
+                                {
+                                    Directory.CreateDirectory(outputPath);
+                                    profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath] = outputPath;
+                                    EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, outputPath);
+                                    codeCoveragePath = outputPath;
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Utils.WriteError("Error creating folder for the global code coverage files:");
+                                    AnsiConsole.WriteException(ex);
+                                }
                             }
                         }
                     }
@@ -339,8 +356,12 @@ namespace Datadog.Trace.Tools.Runner
                         if (CoverageUtils.TryCombineAndGetTotalCoverage(codeCoveragePath, outputPath, out var globalCoverage, useStdOut: false) &&
                             globalCoverage is not null)
                         {
-                            // Adds the global code coverage percentage to the session
-                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
+                            // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
+                            if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true)
+                            {
+                                // Adds the global code coverage percentage to the session
+                                session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
+                            }
                         }
                     }
                     else

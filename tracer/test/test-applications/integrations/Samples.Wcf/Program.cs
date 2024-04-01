@@ -107,12 +107,15 @@ namespace Samples.Wcf
         {
             var uri = $"http://localhost:{port}";
             var host = new WebServiceHost(typeof(HttpCalculator), new Uri(uri));
-            host.AddServiceEndpoint(typeof(IHttpCalculator), new WebHttpBinding(), "");
+            var serviceEndpoint = host.AddServiceEndpoint(typeof(IHttpCalculator), new WebHttpBinding(), "");
+
+            // Adds the server DispatchMessageInspector
+            serviceEndpoint.EndpointBehaviors.Add(new CustomEndpointBehavior());
             host.Open();
 
             using var cf = new ChannelFactory<IHttpCalculator>(new WebHttpBinding(), uri);
             cf.Endpoint.Behaviors.Add(new WebHttpBehavior());
-            // Add the CustomEndpointBehavior / ClientMessageInspector to add headers on calls to the service
+            // Adds the ClientMessageInspector and the DispatchMessageInspector
             cf.Endpoint.EndpointBehaviors.Add(new CustomEndpointBehavior());
 
             var sampleHelper = new ActivitySourceHelper("Samples.Wcf");

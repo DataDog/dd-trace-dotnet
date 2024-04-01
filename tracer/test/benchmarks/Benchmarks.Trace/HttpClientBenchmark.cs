@@ -11,6 +11,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkAgent3]
+    [BenchmarkCategory(Constants.TracerCategory)]
     public class HttpClientBenchmark
     {
         private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };

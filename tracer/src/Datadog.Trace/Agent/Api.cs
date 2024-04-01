@@ -33,6 +33,7 @@ namespace Datadog.Trace.Agent
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IDogStatsd _statsd;
         private readonly string _containerId;
+        private readonly string _entityId;
         private readonly Uri _tracesEndpoint;
         private readonly Uri _statsEndpoint;
         private readonly Action<Dictionary<string, float>> _updateSampleRates;
@@ -57,6 +58,7 @@ namespace Datadog.Trace.Agent
             _updateSampleRates = updateSampleRates;
             _statsd = statsd;
             _containerId = ContainerMetadata.GetContainerId();
+            _entityId = ContainerMetadata.GetEntityId();
             _apiRequestFactory = apiRequestFactory;
             _partialFlushEnabled = partialFlushEnabled;
             _tracesEndpoint = _apiRequestFactory.GetEndpoint(TracesPath);
@@ -198,6 +200,11 @@ namespace Datadog.Trace.Agent
                 request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
             }
 
+            if (_entityId != null)
+            {
+                request.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
+            }
+
             using var stream = new MemoryStream();
             state.Stats.Serialize(stream, state.BucketDuration);
 
@@ -270,6 +277,11 @@ namespace Datadog.Trace.Agent
             if (_containerId != null)
             {
                 request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
+            }
+
+            if (_entityId != null)
+            {
+                request.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
             }
 
             if (statsComputationEnabled)

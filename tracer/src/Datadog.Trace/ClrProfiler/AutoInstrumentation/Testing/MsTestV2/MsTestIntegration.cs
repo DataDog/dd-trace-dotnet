@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
@@ -23,75 +24,83 @@ internal static class MsTestIntegration
 
     internal static readonly ThreadLocal<object> IsTestMethodRunnableThreadLocal = new();
 
+    internal static readonly ConditionalWeakTable<object, TestModule> TestModuleByTestAssemblyInfos = new();
+    internal static readonly ConditionalWeakTable<object, TestSuite> TestSuiteByTestClassInfos = new();
+
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-    internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInfo, Type type)
+    internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type)
         where TTestMethod : ITestMethod
     {
-        var testMethod = testMethodInfo.MethodInfo;
-        var testMethodArguments = testMethodInfo.Arguments;
-        var testName = testMethodInfo.TestMethodName;
+        var testMethod = testMethodInstance.MethodInfo;
+        var testMethodArguments = testMethodInstance.Arguments;
+        var testName = testMethodInstance.TestMethodName;
 
-        if (TestSuite.Current is { } suite)
+        var suite = TestSuite.Current;
+        if (suite is null && testMethodInstance.Instance.TryDuckCast<ITestMethodInfo>(out var testMethodInfo))
         {
-            var test = suite.InternalCreateTest(testName);
-
-            // Get test parameters
-            var methodParameters = testMethod.GetParameters();
-            if (methodParameters?.Length > 0)
-            {
-                var testParameters = new TestParameters();
-                testParameters.Metadata = new Dictionary<string, object>();
-                testParameters.Arguments = new Dictionary<string, object>();
-
-                for (int i = 0; i < methodParameters.Length; i++)
-                {
-                    if (testMethodArguments != null && i < testMethodArguments.Length)
-                    {
-                        testParameters.Arguments[methodParameters[i].Name] = Common.GetParametersValueData(testMethodArguments[i]);
-                    }
-                    else
-                    {
-                        testParameters.Arguments[methodParameters[i].Name] = "(default)";
-                    }
-                }
-
-                test.SetParameters(testParameters);
-            }
-
-            // Get traits
-            if (GetTraits(testMethod) is { } testTraits)
-            {
-                // Unskippable tests
-                if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
-                {
-                    ShouldSkip(testMethodInfo, out var isUnskippable, out var isForcedRun, testTraits);
-                    test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
-                    test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
-                    testTraits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
-                }
-
-                test.SetTraits(testTraits);
-            }
-            else if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
-            {
-                // Unskippable tests
-                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
-                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
-            }
-
-            // Set test method
-            test.SetTestMethodInfo(testMethod);
-
-            test.ResetStartTime();
-            return test;
+            suite = GetOrCreateTestSuiteFromTestClassInfo(testMethodInfo.Parent);
         }
-        else
+
+        if (suite is null)
         {
             Log.Warning("There's no suite to create the Test instance.");
+            return null;
         }
 
-        return null;
+        var test = suite.InternalCreateTest(testName);
+
+        // Get test parameters
+        var methodParameters = testMethod.GetParameters();
+        if (methodParameters?.Length > 0)
+        {
+            var testParameters = new TestParameters
+            {
+                Metadata = new Dictionary<string, object>(),
+                Arguments = new Dictionary<string, object>()
+            };
+
+            for (var i = 0; i < methodParameters.Length; i++)
+            {
+                if (testMethodArguments != null && i < testMethodArguments.Length)
+                {
+                    testParameters.Arguments[methodParameters[i].Name ?? $"{i}"] = Common.GetParametersValueData(testMethodArguments[i]);
+                }
+                else
+                {
+                    testParameters.Arguments[methodParameters[i].Name ?? $"{i}"] = "(default)";
+                }
+            }
+
+            test.SetParameters(testParameters);
+        }
+
+        // Get traits
+        if (GetTraits(testMethod) is { } testTraits)
+        {
+            // Unskippable tests
+            if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+            {
+                ShouldSkip(testMethodInstance, out var isUnskippable, out var isForcedRun, testTraits);
+                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
+                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+                testTraits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
+            }
+
+            test.SetTraits(testTraits);
+        }
+        else if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+        {
+            // Unskippable tests
+            test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
+            test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
+        }
+
+        // Set test method
+        test.SetTestMethodInfo(testMethod);
+
+        test.ResetStartTime();
+        return test;
     }
 
     private static Dictionary<string, List<string>> GetTraits(MethodInfo methodInfo)
@@ -185,5 +194,63 @@ internal static class MsTestIntegration
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
         isForcedRun = itrShouldSkip && isUnskippable;
         return itrShouldSkip && !isUnskippable;
+    }
+
+    internal static TestModule GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo testAssemblyInfo, string assemblyName = null)
+        where TAsmInfo : ITestAssemblyInfo
+    {
+        if (testAssemblyInfo.Instance is not { } objTestAssemblyInfo)
+        {
+            return default;
+        }
+
+        if (TestModuleByTestAssemblyInfos.TryGetValue(objTestAssemblyInfo, out var module))
+        {
+            Common.Log.Debug("Using existing Module: {Module}", module.Name);
+            return module;
+        }
+
+        CIVisibility.WaitForSkippableTaskToFinish();
+        if (assemblyName is not null)
+        {
+            assemblyName = AssemblyName.GetAssemblyName(assemblyName).Name ?? string.Empty;
+        }
+        else
+        {
+            assemblyName = string.Empty;
+        }
+
+        var frameworkVersion = testAssemblyInfo.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
+        Common.Log.Debug("Creating Module: {Module}, Framework version: {Version}", assemblyName, frameworkVersion);
+        module = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
+        TestModuleByTestAssemblyInfos.Add(objTestAssemblyInfo, module);
+        return module;
+    }
+
+    internal static TestSuite GetOrCreateTestSuiteFromTestClassInfo<TClassInfo>(TClassInfo testClassInfo)
+        where TClassInfo : ITestClassInfo
+    {
+        if (testClassInfo.Instance is not { } objTestClassInfo)
+        {
+            return default;
+        }
+
+        if (TestSuiteByTestClassInfos.TryGetValue(objTestClassInfo, out var testSuite))
+        {
+            Common.Log.Debug("Using existing Suite: {Suite}", testSuite.Name);
+            return testSuite;
+        }
+
+        var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType.Assembly.FullName);
+        if (module is null)
+        {
+            Common.Log.Error("There is no current module, a new suite cannot be created.");
+            return default;
+        }
+
+        var classTypeName = testClassInfo.ClassType?.FullName ?? throw new NullReferenceException("ClassType is null, a new suite cannot be created.");
+        testSuite = module.InternalGetOrCreateSuite(classTypeName);
+        TestSuiteByTestClassInfos.Add(objTestClassInfo, testSuite);
+        return testSuite;
     }
 }

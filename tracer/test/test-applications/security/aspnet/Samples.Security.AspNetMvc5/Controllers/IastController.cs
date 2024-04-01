@@ -11,6 +11,9 @@ using Microsoft.Ajax.Utilities;
 using System.Net.Http;
 using System.DirectoryServices;
 using System.Collections.Generic;
+using System.Linq;
+using System.Web.Script.Serialization;
+using System.Xml;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -108,6 +111,31 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content("Error in query.", "text/html");
             }            
+        }
+        
+        [Route("JavaScriptSerializerDeserializeObject")]
+        public ActionResult JavaScriptSerializerDeserializeObject(string input)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(input))
+                {
+                    var serializer = new JavaScriptSerializer();
+                    var json = @"{ ""cmd"": """ + input + @""", ""arg"": ""arg1"" }";
+                    var obj = (Dictionary<string, object>)serializer.DeserializeObject(json);
+                    var cmd = obj["cmd"] as string;
+                    var arg = obj["arg"] as string;
+
+                    // Trigger a vulnerability with the tainted string
+                    return ExecuteCommandInternal(cmd, arg);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return Content("No input was provided");
         }
 
         [Route("ExecuteCommand")]
@@ -338,9 +366,13 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (!string.IsNullOrEmpty(xContentTypeHeaderValue))
+                // We don't want a header injection vulnerability here, so we untaint the header values.
+                var xContentTypeHeaderValueUntainted = CopyStringAvoidTainting(xContentTypeHeaderValue);
+                var contentTypeUntainted = CopyStringAvoidTainting(contentType);
+
+                if (!string.IsNullOrEmpty(xContentTypeHeaderValueUntainted))
                 {
-                    Response.AddHeader("X-Content-Type-Options", xContentTypeHeaderValue);
+                    Response.AddHeader("X-Content-Type-Options", xContentTypeHeaderValueUntainted);
                 }
 
                 if (returnCode != (int)HttpStatusCode.OK)
@@ -348,9 +380,9 @@ namespace Samples.Security.AspNetCore5.Controllers
                     return new HttpStatusCodeResult(returnCode);
                 }
 
-                if (!string.IsNullOrEmpty(contentType))
+                if (!string.IsNullOrEmpty(contentTypeUntainted))
                 {
-                    return Content("XContentTypeHeaderMissing", contentType);
+                    return Content("XContentTypeHeaderMissing", contentTypeUntainted);
                 }
                 else
                 {
@@ -366,14 +398,20 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("StrictTransportSecurity")]
         public ActionResult StrictTransportSecurity(string contentType = "text/html", int returnCode = 200, string hstsHeaderValue = "", string xForwardedProto = "")
         {
-            if (!string.IsNullOrEmpty(hstsHeaderValue))
+            // We don't want a header injection vulnerability here, so we untaint the header values by
+            // using reflection to access the private field "m_string" from the String class.
+            var hstsHeaderValueUntainted = CopyStringAvoidTainting(hstsHeaderValue);
+            var xForwardedProtoUntainted = CopyStringAvoidTainting(xForwardedProto);
+            var contentTypeUntainted = CopyStringAvoidTainting(contentType);
+
+            if (!string.IsNullOrEmpty(hstsHeaderValueUntainted))
             {
-                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValue);
+                Response.Headers.Add("Strict-Transport-Security", hstsHeaderValueUntainted);
             }
 
-            if (!string.IsNullOrEmpty(xForwardedProto))
+            if (!string.IsNullOrEmpty(xForwardedProtoUntainted))
             {
-                Response.Headers.Add("X-Forwarded-Proto", xForwardedProto);
+                Response.Headers.Add("X-Forwarded-Proto", xForwardedProtoUntainted);
             }
 
             if (returnCode != (int)HttpStatusCode.OK)
@@ -381,9 +419,9 @@ namespace Samples.Security.AspNetCore5.Controllers
                 return new HttpStatusCodeResult(returnCode);
             }
 
-            if (!string.IsNullOrEmpty(contentType))
+            if (!string.IsNullOrEmpty(contentTypeUntainted))
             {
-                return Content("StrictTransportSecurityMissing", contentType);
+                return Content("StrictTransportSecurityMissing", contentTypeUntainted);
             }
             else
             {
@@ -507,5 +545,107 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content($"Redirected param:{param}\n");
         }
 
+
+        // We should exclude some headers to prevent false positives:
+        // location: it is already reported in UNVALIDATED_REDIRECT vulnerability detection.
+        // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
+        // access-control-allow-origin: when the header is access-control-allow-origin and the source of the tainted range is the request header origin
+        // set-cookie: We should ignore set-cookie header if the source of all the tainted ranges are cookies
+        // We should exclude the injection when the tainted string only has one range which comes from a request header with the same name that the header that we are checking in the response.
+        // Headers could store sensitive information, we should redact whole <header_value> if:
+        // <header_name> matches with this RegExp
+        // <header_value> matches with  this RegExp
+        // We should redact the sensitive information from the evidence when:
+        // Tainted range is considered sensitive value
+
+        [Route("HeaderInjection")]
+        public ActionResult HeaderInjection(bool UseValueFromOriginHeader = false)
+        {
+            string defaultHeaderName = "defaultName";
+            string defaultHeaderValue = "defaultValue";
+
+            string Combine(string name1, string name2, string defaultValue)
+            {
+                var null1 = string.IsNullOrWhiteSpace(name1);
+                var null2 = string.IsNullOrWhiteSpace(name2);
+
+                if (null1 && null2)
+                {
+                    return defaultValue;
+                }
+                if (!null1 && !null2)
+                {
+                    return name1 + name2;
+                }
+                else
+                {
+                    return null1 ? name2 : name1;
+                }
+            }
+
+            var originValue = Request.Headers["origin"];
+            var headerValue = Request.Headers["value"];
+            var cookieValue = Request.Cookies["value"];
+            var headerName = Request.Headers["name"];
+            var cookieName = Request.Cookies["name"];
+            string propagationHeader = Request.Headers["propagation"];
+
+            if (!string.IsNullOrEmpty(propagationHeader))
+            {
+                Response.Headers.Add("propagation", propagationHeader);
+                return Content($"returned propagation header");
+            }
+
+            var returnedName = Combine(headerName, cookieName?.Value, defaultHeaderName);
+            var returnedValue = UseValueFromOriginHeader ? originValue.ToString() : Combine(headerValue, cookieValue?.Value, defaultHeaderValue);
+            Response.Headers.Add(returnedName, returnedValue);
+            Response.Headers.Add("extraName", "extraValue");
+            return Content($"returned header {returnedName},{returnedValue}");
+        }
+
+        private readonly string xmlContent = @"<?xml version=""1.0"" encoding=""ISO-8859-1""?>
+                <data><user><name>jaime</name><password>1234</password><account>administrative_account</account></user>
+                <user><name>tom</name><password>12345</password><account>toms_acccount</account></user>
+                <user><name>guest</name><password>anonymous1234</password><account>guest_account</account></user>
+                </data>";
+
+        [Route("XpathInjection")]
+        public ActionResult XpathInjection(string user, string value)
+        {
+            var findUserXPath = "/data/user[name/text()='" + user + "' and password/text()='" + value + "}']";
+            var doc = new XmlDocument();
+            doc.LoadXml(xmlContent);
+            var result = doc.SelectSingleNode(findUserXPath);
+            return result is null ?
+                Content($"Invalid user/password") :
+                Content($"User " + result.ChildNodes[0].InnerText + " successfully logged.");
+        }
+
+        static string CopyStringAvoidTainting(string original)
+        {
+            return new string(original.AsEnumerable().ToArray());
+        }
+
+        [Route("StackTraceLeak")]
+        public ActionResult StackTraceLeak()
+        {
+            throw new SystemException("Custom exception message");
+        }
+
+        [ValidateInput(false)]
+        [Route("ReflectedXss")]
+        public ActionResult ReflectedXss(string param)
+        {
+            ViewData["XSS"] = param + "<b>More Text</b>";
+            return View();
+        }
+
+        [ValidateInput(false)]
+        [Route("ReflectedXssEscaped")]
+        public ActionResult ReflectedXssEscaped(string param)
+        {
+            ViewData["XSS"] = WebUtility.HtmlEncode(param);
+            return View("ReflectedXss");
+        }
     }
 }

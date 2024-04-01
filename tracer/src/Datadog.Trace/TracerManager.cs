@@ -443,7 +443,7 @@ namespace Datadog.Trace
                     writer.WritePropertyName("querystring_reporting_enabled");
                     writer.WriteValue(instanceSettings.QueryStringReportingEnabled);
 
-                    writer.WritePropertyName("obfuscation_querystring_regex_timout");
+                    writer.WritePropertyName("obfuscation_querystring_regex_timeout");
                     writer.WriteValue(instanceSettings.ObfuscationQueryStringRegexTimeout);
 
                     writer.WritePropertyName("obfuscation_querystring_size");
@@ -537,11 +537,37 @@ namespace Datadog.Trace
                     writer.WritePropertyName("dbm_propagation_mode");
                     writer.WriteValue(instanceSettings.DbmPropagationMode.ToString());
 
+                    writer.WritePropertyName("remote_configuration_available");
+                    writer.WriteValue(instanceSettings.IsRemoteConfigurationAvailable);
+
                     writer.WritePropertyName("header_tags");
                     WriteDictionary(instanceSettings.HeaderTagsInternal);
 
                     writer.WritePropertyName("service_mapping");
                     WriteDictionary(instanceSettings.ServiceNameMappings);
+
+                    writer.WritePropertyName("trace_propagation_style_extract_first_only");
+                    writer.WriteValue(instanceSettings.PropagationExtractFirstOnly);
+
+                    writer.WritePropertyName("trace_propagation_style_inject");
+                    writer.WriteStartArray();
+
+                    foreach (var warning in instanceSettings.PropagationStyleInject)
+                    {
+                        writer.WriteValue(warning);
+                    }
+
+                    writer.WriteEndArray();
+
+                    writer.WritePropertyName("trace_propagation_style_extract");
+                    writer.WriteStartArray();
+
+                    foreach (var warning in instanceSettings.PropagationStyleExtract)
+                    {
+                        writer.WriteValue(warning);
+                    }
+
+                    writer.WriteEndArray();
 
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
@@ -568,6 +594,12 @@ namespace Datadog.Trace
 
                 writer.WritePropertyName("appsec_apisecurity_sampling");
                 writer.WriteValue(security.Settings.ApiSecuritySampling);
+            }
+
+            if (security.Settings.UseUnsafeEncoder)
+            {
+                writer.WritePropertyName("appsec_use_unsafe_encoder");
+                writer.WriteValue(security.Settings.UseUnsafeEncoder);
             }
 
             writer.WritePropertyName("appsec_trace_rate_limit");

@@ -426,42 +426,38 @@ namespace iast
 
         bool correct = true;
         std::string verificationFail = "";
+        bool dump = trace::Logger::IsDebugEnabled();
 
-        //auto Profiler = module->Profiler;
-        bool verify = true; // Profiler->VerifyIL();
-        bool dump = true; // Profiler->DumpIL();
-
-        if (verify || dump)
+        if (!_rewriter)
         {
-            if (!_rewriter)
-            {
-                trace::Logger::Debug("MethodInfo::SetMethodIL -> No rewritter present. Creating one to verify new IL...");
+            trace::Logger::Debug("MethodInfo::SetMethodIL -> No rewritter present. Creating one to verify new IL...");
                 
-                _rewriter = new ILRewriter(this);
-                if (FAILED(_rewriter->Import(pMethodIL)))
-                {
-                    DEL(_rewriter);
-                    verificationFail = "ILImport failed on new buffer";
-                    correct = false;
-                }
-            }
-            else
+            _rewriter = new ILRewriter(this);
+            if (FAILED(_rewriter->Import(pMethodIL)))
             {
-                trace::Logger::Debug("MethodInfo::SetMethodIL -> Rewritter present. Verify new IL...");
-            }
-
-            if (_rewriter)
-            {
-                ILAnalysis analysis(_rewriter);
-                correct = analysis.IsStackValid();
-                verificationFail = analysis.GetError();
-                if (!correct || dump)
-                {
-                    analysis.Dump(isRejit ? "ReJit " : "  Jit ");
-                }
+                DEL(_rewriter);
+                verificationFail = "ILImport failed on new buffer";
+                correct = false;
             }
         }
+        else
+        {
+            trace::Logger::Debug("MethodInfo::SetMethodIL -> Rewritter present. Verify new IL...");
+        }
+
+        if (_rewriter)
+        {
+            ILAnalysis analysis(_rewriter);
+            correct = analysis.IsStackValid();
+            verificationFail = analysis.GetError();
+            if (!correct || dump)
+            {
+                analysis.Dump(isRejit ? "ReJit " : "  Jit ");
+            }
+        }
+
         DEL(_rewriter);
+
         if (correct)
         {
             _nMethodIL = nSize;

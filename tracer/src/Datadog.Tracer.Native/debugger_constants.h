@@ -66,6 +66,7 @@ const WSTRING non_supported_compiled_bytecode =
     WStr("Compiled code with `tail` call is not yet supported (F#).");
 const WSTRING type_contains_invalid_symbol = 
     WStr("The type is not supported.");
+const WSTRING async_method_could_not_load_this = WStr("Instrumentation of async method in a generic class is not yet supported.");
 const WSTRING invalid_probe_failed_to_instrument_method_probe = 
     GetGenericErrorMessageWithErrorCode(1);
 const WSTRING invalid_probe_failed_to_instrument_line_probe = 

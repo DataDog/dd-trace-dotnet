@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if NETFRAMEWORK
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -39,8 +41,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, bool setImpersonationContext)
             where TTarget : IThreadContext
         {
+            // AssociateWithCurrentThread can only be used when HttpContext is non-null
             var httpContext = instance.HttpContext;
-            if (httpContext.Items[HttpContextScopeKey] is Scope scope && Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
+            if (httpContext.Items is not null
+                && httpContext.Items[HttpContextScopeKey] is Scope scope
+                && Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
             {
                 rawAccess.Active = scope;
             }

@@ -31,11 +31,13 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         _fixture = fixture;
         _fixture.SetOutput(outputHelper);
         Directory.CreateDirectory(LogDirectory);
+        EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.Rules, Path.Combine("ApiSecurity", "ruleset-with-block.json"));
+        // necessary as the developer middleware prevents the right blocking response
+        EnvironmentHelper.CustomEnvironmentVariables.Add("ASPNETCORE_ENVIRONMENT", "Production");
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
         if (enableApiSecurity)
         {
             EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled, "true");
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityRequestSampleRate, "1");
         }
     }
 
@@ -55,13 +57,10 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         await TryStartApp();
         var agent = _fixture.Agent;
 
-        var fileId = nameof(TestApiSecurityScan) + Guid.NewGuid();
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = "crs-932-160", Enabled = true, OnMatch = new[] { "block" } } } }, "ASM", fileId) });
-
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body.Substring(0, 10), expectedStatusCode, containsAttack);
         var dateTime = DateTime.UtcNow;
-        var result = await SubmitRequest(url, body, "application/json");
+        await SubmitRequest(url, body, "application/json");
         var spans = agent.WaitForSpans(2, minDateTime: dateTime);
 #if !NET8_O_OR_GREATER
         // Simple scrubber for the response content type in .NET 8

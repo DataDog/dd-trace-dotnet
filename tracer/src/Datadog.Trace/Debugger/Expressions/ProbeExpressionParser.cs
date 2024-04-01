@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal partial class ProbeExpressionParser<T>
 {
     private const string @Return = "@return";
-    private const string @Exceptions = "@exceptions";
+    private const string @Exceptions = "@exception";
     private const string @Duration = "@duration";
     private const string @It = "@it";
     private const string @This = "this";
@@ -159,7 +159,7 @@ internal partial class ProbeExpressionParser<T>
                                     }
 
                                 case "!=":
-                                case "neq":
+                                case "ne":
                                     {
                                         return NotEqual(reader, parameters, itParameter);
                                     }
@@ -231,11 +231,15 @@ internal partial class ProbeExpressionParser<T>
                                     }
 
                                 // collection operations
+                                case "any":
+                                // backward compability
                                 case "hasAny":
                                     {
                                         return HasAny(reader, parameters);
                                     }
 
+                                case "all":
+                                // backward compability
                                 case "hasAll":
                                     {
                                         return HasAll(reader, parameters);
@@ -246,17 +250,15 @@ internal partial class ProbeExpressionParser<T>
                                         return Filter(reader, parameters);
                                     }
 
-                                case "count":
-                                    {
-                                        return Count(reader, parameters, itParameter);
-                                    }
+                                // see `len` above
+                                // case "len":
 
                                 case "index":
                                     {
                                         return GetItemAtIndex(reader, parameters, itParameter);
                                     }
 
-                                // generic operations
+                                // general operations
                                 case "getmember":
                                     {
                                         return GetMember(reader, parameters, itParameter);
@@ -267,9 +269,19 @@ internal partial class ProbeExpressionParser<T>
                                         return GetReference(reader, parameters, itParameter);
                                     }
 
+                                case "instanceof":
+                                    {
+                                        return IsInstanceOf(reader, parameters, itParameter);
+                                    }
+
                                 case "isUndefined":
                                     {
                                         return IsUndefined(reader, parameters, itParameter);
+                                    }
+
+                                case "isDefined":
+                                    {
+                                        return IsDefined(reader, parameters, itParameter);
                                     }
 
                                 case "Ignore":
@@ -281,7 +293,7 @@ internal partial class ProbeExpressionParser<T>
 
                                 default:
                                     {
-                                        AddError(readerValue, "Operator has not defined");
+                                        AddError(readerValue, "Operator is not defined");
                                         return ReturnDefaultValueExpression();
                                     }
                             }

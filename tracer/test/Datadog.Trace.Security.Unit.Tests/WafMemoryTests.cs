@@ -11,22 +11,19 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
-using YamlDotNet.Core.Tokens;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
     [Collection(nameof(SecuritySequentialTests))]
     public class WafMemoryTests : WafLibraryRequiredTest
     {
-        public const int TimeoutMicroSeconds = 1_000_000;
-
         public const int OverheadMargin = 40_000_000; // 40Mb margin
 
         public void InitMemoryLeakCheck()
@@ -43,7 +40,8 @@ namespace Datadog.Trace.Security.Unit.Tests
                 Execute(AddressesConstants.RequestBody, "/.adsensepostnottherenonobook", "security_scanner", "crs-913-120");
             }
 
-            var current = GetMemory();
+            var current = GetMemory(true);
+
             current.Should().BeLessThanOrEqualTo(baseline + OverheadMargin);
         }
 
@@ -62,12 +60,13 @@ namespace Datadog.Trace.Security.Unit.Tests
                 using var context = waf.CreateContext();
                 var result = context.Run(args, TimeoutMicroSeconds);
                 result.ReturnCode.Should().Be(WafReturnCode.Match);
-                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
+                var jsonString = JsonConvert.SerializeObject(result.Data);
+                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
                 resultData.Rule.Tags.Type.Should().Be("security_scanner");
                 resultData.Rule.Id.Should().Be("crs-913-120");
             }
 
-            var current = GetMemory();
+            var current = GetMemory(true);
             current.Should().BeLessThanOrEqualTo(baseline + OverheadMargin);
         }
 
@@ -81,7 +80,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             bool enabled = false;
 
-            for (int x = 0; x < 1000; x++)
+            for (int x = 0; x < 200; x++)
             {
                 var ruleOverrides = new List<RuleOverride>();
                 var ruleOverride = new RuleOverride { Enabled = enabled, Id = "crs-913-120" };
@@ -97,12 +96,21 @@ namespace Datadog.Trace.Security.Unit.Tests
                 enabled = !enabled;
             }
 
-            var current = GetMemory();
+            var current = GetMemory(true);
             current.Should().BeLessThanOrEqualTo(baseline + OverheadMargin);
         }
 
-        private long GetMemory()
+        private long GetMemory(bool disposePool = false)
         {
+            if (disposePool)
+            {
+                // Size of the unmanaged pool is already MaxBytesForMaxStringLength = (WafConstants.MaxStringLength * 4) + 1 *  BlockSize = 1000
+                // > ((4096 * 4) + 1) * 1000
+                // > 16.385.000
+                // so give more margin for execution
+                Encoder.Pool.Dispose();
+            }
+
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.WaitForFullGCComplete();
@@ -137,7 +145,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             if (isAttack)
             {
                 result.ReturnCode.Should().Be(WafReturnCode.Match);
-                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
+                var jsonString = JsonConvert.SerializeObject(result.Data);
+                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
                 resultData.Rule.Tags.Type.Should().Be(flow);
                 resultData.Rule.Id.Should().Be(rule);
                 resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);

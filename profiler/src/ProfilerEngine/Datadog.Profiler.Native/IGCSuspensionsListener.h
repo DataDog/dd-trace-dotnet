@@ -9,10 +9,10 @@ class IGCSuspensionsListener
 {
 public:
     virtual void OnSuspension(
+        uint64_t timestamp,
         int32_t number,
         uint32_t generation,
-        uint64_t pauseDuration,
-        uint64_t timestamp) = 0;
+        uint64_t pauseDuration) = 0;
 
     virtual ~IGCSuspensionsListener() = default;
 };

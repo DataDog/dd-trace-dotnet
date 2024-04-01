@@ -41,6 +41,8 @@
 
 std::int64_t OpSysTools::s_nanosecondsPerHighPrecisionTimerTick = 0;
 std::int64_t OpSysTools::s_highPrecisionTimerTicksPerNanosecond = 0;
+uint64_t OpSysTools::s_ticksPerSecond = 0;
+
 
 #ifdef _WINDOWS
 bool OpSysTools::s_isRunTimeLinkingThreadDescriptionDone = false;
@@ -79,6 +81,10 @@ bool OpSysTools::InitHighPrecisionTimer()
         return false;
     }
 
+    s_ticksPerSecond = ticksPerSecond.QuadPart;
+
+    // TODO: BUG - ticksPerSecond is ALWAYS smaller than NanosecondsPerSecond.
+    // so this code is useless: both s_xx will be 0...
     if (NanosecondsPerSecond >= ticksPerSecond.QuadPart)
     {
         s_nanosecondsPerHighPrecisionTimerTick = ticksPerSecond.QuadPart / NanosecondsPerSecond;

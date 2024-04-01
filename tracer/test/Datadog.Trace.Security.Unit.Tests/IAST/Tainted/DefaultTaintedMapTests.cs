@@ -20,7 +20,7 @@ public class DefaultTaintedMapTests
     {
         DefaultTaintedMap map = new();
         string testString = "test";
-        var source = new Source(12, "name", "value");
+        var source = new Source(SourceType.RequestBody, "name", "value");
         var tainted = new TaintedObject(testString, new Range[] { new Range(1, 2, source) });
         map.Put(tainted);
         var tainted2 = map.Get(testString);
@@ -102,7 +102,7 @@ public class DefaultTaintedMapTests
     {
         DefaultTaintedMap map = new();
         var testObject = new object();
-        var tainted = new TaintedObject(testObject, new Range[] { new Range(1, 2, new Source(12, "name", "value")) });
+        var tainted = new TaintedObject(testObject, new Range[] { new Range(1, 2, new Source(SourceType.RequestBody, "name", "value")) });
         map.Put(tainted);
         map.Purge();
         var tainted2 = map.Get(testObject);
@@ -115,7 +115,7 @@ public class DefaultTaintedMapTests
     {
         DefaultTaintedMap map = new();
         var testObject = new object();
-        var source = new Source(12, "name", "value");
+        var source = new Source(SourceType.RequestBody, "name", "value");
         var tainted = new TaintedObject(testObject, new Range[] { new Range(1, 2, source) });
         map.Put(tainted);
         map.Get(testObject).Should().NotBeNull();
@@ -132,7 +132,7 @@ public class DefaultTaintedMapTests
         for (int i = 0; i < DefaultTaintedMap.DefaultCapacity; i++)
         {
             string testString = Guid.NewGuid().ToString();
-            var source = new Source(12, "name", "value");
+            var source = new Source(SourceType.RequestBody, "name", "value");
             var tainted = new TaintedObject(testString, new Range[] { new Range(1, 2, source) });
             map.Put(tainted);
             var tainted2 = map.Get(testString);
@@ -151,7 +151,7 @@ public class DefaultTaintedMapTests
         for (int i = 0; i < iterations; i++)
         {
             string testString = Guid.NewGuid().ToString();
-            var source = new Source(12, "name", "value");
+            var source = new Source(SourceType.RequestBody, "name", "value");
             var tainted = new TaintedObject(testString, new Range[] { new Range(1, 2, source) });
             map.Put(tainted);
             map.Get(testString).Should().NotBeNull();
@@ -350,7 +350,7 @@ public class DefaultTaintedMapTests
         for (int i = 0; i < DefaultTaintedMap.DefaultFlatModeThresold * 2; i++)
         {
             string testString = Guid.NewGuid().ToString();
-            var source = new Source(12, "name", "value");
+            var source = new Source(SourceType.RequestBody, "name", "value");
             var tainted = new TaintedObject(testString, new Range[] { new Range(1, 2, source) });
             map.Put(tainted);
             objects.Add(testString);

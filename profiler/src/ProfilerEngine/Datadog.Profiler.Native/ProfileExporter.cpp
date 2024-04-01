@@ -21,6 +21,7 @@
 #include "OsSpecificApi.h"
 #include "Profile.h"
 #include "Sample.h"
+#include "SamplesEnumerator.h"
 #include "ScopeFinalizer.h"
 #include "dd_profiler_version.h"
 
@@ -79,8 +80,8 @@ ProfileExporter::ProfileExporter(
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
-    _metadataProvider{metadataProvider},
     _allocationsRecorder{allocationsRecorder},
+    _metadataProvider{metadataProvider},
     _configuration{configuration}
 {
     _exporter = CreateExporter(_configuration, CreateTags(_configuration, runtimeInfo, enabledProfilers));
@@ -425,9 +426,16 @@ void ProfileExporter::AddUpscalingRules(libdatadog::Profile* profile, std::vecto
 std::list<std::shared_ptr<Sample>> ProfileExporter::GetProcessSamples()
 {
     std::list<std::shared_ptr<Sample>> samples;
+
+    std::shared_ptr<Sample> sample(nullptr); // for process-level samples, we do not need to initialize
     for (auto const& provider : _processSamplesProviders)
     {
-        samples.splice(samples.end(), provider->GetSamples());
+        auto processedSamples = provider->GetSamples();
+
+        while (processedSamples->MoveNext(sample))
+        {
+            samples.push_back(sample);
+        }
     }
     return samples;
 }
@@ -669,8 +677,8 @@ fs::path ProfileExporter::CreatePprofOutputPath(IConfiguration* configuration)
 
     // TODO: add process name to the path using Configuration::GetServiceName() and remove unsupported characters
 
-    std::error_code errorCode;
-    if (fs::create_directories(pprofOutputPath, errorCode) || errorCode)
+    std::error_code errorCode;                              // not a problem if the directory already exists
+    if (fs::create_directories(pprofOutputPath, errorCode) || (errorCode.value() == 0))
     {
         return pprofOutputPath;
     }

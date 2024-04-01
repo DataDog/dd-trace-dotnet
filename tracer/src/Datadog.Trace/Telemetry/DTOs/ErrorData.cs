@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Telemetry;
 
-internal readonly struct ErrorData
+internal readonly record struct ErrorData
 {
     public ErrorData(TelemetryErrorCode error)
         : this(error, error.ToStringFast())

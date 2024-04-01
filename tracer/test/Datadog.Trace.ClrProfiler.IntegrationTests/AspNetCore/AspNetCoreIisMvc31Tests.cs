@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
-    public abstract class AspNetCoreIisMvc31Tests : AspNetCoreIisMvcTestBase
+    public abstract class AspNetCoreIisMvc31Tests : AspNetCoreIisMvcTestBase, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
@@ -62,7 +62,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             _testName = GetTestName(nameof(AspNetCoreIisMvc31Tests));
             _iisFixture = fixture;
-            _iisFixture.TryStartIis(this, inProcess ? IisAppType.AspNetCoreInProcess : IisAppType.AspNetCoreOutOfProcess);
         }
 
         [SkippableTheory]
@@ -90,6 +89,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                           .UseMethodName("_")
                           .UseTypeName(_testName);
         }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, InProcess ? IisAppType.AspNetCoreInProcess : IisAppType.AspNetCoreOutOfProcess);
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 }
 #endif

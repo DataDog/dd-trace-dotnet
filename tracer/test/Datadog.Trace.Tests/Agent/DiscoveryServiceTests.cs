@@ -1,4 +1,4 @@
-﻿// <copyright file="DiscoveryServiceTests.cs" company="Datadog">
+// <copyright file="DiscoveryServiceTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -47,6 +47,7 @@ public class DiscoveryServiceTests
         AgentConfiguration config = null;
         var clientDropP0s = true;
         var version = "1.26.3";
+        var evpProxyEndpoint = "evp_proxy/v4";
         var mutex = new ManualResetEventSlim();
         var factory = new TestRequestFactory(
             x => new TestApiRequest(x, responseContent: GetConfig(clientDropP0s, version)));
@@ -64,9 +65,11 @@ public class DiscoveryServiceTests
         config.AgentVersion.Should().Be(version);
         config.ConfigurationEndpoint.Should().NotBeNullOrEmpty();
         config.DebuggerEndpoint.Should().NotBeNullOrEmpty();
+        config.SymbolDbEndpoint.Should().NotBeNullOrEmpty();
         config.ClientDropP0s.Should().Be(clientDropP0s);
         config.StatsEndpoint.Should().NotBeNullOrEmpty();
         config.DataStreamsMonitoringEndpoint.Should().NotBeNullOrEmpty();
+        config.EventPlatformProxyEndpoint.Should().Be(evpProxyEndpoint);
         await ds.DisposeAsync();
     }
 
@@ -251,6 +254,7 @@ public class DiscoveryServiceTests
         var config1 = new AgentConfiguration(
             configurationEndpoint: "ConfigurationEndpoint",
             debuggerEndpoint: "DebuggerEndpoint",
+            symbolDbEndpoint: "symbolDbEndpoint",
             agentVersion: "AgentVersion",
             statsEndpoint: "StatsEndpoint",
             dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
@@ -263,6 +267,7 @@ public class DiscoveryServiceTests
         var config2 = new AgentConfiguration(
             configurationEndpoint: "ConfigurationEndpoint",
             debuggerEndpoint: "DebuggerEndpoint",
+            symbolDbEndpoint: "symbolDbEndpoint",
             agentVersion: "AgentVersion",
             statsEndpoint: "StatsEndpoint",
             dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
@@ -275,6 +280,7 @@ public class DiscoveryServiceTests
         var config3 = new AgentConfiguration(
             configurationEndpoint: "DIFFERENT",
             debuggerEndpoint: "DebuggerEndpoint",
+            symbolDbEndpoint: "symbolDbEndpoint",
             agentVersion: "AgentVersion",
             statsEndpoint: "StatsEndpoint",
             dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",

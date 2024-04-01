@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
@@ -29,7 +30,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 public static class TestClassInfoRunClassInitializeIntegration
 {
     private static readonly MethodInfo EmptyCleanUpMethodInfo = typeof(TestAssemblyInfoRunAssemblyInitializeIntegration).GetMethod("EmptyCleanUpMethod", BindingFlags.NonPublic | BindingFlags.Static);
-    internal static readonly ConditionalWeakTable<object, object> TestClassInfos = new();
 
     /// <summary>
     /// OnMethodBegin callback
@@ -47,16 +47,8 @@ public static class TestClassInfoRunClassInitializeIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (!TestClassInfos.TryGetValue(instance.Instance, out var suiteObject))
-        {
-            instance.ClassCleanupMethod ??= EmptyCleanUpMethodInfo;
-            var module = TestModule.Current;
-            var suite = module.InternalGetOrCreateSuite(instance.ClassType.FullName);
-            TestClassInfos.Add(instance.Instance, suite);
-            return new CallTargetState(null, suite);
-        }
-
-        return new CallTargetState(null, suiteObject);
+        instance.ClassCleanupMethod ??= EmptyCleanUpMethodInfo;
+        return new CallTargetState(null, MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(instance));
     }
 
     /// <summary>

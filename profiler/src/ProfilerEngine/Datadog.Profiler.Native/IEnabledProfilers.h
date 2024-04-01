@@ -23,4 +23,5 @@ class IEnabledProfilers
 public:
     virtual ~IEnabledProfilers() = default;
     virtual bool IsEnabled(RuntimeProfiler profiler) const = 0;
+    virtual void Disable(RuntimeProfiler profiler) = 0;
 };

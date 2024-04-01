@@ -6,6 +6,7 @@
 #if DEBUG
 
 using System;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
@@ -13,6 +14,11 @@ namespace Datadog.Trace.Iast.Aspects;
 /// <summary> String class aspects </summary>
 internal class DebugAspects
 {
+    private interface ITestStruct
+    {
+        public string GetText();
+    }
+
     /// <summary>
     /// AspectMethodReplace test method
     /// </summary>
@@ -23,6 +29,18 @@ internal class DebugAspects
     {
         Console.WriteLine($"[AspectMethodReplace]DebugAspects.AspectMethodReplace(string {target}, string {param1})");
         return string.Concat(target, param1);
+    }
+
+    /// <summary>
+    /// AspectMethodReplace test method
+    /// </summary>
+    /// <param name="target">main object instance </param>
+    /// <returns>target concatenated to param1</returns>
+    public static string AspectMethodReplace(object target)
+    {
+        Console.WriteLine($"[AspectMethodReplace]DebugAspects.AspectMethodReplace(object {target})");
+        var tTarget = target.DuckCast<ITestStruct>();
+        return tTarget.GetText();
     }
 
     /// <summary>

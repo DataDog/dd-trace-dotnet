@@ -197,7 +197,7 @@ DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     m_work_offloader(work_offloader),
     m_fault_tolerant_method_duplicator(fault_tolerant_method_duplicator)
 {
-    is_debugger_enabled = IsDebuggerEnabled();
+    is_debugger_or_exception_debugging_enabled = IsDebuggerEnabled() || IsExceptionDebuggingEnabled();
 }
 
 void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes,
@@ -878,7 +878,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
 
 HRESULT STDMETHODCALLTYPE DebuggerProbesInstrumentationRequester::ModuleLoadFinished(const ModuleID moduleId)
 {
-    if (!is_debugger_enabled)
+    if (!is_debugger_or_exception_debugging_enabled)
     {
         return S_OK;
     }

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
@@ -133,7 +134,10 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             foreach (var probeStatus in probeStatuses)
             {
                 var probeVersion = _probes.SingleOrDefault(p => p.ProbeId == probeStatus.ProbeId)?.ProbeVersion ?? 0;
-                _probeStatusSink.AddProbeStatus(probeStatus.ProbeId, probeStatus.Status, probeVersion, errorMessage: probeStatus.ErrorMessage);
+                // Normalize `INSTRUMENTED` status to `INSTALLED`. The `INSTRUMENTED` status is not recognized by the backend,
+                // it was added to satisfy Exception Debugging to better distinguish between RequestReJIT (INSTALLED) and actual instrumentation (INSTRUMENTED).
+                var status = probeStatus.Status == Status.INSTRUMENTED ? Status.INSTALLED : probeStatus.Status;
+                _probeStatusSink.AddProbeStatus(probeStatus.ProbeId, status, probeVersion, errorMessage: probeStatus.ErrorMessage);
             }
         }
 

@@ -15,7 +15,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
     {
         public const string NetFrameworkRuntime = "Target process is running with .NET Framework";
         public const string NetCoreRuntime = "Target process is running with .NET Core";
-        public const string RuntimeDetectionFailed = "Failed to detect target process runtime, assuming .NET Framework";
+        public const string RuntimeDetectionFailedWindows = "Failed to detect target process runtime, assuming .NET Framework";
+        public const string RuntimeDetectionFailedLinux = "Failed to detect target process runtime, assuming .NET Core";
         public const string BothRuntimesDetected = "The target process is running .NET Framework and .NET Core simultaneously. Checks will be performed assuming a .NET Framework runtime.";
         public const string LoaderNotLoaded = "The native loader library is not loaded into the process";
         public const string NativeTracerNotLoaded = "The native tracer library is not loaded into the process";
@@ -28,6 +29,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string IisMixedRuntimes = "The application pool is configured to host both .NET Framework and .NET Core runtimes. When hosting .NET Core, it's recommended to set '.NET CLR Version' to 'No managed code' to prevent conflict: https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/?view=aspnetcore-3.1#create-the-iis-site:~:text=CLR%20version%20to-,No%20Managed%20Code,-%3A";
         public const string OutOfProcess = "Detected ASP.NET Core hosted out of proces. Trying to find the application process.";
         public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core applicative process.";
+        public const string AspNetCoreOutOfProcessNotFound = "ASP.NET Core has been detected but no .NET runtime. It could mean that the application is using out-of-process hosting and hasn't received a request to complete the initialization. Please make sure that the site has received at least one web request since the last time it was restarted.";
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
         public const string IisExpressWorkerProcess = "Cannot detect the worker process when using IIS Express. Use the --workerProcess option to manually provide it.";
         public const string IisNotFound = "Could not find IIS. Make sure IIS is properly installed and enable, and run the tool from an elevated prompt.";
@@ -54,6 +56,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         private static int _checkNumber = 1;
 
         public static void ResetChecks() => _checkNumber = 1;
+
+        public static string EnableDiagnosticsSet(string key) => $"The environment variable {key} is set to 0, which disables profiling.";
 
         public static string GetProcessError(string error) => $"Could not fetch information about target process: {error}. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
 

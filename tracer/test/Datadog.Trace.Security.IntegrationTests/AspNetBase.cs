@@ -23,7 +23,6 @@ using FluentAssertions;
 using VerifyTests;
 using VerifyXunit;
 using Xunit.Abstractions;
-using static System.Net.WebRequestMethods;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
@@ -68,6 +67,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 #endif
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
+            EnvironmentHelper.CustomEnvironmentVariables.Add("DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT", 10_000_000.ToString());
+            EnvironmentHelper.CustomEnvironmentVariables.Add("DD_IAST_REGEXP_TIMEOUT", 10_000_000.ToString());
         }
 
         protected bool IncludeAllHttpSpans { get; set; } = false;
@@ -277,8 +278,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             {
                 var url = $"http://localhost:{_httpPort}{path}";
 
-                var response =
-                    body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
+                var response = body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
                 var responseText = await response.Content.ReadAsStringAsync();
                 return (response.StatusCode, responseText);
             }

@@ -11,14 +11,17 @@
       language: dotnet,
       runtime-id: Guid_1,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
+      "hash": -788071420,
+      "location": {
+        "path": "Samples.Deduplication.Program",
+        "method": "ComputeHashNTimes"
+      },
       "evidence": {
         "value": "MD5"
       }
@@ -46,14 +49,17 @@
       language: dotnet,
       runtime-id: Guid_1,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
+      "hash": -788071420,
+      "location": {
+        "path": "Samples.Deduplication.Program",
+        "method": "ComputeHashNTimes"
+      },
       "evidence": {
         "value": "MD5"
       }
@@ -81,14 +87,17 @@
       language: dotnet,
       runtime-id: Guid_1,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
+      "hash": -788071420,
+      "location": {
+        "path": "Samples.Deduplication.Program",
+        "method": "ComputeHashNTimes"
+      },
       "evidence": {
         "value": "MD5"
       }
@@ -116,14 +125,17 @@
       language: dotnet,
       runtime-id: Guid_1,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
+      "hash": -788071420,
+      "location": {
+        "path": "Samples.Deduplication.Program",
+        "method": "ComputeHashNTimes"
+      },
       "evidence": {
         "value": "MD5"
       }
@@ -151,14 +163,17 @@
       language: dotnet,
       runtime-id: Guid_1,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
+      "hash": -788071420,
+      "location": {
+        "path": "Samples.Deduplication.Program",
+        "method": "ComputeHashNTimes"
+      },
       "evidence": {
         "value": "MD5"
       }

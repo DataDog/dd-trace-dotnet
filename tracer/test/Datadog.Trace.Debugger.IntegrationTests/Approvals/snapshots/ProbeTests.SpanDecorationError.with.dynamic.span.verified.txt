@@ -14,9 +14,7 @@
       SpanDecorationError: Instance=Datadog.Trace.Debugger.Expressions.UndefinedValue,
       version: 1.0.0,
       _dd.di.SpanDecorationError.evaluation_error: EvaluationError { Expression = this.error },
-      _dd.di.SpanDecorationError.probe_id: Guid_3,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.di.SpanDecorationError.probe_id: Guid_3
     },
     Metrics: {
       process_id: 0,

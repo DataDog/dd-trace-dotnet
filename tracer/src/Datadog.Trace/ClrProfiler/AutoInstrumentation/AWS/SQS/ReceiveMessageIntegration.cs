@@ -8,8 +8,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
@@ -29,8 +27,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ReceiveMessageIntegration
     {
-        private const string Operation = "ReceiveMessage";
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -40,21 +36,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="request">The request for the SQS operation</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TReceiveMessageRequest>(TTarget instance, TReceiveMessageRequest request)
-            where TReceiveMessageRequest : IAmazonSQSRequestWithQueueUrl, IDuckType
+            where TReceiveMessageRequest : IReceiveMessageRequest
         {
-            if (request.Instance is null)
-            {
-                return CallTargetState.GetDefault();
-            }
-
-            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out var tags, spanKind: SpanKinds.Consumer);
-            if (tags is not null && request.QueueUrl is not null)
-            {
-                tags.QueueUrl = request.QueueUrl;
-                tags.QueueName = AwsSqsCommon.GetQueueName(request.QueueUrl);
-            }
-
-            return new CallTargetState(scope);
+            return AwsSqsHandlerCommon.BeforeReceive(request);
         }
 
         /// <summary>
@@ -67,10 +51,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
+            where TResponse : IReceiveMessageResponse
         {
-            state.Scope.DisposeWithException(exception);
-            return new CallTargetReturn<TResponse>(response);
+            return new CallTargetReturn<TResponse>(AwsSqsHandlerCommon.AfterReceive(response, exception, in state));
         }
     }
 }

@@ -11,6 +11,8 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Sampling
 {
+    // These "default" sampling rule contains the mapping of service/env names to sampling rates.
+    // These rates are received in http responses from the trace agent after we send a trace payload.
     internal class DefaultSamplingRule : ISamplingRule
     {
         private const string DefaultKey = "service:,env:";

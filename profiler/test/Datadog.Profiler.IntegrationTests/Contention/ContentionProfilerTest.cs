@@ -24,10 +24,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         public void ShouldGetContentionSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
-            // disable default profilers
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -40,20 +37,23 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
-        public void ShouldContentionProfilerBeDisabledByDefault(string appName, string framework, string appAssembly)
+        public void ShouldContentionProfilerBeEnabledByDefault(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
-            // disable default profilers
+
+            // disable default profilers except contention
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
-            // no profiler enabled so should not see any sample
-            Assert.Equal(0, SamplesHelper.GetSamplesCount(runner.Environment.PprofDir));
+            // only contention profiler enabled so should see 2 value per sample
+            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
+            Assert.NotEqual(0, SamplesHelper.GetSamplesCount(runner.Environment.PprofDir));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
@@ -61,10 +61,8 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
 
+            EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 

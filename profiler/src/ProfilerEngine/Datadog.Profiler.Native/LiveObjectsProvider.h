@@ -48,7 +48,8 @@ public:
     bool Stop() override;
 
     // Inherited via IBatchedSamplesProvider
-    std::list<std::shared_ptr<Sample>> GetSamples() override;
+    std::unique_ptr<SamplesEnumerator> GetSamples() override;
+
     const char* GetName() override;
 
     // Inherited via ISampledAllocationsListener
@@ -56,6 +57,7 @@ public:
 
     // Inherited via IGarbageCollectionsListener
     void OnGarbageCollectionStart(
+        uint64_t timestamp,
         int32_t number,
         uint32_t generation,
         GCReason reason,
@@ -79,10 +81,6 @@ private:
     static std::vector<SampleValueType> SampleTypeDefinitions;
 
     ICorProfilerInfo13* _pCorProfilerInfo = nullptr;
-    IFrameStore* _pFrameStore = nullptr;
-    IAppDomainStore* _pAppDomainStore = nullptr;
-    IRuntimeIdStore* _pRuntimeIdStore = nullptr;
-    IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     std::unique_ptr<AllocationsProvider> _pAllocationsProvider;
 
     bool _isTimestampsAsLabelEnabled = false;

@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 /// <summary>
 /// TestMethod ducktype interface
 /// </summary>
-internal interface ITestMethod
+internal interface ITestMethod : IDuckType
 {
     /// <summary>
     /// Gets the test method name

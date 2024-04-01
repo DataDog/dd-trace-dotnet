@@ -7,10 +7,12 @@
 #include "gtest/gtest.h"
 
 #include "Configuration.h"
+#include "FakeSamples.h"
 #include "IExporter.h"
 #include "ISamplesProvider.h"
 #include "ProfilerMockedInterface.h"
 #include "Sample.h"
+#include "SamplesEnumerator.h"
 #include "ThreadsCpuManagerHelper.h"
 
 #include <chrono>
@@ -56,10 +58,11 @@ public:
     {
     }
 
-    std::list<std::shared_ptr<Sample>> GetSamples() override
+    std::unique_ptr<SamplesEnumerator> GetSamples() override
     {
         _calls++;
-        return CreateSamples(_runtimeId, _nbSamples);
+
+        return std::make_unique<FakeSamples>(CreateSamples(_runtimeId, _nbSamples));
     }
 
     int GetNbCalls()
@@ -99,7 +102,6 @@ private:
     int _nbSamples;
     int _calls;
 };
-
 
 TEST(SamplesCollectorTest, MustCollectSamplesFromTwoProviders)
 {
@@ -197,7 +199,7 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
     collector.Stop();
 
     auto exportsCount = samplesProvider.GetNbCalls();
-    ASSERT_EQ(exportsCount, 2);  // 1 at work time + 1 at stop time
+    ASSERT_EQ(exportsCount, 2); // 1 at work time + 1 at stop time
     auto exportsCount2 = batchedSamplesProvider.GetNbCalls();
     ASSERT_EQ(exportsCount2, 1); // 1 at export time
 
@@ -228,7 +230,7 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
 
     collector.Export();
 
-    ASSERT_EQ(exportedSamples.size(), 2);  // the BatchedSamplesProvider is called once in export
+    ASSERT_EQ(exportedSamples.size(), 2); // the BatchedSamplesProvider is called once in export
     ASSERT_EQ(pendingSamples.size(), 0);
 }
 
@@ -360,13 +362,11 @@ TEST(SamplesCollectorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
 
     EXPECT_CALL(mockSamplesProvider, GetSamples())
         .Times(AtLeast(1))
-        .WillRepeatedly(InvokeWithoutArgs([runtimeId] {
-            std::list<std::shared_ptr<Sample>> samples;
-
-            // add sample with empty callstack
-            samples.push_back(std::make_shared<Sample>(runtimeId.c_str()));
-            return samples;
-        }));
+        .WillRepeatedly(
+            [runtimeId]() {
+                // process sample with empty callstack
+                return std::make_unique<FakeSamples>(std::make_shared<Sample>(runtimeId.c_str()));
+            });
 
     EXPECT_CALL(mockSamplesProvider, GetName())
         .Times(AtLeast(1))

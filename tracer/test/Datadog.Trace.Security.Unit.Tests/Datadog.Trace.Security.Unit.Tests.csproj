@@ -31,6 +31,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="IAST\Tainted\vulnerability_schema.json" />
+    <EmbeddedResource Include="IAST\Tainted\vulnerability_schema.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="YamlDotNet" Version="13.1.0" />
   </ItemGroup>
 

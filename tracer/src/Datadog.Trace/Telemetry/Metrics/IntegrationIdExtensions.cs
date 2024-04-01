@@ -72,6 +72,12 @@ internal static class IntegrationIdExtensions
             IntegrationId.Remoting => MetricTags.IntegrationName.Remoting,
             IntegrationId.TrustBoundaryViolation => MetricTags.IntegrationName.TrustBoundaryViolation,
             IntegrationId.UnvalidatedRedirect => MetricTags.IntegrationName.UnvalidatedRedirect,
+            IntegrationId.TestPlatformAssemblyResolver => MetricTags.IntegrationName.TestPlatformAssemblyResolver,
+            IntegrationId.StackTraceLeak => MetricTags.IntegrationName.StackTraceLeak,
+            IntegrationId.XpathInjection => MetricTags.IntegrationName.XpathInjection,
+            IntegrationId.ReflectionInjection => MetricTags.IntegrationName.ReflectionInjection,
+            IntegrationId.Xss => MetricTags.IntegrationName.Xss,
+            IntegrationId.NHibernate => MetricTags.IntegrationName.NHibernate,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

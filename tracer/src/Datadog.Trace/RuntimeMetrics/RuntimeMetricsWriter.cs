@@ -10,8 +10,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.RuntimeMetrics
@@ -25,8 +23,12 @@ namespace Datadog.Trace.RuntimeMetrics
         private const string ProcessMetrics = $"{MetricsNames.ThreadsCount}, {MetricsNames.CommittedMemory}, {MetricsNames.CpuUserTime}, {MetricsNames.CpuSystemTime}, {MetricsNames.CpuPercentage}";
 #endif
 
+        private static readonly Version Windows81Version = new(6, 3, 9600);
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuntimeMetricsWriter>();
         private static readonly Func<IDogStatsd, TimeSpan, bool, IRuntimeMetricsListener> InitializeListenerFunc = InitializeListener;
+
+        private static int _pssConsecutiveFailures;
 
         private readonly Process _process;
 
@@ -233,6 +235,28 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private void GetCurrentProcessMetrics(out TimeSpan userProcessorTime, out TimeSpan systemCpuTime, out int threadCount, out long privateMemorySize)
         {
+            if (_pssConsecutiveFailures < 3 && Environment.OSVersion.Platform == PlatformID.Win32NT && Environment.OSVersion.Version > Windows81Version)
+            {
+                try
+                {
+                    ProcessSnapshotRuntimeInformation.GetCurrentProcessMetrics(out userProcessorTime, out systemCpuTime, out threadCount, out privateMemorySize);
+                    _pssConsecutiveFailures = 0;
+                }
+                catch
+                {
+                    var consecutiveFailures = Interlocked.Increment(ref _pssConsecutiveFailures);
+
+                    if (consecutiveFailures >= 3)
+                    {
+                        Log.Error("Pss failed 3 times in a row, falling back to the Process API");
+                    }
+
+                    throw;
+                }
+
+                return;
+            }
+
             _process.Refresh();
             userProcessorTime = _process.UserProcessorTime;
             systemCpuTime = _process.PrivilegedProcessorTime;

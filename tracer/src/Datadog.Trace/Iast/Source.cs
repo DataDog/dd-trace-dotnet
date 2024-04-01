@@ -17,7 +17,7 @@ internal class Source
     private const string RedactedSensitiveBuffer = "****************";
     private const string RedactedSourceBuffer = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-    private readonly byte _origin;
+    private readonly SourceType _origin;
     private int _internalId;
     private string? _value;
     private bool _sensitive;
@@ -25,6 +25,11 @@ internal class Source
     private string? _redactedValue;
 
     public Source(byte origin, string? name, string? value)
+        : this((SourceType)origin, name, value)
+    {
+    }
+
+    public Source(SourceType origin, string? name, string? value)
     {
         this._origin = origin;
         this.Name = name;
@@ -32,9 +37,7 @@ internal class Source
         this._redacted = false;
     }
 
-    public byte OriginByte => _origin;
-
-    public string Origin => SourceType.GetString(_origin);
+    public SourceType Origin => _origin;
 
     public string? Name { get; }
 
@@ -63,6 +66,11 @@ internal class Source
 
     public override bool Equals(object? obj) => GetHashCode() == obj?.GetHashCode();
 
+    internal static string RedactString(string value)
+    {
+        return NewString(ComputeLength(value), RedactedSensitiveBuffer);
+    }
+
     internal void MarkAsSensitive()
     {
         _sensitive = true;
@@ -77,11 +85,6 @@ internal class Source
         {
             _redactedValue = NewString(ComputeLength(_value), RedactedSourceBuffer);
         }
-    }
-
-    internal string RedactString(string value)
-    {
-        return NewString(ComputeLength(value), RedactedSensitiveBuffer);
     }
 
     private static int ComputeLength(string value)

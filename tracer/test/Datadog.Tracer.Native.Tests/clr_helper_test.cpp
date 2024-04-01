@@ -2,6 +2,7 @@
 
 #include "../../src/Datadog.Tracer.Native/clr_helpers.h"
 #include "test_helpers.h"
+#include "../../../shared/src/native-src/pal.h"
 
 #include <vector>
 
@@ -261,5 +262,55 @@ TEST_F(CLRHelperTest, DoesNotFindDoubleNestedTypeDefsByName) {
                                    metadata_import_, typeDef);
     EXPECT_FALSE(found) << "Failed type is : " << shared::ToString(def) << std::endl;
     EXPECT_EQ(typeDef, mdTypeDefNil) << "Failed type is : " << shared::ToString(def) << std::endl;
+  }
+}
+
+TEST_F(CLRHelperTest, TypeSignatureGetTypeTokName) {
+  COR_SIGNATURE signatureChar[] = {ELEMENT_TYPE_CHAR};
+  TypeSignature charTypeSignature{};
+  charTypeSignature.pbBase = signatureChar;
+  charTypeSignature.length = 1;
+  charTypeSignature.offset = 0;
+
+  COR_SIGNATURE signatureByRefChar[] = {ELEMENT_TYPE_BYREF, ELEMENT_TYPE_CHAR};
+  TypeSignature byRefCharTypeSignature{};
+  byRefCharTypeSignature.pbBase = signatureByRefChar;
+  byRefCharTypeSignature.length = 2;
+  byRefCharTypeSignature.offset = 0;
+
+  COR_SIGNATURE signaturePtrChar[] = {ELEMENT_TYPE_PTR, ELEMENT_TYPE_CHAR};
+  TypeSignature ptrCharTypeSignature{};
+  ptrCharTypeSignature.pbBase = signaturePtrChar;
+  ptrCharTypeSignature.length = 2;
+  ptrCharTypeSignature.offset = 0;
+
+  std::vector<std::tuple<TypeSignature, shared::WSTRING>> tests = {
+        {charTypeSignature, WStr("System.Char")},
+        {byRefCharTypeSignature, WStr("System.Char&")},
+        {ptrCharTypeSignature, WStr("System.Char*")}};
+
+  for (auto& test : tests) {
+    auto actual = std::get<0>(test).GetTypeTokName(metadata_import_);
+    auto expected = std::get<1>(test);
+
+    EXPECT_EQ(actual, expected);
+  }
+}
+
+TEST_F(CLRHelperTest, FunctionLocalSignatureTryParse) {
+  COR_SIGNATURE localSignatureWithOneChar[] = {0x07, 0x01, ELEMENT_TYPE_CHAR};
+  COR_SIGNATURE localSignatureWithOneByRefChar[] = {0x07, 0x01, ELEMENT_TYPE_BYREF, ELEMENT_TYPE_CHAR};
+  COR_SIGNATURE localSignatureWithOnePtrChar[] = {0x07, 0x01, ELEMENT_TYPE_PTR, ELEMENT_TYPE_CHAR};
+
+  std::vector<std::tuple<COR_SIGNATURE*, ULONG, shared::WSTRING>> tests = {
+        {localSignatureWithOneChar, 3, WStr("[System.Char]")},
+        {localSignatureWithOneByRefChar, 4, WStr("[System.Char&]")},
+        {localSignatureWithOnePtrChar, 4, WStr("[System.Char*]")}};
+
+  for (auto& test : tests) {
+    std::vector<TypeSignature> locals;
+    HRESULT hr = FunctionLocalSignature::TryParse(std::get<0>(test), std::get<1>(test), locals);
+    EXPECT_EQ(hr, S_OK);
+    EXPECT_EQ(locals.size(), 1) << "Failed test input is params=" << std::get<2>(test) << std::endl;
   }
 }

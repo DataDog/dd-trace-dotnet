@@ -21,13 +21,20 @@ internal class UrlTokenizer : ITokenizer
 {
     private const string AuthorityRegex = "^(?:[^:]+:)?//(?<AUTHORITY>[^@]+)@";
     private const string QueryFragmentGroup = "[?#&$]([^=&;]+)=(?<QUERY>[^?#&]+)";
+    private Regex _patternUrl;
 
-    private static Regex _pattern = new Regex(string.Join("|", AuthorityRegex, QueryFragmentGroup), RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-    public List<Range> GetTokens(string value, IntegrationId? integrationId = null)
+    public UrlTokenizer(TimeSpan timeout)
     {
+        _patternUrl = new Regex(string.Join("|", AuthorityRegex, QueryFragmentGroup), RegexOptions.Compiled | RegexOptions.IgnoreCase, timeout);
+    }
+
+    public List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null)
+    {
+        var value = evidence.Value;
+        if (value is null) { return []; }
+
         var res = new List<Range>(1);
-        foreach (Match? match in _pattern.Matches(value))
+        foreach (Match? match in _patternUrl.Matches(value))
         {
             if (match != null && match.Success)
             {

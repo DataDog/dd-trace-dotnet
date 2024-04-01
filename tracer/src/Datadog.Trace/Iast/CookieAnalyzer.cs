@@ -96,8 +96,10 @@ internal static class CookieAnalyzer
     {
         if (!IsExcluded(cookieHeaderValue))
         {
-            var cookieHeader = SetCookieHeaderValue.Parse(cookieHeaderValue);
-            ReportVulnerabilities(integrationId, cookieHeader);
+            if (SetCookieHeaderValue.TryParse(cookieHeaderValue, out var cookieHeader))
+            {
+                ReportVulnerabilities(integrationId, cookieHeader);
+            }
         }
     }
 
