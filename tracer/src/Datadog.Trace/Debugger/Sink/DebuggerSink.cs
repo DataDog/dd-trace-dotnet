@@ -32,11 +32,19 @@ namespace Datadog.Trace.Debugger.Sink
         private readonly ProbeStatusSink _probeStatusSink;
         private readonly int _uploadFlushInterval;
         private readonly int _initialFlushInterval;
-        private readonly BatchUploader _batchUploader;
+        private readonly BatchUploader _snapshotBatchUploader;
+        private readonly BatchUploader _diagnosticsBatchUploader;
 
-        private DebuggerSink(SnapshotSink snapshotSink, ProbeStatusSink probeStatusSink, BatchUploader batchUploader, int uploadFlushInterval, int initialFlushInterval)
+        private DebuggerSink(
+            SnapshotSink snapshotSink,
+            ProbeStatusSink probeStatusSink,
+            BatchUploader snapshotBatchUploader,
+            BatchUploader diagnosticsBatchUploader,
+            int uploadFlushInterval,
+            int initialFlushInterval)
         {
-            _batchUploader = batchUploader;
+            _diagnosticsBatchUploader = diagnosticsBatchUploader;
+            _snapshotBatchUploader = snapshotBatchUploader;
             _uploadFlushInterval = uploadFlushInterval;
             _initialFlushInterval = initialFlushInterval;
 
@@ -46,7 +54,7 @@ namespace Datadog.Trace.Debugger.Sink
             _cancellationSource = new CancellationTokenSource();
         }
 
-        public static DebuggerSink Create(SnapshotSink snapshotSink, ProbeStatusSink probeStatusSink, BatchUploader batchUploader, DebuggerSettings settings)
+        public static DebuggerSink Create(SnapshotSink snapshotSink, ProbeStatusSink probeStatusSink, BatchUploader snapshotBatchUploader, BatchUploader diagnosticsBatchUploader, DebuggerSettings settings)
         {
             var uploadInterval = settings.UploadFlushIntervalMilliseconds;
             var initialInterval =
@@ -54,7 +62,7 @@ namespace Datadog.Trace.Debugger.Sink
                     ? Math.Max(MinFlushInterval, Math.Min(uploadInterval, MaxFlushInterval))
                     : InitialFlushInterval;
 
-            return new DebuggerSink(snapshotSink, probeStatusSink, batchUploader, uploadInterval, initialInterval);
+            return new DebuggerSink(snapshotSink, probeStatusSink, snapshotBatchUploader, diagnosticsBatchUploader, uploadInterval, initialInterval);
         }
 
         public async Task StartFlushingAsync()
@@ -67,13 +75,13 @@ namespace Datadog.Trace.Debugger.Sink
                     var snapshots = _snapshotSink.GetSnapshots();
                     if (snapshots.Count > 0)
                     {
-                        await _batchUploader.Upload(snapshots).ConfigureAwait(continueOnCapturedContext: false);
+                        await _snapshotBatchUploader.Upload(snapshots).ConfigureAwait(continueOnCapturedContext: false);
                     }
 
                     var diagnostics = _probeStatusSink.GetDiagnostics();
                     if (diagnostics.Count > 0)
                     {
-                        await _batchUploader.Upload(diagnostics.Select(JsonConvert.SerializeObject)).ConfigureAwait(continueOnCapturedContext: false);
+                        await _diagnosticsBatchUploader.Upload(diagnostics.Select(JsonConvert.SerializeObject)).ConfigureAwait(continueOnCapturedContext: false);
                     }
                 }
                 catch (ThreadAbortException)
