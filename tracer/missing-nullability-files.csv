@@ -650,7 +650,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Http/HttpClient/SocketsHttpHan
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Http/HttpClient/WinHttpHandler/WinHttpHandlerIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/DirectSubmission/IExternalScopeProvider.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/DirectSubmission/ILoggerFactory.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/DatadogLoggingScope.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/LoggerExternalScopeProviderForEachScopeIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/LoggerFactoryScopeProviderForEachScopeIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/LoggerIntegrationCommon.cs
