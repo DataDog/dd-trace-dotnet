@@ -22,15 +22,15 @@ internal class SpanLink
     /// in OpenTelemetry that's called a Span Context, which may also include tracestate and trace flags.
     /// </summary>
     /// <param name="spanLinkContext">The context of the spanlink to extract attributes from</param>
-    /// <param name="optionalAttributes">Optional dictionary of attributes to take for the spanlink.</param>
-    internal SpanLink(SpanContext spanLinkContext, List<KeyValuePair<string, object>>? optionalAttributes)
+    /// <param name="attributes">Optional dictionary of attributes to take for the spanlink.</param>
+    internal SpanLink(SpanContext spanLinkContext, List<KeyValuePair<string, object>>? attributes = null)
     {
         Context = spanLinkContext;
-        Attributes = optionalAttributes;
+        Attributes = attributes;
     }
 
-    internal SpanLink(Span spanToLink, List<KeyValuePair<string, object>>? optionalAttributes)
-        : this(spanToLink.Context, optionalAttributes)
+    internal SpanLink(Span spanToLink, List<KeyValuePair<string, object>>? attributes = null)
+        : this(spanToLink.Context, attributes)
     {
     }
 
