@@ -195,9 +195,9 @@ public static class XUnitTestRunnerRunAsyncIntegration
         public readonly ITestRunner TestRunner;
         public readonly StrongBox<int> ExecutionCount;
 
-        public TestRunnerState(ITestRunner testSuite, StrongBox<int> executionCount)
+        public TestRunnerState(ITestRunner testRunner, StrongBox<int> executionCount)
         {
-            TestRunner = testSuite;
+            TestRunner = testRunner;
             ExecutionCount = executionCount;
         }
     }

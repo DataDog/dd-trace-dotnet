@@ -40,4 +40,18 @@ internal interface ITestMethod : IDuckType
     /// <param name="inherit">Injerits all the attributes from base classes</param>
     /// <returns>Attribute array</returns>
     Attribute[] GetAllAttributes(bool inherit);
+
+    /// <summary>
+    /// Invokes the test method.
+    /// </summary>
+    /// <param name="arguments">
+    /// Arguments to pass to test method. (E.g. For data driven).
+    /// </param>
+    /// <returns>
+    /// Result of test method invocation.
+    /// </returns>
+    /// <remarks>
+    /// This call handles asynchronous test methods as well.
+    /// </remarks>
+    object Invoke(object[] arguments);
 }
