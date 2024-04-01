@@ -11,7 +11,8 @@ using Datadog.Trace.Propagators;
 namespace Datadog.Trace;
 
 /// <summary>
-/// The SpanLink contains the information needed for a decorated span for its Span Links.
+/// A SpanLink is a lightweight representation of a Span.
+/// A Span may have multiple SpanLinks and a SpanLink may represent a span from the same trace or from a different trace.
 /// </summary>
 internal class SpanLink
 {
