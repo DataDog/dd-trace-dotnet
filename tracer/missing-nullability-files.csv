@@ -144,7 +144,6 @@ src/Datadog.Trace/ExtensionMethods/DoubleExtensions.cs
 src/Datadog.Trace/ExtensionMethods/MessagePackBinaryExtensions.cs
 src/Datadog.Trace/ExtensionMethods/NameValueCollectionExtensions.cs
 src/Datadog.Trace/ExtensionMethods/SpanExtensions.cs
-src/Datadog.Trace/ExtensionMethods/StringExtensions.cs
 src/Datadog.Trace/ExtensionMethods/TimeExtensions.cs
 src/Datadog.Trace/ExtensionMethods/WebHeadersExtensions.cs
 src/Datadog.Trace/FaultTolerant/FaultTolerantInvoker.cs
@@ -260,7 +259,6 @@ src/Datadog.Trace/Util/AsyncUtil.cs
 src/Datadog.Trace/Util/Clock.cs
 src/Datadog.Trace/Util/DbCommandCache.cs
 src/Datadog.Trace/Util/DomainMetadata.cs
-src/Datadog.Trace/Util/EnvironmentHelpers.cs
 src/Datadog.Trace/Util/FnvHash64.cs
 src/Datadog.Trace/Util/IClock.cs
 src/Datadog.Trace/Util/IRandomIdGenerator.cs
@@ -268,7 +266,6 @@ src/Datadog.Trace/Util/RandomIdGenerator.Net6.cs
 src/Datadog.Trace/Util/RuntimeId.cs
 src/Datadog.Trace/Util/SamplingHelpers.cs
 src/Datadog.Trace/Util/StopwatchHelpers.cs
-src/Datadog.Trace/Util/StringBuilderCache.cs
 src/Datadog.Trace/Util/System.Diagnostics.CodeAnalysis.Attributes.cs
 src/Datadog.Trace/Util/System.Runtime.CompilerServices.Attributes.cs
 src/Datadog.Trace/Util/ThrowHelper.cs
@@ -297,12 +294,9 @@ src/Datadog.Trace/Agent/Transports/MimeTypes.cs
 src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
 src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Core.cs
 src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Framework.cs
-src/Datadog.Trace/AppSec/Coordinator/HttpTransportBase.cs
 src/Datadog.Trace/AppSec/Waf/IWaf.cs
 src/Datadog.Trace/AppSec/Waf/WafConstants.cs
 src/Datadog.Trace/AppSec/Waf/WafReturnCode.cs
-src/Datadog.Trace/AppSec/WafEncoding/Obj.cs
-src/Datadog.Trace/AppSec/WafEncoding/ObjType.cs
 src/Datadog.Trace/Ci/Agent/ApmAgentWriter.cs
 src/Datadog.Trace/Ci/Agent/CIVisibilityProtocolWriter.cs
 src/Datadog.Trace/Ci/Agent/CIWriterFileSender.cs
@@ -624,7 +618,6 @@ src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/EndMethodHandler.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/EndMethodHandler`1.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/IntegrationMapper.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/IntegrationOptions.cs
-src/Datadog.Trace/Configuration/ConfigurationSources/Telemetry/ParsingResult.cs
 src/Datadog.Trace/Debugger/Configurations/Models/Capture.cs
 src/Datadog.Trace/Debugger/Configurations/Models/DebuggerExpression.cs
 src/Datadog.Trace/Debugger/Configurations/Models/Decoration.cs

@@ -68,7 +68,8 @@ namespace Datadog.Trace.AppSec.WafEncoding
         {
             var lstPointers = new List<IntPtr>();
             var pool = Pool;
-            return new EncodeResult(lstPointers, pool, Encode(o, lstPointers, remainingDepth, key, applySafetyLimits, pool: pool));
+            var result = Encode(o, lstPointers, remainingDepth, key, applySafetyLimits, pool: pool);
+            return new EncodeResult(lstPointers, pool, ref result);
         }
 
         public unsafe DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true, UnmanagedMemoryPool? pool = null)
@@ -648,23 +649,19 @@ namespace Datadog.Trace.AppSec.WafEncoding
         {
             private readonly List<IntPtr> _pointers;
             private readonly UnmanagedMemoryPool _innerPool;
-            private readonly GCHandle _handle;
+            private DdwafObjectStruct _result;
 
-            internal EncodeResult(List<IntPtr> pointers, UnmanagedMemoryPool pool, DdwafObjectStruct result)
+            internal EncodeResult(List<IntPtr> pointers, UnmanagedMemoryPool pool, ref DdwafObjectStruct result)
             {
                 _pointers = pointers;
                 _innerPool = pool;
-                ResultDdwafObject = result;
-                _handle = GCHandle.Alloc(result, GCHandleType.Pinned);
+                _result = result;
             }
 
-            public IntPtr Result => _handle.AddrOfPinnedObject();
-
-            public DdwafObjectStruct ResultDdwafObject { get; }
+            public ref DdwafObjectStruct ResultDdwafObject => ref _result;
 
             public void Dispose()
             {
-                _handle.Free();
                 _innerPool.Return(_pointers);
                 _pointers.Clear();
             }

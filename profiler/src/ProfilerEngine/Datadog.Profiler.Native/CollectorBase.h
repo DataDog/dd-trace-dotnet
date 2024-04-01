@@ -88,7 +88,7 @@ public:
 
     void Add(TRawSample&& sample) override
     {
-        _collectedSamples.Add(std::forward<TRawSample>(sample));
+        _collectedSamples.Add(std::move(sample));
     }
 
     void TransformRawSample(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)
@@ -150,9 +150,8 @@ private:
     {
     public:
         SamplesEnumeratorImpl(RawSamples<TRawSample> rawSamples, CollectorBase<TRawSample>* collector) :
-            _rawSamples{std::move(rawSamples)}, _collector{collector}
+            _rawSamples{std::move(rawSamples)}, _collector{collector}, _currentRawSample{_rawSamples.begin()}
         {
-            _currentRawSample = _rawSamples.cbegin();
         }
 
         // Inherited via SamplesEnumerator
@@ -163,7 +162,7 @@ private:
 
         bool MoveNext(std::shared_ptr<Sample>& sample) override
         {
-            if (_currentRawSample == _rawSamples.cend())
+            if (_currentRawSample == _rawSamples.end())
                 return false;
 
             _collector->TransformRawSample(*_currentRawSample, sample);
@@ -175,7 +174,7 @@ private:
     private:
         RawSamples<TRawSample> _rawSamples;
         CollectorBase<TRawSample>* _collector;
-        typename RawSamples<TRawSample>::const_iterator _currentRawSample;
+        typename RawSamples<TRawSample>::iterator _currentRawSample;
     };
 
 private:

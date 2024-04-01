@@ -931,7 +931,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NET462
-                new object[] { "2.6.6" },
+                new object[] { "2.7.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "2.4.2" },
@@ -946,13 +946,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.4.2" },
 #endif
 #if NET6_0
-                new object[] { "2.6.6" },
+                new object[] { "2.7.0" },
 #endif
 #if NET7_0
-                new object[] { "2.6.6" },
+                new object[] { "2.7.0" },
 #endif
 #if NET8_0
-                new object[] { "2.6.6" },
+                new object[] { "2.7.0" },
 #endif
 #endif
             };
@@ -1535,6 +1535,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET8_0
                 new object[] { "1.1.2" },
                 new object[] { "2.1.0" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> AzureServiceBus =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET462
+                new object[] { "7.17.4" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "7.17.4" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "7.17.4" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "7.17.4" },
+#endif
+#if NET5_0
+                new object[] { "7.17.4" },
+#endif
+#if NET6_0
+                new object[] { "7.17.4" },
+#endif
+#if NET7_0
+                new object[] { "7.17.4" },
+#endif
+#if NET8_0
+                new object[] { "7.17.4" },
 #endif
 #endif
             };

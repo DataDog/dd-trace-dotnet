@@ -52,7 +52,7 @@ internal static class SecurityCoordinatorHelpers
                         { AddressesConstants.ResponseStatus, httpContext.Response.StatusCode.ToString() },
                     };
 
-                    var result = securityCoordinator.RunWaf(args);
+                    var result = securityCoordinator.RunWaf(args, true);
                     securityCoordinator.CheckAndBlock(result);
                 }
             }
