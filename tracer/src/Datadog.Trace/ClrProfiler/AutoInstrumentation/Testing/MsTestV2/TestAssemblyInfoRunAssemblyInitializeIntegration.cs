@@ -43,7 +43,7 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext testContext)
         where TTarget : ITestAssemblyInfo
     {
-        if (!MsTestIntegration.IsEnabled)
+        if (!MsTestIntegration.IsEnabled || instance.Instance is null)
         {
             return CallTargetState.GetDefault();
         }
@@ -53,7 +53,11 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
             return CallTargetState.GetDefault();
         }
 
-        instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
+        lock (instance.Instance)
+        {
+            instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
+        }
+
         return new CallTargetState(null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance, context.TestMethod.AssemblyName));
     }
 

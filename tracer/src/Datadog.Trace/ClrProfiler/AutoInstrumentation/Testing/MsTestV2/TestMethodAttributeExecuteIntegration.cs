@@ -19,10 +19,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     TypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
     MethodName = "Execute",
     ReturnTypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult",
-    ParameterTypeNames = new[] { "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod" },
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"],
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyName = "Microsoft.VisualStudio.TestPlatform.TestFramework",
+    TypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+    MethodName = "Execute",
+    ReturnTypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"],
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName,
+    CallTargetIntegrationKind = CallTargetKind.Derived)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodAttributeExecuteIntegration
@@ -38,7 +48,7 @@ public static class TestMethodAttributeExecuteIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
         where TTestMethod : ITestMethod, IDuckType
     {
-        if (!MsTestIntegration.IsEnabled)
+        if (!MsTestIntegration.IsEnabled || instance is ItrSkipTestMethodExecutor)
         {
             return CallTargetState.GetDefault();
         }
@@ -58,20 +68,17 @@ public static class TestMethodAttributeExecuteIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        if (!MsTestIntegration.IsEnabled)
+        if (!MsTestIntegration.IsEnabled || instance is ItrSkipTestMethodExecutor)
         {
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
         if (state.State is Test test)
         {
-            var returnValueArray = returnValue as Array;
-            if (returnValueArray.Length == 1)
+            if (returnValue is Array { Length: > 0 } returnValueArray &&
+                returnValueArray.GetValue(0) is { } testResultObject)
             {
-                var testResultObject = returnValueArray.GetValue(0);
-
-                if (testResultObject != null &&
-                    testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
+                if (testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
                 {
                     string errorType = null;
                     string errorMessage = null;
@@ -125,8 +132,22 @@ public static class TestMethodAttributeExecuteIntegration
                             }
 
                             break;
+                        default:
+                            Common.Log.Warning("Failed to handle the test status");
+                            test.Close(TestStatus.Fail);
+                            break;
                     }
                 }
+                else
+                {
+                    Common.Log.Warning("Failed to cast TestResultStruct");
+                    test.Close(TestStatus.Fail);
+                }
+            }
+            else
+            {
+                Common.Log.Warning("Failed to extract TestResult from return value");
+                test.Close(TestStatus.Fail);
             }
         }
 

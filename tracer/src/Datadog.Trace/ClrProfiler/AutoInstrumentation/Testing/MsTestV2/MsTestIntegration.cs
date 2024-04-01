@@ -204,27 +204,30 @@ internal static class MsTestIntegration
             return default;
         }
 
-        if (TestModuleByTestAssemblyInfos.TryGetValue(objTestAssemblyInfo, out var module))
+        lock (TestModuleByTestAssemblyInfos)
         {
-            Common.Log.Debug("Using existing Module: {Module}", module.Name);
+            if (TestModuleByTestAssemblyInfos.TryGetValue(objTestAssemblyInfo, out var module))
+            {
+                Common.Log.Debug("Using existing Module: {Module}", module.Name);
+                return module;
+            }
+
+            CIVisibility.WaitForSkippableTaskToFinish();
+            if (assemblyName is not null)
+            {
+                assemblyName = AssemblyName.GetAssemblyName(assemblyName).Name ?? string.Empty;
+            }
+            else
+            {
+                assemblyName = string.Empty;
+            }
+
+            var frameworkVersion = testAssemblyInfo.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
+            Common.Log.Debug("Creating Module: {Module}, Framework version: {Version}", assemblyName, frameworkVersion);
+            module = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
+            TestModuleByTestAssemblyInfos.Add(objTestAssemblyInfo, module);
             return module;
         }
-
-        CIVisibility.WaitForSkippableTaskToFinish();
-        if (assemblyName is not null)
-        {
-            assemblyName = AssemblyName.GetAssemblyName(assemblyName).Name ?? string.Empty;
-        }
-        else
-        {
-            assemblyName = string.Empty;
-        }
-
-        var frameworkVersion = testAssemblyInfo.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
-        Common.Log.Debug("Creating Module: {Module}, Framework version: {Version}", assemblyName, frameworkVersion);
-        module = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
-        TestModuleByTestAssemblyInfos.Add(objTestAssemblyInfo, module);
-        return module;
     }
 
     internal static TestSuite GetOrCreateTestSuiteFromTestClassInfo<TClassInfo>(TClassInfo testClassInfo)
@@ -235,22 +238,25 @@ internal static class MsTestIntegration
             return default;
         }
 
-        if (TestSuiteByTestClassInfos.TryGetValue(objTestClassInfo, out var testSuite))
+        lock (TestSuiteByTestClassInfos)
         {
-            Common.Log.Debug("Using existing Suite: {Suite}", testSuite.Name);
+            if (TestSuiteByTestClassInfos.TryGetValue(objTestClassInfo, out var testSuite))
+            {
+                Common.Log.Debug("Using existing Suite: {Suite}", testSuite.Name);
+                return testSuite;
+            }
+
+            var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType.Assembly.FullName);
+            if (module is null)
+            {
+                Common.Log.Error("There is no current module, a new suite cannot be created.");
+                return default;
+            }
+
+            var classTypeName = testClassInfo.ClassType?.FullName ?? throw new NullReferenceException("ClassType is null, a new suite cannot be created.");
+            testSuite = module.InternalGetOrCreateSuite(classTypeName);
+            TestSuiteByTestClassInfos.Add(objTestClassInfo, testSuite);
             return testSuite;
         }
-
-        var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType.Assembly.FullName);
-        if (module is null)
-        {
-            Common.Log.Error("There is no current module, a new suite cannot be created.");
-            return default;
-        }
-
-        var classTypeName = testClassInfo.ClassType?.FullName ?? throw new NullReferenceException("ClassType is null, a new suite cannot be created.");
-        testSuite = module.InternalGetOrCreateSuite(classTypeName);
-        TestSuiteByTestClassInfos.Add(objTestClassInfo, testSuite);
-        return testSuite;
     }
 }
