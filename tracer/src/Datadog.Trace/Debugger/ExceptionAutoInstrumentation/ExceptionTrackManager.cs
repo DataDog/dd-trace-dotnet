@@ -37,6 +37,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static readonly int MaxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
         private static readonly TimeSpan RateLimit = ExceptionDebugging.Settings.RateLimit;
         private static readonly BasicCircuitBreaker ReportingCircuitBreaker = new(ExceptionDebugging.Settings.MaxExceptionAnalysisLimit, TimeSpan.FromSeconds(1));
+        private static CachedItems _invalidatedCases = new CachedItems();
         private static Task? _exceptionProcessorTask;
         private static bool _isInitialized;
 
@@ -81,9 +82,18 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private static void ReportInternal(Exception exception, ErrorOriginKind errorOrigin, Span rootSpan)
         {
-            if (CachedDoneExceptions.Contains(exception.ToString()))
+            var exToString = exception.ToString();
+
+            if (CachedDoneExceptions.Contains(exToString))
             {
                 // Quick exit.
+                return;
+            }
+
+            if (_invalidatedCases.Contains(exToString))
+            {
+                Log.Information("Encountered invalidated exception.ToString(), exception: {Exception}", exToString);
+                ProcessException(exception, errorOrigin, rootSpan);
                 return;
             }
 
@@ -141,58 +151,79 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             if (trackedExceptionCase.IsDone)
             {
             }
+            else if (trackedExceptionCase.IsInvalidated)
+            {
+                if (rootSpan == null)
+                {
+                    Log.Warning("rootSpan is null while processing invalidated case. Should not happen. exception: {Exception}", exception.ToString());
+                    return;
+                }
+
+                var allFrames = trackedExceptionCase.ExceptionCase.ExceptionId.StackTrace;
+                var allProbes = trackedExceptionCase.ExceptionCase.Probes;
+                var frameIndex = allFrames.Length - 1;
+                var debugErrorPrefix = "_dd.debug.error";
+                var assignIndex = 0;
+
+                while (frameIndex >= 0)
+                {
+                    var participatingFrame = allFrames[frameIndex--];
+                    var noCaptureReason = GetNoCaptureReason(participatingFrame, allProbes.FirstOrDefault(p => p.Method.Equals(participatingFrame.MethodIdentifier)));
+
+                    if (noCaptureReason != string.Empty)
+                    {
+                        TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, noCaptureReason);
+                    }
+
+                    assignIndex += 1;
+                }
+
+                if (trackedExceptionCase.Revert())
+                {
+                    CachedDoneExceptions.Add(trackedExceptionCase.ExceptionToString);
+                }
+            }
             else if (trackedExceptionCase.IsCollecting)
             {
                 Log.Information("Exception case re-occurred, data can be collected. Exception details: {FullName} {Message}.", exception.GetType().FullName, exception.Message);
 
+                var shouldCheckWhyThereAreNoFrames = false;
+
                 if (rootSpan == null)
                 {
-                    Log.Information("The RootSpan is null. The exception might be reported from async processing. Should not happen. Exception: {Exception}", exception.ToString());
-                    return;
+                    Log.Information("The RootSpan is null. Exception: {Exception}", exception.ToString());
+                    shouldCheckWhyThereAreNoFrames = true;
                 }
 
                 if (!ShadowStackHolder.IsShadowStackTrackingEnabled)
                 {
                     Log.Warning("The shadow stack is not enabled, while processing IsCollecting state of an exception. Exception details: {FullName} {Message}.", exception.GetType().FullName, exception.Message);
-                    return;
+                    shouldCheckWhyThereAreNoFrames = true;
                 }
 
-                var resultCallStackTree = ShadowStackHolder.ShadowStack!.CreateResultReport(exceptionPath: exception);
+                var resultCallStackTree = shouldCheckWhyThereAreNoFrames ? null : ShadowStackHolder.ShadowStack!.CreateResultReport(exceptionPath: exception);
                 if (resultCallStackTree == null || !resultCallStackTree.Frames.Any())
                 {
-                    Log.Error("ExceptionTrackManager: Received an empty tree from the shadow stack for exception: {Exception}.", exception.ToString());
+                    Log.Error("ExceptionTrackManager: Checking why there are no frames captured for exception: {Exception}.", exception.ToString());
 
                     // If we failed to instrument all the probes.
-                    if (trackedExceptionCase.ExceptionCase.Probes.All(p => p.IsInstrumented && (p.ProbeStatus == Status.ERROR || p.ProbeStatus == Status.BLOCKED || (p.ProbeStatus == Status.INSTALLED && p.MayBeOmittedFromCallStack))))
+                    if (trackedExceptionCase.ExceptionCase.Probes.All(p => p.IsInstrumented && (p.ProbeStatus == Status.ERROR || p.ProbeStatus == Status.BLOCKED || p.MayBeOmittedFromCallStack)))
                     {
-                        var allFrames = trackedExceptionCase.ExceptionCase.ExceptionId.StackTrace;
-                        var allProbes = trackedExceptionCase.ExceptionCase.Probes;
-                        var frameIndex = allFrames.Length - 1;
-                        var debugErrorPrefix = "_dd.debug.error";
-                        var assignIndex = 0;
-
-                        while (frameIndex >= 0)
-                        {
-                            var participatingFrame = allFrames[frameIndex--];
-                            var noCaptureReason = GetNoCaptureReason(participatingFrame, allProbes.FirstOrDefault(p => p.Method.Equals(participatingFrame.MethodIdentifier)));
-
-                            if (noCaptureReason != string.Empty)
-                            {
-                                TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, noCaptureReason);
-                            }
-
-                            assignIndex += 1;
-                        }
-
-                        Log.Information("Reverting the exception case of the empty stack tree since none of the methods were instrumented, for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
-                        if (trackedExceptionCase.Revert())
-                        {
-                            CachedDoneExceptions.Add(trackedExceptionCase.ExceptionToString);
-                        }
+                        Log.Information("Invalidating the exception case of the empty stack tree since none of the methods were instrumented, for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
+                        trackedExceptionCase.InvalidateCase();
+                        _invalidatedCases.Add(exception.ToString());
                     }
+
+                    return;
                 }
                 else
                 {
+                    if (rootSpan == null)
+                    {
+                        Log.Warning("The RootSpan is null in the branch of extracing snapshots. Should not happen. Exception: {Exception}", exception.ToString());
+                        return;
+                    }
+
                     // Attach tags to the root span
                     var debugErrorPrefix = "_dd.debug.error";
                     rootSpan.Tags.SetTag("error.debug_info_captured", "true");
@@ -293,10 +324,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (probe != null)
             {
-                if (probe.ProbeStatus == Status.INSTALLED && probe.MayBeOmittedFromCallStack)
+                if (probe.MayBeOmittedFromCallStack)
                 {
                     // Frame is non-optimized in .NET 6+.
-                    noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} could not be captured.";
+                    noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} could not be captured because it resides in a module that is not optimized. In .NET 6 and later versions, the code must be compiled with optimizations enabled.";
                 }
 
                 if (probe.ProbeStatus == Status.ERROR)
