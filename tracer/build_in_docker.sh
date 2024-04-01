@@ -14,7 +14,7 @@ docker buildx build \
    --file "$BUILD_DIR/docker/alpine.dockerfile" \
    "$BUILD_DIR"
 
-docker run -it --rm \
+docker run --rm \
     --mount type=bind,source="$ROOT_DIR",target=/project \
     --env NugetPackageDirectory=/project/packages \
     --env artifacts=/project/tracer/bin/artifacts \
