@@ -4,6 +4,7 @@ stages:
   - package
   - publish
   - deploy
+  - benchmarks
 
 include:
   - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
@@ -214,6 +215,7 @@ benchmark-serverless:
 
 benchmark-serverless-trigger:
   stage: benchmarks
+  needs: []
   trigger:
     project: DataDog/serverless-tools
     strategy: depend
