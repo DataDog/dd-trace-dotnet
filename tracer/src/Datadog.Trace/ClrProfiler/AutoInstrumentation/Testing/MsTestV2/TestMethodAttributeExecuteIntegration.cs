@@ -110,6 +110,12 @@ public static class TestMethodAttributeExecuteIntegration
                             }
                         }
 
+                        if (!string.IsNullOrEmpty(testResult.DisplayName) && test.Name != testResult.DisplayName)
+                        {
+                            test.SetName(testResult.DisplayName);
+                            MsTestIntegration.UpdateTestParameters(test, testMethodState.TestMethod, testResult.DisplayName);
+                        }
+
                         if (exception is not null)
                         {
                             test.Close(TestStatus.Fail);

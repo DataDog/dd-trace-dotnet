@@ -51,29 +51,7 @@ internal static class MsTestIntegration
         var test = startDate is null ? suite.InternalCreateTest(testName) : suite.InternalCreateTest(testName, startDate.Value);
 
         // Get test parameters
-        var methodParameters = testMethod.GetParameters();
-        if (methodParameters?.Length > 0)
-        {
-            var testParameters = new TestParameters
-            {
-                Metadata = new Dictionary<string, object>(),
-                Arguments = new Dictionary<string, object>()
-            };
-
-            for (var i = 0; i < methodParameters.Length; i++)
-            {
-                if (testMethodArguments != null && i < testMethodArguments.Length)
-                {
-                    testParameters.Arguments[methodParameters[i].Name ?? $"{i}"] = Common.GetParametersValueData(testMethodArguments[i]);
-                }
-                else
-                {
-                    testParameters.Arguments[methodParameters[i].Name ?? $"{i}"] = "(default)";
-                }
-            }
-
-            test.SetParameters(testParameters);
-        }
+        UpdateTestParameters(test, testMethodInstance);
 
         // Get traits
         if (GetTraits(testMethod) is { } testTraits)
@@ -101,6 +79,41 @@ internal static class MsTestIntegration
 
         test.ResetStartTime();
         return test;
+    }
+
+    internal static void UpdateTestParameters<TTestMethod>(Test test, TTestMethod testMethodInstance, string displayName = null)
+        where TTestMethod : ITestMethod
+    {
+        var testMethod = testMethodInstance.MethodInfo;
+        var testMethodArguments = testMethodInstance.Arguments;
+        var testName = testMethodInstance.TestMethodName;
+
+        // Get test parameters
+        var methodParameters = testMethod.GetParameters();
+        if (methodParameters?.Length > 0)
+        {
+            var testParameters = new TestParameters
+            {
+                Metadata = new Dictionary<string, object>(),
+                Arguments = new Dictionary<string, object>()
+            };
+
+            testParameters.Metadata[TestTags.MetadataTestName] = displayName ?? testName;
+
+            for (var i = 0; i < methodParameters.Length; i++)
+            {
+                if (testMethodArguments != null && i < testMethodArguments.Length)
+                {
+                    testParameters.Arguments[methodParameters[i].Name ?? $"{i}"] = Common.GetParametersValueData(testMethodArguments[i]);
+                }
+                else
+                {
+                    testParameters.Arguments[methodParameters[i].Name ?? $"{i}"] = "(default)";
+                }
+            }
+
+            test.SetParameters(testParameters);
+        }
     }
 
     private static Dictionary<string, List<string>> GetTraits(MethodInfo methodInfo)
