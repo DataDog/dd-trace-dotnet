@@ -1547,9 +1547,11 @@ stages:
         matrix:
           Standalone:
             target: CreateRequiredDirectories CompileSamples
+            artifactPath: /bin
             artifact: samples-bin-standalone
           MultiPackage:
             target: CreateRequiredDirectories CompileMultiPackageSamples -TestAllPackageVersions
+            artifactPath: /publish
             artifact: samples-bin-multi-package
       pool:
         name: azure-windows-scale-set-3
@@ -1564,7 +1566,7 @@ stages:
           displayName: Build sample projects
           retryCountOnTaskFailure: 1
 
-        - publish: $(outputDir)/bin
+        - publish: $(outputDir)$(artifactPath)
           displayName: Upload artifact samples (bin only)
           artifact: $(artifact)
 
@@ -1604,7 +1606,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download samples
       inputs:
-        artifact: samples-bin
+        artifact: samples-bin-standalone
         path: $(outputDir)/bin
       retryCountOnTaskFailure: 5
 
