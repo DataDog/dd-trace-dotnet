@@ -1,6 +1,238 @@
-## Migration guide
+# Migration guide
 
-This document includes high level steps describing how to migrate between high level version of the Datadog .NET Client Library (.NET Tracer)
+This document includes high level steps describing how to migrate between high level versions of the Datadog .NET Client Library (.NET Tracer)
+
+- [Migrating from v2.x.x to v3.x.x](#migrating-from-v2xx-to-v3xx)
+- [Migrating from v1.x.x to v2.x.x](#migrating-from-v1xx-to-v2xx)
+
+
+## Migrating from v2.x.x to v3.x.x
+
+The .NET tracer v3.0.0 includes breaking changes that you must be aware of before upgrading your applications. The most important high-level changes are listed below, and described in more detail later in this document
+
+- Breaking changes
+	- **Custom-only** tracing (using the _Datadog.Trace_ NuGet package), _without_ any automatic tracing, will no longer be supported. Custom instrumentation with the  _Datadog.Trace_ NuGet where you have _also_ configured [automatic-instrumentation](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/) is still supported as it was in v2.x.x.
+	- **The public API surface has changed** in the *Datadog.Trace* NuGet package. A number of previously obsolete APIs have been removed, and some other APIs have been marked obsolete. Most changes are related to how you create `TracerSettings`  and `Tracer` instances.
+	- **.NET Core 2.0** will no longer work with automatic or custom instrumentation. This has been marked [End Of Life (EOL)](https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core/#supported-net-core-runtimes)  by Microsoft since 2018, and will no longer work at all in v3.0.0+ of the Datadog .NET tracer.
+	- **Changes to default settings**. The default values of some settings have changed, and others have been removed. See below for more details.
+	- **Changes in behavior**. The semantic requirements and meaning of some settings have changed, as have some of the tags added to traces.  See below for more details.
+	- **The 32-bit MSI installer will no longer be available**. The 64-bit MSI installer already includes support for tracing 32-bit processes, so you should use this installer instead. 
+- Deprecation notices
+	- **.NET Core 2.1 is marked EOL** in v3.0.0+ of the tracer. That means versions  2.1, 2.2 and 3.0 of .NET Core are now EOL. .NET Core 2.1 may still work with v3.0.0+, but is will no longer receive significant testing and you will receive limited support for issues arising with EOL versions.
+	- **Datadog.Trace.OpenTracing is now obsolete**. OpenTracing is considered deprecated, and so _Datadog.Trace.OpenTracing_ is considered deprecated. See the following details on future deprecation.
+- Major version policy and future deprecation
+	- **Announcing a major version roadmap**. We intend to make yearly major releases, starting from v3.0.0 in 2024, and v4.0.0 in 2025. We clearly will aim for minimal breaking changes, with the primary focus being on maintaining support for new versions of .NET and removal of EOL frameworks and operating systems.
+	- **Planned removal of support for .NET Core 2.1** in version v4.0.0+. We intend to completely remove support for .NET Core 2.x and .NET Core 3.0 in v4.0.0. .NET Framework 4.6.1+ will continue to be supported.
+	- **Planned removal of support for some linux distributions**. In version v4.0.0, we intend to drop support for CentOS 7, RHEL 7, and CentOS Stream 8.
+	- **Planned remove of support for App Analytics**. In version v4.0.0, we intend to drop support for App Analytics and associated settings.
+
+### Breaking changes
+
+In this section we describe the important breaking changes introduced in v3.0.0+ of the tracer, whether you will be affected, and how to handle them.
+
+#### Custom-only tracing is no longer supported
+
+**What changed?**
+In version 2.x.x of the tracer, you can add tracing to your application in two ways:
+- Using [automatic instrumentation](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/). You will automatically receive traces for common libraries and frameworks.
+- Using [custom instrumentation](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/dd_libraries/dotnet-core/?tab=windows#custom-instrumentation) by referencing the [_Datadog.Trace_ ](https://www.nuget.org/packages/Datadog.Trace) or [Datadog.Trace.OpenTracing](https://www.nuget.org/packages/Datadog.Trace.OpenTracing) NuGet packages.
+
+In version 3.0.0+, you will _always_ need to configure automatic instrumentation. You can still use custom instrumentation with the  the [_Datadog.Trace_ ](https://www.nuget.org/packages/Datadog.Trace) or [Datadog.Trace.OpenTracing](https://www.nuget.org/packages/Datadog.Trace.OpenTracing) NuGet packages, but you must _also_ configure automatic instrumentation.
+
+**Why did we change it?**
+This change was introduced for technical reasons to tackle the situation where the version of your NuGet package is different to the version of the automatic instrumentation tracer. In version 2.0.0, we included a partial solution to the problem, but the solution came with other performance implications, and caused issues for other features such as remote configuration and dynamic instrumentation. The proposed solution has none of those limitations.
+
+**What action should you take?**
+If you're already using any of the [automatic instrumentation](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation) approaches, no action is required other than to ensure you have updated to version 3.0.0+. You must also update your *Datadog.Trace* NuGet package to 3.0.0+.
+
+If you are currently _only_ using the *Datadog.Trace* NuGet package, then you must configure [automatic instrumentation](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/) to continue receiving traces. 
+
+Using the Datadog.Trace or Datadog.Trace.OpenTracing NuGet packages without automatic instrumentation (when developing locally, for example) should not have adverse side affects, but none of the tracer library features will be available or running.
+
+#### *Datadog.Trace* public APIs have changed
+
+**What changed?**
+Many obsolete APIs have been removed from the public API in the [_Datadog.Trace_ NuGet package](https://www.nuget.org/packages/Datadog.Trace), some rarely-used APIs have been removed, and some APIs have been deprecated.
+
+**Why did we change it?**
+We removed obsolete APIs that could cause problematic usage patterns and restructured some APIs to solve the version-mismatch scenario described in the previous section. 
+
+**What action should you take?**
+If you are _not_ using the [_Datadog.Trace_ NuGet package](https://www.nuget.org/packages/Datadog.Trace), no action is required. 
+
+If you *are* using the NuGet package and any of the following APIs, then you should adjust your usage as described below.
+
+- `TracerSettings` can no longer be created from an `IConfigurationSource`. 
+	- Instead use `TracerSettings.FromDefaultSources()` to load from all [default sources](https://docs.datadoghq.com/tracing/trace_collection/library_config/dotnet-framework)and then configure the `TracerSettings` object using properties
+	- Alternatively, use `new TracerSettings()` to retrieve an "unitialized" instance
+- `TracerSettings` no longer exposes `Build()` method
+	- The output of this method could not be used previously, so it has been removed as unnecessary
+- The `ExporterSettings` object is marked `[Obsolete]`, and most settings have been removed.
+	- Get or set the `TracerSettings.AgentUri` property instead.
+	- If you wish to set other exporter setting values, you should use one of the standard configuration sources instead of using configuration in code
+- `GlobalSettings` no longer exposes a `Reload()` or `FromDefaultSources()` method.
+	- There is no replacement for these methods, but you may still call `SetDebugEnabled(enabled)`
+- `Tracer` no longer has public constructors and `Tracer.Instance` has no setter
+	- These methods were marked `[Obsolete]` in 2.0.0 as they lead to problematic code patterns
+	- Update your code to use the `Configure()` pattern shown below. Note that you should only call `Configure()` infrequently, i.e. on application startup.
+- `ISpan` interfaces exposes a new property, `RawSpanId`, which allows you to retrieve the 128-bit TraceID as a hex-encoded `string`.
+
+```csharp
+using Datadog.Trace;
+
+// Create your settings as before
+var settings = new TracerSettings();
+
+// var tracer = new Tracer(settings) // <- Delete this line
+Tracer.Configure(settings);          // <- Add this line
+```
+
+Also note that the implementation types from all public APIs have changed. For example, `ISpan.Context` returns an `ISpanContext` instance, but this is no longer `SpanContext`.
+
+#### .NET Core 2.0 no longer works with automatic or custom instrumentation
+
+**What changed?**
+Instrumenting a .NET Core 2.0 application with automatic instrumentation will no longer work, and will not produce traces.
+
+**Why did we change it?**
+Microsoft dropped support for .NET Core 2.0 in 2018, and [it is EOL for the .NET tracer](https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core/). 
+
+**What action should you take?**
+If you are using .NET Core 2.0, we strongly suggest upgrading to a newer version of .NET/.NET Core. If you cannot upgrade, you can continue to use the 2.x.x version of the .NET tracer, but you will receive no feature updates or bug fixes.
+
+#### Changes to default settings
+
+**What changed and why?**
+Several settings have changed their default values:
+- `DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED` now defaults to `true`. This setting provides a better experience in the majority of cases.
+- `DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED` now defaults to `true`. This setting provides a better experience in the majority of cases.
+
+**What action should you take?**
+We recommend using the new settings if possible. If this is not possible, you can manually change the value for each setting to it's previous value, for example: `DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED=false`
+
+#### Changes in behavior
+
+**What changed and why?**
+Some settings have changed their behavior, and there are some changes to reported tags
+- `DD_TRACE_HEADER_TAGS` [no longer replaces periods or spaces in names](https://github.com/DataDog/dd-trace-dotnet/pull/4599) . The new behavior is consistent with the behavior of other tracer languages.
+- The `language` tag is [now added to added to all spans](https://github.com/DataDog/dd-trace-dotnet/pull/4839) with the value `dotnet`. Previously, some spans were not tagged, but were subsequently tagged with the value `.NET`. This change removes the inconsistency
+- `DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON` now refers to an absolute file path instead of providing the template content directly. This makes it easier to provide custom values.
+- `DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML` now refers to an absolute file path instead of providing the template content directly. This makes it easier to provide custom values.
+- `DD_API_SECURITY_REQUEST_SAMPLING ` now requires a value from 0 to 1.0, not a percentage from 0 to 100.
+
+**What action should you take?**
+If you require the previous `DD_TRACE_HEADER_TAGS` normalization behavior, you must apply this normalization yourself, replacing periods and spaces with underscores in the value you pass to `DD_TRACE_HEADER_TAGS`.
+
+If you are currently using `DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON` or `DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML`, you should move that content to a file, and provide the absolute file path in the settings.
+
+If you are currently setting `DD_API_SECURITY_REQUEST_SAMPLING`, divide the value you are providing by 100. For example, if you are currently setting `DD_API_SECURITY_REQUEST_SAMPLING=10` (i.e. 10%)., then you should now use `DD_API_SECURITY_REQUEST_SAMPLING=0.10`.
+
+
+#### Windows 32-bit MSI installer is no longer available
+
+**What changed?**
+We will no longer be producing the 32-bit MSI installer as of v3.0.0. We will still produce the 64-bit MSI installer which is capable of instrumenting both 64-bit and 32-bit applications.
+
+**Why did we change it?**
+The 32-bit MSI installer should _only_ be used on 32-bit versions of Windows; the 64-bit MSI should normally be used, and allows tracing both 32-bit and 64-bit processes. Windows Server 2008 was the last version of Windows Server to support 32-bit operating systems, and [was announced EOL by Microsoft in 2020](https://learn.microsoft.com/en-us/troubleshoot/windows-server/windows-server-eos-faq/end-of-support-windows-server-2008-2008r2).  We are removing the 32-bit MSI to reduce confusion so that customers don't install the wrong version.
+
+**What action should you take?**
+If you _are_ running a 32-bit version of Windows (for example, a 32-bit version of Windows 7), you will no longer be able to enable Datadog .NET automatic instrumentation via the MSI. Consider using one of the other automatic instrumentation approaches, such as [the Datadog.Trace.Bundle approach](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/dd_libraries/dotnet-framework/?tab=nuget#install-the-tracer).
+
+### Deprecated APIs and platforms
+
+This section details some of the APIs. supported platforms, and runtimes that are considered deprecated as of version 3.0.0 of the .NET tracer.
+
+#### .NET Core 2.1 is now EOL
+ 
+**What changed?**
+.NET Core 2.1 is considered EOL as of version 3.0.0 of the .NET tracer. You can continue to use v3.0.0  with applications that run on .NET Core 2.1, but this runtime will receive limited support and testing. With this change, versions 2.0, 2.1, 2.2 and 3.0 of .NET Core are now EOL. There are no changes to supported .NET Framework versions.
+
+**Why did we change it?**
+.NET Core 2.1 was marked EOL by Microsoft in August 2021. Similarly .NET Core 2.0, .NET Core 2.2, and .NET Core 3.0 are already considered EOL. This change applies a consistent policy across older runtimes,  allows us to continue to support newer runtimes, and has limited use across customers.
+
+**What action should you take?**
+If you're currently running applications on .NET Core 2.1, you can still do so with v3.0.0 of the .NET tracer. However, we strongly suggest updating to [a supported version of .NET Core/.NET](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core#lifecycle). In a future major version of the .NET tracer we intend to remove support for .NET Core 2.1 completely, as described in the following section.
+
+#### Datadog.Trace.OpenTracing is now obsolete
+
+**What changed?**
+The [Datadog.Trace.OpenTracing](https://www.nuget.org/packages/Datadog.Trace.OpenTracing) NuGet package is considered obsolete, and may be removed in a future major version of .NET Core. The `OpenTracingTracerFactory.CreateTracer()` and `OpenTracingTracerFactory.WrapTracer` methods have been marked `[Obsolete]` to reflect this policy change.
+
+**Why did we change it?**
+[The OpenTracing project](https://opentracing.io/) is archived and considered deprecated at this point. Instead, you should consider [moving to OpenTelemetry](https://www.datadoghq.com/knowledge-center/opentelemetry/).
+
+**What action should you take?**
+You may continue to use the  [Datadog.Trace.OpenTracing](https://www.nuget.org/packages/Datadog.Trace.OpenTracing) package with v3.0.0+ of the .NET tracer, but you may need to [suppress the `[Obsolete]` compiler warnings](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives#pragma-warning). You should consider moving your project to using OpenTelemetry instead of OpenTracing. 
+
+.NET has built in support for OpenTelemetry by way of the `Activity` class, which is supported by Datadog's automatic instrumentation by setting `DD_TRACE_OTEL_ENABLED=true`. Alternatively, you can use vendor agnostic tooling to send telemetry signals to [the OpenTelemetry collector and use the Datadog Exporter](https://docs.datadoghq.com/opentelemetry/collector_exporter) to forward this information to Datadog.
+
+### Future major version policy and plans
+
+This section describes our policy around future major versions, and gives advanced warning of the intention to drop various platforms and frameworks.
+
+#### Future major version roadmap
+
+**What changed?**
+With this major release (v3.0.0) we're announcing the intention to follow a yearly cadence for major version releases of the .NET tracer. For example
+- v3.0.0 of the .NET tracer was released in 2024
+- v4.0.0 of the .NET tracer will be released in 2025
+- v5.0.0 of the .NET tracer will be released in 2026
+
+**Why did we change it?**
+Modern .NET follows [a yearly major release cadence](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core#cadence). Sometimes a major .NET release requires significant or breaking changes to the .NET tracer to support the latest version. By similarly adopting a yearly cycle for the .NET tracer, we are able to quickly react to any new requirements. It also ensures customers know when to expect major versions of the tracer, so as to incorporate updates into their future roadmap.
+
+Note that this policy does _not_ mean the bar for making breaking changes has been lowered. We will always strive to provide the smoothest upgrade experience for users.
+
+#### Planned removal of support for .NET Core 2.x and .NET Core 3.0
+
+**What changed?**
+In the next version of the .NET tracer (v4.0.0) we plan to drop support for the following .NET versions:
+- .NET Core 2.0 (Datadog .NET tracer support removed in v3.0.0)
+- .NET Core 2.1 (Datadog .NET tracer support removed in v4.0.0)
+- .NET Core 2.2 (Datadog .NET tracer support removed in v4.0.0)
+- .NET Core 3.0 (Datadog .NET tracer support removed in v4.0.0)
+
+The .NET tracer will no longer instrument applications using these runtimes.
+
+**Why did we change it?**
+[These .NET runtime versions are all unsupported by Microsoft](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core#cadence). By removing support for these runtimes in the Datadog .NET tracer we can reduce overheads for all users and focus on supporting modern frameworks.
+
+#### Planned removal of support for some linux distributions
+
+**What changed?**
+In the next version of the .NET tracer (v4.0.0) we plan to drop support for the following Linux distributions
+- [CentOS 7](https://www.redhat.com/en/topics/linux/centos-linux-eol)
+- [CentOS 8](https://www.centos.org/centos-stream/)
+- [CentOS Stream 8](https://www.centos.org/centos-stream/)
+- [RHEL 7](https://access.redhat.com/support/policy/updates/errata)
+
+The .NET tracer will no longer function on these distributions or any distribution with a [glibc](https://www.gnu.org/software/libc/) version <2.28 (Version 2.0.0 of the .NET tracer supports glibc 2.17)
+
+**Why did we change it?**
+The above distributions are either no longer supported or have ceased receiving updates. Similarly, .NET 8 dropped support for these distributions and will no longer run. We are adopting a similar approach to Microsoft to ensure we can take advantage of newer versions of glibc that benefit all our customers.
+
+#### Planned removal of support for Datadog.Trace.OpenTracing
+
+**What changed?**
+In the next version of the .NET tracer (v4.0.0) we plan to stop producing the [Datadog.Trace.OpenTracing](https://www.nuget.org/packages/Datadog.Trace.OpenTracing) NuGet package. Consider [moving to OpenTelemetry](https://www.datadoghq.com/knowledge-center/opentelemetry/) instead. 
+
+**Why did we change it?**
+[The OpenTracing project](https://opentracing.io/) is archived and considered deprecated at this point.
+
+#### Planned removal of support for AppAnalytics
+
+**What changed?**
+In version v4.0.0, the .NET tracer will no longer include settings for configuring [App Analytics](https://docs.datadoghq.com/tracing/legacy_app_analytics/).
+
+The following settings will be removed:
+- `DD_TRACE_ANALYTICS_ENABLED` and corresponding `TracerSettings` property
+- `DD_TRACE_<INTEGRATION>_ANALYTICS_ENABLED` and corresponding `IntegrationSettings` property
+- `DD_TRACE_<INTEGRATION>_ANALYTICS_SAMPLE_RATE` and corresponding `IntegrationSettings` property
+
+
+**Why did we change it?**
+[App Analytics](https://docs.datadoghq.com/tracing/legacy_app_analytics/) is deprecated. To have full control over your traces, use [ingestion controls and retention filters](https://docs.datadoghq.com/tracing/trace_pipeline) instead.
 
 ## Migrating from v1.x.x to v2.x.x
 
