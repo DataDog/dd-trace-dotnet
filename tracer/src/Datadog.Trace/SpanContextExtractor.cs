@@ -18,8 +18,13 @@ using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace
 {
-    /// <inheritdoc />
-    public class SpanContextExtractor : ISpanContextExtractor
+    /// <summary>
+    /// The <see cref="SpanContextExtractor"/> is responsible for extracting <see cref="ISpanContext"/> in the rare cases
+    /// where the Tracer couldn't propagate it itself. This can happen for instance when libraries add an extra
+    /// layer above the instrumented ones (eg consuming Kafka messages and enqueuing them prior to generate a span).
+    /// When enabled (and present in the headers) also used to set data streams monitoring checkpoints.
+    /// </summary>
+    public class SpanContextExtractor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextExtractor>();
 
@@ -37,7 +42,13 @@ namespace Datadog.Trace
             // unused parameter is to give us a non-public API we can use
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Given a SpanContext carrier and a function to access the values, this method will extract the <see cref="ISpanContext"/> if any.
+        /// </summary>
+        /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...)</param>
+        /// <param name="getter">Given a key name, returns values from the carrier</param>
+        /// <typeparam name="TCarrier">Type of the carrier</typeparam>
+        /// <returns>A potentially null Datadog <see cref="ISpanContext"/></returns>
         [PublicApi]
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
