@@ -120,10 +120,10 @@ internal partial class MainViewModel
             integrationSourceBuilder.Replace("$(OnMethodBegin)", CreateOnMethodBegin ? $"{Environment.NewLine}{GetOnMethodBeginSourceBuilder(isStatic, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
 
             // OnMethodEnd
-            integrationSourceBuilder.Replace("$(OnMethodEnd)", CreateOnMethodEnd ? $"{Environment.NewLine}{Environment.NewLine}{GetOnMethodEndSourceBuilder(isStatic, isVoid, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
+            integrationSourceBuilder.Replace("$(OnMethodEnd)", CreateOnMethodEnd ? $"{Environment.NewLine}{GetOnMethodEndSourceBuilder(isStatic, isVoid, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
 
             // OnAsyncMethodEnd
-            integrationSourceBuilder.Replace("$(OnAsyncMethodEnd)", CreateOnAsyncMethodEnd ? $"{Environment.NewLine}{Environment.NewLine}{GetOnAsyncMethodEndBuilder(isStatic, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
+            integrationSourceBuilder.Replace("$(OnAsyncMethodEnd)", CreateOnAsyncMethodEnd ? $"{Environment.NewLine}{GetOnAsyncMethodEndBuilder(isStatic, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
 
             var duckTypeProxyDefinitionsValues = duckTypeProxyDefinitions.Values.Where(v => !string.IsNullOrEmpty(v.ProxyDefinition)).Select(v => v.ProxyDefinition).ToList();
             if (duckTypeProxyDefinitionsValues.Count > 0)
