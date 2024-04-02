@@ -473,6 +473,8 @@ internal readonly partial struct SecurityCoordinator
 
         internal override bool IsBlocked => _context.Items["block"] is true;
 
+        internal override bool IsBlockedByAuthentication => _context.Items["block_by_auth"] is true;
+
         internal override int StatusCode => _context.Response.StatusCode;
 
         internal override IDictionary<string, object>? RouteData => _context.Request.RequestContext.RouteData?.Values;

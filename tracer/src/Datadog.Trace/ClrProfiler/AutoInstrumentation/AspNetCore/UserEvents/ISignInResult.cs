@@ -15,7 +15,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 public interface ISignInResult
 {
     /// <summary>
-    /// Gets a value indicating whether the sign-in was successful.
+    /// Gets or sets a value indicating whether the sign-in was successful.
+    /// </summary>
+    public bool Succeeded { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the user requires two factor authentication.
     /// </summary>
     public bool Succeeded { get; }
 

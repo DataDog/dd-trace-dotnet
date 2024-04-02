@@ -68,6 +68,11 @@ internal readonly partial struct SecurityCoordinator
                 throw new BlockException(result);
             }
 
+            if (result!.ShouldBlockByAuthentication)
+            {
+                _context.Items["block_by_auth"] = true;
+            }
+
             TryReport(result, result.ShouldBlock);
         }
     }
@@ -140,6 +145,8 @@ internal readonly partial struct SecurityCoordinator
         public HttpTransport(HttpContext context) => _context = context;
 
         internal override bool IsBlocked => _context.Items["block"] is true;
+
+        internal override bool IsBlockedByAuthentication => _context.Items["block_by_auth"] is true;
 
         internal override int StatusCode => _context.Response.StatusCode;
 

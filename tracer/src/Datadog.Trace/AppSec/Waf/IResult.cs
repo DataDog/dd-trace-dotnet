@@ -19,6 +19,11 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         public bool ShouldBlock { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether to block the authentication or not
+        /// </summary>
+        public bool ShouldBlockByAuthentication { get; }
+
         IReadOnlyCollection<object>? Data { get; }
 
         List<string> Actions { get; }
