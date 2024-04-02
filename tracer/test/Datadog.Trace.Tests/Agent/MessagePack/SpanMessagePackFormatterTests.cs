@@ -163,7 +163,8 @@ public class SpanMessagePackFormatterTests
                     actualSpanLink.TraceIdLow.Should().Be(expectedSpanlink.Context.TraceId128.Lower);
                     actualSpanLink.SpanId.Should().Be(expectedSpanlink.Context.SpanId);
                     var expectedTraceState = W3CTraceContextPropagator.CreateTraceStateHeader(expectedSpanlink.Context);
-                    if (!string.IsNullOrEmpty(expectedTraceState))
+                    // tracestate is only added when trace is from distributed tracing
+                    if (expectedSpanlink.Context.IsRemote)
                     {
                         actualSpanLink.TraceState.Should().Be(expectedTraceState);
                     }

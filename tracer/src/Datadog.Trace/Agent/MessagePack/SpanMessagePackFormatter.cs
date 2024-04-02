@@ -230,8 +230,8 @@ namespace Datadog.Trace.Agent.MessagePack
             foreach (var spanLink in spanModel.Span.SpanLinks)
             {
                 var context = spanLink.Context;
-                var traceState = W3CTraceContextPropagator.CreateTraceStateHeader(context);
                 var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
+                var traceState = W3CTraceContextPropagator.CreateTraceStateHeader(context);
                 var traceFlags = samplingPriority switch
                 {
                     null => 0u,             // not set
@@ -239,7 +239,8 @@ namespace Datadog.Trace.Agent.MessagePack
                     <= 0 => 1u << 31,       // drop
                 };
                 var len = 3;
-                if (string.IsNullOrEmpty(traceState))
+                // check to serialize tracestate
+                if (context.IsRemote)
                 {
                     len++;
                 }
@@ -265,8 +266,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
                 // optional serialization
-                // tracestate
-                if (string.IsNullOrEmpty(traceState))
+                // CreateTraceStateHeader will never return null or empty
+                if (context.IsRemote)
                 {
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceStateBytes);
                     offset += MessagePackBinary.WriteString(ref bytes, offset, traceState);
