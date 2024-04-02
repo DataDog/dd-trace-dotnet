@@ -2140,7 +2140,7 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2170,6 +2170,18 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
+    - task: DownloadPipelineArtifact@2
+      displayName: Download samples
+      inputs:
+        artifact: samples-bin-standalone
+        path: $(outputDir)/bin
+      retryCountOnTaskFailure: 5
+    - task: DownloadPipelineArtifact@2
+      displayName: Download multi-package samples
+      inputs:
+        artifact: samples-bin-multi-package
+        path: $(outputDir)/publish
+      retryCountOnTaskFailure: 5
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
