@@ -55,12 +55,15 @@ partial class Build : NukeBuild
                 }, new string[] { });
                 GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[]
                 {
+                    "tracer/src/Datadog.Trace/ContinuousProfiler",
                     "profiler/",
                     "shared/",
                     "build/",
                     "tracer/build/_build/Build.Shared.Steps.cs",
                     "tracer/build/_build/Build.Profiler.Steps.cs",
                 }, new string[] { });
+
+                GenerateProfilerOnlyChangesConditionVariable();
 
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
                 {
@@ -94,6 +97,24 @@ partial class Build : NukeBuild
                     Logger.Information($"{variableName} - {isChanged}");
 
                     var variableValue = isChanged.ToString();
+                    EnvironmentInfo.SetVariable(variableName, variableValue);
+                    AzurePipelines.Instance.SetOutputVariable(variableName, variableValue);
+                }
+
+                void GenerateProfilerOnlyChangesConditionVariable()
+                {
+                    var isTracerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isTracerChanged") ?? "false");
+                    var isDebuggerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isDebuggerChanged") ?? "false");
+                    var isProfilerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isProfilerChanged") ?? "false");
+                    var isAppSecChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isAppSec") ?? "false");
+
+                    var isProfilerOnlyChanged = isProfilerChanged && !(isTracerChanged || isDebuggerChanged || isAppSecChanged);
+
+                    var variableName = "isProfilerOnlyChanged";
+
+                    Logger.Information($"{variableName} - {isProfilerOnlyChanged}");
+
+                    var variableValue = isProfilerOnlyChanged.ToString();
                     EnvironmentInfo.SetVariable(variableName, variableValue);
                     AzurePipelines.Instance.SetOutputVariable(variableName, variableValue);
                 }
@@ -238,8 +259,8 @@ partial class Build : NukeBuild
             {
                 var baseImages = new []
                 {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"), 
-                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"), 
+                    (baseImage: "debian", artifactSuffix: "linux-x64"),
+                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
 
                 var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
@@ -263,8 +284,8 @@ partial class Build : NukeBuild
                 var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 });
                 var baseImages = new []
                 {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"), 
-                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"), 
+                    (baseImage: "debian", artifactSuffix: "linux-x64"),
+                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
                 var optimizations = new[] { "true", "false" };
 
@@ -343,8 +364,8 @@ partial class Build : NukeBuild
 
                 var baseImages = new []
                 {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"), 
-                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"), 
+                    (baseImage: "debian", artifactSuffix: "linux-x64"),
+                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
 
                 var matrix = new Dictionary<string, object>();
@@ -881,7 +902,7 @@ partial class Build : NukeBuild
                         "alpine",
                         new (string publishFramework, string runtimeTag)[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"), 
+                            (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
                             (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
                             (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
@@ -1211,6 +1232,15 @@ partial class Build : NukeBuild
                { Count: 0 } => "Azure pipeline will run. Skipping noop pipeline",
                _ => "Tracer pipelines will not run. Generating github status updates",
            };
+
+
+           var isTracerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isTracerChanged") ?? "false");
+           var isProfilerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isProfilerChanged") ?? "false");
+           if (tracerStagesToSkip.Count == 0 && isProfilerChanged && !isTracerChanged)
+           {
+               var tracerRequiredJobs = new List<string> { "x", "y" };
+               tracerStagesToSkip.AddRange(tracerRequiredJobs);
+           }
 
            var allStages = string.Join(";", tracerStagesToSkip);
 
