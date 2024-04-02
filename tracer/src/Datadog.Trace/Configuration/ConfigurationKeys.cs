@@ -620,7 +620,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key to enable or disable improved template-based resource names
             /// when using WCF Web HTTP. Requires <see cref="DelayWcfInstrumentationEnabled"/> be set
-            /// to true. Disabled by default
+            /// to true. Enabled by default
             /// </summary>
             /// <seealso cref="TracerSettings.WcfWebHttpResourceNamesEnabled"/>
             public const string WcfWebHttpResourceNamesEnabled = "DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED";
