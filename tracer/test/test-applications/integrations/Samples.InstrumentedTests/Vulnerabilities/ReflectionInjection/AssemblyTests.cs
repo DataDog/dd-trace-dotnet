@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.ReflectionInjection;
 
+#pragma warning disable CS0618 //  'Assembly.LoadFrom(string, Evidence)' is obsolete: 'This method is obsolete and will be removed in a future release of the .NET Framework.
 public class AssemblyTests : InstrumentationTestsBase
 {
     protected string taintedAssembly;
