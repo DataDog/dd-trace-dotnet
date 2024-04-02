@@ -9,8 +9,7 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests.Utils;
 
-[Collection(nameof(WafLibraryRequiredTest))]
-[CollectionDefinition(nameof(WafLibraryRequiredTest), DisableParallelization=true)]
+[Collection(nameof(SecuritySequentialTests))]
 public class WafLibraryRequiredTest
 {
     /// <summary>
