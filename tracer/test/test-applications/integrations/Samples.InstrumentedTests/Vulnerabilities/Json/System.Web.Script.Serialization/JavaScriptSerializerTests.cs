@@ -20,7 +20,9 @@ public class JavaScriptSerializerTests : InstrumentationTestsBase
     private readonly string _taintedJsonDeepObject = "{\"key\": {\"key2\": \"value\"}}";
     private readonly string _taintedJsonDifferentTypes = "{ \"name\": \"Chris\", \"age\": 23, \"address\": { \"city\": \"New York\", \"country\": \"America\" }, \"friends\": [ { \"name\": \"Emily\", \"hobbies\": [ \"biking\", \"music\", \"gaming\" ] }, { \"name\": \"John\", \"hobbies\": [ \"soccer\", \"gaming\" ] }, [ \"aString\", { \"obj\": \"val\" } ] ] }";
 
+#if NETFRAMEWORK
     private readonly string _notTaintedJson = "{ \"key\": \"notTainted\" }";
+#endif
 
     public JavaScriptSerializerTests()
     {
