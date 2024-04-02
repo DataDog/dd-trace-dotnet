@@ -1583,7 +1583,7 @@ partial class Build
         .Unlisted()
         .After(Clean)
         .DependsOn(HackForMissingMsBuildLocation)
-        .DependsOn(CompileSamples) // Compiles the prerequisites
+        .DependsOn(CompileDependencyLibs) // Explicitly compiles the prerequisites which MSbuild doesn't (no, I don't know why, I can't seem to convince it to do this automatically)
         .OnlyWhenStatic(() => TestAllPackageVersions) // Do we still need this? we'll see 
         .Executes(() =>
         {
