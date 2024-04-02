@@ -270,9 +270,9 @@ partial class Build : NukeBuild
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the integration tests for Windows")
-        .DependsOn(CompileDependencyLibs)
+        // .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileSamplesWindows)
+        // .DependsOn(CompileSamplesWindows)
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildRunnerTool);
 
@@ -280,7 +280,7 @@ partial class Build : NukeBuild
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the ASP.NET integration tests for Windows")
-        .DependsOn(CompileDependencyLibs)
+        // .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests);
@@ -319,11 +319,11 @@ partial class Build : NukeBuild
     Target BuildLinuxIntegrationTests => _ => _
         .Requires(() => !IsWin)
         .Description("Builds the linux integration tests")
-        .DependsOn(CompileDependencyLibs)
-        .DependsOn(CompileRegressionDependencyLibs)
+        // .DependsOn(CompileDependencyLibs)
+        // .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileSamplesLinuxOrOsx)
-        .DependsOn(CompileMultiApiPackageVersionSamples)
+        // .DependsOn(CompileSamplesLinuxOrOsx)
+        // .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(CompileLinuxDdDotnetIntegrationTests)
         .DependsOn(BuildRunnerTool)
@@ -339,11 +339,11 @@ partial class Build : NukeBuild
     Target BuildOsxIntegrationTests => _ => _
         .Requires(() => IsOsx)
         .Description("Builds the osx integration tests")
-        .DependsOn(CompileDependencyLibs)
-        .DependsOn(CompileRegressionDependencyLibs)
+        // .DependsOn(CompileDependencyLibs)
+        // .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileSamplesLinuxOrOsx)
-        .DependsOn(CompileMultiApiPackageVersionSamples)
+        // .DependsOn(CompileSamplesLinuxOrOsx)
+        // .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CopyServerlessArtifacts);
