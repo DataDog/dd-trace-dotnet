@@ -9,14 +9,6 @@ on:
         description: 'The commit ID to run the test against'
         required: true
         type: string
-      lib_injection_connection:
-        description: 'The connection type to use for the lib-injection test (e.g. network, uds)'
-        required: true
-        type: string
-      lib_injection_use_admission_controller:
-        description: 'Whether to use the admission controller'
-        type: boolean
-        required: true
       runtime:
         description: 'The runtime to use to run the tests (e.g. bullseye-slim, alpine)'
         required: true
@@ -31,20 +23,39 @@ jobs:
     env:
       TEST_LIBRARY: dotnet
       WEBLOG_VARIANT: 'dd-lib-dotnet-init-test-app'
-      LIBRARY_INJECTION_CONNECTION: ${{ inputs.lib_injection_connection }}
-      LIBRARY_INJECTION_ADMISSION_CONTROLLER: ${{ inputs.lib_injection_use_admission_controller == true && 'use-admission-controller' || '' }}
       DOCKER_REGISTRY_IMAGES_PATH: ghcr.io/datadog
       DOCKER_IMAGE_TAG: ${{ inputs.commit_id }}${{ inputs.runtime == 'alpine' && '-musl' || '' }}
       DOCKER_IMAGE_WEBLOG_TAG: ${{ inputs.commit_id }}-${{ inputs.runtime }}
       RUNTIME: ${{ inputs.runtime }}
       BUILDX_PLATFORMS: linux/amd64
-      MODE: manual
     steps:
-      - name: lib-injection test runner
-        id: lib-injection-test-runner
-        uses: DataDog/system-tests/lib-injection/runner@main
+      - name: Checkout system tests
+        uses: actions/checkout@v2
         with:
-          docker-registry: ghcr.io
-          docker-registry-username: ${{ github.repository_owner }}
-          docker-registry-password: ${{ secrets.DOCKER_REGISTRY_GITHUB_TOKEN }}
-          test-script: ./lib-injection/run-manual-lib-injection.sh
+            repository: 'DataDog/system-tests'
+
+      - name: Install runner
+        uses: ./.github/actions/install_runner 
+
+      - name: Build weblog latest base images
+        env:
+          APP_DOCKER_IMAGE_REPO: ghcr.io/datadog/system-tests/${{ matrix.variant.weblog-variant }}
+        run: |
+          cd lib-injection/build/docker/$TEST_LIBRARY/$WEBLOG_VARIANT 
+          LIBRARY_INJECTION_TEST_APP_IMAGE=$APP_DOCKER_IMAGE_REPO:latest ./build.sh
+          cd ..
+
+      - name: Run K8s Lib Injection Tests
+        run: ./run.sh K8S_LIB_INJECTION_BASIC
+
+      - name: Compress logs
+        id: compress_logs
+        if: always()
+        run: tar -czvf artifact.tar.gz $(ls | grep logs)
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs_k8s_lib_injection
+          path: artifact.tar.gz
