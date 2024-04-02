@@ -1064,6 +1064,7 @@ stages:
         retryCountOnTaskFailure: 1
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
+          enable_crash_dumps: true
 
       - publish: tracer/build_data
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
