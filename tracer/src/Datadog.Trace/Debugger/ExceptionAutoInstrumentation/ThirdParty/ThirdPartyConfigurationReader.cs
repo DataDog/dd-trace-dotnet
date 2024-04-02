@@ -6,8 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -20,7 +18,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
         private const string ThirdPartyResourceName = "Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ConfigFiles.third-party-module-names.json";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ThirdPartyConfigurationReader>();
 
-        internal static HashSet<string> GetModules()
+        internal static HashSet<string>? GetModules()
         {
             try
             {
@@ -29,27 +27,28 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to read third party libs from the embedded resource '{ThirdPartyResourceName}'.", ThirdPartyResourceName);
-                return new HashSet<string>();
+                return null;
             }
         }
 
-        internal static HashSet<string> SafeGetModules()
+        internal static HashSet<string>? SafeGetModules()
         {
-            var modules = new HashSet<string>();
-
-            if (TryGetThirdPartyManifestStream(out var stream))
+            if (!TryGetThirdPartyManifestStream(out var stream))
             {
-                using var sr = new StreamReader(stream!);
-                using var jsonReader = new JsonTextReader(sr);
+                return null;
+            }
 
-                while (jsonReader.Read())
+            using var sr = new StreamReader(stream!);
+            using var jsonReader = new JsonTextReader(sr);
+
+            var modules = new HashSet<string>();
+            while (jsonReader.Read())
+            {
+                if (jsonReader.TokenType == JsonToken.String)
                 {
-                    if (jsonReader.TokenType == JsonToken.String)
+                    if (jsonReader.Value is string moduleName)
                     {
-                        if (jsonReader.Value is string moduleName)
-                        {
-                            modules.Add(moduleName);
-                        }
+                        modules.Add(moduleName);
                     }
                 }
             }

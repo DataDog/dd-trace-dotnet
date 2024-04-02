@@ -43,7 +43,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             Log.Information("Initializing Exception Debugging");
 
-            if (!ThirdPartyModules.PopulateFromConfig())
+            if (!ThirdPartyModules.IsValid)
             {
                 Log.Warning("Third party modules load has failed. Disabling Exception Debugging.");
                 _isDisabled = true;

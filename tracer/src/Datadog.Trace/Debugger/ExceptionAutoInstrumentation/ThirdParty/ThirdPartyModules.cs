@@ -3,25 +3,38 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
-using Datadog.Trace.Logging;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
 {
     internal class ThirdPartyModules
     {
+        private static readonly Lazy<bool> IsModulesPopulated = new(PopulateFromConfig);
         private static HashSet<string>? _thirdPartyModuleNames;
 
-        internal static bool PopulateFromConfig()
+        internal static bool IsValid => IsModulesPopulated.Value;
+
+        private static bool PopulateFromConfig()
         {
             _thirdPartyModuleNames = ThirdPartyConfigurationReader.GetModules();
-            return _thirdPartyModuleNames.Count > 0;
+            return _thirdPartyModuleNames?.Count > 0;
         }
 
-        internal static bool Contains(string moduleName)
+        /// <summary>
+        /// Check if a module is a 3rd party module
+        /// </summary>
+        /// <param name="moduleName">module name to check if it's a 3rd party module</param>
+        /// <returns>true if the 3rd party list contains the moduleName or if the list fail to initialized</returns>
+        internal static bool Contains(string? moduleName)
         {
-            return _thirdPartyModuleNames?.Contains(moduleName) == true;
+            if (string.IsNullOrEmpty(moduleName) || !IsValid)
+            {
+                return true;
+            }
+
+            return _thirdPartyModuleNames?.Contains(moduleName!) == true;
         }
     }
 }
