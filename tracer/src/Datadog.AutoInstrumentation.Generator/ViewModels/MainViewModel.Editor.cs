@@ -86,7 +86,17 @@ internal partial class MainViewModel
             integrationSourceBuilder.Replace("$(Namespace)", EditorHelper.GetNamespace(methodDef));
             integrationSourceBuilder.Replace("$(FullName)", EditorHelper.GetMethodFullNameForComments(methodDef));
             integrationSourceBuilder.Replace("$(AssemblyName)", methodDef.DeclaringType.DefinitionAssembly.Name);
-            integrationSourceBuilder.Replace("$(TypeName)", methodDef.DeclaringType.FullName);
+            if (methodDef.DeclaringType.IsNested)
+            {
+                integrationSourceBuilder.Replace(
+                    "$(TypeName)",
+                    methodDef.DeclaringType.DeclaringType.FullName + "+" + methodDef.DeclaringType.Name);
+            }
+            else
+            {
+                integrationSourceBuilder.Replace("$(TypeName)", methodDef.DeclaringType.FullName);
+            }
+
             integrationSourceBuilder.Replace("$(MethodName)", methodDef.Name);
             integrationSourceBuilder.Replace("$(ReturnTypeName)", EditorHelper.GetReturnType(methodDef));
             integrationSourceBuilder.Replace("$(ParameterTypeNames)", EditorHelper.GetParameterTypeArray(methodDef));
@@ -107,7 +117,7 @@ internal partial class MainViewModel
             duckTypeProxyDefinitions ??= new Dictionary<TypeDef, EditorHelper.DuckTypeProxyDefinition>();
 
             // OnMethodBegin
-            integrationSourceBuilder.Replace("$(OnMethodBegin)", CreateOnMethodBegin ? $"{Environment.NewLine}{Environment.NewLine}{GetOnMethodBeginSourceBuilder(isStatic, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
+            integrationSourceBuilder.Replace("$(OnMethodBegin)", CreateOnMethodBegin ? $"{Environment.NewLine}{GetOnMethodBeginSourceBuilder(isStatic, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
 
             // OnMethodEnd
             integrationSourceBuilder.Replace("$(OnMethodEnd)", CreateOnMethodEnd ? $"{Environment.NewLine}{Environment.NewLine}{GetOnMethodEndSourceBuilder(isStatic, isVoid, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
