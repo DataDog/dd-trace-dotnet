@@ -186,6 +186,7 @@ internal partial class MainViewModel
 
             argsTypesParamDocumentation.Add($"    /// <param name=\"{parameterName}\">Instance of {parameterTypeCleaned}</param>");
 
+            var gentTypeName = "T" + char.ToUpperInvariant(parameterName[0]) + parameterName[1..];
             var basicType = EditorHelper.GetIfBasicTypeOrDefault(parameter.Type.FullName);
             if (basicType is not null)
             {
@@ -193,26 +194,26 @@ internal partial class MainViewModel
             }
             else
             {
-                argsTypesTypeParamDocumentation.Add($"    /// <typeparam name=\"TArg{i}\">Type of the argument {i} ({parameterTypeCleaned})</typeparam>");
-                argsTypes.Add($"TArg{i}");
+                argsTypesTypeParamDocumentation.Add($"    /// <typeparam name=\"{gentTypeName}\">Type of the argument {parameterName} ({parameterTypeCleaned})</typeparam>");
+                argsTypes.Add($"{gentTypeName}");
                 var withConstraint = false;
                 if (CreateDucktypeArguments && parameter.Type.TryGetTypeDef() is { } paramTypeDef)
                 {
                     var proxyDefinition = EditorHelper.GetDuckTypeProxies(paramTypeDef, DucktypeArgumentsFields, DucktypeArgumentsProperties, DucktypeArgumentsMethods, DucktypeArgumentsDuckChaining, UseDuckCopyStruct, duckTypeProxyDefinitions);
                     if (proxyDefinition is not null)
                     {
-                        argsConstraint.Add($"        where TArg{i} : {proxyDefinition.Value.ProxyName}");
+                        argsConstraint.Add($"        where {gentTypeName} : {proxyDefinition.Value.ProxyName}");
                         withConstraint = true;
                     }
                 }
 
                 if (withConstraint)
                 {
-                    argsParameters.Add($"TArg{i} {parameterName}");
+                    argsParameters.Add($"{gentTypeName} {parameterName}");
                 }
                 else
                 {
-                    argsParameters.Add($"ref TArg{i} {parameterName}");
+                    argsParameters.Add($"ref {gentTypeName} {parameterName}");
                 }
             }
         }
