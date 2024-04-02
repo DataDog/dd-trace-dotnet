@@ -29,7 +29,7 @@ internal static class MsTestIntegration
 
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-    internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type)
+    internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, DateTimeOffset? startDate = null)
         where TTestMethod : ITestMethod
     {
         var testMethod = testMethodInstance.MethodInfo;
@@ -48,7 +48,7 @@ internal static class MsTestIntegration
             return null;
         }
 
-        var test = suite.InternalCreateTest(testName);
+        var test = startDate is null ? suite.InternalCreateTest(testName) : suite.InternalCreateTest(testName, startDate.Value);
 
         // Get test parameters
         var methodParameters = testMethod.GetParameters();
