@@ -637,6 +637,7 @@ namespace Datadog.Trace.Propagators
 
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
+            spanContext.IsRemote = true;
             return true;
         }
 

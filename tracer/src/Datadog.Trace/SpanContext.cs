@@ -257,6 +257,11 @@ namespace Datadog.Trace
 
         internal PathwayContext? PathwayContext { get; private set; }
 
+        /// <summary>
+        ///  Gets or sets a value indicating whether this <see cref="SpanContext"/> was propagated from a remote parent.
+        /// </summary>
+        internal bool IsRemote { get; set; }
+
         /// <inheritdoc/>
         int IReadOnlyCollection<KeyValuePair<string, string>>.Count => KeyNames.Length;
 

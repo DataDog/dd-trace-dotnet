@@ -86,7 +86,8 @@ namespace Datadog.Trace.Propagators
 
             spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
                           {
-                              PropagatedTags = traceTags
+                              PropagatedTags = traceTags,
+                              IsRemote = true,
                           };
 
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.Datadog);

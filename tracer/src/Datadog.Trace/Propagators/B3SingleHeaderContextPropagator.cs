@@ -89,7 +89,7 @@ namespace Datadog.Trace.Propagators
                 }
 
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId.ToString(), rawSpanId.ToString());
+                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId.ToString(), rawSpanId.ToString()) { IsRemote = true };
 #else
                 string? rawTraceId;
                 string? rawSpanId;
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Propagators
                 }
 
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
+                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId) { IsRemote = true };
 #endif
 
                 TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.B3SingleHeader);
