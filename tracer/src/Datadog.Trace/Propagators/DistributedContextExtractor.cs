@@ -64,6 +64,7 @@ namespace Datadog.Trace.Propagators
                           {
                               PropagatedTags = traceTags,
                               AdditionalW3CTraceState = w3CTraceState,
+                              IsRemote = true,
                           };
 
             return true;
