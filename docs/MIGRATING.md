@@ -89,7 +89,7 @@ Tracer.Configure(settings);          // <- Add this line
 
 Also note that the implementation types from all public APIs have changed. For example, `ISpan.Context` returns an `ISpanContext` instance, but this is no longer `SpanContext`.
 
-#### .NET Core 2.0 no longer works with automatic instrumentation
+#### .NET Core 2.0 no longer works with automatic or custom instrumentation
 
 **What changed?**
 Instrumenting a .NET Core 2.0 application with automatic instrumentation will no longer work, and will not produce traces.
