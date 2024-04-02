@@ -87,7 +87,9 @@ public static class TestMethodAttributeExecuteIntegration
             {
                 for (var i = 0; i < returnValueList.Count; i++)
                 {
-                    var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, testMethodState.Test.StartTime);
+                    var test = i == 0 ?
+                                   testMethodState.Test :
+                                   MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, testMethodState.Test.StartTime);
                     var testResultObject = returnValueList[i];
                     if (testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
                     {
