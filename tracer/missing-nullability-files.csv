@@ -794,7 +794,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestClassInfo
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestClassInfoRunClassInitializeIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestMethodContextStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestMethodRunnerExecuteIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestMethodRunnerExecuteTestIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestPropertyAttributeStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestResultStruct.cs
