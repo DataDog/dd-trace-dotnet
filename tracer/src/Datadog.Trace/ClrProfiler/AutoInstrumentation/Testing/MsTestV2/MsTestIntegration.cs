@@ -98,7 +98,10 @@ internal static class MsTestIntegration
                 Arguments = new Dictionary<string, object>()
             };
 
-            testParameters.Metadata[TestTags.MetadataTestName] = displayName ?? testName;
+            if (!string.IsNullOrEmpty(displayName) && displayName != testName)
+            {
+                testParameters.Metadata[TestTags.MetadataTestName] = displayName;
+            }
 
             for (var i = 0; i < methodParameters.Length; i++)
             {
