@@ -405,10 +405,6 @@ namespace Datadog.Trace
         ulong SpanId { get; }
         ulong TraceId { get; }
     }
-    public interface ISpanContextExtractor
-    {
-        Datadog.Trace.ISpanContext? Extract<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter);
-    }
     public interface ITracer
     {
         Datadog.Trace.IScope? ActiveScope { get; }
@@ -433,7 +429,7 @@ namespace Datadog.Trace
         public ulong SpanId { get; }
         public ulong TraceId { get; }
     }
-    public class SpanContextExtractor : Datadog.Trace.ISpanContextExtractor
+    public class SpanContextExtractor
     {
         public SpanContextExtractor() { }
         public Datadog.Trace.ISpanContext? Extract<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter) { }
