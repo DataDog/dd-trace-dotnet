@@ -2,6 +2,6 @@
 
 WORKDIR /
 
-RUN pip install --no-cache-dir ddapm-test-agent
+RUN pip install --no-cache-dir ddapm-test-agent ddsketch[serialization]
 
 ENTRYPOINT [ "ddapm-test-agent", "--port=8126" ]
