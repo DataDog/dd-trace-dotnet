@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
@@ -23,11 +23,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         private const string EndAsyncMethodName = "OnAsyncMethodEnd";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntegrationMapper));
-        private static readonly MethodInfo UnwrapReturnValueMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.UnwrapReturnValue), BindingFlags.NonPublic | BindingFlags.Static);
-        private static readonly MethodInfo UnwrapTaskReturnValueMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.UnwrapTaskReturnValue), BindingFlags.NonPublic | BindingFlags.Static);
-        private static readonly MethodInfo ConvertTypeMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.ConvertType), BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo UnwrapReturnValueMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.UnwrapReturnValue), BindingFlags.NonPublic | BindingFlags.Static)!;
+        private static readonly MethodInfo UnwrapTaskReturnValueMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.UnwrapTaskReturnValue), BindingFlags.NonPublic | BindingFlags.Static)!;
+        private static readonly MethodInfo ConvertTypeMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.ConvertType), BindingFlags.NonPublic | BindingFlags.Static)!;
 
-        internal static DynamicMethod CreateBeginMethodDelegate(Type integrationType, Type targetType, Type[] argumentsTypes)
+        internal static DynamicMethod? CreateBeginMethodDelegate(Type integrationType, Type targetType, Type[] argumentsTypes)
         {
             /*
              * OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              */
 
             Log.Debug("Creating BeginMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}]", integrationType.FullName, targetType.FullName);
-            MethodInfo onMethodBeginMethodInfo = integrationType.GetMethod(BeginMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            var onMethodBeginMethodInfo = integrationType.GetMethod(BeginMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodBeginMethodInfo is null)
             {
                 Log.Debug("'{BeginMethodName}' method was not found in integration type: '{IntegrationType}'.", BeginMethodName, integrationType.FullName);
@@ -55,13 +55,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 ThrowHelper.ThrowArgumentException($"The return type of the method: {BeginMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetState)}");
             }
 
-            Type[] genericArgumentsTypes = onMethodBeginMethodInfo.GetGenericArguments();
+            var genericArgumentsTypes = onMethodBeginMethodInfo.GetGenericArguments();
             if (genericArgumentsTypes.Length < 1)
             {
                 ThrowHelper.ThrowArgumentException($"The method: {BeginMethodName} in type: {integrationType.FullName} doesn't have the generic type for the instance type.");
             }
 
-            ParameterInfo[] onMethodBeginParameters = onMethodBeginMethodInfo.GetParameters();
+            var onMethodBeginParameters = onMethodBeginMethodInfo.GetParameters();
             if (onMethodBeginParameters.Length < argumentsTypes.Length)
             {
                 ThrowHelper.ThrowArgumentException($"The method: {BeginMethodName} with {onMethodBeginParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
@@ -75,16 +75,20 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 ThrowHelper.ThrowArgumentException($"The first generic argument for method: {BeginMethodName} in type: {integrationType.FullName} must be the same as the first parameter for the instance value.");
             }
 
-            List<Type> callGenericTypes = new List<Type>();
-
-            bool mustLoadInstance = onMethodBeginParameters.Length != argumentsTypes.Length;
-            Type instanceGenericType = genericArgumentsTypes[0];
-            Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
-            Type instanceProxyType = null;
+            var callGenericTypes = new List<Type>();
+            var mustLoadInstance = onMethodBeginParameters.Length != argumentsTypes.Length;
+            var instanceGenericType = genericArgumentsTypes[0];
+            var instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
+            Type? instanceProxyType = null;
             if (instanceGenericConstraint != null)
             {
                 var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
                 instanceProxyType = result.ProxyType;
+                if (instanceProxyType is null)
+                {
+                    ThrowHelper.ThrowArgumentException($"The instance proxy type for method: {BeginMethodName} in type: {integrationType.FullName} is null.");
+                }
+
                 callGenericTypes.Add(instanceProxyType);
             }
             else
@@ -92,21 +96,21 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 callGenericTypes.Add(targetType);
             }
 
-            DynamicMethod callMethod = new DynamicMethod(
-                     $"{onMethodBeginMethodInfo.DeclaringType.Name}.{onMethodBeginMethodInfo.Name}",
+            var callMethod = new DynamicMethod(
+                     $"{onMethodBeginMethodInfo.DeclaringType!.Name}.{onMethodBeginMethodInfo.Name}",
                      typeof(CallTargetState),
-                     new Type[] { targetType }.Concat(argumentsTypes),
+                     new[] { targetType }.Concat(argumentsTypes),
                      onMethodBeginMethodInfo.Module,
                      true);
 
-            ILGenerator ilWriter = callMethod.GetILGenerator();
+            var ilWriter = callMethod.GetILGenerator();
 
             // Load the instance if is needed
             if (mustLoadInstance)
             {
                 ilWriter.Emit(OpCodes.Ldarg_0);
 
-                if (instanceGenericConstraint != null)
+                if (instanceProxyType != null)
                 {
                     WriteCreateNewProxyInstance(ilWriter, instanceProxyType, targetType);
                 }
@@ -115,23 +119,32 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             // Load arguments
             for (var i = mustLoadInstance ? 1 : 0; i < onMethodBeginParameters.Length; i++)
             {
-                Type sourceParameterType = argumentsTypes[mustLoadInstance ? i - 1 : i];
-                Type targetParameterType = onMethodBeginParameters[i].ParameterType;
-                Type targetParameterTypeConstraint = null;
-                Type parameterProxyType = null;
-
+                var sourceParameterType = argumentsTypes[mustLoadInstance ? i - 1 : i];
+                var sourceParameterTypeElementType = sourceParameterType.GetElementType();
+                var targetParameterType = onMethodBeginParameters[i].ParameterType;
+                Type? parameterProxyType = null;
                 if (targetParameterType.IsGenericParameter)
                 {
+                    if (sourceParameterTypeElementType is null)
+                    {
+                        ThrowHelper.ThrowException($"The source parameter type element type is null.");
+                    }
+
                     targetParameterType = genericArgumentsTypes[targetParameterType.GenericParameterPosition];
-                    targetParameterTypeConstraint = targetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
+                    var targetParameterTypeConstraint = targetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
                     if (targetParameterTypeConstraint is null)
                     {
-                        callGenericTypes.Add(sourceParameterType.GetElementType());
+                        callGenericTypes.Add(sourceParameterTypeElementType);
                     }
                     else
                     {
-                        var result = DuckType.GetOrCreateProxyType(targetParameterTypeConstraint, sourceParameterType.GetElementType());
+                        var result = DuckType.GetOrCreateProxyType(targetParameterTypeConstraint, sourceParameterTypeElementType);
                         parameterProxyType = result.ProxyType;
+                        if (parameterProxyType is null)
+                        {
+                            ThrowHelper.ThrowArgumentException($"The parameter proxy type for method: {BeginMethodName} in type: {integrationType.FullName} is null.");
+                        }
+
                         callGenericTypes.Add(parameterProxyType);
                     }
                 }
@@ -139,10 +152,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 {
                     // ByRef generic parameters needs to be unwrapped before accessing the `IsGenericParameter` property.
                     var genTargetParameterType = genericArgumentsTypes[elementType.GenericParameterPosition];
-                    targetParameterTypeConstraint = genTargetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
+                    var targetParameterTypeConstraint = genTargetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
                     if (targetParameterTypeConstraint is null)
                     {
-                        callGenericTypes.Add(sourceParameterType.GetElementType());
+                        if (sourceParameterTypeElementType is null)
+                        {
+                            ThrowHelper.ThrowException($"The source parameter type element type is null.");
+                        }
+
+                        callGenericTypes.Add(sourceParameterTypeElementType);
                     }
                     else
                     {
@@ -151,8 +169,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
                 else
                 {
-                    var srcParameterType = sourceParameterType.IsByRef ? sourceParameterType.GetElementType() : sourceParameterType;
-                    var trgParameterType = targetParameterType.IsByRef ? targetParameterType.GetElementType() : targetParameterType;
+                    var srcParameterType = sourceParameterType.IsByRef ? sourceParameterType.GetElementType()! : sourceParameterType;
+                    var trgParameterType = targetParameterType.IsByRef ? targetParameterType.GetElementType()! : targetParameterType;
 
                     if (!trgParameterType.IsAssignableFrom(srcParameterType) && (!(srcParameterType.IsEnum && trgParameterType.IsEnum)))
                     {
@@ -163,12 +181,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 if (!targetParameterType.IsByRef)
                 {
                     WriteLoadArgument(ilWriter, i, mustLoadInstance);
-                    sourceParameterType = sourceParameterType.IsByRef ? sourceParameterType.GetElementType() : sourceParameterType;
+                    sourceParameterType = sourceParameterType.IsByRef ? sourceParameterType.GetElementType()! : sourceParameterType;
                     ilWriter.Emit(OpCodes.Ldobj, sourceParameterType);
 
                     if (parameterProxyType != null)
                     {
-                        WriteCreateNewProxyInstance(ilWriter, parameterProxyType, sourceParameterType);
+                        WriteCreateNewProxyInstance(ilWriter, parameterProxyType, sourceParameterType!);
                     }
                 }
                 else if (parameterProxyType == null)
@@ -190,7 +208,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             return callMethod;
         }
 
-        internal static DynamicMethod CreateSlowBeginMethodDelegate(Type integrationType, Type targetType)
+        internal static DynamicMethod? CreateSlowBeginMethodDelegate(Type integrationType, Type targetType)
         {
             /*
              * OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
@@ -206,7 +224,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              */
 
             Log.Debug("Creating SlowBeginMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}]", integrationType.FullName, targetType.FullName);
-            MethodInfo onMethodBeginMethodInfo = integrationType.GetMethod(BeginMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            var onMethodBeginMethodInfo = integrationType.GetMethod(BeginMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodBeginMethodInfo is null)
             {
                 Log.Debug("'{BeginMethodName}' method was not found in integration type: '{IntegrationType}'.", BeginMethodName, integrationType.FullName);
@@ -218,24 +236,29 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 ThrowHelper.ThrowArgumentException($"The return type of the method: {BeginMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetState)}");
             }
 
-            Type[] genericArgumentsTypes = onMethodBeginMethodInfo.GetGenericArguments();
+            var genericArgumentsTypes = onMethodBeginMethodInfo.GetGenericArguments();
             if (genericArgumentsTypes.Length < 1)
             {
                 ThrowHelper.ThrowArgumentException($"The method: {BeginMethodName} in type: {integrationType.FullName} doesn't have the generic type for the instance type.");
             }
 
-            ParameterInfo[] onMethodBeginParameters = onMethodBeginMethodInfo.GetParameters();
+            var onMethodBeginParameters = onMethodBeginMethodInfo.GetParameters();
 
-            List<Type> callGenericTypes = new List<Type>();
+            var callGenericTypes = new List<Type>();
 
-            bool mustLoadInstance = onMethodBeginParameters[0].ParameterType.IsGenericParameter && onMethodBeginParameters[0].ParameterType.GenericParameterPosition == 0;
-            Type instanceGenericType = genericArgumentsTypes[0];
-            Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
-            Type instanceProxyType = null;
+            var mustLoadInstance = onMethodBeginParameters[0].ParameterType is { IsGenericParameter: true, GenericParameterPosition: 0 };
+            var instanceGenericType = genericArgumentsTypes[0];
+            var instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
+            Type? instanceProxyType = null;
             if (instanceGenericConstraint != null)
             {
                 var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
                 instanceProxyType = result.ProxyType;
+                if (instanceProxyType is null)
+                {
+                    ThrowHelper.ThrowArgumentException($"The instance proxy type for method: {BeginMethodName} in type: {integrationType.FullName} is null.");
+                }
+
                 callGenericTypes.Add(instanceProxyType);
             }
             else
@@ -243,21 +266,21 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 callGenericTypes.Add(targetType);
             }
 
-            DynamicMethod callMethod = new DynamicMethod(
-                     $"{onMethodBeginMethodInfo.DeclaringType.Name}.{onMethodBeginMethodInfo.Name}",
+            var callMethod = new DynamicMethod(
+                     $"{onMethodBeginMethodInfo.DeclaringType!.Name}.{onMethodBeginMethodInfo.Name}",
                      typeof(CallTargetState),
                      new Type[] { targetType, typeof(object[]) },
                      onMethodBeginMethodInfo.Module,
                      true);
 
-            ILGenerator ilWriter = callMethod.GetILGenerator();
+            var ilWriter = callMethod.GetILGenerator();
 
             // Load the instance if is needed
             if (mustLoadInstance)
             {
                 ilWriter.Emit(OpCodes.Ldarg_0);
 
-                if (instanceGenericConstraint != null)
+                if (instanceProxyType != null)
                 {
                     WriteCreateNewProxyInstance(ilWriter, instanceProxyType, targetType);
                 }
@@ -266,8 +289,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             // Load arguments
             for (var i = mustLoadInstance ? 1 : 0; i < onMethodBeginParameters.Length; i++)
             {
-                Type targetParameterType = onMethodBeginParameters[i].ParameterType;
-                Type targetParameterTypeConstraint = null;
+                var targetParameterType = onMethodBeginParameters[i].ParameterType;
+                Type? targetParameterTypeConstraint = null;
 
                 if (targetParameterType.IsGenericParameter)
                 {
@@ -308,7 +331,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             return callMethod;
         }
 
-        internal static DynamicMethod CreateEndMethodDelegate(Type integrationType, Type targetType)
+        internal static DynamicMethod? CreateEndMethodDelegate(Type integrationType, Type targetType)
         {
             /*
              * OnMethodEnd signatures with 2 or 3 parameters with 1 generics:
@@ -319,8 +342,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              */
 
             Log.Debug("Creating EndMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}]", integrationType.FullName, targetType.FullName);
-            MethodInfo onMethodEndMethodInfo = GetOnMethodEndMethodInfo(integrationType, "CallTargetReturn");
-
+            var onMethodEndMethodInfo = GetOnMethodEndMethodInfo(integrationType, "CallTargetReturn");
             if (onMethodEndMethodInfo is null)
             {
                 Log.Debug("'{EndMethodName}' method was not found in integration type: '{IntegrationType}'.", EndMethodName, integrationType.FullName);
@@ -332,13 +354,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 ThrowHelper.ThrowArgumentException($"The return type of the method: {EndMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetReturn)}");
             }
 
-            Type[] genericArgumentsTypes = onMethodEndMethodInfo.GetGenericArguments();
+            var genericArgumentsTypes = onMethodEndMethodInfo.GetGenericArguments();
             if (genericArgumentsTypes.Length != 1)
             {
                 ThrowHelper.ThrowArgumentException($"The method: {EndMethodName} in type: {integrationType.FullName} must have a single generic type for the instance type.");
             }
 
-            ParameterInfo[] onMethodEndParameters = onMethodEndMethodInfo.GetParameters();
+            var onMethodEndParameters = onMethodEndMethodInfo.GetParameters();
             if (onMethodEndParameters.Length < 2)
             {
                 ThrowHelper.ThrowArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
@@ -353,7 +375,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 ThrowHelper.ThrowArgumentException($"The Exception type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
             }
 
-            Type stateParameterType = onMethodEndParameters[onMethodEndParameters.Length - 1].ParameterType;
+            var stateParameterType = onMethodEndParameters[onMethodEndParameters.Length - 1].ParameterType;
             if (stateParameterType != typeof(CallTargetState))
             {
                 if (!stateParameterType.IsByRef || stateParameterType.GetElementType() != typeof(CallTargetState))
@@ -362,16 +384,21 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
             }
 
-            List<Type> callGenericTypes = new List<Type>();
+            var callGenericTypes = new List<Type>();
 
-            bool mustLoadInstance = onMethodEndParameters.Length == 3;
-            Type instanceGenericType = genericArgumentsTypes[0];
-            Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
-            Type instanceProxyType = null;
+            var mustLoadInstance = onMethodEndParameters.Length == 3;
+            var instanceGenericType = genericArgumentsTypes[0];
+            var instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
+            Type? instanceProxyType = null;
             if (instanceGenericConstraint != null)
             {
                 var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
                 instanceProxyType = result.ProxyType;
+                if (instanceProxyType is null)
+                {
+                    ThrowHelper.ThrowArgumentException($"The instance proxy type for method: {EndMethodName} in type: {integrationType.FullName} is null.");
+                }
+
                 callGenericTypes.Add(instanceProxyType);
             }
             else
@@ -379,21 +406,21 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 callGenericTypes.Add(targetType);
             }
 
-            DynamicMethod callMethod = new DynamicMethod(
-                     $"{onMethodEndMethodInfo.DeclaringType.Name}.{onMethodEndMethodInfo.Name}",
+            var callMethod = new DynamicMethod(
+                     $"{onMethodEndMethodInfo.DeclaringType!.Name}.{onMethodEndMethodInfo.Name}",
                      typeof(CallTargetReturn),
                      new Type[] { targetType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
                      onMethodEndMethodInfo.Module,
                      true);
 
-            ILGenerator ilWriter = callMethod.GetILGenerator();
+            var ilWriter = callMethod.GetILGenerator();
 
             // Load the instance if is needed
             if (mustLoadInstance)
             {
                 ilWriter.Emit(OpCodes.Ldarg_0);
 
-                if (instanceGenericConstraint != null)
+                if (instanceProxyType != null)
                 {
                     WriteCreateNewProxyInstance(ilWriter, instanceProxyType, targetType);
                 }
@@ -419,7 +446,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             return callMethod;
         }
 
-        internal static DynamicMethod CreateEndMethodDelegate(Type integrationType, Type targetType, Type returnType)
+        internal static DynamicMethod? CreateEndMethodDelegate(Type integrationType, Type targetType, Type returnType)
         {
             /*
              * OnMethodEnd signatures with 3 or 4 parameters with 1 or 2 generics:
@@ -433,8 +460,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              */
 
             Log.Debug("Creating EndMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}, ReturnType={ReturnType}]", integrationType.FullName, targetType.FullName, returnType.FullName);
-            MethodInfo onMethodEndMethodInfo = GetOnMethodEndMethodInfo(integrationType, "CallTargetReturn`1");
-
+            var onMethodEndMethodInfo = GetOnMethodEndMethodInfo(integrationType, "CallTargetReturn`1");
             if (onMethodEndMethodInfo is null)
             {
                 Log.Debug("'{EndMethodName}' method was not found in integration type: '{IntegrationType}'.", EndMethodName, integrationType.FullName);
@@ -446,13 +472,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 ThrowHelper.ThrowArgumentException($"The return type of the method: {EndMethodName} in type: {integrationType.FullName} is not {nameof(CallTargetReturn)}");
             }
 
-            Type[] genericArgumentsTypes = onMethodEndMethodInfo.GetGenericArguments();
+            var genericArgumentsTypes = onMethodEndMethodInfo.GetGenericArguments();
             if (genericArgumentsTypes.Length < 1 || genericArgumentsTypes.Length > 2)
             {
                 ThrowHelper.ThrowArgumentException($"The method: {EndMethodName} in type: {integrationType.FullName} must have the generic type for the instance type.");
             }
 
-            ParameterInfo[] onMethodEndParameters = onMethodEndMethodInfo.GetParameters();
+            var onMethodEndParameters = onMethodEndMethodInfo.GetParameters();
             if (onMethodEndParameters.Length < 3)
             {
                 ThrowHelper.ThrowArgumentException($"The method: {EndMethodName} with {onMethodEndParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
@@ -467,7 +493,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 ThrowHelper.ThrowArgumentException($"The Exception type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
             }
 
-            Type stateParameterType = onMethodEndParameters[onMethodEndParameters.Length - 1].ParameterType;
+            var stateParameterType = onMethodEndParameters[onMethodEndParameters.Length - 1].ParameterType;
             if (stateParameterType != typeof(CallTargetState))
             {
                 if (!stateParameterType.IsByRef || stateParameterType.GetElementType() != typeof(CallTargetState))
@@ -476,16 +502,21 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
             }
 
-            List<Type> callGenericTypes = new List<Type>();
+            var callGenericTypes = new List<Type>();
 
-            bool mustLoadInstance = onMethodEndParameters.Length == 4;
-            Type instanceGenericType = genericArgumentsTypes[0];
-            Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
-            Type instanceProxyType = null;
+            var mustLoadInstance = onMethodEndParameters.Length == 4;
+            var instanceGenericType = genericArgumentsTypes[0];
+            var instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
+            Type? instanceProxyType = null;
             if (instanceGenericConstraint != null)
             {
                 var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
                 instanceProxyType = result.ProxyType;
+                if (instanceProxyType is null)
+                {
+                    ThrowHelper.ThrowArgumentException($"The instance proxy type for method: {EndMethodName} in type: {integrationType.FullName} is null.");
+                }
+
                 callGenericTypes.Add(instanceProxyType);
             }
             else
@@ -493,19 +524,22 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 callGenericTypes.Add(targetType);
             }
 
-            int returnParameterIndex = onMethodEndParameters.Length == 4 ? 1 : 0;
-            bool isAGenericReturnValue = onMethodEndParameters[returnParameterIndex].ParameterType.IsGenericParameter;
-            Type returnValueGenericType = null;
-            Type returnValueGenericConstraint = null;
-            Type returnValueProxyType = null;
+            var returnParameterIndex = onMethodEndParameters.Length == 4 ? 1 : 0;
+            var isAGenericReturnValue = onMethodEndParameters[returnParameterIndex].ParameterType.IsGenericParameter;
+            Type? returnValueProxyType = null;
             if (isAGenericReturnValue)
             {
-                returnValueGenericType = genericArgumentsTypes[1];
-                returnValueGenericConstraint = returnValueGenericType.GetGenericParameterConstraints().FirstOrDefault();
+                var returnValueGenericType = genericArgumentsTypes[1];
+                var returnValueGenericConstraint = returnValueGenericType.GetGenericParameterConstraints().FirstOrDefault();
                 if (returnValueGenericConstraint != null)
                 {
                     var result = DuckType.GetOrCreateProxyType(returnValueGenericConstraint, returnType);
                     returnValueProxyType = result.ProxyType;
+                    if (returnValueProxyType is null)
+                    {
+                        ThrowHelper.ThrowArgumentException($"The return value proxy type for method: {EndMethodName} in type: {integrationType.FullName} is null.");
+                    }
+
                     callGenericTypes.Add(returnValueProxyType);
                 }
                 else
@@ -518,21 +552,21 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 ThrowHelper.ThrowArgumentException($"The ReturnValue type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is invalid. [{onMethodEndParameters[returnParameterIndex].ParameterType} != {returnType}]");
             }
 
-            DynamicMethod callMethod = new DynamicMethod(
-                     $"{onMethodEndMethodInfo.DeclaringType.Name}.{onMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
+            var callMethod = new DynamicMethod(
+                     $"{onMethodEndMethodInfo.DeclaringType!.Name}.{onMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
                      typeof(CallTargetReturn<>).MakeGenericType(returnType),
                      new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
                      onMethodEndMethodInfo.Module,
                      true);
 
-            ILGenerator ilWriter = callMethod.GetILGenerator();
+            var ilWriter = callMethod.GetILGenerator();
 
             // Load the instance if is needed
             if (mustLoadInstance)
             {
                 ilWriter.Emit(OpCodes.Ldarg_0);
 
-                if (instanceGenericConstraint != null)
+                if (instanceProxyType != null)
                 {
                     WriteCreateNewProxyInstance(ilWriter, instanceProxyType, targetType);
                 }
@@ -562,7 +596,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             // Unwrap return value proxy
             if (returnValueProxyType != null)
             {
-                MethodInfo unwrapReturnValue = UnwrapReturnValueMethodInfo.MakeGenericMethod(returnValueProxyType, returnType);
+                var unwrapReturnValue = UnwrapReturnValueMethodInfo.MakeGenericMethod(returnValueProxyType, returnType);
                 ilWriter.EmitCall(OpCodes.Call, unwrapReturnValue, null);
             }
 
@@ -594,15 +628,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              */
 
             Log.Debug("Creating AsyncEndMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}, ReturnType={ReturnType}]", integrationType.FullName, targetType.FullName, returnType.FullName);
-            MethodInfo onAsyncMethodEndMethodInfo = integrationType.GetMethod(EndAsyncMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            var onAsyncMethodEndMethodInfo = integrationType.GetMethod(EndAsyncMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onAsyncMethodEndMethodInfo is null)
             {
                 Log.Debug("'{EndAsyncMethodName}' method was not found in integration type: '{IntegrationType}'.", EndAsyncMethodName, integrationType.FullName);
                 return default;
             }
 
-            bool isTaskReturn = false;
-            Type dynMethodReturnType = returnType;
+            var isTaskReturn = false;
+            var dynMethodReturnType = returnType;
             if (!onAsyncMethodEndMethodInfo.ReturnType.IsGenericParameter && onAsyncMethodEndMethodInfo.ReturnType != returnType)
             {
                 if (onAsyncMethodEndMethodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>) ||
@@ -617,13 +651,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
             }
 
-            Type[] genericArgumentsTypes = onAsyncMethodEndMethodInfo.GetGenericArguments();
+            var genericArgumentsTypes = onAsyncMethodEndMethodInfo.GetGenericArguments();
             if (genericArgumentsTypes.Length < 1 || genericArgumentsTypes.Length > 2)
             {
                 ThrowHelper.ThrowArgumentException($"The method: {EndAsyncMethodName} in type: {integrationType.FullName} must have the generic type for the instance type.");
             }
 
-            ParameterInfo[] onAsyncMethodEndParameters = onAsyncMethodEndMethodInfo.GetParameters();
+            var onAsyncMethodEndParameters = onAsyncMethodEndMethodInfo.GetParameters();
             if (onAsyncMethodEndParameters.Length < 3)
             {
                 ThrowHelper.ThrowArgumentException($"The method: {EndAsyncMethodName} with {onAsyncMethodEndParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
@@ -638,7 +672,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 ThrowHelper.ThrowArgumentException($"The Exception type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is missing.");
             }
 
-            Type stateParameterType = onAsyncMethodEndParameters[onAsyncMethodEndParameters.Length - 1].ParameterType;
+            var stateParameterType = onAsyncMethodEndParameters[onAsyncMethodEndParameters.Length - 1].ParameterType;
             if (stateParameterType != typeof(CallTargetState))
             {
                 if (!stateParameterType.IsByRef || stateParameterType.GetElementType() != typeof(CallTargetState))
@@ -647,18 +681,23 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
             }
 
-            bool preserveContext = onAsyncMethodEndMethodInfo.GetCustomAttribute<PreserveContextAttribute>() != null;
+            var preserveContext = onAsyncMethodEndMethodInfo.GetCustomAttribute<PreserveContextAttribute>() != null;
 
-            List<Type> callGenericTypes = new List<Type>();
+            var callGenericTypes = new List<Type>();
 
-            bool mustLoadInstance = onAsyncMethodEndParameters.Length == 4;
-            Type instanceGenericType = genericArgumentsTypes[0];
-            Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
-            Type instanceProxyType = null;
+            var mustLoadInstance = onAsyncMethodEndParameters.Length == 4;
+            var instanceGenericType = genericArgumentsTypes[0];
+            var instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
+            Type? instanceProxyType = null;
             if (instanceGenericConstraint != null)
             {
                 var result = DuckType.GetOrCreateProxyType(instanceGenericConstraint, targetType);
                 instanceProxyType = result.ProxyType;
+                if (instanceProxyType is null)
+                {
+                    ThrowHelper.ThrowArgumentException($"The instance proxy type for method: {EndAsyncMethodName} in type: {integrationType.FullName} is null.");
+                }
+
                 callGenericTypes.Add(instanceProxyType);
             }
             else
@@ -666,19 +705,22 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 callGenericTypes.Add(targetType);
             }
 
-            int returnParameterIndex = onAsyncMethodEndParameters.Length == 4 ? 1 : 0;
-            bool isAGenericReturnValue = onAsyncMethodEndParameters[returnParameterIndex].ParameterType.IsGenericParameter;
-            Type returnValueGenericType = null;
-            Type returnValueGenericConstraint = null;
-            Type returnValueProxyType = null;
+            var returnParameterIndex = onAsyncMethodEndParameters.Length == 4 ? 1 : 0;
+            var isAGenericReturnValue = onAsyncMethodEndParameters[returnParameterIndex].ParameterType.IsGenericParameter;
+            Type? returnValueProxyType = null;
             if (isAGenericReturnValue)
             {
-                returnValueGenericType = genericArgumentsTypes[1];
-                returnValueGenericConstraint = returnValueGenericType.GetGenericParameterConstraints().FirstOrDefault();
+                var returnValueGenericType = genericArgumentsTypes[1];
+                var returnValueGenericConstraint = returnValueGenericType.GetGenericParameterConstraints().FirstOrDefault();
                 if (returnValueGenericConstraint != null)
                 {
                     var result = DuckType.GetOrCreateProxyType(returnValueGenericConstraint, returnType);
                     returnValueProxyType = result.ProxyType;
+                    if (returnValueProxyType is null)
+                    {
+                        ThrowHelper.ThrowArgumentException($"The return value proxy type for method: {EndAsyncMethodName} in type: {integrationType.FullName} is null.");
+                    }
+
                     callGenericTypes.Add(returnValueProxyType);
                 }
                 else
@@ -691,21 +733,21 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 ThrowHelper.ThrowArgumentException($"The ReturnValue type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is invalid. [{onAsyncMethodEndParameters[returnParameterIndex].ParameterType} != {returnType}]");
             }
 
-            DynamicMethod callMethod = new DynamicMethod(
-                     $"{onAsyncMethodEndMethodInfo.DeclaringType.Name}.{onAsyncMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
+            var callMethod = new DynamicMethod(
+                     $"{onAsyncMethodEndMethodInfo.DeclaringType!.Name}.{onAsyncMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
                      dynMethodReturnType,
                      new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
                      onAsyncMethodEndMethodInfo.Module,
                      true);
 
-            ILGenerator ilWriter = callMethod.GetILGenerator();
+            var ilWriter = callMethod.GetILGenerator();
 
             // Load the instance if is needed
             if (mustLoadInstance)
             {
                 ilWriter.Emit(OpCodes.Ldarg_0);
 
-                if (instanceGenericConstraint != null)
+                if (instanceProxyType != null)
                 {
                     WriteCreateNewProxyInstance(ilWriter, instanceProxyType, targetType);
                 }
@@ -763,7 +805,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             return new CreateAsyncEndMethodResult(callMethod, preserveContext);
         }
 
-        private static MethodInfo GetOnMethodEndMethodInfo(Type integrationType, string returnTypeName)
+        private static MethodInfo? GetOnMethodEndMethodInfo(Type integrationType, string returnTypeName)
         {
             try
             {
@@ -820,7 +862,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             ilWriter.MarkLabel(endLabel);
         }
 
-        private static TTo UnwrapReturnValue<TFrom, TTo>(TFrom returnValue)
+        private static TTo? UnwrapReturnValue<TFrom, TTo>(TFrom? returnValue)
             where TFrom : IDuckType
         {
             if (returnValue?.Instance is not null)
@@ -832,7 +874,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             return default;
         }
 
-        private static Task<TTo> UnwrapTaskReturnValue<TFrom, TTo>(Task<TFrom> returnValue, bool preserveContext)
+        private static Task<TTo?>? UnwrapTaskReturnValue<TFrom, TTo>(Task<TFrom?>? returnValue, bool preserveContext)
             where TFrom : IDuckType
         {
             if (returnValue is not null)
@@ -843,7 +885,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             Log.Error("UnwrapTaskReturnValue<{TFrom}, {TTo}>: The return value is null.", typeof(TFrom), typeof(TTo));
             return null;
 
-            static async Task<TTo> InternalUnwrapTaskReturnValue(Task<TFrom> returnValue, bool preserveContext)
+            static async Task<TTo?> InternalUnwrapTaskReturnValue(Task<TFrom?> returnValue, bool preserveContext)
                 => UnwrapReturnValue<TFrom, TTo>(await returnValue.ConfigureAwait(preserveContext));
         }
 
@@ -921,11 +963,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             il.Emit(OpCodes.Ldarga_S, index);
         }
 
-        private static T ConvertType<T>(object value)
+        private static T? ConvertType<T>(object value)
         {
             if (value is null or T)
             {
-                return (T)value;
+                return (T?)value;
             }
 
             // Finally we try to duck type

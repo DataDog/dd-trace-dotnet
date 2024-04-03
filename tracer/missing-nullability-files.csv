@@ -616,7 +616,6 @@ src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/BeginMethodSlowHandler.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/CreateAsyncEndMethodResult.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/EndMethodHandler.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/EndMethodHandler`1.cs
-src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/IntegrationMapper.cs
 src/Datadog.Trace/ClrProfiler/CallTarget/Handlers/IntegrationOptions.cs
 src/Datadog.Trace/Debugger/Configurations/Models/Capture.cs
 src/Datadog.Trace/Debugger/Configurations/Models/DebuggerExpression.cs
