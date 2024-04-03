@@ -30,7 +30,7 @@ EtwEventsManager::EtwEventsManager(
     _pAllocationListener(pAllocationListener),
     _pContentionListener(pContentionListener)
 {
-    _isDebugLogEnabled = pConfiguration->IsDebugLogEnabled();
+    _isDebugLogEnabled = pConfiguration->IsEtwLoggingEnabled();
 
     _threadsInfo.reserve(256);
     _parser = std::make_unique<ClrEventsParser>(
@@ -149,7 +149,6 @@ void EtwEventsManager::OnEvent(
     }
     else if (keyword == KEYWORD_GC)
     {
-
         if (id == EVENT_ALLOCATION_TICK)
         {
             if (_isDebugLogEnabled)
@@ -171,9 +170,21 @@ void EtwEventsManager::OnEvent(
         }
         else
         {
+            if (_isDebugLogEnabled)
+            {
+                std::cout << "GC event: " << keyword << " - " << id << std::endl;
+            }
+
             // reuse GC events parser
             auto timestamp = TimestampToEpochNS(systemTimestamp);
             _parser->ParseEvent(timestamp, version, keyword, id, cbEventData, pEventData);
+        }
+    }
+    else
+    {
+        if (_isDebugLogEnabled)
+        {
+            std::cout << "Unknown event: " << keyword << " - " << id << std::endl;
         }
     }
 }
