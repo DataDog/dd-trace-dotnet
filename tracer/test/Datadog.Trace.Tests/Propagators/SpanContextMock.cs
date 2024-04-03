@@ -28,7 +28,7 @@ internal class SpanContextMock
     public string AdditionalW3CTraceState { get; set; }
 
     public bool IsRemote { get; set; }
-    
+
     public string LastParentId { get; set; }
 
     public ISpanContext Parent { get; set; }
