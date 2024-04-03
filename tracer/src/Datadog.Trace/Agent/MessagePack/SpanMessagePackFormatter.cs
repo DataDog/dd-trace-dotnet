@@ -45,7 +45,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _spanLinkBytes = StringEncoding.UTF8.GetBytes("span_links");
         private readonly byte[] _traceStateBytes = StringEncoding.UTF8.GetBytes("tracestate");
         private readonly byte[] _traceFlagBytes = StringEncoding.UTF8.GetBytes("flags");
-        private readonly byte[] _tags = StringEncoding.UTF8.GetBytes("tags");
+        private readonly byte[] _attributes = StringEncoding.UTF8.GetBytes("attributes");
 
         // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
@@ -266,6 +266,17 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
                 // optional serialization
+                if (spanLink.Attributes is { Count: > 0 })
+                {
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _attributes);
+                    offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, spanLink.Attributes.Count);
+                    foreach (var attribute in spanLink.Attributes)
+                    {
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Value);
+                    }
+                }
+
                 // CreateTraceStateHeader will never return null or empty
                 if (context.IsRemote)
                 {
@@ -277,17 +288,6 @@ namespace Datadog.Trace.Agent.MessagePack
                 {
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceFlagBytes);
                     offset += MessagePackBinary.WriteUInt32(ref bytes, offset, traceFlags);
-                }
-
-                if (spanLink.Attributes is { Count: > 0 })
-                {
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _tags);
-                    offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, spanLink.Attributes.Count);
-                    foreach (var attribute in spanLink.Attributes)
-                    {
-                        offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
-                        offset += PrimitiveObjectFormatter.Instance.Serialize(ref bytes, offset, attribute.Value, null);
-                    }
                 }
             }
 

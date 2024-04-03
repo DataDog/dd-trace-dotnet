@@ -28,6 +28,6 @@ namespace Datadog.Trace.TestHelpers
         public string TraceState { get; set; }
 
         [Key("tags")]
-        public Dictionary<string, object>  Attributes { get; set; }
+        public Dictionary<string, string>  Attributes { get; set; }
     }
 }

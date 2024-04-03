@@ -23,27 +23,27 @@ internal class SpanLink
     /// </summary>
     /// <param name="spanLinkContext">The context of the spanlink to extract attributes from</param>
     /// <param name="attributes">Optional dictionary of attributes to take for the spanlink.</param>
-    internal SpanLink(SpanContext spanLinkContext, List<KeyValuePair<string, object>>? attributes = null)
+    internal SpanLink(SpanContext spanLinkContext, List<KeyValuePair<string, string>>? attributes = null)
     {
         Context = spanLinkContext;
         Attributes = attributes;
     }
 
-    internal SpanLink(Span spanToLink, List<KeyValuePair<string, object>>? attributes = null)
+    internal SpanLink(Span spanToLink, List<KeyValuePair<string, string>>? attributes = null)
         : this(spanToLink.Context, attributes)
     {
     }
 
-    internal List<KeyValuePair<string, object>>? Attributes { get; set; }
+    internal List<KeyValuePair<string, string>>? Attributes { get; set; }
 
     internal SpanContext Context { get;  }
 
-    internal SpanLink AddAttribute(string name, object value)
+    internal SpanLink AddAttribute(string name, string value)
     {
-        var newAttribute = new KeyValuePair<string, object>(name, value);
+        var newAttribute = new KeyValuePair<string, string>(name, value);
         if (Attributes is null)
         {
-            Attributes = new List<KeyValuePair<string, object>>();
+            Attributes = new List<KeyValuePair<string, string>>();
         }
 
         Attributes.Add(newAttribute);

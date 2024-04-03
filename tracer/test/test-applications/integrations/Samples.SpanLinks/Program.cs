@@ -11,7 +11,14 @@ using (root = SampleHelpers.CreateScope("root"))
 using (var link = SampleHelpers.CreateScope("link"))
 {
     Console.WriteLine("link");
-    var result = SampleHelpers.AddSpanLinkWithAttributes(root, link, null);
+    var attributesToAdd = new List<KeyValuePair<string, string>>
+    {
+        new("link.name", "manually_linking"),
+        new("pair", "false"),
+        new("arbitrary", "56709")
+    };
+    
+    var result = SampleHelpers.AddSpanLinkWithAttributes(root, link, attributesToAdd);
 
     if (result is not null) 
     {

@@ -126,11 +126,11 @@ public class SpanMessagePackFormatterTests
             new Span(new SpanContext(parentContext, new TraceContext(Mock.Of<IDatadogTracer>()), "ServiceName1"), DateTimeOffset.UtcNow),
             new Span(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
         };
-        var attributesToAdd = new List<KeyValuePair<string, object>>
+        var attributesToAdd = new List<KeyValuePair<string, string>>
         {
-            new KeyValuePair<string, object>("link.name", "manually_linking"),
-            new KeyValuePair<string, object>("pair", false),
-            new KeyValuePair<string, object>("arbitrary", 56709)
+            new KeyValuePair<string, string>("link.name", "manually_linking"),
+            new KeyValuePair<string, string>("pair", "false"),
+            new KeyValuePair<string, string>("arbitrary", "56709")
         };
         spans[0].AddSpanLink(spans[1], attributesToAdd);
         spans[1].AddSpanLink(spans[2]).AddAttribute("chaining", "adding attribute").AddAttribute("chaining2x", "we're cooking");

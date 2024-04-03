@@ -147,7 +147,7 @@ namespace Samples
                 }
             }
         }
-        public static object AddSpanLinkWithAttributes(object parentSpan, object scopeToAddAsLink, List<KeyValuePair<string, object>> attributes)
+        public static object AddSpanLinkWithAttributes(object parentSpan, object scopeToAddAsLink, List<KeyValuePair<string, string>> attributes)
         {
             if (SpanProperty != null && AddSpanLinkMethod != null)
             {
