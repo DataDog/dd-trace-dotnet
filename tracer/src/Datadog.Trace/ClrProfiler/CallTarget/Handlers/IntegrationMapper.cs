@@ -790,26 +790,61 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
         private static void WriteCreateNewProxyInstance(ILGenerator ilWriter, Type proxyType, Type targetType)
         {
-            ConstructorInfo proxyTypeCtor = proxyType.GetConstructors()[0];
+            // Before creating the proxy instance we check if the value in the stack is null.
+            // In case is null we pass null to the integration's generic parameter instead of a proxy with a null instance.
 
+            var isNullLabel = ilWriter.DefineLabel();
+            var endLabel = ilWriter.DefineLabel();
+
+            // Let's duplicate the value to check if it's null
+            ilWriter.Emit(OpCodes.Dup);
+            // Check if the value is null and jump to the isNullLabel if it is
+            ilWriter.Emit(OpCodes.Brfalse_S, isNullLabel);
+
+            // Create a new instance of the proxy type from the value in the stack
+            var proxyTypeCtor = proxyType.GetConstructors()[0];
             if (targetType.IsValueType && !proxyTypeCtor.GetParameters()[0].ParameterType.IsValueType)
             {
                 ilWriter.Emit(OpCodes.Box, targetType);
             }
 
             ilWriter.Emit(OpCodes.Newobj, proxyTypeCtor);
+            ilWriter.Emit(OpCodes.Br_S, endLabel);
+
+            // Drop the current value and load Ldnull
+            ilWriter.MarkLabel(isNullLabel);
+            ilWriter.Emit(OpCodes.Pop);
+            ilWriter.Emit(OpCodes.Ldnull);
+
+            // Mark the end of null or proxy conversion
+            ilWriter.MarkLabel(endLabel);
         }
 
         private static TTo UnwrapReturnValue<TFrom, TTo>(TFrom returnValue)
             where TFrom : IDuckType
         {
-            return returnValue.GetInternalDuckTypedInstance<TTo>();
+            if (returnValue?.Instance is not null)
+            {
+                return returnValue.GetInternalDuckTypedInstance<TTo>();
+            }
+
+            Log.Error("UnwrapReturnValue<{TFrom}, {TTo}>: The return value is null.", typeof(TFrom), typeof(TTo));
+            return default;
         }
 
-        private static async Task<TTo> UnwrapTaskReturnValue<TFrom, TTo>(Task<TFrom> returnValue, bool preserveContext)
+        private static Task<TTo> UnwrapTaskReturnValue<TFrom, TTo>(Task<TFrom> returnValue, bool preserveContext)
             where TFrom : IDuckType
         {
-            return (await returnValue.ConfigureAwait(preserveContext)).GetInternalDuckTypedInstance<TTo>();
+            if (returnValue is not null)
+            {
+                return InternalUnwrapTaskReturnValue(returnValue, preserveContext);
+            }
+
+            Log.Error("UnwrapTaskReturnValue<{TFrom}, {TTo}>: The return value is null.", typeof(TFrom), typeof(TTo));
+            return null;
+
+            static async Task<TTo> InternalUnwrapTaskReturnValue(Task<TFrom> returnValue, bool preserveContext)
+                => UnwrapReturnValue<TFrom, TTo>(await returnValue.ConfigureAwait(preserveContext));
         }
 
         private static void WriteIntValue(ILGenerator il, int value)
