@@ -861,7 +861,7 @@ public class ProbesTests : TestHelper
                                 break;
 
                             case "message":
-                                if (!value.Contains("Installed probe ") && !value.Contains("Error installing probe ") &&
+                                if (!value.Contains("Installed probe ") && !value.Contains("Error installing probe ") && !value.Contains("Emitted probe ") &&
                                     !IsParentName(item, parentName: "throwable") &&
                                     !IsParentName(item, parentName: "exception"))
                                 {
