@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output, pre225TestCount: 19, post225TestCount: 22);
 
-    public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output, pre225TestCount: 15, post225TestCount: 17);
+    public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output, pre225TestCount: 19, post225TestCount: 21);
 
     [Collection("MsTestV2Tests")]
     [UsesVerify]
