@@ -130,7 +130,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     {
                         var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == 19 ? "pre_2_2_5" : "post_2_2_5", null, null);
                         settings.DisableRequireUniquePrefix();
-                        await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Name)).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
+                        await Verifier.Verify(
+                            tests
+                               .OrderBy(s => s.Resource)
+                               .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Name))
+                               .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)),
+                            settings);
 
                         // Check the tests, suites and modules count
                         Assert.Equal(expectedTestCount, tests.Count);

@@ -23,10 +23,8 @@
       ci.stage.name: StageDisplayName,
       ci.workspace_path: workspacePath,
       env: integration_tests,
-      error.msg: Class Initialization method Samples.MSTestTests.ClassInitializeExceptionTestSuite.ClassInitialize threw exception. System.Exception: System.Exception: Class initialize exception.,
-      error.stack:
-Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestFailedException: Class Initialization method Samples.MSTestTests.ClassInitializeExceptionTestSuite.ClassInitialize threw exception. System.Exception: System.Exception: Class initialize exception.
-at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo.RunClassInitialize(TestContext testContext),
+      error.msg: ErrorMessage,
+      error.stack: StackTrace,
       error.type: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestFailedException,
       git.branch: branch,
       git.commit.author.email: author@email.com,
@@ -339,10 +337,8 @@ at Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInf
       ci.stage.name: StageDisplayName,
       ci.workspace_path: workspacePath,
       env: integration_tests,
-      error.msg: Attempted to divide by zero.,
-      error.stack:
-System.DivideByZeroException: Attempted to divide by zero.
-at Samples.MSTestTests.TestSuite.SimpleErrorParameterizedTest(Int32 xValue, Int32 yValue, Int32 expectedResult),
+      error.msg: ErrorMessage,
+      error.stack: StackTrace,
       error.type: System.DivideByZeroException,
       git.branch: branch,
       git.commit.author.email: author@email.com,
@@ -408,10 +404,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorParameterizedTest(Int32 xValue, Int3
       ci.stage.name: StageDisplayName,
       ci.workspace_path: workspacePath,
       env: integration_tests,
-      error.msg: Attempted to divide by zero.,
-      error.stack:
-System.DivideByZeroException: Attempted to divide by zero.
-at Samples.MSTestTests.TestSuite.SimpleErrorParameterizedTest(Int32 xValue, Int32 yValue, Int32 expectedResult),
+      error.msg: ErrorMessage,
+      error.stack: StackTrace,
       error.type: System.DivideByZeroException,
       git.branch: branch,
       git.commit.author.email: author@email.com,
@@ -477,10 +471,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorParameterizedTest(Int32 xValue, Int3
       ci.stage.name: StageDisplayName,
       ci.workspace_path: workspacePath,
       env: integration_tests,
-      error.msg: Attempted to divide by zero.,
-      error.stack:
-System.DivideByZeroException: Attempted to divide by zero.
-at Samples.MSTestTests.TestSuite.SimpleErrorParameterizedTest(Int32 xValue, Int32 yValue, Int32 expectedResult),
+      error.msg: ErrorMessage,
+      error.stack: StackTrace,
       error.type: System.DivideByZeroException,
       git.branch: branch,
       git.commit.author.email: author@email.com,
@@ -546,10 +538,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorParameterizedTest(Int32 xValue, Int3
       ci.stage.name: StageDisplayName,
       ci.workspace_path: workspacePath,
       env: integration_tests,
-      error.msg: Attempted to divide by zero.,
-      error.stack:
-System.DivideByZeroException: Attempted to divide by zero.
-at Samples.MSTestTests.TestSuite.SimpleErrorTest(),
+      error.msg: ErrorMessage,
+      error.stack: StackTrace,
       error.type: System.DivideByZeroException,
       git.branch: branch,
       git.commit.author.email: author@email.com,
@@ -1188,10 +1178,8 @@ at Samples.MSTestTests.TestSuite.SimpleErrorTest(),
       ci.stage.name: StageDisplayName,
       ci.workspace_path: workspacePath,
       env: integration_tests,
-      error.msg: Attempted to divide by zero.,
-      error.stack:
-System.DivideByZeroException: Attempted to divide by zero.
-at Samples.MSTestTests.TestSuite.TraitErrorTest(),
+      error.msg: ErrorMessage,
+      error.stack: StackTrace,
       error.type: System.DivideByZeroException,
       git.branch: branch,
       git.commit.author.email: author@email.com,
