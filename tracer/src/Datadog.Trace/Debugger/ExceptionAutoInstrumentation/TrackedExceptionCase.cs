@@ -41,6 +41,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public bool IsDone => TrackingExceptionCollectionState == ExceptionCollectionState.Finalizing || TrackingExceptionCollectionState == ExceptionCollectionState.Done;
 
+        public bool IsInvalidated => TrackingExceptionCollectionState == ExceptionCollectionState.Invalidated;
+
         public DateTime StartCollectingTime { get; private set; }
 
         public ExceptionCase ExceptionCase { get; private set; }
@@ -95,6 +97,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             return false;
+        }
+
+        public void InvalidateCase()
+        {
+            EndInProgressState(ExceptionCollectionState.Invalidated);
         }
 
         private bool BeginTeardown()
