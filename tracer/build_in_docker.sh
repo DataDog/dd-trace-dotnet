@@ -8,13 +8,13 @@ ROOT_DIR="$(dirname $(pwd))"
 BUILD_DIR="$ROOT_DIR/tracer/build/_build"
 IMAGE_NAME="dd-trace-dotnet/alpine-base"
 
-docker buildx build \
+docker build \
    --build-arg DOTNETSDK_VERSION=8.0.100 \
    --tag $IMAGE_NAME \
    --file "$BUILD_DIR/docker/alpine.dockerfile" \
    "$BUILD_DIR"
 
-docker run --rm \
+docker run -it --rm \
     --mount type=bind,source="$ROOT_DIR",target=/project \
     --env NugetPackageDirectory=/project/packages \
     --env artifacts=/project/tracer/bin/artifacts \
