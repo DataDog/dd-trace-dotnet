@@ -1104,6 +1104,13 @@ stages:
         parameters:
           artifact: build-macos-working-directory
 
+      # The native tracer is built and uploaded separately for perf reasons, so needs to be explicitly downloaded here
+      - task: DownloadPipelineArtifact@2
+        displayName: Download native tracer
+        inputs:
+          artifact: build-macos-native_tracer
+          path: $(monitoringHome)
+
       - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
         displayName: Build and Test
         retryCountOnTaskFailure: 1
