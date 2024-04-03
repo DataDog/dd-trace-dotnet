@@ -32,14 +32,14 @@ namespace Datadog.Trace.Debugger.Sink
         private readonly ProbeStatusSink _probeStatusSink;
         private readonly int _uploadFlushInterval;
         private readonly int _initialFlushInterval;
-        private readonly BatchUploader _snapshotBatchUploader;
-        private readonly BatchUploader _diagnosticsBatchUploader;
+        private readonly IBatchUploader _snapshotBatchUploader;
+        private readonly IBatchUploader _diagnosticsBatchUploader;
 
         private DebuggerSink(
             SnapshotSink snapshotSink,
             ProbeStatusSink probeStatusSink,
-            BatchUploader snapshotBatchUploader,
-            BatchUploader diagnosticsBatchUploader,
+            IBatchUploader snapshotBatchUploader,
+            IBatchUploader diagnosticsBatchUploader,
             int uploadFlushInterval,
             int initialFlushInterval)
         {
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Debugger.Sink
             _cancellationSource = new CancellationTokenSource();
         }
 
-        public static DebuggerSink Create(SnapshotSink snapshotSink, ProbeStatusSink probeStatusSink, BatchUploader snapshotBatchUploader, BatchUploader diagnosticsBatchUploader, DebuggerSettings settings)
+        public static DebuggerSink Create(SnapshotSink snapshotSink, ProbeStatusSink probeStatusSink, IBatchUploader snapshotBatchUploader, IBatchUploader diagnosticsBatchUploader, DebuggerSettings settings)
         {
             var uploadInterval = settings.UploadFlushIntervalMilliseconds;
             var initialInterval =
