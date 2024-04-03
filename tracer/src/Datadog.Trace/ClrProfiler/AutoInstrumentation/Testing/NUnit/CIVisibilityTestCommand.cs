@@ -23,9 +23,14 @@ internal class CIVisibilityTestCommand
     }
 
     [DuckReverseMethod]
-    public object Execute(ITestExecutionContext context)
+    public object Execute(object contextObject)
     {
-        var result = ExecuteTest(context);
+        var context = contextObject.TryDuckCast<ITestExecutionContextWithRepeatCount>(out var contextWithRepeatCount) ?
+                          contextWithRepeatCount :
+                          contextObject.DuckCast<ITestExecutionContext>();
+
+        var executionNumber = 0;
+        var result = ExecuteTest(context, executionNumber++);
         if (result.ResultState.Status != TestStatus.Skipped &&
             result.ResultState.Status != TestStatus.Inconclusive)
         {
@@ -34,7 +39,7 @@ internal class CIVisibilityTestCommand
             var remainingRetries = _retries;
             while (remainingRetries-- > 0)
             {
-                var retryResult = ExecuteTest(context);
+                var retryResult = ExecuteTest(context, executionNumber++);
                 result.Duration += retryResult.Duration;
                 result.StartTime = result.StartTime < retryResult.StartTime ? result.StartTime : retryResult.StartTime;
                 result.EndTime = result.EndTime > retryResult.EndTime ? result.EndTime : retryResult.EndTime;
@@ -83,13 +88,17 @@ internal class CIVisibilityTestCommand
         void ClearResultForRetry()
         {
             context.CurrentResult = context.CurrentTest.MakeTestResult();
-            context.CurrentRepeatCount++; // increment Retry count for next iteration. will only happen if we are guaranteed another iteration
+            if (context is ITestExecutionContextWithRepeatCount tmpContextWithRepeatCount)
+            {
+                // increment Retry count for next iteration. will only happen if we are guaranteed another iteration
+                tmpContextWithRepeatCount.CurrentRepeatCount++;
+            }
         }
     }
 
-    private ITestResult ExecuteTest(ITestExecutionContext context)
+    private ITestResult ExecuteTest(ITestExecutionContext context, int executionNumber)
     {
-        var test = NUnitIntegration.GetOrCreateTest(context.CurrentTest, context.CurrentRepeatCount);
+        var test = NUnitIntegration.GetOrCreateTest(context.CurrentTest, executionNumber);
         ITestResult? testResult = null;
         try
         {
