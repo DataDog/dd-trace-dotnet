@@ -42,7 +42,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _errorBytes = StringEncoding.UTF8.GetBytes("error");
         private readonly byte[] _metaStructBytes = StringEncoding.UTF8.GetBytes("meta_struct");
         // span links metadata
-        private readonly byte[] _spanLinkBytes = StringEncoding.UTF8.GetBytes("_dd.span_links");
+        private readonly byte[] _spanLinkBytes = StringEncoding.UTF8.GetBytes("span_links");
         private readonly byte[] _traceStateBytes = StringEncoding.UTF8.GetBytes("tracestate");
         private readonly byte[] _traceFlagBytes = StringEncoding.UTF8.GetBytes("flags");
         private readonly byte[] _tags = StringEncoding.UTF8.GetBytes("tags");
