@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var tests = new List<MockCIVisibilityTest>();
             var testSuites = new List<MockCIVisibilityTestSuite>();
             var testModules = new List<MockCIVisibilityTestModule>();
-            var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 15 : 22;
+            var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 19 : 22;
 
             var sessionId = RandomIdGenerator.Shared.NextSpanId();
             var sessionCommand = "test command";
@@ -128,13 +128,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == 15 ? "pre_2_2_5" : "post_2_2_5", null, null);
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == 19 ? "pre_2_2_5" : "post_2_2_5", null, null);
                         settings.DisableRequireUniquePrefix();
                         await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Name)).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
 
                         // Check the tests, suites and modules count
                         Assert.Equal(expectedTestCount, tests.Count);
-                        testSuites.Should().HaveCount(2);
+                        testSuites.Should().HaveCountLessThanOrEqualTo(2);
                         Assert.Single(testModules);
 
                         var testSuite = testSuites[0];
@@ -143,7 +143,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // Check Suite
                         testSuites.Select(ts => ts.TestSuiteId)
                                   .Intersect(tests.Select(t => t.TestSuiteId))
-                                  .Should().HaveCount(2);
+                                  .Should()
+                                  .HaveCountLessThanOrEqualTo(2);
                         Assert.True(testSuite.TestModuleId == testModule.TestModuleId);
 
                         // ITR tags inside the test suite

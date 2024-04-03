@@ -20,7 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
-    public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output, pre225TestCount: 15, post225TestCount: 22);
+    public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output, pre225TestCount: 19, post225TestCount: 22);
 
     public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output, pre225TestCount: 15, post225TestCount: 17);
 
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                      .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                                      .ToList();
 
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedSpanCount == 15 ? "pre_2_2_5" : "post_2_2_5");
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedSpanCount == Pre225TestCount ? "pre_2_2_5" : "post_2_2_5");
                         settings.DisableRequireUniquePrefix();
                         await Verifier.Verify(spans.OrderBy(s => s.Resource).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Name)).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Parameters)), settings);
 
