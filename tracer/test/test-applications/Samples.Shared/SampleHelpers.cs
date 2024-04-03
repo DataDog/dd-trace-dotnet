@@ -46,6 +46,7 @@ namespace Samples
         private static readonly MethodInfo SetServiceName = TracerSettingsType?.GetProperty("ServiceName")?.SetMethod;
         private static readonly MethodInfo GetMetricMethod = SpanType?.GetMethod("GetMetric", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo RunCommandMethod = ProcessHelpersType?.GetMethod("TestingOnly_RunCommand", BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo AddSpanLinkMethod = SpanType?.GetMethod("AddSpanLink", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly FieldInfo TracerThreePartVersionField = TracerConstantsType?.GetField("ThreePartVersion");
 
 
@@ -81,7 +82,7 @@ namespace Samples
 
         public static bool IsProfilerAttached()
         {
-            if(NativeMethodsType is null)
+            if (NativeMethodsType is null)
             {
                 return false;
             }
@@ -89,7 +90,7 @@ namespace Samples
             try
             {
                 var profilerAttachedMethodInfo = NativeMethodsType.GetMethod("IsProfilerAttached");
-                return (bool) profilerAttachedMethodInfo.Invoke(null, null);
+                return (bool)profilerAttachedMethodInfo.Invoke(null, null);
             }
             catch (Exception ex)
             {
@@ -121,7 +122,7 @@ namespace Samples
         {
             try
             {
-                return (string) TracerThreePartVersionField.GetValue(null);
+                return (string)TracerThreePartVersionField.GetValue(null);
             }
             catch (Exception e)
             {
@@ -146,6 +147,17 @@ namespace Samples
                 }
             }
         }
+        public static object AddSpanLinkWithAttributes(object parentSpan, object scopeToAddAsLink, List<KeyValuePair<string, object>> attributes)
+        {
+            if (SpanProperty != null && AddSpanLinkMethod != null)
+            {
+                var spanToAdd = SpanProperty.Invoke(scopeToAddAsLink, Array.Empty<object>());
+                var toAddTo = SpanProperty.Invoke(parentSpan, Array.Empty<object>());
+                return AddSpanLinkMethod.Invoke(toAddTo, new object[] { spanToAdd, attributes });
+            }
+
+            return null;
+        }
 
         public static IDisposable CreateScope(string operationName)
         {
@@ -155,7 +167,7 @@ namespace Samples
             }
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            return (IDisposable) StartActiveMethod.Invoke(tracer, new object[] { operationName });
+            return (IDisposable)StartActiveMethod.Invoke(tracer, new object[] { operationName });
         }
 
         public static IDisposable CreateScopeWithPropagation<TCarrier>(string operationName, TCarrier carrier, Func<TCarrier, string, IEnumerable<string>> getter)
@@ -173,12 +185,12 @@ namespace Samples
             SetParent.Invoke(spanCreationSettings, new object[] { parentScope });
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            return (IDisposable) StartActiveWithContextMethod.Invoke(tracer, new object[] { operationName, spanCreationSettings });
+            return (IDisposable)StartActiveWithContextMethod.Invoke(tracer, new object[] { operationName, spanCreationSettings });
         }
 
         public static void ExtractScope<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string>> getter, out ulong traceId, out ulong spanId)
         {
-            if (ExtractMethod is null || TraceIdProperty is null || SpanIdProperty is null  || SpanContextExtractorType is null  || carrier == null)
+            if (ExtractMethod is null || TraceIdProperty is null || SpanIdProperty is null || SpanContextExtractorType is null || carrier == null)
             {
                 traceId = 0;
                 spanId = 0;
@@ -188,13 +200,13 @@ namespace Samples
             var scopeExtractor = Activator.CreateInstance(SpanContextExtractorType);
             var genericMethod = ExtractMethod.MakeGenericMethod(carrier.GetType());
             var parentScope = genericMethod.Invoke(scopeExtractor, new object[] { carrier, getter });
-            traceId = (ulong) TraceIdProperty.Invoke(parentScope, null);
-            spanId = (ulong) SpanIdProperty.Invoke(parentScope, null);
+            traceId = (ulong)TraceIdProperty.Invoke(parentScope, null);
+            spanId = (ulong)SpanIdProperty.Invoke(parentScope, null);
         }
 
         public static void InjectScope<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, object scope)
         {
-            if (InjectMethod is null || SpanContextInjectorType is null  || carrier == null)
+            if (InjectMethod is null || SpanContextInjectorType is null || carrier == null)
             {
                 return;
             }
@@ -206,12 +218,12 @@ namespace Samples
 
         public static ulong GetTraceId(IDisposable scope)
         {
-            return (ulong) TraceIdProperty.Invoke(GetActiveSpanContext(), Array.Empty<object>());
+            return (ulong)TraceIdProperty.Invoke(GetActiveSpanContext(), Array.Empty<object>());
         }
 
         public static ulong GetSpanId(IDisposable scope)
         {
-            return (ulong) SpanIdProperty.Invoke(GetActiveSpanContext(), Array.Empty<object>());
+            return (ulong)SpanIdProperty.Invoke(GetActiveSpanContext(), Array.Empty<object>());
         }
 
         public static Task ForceTracerFlushAsync()
@@ -233,7 +245,7 @@ namespace Samples
             }
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            return (IDisposable) ActiveScopeProperty.Invoke(tracer, Array.Empty<object>());
+            return (IDisposable)ActiveScopeProperty.Invoke(tracer, Array.Empty<object>());
         }
 
         public static object GetActiveSpanContext()
@@ -287,7 +299,7 @@ namespace Samples
                 {
                     if (property.Name == "Metrics")
                     {
-                        return (ConcurrentDictionary<string, double>) property.GetValue(span);
+                        return (ConcurrentDictionary<string, double>)property.GetValue(span);
                     }
                 }
             }
@@ -333,7 +345,7 @@ namespace Samples
             SetExceptionMethod.Invoke(span, new object[] { new Exception() });
         }
 
-        public static IEnumerable<KeyValuePair<string,string>> GetDatadogEnvironmentVariables()
+        public static IEnumerable<KeyValuePair<string, string>> GetDatadogEnvironmentVariables()
         {
             var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
 
@@ -378,13 +390,13 @@ namespace Samples
 
             return result as Task ?? Task.CompletedTask;
         }
-        
+
         public static void RunCommand(string cmd, string args = null)
         {
-            RunCommandMethod?.Invoke(null, new object[] {cmd, args});
-        }    
+            RunCommandMethod?.Invoke(null, new object[] { cmd, args });
+        }
 
-        class NoOpDisposable : IDisposable
+        private class NoOpDisposable : IDisposable
         {
             public void Dispose() { }
         }
