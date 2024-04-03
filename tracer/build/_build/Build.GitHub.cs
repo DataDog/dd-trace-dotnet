@@ -1344,7 +1344,8 @@ partial class Build
         var milestoneName = Version switch
         {
             null or { Length: 0 } => throw new Exception("Version was unexpectedly null!"),
-            { } v => $"vNext-v{v[0]}",
+            { } v when v.IndexOf('.') < 0 => throw new Exception("Version didn't contain '.'!"),
+            { } v => $"vNext-v{v.AsSpan(0, v.IndexOf('.'))}",
         };
 
         var milestone = await GetMilestone(gitHubClient, milestoneName);
