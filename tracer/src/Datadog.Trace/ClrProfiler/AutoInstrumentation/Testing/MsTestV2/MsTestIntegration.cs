@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -107,11 +108,11 @@ internal static class MsTestIntegration
             {
                 if (testMethodArguments != null && i < testMethodArguments.Length)
                 {
-                    testParameters.Arguments[methodParameters[i].Name ?? $"{i}"] = Common.GetParametersValueData(testMethodArguments[i]);
+                    testParameters.Arguments[methodParameters[i].Name ?? i.ToString(CultureInfo.InvariantCulture)] = Common.GetParametersValueData(testMethodArguments[i]);
                 }
                 else
                 {
-                    testParameters.Arguments[methodParameters[i].Name ?? $"{i}"] = "(default)";
+                    testParameters.Arguments[methodParameters[i].Name ?? i.ToString(CultureInfo.InvariantCulture)] = "(default)";
                 }
             }
 

@@ -64,8 +64,7 @@ public static class TestMethodRunnerExecuteIntegration
                     else if (unitTestResult.Outcome is UnitTestResultOutcome.Error or UnitTestResultOutcome.Failed)
                     {
                         // We need to check if the test is failing because a Class initialization error
-                        if (instance.TestMethodInfo.Parent.Instance is { } classInfoObject &&
-                            classInfoObject.TryDuckCast<ClassInfoExceptionsStruct>(out var classInfoExceptionsStruct))
+                        if (instance.TestMethodInfo.Parent.Instance.TryDuckCast<ClassInfoExceptionsStruct>(out var classInfoExceptionsStruct))
                         {
                             if (classInfoExceptionsStruct.ClassInitializationException is { } classInitializationException &&
                                 MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType()) is { } test)
@@ -82,8 +81,7 @@ public static class TestMethodRunnerExecuteIntegration
                         }
 
                         // We need to check if the test is failing because a Assembly initialization error
-                        if (instance.TestMethodInfo.Parent.Parent.Instance is { } assemblyInfoObject &&
-                            assemblyInfoObject.TryDuckCast<AssemblyInfoExceptionsStruct>(out var assemblyInfoExceptionsStruct))
+                        if (instance.TestMethodInfo.Parent.Parent.Instance.TryDuckCast<AssemblyInfoExceptionsStruct>(out var assemblyInfoExceptionsStruct))
                         {
                             if (assemblyInfoExceptionsStruct.AssemblyInitializationException is { } assemblyInitializationException &&
                                 MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType()) is { } test)

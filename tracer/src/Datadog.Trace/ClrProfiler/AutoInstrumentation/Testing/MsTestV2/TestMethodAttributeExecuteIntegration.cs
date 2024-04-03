@@ -76,11 +76,6 @@ public static class TestMethodAttributeExecuteIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
     {
-        if (!MsTestIntegration.IsEnabled || instance is ItrSkipTestMethodExecutor)
-        {
-            return new CallTargetReturn<TReturn>(returnValue);
-        }
-
         if (state.State is TestMethodState testMethodState)
         {
             if (returnValue is IList { Count: > 0 } returnValueList)
@@ -106,13 +101,13 @@ public static class TestMethodAttributeExecuteIntegration
                             }
                             else
                             {
-                                test.SetErrorInfo(testExceptionType.FullName ?? "Error", testException.Message, testException.ToString());
+                                test.SetErrorInfo(testExceptionType.ToString(), testException.Message, testException.ToString());
                             }
                         }
 
                         if (!string.IsNullOrEmpty(testResult.DisplayName) && test.Name != testResult.DisplayName)
                         {
-                            test.SetName(testResult.DisplayName);
+                            test.SetName(testResult.DisplayName!);
                             MsTestIntegration.UpdateTestParameters(test, testMethodState.TestMethod, testResult.DisplayName);
                         }
 
@@ -134,7 +129,7 @@ public static class TestMethodAttributeExecuteIntegration
                                     test.Close(TestStatus.Pass);
                                     break;
                                 default:
-                                    Common.Log.Warning("Failed to handle the test status");
+                                    Common.Log.Warning("Failed to handle the test status: {Outcome}", testResult.Outcome);
                                     test.Close(TestStatus.Fail);
                                     break;
                             }
@@ -142,7 +137,7 @@ public static class TestMethodAttributeExecuteIntegration
                     }
                     else
                     {
-                        Common.Log.Warning("Failed to cast TestResultStruct");
+                        Common.Log.Warning("Failed to cast {TestResultObject} to TestResultStruct", testResultObject);
                         test.Close(TestStatus.Fail);
                     }
                 }

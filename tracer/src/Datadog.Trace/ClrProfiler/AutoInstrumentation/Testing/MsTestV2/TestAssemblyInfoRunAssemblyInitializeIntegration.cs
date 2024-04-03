@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo",
     MethodName = "RunAssemblyInitialize",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = new[] { ClrNames.Ignore },
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.TestContext"],
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
@@ -43,7 +43,7 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext testContext)
         where TTarget : ITestAssemblyInfo
     {
-        if (!MsTestIntegration.IsEnabled || instance.Instance is null)
+        if (!MsTestIntegration.IsEnabled)
         {
             return CallTargetState.GetDefault();
         }
@@ -53,7 +53,7 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
             return CallTargetState.GetDefault();
         }
 
-        lock (instance.Instance)
+        lock (instance.Instance!)
         {
             instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
         }
