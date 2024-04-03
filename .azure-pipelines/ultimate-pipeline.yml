@@ -4649,6 +4649,19 @@ stages:
       vmImage: ubuntu-latest
 
     steps:
+    # Install docker-compose v1
+    # https://github.com/microsoft/azure-pipelines-tasks/issues/19711
+    # We can't use docker-compose v2 universally yet (our custom runners and the DockerCompose@0 task don't support it)
+    - task: Bash@3
+      displayName: "Install docker-compose v1"
+      inputs:
+        targetType: 'inline'
+        script: |
+          DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+          mkdir -p $DOCKER_CONFIG/cli-plugins
+          curl -SL https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+          chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -4700,6 +4713,8 @@ stages:
       parameters:
         target: 'dd-dotnet-smoke-tests'
         snapshotPrefix: "smoke_test"
+        dockerComposePath: '/home/vsts/.docker/cli-plugins/docker-compose'
+
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -4733,6 +4748,19 @@ stages:
         vmImage: ubuntu-latest
       
       steps:
+        # Install docker-compose v1
+        # https://github.com/microsoft/azure-pipelines-tasks/issues/19711
+        # We can't use docker-compose v2 universally yet (our custom runners and the DockerCompose@0 task don't support it)
+        - task: Bash@3
+          displayName: "Install docker-compose v1"
+          inputs:
+            targetType: 'inline'
+            script: |
+              DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+              mkdir -p $DOCKER_CONFIG/cli-plugins
+              curl -SL https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+              chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+
         - template: steps/clone-repo.yml
           parameters:
             targetShaId: $(targetShaId)
@@ -4785,6 +4813,7 @@ stages:
           parameters:
             target: 'dd-dotnet-chiseled-smoke-tests'
             snapshotPrefix: "smoke_test"
+            dockerComposePath: '/home/vsts/.docker/cli-plugins/docker-compose'
 
         - publish: tracer/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -4812,6 +4841,19 @@ stages:
       vmImage: ubuntu-latest
 
     steps:
+    # Install docker-compose v1
+    # https://github.com/microsoft/azure-pipelines-tasks/issues/19711
+    # We can't use docker-compose v2 universally yet (our custom runners and the DockerCompose@0 task don't support it)
+    - task: Bash@3
+      displayName: "Install docker-compose v1"
+      inputs:
+        targetType: 'inline'
+        script: |
+          DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+          mkdir -p $DOCKER_CONFIG/cli-plugins
+          curl -SL https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+          chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -4851,6 +4893,7 @@ stages:
       parameters:
         target: 'nuget-smoke-tests'
         snapshotPrefix: "smoke_test"
+        dockerComposePath: '/home/vsts/.docker/cli-plugins/docker-compose'
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
@@ -4869,6 +4912,7 @@ stages:
       parameters:
         target: 'nuget-dddotnet-smoke-tests'
         snapshotPrefix: "smoke_test"
+        dockerComposePath: '/home/vsts/.docker/cli-plugins/docker-compose'
 
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -4902,6 +4946,19 @@ stages:
       vmImage: ubuntu-latest
 
     steps:
+    # Install docker-compose v1
+    # https://github.com/microsoft/azure-pipelines-tasks/issues/19711
+    # We can't use docker-compose v2 universally yet (our custom runners and the DockerCompose@0 task don't support it)
+    - task: Bash@3
+      displayName: "Install docker-compose v1"
+      inputs:
+        targetType: 'inline'
+        script: |
+          DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+          mkdir -p $DOCKER_CONFIG/cli-plugins
+          curl -SL https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+          chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -4933,6 +4990,7 @@ stages:
       parameters:
         target: 'dotnet-tool-nuget-smoke-tests'
         snapshotPrefix: "smoke_test"
+        dockerComposePath: '/home/vsts/.docker/cli-plugins/docker-compose'
 
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -4966,6 +5024,19 @@ stages:
       vmImage: ubuntu-latest
 
     steps:
+    # Install docker-compose v1
+    # https://github.com/microsoft/azure-pipelines-tasks/issues/19711
+    # We can't use docker-compose v2 universally yet (our custom runners and the DockerCompose@0 task don't support it)
+    - task: Bash@3
+      displayName: "Install docker-compose v1"
+      inputs:
+        targetType: 'inline'
+        script: |
+          DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+          mkdir -p $DOCKER_CONFIG/cli-plugins
+          curl -SL https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+          chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -5001,6 +5072,7 @@ stages:
       parameters:
         target: 'dotnet-tool-smoke-tests'
         snapshotPrefix: "smoke_test"
+        dockerComposePath: '/home/vsts/.docker/cli-plugins/docker-compose'
 
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -5038,6 +5110,19 @@ stages:
       vmImage: ubuntu-latest
 
     steps:
+    # Install docker-compose v1
+    # https://github.com/microsoft/azure-pipelines-tasks/issues/19711
+    # We can't use docker-compose v2 universally yet (our custom runners and the DockerCompose@0 task don't support it)
+    - task: Bash@3
+      displayName: "Install docker-compose v1"
+      inputs:
+        targetType: 'inline'
+        script: |
+          DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+          mkdir -p $DOCKER_CONFIG/cli-plugins
+          curl -SL https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+          chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -5079,6 +5164,7 @@ stages:
       parameters:
         target: 'dotnet-tool-self-instrument-smoke-tests'
         snapshotPrefix: "smoke_test"
+        dockerComposePath: '/home/vsts/.docker/cli-plugins/docker-compose'
 
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)

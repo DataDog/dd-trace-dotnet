@@ -13,6 +13,10 @@ parameters:
     type: string
     default: ''
 
+  - name: 'dockerComposePath'
+    type: string
+    default: ''
+
 steps:
 - bash: |
     echo "##vso[task.setvariable variable=TOKEN]$(System.JobId)"
@@ -102,6 +106,7 @@ steps:
     dockerComposeCommand: logs $(TEST_AGENT_TARGET)
     projectName: ddtrace_$(Build.BuildNumber)
     dockerComposeFile: $(COMPOSE_PATH)
+    dockerComposePath: ${{ parameters.dockerComposePath }}
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   condition: succeededOrFailed()
@@ -114,6 +119,7 @@ steps:
     dockerComposeCommand: down
     projectName: ddtrace_$(Build.BuildNumber)
     dockerComposeFile: $(COMPOSE_PATH)
+    dockerComposePath: ${{ parameters.dockerComposePath }}
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   condition: succeededOrFailed()
