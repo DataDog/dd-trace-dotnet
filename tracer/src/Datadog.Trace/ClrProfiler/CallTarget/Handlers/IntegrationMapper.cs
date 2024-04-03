@@ -269,7 +269,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             var callMethod = new DynamicMethod(
                      $"{onMethodBeginMethodInfo.DeclaringType!.Name}.{onMethodBeginMethodInfo.Name}",
                      typeof(CallTargetState),
-                     new Type[] { targetType, typeof(object[]) },
+                     [targetType, typeof(object[])],
                      onMethodBeginMethodInfo.Module,
                      true);
 
@@ -409,7 +409,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             var callMethod = new DynamicMethod(
                      $"{onMethodEndMethodInfo.DeclaringType!.Name}.{onMethodEndMethodInfo.Name}",
                      typeof(CallTargetReturn),
-                     new Type[] { targetType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
+                     [targetType, typeof(Exception), typeof(CallTargetState).MakeByRefType()],
                      onMethodEndMethodInfo.Module,
                      true);
 
@@ -555,7 +555,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             var callMethod = new DynamicMethod(
                      $"{onMethodEndMethodInfo.DeclaringType!.Name}.{onMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
                      typeof(CallTargetReturn<>).MakeGenericType(returnType),
-                     new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
+                     [targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType()],
                      onMethodEndMethodInfo.Module,
                      true);
 
@@ -736,7 +736,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             var callMethod = new DynamicMethod(
                      $"{onAsyncMethodEndMethodInfo.DeclaringType!.Name}.{onAsyncMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
                      dynMethodReturnType,
-                     new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
+                     [targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType()],
                      onAsyncMethodEndMethodInfo.Module,
                      true);
 
@@ -832,34 +832,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
         private static void WriteCreateNewProxyInstance(ILGenerator ilWriter, Type proxyType, Type targetType)
         {
-            // Before creating the proxy instance we check if the value in the stack is null.
-            // In case is null we pass null to the integration's generic parameter instead of a proxy with a null instance.
-
-            var isNullLabel = ilWriter.DefineLabel();
-            var endLabel = ilWriter.DefineLabel();
-
-            // Let's duplicate the value to check if it's null
-            ilWriter.Emit(OpCodes.Dup);
-            // Check if the value is null and jump to the isNullLabel if it is
-            ilWriter.Emit(OpCodes.Brfalse_S, isNullLabel);
-
-            // Create a new instance of the proxy type from the value in the stack
             var proxyTypeCtor = proxyType.GetConstructors()[0];
+
+            // No null check is needed for value types
             if (targetType.IsValueType && !proxyTypeCtor.GetParameters()[0].ParameterType.IsValueType)
             {
                 ilWriter.Emit(OpCodes.Box, targetType);
             }
 
             ilWriter.Emit(OpCodes.Newobj, proxyTypeCtor);
-            ilWriter.Emit(OpCodes.Br_S, endLabel);
-
-            // Drop the current value and load Ldnull
-            ilWriter.MarkLabel(isNullLabel);
-            ilWriter.Emit(OpCodes.Pop);
-            ilWriter.Emit(OpCodes.Ldnull);
-
-            // Mark the end of null or proxy conversion
-            ilWriter.MarkLabel(endLabel);
         }
 
         private static TTo? UnwrapReturnValue<TFrom, TTo>(TFrom? returnValue)
