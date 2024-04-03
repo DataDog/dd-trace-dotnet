@@ -4,12 +4,17 @@
 // </copyright>
 #nullable enable
 
+#if !NETFRAMEWORK
 using System;
 using System.ComponentModel;
 using System.IO;
 using System.Threading;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast.Aspects.System.Web.Extensions;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 
@@ -22,29 +27,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     MethodName = "CheckPasswordSignInAsync",
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     ParameterTypeNames = ["!0", ClrNames.String, ClrNames.Bool],
-    MinimumVersion = "7.0.0",
-    MaximumVersion = "7.*.*",
+    MinimumVersion = "2",
+    MaximumVersion = "8",
     IntegrationName = nameof(IntegrationId.AspNetCore),
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class SignInManagerCheckPasswordSignInAsync
 {
-    /// <summary>
-    /// OnMethodBegin callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <typeparam name="TArg1">Type of the argument 1 (TUser)</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
-    /// <param name="user">Instance of TUser</param>
-    /// <param name="password">Instance of System.String</param>
-    /// <param name="lockoutOnFailure">Instance of System.Boolean</param>
-    /// <returns>Calltarget state value</returns>
-    internal static CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, ref TArg1 user, ref string password, ref bool lockoutOnFailure)
-    {
-        return CallTargetState.GetDefault();
-    }
-
     /// <summary>
     /// OnAsyncMethodEnd callback
     /// </summary>
@@ -58,7 +48,28 @@ public class SignInManagerCheckPasswordSignInAsync
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TReturn : ISignInResult
     {
-        returnValue.Succeeded = false;
+        // Fake return value: Blocking by authentication
+        if (Security.Instance.Enabled && CoreHttpContextStore.Instance.Get() is { } httpContext)
+        {
+            var transport = new SecurityCoordinator.HttpTransport(httpContext);
+            if (transport.IsBlockedByAuthentication)
+            {
+                var tracer = Tracer.Instance;
+                var scope = tracer.InternalActiveScope;
+                var span = scope.Span;
+                var setTag = TaggingUtils.GetSpanSetter(span, out _);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.Blocked, "true");
+
+                if (returnValue.Succeeded)
+                {
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.BlockedWithSuccess, "true");
+                }
+
+                return (TReturn)returnValue.Failed;
+            }
+        }
+
         return returnValue;
     }
 }
+#endif

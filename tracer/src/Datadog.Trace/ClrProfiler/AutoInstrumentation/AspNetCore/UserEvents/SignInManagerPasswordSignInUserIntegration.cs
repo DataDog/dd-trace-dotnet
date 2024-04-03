@@ -8,7 +8,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -101,16 +100,6 @@ public static class SignInManagerPasswordSignInUserIntegration
             }
 
             security.SetTraceSamplingPriority(span);
-        }
-
-        // Fake return value: Blocking by authentication
-        if (Security.Instance.Enabled && CoreHttpContextStore.Instance.Get() is { } httpContext)
-        {
-            var transport = new SecurityCoordinator.HttpTransport(httpContext);
-            if (!transport.IsBlockedByAuthentication)
-            {
-                // returnValue.Succeeded = false;
-            }
         }
 
         return returnValue;

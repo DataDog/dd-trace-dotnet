@@ -36,6 +36,9 @@ public static partial class Tags
                 internal const string FailureAutoMode = $"_dd.{Failure}.auto.mode";
                 internal const string FailureSdkSource = $"_dd.{Failure}.sdk";
                 internal const string FailureTrack = Failure + ".track";
+
+                internal const string Blocked = ".blocked";
+                internal const string BlockedWithSuccess = Blocked + ".success";
             }
 
             internal static class SignUpEvent
