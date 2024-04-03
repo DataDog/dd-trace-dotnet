@@ -37,12 +37,12 @@ jobs:
       - name: Install runner
         uses: ./.github/actions/install_runner 
 
-      - name: Build weblog latest base images
+      - name: Build weblog base images
         env:
-          APP_DOCKER_IMAGE_REPO: ghcr.io/datadog/system-tests/${{ matrix.variant.weblog-variant }}
+          APP_DOCKER_IMAGE_REPO: ghcr.io/datadog/system-tests/${{ env.WEBLOG_VARIANT }}
         run: |
           cd lib-injection/build/docker/$TEST_LIBRARY/$WEBLOG_VARIANT 
-          LIBRARY_INJECTION_TEST_APP_IMAGE=$APP_DOCKER_IMAGE_REPO:latest ./build.sh
+          LIBRARY_INJECTION_TEST_APP_IMAGE=$APP_DOCKER_IMAGE_REPO:$DOCKER_IMAGE_WEBLOG_TAG ./build.sh
           cd ..
 
       - name: Run K8s Lib Injection Tests
@@ -57,5 +57,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: logs_k8s_lib_injection
+          name: logs_k8s_lib_injection_${{ env.WEBLOG_VARIANT }}_${{ env.RUNTIME }}
           path: artifact.tar.gz
