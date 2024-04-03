@@ -134,7 +134,7 @@ steps:
     displayName: clean
     condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
 
-  - powershell: rm "$env:BUILD_REPOSITORY_LOCALPATH/*"" -r -fo
+  - powershell: rm "$env:BUILD_REPOSITORY_LOCALPATH/*" -r -fo
     displayName: clean
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
