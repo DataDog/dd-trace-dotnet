@@ -165,11 +165,11 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             lock (_locker)
             {
                 _probes.UnionWith(newProbes);
-                ScheduleNextPollInOneSeconds();
+                ScheduleNextPollInOneSecond();
             }
         }
 
-        private void ScheduleNextPollInOneSeconds()
+        private void ScheduleNextPollInOneSecond()
         {
             lock (_locker)
             {
@@ -203,12 +203,24 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             }
         }
 
-        public string[] GetFetchedProbes(string[] candidateProbeIds)
+        public void UpdateProbe(string probeId, FetchProbeStatus newProbeStatus)
+        {
+            UpdateProbes(new[] { probeId }, new[] { newProbeStatus });
+        }
+
+        /// <summary>
+        /// Returns a subset of probeIds from <paramref name="candidateProbeIds" /> that have native representation (e.g either requested rejit or rejitted).
+        /// Note that <see cref="Status.EMITTING"/> is taken into account, since EMITTING probes are those that not only have native representation,
+        /// but their instrumentation is actively executing.
+        /// </summary>
+        /// <param name="candidateProbeIds">The set of probes that needs to be checked</param>
+        /// <returns>An array of ProbeIds that have native representation.</returns>
+        public string[] GetBoundedProbes(string[] candidateProbeIds)
         {
             lock (_locker)
             {
                 return _probes
-                      .Where(p => p.ShouldFetch() && candidateProbeIds
+                      .Where(p => (p.ShouldFetch() || p.ProbeStatus.Status == Status.EMITTING) && candidateProbeIds
                                 .Contains(p.ProbeId))
                       .Select(p => p.ProbeId)
                       .ToArray();
