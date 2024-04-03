@@ -218,6 +218,9 @@ namespace LogsInjection.NLog
         private static void AddToContextAndLog(string message, ContextProperty contextProperty)
         {
             string propKey = "CustomContextKey", propValue = "CustomContextValue";
+            // don't complain if they're not actually used.
+            _ = propKey;
+            _ = propValue;
 
             switch (contextProperty)
             {
