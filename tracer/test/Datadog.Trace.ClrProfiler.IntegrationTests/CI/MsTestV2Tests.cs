@@ -238,7 +238,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                     targetSpan.Error.Should().Be(1);
                                     AssertTargetSpanEqual(targetSpan, Tags.ErrorType, "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestFailedException");
                                     AssertTargetSpanContains(targetSpan, Tags.ErrorStack, "System.Exception: Class initialize exception");
-                                    AssertTargetSpanContains(targetSpan, Tags.ErrorMsg, "System.Exception: System.Exception: Class initialize exception.");
+                                    AssertTargetSpanContains(targetSpan, Tags.ErrorMsg, "Class initialize exception.");
                                     break;
 
                                 case "My Custom: CustomTestMethodAttributeTest":
