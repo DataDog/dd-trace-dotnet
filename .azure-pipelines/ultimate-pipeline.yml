@@ -1673,6 +1673,8 @@ stages:
     pool:
       name: azure-windows-scale-set
     timeoutInMinutes: 60 #default value
+    # Temporarily disabled, as current Cppcheck does not support macros
+    condition: "false"
 
     steps:
     - powershell: |
