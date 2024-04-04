@@ -658,7 +658,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-11
+      vmImage: macos-12
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -678,7 +678,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-11
+      vmImage: macos-12
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -703,7 +703,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [native_tracer, native_loader_and_managed ]
     pool:
-      vmImage: macos-11
+      vmImage: macos-12
     steps:
     - checkout: none
 
@@ -999,7 +999,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-11
+      vmImage: macos-12
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1089,7 +1089,7 @@ stages:
   - job: managed
     timeoutInMinutes: 60 #default value
     pool:
-      vmImage: macos-11
+      vmImage: macos-12
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1634,7 +1634,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-11
+      vmImage: macos-12
     steps:
     - template: steps/clone-repo.yml
       parameters:
