@@ -5,7 +5,6 @@
 
 #nullable enable
 using System;
-using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -17,7 +16,6 @@ using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -49,9 +47,18 @@ internal class LiveDebuggerFactory
             () => new MinimalAgentHeaderHelper(),
             uri => uri);
 
-        var batchApi = AgentBatchUploadApi.Create(apiFactory, discoveryService, gitMetadataTagsProvider);
-        var batchUploader = BatchUploader.Create(batchApi);
-        var debuggerSink = DebuggerSink.Create(snapshotStatusSink, probeStatusSink, batchUploader, debuggerSettings);
+        var snapshotBatchUploadApi = AgentBatchUploadApi.Create(apiFactory, discoveryService, gitMetadataTagsProvider, false);
+        var snapshotBatchUploader = BatchUploader.Create(snapshotBatchUploadApi);
+
+        var diagnosticsBatchUploadApi = AgentBatchUploadApi.Create(apiFactory, discoveryService, gitMetadataTagsProvider, true);
+        var diagnosticsBatchUploader = BatchUploader.Create(diagnosticsBatchUploadApi);
+
+        var debuggerSink = DebuggerSink.Create(
+            snapshotStatusSink,
+            probeStatusSink,
+            snapshotBatchUploader: snapshotBatchUploader,
+            diagnosticsBatchUploader: diagnosticsBatchUploader,
+            debuggerSettings);
 
         var lineProbeResolver = LineProbeResolver.Create();
         var probeStatusPoller = ProbeStatusPoller.Create(probeStatusSink, debuggerSettings);
