@@ -81,7 +81,7 @@ namespace Samples.AWS.SQS
         {
             None = 0,
             Batch = 1,
-            InThread = 2,
+            SameThread = 2,
             Injected = 4
         }
 
@@ -93,7 +93,7 @@ namespace Samples.AWS.SQS
             await PurgeQueueAsync(sqsClient);
 
             Console.WriteLine($"Running test scenario {s}");
-            if (!s.HasFlag(Scenario.InThread))
+            if (s.HasFlag(Scenario.SameThread))
             {
                 if (s.HasFlag(Scenario.Injected))
                 {
@@ -122,7 +122,7 @@ namespace Samples.AWS.SQS
             {
                 if (!s.HasFlag(Scenario.Injected))
                 {
-                    throw new Exception($"Bad scenario requested ({s}): there is no non-injected in-thread scenario");
+                    throw new Exception($"Bad scenario requested ({s}): there is no non-injected multi-thread scenario");
                 }
 
                 if (s.HasFlag(Scenario.Batch))

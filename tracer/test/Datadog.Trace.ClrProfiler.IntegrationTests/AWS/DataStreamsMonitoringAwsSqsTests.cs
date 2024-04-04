@@ -35,11 +35,11 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
             {
                 foreach (var inject in new[] { 0, 1 })
                 {
-                    yield return [packageVersionArray[0], batch, /*inThread:*/0, inject];
+                    yield return [packageVersionArray[0], batch, /*sameThread:*/1, inject];
                 }
 
-                // there is no in-thread scenario that don't inject
-                yield return [packageVersionArray[0], batch, /*inThread:*/1, /*inject:*/1];
+                // there is no multi-thread scenario that don't inject
+                yield return [packageVersionArray[0], batch, /*sameThread:*/0, /*inject:*/1];
             }
         }
     }
@@ -47,13 +47,13 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
     [SkippableTheory]
     [MemberData(nameof(GetEnabledConfig))]
     [Trait("Category", "EndToEnd")]
-    public async Task SubmitsDsmMetrics(string packageVersion, int batch, int inThread, int inject)
+    public async Task SubmitsDsmMetrics(string packageVersion, int batch, int sameThread, int inject)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
 
         // set scenario to run
         SetEnvironmentVariable("TEST_BATCH", batch.ToString());
-        SetEnvironmentVariable("TEST_IN_THREAD", inThread.ToString());
+        SetEnvironmentVariable("TEST_SAME_THREAD", sameThread.ToString());
         SetEnvironmentVariable("TEST_INJECT", inject.ToString());
 
         using var telemetry = this.ConfigureTelemetry();
@@ -95,7 +95,7 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
             settings.AddDataStreamsScrubber();
             var fileName = $"{nameof(DataStreamsMonitoringAwsSqsTests)}.{nameof(SubmitsDsmMetrics)}."
                          + (batch == 0 ? "single" : "batch") + "."
-                         + (inThread == 0 ? "sameThread" : "multiThread") + "."
+                           // whether it's running in the same thread or in different threads shouldn't change anything
                          + (inject == 0 ? "noinjection" : "injection");
             await Verifier.Verify(MockDataStreamsPayload.Normalize(dsPoints), settings)
                           .UseFileName(fileName)

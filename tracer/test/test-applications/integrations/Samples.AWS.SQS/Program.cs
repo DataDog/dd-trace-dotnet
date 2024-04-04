@@ -17,7 +17,7 @@ namespace Samples.AWS.SQS
             SyncHelpers.SendAndReceiveMessages(sqsClient);
 #endif
             if (Environment.GetEnvironmentVariable("TEST_BATCH") is string batch &&
-                Environment.GetEnvironmentVariable("TEST_IN_THREAD") is string thread &&
+                Environment.GetEnvironmentVariable("TEST_SAME_THREAD") is string thread &&
                 Environment.GetEnvironmentVariable("TEST_INJECT") is string inject)
             {
                 var scenario = AsyncHelpers.Scenario.None;
@@ -28,7 +28,7 @@ namespace Samples.AWS.SQS
 
                 if (thread == "1")
                 {
-                    scenario |= AsyncHelpers.Scenario.InThread;
+                    scenario |= AsyncHelpers.Scenario.SameThread;
                 }
 
                 if (inject == "1")

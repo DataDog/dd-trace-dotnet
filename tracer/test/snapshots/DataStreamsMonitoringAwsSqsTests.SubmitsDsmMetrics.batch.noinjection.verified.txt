@@ -11,10 +11,10 @@
         {
           EdgeTags: [
             direction:out,
-            topic:MyAsyncSQSQueue,
+            topic:MyAsyncSQSQueue2,
             type:sqs
           ],
-          Hash: 16264089125033314072,
+          Hash: 3050662557753554578,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
@@ -23,11 +23,10 @@
         {
           EdgeTags: [
             direction:in,
-            topic:MyAsyncSQSQueue,
+            topic:MyAsyncSQSQueue2,
             type:sqs
           ],
-          Hash: 1683312031548079124,
-          ParentHash: 16264089125033314072,
+          Hash: 16534601073286278717,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
@@ -42,10 +41,10 @@
         {
           EdgeTags: [
             direction:out,
-            topic:MyAsyncSQSQueue,
+            topic:MyAsyncSQSQueue2,
             type:sqs
           ],
-          Hash: 16264089125033314072,
+          Hash: 3050662557753554578,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
@@ -54,11 +53,10 @@
         {
           EdgeTags: [
             direction:in,
-            topic:MyAsyncSQSQueue,
+            topic:MyAsyncSQSQueue2,
             type:sqs
           ],
-          Hash: 1683312031548079124,
-          ParentHash: 16264089125033314072,
+          Hash: 16534601073286278717,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
