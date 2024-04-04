@@ -5,9 +5,11 @@
 
 #nullable enable
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests.Utils;
 
+[Collection(nameof(SecuritySequentialTests))]
 public class WafLibraryRequiredTest
 {
     /// <summary>

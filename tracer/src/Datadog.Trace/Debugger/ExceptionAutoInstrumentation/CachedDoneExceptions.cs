@@ -7,54 +7,32 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class CachedDoneExceptions
+    /// <summary>
+    /// Acts as a proxy to a static `CachedItems` object to make the Exception that are in done cases easily accesible, throughout the codebase
+    /// without references detouring.
+    /// </summary>
+    internal static class CachedDoneExceptions
     {
-        private static readonly HashSet<string> DoneExceptions = new();
-        private static readonly ReaderWriterLockSlim DoneExceptionsLocker = new();
+        private static readonly CachedItems _cachedDoneExceptions = new CachedItems();
 
-        internal static void Add(string exceptionToString)
+        internal static void Add(string item)
         {
-            DoneExceptionsLocker.EnterWriteLock();
-            try
-            {
-                DoneExceptions.Add(exceptionToString);
-            }
-            finally
-            {
-                DoneExceptionsLocker.ExitWriteLock();
-            }
+            _cachedDoneExceptions.Add(item);
         }
 
-        internal static bool Remove(string exceptionToString)
+        internal static bool Remove(string item)
         {
-            DoneExceptionsLocker.EnterWriteLock();
-            try
-            {
-                return DoneExceptions.Remove(exceptionToString);
-            }
-            finally
-            {
-                DoneExceptionsLocker.ExitWriteLock();
-            }
+            return _cachedDoneExceptions.Remove(item);
         }
 
-        internal static bool Contains(string exceptionToString)
+        internal static bool Contains(string item)
         {
-            DoneExceptionsLocker.EnterReadLock();
-            try
-            {
-                return DoneExceptions.Contains(exceptionToString);
-            }
-            finally
-            {
-                DoneExceptionsLocker.ExitReadLock();
-            }
+            return _cachedDoneExceptions.Contains(item);
         }
     }
 }

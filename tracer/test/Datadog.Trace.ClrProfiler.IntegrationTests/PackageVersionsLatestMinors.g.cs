@@ -2331,6 +2331,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.4.2" },
                 new object[] { "2.5.3" },
                 new object[] { "2.6.6" },
+                new object[] { "2.7.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "2.2.0" },
@@ -2358,6 +2359,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.4.2" },
                 new object[] { "2.5.3" },
                 new object[] { "2.6.6" },
+                new object[] { "2.7.0" },
 #endif
 #if NET7_0
                 new object[] { "2.2.0" },
@@ -2365,6 +2367,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.4.2" },
                 new object[] { "2.5.3" },
                 new object[] { "2.6.6" },
+                new object[] { "2.7.0" },
 #endif
 #if NET8_0
                 new object[] { "2.2.0" },
@@ -2372,6 +2375,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.4.2" },
                 new object[] { "2.5.3" },
                 new object[] { "2.6.6" },
+                new object[] { "2.7.0" },
 #endif
 #endif
             };
@@ -4122,6 +4126,144 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.1.2" },
                 new object[] { "2.0.1" },
                 new object[] { "2.1.0" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> AzureServiceBus =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET462
+                new object[] { "7.4.0" },
+                new object[] { "7.5.1" },
+                new object[] { "7.6.0" },
+                new object[] { "7.7.0" },
+                new object[] { "7.8.1" },
+                new object[] { "7.9.0" },
+                new object[] { "7.10.0" },
+                new object[] { "7.11.1" },
+                new object[] { "7.12.0" },
+                new object[] { "7.13.1" },
+                new object[] { "7.14.0" },
+                new object[] { "7.15.0" },
+                new object[] { "7.16.2" },
+                new object[] { "7.17.4" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "7.4.0" },
+                new object[] { "7.5.1" },
+                new object[] { "7.6.0" },
+                new object[] { "7.7.0" },
+                new object[] { "7.8.1" },
+                new object[] { "7.9.0" },
+                new object[] { "7.10.0" },
+                new object[] { "7.11.1" },
+                new object[] { "7.12.0" },
+                new object[] { "7.13.1" },
+                new object[] { "7.14.0" },
+                new object[] { "7.15.0" },
+                new object[] { "7.16.2" },
+                new object[] { "7.17.4" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "7.4.0" },
+                new object[] { "7.5.1" },
+                new object[] { "7.6.0" },
+                new object[] { "7.7.0" },
+                new object[] { "7.8.1" },
+                new object[] { "7.9.0" },
+                new object[] { "7.10.0" },
+                new object[] { "7.11.1" },
+                new object[] { "7.12.0" },
+                new object[] { "7.13.1" },
+                new object[] { "7.14.0" },
+                new object[] { "7.15.0" },
+                new object[] { "7.16.2" },
+                new object[] { "7.17.4" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "7.4.0" },
+                new object[] { "7.5.1" },
+                new object[] { "7.6.0" },
+                new object[] { "7.7.0" },
+                new object[] { "7.8.1" },
+                new object[] { "7.9.0" },
+                new object[] { "7.10.0" },
+                new object[] { "7.11.1" },
+                new object[] { "7.12.0" },
+                new object[] { "7.13.1" },
+                new object[] { "7.14.0" },
+                new object[] { "7.15.0" },
+                new object[] { "7.16.2" },
+                new object[] { "7.17.4" },
+#endif
+#if NET5_0
+                new object[] { "7.4.0" },
+                new object[] { "7.5.1" },
+                new object[] { "7.6.0" },
+                new object[] { "7.7.0" },
+                new object[] { "7.8.1" },
+                new object[] { "7.9.0" },
+                new object[] { "7.10.0" },
+                new object[] { "7.11.1" },
+                new object[] { "7.12.0" },
+                new object[] { "7.13.1" },
+                new object[] { "7.14.0" },
+                new object[] { "7.15.0" },
+                new object[] { "7.16.2" },
+                new object[] { "7.17.4" },
+#endif
+#if NET6_0
+                new object[] { "7.4.0" },
+                new object[] { "7.5.1" },
+                new object[] { "7.6.0" },
+                new object[] { "7.7.0" },
+                new object[] { "7.8.1" },
+                new object[] { "7.9.0" },
+                new object[] { "7.10.0" },
+                new object[] { "7.11.1" },
+                new object[] { "7.12.0" },
+                new object[] { "7.13.1" },
+                new object[] { "7.14.0" },
+                new object[] { "7.15.0" },
+                new object[] { "7.16.2" },
+                new object[] { "7.17.4" },
+#endif
+#if NET7_0
+                new object[] { "7.4.0" },
+                new object[] { "7.5.1" },
+                new object[] { "7.6.0" },
+                new object[] { "7.7.0" },
+                new object[] { "7.8.1" },
+                new object[] { "7.9.0" },
+                new object[] { "7.10.0" },
+                new object[] { "7.11.1" },
+                new object[] { "7.12.0" },
+                new object[] { "7.13.1" },
+                new object[] { "7.14.0" },
+                new object[] { "7.15.0" },
+                new object[] { "7.16.2" },
+                new object[] { "7.17.4" },
+#endif
+#if NET8_0
+                new object[] { "7.4.0" },
+                new object[] { "7.5.1" },
+                new object[] { "7.6.0" },
+                new object[] { "7.7.0" },
+                new object[] { "7.8.1" },
+                new object[] { "7.9.0" },
+                new object[] { "7.10.0" },
+                new object[] { "7.11.1" },
+                new object[] { "7.12.0" },
+                new object[] { "7.13.1" },
+                new object[] { "7.14.0" },
+                new object[] { "7.15.0" },
+                new object[] { "7.16.2" },
+                new object[] { "7.17.4" },
 #endif
 #endif
             };

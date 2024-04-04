@@ -32,12 +32,12 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         _fixture.SetOutput(outputHelper);
         Directory.CreateDirectory(LogDirectory);
         EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.Rules, Path.Combine("ApiSecurity", "ruleset-with-block.json"));
+        // necessary as the developer middleware prevents the right blocking response
+        EnvironmentHelper.CustomEnvironmentVariables.Add("ASPNETCORE_ENVIRONMENT", "Production");
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
         if (enableApiSecurity)
         {
             EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled, "true");
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityRequestSampleRate, "1");
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityMaxConcurrentRequests, "100");
         }
     }
 

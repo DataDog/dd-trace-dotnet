@@ -157,6 +157,9 @@
     <ClCompile Include="FakeSamples.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>
+    <ClCompile Include="LinkedListTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">

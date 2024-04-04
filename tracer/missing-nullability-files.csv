@@ -294,12 +294,9 @@ src/Datadog.Trace/Agent/Transports/MimeTypes.cs
 src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
 src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Core.cs
 src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Framework.cs
-src/Datadog.Trace/AppSec/Coordinator/HttpTransportBase.cs
 src/Datadog.Trace/AppSec/Waf/IWaf.cs
 src/Datadog.Trace/AppSec/Waf/WafConstants.cs
 src/Datadog.Trace/AppSec/Waf/WafReturnCode.cs
-src/Datadog.Trace/AppSec/WafEncoding/Obj.cs
-src/Datadog.Trace/AppSec/WafEncoding/ObjType.cs
 src/Datadog.Trace/Ci/Agent/ApmAgentWriter.cs
 src/Datadog.Trace/Ci/Agent/CIVisibilityProtocolWriter.cs
 src/Datadog.Trace/Ci/Agent/CIWriterFileSender.cs
@@ -796,12 +793,9 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestClassInfo
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestClassInfoRunClassCleanupIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestClassInfoRunClassInitializeIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestContextStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestMethodAttributeExecuteIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestMethodContextStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestMethodRunnerExecuteIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestMethodRunnerExecuteTestIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestPropertyAttributeStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestResultStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestOutcome.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestResultOutcome.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestResultStruct.cs

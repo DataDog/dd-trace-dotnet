@@ -431,9 +431,9 @@
     <ClInclude Include="FrameworkThreadInfo.h">
       <Filter>Threads</Filter>
     </ClInclude>
-    <ClInclude Include="SampleEnumerator.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
+    <ClInclude Include="RawSamples.hpp" />
+    <ClInclude Include="SamplesEnumerator.h" />
+    <ClInclude Include="LinkedList.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">

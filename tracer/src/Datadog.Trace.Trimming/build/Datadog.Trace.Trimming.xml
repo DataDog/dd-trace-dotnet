@@ -70,6 +70,7 @@
       <type fullname="Microsoft.AspNetCore.Routing.IRoutingFeature" />
       <type fullname="Microsoft.AspNetCore.Routing.RouteData" />
       <type fullname="Microsoft.AspNetCore.Routing.RouteValueDictionary" />
+      <type fullname="Microsoft.AspNetCore.Routing.RoutingHttpContextExtensions" />
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Server.IIS" />
    <assembly fullname="Microsoft.AspNetCore.Server.Kestrel.Core" />
@@ -157,6 +158,7 @@
    </assembly>
    <assembly fullname="System.Collections.Specialized">
       <type fullname="System.Collections.Specialized.NameValueCollection" />
+      <type fullname="System.Collections.Specialized.OrderedDictionary" />
    </assembly>
    <assembly fullname="System.ComponentModel.Primitives">
       <type fullname="System.ComponentModel.BrowsableAttribute" />
@@ -706,6 +708,7 @@
       <type fullname="System.Runtime.CompilerServices.CompilationRelaxationsAttribute" />
       <type fullname="System.Runtime.CompilerServices.CompilerGeneratedAttribute" />
       <type fullname="System.Runtime.CompilerServices.ConditionalWeakTable`2" />
+      <type fullname="System.Runtime.CompilerServices.ConditionalWeakTable`2/CreateValueCallback" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredTaskAwaitable" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredTaskAwaitable/ConfiguredTaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1" />

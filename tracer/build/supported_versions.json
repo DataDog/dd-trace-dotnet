@@ -347,10 +347,10 @@
         "name": "Azure.Messaging.ServiceBus",
         "minVersionAvailableInclusive": "7.0.0",
         "minVersionSupportedInclusive": "7.14.0",
-        "minVersionTestedInclusive": null,
+        "minVersionTestedInclusive": "7.4.0",
         "maxVersionSupportedInclusive": "7.17.4",
         "maxVersionAvailableInclusive": "7.17.4",
-        "maxVersionTestedInclusive": null
+        "maxVersionTestedInclusive": "7.17.4"
       }
     ]
   },
@@ -1156,7 +1156,7 @@
         "minVersionTestedInclusive": "2.2.0",
         "maxVersionSupportedInclusive": "2.7.0",
         "maxVersionAvailableInclusive": "2.7.0",
-        "maxVersionTestedInclusive": "2.6.6"
+        "maxVersionTestedInclusive": "2.7.0"
       }
     ]
   },

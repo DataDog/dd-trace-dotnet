@@ -160,6 +160,7 @@ enum class ProbeStatus
 {
     RECEIVED,
     INSTALLED,
+    EMITTING,
     BLOCKED,
     /**
      * \brief Preceding with underscore because ERROR is a widely used preprocessor constant.

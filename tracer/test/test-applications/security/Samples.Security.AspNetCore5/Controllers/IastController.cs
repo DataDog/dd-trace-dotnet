@@ -29,6 +29,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Samples.Security.Data;
 
+#pragma warning disable ASP0019 // warning ASP0019: Use IHeaderDictionary.Append or the indexer to append or set headers. IDictionary.Add will throw an ArgumentException when attempting to add a duplicate key
 namespace Samples.Security.AspNetCore5.Controllers
 {
     public class QueryData
@@ -172,6 +173,27 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return BadRequest($"No price or query was provided");
+        }
+        
+        [HttpGet("NHibernateQuery")]
+        [Route("NHibernateQuery")]
+        public IActionResult NHibernateQuery(string username)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(username))
+                {
+                    var taintedQuery = "SELECT Value from FakeData where Name = '" + username + "'";
+                    var result = NHibernateHelper.CreateSqlQuery(taintedQuery);
+                    return Content($"Result: " + result.First());
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return BadRequest($"No username was provided");
         }
 
         [HttpGet("NewtonsoftJsonParseTainting")]

@@ -2260,7 +2260,7 @@ stages:
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
-        eq(variables.isMainBranch, true),
+        eq(variables.isMainOrReleaseBranch, true),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
       )
     )
@@ -2334,7 +2334,7 @@ stages:
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
-        eq(variables.isMainBranch, true),
+        eq(variables.isMainOrReleaseBranch, true),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
       )
     )
@@ -3885,9 +3885,9 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Linux64, Windows64, LinuxArm64, AsmLinux64]
+      jobs: [Linux64, Windows64, LinuxArm64]
       allowSkipped: true
-  #### Throughput Linux 64, windows 64, linux arm 64
+  #### Throughput Linux 64, Windows 64, Linux arm 64
 
   - job: Linux64
     timeoutInMinutes: 60
@@ -4022,61 +4022,13 @@ stages:
       # bother trying to upload these in case of failure, which means we can retry the
       # stages without issue
       artifact: crank_linux_arm64_1
-    
-    #### Throughput-AppSec Linux 64
-
-  - job: AsmLinux64
-    timeoutInMinutes: 60
-    pool: Throughput-AppSec
-    condition: >
-      or(
-        eq(variables.isMainBranch, true),
-        eq(variables.force_appsec_throughput_run, 'true'),
-        eq(variables.isAppSecChanged, 'True')
-      )
-
-    steps:
-      - template: steps/clone-repo.yml
-        parameters:
-          targetShaId: $(targetShaId)
-          targetBranch: $(targetBranch)
-      - task: DownloadPipelineArtifact@2
-        displayName: Download linux native binary
-        inputs:
-          artifact: linux-monitoring-home-linux-x64
-          path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
-
-      - script: |
-          test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
-          test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
-          test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
-          mkdir -p $(CrankDir)/results/logs
-          cd $(CrankDir)
-          chmod +x ./run-appsec.sh
-          ./run-appsec.sh "linux"
-        displayName: Crank
-        env:
-          DD_SERVICE: dd-trace-dotnet
-          DD_ENV: CI
-
-      - script: |
-          cp $(CrankDir)/*.json $(CrankDir)/results
-        displayName: Copy the results to results dir
-
-      - publish: "$(CrankDir)/results"
-        displayName: Publish results
-        # We don't include the JobAttempt in this case, because we rely on a specific name
-        # and an error in the throughput tests probably means no usable data, so dont
-        # bother trying to upload these in case of failure, which means we can retry the
-        # stages without issue
-        artifact: crank_linux_x64_asm_1
 
 - stage: throughput_profiler
   condition: >
     and(succeeded(), 
         eq(variables.isMainRepository, true),
         or(
-          eq(variables.isMainBranch, true),
+          eq(variables.isMainOrReleaseBranch, true),
           eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')))
   dependsOn: [package_linux, generate_variables, build_windows_tracer, merge_commit_id]
   variables:
@@ -4694,7 +4646,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -4778,7 +4730,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        vmImage: ubuntu-latest
+        name: azure-linux-smoke-scale-set
       
       steps:
         - template: steps/clone-repo.yml
@@ -4857,7 +4809,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -4947,7 +4899,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -5011,7 +4963,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -5083,7 +5035,7 @@ stages:
       installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
       linuxArtifacts: "linux-packages-linux-x64"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -5957,13 +5909,6 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_1
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download crank_linux_x64_asm_1
-      continueOnError: true
-      inputs:
-        artifact: crank_linux_x64_asm_1
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_asm_1
-
-    - task: DownloadPipelineArtifact@2
       displayName: Download crank_windows_x64_1
       continueOnError: true
       inputs:
@@ -6057,7 +6002,7 @@ stages:
     and(
       failed(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(variables['isMainBranch'], true)
+      eq(variables['isMainOrReleaseBranch'], true)
     )
   dependsOn: [trace_pipeline] # so it runs last
   jobs:

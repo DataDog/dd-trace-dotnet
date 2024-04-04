@@ -285,15 +285,5 @@ namespace Datadog.Trace
                 }
             }
         }
-
-        public void MarkApiSecurity()
-        {
-            if (Volatile.Read(ref _appSecRequestContext) is null)
-            {
-                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
-            }
-
-            _appSecRequestContext!.MarkApiSecurity();
-        }
     }
 }
