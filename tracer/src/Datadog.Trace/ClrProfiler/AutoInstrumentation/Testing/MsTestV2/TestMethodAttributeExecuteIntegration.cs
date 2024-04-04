@@ -127,16 +127,16 @@ public static class TestMethodAttributeExecuteIntegration
                         {
                             for (var j = 0; j < retryTestResultList.Count; j++)
                             {
-                                var test = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, retryTest.StartTime);
-                                HandleTestResult(test, testMethod, retryTestResultList[j], retryException);
+                                var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, retryTest.StartTime);
+                                HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j], retryException);
                             }
 
                             results[i + 1] = retryTestResultList;
                         }
                         else
                         {
-                            Common.Log.Warning<int>("Failed to extract TestResult from the retry {Index} return value", i);
-                            testMethodState.Test.Close(TestStatus.Fail);
+                            HandleTestResult(retryTest, testMethod, retryTestResult, retryException);
+                            results[i + 1] = new List<object?> { retryTestResult };
                         }
                     }
                 }
