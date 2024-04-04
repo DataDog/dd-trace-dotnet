@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
 #nullable enable
@@ -16,35 +17,44 @@ namespace Datadog.Trace;
 /// </summary>
 internal class SpanLink
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanLink>();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SpanLink"/> class.
     /// A span link describes a tuple of trace id and span id
     /// in OpenTelemetry that's called a Span Context, which may also include tracestate and trace flags.
     /// </summary>
     /// <param name="spanLinkContext">The context of the spanlink to extract attributes from</param>
+    /// <param name="decoratedSpan">Reference to the span you're adding SpanLinks to</param>
     /// <param name="attributes">Optional dictionary of attributes to take for the spanlink.</param>
-    internal SpanLink(SpanContext spanLinkContext, List<KeyValuePair<string, string>>? attributes = null)
+    public SpanLink(SpanContext spanLinkContext, Span decoratedSpan, List<KeyValuePair<string, string>>? attributes = null)
     {
         Context = spanLinkContext;
+        DecoratedSpan = decoratedSpan;
         Attributes = attributes;
     }
 
-    internal SpanLink(Span spanToLink, List<KeyValuePair<string, string>>? attributes = null)
-        : this(spanToLink.Context, attributes)
+    public SpanLink(Span spanToLink, Span decoratedSpan, List<KeyValuePair<string, string>>? attributes = null)
+        : this(spanToLink.Context, decoratedSpan, attributes)
     {
     }
 
-    internal List<KeyValuePair<string, string>>? Attributes { get; set; }
+    public List<KeyValuePair<string, string>>? Attributes { get; set; }
 
-    internal SpanContext Context { get;  }
+    public SpanContext Context { get;  }
 
-    internal SpanLink AddAttribute(string name, string value)
+    public Span DecoratedSpan { get; }
+
+    public SpanLink? AddAttribute(string name, string value)
     {
-        var newAttribute = new KeyValuePair<string, string>(name, value);
-        if (Attributes is null)
+        if (DecoratedSpan.IsFinished)
         {
-            Attributes = new List<KeyValuePair<string, string>>();
+            Log.Warning("AddAttribute should not be called after the decorated span was closed");
+            return null;
         }
+
+        var newAttribute = new KeyValuePair<string, string>(name, value);
+        Attributes ??= [];
 
         Attributes.Add(newAttribute);
         return this;

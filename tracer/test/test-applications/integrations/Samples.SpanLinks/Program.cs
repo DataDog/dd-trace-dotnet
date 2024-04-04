@@ -1,27 +1,27 @@
 // See https://aka.ms/new-console-template for more information
+
 using Samples;
 
 Console.WriteLine("Hello, World!");
-IDisposable? root;
-using (root = SampleHelpers.CreateScope("root"))
+for (var i = 0; i < 100; i++)
 {
+    IDisposable? root;
+    root = SampleHelpers.CreateScope("root");
     Console.WriteLine("Started root");
-}
 
-using (var link = SampleHelpers.CreateScope("link"))
-{
+    var link = SampleHelpers.CreateScope("link");
     Console.WriteLine("link");
-    var attributesToAdd = new List<KeyValuePair<string, string>>
-    {
-        new("link.name", "manually_linking"),
-        new("pair", "false"),
-        new("arbitrary", "56709")
-    };
-    
-    var result = SampleHelpers.AddSpanLinkWithAttributes(root, link, attributesToAdd);
+    var attributesToAdd = new List<KeyValuePair<string, string>> { new("link.name", "manually_linking"), new("pair", "false"), new("arbitrary", "56709") };
 
-    if (result is not null) 
+
+    var result = SampleHelpers.AddSpanLinkWithAttributes(link, root, attributesToAdd);
+
+    if (result is not null)
     {
         Console.WriteLine("added link");
     }
+    
+
+    link.Dispose();
+    root.Dispose();
 }

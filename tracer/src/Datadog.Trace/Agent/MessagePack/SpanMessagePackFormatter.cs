@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
@@ -45,7 +46,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _spanLinkBytes = StringEncoding.UTF8.GetBytes("span_links");
         private readonly byte[] _traceStateBytes = StringEncoding.UTF8.GetBytes("tracestate");
         private readonly byte[] _traceFlagBytes = StringEncoding.UTF8.GetBytes("flags");
-        private readonly byte[] _attributes = StringEncoding.UTF8.GetBytes("attributes");
+        private readonly byte[] _attributesBytes = StringEncoding.UTF8.GetBytes("attributes");
 
         // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
@@ -268,7 +269,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 // optional serialization
                 if (spanLink.Attributes is { Count: > 0 })
                 {
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _attributes);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _attributesBytes);
                     offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, spanLink.Attributes.Count);
                     foreach (var attribute in spanLink.Attributes)
                     {

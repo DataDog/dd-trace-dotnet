@@ -551,8 +551,14 @@ namespace Datadog.Trace
 
         internal SpanLink AddSpanLink(Span spanLinkToAdd, List<KeyValuePair<string, string>> attributes = null)
         {
+            if (IsFinished)
+            {
+                Log.Warning("AddSpanLink should not be called after the span was closed");
+                return null;
+            }
+
             SpanLinks ??= new List<SpanLink>();
-            var spanLink = new SpanLink(spanLinkToAdd, attributes);
+            var spanLink = new SpanLink(spanLinkToAdd, this, attributes);
             SpanLinks.Add(spanLink);
             return spanLink;
         }
