@@ -44,6 +44,8 @@ void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
 
     auto threads = GetThreads();
 
+    std::cout << "Inspecting " << threads.size() << " threads...\n";
+
     for (auto threadId : threads)
     {
         auto frames = GetThreadFrames(threadId, resolveCallback);
@@ -104,8 +106,6 @@ void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
         delete[] strings;
     }
 
-    std::cout << "Finished inspecting threads\n";
-
     //auto sigInfo = "NullReferenceException";
 
     //ddog_crashinfo_set_siginfo(crashInfo, { 139, { sigInfo, std::strlen(sigInfo)} });
@@ -144,7 +144,7 @@ void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
         return;
     }
 
-    std::cout << "Crash uploaded to endpoint" << std::endl;
+    std::cout << "Crash info uploaded to Datadog" << std::endl;
 
     ddog_crashinfo_drop(crashInfo);
 }

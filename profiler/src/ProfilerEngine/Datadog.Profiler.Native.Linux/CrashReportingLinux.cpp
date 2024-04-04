@@ -107,24 +107,7 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
 
 std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod)
 {
-    std::cout << "-------------- Inspecting thread " << tid << "\n";
-
     std::vector<StackFrame> frames;
-
-    // if (ptrace(PTRACE_ATTACH, tid, NULL, NULL) == -1)
-    // {
-    //     std::cout << "Ptrace failed for thread " << tid << "\n";
-    //     return frames;
-    // }
-
-    // Wait for the target process to stop
-    // int wait_status;
-    // waitpid(tid, &wait_status, 0);
-    // if (!WIFSTOPPED(wait_status))
-    // {
-    //     fprintf(stderr, "Failed to stop target process\n");
-    //     return frames;
-    // }
 
     auto context = _UPT_create(tid);
 
@@ -158,16 +141,27 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             unw_word_t offset;
 
             // TODO: check if unw_get_proc_name fails
-            unw_get_proc_name(&cursor, methodData.symbolName, sizeof(methodData.symbolName), &offset);
-            stackFrame.method = std::string(methodData.symbolName);
+            result = unw_get_proc_name(&cursor, methodData.symbolName, sizeof(methodData.symbolName), &offset);
 
-            unw_proc_info_t procInfo;
-            unw_get_proc_info(&cursor, &procInfo);
+            if (result == 0)
+            {
+                stackFrame.method = std::string(methodData.symbolName);
 
-            stackFrame.symbolAddress = procInfo.start_ip;
+                unw_proc_info_t procInfo;
+                result = unw_get_proc_info(&cursor, &procInfo);
 
-            auto module = FindModule(ip);
-            stackFrame.moduleAddress = module.second;
+                if (result == 0)
+                {
+                    stackFrame.symbolAddress = procInfo.start_ip;
+
+                    auto module = FindModule(ip);
+                    stackFrame.moduleAddress = module.second;
+                }
+            }
+            else
+            {
+                stackFrame.method = unw_strerror(result);
+            }
 
         }
         else if (resolved == 0)
@@ -181,10 +175,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
     } while (unw_step(&cursor) > 0);
 
-    // if (ptrace(PTRACE_DETACH, tid, NULL, NULL) == -1) {
-    //     perror("ptrace detach");
-    //     return frames;
-    // }
+    _UPT_destroy(context);
 
     return frames;
 }
@@ -192,7 +183,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 std::vector<int32_t> CrashReportingLinux::GetThreads()
 {
     DIR* proc_dir;
-    char dirname[256]; // Ensure sufficient space
+    char dirname[256];
 
     std::string pidPath = (_pid == -1) ? "self" : std::to_string(_pid);
     snprintf(dirname, sizeof(dirname), "/proc/%s/task", pidPath.c_str());

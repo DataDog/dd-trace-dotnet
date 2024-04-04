@@ -81,11 +81,7 @@ internal class CreatedumpCommand : Command
 
         AnsiConsole.WriteLine($"Capturing crash info for process {pid}");
 
-        const string path = @"/home/kgosse/git/dd-trace-dotnet/shared/bin/monitoring-home/linux-x64/";
-
-        AnsiConsole.WriteLine($"Loading Datadog.Profiler.Native.so from {path}");
-
-        var lib = NativeLibrary.Load(Path.Combine(path, "Datadog.Profiler.Native.so"));
+        var lib = NativeLibrary.Load("Datadog.Profiler.Native.so");
 
         var export = NativeLibrary.GetExport(lib, "ReportCrash");
 
@@ -103,8 +99,6 @@ internal class CreatedumpCommand : Command
         var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
 
         function(pid.Value, (IntPtr)callback);
-
-        AnsiConsole.WriteLine("Createdump command finished");
     }
 
     [StructLayout(LayoutKind.Sequential)]
