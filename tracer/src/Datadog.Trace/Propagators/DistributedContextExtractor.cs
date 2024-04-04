@@ -59,11 +59,11 @@ namespace Datadog.Trace.Propagators
                 traceId = GetFullTraceId((ulong)traceIdLower, traceTags);
             }
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId)
+            // we don't consider contexts coming from this as "remote" as it could be from a version conflict scenario crossing an AppDomain boundary
+            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId, isRemote: false)
                           {
                               PropagatedTags = traceTags,
                               AdditionalW3CTraceState = w3CTraceState,
-                              IsRemote = true,
                           };
 
             return true;
