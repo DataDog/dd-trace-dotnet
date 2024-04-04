@@ -633,11 +633,11 @@ namespace Datadog.Trace.Propagators
                 serviceName: null,
                 origin: traceState.Origin,
                 rawTraceId: traceParent.RawTraceId,
-                rawSpanId: traceParent.RawParentId);
+                rawSpanId: traceParent.RawParentId,
+                isRemote: true);
 
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
-            spanContext.IsRemote = true;
             return true;
         }
 
