@@ -125,7 +125,7 @@ namespace Datadog.Trace
 
         internal SpanContext Context { get; }
 
-        internal List<SpanLink> SpanLinks { get; set; }
+        internal List<SpanLink> SpanLinks { get; private set; }
 
         internal DateTimeOffset StartTime { get; private set; }
 
