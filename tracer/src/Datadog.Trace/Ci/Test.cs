@@ -423,4 +423,9 @@ public sealed class Test
     {
         return _scope.Span;
     }
+
+    internal void SetName(string name)
+    {
+        ((TestSpanTags)_scope.Span.Tags).Name = name;
+    }
 }
