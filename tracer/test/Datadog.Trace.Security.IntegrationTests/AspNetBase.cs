@@ -66,9 +66,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             _httpClient.DefaultRequestHeaders.ConnectionClose = true;
 #endif
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
-            EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
-            EnvironmentHelper.CustomEnvironmentVariables.Add("DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT", 10_000_000.ToString());
-            EnvironmentHelper.CustomEnvironmentVariables.Add("DD_IAST_REGEXP_TIMEOUT", 10_000_000.ToString());
         }
 
         protected bool IncludeAllHttpSpans { get; set; } = false;
