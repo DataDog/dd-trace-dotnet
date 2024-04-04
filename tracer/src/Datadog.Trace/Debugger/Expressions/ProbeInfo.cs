@@ -18,6 +18,7 @@ namespace Datadog.Trace.Debugger.Expressions
         bool HasCondition,
         string[] Tags,
         TargetSpan? TargetSpan,
+        CaptureLimitInfo CaptureLimitInfo,
         bool IsEmitted = false)
     {
         internal string ProbeId { get; } = ProbeId;
@@ -41,5 +42,22 @@ namespace Datadog.Trace.Debugger.Expressions
         internal string[] Tags { get; } = Tags;
 
         public TargetSpan? TargetSpan { get; } = TargetSpan;
+
+        public CaptureLimitInfo CaptureLimitInfo { get; } = CaptureLimitInfo;
+    }
+
+    internal readonly record struct CaptureLimitInfo(
+        int MaxReferenceDepth,
+        int MaxCollectionSize,
+        int MaxLength,
+        int MaxFieldCount)
+    {
+        public int MaxReferenceDepth { get; } = MaxReferenceDepth;
+
+        public int MaxCollectionSize { get; } = MaxCollectionSize;
+
+        public int MaxLength { get; } = MaxLength;
+
+        public int MaxFieldCount { get; } = MaxFieldCount;
     }
 }

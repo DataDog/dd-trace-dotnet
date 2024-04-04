@@ -9,22 +9,34 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "AsyncVoid",
-                "value": "AsyncVoid"
+                "type": "AsyncNoHoistedLocal",
+                "value": "AsyncNoHoistedLocal"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "AsyncVoid",
-                "value": "AsyncVoid"
+                "type": "AsyncNoHoistedLocal",
+                "value": "AsyncNoHoistedLocal"
               }
             },
             "locals": {
-              "e": {
-                "notCapturedReason": "The value of this variable in not available in the specified probe location. Place a line probe closer to where the variable was assigned or used to obtain its value.",
-                "type": "AccessViolationException"
+              "@return": {
+                "type": "String",
+                "value": "Method"
+              },
+              "iii": {
+                "isNull": "true",
+                "type": "Object"
+              },
+              "input": {
+                "isNull": "true",
+                "type": "String"
+              },
+              "rrr": {
+                "isNull": "true",
+                "type": "String"
               }
             }
           }
@@ -35,8 +47,8 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "VoidTaskMethod",
-            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncVoid"
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncNoHoistedLocal"
           },
           "version": 0
         },
@@ -45,8 +57,8 @@
       }
     },
     "logger": {
-      "method": "VoidTaskMethod",
-      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncVoid",
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncNoHoistedLocal",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
