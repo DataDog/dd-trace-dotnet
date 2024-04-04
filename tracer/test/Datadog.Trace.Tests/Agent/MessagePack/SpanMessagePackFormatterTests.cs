@@ -128,9 +128,9 @@ public class SpanMessagePackFormatterTests
         };
         var attributesToAdd = new List<KeyValuePair<string, string>>
         {
-            new KeyValuePair<string, string>("link.name", "manually_linking"),
-            new KeyValuePair<string, string>("pair", "false"),
-            new KeyValuePair<string, string>("arbitrary", "56709")
+            new("link.name", "manually_linking"),
+            new("pair", "false"),
+            new("arbitrary", "56709")
         };
         spans[0].AddSpanLink(spans[1], attributesToAdd);
         spans[1].AddSpanLink(spans[2]).AddAttribute("chaining", "adding attribute").AddAttribute("chaining2x", "we're cooking");
