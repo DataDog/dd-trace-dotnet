@@ -219,7 +219,6 @@ benchmark-serverless-trigger:
   trigger:
     project: DataDog/serverless-tools
     strategy: depend
-    branch: jordan.gonzalez/benchmark-dd-trace-dotnet
   allow_failure: true
   variables:
     UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
