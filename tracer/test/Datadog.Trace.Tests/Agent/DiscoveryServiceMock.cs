@@ -17,6 +17,7 @@ internal class DiscoveryServiceMock : IDiscoveryService
     public void TriggerChange(
         string configurationEndpoint = "configurationEndpoint",
         string debuggerEndpoint = "debuggerEndpoint",
+        string diagnosticsEndpoint = "diagnosticsEndpoint",
         string symbolDbEndpoint = "symbolDbEndpoint",
         string agentVersion = "agentVersion",
         string statsEndpoint = "traceStatsEndpoint",
@@ -29,6 +30,7 @@ internal class DiscoveryServiceMock : IDiscoveryService
             new AgentConfiguration(
                 configurationEndpoint: configurationEndpoint,
                 debuggerEndpoint: debuggerEndpoint,
+                diagnosticsEndpoint: diagnosticsEndpoint,
                 symbolDbEndpoint: symbolDbEndpoint,
                 agentVersion: agentVersion,
                 statsEndpoint: statsEndpoint,
