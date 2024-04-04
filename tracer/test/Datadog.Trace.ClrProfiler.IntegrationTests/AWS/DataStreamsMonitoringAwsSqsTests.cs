@@ -59,19 +59,16 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
         /*
-         * runs a scenario where we test:
-         *   in the same thread:
-         *    - 1 async send / receive + same with a batch of 3 messages
-         *    - 1 async send / receive + same with a batch of 3 messages where headers are full (so we cannot inject an datadog info)
-         *   then in 3 different threads:
-         *    - 2 async send and 2 async batch send of 3 messages
-         *    - 2 async receive of the non batch messages
-         *    - 2 async receive of 3 messages of the batch messages
-         *   batch messages and single messages are sent to 2 different queues.
+         * runs a scenario depending on the env variables set, where we do:
+         *    - one send
+         *    - one receive
+         * for batch mode, groups of 3 messages are sent/received
+         * "in thread" means that the send and the receive are in separate threads
+         * and we can set 10 headers before the instrumentation to prevent it from being able to add one (i.e. prevent injection)
          *
          * For DSM, this results in:
-         *  - 2 produce pathway points (one for each queue)
-         *  - 4 consume pathway points (one with a parent for the "normal" case, and one without for when headers are full, times 2 queues)
+         *  - 1 produce pathway point (tagged with 'direction:out')
+         *  - 1 consume pathway points (either with a parent for the "normal" case, or without when headers are full)
          */
         using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
