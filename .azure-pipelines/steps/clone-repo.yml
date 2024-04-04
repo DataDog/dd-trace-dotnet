@@ -11,11 +11,11 @@ steps:
   - bash: |
       # Azure devops _doesn't_ clean up the contents of the repo after the pipeline has finished
       # So we do it manually
-      echo "Cleaning up source directory $BUILD_REPOSITORY_LOCALPATH/"
-      sudo rm -rf $BUILD_REPOSITORY_LOCALPATH/
-      # Have to recreate the directory because the above deletes it entirely (to ensure we also delete . files)
-      mkdir $BUILD_REPOSITORY_LOCALPATH/
-      
+      echo "Cleaning $BUILD_REPOSITORY_LOCALPATH/ directory"
+      # This deletes everything in the folder _except the .git folder
+      # Deleting the git folder causes weird issues with git lfs
+      sudo find $BUILD_REPOSITORY_LOCALPATH/. -name . -o -prune -not \( -path $BUILD_REPOSITORY_LOCALPATH/./.git -prune \) -exec rm -rf -- {} +
+
       # As this is a pull request, we need to do a fake merge
       # uses similar process to existing checkout task
       prBranch=$SYSTEM_PULLREQUEST_SOURCEBRANCH
@@ -68,7 +68,7 @@ steps:
   - powershell: |
       echo "Cleaning up source directories ..."
       $localPath=$env:BUILD_REPOSITORY_LOCALPATH
-      rm $localPath/* -r -fo
+      rm $localPath/* -r -fo -Exclude ".git"
 
       # As this is a pull request, we need to do a fake merge
       # uses similar process to existing checkout task
@@ -133,14 +133,14 @@ steps:
 - ${{ else }}:
     # The clean doesn't always work, so sudo rm -rf it
   - bash: |
-      echo "Deleting $BUILD_REPOSITORY_LOCALPATH/ with sudo rm -rf"
-      sudo rm -rf $BUILD_REPOSITORY_LOCALPATH/
-      # Have to recreate the directory because the above deletes it entirely (to ensure we also delete . files)
-      mkdir $BUILD_REPOSITORY_LOCALPATH/
+      echo "Cleaning $BUILD_REPOSITORY_LOCALPATH/ directory"
+      # This deletes everything in the folder _except the .git folder
+      # Deleting the git folder causes weird issues with git lfs
+      sudo find $BUILD_REPOSITORY_LOCALPATH/. -name . -o -prune -not \( -path $BUILD_REPOSITORY_LOCALPATH/./.git -prune \) -exec rm -rf -- {} +
     displayName: clean
     condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
 
-  - powershell: rm "$env:BUILD_REPOSITORY_LOCALPATH/*" -r -fo
+  - powershell: rm "$env:BUILD_REPOSITORY_LOCALPATH/*" -r -fo -Exclude ".git"
     displayName: clean
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
