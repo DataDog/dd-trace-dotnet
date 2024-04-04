@@ -851,7 +851,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 return returnValue.GetInternalDuckTypedInstance<TTo>();
             }
 
-            Log.Error("UnwrapReturnValue<{TFrom}, {TTo}>: The return value is null.", typeof(TFrom), typeof(TTo));
+            Log.Debug("UnwrapReturnValue<{TFrom}, {TTo}>: The return value is null.", typeof(TFrom), typeof(TTo));
             return default;
         }
 
@@ -863,7 +863,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 return InternalUnwrapTaskReturnValue(returnValue, preserveContext);
             }
 
-            Log.Error("UnwrapTaskReturnValue<{TFrom}, {TTo}>: The return value is null.", typeof(TFrom), typeof(TTo));
+            Log.Debug("UnwrapTaskReturnValue<{TFrom}, {TTo}>: The return value is null.", typeof(TFrom), typeof(TTo));
             return null;
 
             static async Task<TTo?> InternalUnwrapTaskReturnValue(Task<TFrom?> returnValue, bool preserveContext)
