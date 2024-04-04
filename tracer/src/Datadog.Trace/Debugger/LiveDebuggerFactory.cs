@@ -47,10 +47,10 @@ internal class LiveDebuggerFactory
             () => new MinimalAgentHeaderHelper(),
             uri => uri);
 
-        var snapshotBatchUploadApi = AgentBatchUploadApi.Create(apiFactory, discoveryService, gitMetadataTagsProvider, false);
+        var snapshotBatchUploadApi = AgentBatchUploadApi.CreateSnapshotApi(apiFactory, discoveryService, gitMetadataTagsProvider);
         var snapshotBatchUploader = BatchUploader.Create(snapshotBatchUploadApi);
 
-        var diagnosticsBatchUploadApi = AgentBatchUploadApi.Create(apiFactory, discoveryService, gitMetadataTagsProvider, true);
+        var diagnosticsBatchUploadApi = AgentBatchUploadApi.CreateDiagnosticsApi(apiFactory, discoveryService, gitMetadataTagsProvider);
         var diagnosticsBatchUploader = BatchUploader.Create(diagnosticsBatchUploadApi);
 
         var debuggerSink = DebuggerSink.Create(

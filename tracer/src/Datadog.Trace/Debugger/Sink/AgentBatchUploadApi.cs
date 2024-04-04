@@ -40,13 +40,20 @@ namespace Datadog.Trace.Debugger.Sink
             discoveryService.SubscribeToChanges(c => _endpoint = isDiagnostics ? c.DiagnosticsEndpoint : c.DebuggerEndpoint);
         }
 
-        public static AgentBatchUploadApi Create(
+        public static AgentBatchUploadApi CreateDiagnosticsApi(
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
-            IGitMetadataTagsProvider gitMetadataTagsProvider,
-            bool isDiagnostics)
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
-            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, isDiagnostics);
+            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, true);
+        }
+
+        public static AgentBatchUploadApi CreateSnapshotApi(
+            IApiRequestFactory apiRequestFactory,
+            IDiscoveryService discoveryService,
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
+        {
+            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, false);
         }
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> data)
