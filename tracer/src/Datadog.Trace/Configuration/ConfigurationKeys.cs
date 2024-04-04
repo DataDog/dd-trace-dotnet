@@ -527,6 +527,11 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for enabling or disabling Datadog.Trace GAC installation
             /// </summary>
             public const string InstallDatadogTraceInGac = "DD_CIVISIBILITY_GAC_INSTALL_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling the early flake detection feature in CI Visibility
+            /// </summary>
+            public const string EarlyFlakeDetectionEnabled = "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED";
         }
 
         /// <summary>

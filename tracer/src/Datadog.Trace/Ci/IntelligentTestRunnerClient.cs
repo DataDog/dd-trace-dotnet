@@ -1208,9 +1208,9 @@ internal class IntelligentTestRunnerClient
         }
     }
 
+#pragma warning disable CS0649 // Readonly field is never assigned to - this is created using JSON deserialization
     public readonly struct SettingsResponse
     {
-#pragma warning disable CS0649 // Readonly field is never assigned to - this is created using JSON deserialization
         [JsonProperty("code_coverage")]
         public readonly bool? CodeCoverage;
 
@@ -1219,8 +1219,38 @@ internal class IntelligentTestRunnerClient
 
         [JsonProperty("require_git")]
         public readonly bool? RequireGit;
-#pragma warning restore CS0649
+
+        [JsonProperty("early_flake_detection")]
+        public readonly EarlyFlakeDetectionSettingsResponse EarlyFlakeDetection;
     }
+
+    public readonly struct EarlyFlakeDetectionSettingsResponse
+    {
+        [JsonProperty("enabled")]
+        public readonly bool? Enabled;
+
+        [JsonProperty("slow_test_retries")]
+        public readonly SlowTestRetriesSettingsResponse SlowTestRetries;
+
+        [JsonProperty("faulty_session_threshold")]
+        public readonly int? FaultySessionThreshold;
+    }
+
+    public readonly struct SlowTestRetriesSettingsResponse
+    {
+        [JsonProperty("5s")]
+        public readonly int? FiveSeconds;
+
+        [JsonProperty("10s")]
+        public readonly int? TenSeconds;
+
+        [JsonProperty("30s")]
+        public readonly int? ThirtySeconds;
+
+        [JsonProperty("5m")]
+        public readonly int? FiveMinutes;
+    }
+#pragma warning restore CS0649
 
     private class ObjectPackFilesResult
     {
