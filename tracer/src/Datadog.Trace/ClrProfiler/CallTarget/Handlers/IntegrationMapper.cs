@@ -846,7 +846,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         private static TTo? UnwrapReturnValue<TFrom, TTo>(TFrom? returnValue)
             where TFrom : IDuckType
         {
-            if (returnValue?.Instance is not null)
+            if (returnValue is not null)
             {
                 return returnValue.GetInternalDuckTypedInstance<TTo>();
             }
