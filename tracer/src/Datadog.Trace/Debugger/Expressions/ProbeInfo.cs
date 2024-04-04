@@ -18,7 +18,7 @@ namespace Datadog.Trace.Debugger.Expressions
         bool HasCondition,
         string[] Tags,
         TargetSpan? TargetSpan,
-		CaptureLimitInfo CaptureLimitInfo,
+        CaptureLimitInfo CaptureLimitInfo,
         bool IsEmitted = false)
     {
         internal string ProbeId { get; } = ProbeId;
