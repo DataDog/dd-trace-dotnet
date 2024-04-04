@@ -438,37 +438,7 @@
               },
               "children": {
                 "fields": {
-                  "m_task": {
-                    "fields": {
-                      "m_action": {
-                        "isNull": "true",
-                        "type": "Delegate"
-                      },
-                      "m_contingentProperties": {
-                        "isNull": "true",
-                        "type": "ContingentProperties"
-                      },
-                      "m_continuationObject": {
-                        "type": "Object",
-                        "value": "Object"
-                      },
-                      "m_stateFlags": {
-                        "type": "Int32",
-                        "value": "117441536"
-                      },
-                      "m_stateObject": {
-                        "isNull": "true",
-                        "type": "Object"
-                      },
-                      "m_taskId": "ScrubbedValue",
-                      "m_taskScheduler": {
-                        "isNull": "true",
-                        "type": "TaskScheduler"
-                      }
-                    },
-                    "type": "Task",
-                    "value": "Task"
-                  }
+                  "m_task": "ScrubbedValue"
                 },
                 "type": "TaskAwaiter",
                 "value": "TaskAwaiter"
@@ -1618,10 +1588,7 @@
                 },
                 "children": {
                   "fields": {
-                    "m_task": {
-                      "isNull": "true",
-                      "type": "Task"
-                    }
+                    "m_task": "ScrubbedValue"
                   },
                   "type": "TaskAwaiter",
                   "value": "TaskAwaiter"
@@ -1978,10 +1945,7 @@
                 },
                 "children": {
                   "fields": {
-                    "m_task": {
-                      "isNull": "true",
-                      "type": "Task"
-                    }
+                    "m_task": "ScrubbedValue"
                   },
                   "type": "TaskAwaiter",
                   "value": "TaskAwaiter"
@@ -2338,37 +2302,7 @@
                 },
                 "children": {
                   "fields": {
-                    "m_task": {
-                      "fields": {
-                        "m_action": {
-                          "isNull": "true",
-                          "type": "Delegate"
-                        },
-                        "m_contingentProperties": {
-                          "isNull": "true",
-                          "type": "ContingentProperties"
-                        },
-                        "m_continuationObject": {
-                          "type": "Object",
-                          "value": "Object"
-                        },
-                        "m_stateFlags": {
-                          "type": "Int32",
-                          "value": "117441536"
-                        },
-                        "m_stateObject": {
-                          "isNull": "true",
-                          "type": "Object"
-                        },
-                        "m_taskId": "ScrubbedValue",
-                        "m_taskScheduler": {
-                          "isNull": "true",
-                          "type": "TaskScheduler"
-                        }
-                      },
-                      "type": "Task",
-                      "value": "Task"
-                    }
+                    "m_task": "ScrubbedValue"
                   },
                   "type": "TaskAwaiter",
                   "value": "TaskAwaiter"

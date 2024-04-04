@@ -27,15 +27,15 @@
                 "value": "Method"
               },
               "iii": {
-                "isNull": "true",
+                "notCapturedReason": "The value of this variable in not available in the specified probe location. Place a line probe closer to where the variable was assigned or used to obtain its value.",
                 "type": "Object"
               },
               "input": {
-                "isNull": "true",
+                "notCapturedReason": "The value of this variable in not available in the specified probe location. Place a line probe closer to where the variable was assigned or used to obtain its value.",
                 "type": "String"
               },
               "rrr": {
-                "isNull": "true",
+                "notCapturedReason": "The value of this variable in not available in the specified probe location. Place a line probe closer to where the variable was assigned or used to obtain its value.",
                 "type": "String"
               }
             }
