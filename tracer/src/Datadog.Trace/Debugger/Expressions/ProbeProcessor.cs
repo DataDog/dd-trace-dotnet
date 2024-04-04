@@ -314,7 +314,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.Metric.HasValue)
             {
-                LiveDebugger.Instance.SendMetrics(ProbeInfo.MetricKind.Value, ProbeInfo.MetricName, evaluationResult.Metric.Value, ProbeInfo.ProbeId);
+                LiveDebugger.Instance.SendMetrics(ProbeInfo, ProbeInfo.MetricKind.Value, ProbeInfo.MetricName, evaluationResult.Metric.Value, ProbeInfo.ProbeId);
                 // snapshot creator is created for all probes in the method invokers,
                 // if it is a metric probe, once we sent the value, we can stop the invokers and dispose the snapshot creator
                 snapshotCreator.Dispose();
@@ -345,6 +345,8 @@ namespace Datadog.Trace.Debugger.Expressions
                 return;
             }
 
+            var attachedTags = false;
+
             for (int i = 0; i < evaluationResult.Decorations.Length; i++)
             {
                 var decoration = evaluationResult.Decorations[i];
@@ -364,6 +366,8 @@ namespace Datadog.Trace.Debugger.Expressions
                             Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, null);
                         }
 
+                        attachedTags = true;
+
                         break;
                     case TargetSpan.Active:
                         Tracer.Instance.ScopeManager.Active.Span.SetTag(decoration.TagName, decoration.Value);
@@ -377,6 +381,8 @@ namespace Datadog.Trace.Debugger.Expressions
                             Tracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, null);
                         }
 
+                        attachedTags = true;
+
                         break;
                     default:
                         Log.Error("Invalid target span. Probe: {ProbeId}", ProbeInfo.ProbeId);
@@ -389,6 +395,11 @@ namespace Datadog.Trace.Debugger.Expressions
             {
                 snapshotCreator.Dispose();
                 shouldStopCapture = true;
+            }
+
+            if (attachedTags)
+            {
+                LiveDebugger.Instance.SetProbeStatusToEmitting(ProbeInfo);
             }
         }
 
@@ -457,7 +468,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (!ProbeInfo.IsFullSnapshot)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                        LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
+                        LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
                         break;
                     }
 
@@ -476,7 +487,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (!ProbeInfo.IsFullSnapshot)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                        LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
+                        LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
                         break;
                     }
 
@@ -503,7 +514,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         }
 
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                        LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
+                        LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
                         snapshotCreator.Stop();
                         break;
                     }
@@ -542,7 +553,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     }
 
                     var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                    LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
+                    LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
                     snapshotCreator.Stop();
                     break;
 

@@ -2260,7 +2260,7 @@ stages:
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
-        eq(variables.isMainBranch, true),
+        eq(variables.isMainOrReleaseBranch, true),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
       )
     )
@@ -2334,7 +2334,7 @@ stages:
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
-        eq(variables.isMainBranch, true),
+        eq(variables.isMainOrReleaseBranch, true),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
       )
     )
@@ -4028,7 +4028,7 @@ stages:
     and(succeeded(), 
         eq(variables.isMainRepository, true),
         or(
-          eq(variables.isMainBranch, true),
+          eq(variables.isMainOrReleaseBranch, true),
           eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')))
   dependsOn: [package_linux, generate_variables, build_windows_tracer, merge_commit_id]
   variables:
@@ -4646,7 +4646,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -4730,7 +4730,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        vmImage: ubuntu-latest
+        name: azure-linux-smoke-scale-set
       
       steps:
         - template: steps/clone-repo.yml
@@ -4809,7 +4809,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -4899,7 +4899,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -4963,7 +4963,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -5035,7 +5035,7 @@ stages:
       installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
       linuxArtifacts: "linux-packages-linux-x64"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -6002,7 +6002,7 @@ stages:
     and(
       failed(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(variables['isMainBranch'], true)
+      eq(variables['isMainOrReleaseBranch'], true)
     )
   dependsOn: [trace_pipeline] # so it runs last
   jobs:
