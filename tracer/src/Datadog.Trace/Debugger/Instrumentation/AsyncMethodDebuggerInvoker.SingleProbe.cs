@@ -11,6 +11,7 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
+using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -219,16 +220,27 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            var captureInfo = new CaptureInfo<TLocal>(asyncState.MethodMetadataIndex, value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
-            var probeData = asyncState.ProbeData;
-
-            if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator, in probeData))
+            if (!ProcessMoveNextLocal(ref local, asyncState, localName))
             {
                 asyncState.IsActive = false;
             }
 
             asyncState.HasLocalsOrReturnValue = true;
             asyncState.HasArguments = false;
+        }
+
+        private static bool ProcessMoveNextLocal<TLocal>(ref TLocal local, AsyncMethodDebuggerState asyncState, string localName)
+        {
+            var probeData = asyncState.ProbeData;
+            if (!TypeExtensions.IsDefaultValue(ref local))
+            {
+                var localInfo = new CaptureInfo<TLocal>(asyncState.MethodMetadataIndex, value: local, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+                return asyncState.ProbeData.Processor.Process(ref localInfo, asyncState.SnapshotCreator, in probeData);
+            }
+
+            var unreachableLocal = new DebuggerSnapshotSerializer.UnreachableLocal(DebuggerSnapshotSerializer.UnreachableLocalReason.NotHoistedLocalInAsyncMethod);
+            var captureInfo = new CaptureInfo<DebuggerSnapshotSerializer.UnreachableLocal>(asyncState.MethodMetadataIndex, value: unreachableLocal, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+            return asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator, in probeData);
         }
 
         /// <summary>

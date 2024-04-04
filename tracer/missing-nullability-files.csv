@@ -398,6 +398,7 @@ src/Datadog.Trace/Debugger/Sink/SnapshotSink.cs
 src/Datadog.Trace/Debugger/Snapshots/DebuggerSnapshotCreator.cs
 src/Datadog.Trace/Debugger/Snapshots/DebuggerSnapshotSerializer.cs
 src/Datadog.Trace/Debugger/Snapshots/DebuggerSnapshotSerializer.NotCapturedReason.cs
+src/Datadog.Trace/Debugger/Snapshots/DebuggerSnapshotSerializer.UnreachableLocal.cs
 src/Datadog.Trace/Debugger/Snapshots/ExceptionSnapshotSerializerFieldsAndPropsSelector.cs
 src/Datadog.Trace/Debugger/Snapshots/LazySnapshotSerializerFieldsAndPropsSelector.cs
 src/Datadog.Trace/Debugger/Snapshots/OldStyleTupleSnapshotSerializerFieldsAndPropsSelector.cs

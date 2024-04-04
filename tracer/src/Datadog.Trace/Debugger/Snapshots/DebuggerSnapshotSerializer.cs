@@ -78,6 +78,17 @@ namespace Datadog.Trace.Debugger.Snapshots
                     return true;
                 }
 
+                if (source is UnreachableLocal unreachable)
+                {
+                    jsonWriter.WritePropertyName(variableName);
+                    jsonWriter.WriteStartObject();
+                    jsonWriter.WritePropertyName("type");
+                    jsonWriter.WriteValue(type.Name);
+                    WriteNotCapturedReason(jsonWriter, unreachable.Reason);
+                    jsonWriter.WriteEndObject();
+                    return true;
+                }
+
                 if (source is IEnumerable enumerable && (Redaction.IsSupportedCollection(source) ||
                                                          Redaction.IsSupportedDictionary(source)))
                 {
@@ -370,8 +381,13 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static void WriteNotCapturedReason(JsonWriter writer, NotCapturedReason notCapturedReason)
         {
+            WriteNotCapturedReason(writer, Enum.GetName(typeof(NotCapturedReason), notCapturedReason));
+        }
+
+        private static void WriteNotCapturedReason(JsonWriter writer, string notCapturedReason)
+        {
             writer.WritePropertyName("notCapturedReason");
-            writer.WriteValue(Enum.GetName(typeof(NotCapturedReason), notCapturedReason));
+            writer.WriteValue(notCapturedReason);
         }
 
         private static string GetAutoPropertyOrFieldName(string fieldName)
