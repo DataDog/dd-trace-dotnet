@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
@@ -20,15 +21,10 @@ namespace Datadog.Trace.Debugger.Snapshots
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerSnapshotSerializer));
 
-        private static int _maximumNumberOfItemsInCollectionToCopy = DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy;
-        private static int _maximumNumberOfFieldsToCopy = DebuggerSettings.DefaultMaxNumberOfFieldsToCopy;
-        private static int _maximumDepthOfMembersToCopy = DebuggerSettings.DefaultMaxDepthToSerialize;
         private static int _maximumSerializationTime = DebuggerSettings.DefaultMaxSerializationTimeInMilliseconds;
-        private static int _maximumStringLength = 1000;
 
         internal static void SetConfig(DebuggerSettings debuggerSettings)
         {
-            _maximumDepthOfMembersToCopy = debuggerSettings.MaximumDepthOfMembersToCopy;
             _maximumSerializationTime = debuggerSettings.MaxSerializationTimeInMilliseconds;
         }
 
@@ -39,16 +35,17 @@ namespace Datadog.Trace.Debugger.Snapshots
             object source,
             Type type,
             string name,
-            JsonWriter jsonWriter)
+            JsonWriter jsonWriter,
+            CaptureLimitInfo limitInfo)
         {
             using var cts = CreateCancellationTimeout();
-            SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false);
+            SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo);
         }
 
-        public static void SerializeStaticFields(Type declaringType, JsonTextWriter jsonWriter)
+        public static void SerializeStaticFields(Type declaringType, JsonTextWriter jsonWriter, CaptureLimitInfo limitInfo)
         {
             using var cts = CreateCancellationTimeout();
-            WriteFields(null, declaringType, jsonWriter, cts, currentDepth: 0, writeStaticFields: true);
+            WriteFields(null, declaringType, jsonWriter, cts, currentDepth: 0, writeStaticFields: true, limitInfo);
         }
 
         private static bool SerializeInternal(
@@ -58,7 +55,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             CancellationTokenSource cts,
             int currentDepth,
             string variableName,
-            bool fieldsOnly)
+            bool fieldsOnly,
+            CaptureLimitInfo limitInfo)
         {
             try
             {
@@ -89,7 +87,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     }
 
                     jsonWriter.WriteStartObject();
-                    SerializeEnumerable(source, type, jsonWriter, enumerable, currentDepth, cts);
+                    SerializeEnumerable(source, type, jsonWriter, enumerable, currentDepth, cts, limitInfo);
                     jsonWriter.WriteEndObject();
 
                     return true;
@@ -102,7 +100,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                     cts,
                     currentDepth,
                     variableName,
-                    fieldsOnly);
+                    fieldsOnly,
+                    limitInfo);
             }
             catch (Exception e)
             {
@@ -119,16 +118,17 @@ namespace Datadog.Trace.Debugger.Snapshots
             CancellationTokenSource cts,
             int currentDepth,
             string variableName,
-            bool fieldsOnly)
+            bool fieldsOnly,
+            CaptureLimitInfo limitInfo)
         {
             if (!fieldsOnly)
             {
-                WriteTypeAndValue(source, type, jsonWriter, variableName);
+                WriteTypeAndValue(source, type, jsonWriter, variableName, limitInfo);
             }
 
             try
             {
-                SerializeInstanceFieldsInternal(source, type, jsonWriter, cts, currentDepth);
+                SerializeInstanceFieldsInternal(source, type, jsonWriter, cts, currentDepth, limitInfo);
                 if (!fieldsOnly)
                 {
                     jsonWriter.WriteEndObject();
@@ -152,7 +152,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             object source,
             Type type,
             JsonWriter jsonWriter,
-            string variableName)
+            string variableName,
+            CaptureLimitInfo limitInfo)
         {
             if (variableName != null)
             {
@@ -172,7 +173,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 jsonWriter.WritePropertyName("value");
                 var stringValue = source.ToString();
-                var stringValueTruncated = stringValue?.Length < _maximumStringLength ? stringValue : stringValue?.Substring(0, _maximumStringLength);
+                var stringValueTruncated = stringValue?.Length < limitInfo.MaxLength ? stringValue : stringValue?.Substring(0, limitInfo.MaxLength);
                 jsonWriter.WriteValue(stringValueTruncated);
             }
             else
@@ -187,34 +188,35 @@ namespace Datadog.Trace.Debugger.Snapshots
             Type type,
             JsonWriter jsonWriter,
             CancellationTokenSource cts,
-            int currentDepth)
+            int currentDepth,
+            CaptureLimitInfo limitInfo)
         {
             if (Redaction.IsSafeToCallToString(type) || source == null)
             {
                 return;
             }
 
-            if (currentDepth >= _maximumDepthOfMembersToCopy)
+            if (currentDepth >= limitInfo.MaxReferenceDepth)
             {
                 WriteNotCapturedReason(jsonWriter, NotCapturedReason.depth);
                 return;
             }
 
-            WriteFields(source, type, jsonWriter, cts, currentDepth, writeStaticFields: false);
+            WriteFields(source, type, jsonWriter, cts, currentDepth, writeStaticFields: false, limitInfo);
         }
 
-        private static void WriteFields(object source, Type type, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, bool writeStaticFields)
+        private static void WriteFields(object source, Type type, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, bool writeStaticFields, CaptureLimitInfo limitInfo)
         {
             var selector = SnapshotSerializerFieldsAndPropsSelector.CreateDeepClonerFieldsAndPropsSelector(type);
             var fields = selector.GetFieldsAndProps(type, source, cts);
-            WriteFieldsInternal(source, jsonWriter, cts, currentDepth, fields.Where(f => IsStatic(f) == writeStaticFields), writeStaticFields ? "staticFields" : "fields");
+            WriteFieldsInternal(source, jsonWriter, cts, currentDepth, fields.Where(f => IsStatic(f) == writeStaticFields), writeStaticFields ? "staticFields" : "fields", limitInfo);
         }
 
         private static bool IsStatic(MemberInfo arg) =>
             (arg is FieldInfo fieldInfo && fieldInfo.IsStatic) ||
             (arg is PropertyInfo propertyInfo && propertyInfo.GetMethod.IsStatic);
 
-        private static void WriteFieldsInternal(object source, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, IEnumerable<MemberInfo> fields, string fieldsObjectName)
+        private static void WriteFieldsInternal(object source, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, IEnumerable<MemberInfo> fields, string fieldsObjectName, CaptureLimitInfo limitInfo)
         {
             int index = 0;
             var isFieldCountReached = false;
@@ -222,7 +224,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 var fieldOrPropertyName = GetAutoPropertyOrFieldName(field.Name);
 
-                if (index >= _maximumNumberOfFieldsToCopy)
+                if (index >= limitInfo.MaxFieldCount)
                 {
                     isFieldCountReached = true;
                     break;
@@ -247,7 +249,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                     cts,
                     currentDepth + 1,
                     fieldOrPropertyName,
-                    fieldsOnly: false);
+                    fieldsOnly: false,
+                    limitInfo);
 
                 if (!serialized)
                 {
@@ -272,7 +275,8 @@ namespace Datadog.Trace.Debugger.Snapshots
            JsonWriter jsonWriter,
            IEnumerable enumerable,
            int currentDepth,
-           CancellationTokenSource cts)
+           CancellationTokenSource cts,
+           CaptureLimitInfo limitInfo)
         {
             try
             {
@@ -289,8 +293,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     var itemIndex = 0;
                     var enumerator = enumerable.GetEnumerator();
 
-                    while (itemIndex < _maximumNumberOfItemsInCollectionToCopy &&
-                           enumerator.MoveNext())
+                    while (itemIndex < limitInfo.MaxCollectionSize && enumerator.MoveNext())
                     {
                         cts.Token.ThrowIfCancellationRequested();
                         if (enumerator.Current == null)
@@ -301,7 +304,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         bool serialized;
                         if (isDictionary)
                         {
-                            serialized = SerializeKeyValuePair(enumerator.Current, jsonWriter, cts, currentDepth);
+                            serialized = SerializeKeyValuePair(enumerator.Current, jsonWriter, cts, currentDepth, limitInfo);
                         }
                         else
                         {
@@ -312,7 +315,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                                 cts,
                                 currentDepth,
                                 variableName: null,
-                                fieldsOnly: false);
+                                fieldsOnly: false,
+                                limitInfo);
                         }
 
                         itemIndex++;
@@ -351,13 +355,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             object current,
             JsonWriter jsonWriter,
             CancellationTokenSource cts,
-            int currentDepth)
+            int currentDepth,
+            CaptureLimitInfo limitInfo)
         {
             var reflectionObject = ReflectionObject.Create(current.GetType(), "Key", "Value");
             jsonWriter.WriteStartArray();
 
-            bool serializedKey = SerializeInternal(reflectionObject.GetValue(current, "Key"), reflectionObject.GetType("Key"), jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false);
-            bool serializedValue = SerializeInternal(reflectionObject.GetValue(current, "Value"), reflectionObject.GetType("Value"), jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false);
+            bool serializedKey = SerializeInternal(reflectionObject.GetValue(current, "Key"), reflectionObject.GetType("Key"), jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo);
+            bool serializedValue = SerializeInternal(reflectionObject.GetValue(current, "Value"), reflectionObject.GetType("Value"), jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo);
 
             jsonWriter.WriteEndArray();
             return serializedKey;
