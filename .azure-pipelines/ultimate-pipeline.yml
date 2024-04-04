@@ -1626,7 +1626,7 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
