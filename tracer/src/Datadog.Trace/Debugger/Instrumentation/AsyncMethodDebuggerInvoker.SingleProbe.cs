@@ -264,7 +264,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             asyncState.MoveNextInvocationTarget = instance;
 
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
-            var capture = new CaptureInfo<Exception>(asyncState.MethodMetadataIndex, value: exception, methodState: MethodState.ExitStartAsync, asyncCaptureInfo: asyncCaptureInfo, memberKind: ScopeMemberKind.Exception);
+            var capture = new CaptureInfo<Exception>(asyncState.MethodMetadataIndex, value: exception, methodState: MethodState.ExitStartAsync, localsCount: asyncState.MethodMetadataInfo.LocalVariableNames.Length, asyncCaptureInfo: asyncCaptureInfo, memberKind: ScopeMemberKind.Exception);
             var probeData = asyncState.ProbeData;
 
             if (!asyncState.ProbeData.Processor.Process(ref capture, asyncState.SnapshotCreator, in probeData))
@@ -303,7 +303,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             if (exception != null)
             {
-                var captureInfo = new CaptureInfo<Exception>(asyncState.MethodMetadataIndex, value: exception, methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Exception, asyncCaptureInfo: asyncCaptureInfo);
+                var captureInfo = new CaptureInfo<Exception>(asyncState.MethodMetadataIndex, value: exception, methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Exception, localsCount: asyncState.MethodMetadataInfo.LocalVariableNames.Length, asyncCaptureInfo: asyncCaptureInfo);
                 if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator, in probeData))
                 {
                     asyncState.IsActive = false;
@@ -311,7 +311,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
             else if (returnValue != null)
             {
-                var captureInfo = new CaptureInfo<TReturn>(asyncState.MethodMetadataIndex, value: returnValue, name: "@return", methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Return, asyncCaptureInfo: asyncCaptureInfo);
+                var captureInfo = new CaptureInfo<TReturn>(asyncState.MethodMetadataIndex, value: returnValue, name: "@return", methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Return, localsCount: asyncState.MethodMetadataInfo.LocalVariableNames.Length, asyncCaptureInfo: asyncCaptureInfo);
                 if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator, in probeData))
                 {
                     asyncState.IsActive = false;
