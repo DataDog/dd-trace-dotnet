@@ -33,13 +33,13 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
         {
             foreach (var batch in new[] { 0, 1 })
             {
-                foreach (var inThread in new[] { 0, 1 })
+                foreach (var inject in new[] { 0, 1 })
                 {
-                    foreach (var inject in new[] { 0, 1 })
-                    {
-                        yield return [packageVersionArray[0], batch, inThread, inject];
-                    }
+                    yield return [packageVersionArray[0], batch, /*inThread:*/0, inject];
                 }
+
+                // there is no in-thread scenario that don't inject
+                yield return [packageVersionArray[0], batch, /*inThread:*/1, /*inject:*/1];
             }
         }
     }

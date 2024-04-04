@@ -120,7 +120,11 @@ namespace Samples.AWS.SQS
             }
             else
             {
-                // Note: there is no non-injected in-thread scenario
+                if (!s.HasFlag(Scenario.Injected))
+                {
+                    throw new Exception($"Bad scenario requested ({s}): there is no non-injected in-thread scenario");
+                }
+
                 if (s.HasFlag(Scenario.Batch))
                 {
                     var receiveMessageBatchTask = Task.Run(() => ReceiveMessagesAndDeleteMessageBatchAsync(sqsClient)); // Run on separate thread
