@@ -65,6 +65,7 @@ public class DiscoveryServiceTests
         config.AgentVersion.Should().Be(version);
         config.ConfigurationEndpoint.Should().NotBeNullOrEmpty();
         config.DebuggerEndpoint.Should().NotBeNullOrEmpty();
+        config.DiagnosticsEndpoint.Should().NotBeNullOrEmpty();
         config.SymbolDbEndpoint.Should().NotBeNullOrEmpty();
         config.ClientDropP0s.Should().Be(clientDropP0s);
         config.StatsEndpoint.Should().NotBeNullOrEmpty();
@@ -254,6 +255,7 @@ public class DiscoveryServiceTests
         var config1 = new AgentConfiguration(
             configurationEndpoint: "ConfigurationEndpoint",
             debuggerEndpoint: "DebuggerEndpoint",
+            diagnosticsEndpoint: "DiagnosticsEndpoint",
             symbolDbEndpoint: "symbolDbEndpoint",
             agentVersion: "AgentVersion",
             statsEndpoint: "StatsEndpoint",
@@ -267,6 +269,7 @@ public class DiscoveryServiceTests
         var config2 = new AgentConfiguration(
             configurationEndpoint: "ConfigurationEndpoint",
             debuggerEndpoint: "DebuggerEndpoint",
+            diagnosticsEndpoint: "DiagnosticsEndpoint",
             symbolDbEndpoint: "symbolDbEndpoint",
             agentVersion: "AgentVersion",
             statsEndpoint: "StatsEndpoint",
@@ -280,6 +283,7 @@ public class DiscoveryServiceTests
         var config3 = new AgentConfiguration(
             configurationEndpoint: "DIFFERENT",
             debuggerEndpoint: "DebuggerEndpoint",
+            diagnosticsEndpoint: "DiagnosticsEndpoint",
             symbolDbEndpoint: "symbolDbEndpoint",
             agentVersion: "AgentVersion",
             statsEndpoint: "StatsEndpoint",

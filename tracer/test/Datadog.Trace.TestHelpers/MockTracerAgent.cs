@@ -492,7 +492,7 @@ namespace Datadog.Trace.TestHelpers
                 response = JsonConvert.SerializeObject(Configuration);
                 responseType = MockTracerResponseType.Info;
             }
-            else if (request.PathAndQuery.StartsWith("/debugger/v1/input"))
+            else if (request.PathAndQuery.StartsWith("/debugger"))
             {
                 HandlePotentialDebuggerData(request);
                 responseType = MockTracerResponseType.Debugger;

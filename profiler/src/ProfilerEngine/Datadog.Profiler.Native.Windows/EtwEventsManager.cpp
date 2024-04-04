@@ -30,7 +30,7 @@ EtwEventsManager::EtwEventsManager(
     _pAllocationListener(pAllocationListener),
     _pContentionListener(pContentionListener)
 {
-    _isDebugLogEnabled = pConfiguration->IsDebugLogEnabled();
+    _isDebugLogEnabled = pConfiguration->IsEtwLoggingEnabled();
 
     _threadsInfo.reserve(256);
     _parser = std::make_unique<ClrEventsParser>(
@@ -149,7 +149,6 @@ void EtwEventsManager::OnEvent(
     }
     else if (keyword == KEYWORD_GC)
     {
-
         if (id == EVENT_ALLOCATION_TICK)
         {
             if (_isDebugLogEnabled)
@@ -171,9 +170,21 @@ void EtwEventsManager::OnEvent(
         }
         else
         {
+            if (_isDebugLogEnabled)
+            {
+                std::cout << "GC event: " << keyword << " - " << id << std::endl;
+            }
+
             // reuse GC events parser
             auto timestamp = TimestampToEpochNS(systemTimestamp);
             _parser->ParseEvent(timestamp, version, keyword, id, cbEventData, pEventData);
+        }
+    }
+    else
+    {
+        if (_isDebugLogEnabled)
+        {
+            std::cout << "Unknown event: " << keyword << " - " << id << std::endl;
         }
     }
 }
@@ -303,17 +314,23 @@ void EtwEventsManager::Stop()
         Log::Warn("Fail to unregister from the Datadog Agent...");
     }
 
-    if (_IpcClient->Disconnect())
+    if (_IpcClient != nullptr)
     {
-        Log::Info("Disconnected from the Datadog Agent named pipe");
-    }
-    else
-    {
-        Log::Warn("Failed to disconnect from the Datadog Agent named pipe...");
+        if (_IpcClient->Disconnect())
+        {
+            Log::Info("Disconnected from the Datadog Agent named pipe");
+        }
+        else
+        {
+            Log::Warn("Failed to disconnect from the Datadog Agent named pipe...");
+        }
     }
 
     // stop listening to incoming ETW events
-    _IpcServer->Stop();
+    if (_IpcServer != nullptr)
+    {
+        _IpcServer->Stop();
+    }
 }
 
 static void LogLastError(const char* msg, DWORD error = ::GetLastError())

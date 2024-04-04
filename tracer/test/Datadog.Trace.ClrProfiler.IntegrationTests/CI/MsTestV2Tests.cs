@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,9 +20,9 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
-    public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output);
+    public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output, pre225TestCount: 19, post225TestCount: 22);
 
-    public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output);
+    public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output, pre225TestCount: 19, post225TestCount: 21);
 
     [Collection("MsTestV2Tests")]
     [UsesVerify]
@@ -29,11 +30,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         private readonly GacFixture _gacFixture;
 
-        public MsTestV2TestsBase(string sampleAppName, ITestOutputHelper output)
+        public MsTestV2TestsBase(string sampleAppName, ITestOutputHelper output, int pre225TestCount, int post225TestCount)
             : base(sampleAppName, output)
         {
             TestBundleName = $"Samples.{sampleAppName}";
             TestSuiteName = "Samples.MSTestTests.TestSuite";
+            ClassInitializationExceptionTestSuiteName = "Samples.MSTestTests.ClassInitializeExceptionTestSuite";
+            Pre225TestCount = pre225TestCount;
+            Post225TestCount = post225TestCount;
             SetServiceName("mstest-tests");
             SetServiceVersion("1.0.0");
             _gacFixture = new GacFixture();
@@ -43,6 +47,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         protected virtual string TestSuiteName { get; }
 
         protected virtual string TestBundleName { get; }
+
+        protected virtual string ClassInitializationExceptionTestSuiteName { get; }
+
+        protected virtual int Pre225TestCount { get; }
+
+        protected virtual int Post225TestCount { get; }
 
         public override void Dispose()
         {
@@ -57,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
             List<MockSpan> spans = null;
-            var expectedSpanCount = version.CompareTo(new Version("2.2.5")) < 0 ? 15 : 17;
+            var expectedSpanCount = version.CompareTo(new Version("2.2.5")) < 0 ? Pre225TestCount : Post225TestCount;
 
             try
             {
@@ -73,9 +83,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                      .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                                      .ToList();
 
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedSpanCount == 15 ? "pre_2_2_5" : "post_2_2_5");
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedSpanCount == Pre225TestCount ? "pre_2_2_5" : "post_2_2_5");
                         settings.DisableRequireUniquePrefix();
-                        await Verifier.Verify(spans.OrderBy(s => s.Resource).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Parameters)), settings);
+                        await Verifier.Verify(spans.OrderBy(s => s.Resource).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Name)).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Parameters)), settings);
 
                         // Check the span count
                         Assert.Equal(expectedSpanCount, spans.Count);
@@ -104,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetSpan, TestTags.Module, TestBundleName);
 
                             // check the suite name
-                            AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);
+                            AssertTargetSpanAnyOf(targetSpan, TestTags.Suite, TestSuiteName, ClassInitializationExceptionTestSuiteName);
 
                             // check the test type
                             AssertTargetSpanEqual(targetSpan, TestTags.Type, TestTags.TypeTest);
@@ -221,6 +231,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                     AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.UnskippableTag, "true");
                                     AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.ForcedRunTag, "false");
                                     CheckSimpleTestSpan(targetSpan);
+                                    break;
+
+                                case "ClassInitializeExceptionTestMethod":
+                                    AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusFail);
+                                    targetSpan.Error.Should().Be(1);
+                                    AssertTargetSpanEqual(targetSpan, Tags.ErrorType, "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestFailedException");
+                                    AssertTargetSpanContains(targetSpan, Tags.ErrorStack, "System.Exception: Class initialize exception");
+                                    AssertTargetSpanContains(targetSpan, Tags.ErrorMsg, "Class initialize exception.");
+                                    break;
+
+                                case "My Custom: CustomTestMethodAttributeTest":
+                                case "My Custom 2: CustomRenameTestMethodAttributeTest":
+                                case "My Custom 3|1: CustomMultipleResultsTestMethodAttributeTest":
+                                case "My Custom 3|2: CustomMultipleResultsTestMethodAttributeTest":
+                                    AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusPass);
                                     break;
                             }
 

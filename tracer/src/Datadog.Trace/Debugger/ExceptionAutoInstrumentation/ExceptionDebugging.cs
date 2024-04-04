@@ -77,9 +77,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 uri => uri);
             var discoveryService = tracer.TracerManager.DiscoveryService;
             var gitMetadataTagsProvider = tracer.TracerManager.GitMetadataTagsProvider;
-            var batchApi = AgentBatchUploadApi.Create(apiFactory, discoveryService, gitMetadataTagsProvider);
-            var batchUploader = BatchUploader.Create(batchApi);
-            _sink = DebuggerSink.Create(snapshotStatusSink, new NopProbeStatusSink(), batchUploader, debuggerSettings);
+
+            var snapshotBatchUploadApi = AgentBatchUploadApi.Create(apiFactory, discoveryService, gitMetadataTagsProvider, false);
+            var snapshotBatchUploader = BatchUploader.Create(snapshotBatchUploadApi);
+
+            _sink = DebuggerSink.Create(
+                snapshotSink: snapshotStatusSink,
+                probeStatusSink: new NopProbeStatusSink(),
+                snapshotBatchUploader: snapshotBatchUploader,
+                diagnosticsBatchUploader: new NonBatchUploader(),
+                debuggerSettings);
 
             Task.Run(async () => await _sink.StartFlushingAsync().ConfigureAwait(false));
         }

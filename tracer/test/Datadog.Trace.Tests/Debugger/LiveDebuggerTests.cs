@@ -85,6 +85,7 @@ public class LiveDebuggerTests
                 new AgentConfiguration(
                     configurationEndpoint: "configurationEndpoint",
                     debuggerEndpoint: "debuggerEndpoint",
+                    diagnosticsEndpoint: "diagnosticsEndpoint",
                     symbolDbEndpoint: "symbolDbEndpoint",
                     agentVersion: "agentVersion",
                     statsEndpoint: "traceStatsEndpoint",
