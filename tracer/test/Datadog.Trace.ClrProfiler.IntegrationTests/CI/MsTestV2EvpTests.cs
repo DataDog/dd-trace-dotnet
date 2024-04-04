@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         private const string TestSuiteName = "Samples.MSTestTests.TestSuite";
         private const string TestBundleName = "Samples.MSTestTests";
+        private const string ClassInitializationExceptionTestSuiteName = "Samples.MSTestTests.ClassInitializeExceptionTestSuite";
 
         public MsTestV2EvpTests(ITestOutputHelper output)
             : base("MSTestTests", output)
@@ -56,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var tests = new List<MockCIVisibilityTest>();
             var testSuites = new List<MockCIVisibilityTestSuite>();
             var testModules = new List<MockCIVisibilityTestModule>();
-            var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 15 : 17;
+            var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 19 : 22;
 
             var sessionId = RandomIdGenerator.Shared.NextSpanId();
             var sessionCommand = "test command";
@@ -127,24 +128,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == 15 ? "pre_2_2_5" : "post_2_2_5", null, null);
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == 19 ? "pre_2_2_5" : "post_2_2_5", null, null);
                         settings.DisableRequireUniquePrefix();
-                        await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
+                        await Verifier.Verify(
+                            tests
+                               .OrderBy(s => s.Resource)
+                               .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Name))
+                               .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)),
+                            settings);
 
                         // Check the tests, suites and modules count
                         Assert.Equal(expectedTestCount, tests.Count);
-                        Assert.Single(testSuites);
+                        testSuites.Should().HaveCountLessThanOrEqualTo(2);
                         Assert.Single(testModules);
 
                         var testSuite = testSuites[0];
                         var testModule = testModules[0];
 
                         // Check Suite
-                        Assert.True(tests.All(t => t.TestSuiteId == testSuite.TestSuiteId));
+                        testSuites.Select(ts => ts.TestSuiteId)
+                                  .Intersect(tests.Select(t => t.TestSuiteId))
+                                  .Should()
+                                  .HaveCountLessThanOrEqualTo(2);
                         Assert.True(testSuite.TestModuleId == testModule.TestModuleId);
 
                         // ITR tags inside the test suite
-                        testSuite.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
+                        testSuites.SelectMany(s => s.Metrics)
+                                  .Should()
+                                  .ContainEquivalentOf(new KeyValuePair<string, double>(IntelligentTestRunnerTags.SkippingCount, 1));
 
                         // Check Module
                         Assert.True(tests.All(t => t.TestModuleId == testSuite.TestModuleId));
@@ -181,7 +192,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetTest, TestTags.Module, TestBundleName);
 
                             // check the suite name
-                            AssertTargetSpanEqual(targetTest, TestTags.Suite, TestSuiteName);
+                            AssertTargetSpanAnyOf(targetTest, TestTags.Suite, TestSuiteName, ClassInitializationExceptionTestSuiteName);
 
                             // check the test type
                             AssertTargetSpanEqual(targetTest, TestTags.Type, TestTags.TypeTest);
@@ -295,6 +306,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                     AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "true");
                                     AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
                                     CheckSimpleTestSpan(targetTest);
+                                    break;
+
+                                case "ClassInitializeExceptionTestMethod":
+                                    AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusFail);
+                                    targetTest.Error.Should().Be(1);
+                                    AssertTargetSpanEqual(targetTest, Tags.ErrorType, "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestFailedException");
+                                    AssertTargetSpanContains(targetTest, Tags.ErrorStack, "System.Exception: Class initialize exception");
+                                    AssertTargetSpanContains(targetTest, Tags.ErrorMsg, "Class initialize exception.");
+                                    break;
+
+                                case "My Custom: CustomTestMethodAttributeTest":
+                                case "My Custom 2: CustomRenameTestMethodAttributeTest":
+                                case "My Custom 3|1: CustomMultipleResultsTestMethodAttributeTest":
+                                case "My Custom 3|2: CustomMultipleResultsTestMethodAttributeTest":
+                                    AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusPass);
                                     break;
                             }
 
