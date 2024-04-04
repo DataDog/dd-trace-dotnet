@@ -78,7 +78,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var discoveryService = tracer.TracerManager.DiscoveryService;
             var gitMetadataTagsProvider = tracer.TracerManager.GitMetadataTagsProvider;
 
-            var snapshotBatchUploadApi = AgentBatchUploadApi.CreateSnapshotApi(apiFactory, discoveryService, gitMetadataTagsProvider, isDiagnostics: false);
+            var snapshotBatchUploadApi = AgentBatchUploadApi.CreateSnapshotApi(apiFactory, discoveryService, gitMetadataTagsProvider);
             var snapshotBatchUploader = BatchUploader.Create(snapshotBatchUploadApi);
 
             _sink = DebuggerSink.Create(
