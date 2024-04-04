@@ -39,7 +39,7 @@ internal class SpanLink
     {
     }
 
-    public List<KeyValuePair<string, string>>? Attributes { get; set; }
+    public List<KeyValuePair<string, string>>? Attributes { get; private set; }
 
     public SpanContext Context { get;  }
 
