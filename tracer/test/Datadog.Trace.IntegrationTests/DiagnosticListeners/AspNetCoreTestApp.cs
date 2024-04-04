@@ -41,7 +41,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 #if NETCOREAPP2_1
             services.AddMvc();
 #else
-            services.AddRazorPages();
+            services.AddRazorPages(c => c.RootDirectory = "/AspNetCoreRazorPages");
 #endif
         }
 
