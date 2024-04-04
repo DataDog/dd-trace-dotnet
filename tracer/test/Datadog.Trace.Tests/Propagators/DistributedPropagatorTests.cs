@@ -91,7 +91,6 @@ public class DistributedPropagatorTests
                        SamplingPriority = SamplingPriority,
                        PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState,
-                       IsRemote = true,
                    });
     }
 
@@ -127,7 +126,6 @@ public class DistributedPropagatorTests
                 RawTraceId = RawTraceId,
                 RawSpanId = "0000000000000000",
                 PropagatedTags = EmptyPropagatedTags,
-                IsRemote = true,
             });
     }
 
@@ -246,7 +244,6 @@ public class DistributedPropagatorTests
                        SamplingPriority = expectedSamplingPriority,
                        PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState,
-                       IsRemote = true,
                    });
     }
 
