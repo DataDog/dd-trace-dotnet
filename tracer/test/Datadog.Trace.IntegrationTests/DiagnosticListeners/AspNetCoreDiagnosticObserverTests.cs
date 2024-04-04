@@ -105,7 +105,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             }
 #endif
 
-            await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(path, statusCode, isError, resourceName, expectedTags);
+            await AssertDiagnosticObserverSubmitsSpans<RazorPagesStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
 
         [SkippableTheory]
@@ -122,7 +122,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             string childSpan2ResourceName,
             SerializableDictionary secondChildSpanTags)
         {
-            await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(
+            await AssertDiagnosticObserverSubmitsSpans<RazorPagesStartup>(
                 path,
                 statusCode,
                 isError,
@@ -157,7 +157,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             }
 #endif
 
-            await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(
+            await AssertDiagnosticObserverSubmitsSpans<RazorPagesStartup>(
                 path,
                 statusCode,
                 isError,
