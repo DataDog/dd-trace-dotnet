@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Datadog.Trace.Logging;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -18,7 +19,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
         private const string ThirdPartyResourceName = "Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ConfigFiles.third-party-module-names.json";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ThirdPartyConfigurationReader>();
 
-        internal static HashSet<string>? GetModules()
+        internal static ImmutableHashSet<string> GetModules()
         {
             try
             {
@@ -27,15 +28,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to read third party libs from the embedded resource '{ThirdPartyResourceName}'.", ThirdPartyResourceName);
-                return null;
+                return ImmutableHashSet<string>.Empty;
             }
         }
 
-        internal static HashSet<string>? SafeGetModules()
+        private static ImmutableHashSet<string> SafeGetModules()
         {
             if (!TryGetThirdPartyManifestStream(out var stream))
             {
-                return null;
+                return ImmutableHashSet<string>.Empty;
             }
 
             using var sr = new StreamReader(stream!);
@@ -44,16 +45,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
             var modules = new HashSet<string>();
             while (jsonReader.Read())
             {
-                if (jsonReader.TokenType == JsonToken.String)
+                if (jsonReader is { TokenType: JsonToken.String, Value: string moduleName })
                 {
-                    if (jsonReader.Value is string moduleName)
-                    {
-                        modules.Add(moduleName);
-                    }
+                    modules.Add(moduleName);
                 }
             }
 
-            return modules;
+            return modules.ToImmutableHashSet();
         }
 
         private static bool TryGetThirdPartyManifestStream(out Stream? resourceStream)

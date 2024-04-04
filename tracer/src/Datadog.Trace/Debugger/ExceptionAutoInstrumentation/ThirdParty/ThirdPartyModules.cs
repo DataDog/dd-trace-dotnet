@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
@@ -12,14 +12,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
     internal class ThirdPartyModules
     {
         private static readonly Lazy<bool> IsModulesPopulated = new(PopulateFromConfig);
-        private static HashSet<string>? _thirdPartyModuleNames;
+        private static ImmutableHashSet<string> _thirdPartyModuleNames = ImmutableHashSet<string>.Empty;
 
         internal static bool IsValid => IsModulesPopulated.Value;
 
         private static bool PopulateFromConfig()
         {
             _thirdPartyModuleNames = ThirdPartyConfigurationReader.GetModules();
-            return _thirdPartyModuleNames?.Count > 0;
+            return _thirdPartyModuleNames.Count > 0;
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
                 return true;
             }
 
-            return _thirdPartyModuleNames?.Contains(moduleName!) == true;
+            return _thirdPartyModuleNames.Contains(moduleName!);
         }
     }
 }
