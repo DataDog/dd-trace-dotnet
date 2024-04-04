@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Debugger.Snapshots;
@@ -165,6 +166,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 var debugErrorPrefix = "_dd.debug.error";
                 var assignIndex = 0;
 
+                // Attach tags to the root span
+                rootSpan.Tags.SetTag("error.debug_info_captured", "true");
+                rootSpan.Tags.SetTag($"{debugErrorPrefix}.exception_hash", trackedExceptionCase.ErrorHash);
+                rootSpan.Tags.SetTag($"{debugErrorPrefix}.exception_id", Guid.NewGuid().ToString());
+
                 while (frameIndex >= 0)
                 {
                     var participatingFrame = allFrames[frameIndex--];
@@ -206,7 +212,31 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 {
                     Log.Error("ExceptionTrackManager: Checking why there are no frames captured for exception: {Exception}.", exception.ToString());
 
-                    // If we failed to instrument all the probes.
+                    // Check if we failed to instrument all the probes.
+
+                    if (trackedExceptionCase.ExceptionCase.Probes.Any(p => p.ProbeStatus == Status.RECEIVED))
+                    {
+                        // Determine if there are any errored probe statuses by P/Invoking the native for RECEIVED probes.
+
+                        var receivedStatusProbeIds = trackedExceptionCase.ExceptionCase.Probes.Where(p => p.ProbeStatus == Status.RECEIVED).ToList();
+
+                        if (receivedStatusProbeIds.Any())
+                        {
+                            var statuses = DebuggerNativeMethods.GetProbesStatuses(receivedStatusProbeIds.Select(p => p.ProbeId).ToArray());
+
+                            // Update the status only if we're dealing with probes marked as ERRORs.
+                            foreach (var status in statuses)
+                            {
+                                var probe = receivedStatusProbeIds.FirstOrDefault(p => p.ProbeId == status.ProbeId);
+                                if (probe != null && status.Status is Status.ERROR)
+                                {
+                                    probe.ProbeStatus = status.Status;
+                                    probe.ErrorMessage = status.ErrorMessage;
+                                }
+                            }
+                        }
+                    }
+
                     if (trackedExceptionCase.ExceptionCase.Probes.All(p => p.IsInstrumented && (p.ProbeStatus == Status.ERROR || p.ProbeStatus == Status.BLOCKED || p.MayBeOmittedFromCallStack)))
                     {
                         Log.Information("Invalidating the exception case of the empty stack tree since none of the methods were instrumented, for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);

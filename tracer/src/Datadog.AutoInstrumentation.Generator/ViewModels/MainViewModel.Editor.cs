@@ -86,7 +86,17 @@ internal partial class MainViewModel
             integrationSourceBuilder.Replace("$(Namespace)", EditorHelper.GetNamespace(methodDef));
             integrationSourceBuilder.Replace("$(FullName)", EditorHelper.GetMethodFullNameForComments(methodDef));
             integrationSourceBuilder.Replace("$(AssemblyName)", methodDef.DeclaringType.DefinitionAssembly.Name);
-            integrationSourceBuilder.Replace("$(TypeName)", methodDef.DeclaringType.FullName);
+            if (methodDef.DeclaringType.IsNested)
+            {
+                integrationSourceBuilder.Replace(
+                    "$(TypeName)",
+                    methodDef.DeclaringType.DeclaringType.FullName + "+" + methodDef.DeclaringType.Name);
+            }
+            else
+            {
+                integrationSourceBuilder.Replace("$(TypeName)", methodDef.DeclaringType.FullName);
+            }
+
             integrationSourceBuilder.Replace("$(MethodName)", methodDef.Name);
             integrationSourceBuilder.Replace("$(ReturnTypeName)", EditorHelper.GetReturnType(methodDef));
             integrationSourceBuilder.Replace("$(ParameterTypeNames)", EditorHelper.GetParameterTypeArray(methodDef));
@@ -107,13 +117,13 @@ internal partial class MainViewModel
             duckTypeProxyDefinitions ??= new Dictionary<TypeDef, EditorHelper.DuckTypeProxyDefinition>();
 
             // OnMethodBegin
-            integrationSourceBuilder.Replace("$(OnMethodBegin)", CreateOnMethodBegin ? $"{Environment.NewLine}{Environment.NewLine}{GetOnMethodBeginSourceBuilder(isStatic, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
+            integrationSourceBuilder.Replace("$(OnMethodBegin)", CreateOnMethodBegin ? $"{Environment.NewLine}{GetOnMethodBeginSourceBuilder(isStatic, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
 
             // OnMethodEnd
-            integrationSourceBuilder.Replace("$(OnMethodEnd)", CreateOnMethodEnd ? $"{Environment.NewLine}{Environment.NewLine}{GetOnMethodEndSourceBuilder(isStatic, isVoid, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
+            integrationSourceBuilder.Replace("$(OnMethodEnd)", CreateOnMethodEnd ? $"{Environment.NewLine}{GetOnMethodEndSourceBuilder(isStatic, isVoid, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
 
             // OnAsyncMethodEnd
-            integrationSourceBuilder.Replace("$(OnAsyncMethodEnd)", CreateOnAsyncMethodEnd ? $"{Environment.NewLine}{Environment.NewLine}{GetOnAsyncMethodEndBuilder(isStatic, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
+            integrationSourceBuilder.Replace("$(OnAsyncMethodEnd)", CreateOnAsyncMethodEnd ? $"{Environment.NewLine}{GetOnAsyncMethodEndBuilder(isStatic, methodDef, duckTypeProxyDefinitions)}" : string.Empty);
 
             var duckTypeProxyDefinitionsValues = duckTypeProxyDefinitions.Values.Where(v => !string.IsNullOrEmpty(v.ProxyDefinition)).Select(v => v.ProxyDefinition).ToList();
             if (duckTypeProxyDefinitionsValues.Count > 0)
@@ -176,33 +186,39 @@ internal partial class MainViewModel
 
             argsTypesParamDocumentation.Add($"    /// <param name=\"{parameterName}\">Instance of {parameterTypeCleaned}</param>");
 
+            var realPType = parameter.Type.IsByRef ? parameter.Type.Next : parameter.Type;
+            var gentTypeName = "T" + char.ToUpperInvariant(parameterName[0]) + parameterName[1..];
             var basicType = EditorHelper.GetIfBasicTypeOrDefault(parameter.Type.FullName);
             if (basicType is not null)
             {
-                argsParameters.Add($"ref {basicType} {parameterName}");
+                argsParameters.Add(realPType.IsValueType ? $"ref {basicType} {parameterName}" : $"ref {basicType}? {parameterName}");
             }
             else
             {
-                argsTypesTypeParamDocumentation.Add($"    /// <typeparam name=\"TArg{i}\">Type of the argument {i} ({parameterTypeCleaned})</typeparam>");
-                argsTypes.Add($"TArg{i}");
+                argsTypesTypeParamDocumentation.Add($"    /// <typeparam name=\"{gentTypeName}\">Type of the argument {parameterName} ({parameterTypeCleaned})</typeparam>");
+                argsTypes.Add($"{gentTypeName}");
                 var withConstraint = false;
                 if (CreateDucktypeArguments && parameter.Type.TryGetTypeDef() is { } paramTypeDef)
                 {
                     var proxyDefinition = EditorHelper.GetDuckTypeProxies(paramTypeDef, DucktypeArgumentsFields, DucktypeArgumentsProperties, DucktypeArgumentsMethods, DucktypeArgumentsDuckChaining, UseDuckCopyStruct, duckTypeProxyDefinitions);
                     if (proxyDefinition is not null)
                     {
-                        argsConstraint.Add($"        where TArg{i} : {proxyDefinition.Value.ProxyName}");
+                        argsConstraint.Add($"        where {gentTypeName} : {proxyDefinition.Value.ProxyName}");
                         withConstraint = true;
                     }
                 }
 
                 if (withConstraint)
                 {
-                    argsParameters.Add($"TArg{i} {parameterName}");
+                    argsParameters.Add(realPType.IsValueType
+                        ? $"{gentTypeName} {parameterName}"
+                        : $"{gentTypeName}? {parameterName}");
                 }
                 else
                 {
-                    argsParameters.Add($"ref TArg{i} {parameterName}");
+                    argsParameters.Add(realPType.IsValueType
+                        ? $"ref {gentTypeName} {parameterName}"
+                        : $"ref {gentTypeName}? {parameterName}");
                 }
             }
         }
@@ -247,16 +263,21 @@ internal partial class MainViewModel
             var returnTypeCleaned = methodDef.ReturnType.FullName.Replace("<", "[").Replace(">", "]").Replace("&", "&amp;");
             var returnParamDocumentation = Environment.NewLine + $"    /// <param name=\"returnValue\">Instance of {returnTypeCleaned}</param>";
 
+            var rType = methodDef.ReturnType.IsByRef ? methodDef.ReturnType.Next : methodDef.ReturnType;
             var basicType = EditorHelper.GetIfBasicTypeOrDefault(methodDef.ReturnType.FullName);
             if (basicType is not null)
             {
                 returnTypeParameter = basicType;
+                if (!rType.IsValueType)
+                {
+                    returnTypeParameter += "?";
+                }
             }
             else
             {
                 returnTypeParamDocumentation = Environment.NewLine + $"    /// <typeparam name=\"TReturn\">Type of the return value ({returnTypeCleaned})</typeparam>";
                 returnType = ", TReturn";
-                returnTypeParameter = "TReturn";
+                returnTypeParameter = rType.IsValueType ? "TReturn" : "TReturn?";
                 if (CreateDucktypeReturnValue && methodDef.ReturnType.TryGetTypeDef() is { } returnTypeDef)
                 {
                     var proxyDefinition = EditorHelper.GetDuckTypeProxies(returnTypeDef, DucktypeReturnValueFields, DucktypeReturnValueProperties, DucktypeReturnValueMethods, DucktypeReturnValueDuckChaining, UseDuckCopyStruct, duckTypeProxyDefinitions);
@@ -304,7 +325,7 @@ internal partial class MainViewModel
             returnParamDocumentation = Environment.NewLine + $"    /// <param name=\"returnValue\">Always NULL: Async type doesn't have generic argument. (Task or ValueTask)</param>";
             returnTypeParamDocumentation = Environment.NewLine + $"    /// <typeparam name=\"TReturn\">Dummy object type due original return value doesn't have a generic argument.</typeparam>";
             returnType = ", TReturn";
-            returnTypeParameter = "TReturn";
+            returnTypeParameter = "TReturn?";
         }
         else if (methodDef.ReturnType.ToGenericInstSig().GenericArguments.Count > 1)
         {
@@ -316,18 +337,23 @@ internal partial class MainViewModel
         else
         {
             var genericReturnValue = methodDef.ReturnType.ToGenericInstSig().GenericArguments[0];
+            var genericReturnType = genericReturnValue.IsByRef ? genericReturnValue.Next : genericReturnValue;
             var returnTypeCleaned = genericReturnValue.FullName.Replace("<", "[").Replace(">", "]").Replace("&", "&amp;");
             returnParamDocumentation = Environment.NewLine + $"    /// <param name=\"returnValue\">Instance of {returnTypeCleaned}</param>";
             var basicType = EditorHelper.GetIfBasicTypeOrDefault(genericReturnValue.FullName);
             if (basicType is not null)
             {
                 returnTypeParameter = basicType;
+                if (!genericReturnType.IsValueType)
+                {
+                    returnTypeParameter += "?";
+                }
             }
             else
             {
                 returnTypeParamDocumentation = Environment.NewLine + $"    /// <typeparam name=\"TReturn\">Type of the return value ({returnTypeCleaned})</typeparam>";
                 returnType = ", TReturn";
-                returnTypeParameter = "TReturn";
+                returnTypeParameter = genericReturnType.IsValueType ? "TReturn" : "TReturn?";
                 if (CreateDucktypeAsyncReturnValue && genericReturnValue.TryGetTypeDef() is { } returnTypeDef)
                 {
                     var proxyDefinition = EditorHelper.GetDuckTypeProxies(returnTypeDef, DucktypeAsyncReturnValueFields, DucktypeAsyncReturnValueProperties, DucktypeAsyncReturnValueMethods, DucktypeAsyncReturnValueDuckChaining, UseDuckCopyStruct, duckTypeProxyDefinitions);

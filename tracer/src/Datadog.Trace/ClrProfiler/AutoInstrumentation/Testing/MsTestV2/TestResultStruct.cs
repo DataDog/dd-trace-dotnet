@@ -23,6 +23,11 @@ internal struct TestResultStruct
     public UnitTestOutcome Outcome;
 
     /// <summary>
+    /// Gets the display name
+    /// </summary>
+    public string? DisplayName;
+
+    /// <summary>
     /// Test failure exception
     /// </summary>
     public Exception? TestFailureException;

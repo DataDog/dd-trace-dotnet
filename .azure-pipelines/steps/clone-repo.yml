@@ -12,7 +12,7 @@ steps:
       # Azure devops _doesn't_ clean up the contents of the repo after the pipeline has finished
       # So we do it manually
       echo "Cleaning up source directories ..."
-      rm -rf $BUILD_REPOSITORY_LOCALPATH/*
+      sudo rm -rf $BUILD_REPOSITORY_LOCALPATH/*
       
       # As this is a pull request, we need to do a fake merge
       # uses similar process to existing checkout task
@@ -129,5 +129,14 @@ steps:
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
 - ${{ else }}:
+    # The clean doesn't always work, so sudo rm -rf it
+  - bash: sudo rm -rf $BUILD_REPOSITORY_LOCALPATH/*
+    displayName: clean
+    condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
+
+  - powershell: rm "$env:BUILD_REPOSITORY_LOCALPATH/*" -r -fo
+    displayName: clean
+    condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+
   - checkout: self
     clean: true

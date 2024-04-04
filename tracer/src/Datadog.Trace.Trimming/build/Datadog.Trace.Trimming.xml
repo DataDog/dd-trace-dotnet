@@ -708,6 +708,7 @@
       <type fullname="System.Runtime.CompilerServices.CompilationRelaxationsAttribute" />
       <type fullname="System.Runtime.CompilerServices.CompilerGeneratedAttribute" />
       <type fullname="System.Runtime.CompilerServices.ConditionalWeakTable`2" />
+      <type fullname="System.Runtime.CompilerServices.ConditionalWeakTable`2/CreateValueCallback" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredTaskAwaitable" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredTaskAwaitable/ConfiguredTaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1" />

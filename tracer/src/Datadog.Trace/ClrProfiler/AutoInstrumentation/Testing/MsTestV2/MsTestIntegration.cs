@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -29,7 +30,7 @@ internal static class MsTestIntegration
 
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-    internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type)
+    internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, DateTimeOffset? startDate = null)
         where TTestMethod : ITestMethod
     {
         var testMethod = testMethodInstance.MethodInfo;
@@ -48,32 +49,10 @@ internal static class MsTestIntegration
             return null;
         }
 
-        var test = suite.InternalCreateTest(testName);
+        var test = startDate is null ? suite.InternalCreateTest(testName) : suite.InternalCreateTest(testName, startDate.Value);
 
         // Get test parameters
-        var methodParameters = testMethod.GetParameters();
-        if (methodParameters?.Length > 0)
-        {
-            var testParameters = new TestParameters
-            {
-                Metadata = new Dictionary<string, object>(),
-                Arguments = new Dictionary<string, object>()
-            };
-
-            for (var i = 0; i < methodParameters.Length; i++)
-            {
-                if (testMethodArguments != null && i < testMethodArguments.Length)
-                {
-                    testParameters.Arguments[methodParameters[i].Name ?? $"{i}"] = Common.GetParametersValueData(testMethodArguments[i]);
-                }
-                else
-                {
-                    testParameters.Arguments[methodParameters[i].Name ?? $"{i}"] = "(default)";
-                }
-            }
-
-            test.SetParameters(testParameters);
-        }
+        UpdateTestParameters(test, testMethodInstance);
 
         // Get traits
         if (GetTraits(testMethod) is { } testTraits)
@@ -101,6 +80,44 @@ internal static class MsTestIntegration
 
         test.ResetStartTime();
         return test;
+    }
+
+    internal static void UpdateTestParameters<TTestMethod>(Test test, TTestMethod testMethodInstance, string displayName = null)
+        where TTestMethod : ITestMethod
+    {
+        var testMethod = testMethodInstance.MethodInfo;
+        var testMethodArguments = testMethodInstance.Arguments;
+        var testName = testMethodInstance.TestMethodName;
+
+        // Get test parameters
+        var methodParameters = testMethod.GetParameters();
+        if (methodParameters?.Length > 0)
+        {
+            var testParameters = new TestParameters
+            {
+                Metadata = new Dictionary<string, object>(),
+                Arguments = new Dictionary<string, object>()
+            };
+
+            if (!string.IsNullOrEmpty(displayName) && displayName != testName)
+            {
+                testParameters.Metadata[TestTags.MetadataTestName] = displayName;
+            }
+
+            for (var i = 0; i < methodParameters.Length; i++)
+            {
+                if (testMethodArguments != null && i < testMethodArguments.Length)
+                {
+                    testParameters.Arguments[methodParameters[i].Name ?? i.ToString(CultureInfo.InvariantCulture)] = Common.GetParametersValueData(testMethodArguments[i]);
+                }
+                else
+                {
+                    testParameters.Arguments[methodParameters[i].Name ?? i.ToString(CultureInfo.InvariantCulture)] = "(default)";
+                }
+            }
+
+            test.SetParameters(testParameters);
+        }
     }
 
     private static Dictionary<string, List<string>> GetTraits(MethodInfo methodInfo)
@@ -204,27 +221,25 @@ internal static class MsTestIntegration
             return default;
         }
 
-        if (TestModuleByTestAssemblyInfos.TryGetValue(objTestAssemblyInfo, out var module))
-        {
-            Common.Log.Debug("Using existing Module: {Module}", module.Name);
-            return module;
-        }
-
         CIVisibility.WaitForSkippableTaskToFinish();
-        if (assemblyName is not null)
-        {
-            assemblyName = AssemblyName.GetAssemblyName(assemblyName).Name ?? string.Empty;
-        }
-        else
-        {
-            assemblyName = string.Empty;
-        }
 
-        var frameworkVersion = testAssemblyInfo.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
-        Common.Log.Debug("Creating Module: {Module}, Framework version: {Version}", assemblyName, frameworkVersion);
-        module = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
-        TestModuleByTestAssemblyInfos.Add(objTestAssemblyInfo, module);
-        return module;
+        return TestModuleByTestAssemblyInfos.GetValue(
+            objTestAssemblyInfo,
+            key =>
+            {
+                if (assemblyName is not null)
+                {
+                    assemblyName = AssemblyName.GetAssemblyName(assemblyName).Name ?? string.Empty;
+                }
+                else
+                {
+                    assemblyName = string.Empty;
+                }
+
+                var frameworkVersion = testAssemblyInfo.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
+                Common.Log.Debug("Module: {Module}, Framework version: {Version}", assemblyName, frameworkVersion);
+                return TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
+            });
     }
 
     internal static TestSuite GetOrCreateTestSuiteFromTestClassInfo<TClassInfo>(TClassInfo testClassInfo)
@@ -235,22 +250,19 @@ internal static class MsTestIntegration
             return default;
         }
 
-        if (TestSuiteByTestClassInfos.TryGetValue(objTestClassInfo, out var testSuite))
-        {
-            Common.Log.Debug("Using existing Suite: {Suite}", testSuite.Name);
-            return testSuite;
-        }
+        return TestSuiteByTestClassInfos.GetValue(
+            objTestClassInfo,
+            key =>
+            {
+                var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType.Assembly.FullName);
+                if (module is null)
+                {
+                    Common.Log.Error("There is no current module, a new suite cannot be created.");
+                    return default;
+                }
 
-        var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType.Assembly.FullName);
-        if (module is null)
-        {
-            Common.Log.Error("There is no current module, a new suite cannot be created.");
-            return default;
-        }
-
-        var classTypeName = testClassInfo.ClassType?.FullName ?? throw new NullReferenceException("ClassType is null, a new suite cannot be created.");
-        testSuite = module.InternalGetOrCreateSuite(classTypeName);
-        TestSuiteByTestClassInfos.Add(objTestClassInfo, testSuite);
-        return testSuite;
+                var classTypeName = testClassInfo.ClassType?.FullName ?? throw new NullReferenceException("ClassType is null, a new suite cannot be created.");
+                return module.InternalGetOrCreateSuite(classTypeName);
+            });
     }
 }

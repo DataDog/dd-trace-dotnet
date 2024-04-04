@@ -7,7 +7,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 
 namespace Datadog.Trace.Debugger.Expressions
 {
-    internal readonly record struct ProbeInfo(
+    internal record struct ProbeInfo(
         string ProbeId,
         int ProbeVersion,
         ProbeType ProbeType,
@@ -17,7 +17,8 @@ namespace Datadog.Trace.Debugger.Expressions
         string MetricName,
         bool HasCondition,
         string[] Tags,
-        TargetSpan? TargetSpan)
+        TargetSpan? TargetSpan,
+        bool IsEmitted = false)
     {
         internal string ProbeId { get; } = ProbeId;
 

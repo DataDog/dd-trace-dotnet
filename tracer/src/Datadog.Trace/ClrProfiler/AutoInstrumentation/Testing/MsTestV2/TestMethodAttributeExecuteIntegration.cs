@@ -2,9 +2,11 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.Ci;
@@ -25,6 +27,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyName = "Microsoft.VisualStudio.TestPlatform.TestFramework",
+    TypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+    MethodName = "Execute",
+    ReturnTypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"],
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName,
+    CallTargetIntegrationKind = CallTargetKind.Derived)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodAttributeExecuteIntegration
@@ -40,19 +52,20 @@ public static class TestMethodAttributeExecuteIntegration
     /// <param name="testMethod">Test method instance</param>
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
-        where TTestMethod : ITestMethod, IDuckType
+        where TTestMethod : ITestMethod
     {
-        if (!MsTestIntegration.IsEnabled || instance is null)
+        if (!MsTestIntegration.IsEnabled || instance is ItrSkipTestMethodExecutor)
         {
             return CallTargetState.GetDefault();
         }
 
-        if (Retries == 0)
+        if (Tracer.Instance.InternalActiveScope is { Span.Type: SpanTypes.Test })
         {
-            return new CallTargetState(null, MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type));
+            // Avoid a test inside another test
+            return CallTargetState.GetDefault();
         }
 
-        return new CallTargetState(null, new TestRunnerState(testMethod, MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type)));
+        return new CallTargetState(null, new TestRunnerState(testMethod, MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type), Retries));
     }
 
     /// <summary>
@@ -67,168 +80,208 @@ public static class TestMethodAttributeExecuteIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
     {
-        if (!MsTestIntegration.IsEnabled || instance is null)
+        if (state.State is TestRunnerState testMethodState)
         {
-            return new CallTargetReturn<TReturn>(returnValue);
-        }
-
-        if (returnValue is Array { Length: 1 } returnValueArray &&
-            returnValueArray.GetValue(0) is { } returnElement)
-        {
-            if (state.State is Test test)
+            var testMethod = testMethodState.TestMethod;
+            var allowRetries = false;
+            if (returnValue is IList { Count: > 0 } returnValueList)
             {
-                HandleTestResult(test, returnElement, exception);
-            }
-            else if (state.State is TestRunnerState testRunnerState)
-            {
-                var retries = Retries;
-                var initialTestStatus = HandleTestResult(testRunnerState.Test, returnElement, exception);
-                if (initialTestStatus != TestStatus.Skip && retries > 0)
+                for (var i = 0; i < returnValueList.Count; i++)
                 {
-                    var results = new object?[retries + 1];
-                    results[0] = returnElement;
-                    Common.Log.Debug<int>("We need to retry {Times} times", retries);
-                    var testMethod = testRunnerState.TestMethod;
-                    for (var i = 0; i < retries; i++)
+                    var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, testMethodState.Test.StartTime);
+                    var result = HandleTestResult(test, testMethod, returnValueList[i], exception);
+                    allowRetries = allowRetries || result != TestStatus.Skip;
+                }
+            }
+            else
+            {
+                Common.Log.Warning("Failed to extract TestResult from return value");
+                testMethodState.Test.Close(TestStatus.Fail);
+                return new CallTargetReturn<TReturn>(returnValue);
+            }
+
+            if (allowRetries && testMethodState.Retries > 0)
+            {
+                // Handle retries
+                var retries = testMethodState.Retries;
+                var results = new IList[retries + 1];
+                results[0] = returnValueList;
+                Common.Log.Debug<int>("We need to retry {Times} times", retries);
+                for (var i = 0; i < retries; i++)
+                {
+                    Common.Log.Debug<int>("Retry number: {RetryNumber}", i);
+                    var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type);
+                    object? retryTestResult = null;
+                    Exception? retryException = null;
+                    try
                     {
-                        Common.Log.Debug<int>("Retry number: {RetryNumber}", i);
-                        var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type);
-                        object? retryTestResult = null;
-                        Exception? retryException = null;
-                        try
+                        retryTestResult = testMethodState.TestMethod.Invoke(null);
+                    }
+                    catch (Exception ex)
+                    {
+                        retryException = ex;
+                    }
+                    finally
+                    {
+                        if (retryTestResult is IList { Count: > 0 } retryTestResultList)
                         {
-                            retryTestResult = testRunnerState.TestMethod.Invoke(null);
+                            for (var j = 0; j < retryTestResultList.Count; j++)
+                            {
+                                var test = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, retryTest.StartTime);
+                                HandleTestResult(test, testMethod, retryTestResultList[j], retryException);
+                            }
+
+                            results[i + 1] = retryTestResultList;
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            retryException = ex;
-                        }
-                        finally
-                        {
-                            HandleTestResult(retryTest, retryTestResult, retryException);
-                            results[i + 1] = retryTestResult;
+                            Common.Log.Warning<int>("Failed to extract TestResult from the retry {Index} return value", i);
+                            testMethodState.Test.Close(TestStatus.Fail);
                         }
                     }
-
-                    // Set return value
-                    returnValueArray.SetValue(GetResultFromRetries(results), 0);
                 }
+
+                // Calculate final results
+                returnValue = (TReturn)GetFinalResults(results);
             }
         }
 
         return new CallTargetReturn<TReturn>(returnValue);
     }
 
-    private static TestStatus HandleTestResult(Test test, object? objTestResult, Exception? exception)
+    private static TestStatus HandleTestResult(Test test, ITestMethod testMethod, object? testResultObject, Exception? exception)
     {
-        if (objTestResult is null || !objTestResult.TryDuckCast<TestResultStruct>(out var testResult))
+        if (testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
         {
-            test.SetErrorInfo("Exception", "Test result not found", null);
-            test.Close(TestStatus.Fail);
-            return TestStatus.Fail;
-        }
-
-        string? errorType = null;
-        string? errorMessage = null;
-        string? errorStackTrace = null;
-
-        if (testResult.TestFailureException != null)
-        {
-            var testException = testResult.TestFailureException.InnerException ?? testResult.TestFailureException;
-            var testExceptionType = testException.GetType();
-            var testExceptionName = testExceptionType.Name;
-            if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
+            var testException = testResult.TestFailureException?.InnerException ??
+                                testResult.TestFailureException ??
+                                exception;
+            if (testException != null)
             {
-                test.SetErrorInfo(testException);
+                var testExceptionType = testException.GetType();
+                var testExceptionName = testExceptionType.Name;
+                if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
+                {
+                    test.SetErrorInfo(testException);
+                }
+                else
+                {
+                    test.SetErrorInfo(testExceptionType.ToString(), testException.Message, testException.ToString());
+                }
             }
 
-            errorType = testExceptionType.FullName;
-            errorMessage = testException.Message;
-            errorStackTrace = testException.ToString();
-        }
+            if (!string.IsNullOrEmpty(testResult.DisplayName) && test.Name != testResult.DisplayName)
+            {
+                test.SetName(testResult.DisplayName!);
+                MsTestIntegration.UpdateTestParameters(test, testMethod, testResult.DisplayName);
+            }
 
-        switch (testResult.Outcome)
-        {
-            case UnitTestOutcome.Error:
-            case UnitTestOutcome.Failed:
-            case UnitTestOutcome.Timeout:
-                test.SetErrorInfo(errorType ?? "Exception", errorMessage ?? testResult.Outcome.ToString(), errorStackTrace);
+            if (exception is not null)
+            {
                 test.Close(TestStatus.Fail);
                 return TestStatus.Fail;
-            case UnitTestOutcome.Inconclusive:
-            case UnitTestOutcome.NotRunnable:
-                if (exception is not null)
-                {
-                    test.SetErrorInfo(exception);
-                    test.Close(TestStatus.Fail);
-                    return TestStatus.Fail;
-                }
+            }
 
-                test.Close(TestStatus.Skip, TimeSpan.Zero, errorMessage);
-                return TestStatus.Skip;
-            case UnitTestOutcome.Passed:
-                if (exception is not null)
-                {
-                    test.SetErrorInfo(exception);
-                    test.Close(TestStatus.Fail);
-                    return TestStatus.Fail;
-                }
-
-                test.Close(TestStatus.Pass);
-                return TestStatus.Pass;
-        }
-
-        return TestStatus.Skip;
-    }
-
-    private static object GetResultFromRetries(object?[] results)
-    {
-        var lstResults = new List<ITestResult>();
-        var lstExceptions = new List<Exception>();
-        ITestResult? finalResult = null;
-        var duration = TimeSpan.Zero;
-        foreach (var result in results)
-        {
-            if (result is not null && result.TryDuckCast<ITestResult>(out var testResult))
+            switch (testResult.Outcome)
             {
-                lstResults.Add(testResult);
-                duration += testResult.Duration;
-                if (testResult.TestFailureException is { } testFailureException)
-                {
-                    lstExceptions.Add(testFailureException);
-                }
-
-                if (testResult.Outcome == UnitTestOutcome.Passed)
-                {
-                    finalResult = testResult;
-                }
+                case UnitTestOutcome.Error or UnitTestOutcome.Failed or UnitTestOutcome.Timeout:
+                    test.Close(TestStatus.Fail);
+                    return TestStatus.Fail;
+                case UnitTestOutcome.Inconclusive or UnitTestOutcome.NotRunnable:
+                    test.Close(TestStatus.Skip, TimeSpan.Zero, testException?.Message ?? string.Empty);
+                    return TestStatus.Skip;
+                case UnitTestOutcome.Passed:
+                    test.Close(TestStatus.Pass);
+                    return TestStatus.Pass;
+                default:
+                    Common.Log.Warning("Failed to handle the test status: {Outcome}", testResult.Outcome);
+                    test.Close(TestStatus.Fail);
+                    return TestStatus.Fail;
             }
         }
 
-        if (finalResult is null)
+        Common.Log.Warning("Failed to cast {TestResultObject} to TestResultStruct", testResultObject);
+        test.Close(TestStatus.Fail);
+        return TestStatus.Fail;
+    }
+
+    private static IList GetFinalResults(IList[] executionStatuses)
+    {
+        var lstExceptions = new List<Exception>();
+        var initialResults = executionStatuses[0];
+        List<object?> lstResultsFromDifferentRuns = new();
+        var finalResults = new object[initialResults.Count];
+        for (var i = 0; i < initialResults.Count; i++)
         {
-            finalResult = lstResults[0];
+            foreach (var execution in executionStatuses)
+            {
+                if (i < execution.Count)
+                {
+                    lstResultsFromDifferentRuns.Add(execution[i]);
+                }
+            }
+
+            finalResults[i] = GetResultFromRetries(lstResultsFromDifferentRuns);
+            lstResultsFromDifferentRuns.Clear();
+            lstExceptions.Clear();
         }
 
-        finalResult.Duration = duration;
-        if (finalResult.Outcome != UnitTestOutcome.Passed && lstExceptions.Count > 0)
+        for (var i = 0; i < initialResults.Count; i++)
         {
-            finalResult.TestFailureException = new AggregateException(lstExceptions);
+            initialResults[i] = finalResults[i];
         }
 
-        finalResult.InnerResultsCount = lstResults.Count;
-        return finalResult.Instance!;
+        return initialResults;
+
+        object GetResultFromRetries(IList results)
+        {
+            ITestResult? finalResult = null;
+            var resultsCount = 0;
+            var duration = TimeSpan.Zero;
+            foreach (var result in results)
+            {
+                if (result.TryDuckCast<ITestResult>(out var testResult))
+                {
+                    duration += testResult.Duration;
+                    if (testResult.TestFailureException is { } testFailureException)
+                    {
+                        lstExceptions.Add(testFailureException);
+                    }
+
+                    if (resultsCount++ == 0 || testResult.Outcome == UnitTestOutcome.Passed)
+                    {
+                        finalResult = testResult;
+                    }
+                }
+            }
+
+            if (finalResult is null)
+            {
+                ThrowHelper.ThrowNullReferenceException("Failed to get the final result from the retries");
+            }
+
+            finalResult.Duration = duration;
+            if (finalResult.Outcome != UnitTestOutcome.Passed && lstExceptions.Count > 0)
+            {
+                finalResult.TestFailureException = new AggregateException(lstExceptions);
+            }
+
+            finalResult.InnerResultsCount = resultsCount;
+            return finalResult.Instance!;
+        }
     }
 
     private readonly struct TestRunnerState
     {
         public readonly ITestMethod TestMethod;
         public readonly Test Test;
+        public readonly int Retries;
 
-        public TestRunnerState(ITestMethod testMethod, Test test)
+        public TestRunnerState(ITestMethod testMethod, Test test, int retries)
         {
             TestMethod = testMethod;
             Test = test;
+            Retries = retries;
         }
     }
 }

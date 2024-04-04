@@ -85,6 +85,7 @@ public class LiveDebuggerTests
                 new AgentConfiguration(
                     configurationEndpoint: "configurationEndpoint",
                     debuggerEndpoint: "debuggerEndpoint",
+                    diagnosticsEndpoint: "diagnosticsEndpoint",
                     symbolDbEndpoint: "symbolDbEndpoint",
                     agentVersion: "agentVersion",
                     statsEndpoint: "traceStatsEndpoint",
@@ -224,7 +225,12 @@ public class LiveDebuggerTests
             Called = true;
         }
 
-        public string[] GetFetchedProbes(string[] candidateProbeIds)
+        public void UpdateProbe(string probeId, FetchProbeStatus newProbeStatus)
+        {
+            Called = true;
+        }
+
+        public string[] GetBoundedProbes(string[] candidateProbeIds)
         {
             Called = true;
             return candidateProbeIds;

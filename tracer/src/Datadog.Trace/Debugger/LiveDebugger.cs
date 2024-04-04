@@ -27,6 +27,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.StatsdClient;
+using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
 namespace Datadog.Trace.Debugger
 {
@@ -282,7 +283,7 @@ namespace Datadog.Trace.Debugger
 
                 RemoveUnboundProbes(removedProbesIds);
 
-                var probesToRemoveFromNative = _probeStatusPoller.GetFetchedProbes(removedProbesIds);
+                var probesToRemoveFromNative = _probeStatusPoller.GetBoundedProbes(removedProbesIds);
                 _probeStatusPoller.RemoveProbes(removedProbesIds);
 
                 if (probesToRemoveFromNative.Any())
@@ -435,9 +436,21 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal void AddSnapshot(string probeId, string snapshot)
+        internal void AddSnapshot(ProbeInfo probe, string snapshot)
         {
-            _debuggerSink.AddSnapshot(probeId, snapshot);
+            _debuggerSink.AddSnapshot(probe.ProbeId, snapshot);
+            SetProbeStatusToEmitting(probe);
+        }
+
+        internal void SetProbeStatusToEmitting(ProbeInfo probe)
+        {
+            if (!probe.IsEmitted)
+            {
+                var probeStatus = new ProbeStatus(probe.ProbeId, Sink.Models.Status.EMITTING);
+                var fetchProbeStatus = new FetchProbeStatus(probe.ProbeId, probe.ProbeVersion, probeStatus);
+                _probeStatusPoller.UpdateProbe(probe.ProbeId, fetchProbeStatus);
+                probe.IsEmitted = true;
+            }
         }
 
         internal void AddReceivedProbeStatus(string probeId)
@@ -460,7 +473,7 @@ namespace Datadog.Trace.Debugger
             _debuggerSink.AddErrorProbeStatus(probeId, probeVersion, exception, errorMessage);
         }
 
-        internal void SendMetrics(MetricKind metricKind, string metricName, double value, string probeId)
+        internal void SendMetrics(ProbeInfo probe, MetricKind metricKind, string metricName, double value, string probeId)
         {
             if (_dogStats is NoOpStatsd)
             {
@@ -483,6 +496,8 @@ namespace Datadog.Trace.Debugger
                         nameof(metricKind),
                         $"{metricKind} is not a valid value");
             }
+
+            SetProbeStatusToEmitting(probe);
         }
 
         private void DiscoveryCallback(AgentConfiguration x)
