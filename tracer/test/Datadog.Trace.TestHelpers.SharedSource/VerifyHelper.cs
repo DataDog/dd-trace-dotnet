@@ -224,7 +224,8 @@ namespace Datadog.Trace.TestHelpers
                        kvp => kvp.Key switch
                        {
                            // scrub stack trace for errors
-                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
+                           Tags.ErrorMsg => new KeyValuePair<string, string>(kvp.Key, "ErrorMessage"),
+                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, "StackTrace"),
                            Trace.Ci.Tags.CommonTags.GitBranch => new KeyValuePair<string, string>(kvp.Key, "branch"),
                            Trace.Ci.Tags.CommonTags.GitTag => new KeyValuePair<string, string>(kvp.Key, "tag"),
                            Trace.Ci.Tags.CommonTags.BuildSourceRoot => new KeyValuePair<string, string>(kvp.Key, "sourceRoot"),

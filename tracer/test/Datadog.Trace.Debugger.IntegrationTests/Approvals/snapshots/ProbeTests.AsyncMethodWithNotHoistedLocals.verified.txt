@@ -1,0 +1,73 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "this": {
+                "type": "AsyncMethodWithNotHoistedLocals",
+                "value": "AsyncMethodWithNotHoistedLocals"
+              },
+              "value": {
+                "type": "String",
+                "value": "RunAsync"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "this": {
+                "type": "AsyncMethodWithNotHoistedLocals",
+                "value": "AsyncMethodWithNotHoistedLocals"
+              },
+              "value": {
+                "type": "String",
+                "value": "RunAsync"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "8"
+              },
+              "otherValue": {
+                "notCapturedReason": "The value of this variable in not available in the specified probe location. Place a line probe closer to where the variable was assigned or used to obtain its value.",
+                "type": "String"
+              },
+              "result": {
+                "notCapturedReason": "The value of this variable in not available in the specified probe location. Place a line probe closer to where the variable was assigned or used to obtain its value.",
+                "type": "String"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Foo",
+            "type": "Samples.Probes.TestRuns.SmokeTests.AsyncMethodWithNotHoistedLocals"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Foo",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncMethodWithNotHoistedLocals",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

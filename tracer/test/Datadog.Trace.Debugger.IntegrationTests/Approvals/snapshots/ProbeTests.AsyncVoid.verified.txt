@@ -23,7 +23,7 @@
             },
             "locals": {
               "e": {
-                "isNull": "true",
+                "notCapturedReason": "The value of this variable in not available in the specified probe location. Place a line probe closer to where the variable was assigned or used to obtain its value.",
                 "type": "AccessViolationException"
               }
             }

@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo",
     MethodName = "RunAssemblyInitialize",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = new[] { ClrNames.Ignore },
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.TestContext"],
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
@@ -53,7 +53,11 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
             return CallTargetState.GetDefault();
         }
 
-        instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
+        lock (instance.Instance!)
+        {
+            instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
+        }
+
         return new CallTargetState(null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance, context.TestMethod.AssemblyName));
     }
 

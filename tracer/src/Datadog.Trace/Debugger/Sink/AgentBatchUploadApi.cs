@@ -25,22 +25,28 @@ namespace Datadog.Trace.Debugger.Sink
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IGitMetadataTagsProvider? _gitMetadataTagsProvider;
+
         private string? _endpoint = null;
         private string? _tags = null;
 
         private AgentBatchUploadApi(
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            bool isDiagnostics)
         {
             _apiRequestFactory = apiRequestFactory;
             _gitMetadataTagsProvider = gitMetadataTagsProvider;
-            discoveryService.SubscribeToChanges(c => _endpoint = c.DebuggerEndpoint);
+            discoveryService.SubscribeToChanges(c => _endpoint = isDiagnostics ? c.DiagnosticsEndpoint : c.DebuggerEndpoint);
         }
 
-        public static AgentBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider)
+        public static AgentBatchUploadApi Create(
+            IApiRequestFactory apiRequestFactory,
+            IDiscoveryService discoveryService,
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            bool isDiagnostics)
         {
-            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
+            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, isDiagnostics);
         }
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> data)
