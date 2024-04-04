@@ -153,7 +153,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 len++;
             }
 
-            if (span.SpanLinks is { Count: > 0 })
+            var hasSpanLinks = span.SpanLinks is { Count: > 0 };
+            if (hasSpanLinks)
             {
                 len++;
             }
@@ -215,7 +216,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += WriteMetaStruct(ref bytes, offset, in spanModel);
             }
 
-            if (span.SpanLinks is { Count: > 0 })
+            if (hasSpanLinks)
             {
                 offset += WriteSpanLink(ref bytes, offset, in spanModel);
             }
@@ -232,7 +233,6 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 var context = spanLink.Context;
                 var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
-                var traceState = W3CTraceContextPropagator.CreateTraceStateHeader(context);
                 var traceFlags = samplingPriority switch
                 {
                     null => 0u,             // not set
@@ -251,7 +251,8 @@ namespace Datadog.Trace.Agent.MessagePack
                     len++;
                 }
 
-                if (spanLink.Attributes is { Count: > 0 })
+                var hasAttributes = spanLink.Attributes is { Count: > 0 };
+                if (hasAttributes)
                 {
                     len++;
                 }
@@ -267,7 +268,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
                 // optional serialization
-                if (spanLink.Attributes is { Count: > 0 })
+                if (hasAttributes)
                 {
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _attributesBytes);
                     offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, spanLink.Attributes.Count);
@@ -281,6 +282,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 // CreateTraceStateHeader will never return null or empty
                 if (context.IsRemote)
                 {
+                    var traceState = W3CTraceContextPropagator.CreateTraceStateHeader(context);
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceStateBytes);
                     offset += MessagePackBinary.WriteString(ref bytes, offset, traceState);
                 }
