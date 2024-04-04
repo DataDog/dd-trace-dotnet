@@ -25,9 +25,8 @@ jobs:
         run: |
           if( "${{ github.event.release.tag_name}}".StartsWith("v1.")) {
             echo "::set-output name=ref::release/1.x"
-          # TODO: Uncomment the following once we cut the release/2.x branch and merge v3
-          # } elseif("${{ github.event.release.tag_name}}".StartsWith("v2.")) {
-            # echo "::set-output name=ref::release/2.x"
+          } elseif("${{ github.event.release.tag_name}}".StartsWith("v2.")) {
+            echo "::set-output name=ref::release/2.x"
           } else {
             echo "::set-output name=ref::master"
           }
