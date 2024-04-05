@@ -67,6 +67,11 @@ namespace Datadog.Trace
 
         internal static void InjectInternal<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string? messageType = null, string? target = null)
         {
+            if (messageType != null && target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
+            else if (messageType == null && target != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
+
+            if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
+
             if (context is SpanContext spanContext)
             {
                 SpanContextPropagator.Instance.Inject(spanContext, carrier, setter);
