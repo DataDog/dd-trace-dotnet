@@ -177,7 +177,7 @@ CI Visibility previously supported macOS 11+. In v3.0.0+ CI Visibility will only
 macOS 11 no longer receives updates from Apple, and [is being dropped from continuous integration providers](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops&tabs=yaml#recent-updates) in June 2024.
 
 **What action should you take?**
-If you are using CI Visibility with macOS 11, we strongly suggest upgrading to a newer version of macOS. If you cannot upgrade, you can continue to use the 2.x.x version of the .NET tracer, but you will receive no feature updates or bug fixes.
+If you are using CI Visibility with macOS 11, we strongly suggest upgrading to a newer version of macOS. If you cannot upgrade, you can continue to use the 2.x.x version of the .NET tracer but you will receive no feature updates or bug fixes.
 
 ### Future major version policy and plans
 
