@@ -4,10 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -48,11 +46,51 @@ namespace Datadog.Trace
             InjectInternal(carrier, setter, context);
         }
 
-        internal static void InjectInternal<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context)
+        /// <summary>
+        /// Given a SpanContext carrier and a function to set a value, this method will inject a SpanContext.
+        /// You should only call <see cref="Inject{TCarrier}"/> once on the message <paramref name="carrier"/>. Calling
+        /// multiple times may lead to incorrect behaviors.
+        /// This method also sets a data streams monitoring checkpoint (if enabled).
+        /// </summary>
+        /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...)</param>
+        /// <param name="setter">Given a key name and value, sets the value in the carrier</param>
+        /// <param name="context">The context you want to inject</param>
+        /// <param name="messageType">For Data Streams Monitoring: The type of messaging system where the data being injected will be sent.</param>
+        /// <param name="target">For Data Streams Monitoring: The queue or topic where the data being injected will be sent.</param>
+        /// <typeparam name="TCarrier">Type of the carrier</typeparam>
+        [PublicApi]
+        public void InjectIncludingDsm<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string messageType, string target)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_InjectIncludingDsm);
+            InjectInternal(carrier, setter, context, messageType, target);
+        }
+
+        internal static void InjectInternal<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string? messageType = null, string? target = null)
+        {
+            if (messageType != null && target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
+            else if (messageType == null && target != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
+
+            if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
+
             if (context is SpanContext spanContext)
             {
                 SpanContextPropagator.Instance.Inject(spanContext, carrier, setter);
+
+                if (string.IsNullOrEmpty(messageType) || string.IsNullOrEmpty(target))
+                {
+                    return;
+                }
+
+                var dsm = Tracer.Instance.TracerManager.DataStreamsManager;
+                if (dsm != null && dsm.IsEnabled)
+                {
+                    var edgeTags = new[] { "direction:out", $"topic:{target}", $"type:{messageType}" };
+                    spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0, parent: null);
+                    if (carrier != null)
+                    {
+                        dsm.InjectPathwayContextAsBase64String(spanContext.PathwayContext, new CarrierWithDelegate<TCarrier>(carrier, setter: setter));
+                    }
+                }
             }
         }
     }
