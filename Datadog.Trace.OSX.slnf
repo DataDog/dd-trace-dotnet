@@ -11,6 +11,7 @@
       "tracer\\src\\Datadog.Trace.Bundle\\Datadog.Trace.Bundle.csproj",
       "tracer\\src\\Datadog.Trace.ClrProfiler.Managed.Loader\\Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
       "tracer\\src\\Datadog.Trace.Coverage.collector\\Datadog.Trace.Coverage.collector.csproj",
+      "tracer\\src\\Datadog.Trace.Manual\\Datadog.Trace.Manual.csproj",
       "tracer\\src\\Datadog.Trace.MSBuild\\Datadog.Trace.MSBuild.csproj",
       "tracer\\src\\Datadog.Trace.OpenTracing\\Datadog.Trace.OpenTracing.csproj",
       "tracer\\src\\Datadog.Trace.SourceGenerators\\Datadog.Trace.SourceGenerators.csproj",
