@@ -36,6 +36,8 @@ internal readonly partial struct SecurityCoordinator
 
     public void MarkBlocked() => _httpTransport.MarkBlocked();
 
+    public void MarkBlockedByAuthentication() => _httpTransport.MarkBlockedByAuthentication();
+
     private static void LogMatchesIfDebugEnabled(IReadOnlyCollection<object>? results, bool blocked)
     {
         if (Log.IsEnabled(LogEventLevel.Debug) && results != null)

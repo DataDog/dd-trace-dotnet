@@ -35,4 +35,6 @@ internal abstract class HttpTransportBase
     internal abstract IHeadersCollection GetResponseHeaders();
 
     internal abstract void MarkBlocked();
+
+    internal abstract void MarkBlockedByAuthentication();
 }

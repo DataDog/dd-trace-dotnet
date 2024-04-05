@@ -70,7 +70,7 @@ internal readonly partial struct SecurityCoordinator
 
             if (result!.ShouldBlockByAuthentication)
             {
-                _context.Items["block_by_auth"] = true;
+                MarkBlockedByAuthentication();
             }
 
             TryReport(result, result.ShouldBlock);
@@ -153,6 +153,8 @@ internal readonly partial struct SecurityCoordinator
         internal override IDictionary<string, object>? RouteData => _context.GetRouteData()?.Values;
 
         internal override void MarkBlocked() => _context.Items["block"] = true;
+
+        internal override void MarkBlockedByAuthentication() => _context.Items["block_by_auth"] = true;
 
         internal override IContext GetAdditiveContext() => _context.Features.Get<IContext>();
 

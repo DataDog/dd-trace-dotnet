@@ -481,6 +481,8 @@ internal readonly partial struct SecurityCoordinator
 
         internal override void MarkBlocked() => _context.Items["block"] = true;
 
+        internal override void MarkBlockedByAuthentication() => _context.Items["block_by_auth"] = true;
+
         internal override IContext? GetAdditiveContext() => _context.Items[WafKey] as IContext;
 
         internal override void SetAdditiveContext(IContext additiveContext) => _context.Items[WafKey] = additiveContext;

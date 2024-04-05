@@ -97,6 +97,11 @@ internal class BlockingMiddleware
                         securityCoordinator.MarkBlocked();
                     }
 
+                    if (result.ShouldBlockByAuthentication)
+                    {
+                        securityCoordinator.MarkBlockedByAuthentication();
+                    }
+
                     securityCoordinator.TryReport(result, endedResponse);
                     // security will be disposed in endrequest of diagnostic observer in any case
                 }
