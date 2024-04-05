@@ -37,7 +37,7 @@ public static partial class Tags
                 internal const string FailureSdkSource = $"_dd.{Failure}.sdk";
                 internal const string FailureTrack = Failure + ".track";
 
-                internal const string Blocked = ".blocked";
+                internal const string Blocked = Root + ".blocked";
                 internal const string BlockedWithSuccess = Blocked + ".success";
             }
 

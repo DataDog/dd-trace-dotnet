@@ -35,16 +35,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class SignInManagerCheckPasswordSignInAsync
 {
-    /// <summary>
-    /// OnAsyncMethodEnd callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <typeparam name="TReturn">Type of the return value (Microsoft.AspNetCore.Identity.SignInResult)</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="returnValue">Instance of Microsoft.AspNetCore.Identity.SignInResult</param>
-    /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-    /// <param name="state">Calltarget state value</param>
-    /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TReturn : ISignInResult
     {
@@ -57,7 +47,7 @@ public class SignInManagerCheckPasswordSignInAsync
                 var tracer = Tracer.Instance;
                 var scope = tracer.InternalActiveScope;
                 var span = scope.Span;
-                var setTag = TaggingUtils.GetSpanSetter(span, out _);
+                var setTag = TaggingUtils.GetSpanSetter(span);
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.Blocked, "true");
 
                 if (returnValue.Succeeded)
