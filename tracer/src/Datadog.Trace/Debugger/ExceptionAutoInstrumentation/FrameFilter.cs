@@ -4,30 +4,15 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Threading;
-using System.Threading.Tasks;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Symbols;
-using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal static class FrameFilter
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FrameFilter));
-
-        internal static bool IsDatadogAssembly(string assemblyName)
-        {
-            return assemblyName?.StartsWith("datadog.", StringComparison.OrdinalIgnoreCase) == true;
-        }
-
         internal static bool IsUserCode(in ParticipatingFrame participatingFrameToRejit)
         {
             return IsUserCode(participatingFrameToRejit.Method);
@@ -79,50 +64,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return true;
             }
 
-            var moduleName = GetModuleNameWithoutExtension(method.Module.Name);
-
-            return string.IsNullOrEmpty(moduleName) ||
-                   ThirdPartyModules.Contains(moduleName) ||
-                   AssemblyFilter.ShouldSkipAssembly(method.Module.Assembly);
-        }
-
-        private static string GetModuleNameWithoutExtension(string moduleName)
-        {
-            if (string.IsNullOrEmpty(moduleName))
-            {
-                return moduleName;
-            }
-
-            try
-            {
-                var lastPeriod = moduleName.LastIndexOf('.');
-                if (lastPeriod == -1)
-                {
-                    return moduleName;
-                }
-
-                if (lastPeriod == moduleName.Length - 1)
-                {
-                    return moduleName.Substring(0, moduleName.Length - 1);
-                }
-
-                var ext = moduleName.Remove(0, lastPeriod + 1).ToLower();
-
-                if (ext == "dll" ||
-                    ext == "exe" ||
-                    ext == "so")
-                {
-                    return moduleName.Substring(0, lastPeriod);
-                }
-
-                return moduleName;
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Failed tlo get the name of {ModuleName} without extension", moduleName);
-
-                throw;
-            }
+            return AssemblyFilter.ShouldSkipAssembly(method.Module.Assembly);
         }
 
         internal static bool ShouldSkipNamespaceIfOnTopOfStack(MethodBase method)
