@@ -20,6 +20,7 @@ The .NET tracer v3.0.0 includes breaking changes that you must be aware of befor
 - Deprecation notices
 	- **.NET Core 2.1 is marked EOL** in v3.0.0+ of the tracer. That means versions  2.1, 2.2 and 3.0 of .NET Core are now EOL. .NET Core 2.1 may still work with v3.0.0+, but is will no longer receive significant testing and you will receive limited support for issues arising with EOL versions.
 	- **Datadog.Trace.OpenTracing is now obsolete**. OpenTracing is considered deprecated, and so _Datadog.Trace.OpenTracing_ is considered deprecated. See the following details on future deprecation.
+	- **macOS 11 is no longer supported for CI Visibility** in v3.0.0+. Only macOS 12 and above are supported.
 - Major version policy and future deprecation
 	- **Announcing a major version roadmap**. We intend to make yearly major releases, starting from v3.0.0 in 2024, and v4.0.0 in 2025. We clearly will aim for minimal breaking changes, with the primary focus being on maintaining support for new versions of .NET and removal of EOL frameworks and operating systems.
 	- **Planned removal of support for .NET Core 2.1** in version v4.0.0+. We intend to completely remove support for .NET Core 2.x and .NET Core 3.0 in v4.0.0. .NET Framework 4.6.1+ will continue to be supported.
@@ -166,6 +167,17 @@ The [Datadog.Trace.OpenTracing](https://www.nuget.org/packages/Datadog.Trace.Ope
 You may continue to use the  [Datadog.Trace.OpenTracing](https://www.nuget.org/packages/Datadog.Trace.OpenTracing) package with v3.0.0+ of the .NET tracer, but you may need to [suppress the `[Obsolete]` compiler warnings](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/preprocessor-directives#pragma-warning). You should consider moving your project to using OpenTelemetry instead of OpenTracing. 
 
 .NET has built in support for OpenTelemetry by way of the `Activity` class, which is supported by Datadog's automatic instrumentation by setting `DD_TRACE_OTEL_ENABLED=true`. Alternatively, you can use vendor agnostic tooling to send telemetry signals to [the OpenTelemetry collector and use the Datadog Exporter](https://docs.datadoghq.com/opentelemetry/collector_exporter) to forward this information to Datadog.
+
+#### macOS 11 is no longer supported
+
+**What changed?**
+CI Visibility previously supported macOS 11+. In v3.0.0+ CI Visibility will only support macOS 12+.
+
+**Why did we change it?**
+macOS 11 no longer receives updates from Apple, and [is being dropped from continuous integration providers](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops&tabs=yaml#recent-updates) in June 2024.
+
+**What action should you take?**
+If you are using CI Visibility with macOS 11, we strongly suggest upgrading to a newer version of macOS. If you cannot upgrade, you can continue to use the 2.x.x version of the .NET tracer, but you will receive no feature updates or bug fixes.
 
 ### Future major version policy and plans
 
