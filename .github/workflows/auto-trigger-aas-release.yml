@@ -13,6 +13,6 @@ jobs:
         run: |
           curl -X POST \
           -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: Bearer ${{ secrets.GH_TOKEN_PIERO }}" \
+          -H "Authorization: Bearer ${{ secrets.GH_EXTERNAL_TOKEN }}" \
           https://api.github.com/repos/DataDog/datadog-aas-extension/dispatches \
           -d '{"event_type": "dd-trace-dotnet-release", "client_payload": {"is_prerelease":"${{github.event.release.prerelease}}", "version":"${{github.event.release.tag_name}}" } }'
