@@ -46,7 +46,6 @@ namespace Samples
         private static readonly MethodInfo SetServiceName = TracerSettingsType?.GetProperty("ServiceName")?.SetMethod;
         private static readonly MethodInfo GetMetricMethod = SpanType?.GetMethod("GetMetric", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo RunCommandMethod = ProcessHelpersType?.GetMethod("TestingOnly_RunCommand", BindingFlags.NonPublic | BindingFlags.Static);
-        private static readonly MethodInfo AddSpanLinkMethod = SpanType?.GetMethod("AddSpanLink", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly FieldInfo TracerThreePartVersionField = TracerConstantsType?.GetField("ThreePartVersion");
 
 
@@ -146,17 +145,6 @@ namespace Samples
                     }
                 }
             }
-        }
-        public static object AddSpanLinkWithAttributes(object parentSpan, object scopeToAddAsLink, List<KeyValuePair<string, string>> attributes)
-        {
-            if (SpanProperty != null && AddSpanLinkMethod != null)
-            {
-                var spanToAdd = SpanProperty.Invoke(scopeToAddAsLink, Array.Empty<object>());
-                var toAddTo = SpanProperty.Invoke(parentSpan, Array.Empty<object>());
-                return AddSpanLinkMethod.Invoke(toAddTo, new object[] { spanToAdd, attributes });
-            }
-
-            return null;
         }
 
         public static IDisposable CreateScope(string operationName)
