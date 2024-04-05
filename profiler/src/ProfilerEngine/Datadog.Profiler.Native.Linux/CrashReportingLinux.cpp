@@ -16,6 +16,13 @@
 #include <sstream>
 #include <map>
 #include <string.h>
+#include "FfiHelper.h"
+
+extern "C"
+{
+#include "datadog/common.h"
+#include "datadog/profiling.h"
+}
 
 std::unique_ptr<CrashReporting> CrashReporting::Create(int32_t pid, int32_t signal)
 {
@@ -143,27 +150,37 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             auto module = FindModule(ip);
             stackFrame.moduleAddress = module.second;
 
-            unw_word_t offset;
-
-            // TODO: check if unw_get_proc_name fails
             unw_proc_info_t procInfo;
             result = unw_get_proc_info(&cursor, &procInfo);            
 
             if (result == 0)
             {
                 stackFrame.symbolAddress = procInfo.start_ip;
+
+                unw_word_t offset;
                 result = unw_get_proc_name(&cursor, methodData.symbolName, sizeof(methodData.symbolName), &offset);
 
                 if (result == 0)
                 {
-                    stackFrame.method = std::string(methodData.symbolName);                    
+                    stackFrame.method = std::string(methodData.symbolName);
+
+                    auto demangleResult = ddog_demangle(libdatadog::FfiHelper::StringToCharSlice(stackFrame.method), DDOG_PROF_DEMANGLE_OPTIONS_COMPLETE);
+
+                    if (demangleResult.tag == DDOG_PROF_STRING_WRAPPER_RESULT_OK)
+                    {
+                        // TODO: There is currently no safe way to free the StringWrapper
+                        auto stringWrapper = demangleResult.ok;
+
+                        if (stringWrapper.message.len > 0)
+                        {
+                            stackFrame.method = std::string((char*)stringWrapper.message.ptr, stringWrapper.message.len);
+                        }
+                    }
                 }
                 else
                 {
                     std::ostringstream unknownModule;
-
                     unknownModule << module.first << "!<unknown>+" << std::hex << (ip - module.second);
-
                     stackFrame.method = unknownModule.str();
                 }
             }            
