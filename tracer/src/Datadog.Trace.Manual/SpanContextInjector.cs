@@ -36,5 +36,22 @@ namespace Datadog.Trace
         public void Inject<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context)
         {
         }
+
+        /// <summary>
+        /// Given a SpanContext carrier and a function to set a value, this method will inject a SpanContext.
+        /// You should only call <see cref="Inject{TCarrier}"/> once on the message <paramref name="carrier"/>. Calling
+        /// multiple times may lead to incorrect behaviors.
+        /// This method also sets a data streams monitoring checkpoint (if enabled).
+        /// </summary>
+        /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...)</param>
+        /// <param name="setter">Given a key name and value, sets the value in the carrier</param>
+        /// <param name="context">The context you want to inject</param>
+        /// <param name="messageType">For Data Streams Monitoring: The type of messaging system where the data being injected will be sent.</param>
+        /// <param name="target">For Data Streams Monitoring: The queue or topic where the data being injected will be sent.</param>
+        /// <typeparam name="TCarrier">Type of the carrier</typeparam>
+        [Instrumented]
+        public void InjectIncludingDsm<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string messageType, string target)
+        {
+        }
     }
 }
