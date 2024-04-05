@@ -64,9 +64,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
         {
             if (requestMsg is null)
             {
-                // The request may need to be deserialized from a Stream, at which point we won't have access to the requestHeaders object
-                // Store the value in StateHelper.ActiveRequestHeaders so it can be accessed in case we end up creating a span
-                StateHelper.ActiveRequestHeaders.Value = requestHeaders;
                 return CallTargetState.GetDefault();
             }
 
