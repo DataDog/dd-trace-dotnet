@@ -25,16 +25,18 @@ typedef int (*ResolveManagedMethod)(uintptr_t ip, ResolveMethodData* methodData)
 class CrashReporting
 {
 public:
-    CrashReporting(int32_t pid);
+    CrashReporting(int32_t pid, int32_t signal);
     virtual ~CrashReporting();
 
-    static std::unique_ptr<CrashReporting> Create(int32_t pid);
+    static std::unique_ptr<CrashReporting> Create(int32_t pid, int32_t signal);
 
     void ReportCrash(ResolveManagedMethod resolveCallback);
 
 protected:
     int32_t _pid;
+    int32_t _signal;
 
     virtual std::vector<int32_t> GetThreads() = 0;
     virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod) = 0;
+    virtual std::string GetSignalInfo() = 0;
 };

@@ -170,6 +170,8 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
             for (envp_count = 0; envp[envp_count]; ++envp_count);
             char** new_envp = malloc((envp_count + 1) * sizeof(char*)); // +1 for NULL terminator
 
+            int index = 0;
+
             for (size_t i = 0; i < envp_count; ++i) {
                 if (strncmp(envp[i], "LD_PRELOAD=", strlen("LD_PRELOAD=")) == 0) {
                     continue;
@@ -179,9 +181,17 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
                     continue;
                 }
 
-                new_envp[i] = envp[i];
+                if (strncmp(envp[i], "DOTNET_DbgEnableMiniDump=", strlen("DOTNET_DbgEnableMiniDump=")) == 0) {
+                    continue;
+                }
+
+                if (strncmp(envp[i], "COMPlus_DbgEnableMiniDump=", strlen("COMPlus_DbgEnableMiniDump=")) == 0) {
+                    continue;
+                }
+
+                new_envp[index++] = envp[i];
             }
-            new_envp[envp_count] = NULL; // NULL terminate the array
+            new_envp[index] = NULL; // NULL terminate the array
 
             int result = __real_execve(ddTracePath, newArgv, new_envp);
 
@@ -296,6 +306,6 @@ pid_t fork()
     ((char*)&functions_entered_counter)[ENTERED_FORK]--;
 
     return result;
-        }
+}
 
 #endif

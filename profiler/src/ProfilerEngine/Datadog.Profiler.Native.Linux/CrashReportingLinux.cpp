@@ -15,14 +15,15 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <string.h>
 
-std::unique_ptr<CrashReporting> CrashReporting::Create(int32_t pid)
+std::unique_ptr<CrashReporting> CrashReporting::Create(int32_t pid, int32_t signal)
 {
-    return std::make_unique<CrashReportingLinux>(pid);
+    return std::make_unique<CrashReportingLinux>(pid, signal);
 }
 
-CrashReportingLinux::CrashReportingLinux(int32_t pid)
-    : CrashReporting(pid)
+CrashReportingLinux::CrashReportingLinux(int32_t pid, int32_t signal)
+    : CrashReporting(pid, signal)
 {
     _addressSpace = unw_create_addr_space(&_UPT_accessors, 0);
     _modules = GetModules();
@@ -138,31 +139,34 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
         if (resolved != 0)
         {
             // Not a managed method
+
+            auto module = FindModule(ip);
+            stackFrame.moduleAddress = module.second;
+
             unw_word_t offset;
 
             // TODO: check if unw_get_proc_name fails
-            result = unw_get_proc_name(&cursor, methodData.symbolName, sizeof(methodData.symbolName), &offset);
+            unw_proc_info_t procInfo;
+            result = unw_get_proc_info(&cursor, &procInfo);            
 
             if (result == 0)
             {
-                stackFrame.method = std::string(methodData.symbolName);
-
-                unw_proc_info_t procInfo;
-                result = unw_get_proc_info(&cursor, &procInfo);
+                stackFrame.symbolAddress = procInfo.start_ip;
+                result = unw_get_proc_name(&cursor, methodData.symbolName, sizeof(methodData.symbolName), &offset);
 
                 if (result == 0)
                 {
-                    stackFrame.symbolAddress = procInfo.start_ip;
-
-                    auto module = FindModule(ip);
-                    stackFrame.moduleAddress = module.second;
+                    stackFrame.method = std::string(methodData.symbolName);                    
                 }
-            }
-            else
-            {
-                stackFrame.method = unw_strerror(result);
-            }
+                else
+                {
+                    std::ostringstream unknownModule;
 
+                    unknownModule << module.first << "!<unknown>+" << std::hex << (ip - module.second);
+
+                    stackFrame.method = unknownModule.str();
+                }
+            }            
         }
         else if (resolved == 0)
         {
@@ -178,6 +182,18 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
     _UPT_destroy(context);
 
     return frames;
+}
+
+std::string CrashReportingLinux::GetSignalInfo()
+{
+    auto signalInfo = strsignal(_signal);
+
+    if (signalInfo == nullptr)
+    {
+        return {};
+    }
+
+    return signalInfo;
 }
 
 std::vector<int32_t> CrashReportingLinux::GetThreads()

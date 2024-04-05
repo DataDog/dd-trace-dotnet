@@ -22,8 +22,8 @@ internal class CreatedumpCommand : Command
 
     private readonly Argument<int?> _pidArgument = new("pid") { Arity = ArgumentArity.ExactlyOne };
     private readonly Option<bool> _fullOption = new("--full");
-    private readonly Option<int> _signalOption = new("--signal");
-    private readonly Option<int> _crashthreadOption = new("--crashthread");
+    private readonly Option<int?> _signalOption = new("--signal");
+    private readonly Option<int?> _crashthreadOption = new("--crashthread");
 
     public CreatedumpCommand()
         : base("createdump")
@@ -77,11 +77,26 @@ internal class CreatedumpCommand : Command
 
     private unsafe void Execute(InvocationContext context)
     {
+        Console.WriteLine($"Command: {Environment.CommandLine}");
+
         var pid = _pidArgument.GetValue(context)!;
+        var signal = _signalOption.GetValue(context);
+
+        if (signal.HasValue)
+        {
+            AnsiConsole.WriteLine($"Process received signal {signal}");
+        }
+
+        var crashThread = _crashthreadOption.GetValue(context);
+
+        if (crashThread.HasValue)
+        {
+            AnsiConsole.WriteLine($"Crash thread: {crashThread}");
+        }
 
         AnsiConsole.WriteLine($"Capturing crash info for process {pid}");
 
-        var lib = NativeLibrary.Load("Datadog.Profiler.Native.so");
+        var lib = NativeLibrary.Load(Path.Combine(System.AppContext.BaseDirectory, "Datadog.Profiler.Native.so"));
 
         var export = NativeLibrary.GetExport(lib, "ReportCrash");
 
@@ -94,11 +109,11 @@ internal class CreatedumpCommand : Command
         using var target = DataTarget.AttachToProcess(pid.Value, suspend: true);
         _runtime = target.ClrVersions[0].CreateRuntime();
 
-        // extern "C" void __stdcall ReportCrash(int32_t pid, ResolveManagedMethod resolveCallback)
-        var function = (delegate* unmanaged<int, IntPtr, void>)export;
+        // extern "C" void __stdcall ReportCrash(int32_t pid, int32_t signal, ResolveManagedMethod resolveCallback)
+        var function = (delegate* unmanaged<int, int, IntPtr, void>)export;
         var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
 
-        function(pid.Value, (IntPtr)callback);
+        function(pid.Value, signal ?? 0, (IntPtr)callback);
     }
 
     [StructLayout(LayoutKind.Sequential)]

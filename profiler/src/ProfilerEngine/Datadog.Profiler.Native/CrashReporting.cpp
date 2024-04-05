@@ -12,23 +12,34 @@ extern "C"
 #include "datadog/profiling.h"
 }
 
-extern "C" void __stdcall ReportCrash(int32_t pid, ResolveManagedMethod resolveCallback)
+extern "C" void __stdcall ReportCrash(int32_t pid, int signal, ResolveManagedMethod resolveCallback)
 {
 #ifdef _WIN32
     std::cout << "CrashReporting::ReportCrash not implemented on Windows" << std::endl;
 #else
-    auto crashReporting = CrashReporting::Create(pid);
+    auto crashReporting = CrashReporting::Create(pid, signal);
     crashReporting->ReportCrash(resolveCallback);
 #endif
 }
 
-CrashReporting::CrashReporting(int32_t pid)
-        : _pid(pid)
+CrashReporting::CrashReporting(int32_t pid, int32_t signal)
+        : _pid(pid),
+        _signal(signal)
 {
 }
 
 CrashReporting::~CrashReporting()
 {
+}
+
+void add_tag(ddog_prof_CrashInfo* crashInfo, const char* key, const char* value)
+{
+    auto result = ddog_crashinfo_add_tag(crashInfo, libdatadog::FfiHelper::StringToCharSlice(std::string_view(key)), libdatadog::FfiHelper::StringToCharSlice(std::string_view(value)));
+
+    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+    {
+        std::cout << "Error setting tag: " << libdatadog::FfiHelper::GetErrorMessage(result.err) << std::endl;
+    }
 }
 
 void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
@@ -48,6 +59,8 @@ void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
 
     for (auto threadId : threads)
     {
+        std::cout << "---- Thread " << threadId << "\n";
+
         auto frames = GetThreadFrames(threadId, resolveCallback);
 
         ddog_prof_Slice_StackFrame stackTrace;
@@ -79,6 +92,8 @@ void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
             auto moduleAddress = static_cast<uintptr_t>(frame.moduleAddress);
             auto symbolAddress = static_cast<uintptr_t>(frame.symbolAddress);
 
+            std::cout << " - " << strings[i] << "\n";
+
             stackFrames[i] = ddog_prof_StackFrame{
                 .ip = ip,
                 .module_base_address = moduleAddress,
@@ -107,21 +122,21 @@ void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
     }
 
     //auto sigInfo = "NullReferenceException";
+    std::string signalInfo = GetSignalInfo();
 
-    //ddog_crashinfo_set_siginfo(crashInfo, { 139, { sigInfo, std::strlen(sigInfo)} });
+    if (!signalInfo.empty())
+    {
+        ddog_crashinfo_set_siginfo(crashInfo, { _signal, libdatadog::FfiHelper::StringToCharSlice(signalInfo) });
+    }
 
     auto libName = "testCrashTracking";
     auto libVersion = "1.0.0";
     auto family = "csharp";
-    auto tag1 = "tag1";
-    auto value1 = "value1";
-    auto tag2 = "tag2";
-    auto value2 = "value2";
 
     const ddog_prof_CrashtrackerMetadata metadata = {
         .profiling_library_name = { libName, std::strlen(libName) },
         .profiling_library_version = { libVersion, std::strlen(libVersion) },
-        .family = { family, std::strlen(family) }
+        .family = { family, std::strlen(family) },
     };
 
     auto result = ddog_crashinfo_set_metadata(crashInfo, metadata);
@@ -132,11 +147,30 @@ void CrashReporting::ReportCrash(ResolveManagedMethod resolveCallback)
         return;
     }
 
-    const std::string endpointUrl = "file://tmp/crash.txt";
+    add_tag(crashInfo, "crashreport", "crashreport");
+    add_tag(crashInfo, "runtime_name", ".NET");
 
+/*
+    const std::string endpointUrl = "file://tmp/crash.txt";
     auto endpoint = ddog_Endpoint_file(libdatadog::FfiHelper::StringToCharSlice(endpointUrl));
 
     result = ddog_crashinfo_upload_to_endpoint(crashInfo, endpoint, 30);
+
+    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+    {
+        std::cout << "Error uploading to endpoint: " << libdatadog::FfiHelper::GetErrorMessage(result.err) << std::endl;
+        return;
+    }
+
+    std::cout << "Crash info written in /tmp/crash.txt" << std::endl;
+*/
+
+    std::string url = "http://172.30.64.1:8126/";
+    ddog_prof_CrashtrackerConfiguration config;
+    config.endpoint = ddog_prof_Endpoint_agent(DDOG_CHARSLICE_C("http://172.30.64.1:8126/")),
+    config.path_to_receiver_binary = DDOG_CHARSLICE_C("FIXME - point me to receiver binary path");
+
+    result = ddog_crashinfo_upload_to_telemetry(crashInfo, config);
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {
