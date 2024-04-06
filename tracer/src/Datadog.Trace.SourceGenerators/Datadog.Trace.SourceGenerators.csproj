@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <Nullable>enable</Nullable>
     <IsRoslynComponent>true</IsRoslynComponent>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -9,7 +9,7 @@
     <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
     <NoWarn>RS2008</NoWarn>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
   </ItemGroup>
@@ -24,7 +24,7 @@
     <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectMethodInsertBeforeAttribute.cs" Link="AspectsDefinitions\Sources\AspectMethodInsertBeforeAttribute.cs" />
     <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectMethodReplaceAttribute.cs" Link="AspectsDefinitions\Sources\AspectMethodReplaceAttribute.cs" />
     <Compile Include="..\Datadog.Trace\Iast\VulnerabilityType.cs" Link="AspectsDefinitions\Sources\VulnerabilityType.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\VulnerabilityTypeName.cs" Link="AspectsDefinitions\Sources\VulnerabilityTypeName.cs" />    
+    <Compile Include="..\Datadog.Trace\Iast\VulnerabilityTypeName.cs" Link="AspectsDefinitions\Sources\VulnerabilityTypeName.cs" />
     <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Attributes.cs">
       <Link>MessagePack\Attributes.cs</Link>
     </Compile>
