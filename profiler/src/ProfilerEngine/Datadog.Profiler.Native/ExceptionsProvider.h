@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "CallstackProvider.h"
 #include "CollectorBase.h"
 #include "IFrameStore.h"
 #include "IManagedThreadList.h"
@@ -19,7 +20,6 @@
 
 #include <memory>
 
-class CallstackPool;
 class IConfiguration;
 class SampleValueTypeProvider;
 
@@ -38,7 +38,7 @@ public:
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         MetricsRegistry& metricsRegistry,
-        CallstackPool* pool);
+        CallstackProvider pool);
 
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);
@@ -75,5 +75,5 @@ private:
     IConfiguration const* const _pConfiguration;
     std::shared_ptr<CounterMetric> _exceptionsCountMetric;
     std::shared_ptr<CounterMetric> _sampledExceptionsCountMetric;
-    CallstackPool* _callstackPool;
+    CallstackProvider _callstackProvider;
 };

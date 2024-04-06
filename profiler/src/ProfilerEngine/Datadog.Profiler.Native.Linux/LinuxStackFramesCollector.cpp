@@ -12,6 +12,7 @@
 #include <ucontext.h>
 #include <unordered_map>
 
+#include "CallstackProvider.h"
 #include "IConfiguration.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
@@ -28,8 +29,8 @@ LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackW
 LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
     IConfiguration const* const configuration,
-    CallstackPool* callstackPool) :
-    StackFramesCollectorBase(configuration, callstackPool),
+    CallstackProvider* callstackProvider) :
+    StackFramesCollectorBase(configuration, callstackProvider),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
     _processId{OpSysTools::GetProcId()},

@@ -22,7 +22,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "CallstackPool.h"
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
 
@@ -35,6 +34,8 @@
 #include "ProfilerSignalManager.h"
 #include "StackFramesCollectorBase.h"
 #include "shared/src/native-src/loader.h"
+
+class CallstackProvider;
 
 namespace OsSpecificApi {
 
@@ -59,9 +60,9 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
     ICorProfilerInfo4* pCorProfilerInfo,
     IConfiguration const* const pConfiguration,
-    CallstackPool* callstackPool)
+    CallstackProvider* callstackProvider)
 {
-    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration, callstackPool);
+    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration, callstackProvider);
 }
 
 // https://linux.die.net/man/5/proc

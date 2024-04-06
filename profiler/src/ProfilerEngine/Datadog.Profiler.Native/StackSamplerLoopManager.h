@@ -13,6 +13,7 @@
 #include "corprof.h"
 // end
 
+#include "CallstackProvider.h"
 #include "CounterMetric.h"
 #include "ICollector.h"
 #include "IMetricsSender.h"
@@ -35,7 +36,6 @@ class IStackSnapshotsBufferManager;
 class IManagedThreadList;
 class ISymbolsResolver;
 class IConfiguration;
-class CallstackPool;
 
 constexpr std::uint64_t DeadlocksPerThreadThreshold = 5;
 constexpr std::uint64_t TotalDeadlocksThreshold = 12;
@@ -84,7 +84,7 @@ public:
         ICollector<RawWallTimeSample>* pWallTimeCollector,
         ICollector<RawCpuSample>* pCpuTimeCollector,
         MetricsRegistry& metricsRegistry,
-        CallstackPool* pool);
+        CallstackProvider callstackProvider);
 
     ~StackSamplerLoopManager() override;
 
@@ -239,4 +239,6 @@ private:
     std::shared_ptr<CounterMetric> _deadlockCountMetric;
 
     bool _isStopped = false;
+
+    CallstackProvider _callstackProvider;
 };

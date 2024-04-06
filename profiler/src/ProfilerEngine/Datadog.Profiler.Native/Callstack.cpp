@@ -3,8 +3,6 @@
 
 #include "Callstack.h"
 
-#include "CallstackPool.h"
-
 #include <cassert>
 #include <utility>
 
@@ -13,27 +11,27 @@ Callstack::Callstack() :
 {
 }
 
-Callstack::Callstack(CallstackPool* pool) :
-    _pool{pool},
-    _buffer{},
-    _count{0}
+Callstack::Callstack(shared::pmr::memory_resource* memoryResource) :
+    _memoryResource{memoryResource}, _buffer{}, _count{0}
 {
-    if (_pool != nullptr)
+    if (_memoryResource != nullptr)
     {
-        _buffer = _pool->Acquire();
+        auto* data = reinterpret_cast<std::uintptr_t*>(_memoryResource->allocate(MaxSize));
+        _buffer = shared::span<std::uintptr_t>(data, data == nullptr ? 0 : MaxFrames);
     }
 }
 
 Callstack::~Callstack()
 {
-    if (_pool != nullptr)
+    if (_memoryResource != nullptr && _buffer.data() != nullptr)
     {
-        _pool->Release(std::exchange(_buffer, {}));
+        auto old = std::exchange(_buffer, {});
+        _memoryResource->deallocate(old.data(), MaxFrames);
     }
 }
 
 Callstack::Callstack(Callstack&& other) noexcept :
-    _pool{nullptr},
+    _memoryResource{nullptr},
     _buffer{},
     _count{0}
 {
@@ -47,7 +45,7 @@ Callstack& Callstack::operator=(Callstack&& other) noexcept
         return *this;
     }
 
-    std::swap(_pool, other._pool);
+    std::swap(_memoryResource, other._memoryResource);
     std::swap(_buffer, other._buffer);
     std::swap(_count, other._count);
 

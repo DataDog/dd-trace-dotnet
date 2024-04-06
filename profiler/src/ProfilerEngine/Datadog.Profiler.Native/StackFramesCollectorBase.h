@@ -8,17 +8,16 @@
 #include <memory>
 #include <mutex>
 
+#include "CallstackProvider.h"
 #include "ManagedThreadInfo.h"
 #include "StackSnapshotResultBuffer.h"
 
 class IConfiguration;
-class CallstackPool;
-class CallstackPool;
 
 class StackFramesCollectorBase
 {
 protected:
-    StackFramesCollectorBase(IConfiguration const * _configuration, CallstackPool* callstackPool);
+    StackFramesCollectorBase(IConfiguration const * _configuration, CallstackProvider* callstackProvider);
 
     bool TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
     bool AddFrame(std::uintptr_t ip);
@@ -54,7 +53,7 @@ public:
 
 protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;
-    CallstackPool* _callstackPool;
+    CallstackProvider* _callstackProvider;
 
 private:
     std::unique_ptr<StackSnapshotResultBuffer> _pStackSnapshotResult;

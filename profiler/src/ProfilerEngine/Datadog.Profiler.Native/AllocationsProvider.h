@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "CallstackProvider.h"
 #include "CollectorBase.h"
 #include "CounterMetric.h"
 #include "GenericSampler.h"
@@ -14,7 +15,6 @@
 
 #include <memory>
 
-class CallstackPool;
 class IConfiguration;
 class IManagedThreadList;
 class IFrameStore;
@@ -42,7 +42,7 @@ public:
         IConfiguration* pConfiguration,
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
-        CallstackPool* pool);
+        CallstackProvider callstackProvider);
 
     AllocationsProvider(
         std::vector<SampleValueTypeProvider::Offset> valueTypeProvider,
@@ -55,7 +55,7 @@ public:
         IConfiguration* pConfiguration,
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
-        CallstackPool* pool);
+        CallstackProvider callstackProvider);
 
     void OnAllocation(uint32_t allocationKind,
                       ClassID classId,
@@ -80,5 +80,5 @@ private:
     std::shared_ptr<CounterMetric> _sampledAllocationsCountMetric;
     std::shared_ptr<MeanMaxMetric> _sampledAllocationsSizeMetric;
     std::shared_ptr<SumMetric> _totalAllocationsSizeMetric;
-    CallstackPool* _callstackPool;
+    CallstackProvider _callstackProvider;
 };

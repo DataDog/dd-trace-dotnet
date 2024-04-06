@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "AppDomainStoreHelper.h"
-#include "CallstackPool.h"
+#include "CallstackProvider.h"
 #include "CpuTimeProvider.h"
 #include "FrameStoreHelper.h"
 #include "IAppDomainStore.h"
@@ -24,7 +24,7 @@
 
 using namespace std::chrono_literals;
 
-CallstackPool pool(shared::pmr::get_default_resource());
+CallstackProvider callstackProvider(shared::pmr::get_default_resource());
 
 RawWallTimeSample GetWallTimeRawSample(
     std::uint64_t timeStamp,
@@ -41,7 +41,7 @@ RawWallTimeSample GetWallTimeRawSample(
     raw.LocalRootSpanId = traceId;
     raw.SpanId = spanId;
 
-    raw.Stack = pool.Get();
+    raw.Stack = callstackProvider.Get();
     for (size_t i = 0; i < frameCount; i++)
     {
         raw.Stack.Add(i + 1); // instruction pointers start at 1 (convention in this test)
@@ -68,7 +68,7 @@ RawCpuSample GetRawCpuSample(
     raw.LocalRootSpanId = traceId;
     raw.SpanId = spanId;
 
-    raw.Stack = pool.Get();
+    raw.Stack = callstackProvider.Get();
     for (size_t i = 0; i < frameCount; i++)
     {
         raw.Stack.Add(i + 1); // instruction pointers start at 1 (convention in this test)

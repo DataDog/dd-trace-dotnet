@@ -22,7 +22,7 @@
 #include "AllocationsProvider.h"
 #include "AppDomainStore.h"
 #include "ApplicationStore.h"
-#include "EventPipeEventsManager.h"
+#include "CallstackProvider.h"
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
@@ -30,8 +30,8 @@
 #include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
 #include "EnvironmentVariables.h"
+#include "EventPipeEventsManager.h"
 #include "ExceptionsProvider.h"
-#include "CallstackPoolManager.h"
 #include "FrameStore.h"
 #include "GCThreadsCpuProvider.h"
 #include "IMetricsSender.h"
@@ -181,7 +181,7 @@ bool CorProfilerCallback::InitializeServices()
             _pAppDomainStore.get(),
             pRuntimeIdStore,
             _metricsRegistry,
-            CallstackPoolManager::GetDefault());
+            CallstackProvider(shared::pmr::get_default_resource()));
     }
 
     // _pCorProfilerInfoEvents must have been set for any .NET 5+ CLR events-based profiler to work
@@ -214,7 +214,7 @@ bool CorProfilerCallback::InitializeServices()
                     _pConfiguration.get(),
                     _pLiveObjectsProvider,
                     _metricsRegistry,
-                    CallstackPoolManager::GetDefault()
+                    CallstackProvider(shared::pmr::get_default_resource())
                     );
 
                 if (!_pConfiguration->IsAllocationProfilingEnabled())
@@ -242,7 +242,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 nullptr, // no listener
                 _metricsRegistry,
-                CallstackPoolManager::GetDefault()
+                CallstackProvider(shared::pmr::get_default_resource())
                 );
         }
 
@@ -258,7 +258,7 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
-                CallstackPoolManager::GetDefault()
+                CallstackProvider(shared::pmr::get_default_resource())
                 );
         }
 
@@ -322,7 +322,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 nullptr, // no listener
                 _metricsRegistry,
-                CallstackPoolManager::GetDefault());
+                CallstackProvider(shared::pmr::get_default_resource()));
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
@@ -337,7 +337,7 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
-                CallstackPoolManager::GetDefault());
+                CallstackProvider(shared::pmr::get_default_resource()));
         }
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
@@ -415,8 +415,9 @@ bool CorProfilerCallback::InitializeServices()
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
-    _callstackAllocator = std::make_unique<FixedSizeAllocator>(Callstack::MaxSize, 500);
-    auto* pool = _callstackPoolManager->Get(_callstackAllocator.get());
+    // By design, there is no need to synchronize the callstack allocator because
+    // the stacksampler loop collects callstacks in sequence.
+    auto callstackAllocator = std::make_unique<shared::pmr::unsynchronized_pool_resource>(shared::pmr::pool_options{.max_blocks_per_chunk = 100, .largest_required_pool_block = Callstack::MaxFrames});
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
         _pConfiguration.get(),
@@ -428,7 +429,7 @@ bool CorProfilerCallback::InitializeServices()
         _pWallTimeProvider,
         _pCpuTimeProvider,
         _metricsRegistry,
-        pool);
+        CallstackProvider(std::move(callstackAllocator)));
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 
@@ -987,8 +988,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     _pMetadataProvider = std::make_unique<MetadataProvider>();
     _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
-
-    _callstackPoolManager = std::make_unique<CallstackPoolManager>();
 
     double coresThreshold = _pConfiguration->MinimumCores();
     double cpuLimit = 0;

@@ -5,6 +5,7 @@
 
 #include <atomic>
 
+#include "CallstackProvider.h"
 #include "CollectorBase.h"
 #include "CounterMetric.h"
 #include "GenericSampler.h"
@@ -17,7 +18,6 @@
 
 #include <memory>
 
-class CallstackPool;
 class IConfiguration;
 class IManagedThreadList;
 class IFrameStore;
@@ -43,7 +43,7 @@ public:
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
         MetricsRegistry& metricsRegistry,
-        CallstackPool* pool);
+        CallstackProvider callstackProvider);
 
     // IContentionListener implementation
     void OnContention(double contentionDurationNs) override;
@@ -72,5 +72,5 @@ private:
     std::shared_ptr<MeanMaxMetric> _sampledLockContentionsDurationMetric;
     std::mutex _contentionsLock;
 
-    CallstackPool* _callstackPool;
+    CallstackProvider _callstackProvider;
 };

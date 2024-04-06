@@ -12,7 +12,6 @@
 #include <sstream>
 #include <stdio.h>
 
-#include "CallstackPool.h"
 #include "Configuration.h"
 #include "HResultConverter.h"
 #include "ICollector.h"

@@ -6,7 +6,7 @@
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/LinuxStackFramesCollector.h"
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
 
-#include "CallstackPool.h"
+#include "CallstackProvider.h"
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
 #include "StackSnapshotResultBuffer.h"
@@ -310,7 +310,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    CallstackPool p(shared::pmr::get_default_resource());
+    CallstackProvider p(shared::pmr::get_default_resource());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
@@ -335,7 +335,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWith
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(false));
 
-    CallstackPool p(shared::pmr::get_default_resource());
+    CallstackProvider p(shared::pmr::get_default_resource());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
@@ -362,7 +362,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCa
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    CallstackPool p(shared::pmr::get_default_resource());
+    CallstackProvider p(shared::pmr::get_default_resource());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
@@ -384,7 +384,7 @@ TEST_F(LinuxStackFramesCollectorFixture, MustNotCollectIfUnknownThreadId)
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    CallstackPool p(shared::pmr::get_default_resource());
+    CallstackProvider p(shared::pmr::get_default_resource());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
@@ -407,7 +407,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    CallstackPool p(shared::pmr::get_default_resource());
+    CallstackProvider p(shared::pmr::get_default_resource());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     // Validate the profiler is working correctly
@@ -473,7 +473,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    CallstackPool p(shared::pmr::get_default_resource());
+    CallstackProvider p(shared::pmr::get_default_resource());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     std::uint32_t hr;
@@ -517,7 +517,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    CallstackPool p(shared::pmr::get_default_resource());
+    CallstackProvider p(shared::pmr::get_default_resource());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     std::uint32_t hr;
@@ -561,7 +561,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    CallstackPool p(shared::pmr::get_default_resource());
+    CallstackProvider p(shared::pmr::get_default_resource());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     std::uint32_t hr;
@@ -603,7 +603,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckNoCrashIfPreviousHandlerWasMarkedA
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    CallstackPool p(shared::pmr::get_default_resource());
+    CallstackProvider p(shared::pmr::get_default_resource());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
@@ -627,7 +627,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandler
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    CallstackPool p(shared::pmr::get_default_resource());
+    CallstackProvider p(shared::pmr::get_default_resource());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     // 3rd now point to the profiler handler
@@ -666,7 +666,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckNoCrashIfNoPreviousHandlerInstalle
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    CallstackPool p(shared::pmr::get_default_resource());
+    CallstackProvider p(shared::pmr::get_default_resource());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
@@ -686,7 +686,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
 
-    CallstackPool p(shared::pmr::get_default_resource());
+    CallstackProvider p(shared::pmr::get_default_resource());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     const auto threadId = GetWorkerThreadId();

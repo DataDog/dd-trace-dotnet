@@ -192,12 +192,7 @@ inline Callstack StackSnapshotResultBuffer::GetCallstack()
     return std::exchange(_callstack, {});
 }
 
-#include "Log.h"
 inline void StackSnapshotResultBuffer::SetCallstack(Callstack callstack)
 {
-    if (callstack.Capacity() == 0)
-    {
-        Log::Error("============ no space available");
-    }
     _callstack = std::move(callstack);
 }

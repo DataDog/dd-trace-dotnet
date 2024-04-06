@@ -55,7 +55,6 @@
     <ClCompile Include="AdaptiveSamplerTest.cpp" />
     <ClCompile Include="AppDomainStoreHelper.cpp" />
     <ClCompile Include="ApplicationStoreTest.cpp" />
-    <ClCompile Include="CallstackPoolTest.cpp" />
     <ClCompile Include="CallstackTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
     <ClCompile Include="EnabledProfilersTest.cpp" />
@@ -63,7 +62,6 @@
     <ClCompile Include="ErrorCodeTest.cpp" />
     <ClCompile Include="ExporterTest.cpp" />
     <ClCompile Include="FakeSamples.cpp" />
-    <ClCompile Include="FixedSizeAllocatorTest.cpp" />
     <ClCompile Include="FrameStoreHelper.cpp" />
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
     <ClCompile Include="LinkedListTest.cpp" />

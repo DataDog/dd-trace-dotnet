@@ -6,8 +6,7 @@
 #include <memory>
 
 #include "shared/src/native-src/dd_span.hpp"
-
-class CallstackPool;
+#include "shared/src/native-src/dd_memory_resource.hpp"
 
 class Callstack
 {
@@ -17,16 +16,16 @@ public:
     static constexpr std::size_t MaxSize = MaxFrames * FrameSize;
 
     // default ctor is needed because there are instances of Callstack that can
-    // be fields of classes. They will be replaced during the execution with
-    // ones from the pool.
+    // be fields of classes.
     Callstack();
+    Callstack(shared::pmr::memory_resource* memoryResource);
 
     ~Callstack();
 
 #ifdef DD_TEST
     Callstack(shared::span<std::uintptr_t> buffer)
     {
-        _pool = nullptr;
+        _memoryResource = nullptr;
         _buffer = buffer;
         _count = buffer.size();
     }
@@ -70,10 +69,7 @@ public:
     std::uintptr_t* end() const;
 
 private:
-    friend CallstackPool;
-    Callstack(CallstackPool* pool);
-
-    CallstackPool* _pool;
+    shared::pmr::memory_resource* _memoryResource;
     shared::span<std::uintptr_t> _buffer;
     std::size_t _count;
 };

@@ -36,7 +36,7 @@ AllocationsProvider::AllocationsProvider(
     IConfiguration* pConfiguration,
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry,
-    CallstackPool* pool)
+    CallstackProvider pool)
     :
     AllocationsProvider(
         valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
@@ -45,7 +45,7 @@ AllocationsProvider::AllocationsProvider(
         pConfiguration,
         pListener,
         metricsRegistry,
-        pool)
+        std::move(pool))
 {
 }
 
@@ -60,7 +60,7 @@ AllocationsProvider::AllocationsProvider(
     IConfiguration* pConfiguration,
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry,
-    CallstackPool* pool) :
+    CallstackProvider pool) :
     CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
@@ -69,7 +69,7 @@ AllocationsProvider::AllocationsProvider(
     _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval()),
     _sampleLimit(pConfiguration->AllocationSampleLimit()),
     _pConfiguration(pConfiguration),
-    _callstackPool{pool}
+    _callstackProvider{std::move(pool)}
 {
     _allocationsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_allocations");
     _allocationsSizeMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_allocations_size");
@@ -104,7 +104,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     std::shared_ptr<ManagedThreadInfo> threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, _callstackPool);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, &_callstackProvider);
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;

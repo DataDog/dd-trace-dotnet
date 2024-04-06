@@ -3,7 +3,7 @@
 
 #include "StackFramesCollectorBase.h"
 
-#include "CallstackPool.h"
+#include "CallstackProvider.h"
 #include "Configuration.h"
 #include "EnvironmentVariables.h"
 #include "ManagedThreadList.h"
@@ -16,7 +16,7 @@
 #include <condition_variable>
 #include <mutex>
 
-StackFramesCollectorBase::StackFramesCollectorBase(IConfiguration const* _configuration, CallstackPool* callstackPool)
+StackFramesCollectorBase::StackFramesCollectorBase(IConfiguration const* _configuration, CallstackProvider* callstackProvider)
 {
     _isRequestedCollectionAbortSuccessful = false;
     _pStackSnapshotResult = std::make_unique<StackSnapshotResultBuffer>();
@@ -24,7 +24,7 @@ StackFramesCollectorBase::StackFramesCollectorBase(IConfiguration const* _config
     _isCurrentCollectionAbortRequested.store(false);
     _isCIVisibilityEnabled = _configuration->IsCIVisibilityEnabled();
     _ciVisibilitySpanId = _configuration->GetCIVisibilitySpanId();
-    _callstackPool = callstackPool;
+    _callstackProvider = callstackProvider;
 }
 
 bool StackFramesCollectorBase::AddFrame(std::uintptr_t ip)
@@ -152,7 +152,7 @@ void StackFramesCollectorBase::PrepareForNextCollection()
     // This is because malloc() uses a lock and so if we suspend a thread that was allocating, we will deadlock.
     // So we pre-allocate the memory buffer and reset it before suspending the target thread.
     _pStackSnapshotResult->Reset();
-    _pStackSnapshotResult->SetCallstack(_callstackPool->Get());
+    _pStackSnapshotResult->SetCallstack(_callstackProvider->Get());
 
 
     // Clear the current collection thread pointer:

@@ -37,7 +37,7 @@ ContentionProvider::ContentionProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry,
-    CallstackPool* pool)
+    CallstackProvider callstackProvider)
     :
     CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo{pCorProfilerInfo},
@@ -46,7 +46,7 @@ ContentionProvider::ContentionProvider(
     _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
     _sampleLimit{pConfiguration->ContentionSampleLimit()},
     _pConfiguration{pConfiguration},
-    _callstackPool{pool}
+    _callstackProvider{std::move(callstackProvider)}
 {
     _lockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_lock_contentions");
     _lockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_lock_contentions_duration");
@@ -118,7 +118,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         std::shared_ptr<ManagedThreadInfo> threadInfo;
         CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-        const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, _callstackPool);
+        const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, &_callstackProvider);
         pStackFramesCollector->PrepareForNextCollection();
 
         uint32_t hrCollectStack = E_FAIL;

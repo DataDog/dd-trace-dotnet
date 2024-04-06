@@ -3,13 +3,13 @@
 
 #include "gtest/gtest.h"
 
-#include "CallstackPool.h"
+#include "CallstackProvider.h"
 #include "StackSnapshotResultBuffer.h"
 #include "shared/src/native-src/dd_span.hpp"
 
 TEST(StackSnapshotResultBufferTest, CheckAddedFrames)
 {
-    CallstackPool p(shared::pmr::get_default_resource());
+    auto p = CallstackProvider(shared::pmr::get_default_resource());
     auto buffer = StackSnapshotResultBuffer();
     buffer.SetCallstack(p.Get());
 
@@ -27,7 +27,7 @@ TEST(StackSnapshotResultBufferTest, CheckAddedFrames)
 
 TEST(StackSnapshotResultBufferTest, CheckAddedFakeFrame)
 {
-    CallstackPool p(shared::pmr::get_default_resource());
+    auto p = CallstackProvider(shared::pmr::get_default_resource());
     auto buffer = StackSnapshotResultBuffer();
     buffer.SetCallstack(p.Get());
 
@@ -52,7 +52,7 @@ TEST(StackSnapshotResultBufferTest, CheckAddedFakeFrame)
 
 TEST(StackSnapshotResultBufferTest, CheckIfWeReachTheBufferLimit)
 {
-    CallstackPool p(shared::pmr::get_default_resource());
+    auto p = CallstackProvider(shared::pmr::get_default_resource());
     auto buffer = StackSnapshotResultBuffer();
     buffer.SetCallstack(p.Get());
 

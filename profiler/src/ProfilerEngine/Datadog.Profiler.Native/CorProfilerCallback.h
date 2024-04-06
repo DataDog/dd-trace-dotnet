@@ -10,10 +10,8 @@
 
 #include "AllocationsProvider.h"
 #include "ApplicationStore.h"
-#include "CallstackPoolManager.h"
 #include "EventPipeEventsManager.h"
 #include "ExceptionsProvider.h"
-#include "FixedSizeAllocator.h"
 #include "IAppDomainStore.h"
 #include "IClrLifetime.h"
 #include "IConfiguration.h"
@@ -268,7 +266,6 @@ private :
     std::unique_ptr<IMetadataProvider> _pMetadataProvider;
     std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
     bool _isETWStarted = false;
-    std::unique_ptr<CallstackPoolManager> _callstackPoolManager;
     std::unique_ptr<shared::pmr::memory_resource> _callstackAllocator;
 
 private:
