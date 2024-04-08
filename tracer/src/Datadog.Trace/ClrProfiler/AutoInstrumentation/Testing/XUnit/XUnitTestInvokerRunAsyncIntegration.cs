@@ -53,7 +53,13 @@ public static class XUnitTestInvokerRunAsyncIntegration
             TestMethodArguments = invokerInstance.TestMethodArguments
         };
 
-        return new CallTargetState(null, XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType(), isRetry: false));
+        var isRetry = false;
+        if (invokerInstance.MessageBus is IDuckType { Instance: RetryMessageBus retryMessageBus })
+        {
+            isRetry = retryMessageBus.ExecutionIndex > 0;
+        }
+
+        return new CallTargetState(null, XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType(), isRetry: isRetry));
     }
 
     /// <summary>

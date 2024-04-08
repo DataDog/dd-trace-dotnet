@@ -24,6 +24,8 @@ internal class RetryMessageBus : IMessageBus
         _executionNumber = executionNumber;
     }
 
+    public int ExecutionIndex => _totalExecutions - (_executionNumber.Value + 1);
+
     [DuckReverseMethod]
     public void Dispose()
     {
