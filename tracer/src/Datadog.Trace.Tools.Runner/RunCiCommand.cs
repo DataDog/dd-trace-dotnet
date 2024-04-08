@@ -174,7 +174,7 @@ namespace Datadog.Trace.Tools.Runner
 
                 // If we still don't know if we have to enable code coverage or test skipping, then let's request the configuration API
                 if (ciVisibilitySettings.IntelligentTestRunnerEnabled
-                 && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
+                 && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null || ciVisibilitySettings.EarlyFlakeDetectionEnabled == null))
                 {
                     try
                     {
