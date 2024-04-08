@@ -29,33 +29,46 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
 
     public static IEnumerable<object[]> GetEnabledConfig()
     {
-        return from packageVersionArray in PackageVersions.AwsSqs
-               select new[] { packageVersionArray[0] };
+        foreach (var packageVersionArray in PackageVersions.AwsSqs)
+        {
+            foreach (var batch in new[] { 0, 1 })
+            {
+                foreach (var inject in new[] { 0, 1 })
+                {
+                    yield return [packageVersionArray[0], batch, /*sameThread:*/1, inject];
+                }
+
+                // there is no multi-thread scenario that don't inject
+                yield return [packageVersionArray[0], batch, /*sameThread:*/0, /*inject:*/1];
+            }
+        }
     }
 
     [SkippableTheory]
     [MemberData(nameof(GetEnabledConfig))]
     [Trait("Category", "EndToEnd")]
-    public async Task SubmitsDsmMetrics(string packageVersion)
+    public async Task SubmitsDsmMetrics(string packageVersion, int batch, int sameThread, int inject)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+
+        // set scenario to run
+        SetEnvironmentVariable("TEST_BATCH", batch.ToString());
+        SetEnvironmentVariable("TEST_SAME_THREAD", sameThread.ToString());
+        SetEnvironmentVariable("TEST_INJECT", inject.ToString());
 
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
         /*
-         * runs a scenario where we test:
-         *   in the same thread:
-         *    - 1 async send / receive + same with a batch of 3 messages
-         *    - 1 async send / receive + same with a batch of 3 messages where headers are full (so we cannot inject an datadog info)
-         *   then in 3 different threads:
-         *    - 2 async send and 2 async batch send of 3 messages
-         *    - 2 async receive of the non batch messages
-         *    - 2 async receive of 3 messages of the batch messages
-         *   batch messages and single messages are sent to 2 different queues.
+         * runs a scenario depending on the env variables set, where we do:
+         *    - one send
+         *    - one receive
+         * for batch mode, groups of 3 messages are sent/received
+         * "in thread" means that the send and the receive are in separate threads
+         * and we can set 10 headers before the instrumentation to prevent it from being able to add one (i.e. prevent injection)
          *
          * For DSM, this results in:
-         *  - 2 produce pathway points (one for each queue)
-         *  - 4 consume pathway points (one with a parent for the "normal" case, and one without for when headers are full, times 2 queues)
+         *  - 1 produce pathway point (tagged with 'direction:out')
+         *  - 1 consume pathway points (either with a parent for the "normal" case, or without when headers are full)
          */
         using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
@@ -63,10 +76,8 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
             // there is no snapshot for NetFramework so this test would fail if run
             // but it is compiled, so it still needs to look legit for the CI
             var expectedCount = 0;
-            var frameworkName = "NetFramework";
 #else
-            var expectedCount = 34;
-            var frameworkName = "NetCore";
+            var expectedCount = 9;
 #endif
             var spans = agent.WaitForSpans(expectedCount);
             var sqsSpans = spans.Where(
@@ -75,15 +86,19 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
             sqsSpans.Should().NotBeEmpty();
 
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
-            taggedSpans.Should().HaveCount(expected: 16);
+            taggedSpans.Should().HaveCount(expected: 2); // a send and a receive
 
-            var dsPoints = agent.WaitForDataStreamsPoints(statsCount: 12);
+            var dsPoints = agent.WaitForDataStreamsPoints(statsCount: 2);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);
             settings.AddDataStreamsScrubber();
+            var fileName = $"{nameof(DataStreamsMonitoringAwsSqsTests)}.{nameof(SubmitsDsmMetrics)}."
+                         + (batch == 0 ? "single" : "batch") + "."
+                           // whether it's running in the same thread or in different threads shouldn't change anything
+                         + (inject == 0 ? "noinjection" : "injection");
             await Verifier.Verify(MockDataStreamsPayload.Normalize(dsPoints), settings)
-                          .UseFileName($"{nameof(DataStreamsMonitoringAwsSqsTests)}.{nameof(SubmitsDsmMetrics)}.{frameworkName}")
+                          .UseFileName(fileName)
                           .DisableRequireUniquePrefix();
 
             telemetry.AssertIntegrationEnabled(IntegrationId.AwsSqs);

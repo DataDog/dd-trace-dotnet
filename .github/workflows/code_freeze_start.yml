@@ -57,4 +57,4 @@ jobs:
       - uses: ./.github/actions/deploy-aas-dev-apps
         name: 'Trigger AAS deploy'
         with:
-          aas_github_token: ${{ secrets.GH_TOKEN_PIERO }}
+          aas_github_token: ${{ secrets.GH_EXTERNAL_TOKEN }}
