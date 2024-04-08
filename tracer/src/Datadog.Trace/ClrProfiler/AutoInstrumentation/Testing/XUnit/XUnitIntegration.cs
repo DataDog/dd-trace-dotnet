@@ -19,7 +19,7 @@ internal static class XUnitIntegration
 
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-    internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, Type targetType)
+    internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, Type targetType, bool isRetry)
     {
         // Get the test suite instance
         var testSuite = TestSuite.Current;
@@ -77,6 +77,18 @@ internal static class XUnitIntegration
             // Unskippable tests support
             test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
             test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
+        }
+
+        // Early flake detection flags
+        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true &&
+            !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty))
+        {
+            test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
+        }
+
+        if (isRetry)
+        {
+            test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
         }
 
         // Test code and code owners

@@ -75,6 +75,7 @@ internal static class MsTestIntegration
             test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
         }
 
+        // Early flake detection flags
         if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true &&
             !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty))
         {

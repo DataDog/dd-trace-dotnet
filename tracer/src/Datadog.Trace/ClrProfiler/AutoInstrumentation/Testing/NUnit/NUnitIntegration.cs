@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     return test;
                 }
 
-                test = InternalCreateTest(currentTest);
+                test = InternalCreateTest(currentTest, repeatCount > 0);
                 if (test is not null)
                 {
                     Tests[key] = new WeakReference<Test>(test);
@@ -209,7 +209,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
         }
 
-        private static Test? InternalCreateTest(ITest currentTest)
+        private static Test? InternalCreateTest(ITest currentTest, bool isRetry)
         {
             var testMethod = currentTest.Method?.MethodInfo;
             var testMethodArguments = currentTest.Arguments;
@@ -283,6 +283,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
                     test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
                 }
+            }
+
+            // Early flake detection flags
+            if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true &&
+                !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty))
+            {
+                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
+            }
+
+            if (isRetry)
+            {
+                test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
             }
 
             // Test code and code owners

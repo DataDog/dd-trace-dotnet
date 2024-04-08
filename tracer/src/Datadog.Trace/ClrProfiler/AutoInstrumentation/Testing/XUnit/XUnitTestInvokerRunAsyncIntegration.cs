@@ -53,7 +53,7 @@ public static class XUnitTestInvokerRunAsyncIntegration
             TestMethodArguments = invokerInstance.TestMethodArguments
         };
 
-        return new CallTargetState(null, XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType()));
+        return new CallTargetState(null, XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType(), isRetry: false));
     }
 
     /// <summary>

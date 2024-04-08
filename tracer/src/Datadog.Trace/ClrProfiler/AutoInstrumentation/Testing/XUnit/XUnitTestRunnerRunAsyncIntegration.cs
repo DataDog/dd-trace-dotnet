@@ -57,7 +57,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                 // Refresh values after skip reason change, and create Skip by ITR span.
                 runnerInstance.SkipReason = IntelligentTestRunnerTags.SkippedByReason;
                 testRunnerInstance.SkipReason = runnerInstance.SkipReason;
-                XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType());
+                XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType(), isRetry: false);
                 return CallTargetState.GetDefault();
             }
         }
@@ -65,7 +65,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
         if (runnerInstance.SkipReason is not null)
         {
             // Skip test support
-            XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType());
+            XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType(), isRetry: false);
             return CallTargetState.GetDefault();
         }
 
