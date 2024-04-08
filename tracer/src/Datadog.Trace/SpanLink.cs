@@ -45,6 +45,11 @@ internal class SpanLink
 
     public Span DecoratedSpan { get; }
 
+    /// <summary>
+    /// Adds an Attribute to the SpanLink.
+    /// </summary>
+    /// <param name="name">name of attribute</param>
+    /// <param name="value">value of attribute</param>
     public void AddAttribute(string name, string value)
     {
         if (DecoratedSpan.IsFinished)
