@@ -175,6 +175,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // Remove decision maker tag (not used by the backend for civisibility)
                             targetTest.Meta.Remove(Tags.Propagated.DecisionMaker);
 
+                            // Remove EFD tags
+                            targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
+                            targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+
                             // check the name
                             Assert.Equal("mstestv2.test", targetTest.Name);
 

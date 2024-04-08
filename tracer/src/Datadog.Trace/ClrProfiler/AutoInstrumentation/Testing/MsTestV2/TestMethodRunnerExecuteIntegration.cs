@@ -57,7 +57,7 @@ public static class TestMethodRunnerExecuteIntegration
                         if (!MsTestIntegration.ShouldSkip(instance.TestMethodInfo, out _, out _))
                         {
                             // This instrumentation catches all tests being ignored
-                            MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType())?
+                            MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false)?
                                .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
                         }
                     }
@@ -67,7 +67,7 @@ public static class TestMethodRunnerExecuteIntegration
                         if (instance.TestMethodInfo.Parent.Instance.TryDuckCast<ClassInfoExceptionsStruct>(out var classInfoExceptionsStruct))
                         {
                             if (classInfoExceptionsStruct.ClassInitializationException is { } classInitializationException &&
-                                MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType()) is { } test)
+                                MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false) is { } test)
                             {
                                 test.SetErrorInfo(classInitializationException);
                                 test.Close(TestStatus.Fail);
@@ -84,7 +84,7 @@ public static class TestMethodRunnerExecuteIntegration
                         if (instance.TestMethodInfo.Parent.Parent.Instance.TryDuckCast<AssemblyInfoExceptionsStruct>(out var assemblyInfoExceptionsStruct))
                         {
                             if (assemblyInfoExceptionsStruct.AssemblyInitializationException is { } assemblyInitializationException &&
-                                MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType()) is { } test)
+                                MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false) is { } test)
                             {
                                 test.SetErrorInfo(assemblyInitializationException);
                                 test.Close(TestStatus.Fail);

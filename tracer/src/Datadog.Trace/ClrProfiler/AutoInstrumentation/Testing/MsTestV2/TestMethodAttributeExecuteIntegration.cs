@@ -65,7 +65,7 @@ public static class TestMethodAttributeExecuteIntegration
             return CallTargetState.GetDefault();
         }
 
-        return new CallTargetState(null, new TestRunnerState(testMethod, MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type), Retries));
+        return new CallTargetState(null, new TestRunnerState(testMethod, MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: false), Retries));
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public static class TestMethodAttributeExecuteIntegration
             {
                 for (var i = 0; i < returnValueList.Count; i++)
                 {
-                    var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, testMethodState.Test.StartTime);
+                    var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: false, testMethodState.Test.StartTime);
                     var result = HandleTestResult(test, testMethod, returnValueList[i], exception);
                     allowRetries = allowRetries || result != TestStatus.Skip;
                 }
@@ -110,7 +110,7 @@ public static class TestMethodAttributeExecuteIntegration
                 for (var i = 0; i < retries; i++)
                 {
                     Common.Log.Debug<int>("Retry number: {RetryNumber}", i);
-                    var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type);
+                    var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
                     object? retryTestResult = null;
                     Exception? retryException = null;
                     try
@@ -127,7 +127,7 @@ public static class TestMethodAttributeExecuteIntegration
                         {
                             for (var j = 0; j < retryTestResultList.Count; j++)
                             {
-                                var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, retryTest.StartTime);
+                                var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true, retryTest.StartTime);
                                 HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j], retryException);
                             }
 

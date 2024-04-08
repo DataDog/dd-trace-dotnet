@@ -30,7 +30,7 @@ internal static class MsTestIntegration
 
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-    internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, DateTimeOffset? startDate = null)
+    internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, bool isRetry, DateTimeOffset? startDate = null)
         where TTestMethod : ITestMethod
     {
         var testMethod = testMethodInstance.MethodInfo;
@@ -73,6 +73,17 @@ internal static class MsTestIntegration
             // Unskippable tests
             test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
             test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
+        }
+
+        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true &&
+            !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty))
+        {
+            test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
+        }
+
+        if (isRetry)
+        {
+            test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
         }
 
         // Set test method

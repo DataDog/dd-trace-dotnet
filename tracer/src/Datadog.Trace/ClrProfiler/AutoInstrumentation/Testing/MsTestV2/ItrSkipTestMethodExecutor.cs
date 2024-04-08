@@ -32,7 +32,7 @@ internal class ItrSkipTestMethodExecutor
         if (testMethod.TryDuckCast<ITestMethod>(out var testMethodInfo))
         {
             // Create ITR skip span
-            MsTestIntegration.OnMethodBegin(testMethodInfo, testMethod.GetType())?
+            MsTestIntegration.OnMethodBegin(testMethodInfo, testMethod.GetType(), isRetry: false)?
                              .Close(TestStatus.Skip, TimeSpan.Zero, IntelligentTestRunnerTags.SkippedByReason);
         }
 

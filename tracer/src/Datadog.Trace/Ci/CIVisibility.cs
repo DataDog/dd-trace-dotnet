@@ -328,6 +328,27 @@ namespace Datadog.Trace.Ci
             }
         }
 
+        internal static bool IsAnEarlyFlakeDetectionTest(string moduleName, string testSuite, string testName)
+        {
+            if (EarlyFlakeDetectionResponse is { Tests: { } efdTests } &&
+                efdTests.TryGetValue(moduleName, out var efdResponseSuites) &&
+                efdResponseSuites?.TryGetValue(testSuite, out var efdResponseTests) == true &&
+                efdResponseTests is not null)
+            {
+                foreach (var test in efdResponseTests)
+                {
+                    if (test == testName)
+                    {
+                        Log.Debug("Test is included in the early flake detection response. [ModuleName: {ModuleName}, TestSuite: {TestSuite}, TestName: {TestName}]", moduleName, testSuite, testName);
+                        return true;
+                    }
+                }
+            }
+
+            Log.Debug("Test is not in the early flake detection response. [ModuleName: {ModuleName}, TestSuite: {TestSuite}, TestName: {TestName}]", moduleName, testSuite, testName);
+            return false;
+        }
+
         internal static bool HasSkippableTests() => _skippableTestsBySuiteAndName?.Count > 0;
 
         internal static string? GetSkippableTestsCorrelationId() => _skippableTestsCorrelationId;
