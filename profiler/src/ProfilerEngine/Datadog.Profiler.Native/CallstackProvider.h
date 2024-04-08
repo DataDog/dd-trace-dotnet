@@ -14,8 +14,7 @@ class CallstackProvider
 public:
     CallstackProvider();
 
-    CallstackProvider(shared::pmr::memory_resource* memoryResource);
-    CallstackProvider(std::unique_ptr<shared::pmr::memory_resource> memoryResource);
+    explicit CallstackProvider(shared::pmr::memory_resource* memoryResource);
     ~CallstackProvider();
 
     CallstackProvider(CallstackProvider const&) = delete;
@@ -27,6 +26,5 @@ public:
     Callstack Get();
 
 private:
-    std::unique_ptr<shared::pmr::memory_resource> _memoryResource;
     shared::pmr::memory_resource* _resource;
 };

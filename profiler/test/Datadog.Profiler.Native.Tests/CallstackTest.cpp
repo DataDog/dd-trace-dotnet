@@ -6,11 +6,11 @@
 
 #include "gtest/gtest.h"
 
-#include "shared/src/native-src/dd_memory_resource.hpp"
+#include "MemoryResourceManager.h"
 
 TEST(CallstackTest, CheckMoveAssignmentOperator)
 {
-    auto p = CallstackProvider(shared::pmr::get_default_resource());
+    auto p = CallstackProvider(MemoryResourceManager::GetDefault());
 
     auto s = p.Get();
 
@@ -37,7 +37,7 @@ TEST(CallstackTest, CheckMoveAssignmentOperator)
 
 TEST(CallstackTest, CheckAddApi)
 {
-    auto p = CallstackProvider(shared::pmr::get_default_resource());
+    auto p = CallstackProvider(MemoryResourceManager::GetDefault());
 
     auto s = p.Get();
 
@@ -58,7 +58,8 @@ TEST(CallstackTest, CheckAddApi)
 
 TEST(CallstackTest, CheckBufferSetCountApi)
 {
-    auto p = CallstackProvider(shared::pmr::get_default_resource());
+    auto manager = MemoryResourceManager();
+    auto p = CallstackProvider(manager.GetUnSynchronizedPool(1, Callstack::MaxSize));
 
     auto s = p.Get();
 

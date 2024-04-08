@@ -35,6 +35,7 @@
 #include "ThreadLifetimeProvider.h"
 #include "shared/src/native-src/string.h"
 #include "IEtwEventsManager.h"
+#include "MemoryResourceManager.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -266,7 +267,7 @@ private :
     std::unique_ptr<IMetadataProvider> _pMetadataProvider;
     std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
     bool _isETWStarted = false;
-    std::unique_ptr<shared::pmr::memory_resource> _callstackAllocator;
+    MemoryResourceManager _memoryResourceManager;
 
 private:
     static void ConfigureDebugLog();

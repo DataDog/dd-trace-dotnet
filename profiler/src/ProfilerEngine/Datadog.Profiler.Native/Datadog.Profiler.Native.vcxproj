@@ -249,6 +249,7 @@
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
     <ClInclude Include="LinkedList.hpp" />
+    <ClInclude Include="MemoryResourceManager.h" />
     <ClInclude Include="RawSamples.hpp" />
     <ClInclude Include="SamplesEnumerator.h" />
     <ClInclude Include="Success.h" />
@@ -389,6 +390,7 @@
     <ClCompile Include="ExporterBuilder.cpp" />
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
+    <ClCompile Include="MemoryResourceManager.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />

@@ -181,7 +181,7 @@ bool CorProfilerCallback::InitializeServices()
             _pAppDomainStore.get(),
             pRuntimeIdStore,
             _metricsRegistry,
-            CallstackProvider(shared::pmr::get_default_resource()));
+            CallstackProvider(_memoryResourceManager.GetDefault()));
     }
 
     // _pCorProfilerInfoEvents must have been set for any .NET 5+ CLR events-based profiler to work
@@ -214,7 +214,7 @@ bool CorProfilerCallback::InitializeServices()
                     _pConfiguration.get(),
                     _pLiveObjectsProvider,
                     _metricsRegistry,
-                    CallstackProvider(shared::pmr::get_default_resource())
+                    CallstackProvider(_memoryResourceManager.GetDefault())
                     );
 
                 if (!_pConfiguration->IsAllocationProfilingEnabled())
@@ -242,7 +242,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 nullptr, // no listener
                 _metricsRegistry,
-                CallstackProvider(shared::pmr::get_default_resource())
+                CallstackProvider(_memoryResourceManager.GetDefault())
                 );
         }
 
@@ -258,7 +258,7 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
-                CallstackProvider(shared::pmr::get_default_resource())
+                CallstackProvider(_memoryResourceManager.GetDefault())
                 );
         }
 
@@ -322,7 +322,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 nullptr, // no listener
                 _metricsRegistry,
-                CallstackProvider(shared::pmr::get_default_resource()));
+                CallstackProvider(_memoryResourceManager.GetDefault()));
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
@@ -337,7 +337,7 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
-                CallstackProvider(shared::pmr::get_default_resource()));
+                CallstackProvider(_memoryResourceManager.GetDefault()));
         }
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
@@ -415,9 +415,6 @@ bool CorProfilerCallback::InitializeServices()
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
-    // By design, there is no need to synchronize the callstack allocator because
-    // the stacksampler loop collects callstacks in sequence.
-    auto callstackAllocator = std::make_unique<shared::pmr::unsynchronized_pool_resource>(shared::pmr::pool_options{.max_blocks_per_chunk = 100, .largest_required_pool_block = Callstack::MaxFrames});
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
         _pConfiguration.get(),
@@ -429,7 +426,9 @@ bool CorProfilerCallback::InitializeServices()
         _pWallTimeProvider,
         _pCpuTimeProvider,
         _metricsRegistry,
-        CallstackProvider(std::move(callstackAllocator)));
+        // By design, there is no need to synchronize the callstack allocator because
+        // the stacksampler loop collects callstacks in sequence.
+        CallstackProvider(_memoryResourceManager.GetUnSynchronizedPool(100, Callstack::MaxSize)));
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 

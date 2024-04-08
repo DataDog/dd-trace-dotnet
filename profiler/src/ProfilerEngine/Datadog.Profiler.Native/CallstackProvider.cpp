@@ -8,12 +8,6 @@ CallstackProvider::CallstackProvider() :
 {
 }
 
-CallstackProvider::CallstackProvider(std::unique_ptr<shared::pmr::memory_resource> memoryResource) :
-    _memoryResource{std::move(memoryResource)}
-{
-    _resource = _memoryResource.get();
-}
-
 CallstackProvider::CallstackProvider(shared::pmr::memory_resource* memoryResource) :
     _resource{memoryResource}
 {
@@ -37,7 +31,6 @@ CallstackProvider& CallstackProvider::operator=(CallstackProvider&& other) noexc
         return *this;
     }
 
-    std::swap(_memoryResource, other._memoryResource);
     std::swap(_resource, other._resource);
 
     return *this;

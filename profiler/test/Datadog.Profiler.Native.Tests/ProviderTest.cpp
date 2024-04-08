@@ -14,6 +14,7 @@
 #include "FrameStoreHelper.h"
 #include "IAppDomainStore.h"
 #include "IFrameStore.h"
+#include "MemoryResourceManager.h"
 #include "ProfilerMockedInterface.h"
 #include "RawCpuSample.h"
 #include "RawWallTimeSample.h"
@@ -24,7 +25,7 @@
 
 using namespace std::chrono_literals;
 
-CallstackProvider callstackProvider(shared::pmr::get_default_resource());
+CallstackProvider callstackProvider(MemoryResourceManager::GetDefault());
 
 RawWallTimeSample GetWallTimeRawSample(
     std::uint64_t timeStamp,
