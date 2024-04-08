@@ -14,12 +14,7 @@ parameters:
     default: ''
 
 steps:
-- ${{ if eq(parameters.isLinux, true) }}:
-  - bash: docker rm -f $(docker ps -qa)
-    displayName: Clean docker containers
-- ${{ else }}:
-  - powershell: docker rm -f $(docker ps -a -q)
-    displayName: Clean docker containers
+- template: ./clean-docker-containers.yml
 
 - bash: |
     echo "##vso[task.setvariable variable=TOKEN]$(System.JobId)"

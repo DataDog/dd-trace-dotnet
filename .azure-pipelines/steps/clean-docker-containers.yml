@@ -1,0 +1,3 @@
+steps:
+- script: docker rm -f $(docker ps -q -a)
+  displayName: Clean docker containers
