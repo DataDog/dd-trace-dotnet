@@ -26,7 +26,7 @@ Callstack::~Callstack()
     if (_memoryResource != nullptr && _buffer.data() != nullptr)
     {
         auto old = std::exchange(_buffer, {});
-        _memoryResource->deallocate(old.data(), MaxFrames);
+        _memoryResource->deallocate(old.data(), MaxSize);
     }
 }
 
