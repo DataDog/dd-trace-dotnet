@@ -14,6 +14,13 @@ parameters:
     default: ''
 
 steps:
+- ${{ if eq(parameters.isLinux, true) }}:
+  - bash: docker rm -f $(docker ps -qa)
+    displayName: Clean docker containers
+- ${{ else }}:
+  - powershell: docker rm -f $(docker ps -a -q)
+    displayName: Clean docker containers
+
 - bash: |
     echo "##vso[task.setvariable variable=TOKEN]$(System.JobId)"
     echo "##vso[task.setvariable variable=START_ENDPOINT]/test/session/start?test_session_token=$(System.JobId)"
