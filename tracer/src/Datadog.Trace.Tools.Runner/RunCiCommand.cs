@@ -228,7 +228,7 @@ namespace Datadog.Trace.Tools.Runner
                 {
                     // Try to find the test command type: `dotnet test` or `dotnet vstest`
                     var isDotnetTestCommand = false;
-                    if (isDotnetCommand)
+                    if (!isVsTestCommand)
                     {
                         foreach (var arg in args.Skip(1))
                         {
