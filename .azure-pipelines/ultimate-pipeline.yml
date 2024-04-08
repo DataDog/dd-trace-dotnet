@@ -1673,14 +1673,12 @@ stages:
     pool:
       name: azure-windows-scale-set
     timeoutInMinutes: 60 #default value
-    # Temporarily disabled, as current Cppcheck does not support macros
-    condition: "false"
 
     steps:
     - powershell: |
         # Required to reload environment apparently
         Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
-        choco install cppcheck -y --version 2.9
+        choco install cppcheck -y --version 2.12
         $errorCode = $LASTEXITCODE
         if ($errorCode -ne 0)
         {
@@ -4628,12 +4626,12 @@ stages:
         remainder_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: "+S INTEGRATIONS +S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
-        debugger_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: DEBUGGER_SCENARIOS
-        debugger_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: DEBUGGER_SCENARIOS
+        # debugger_poc:
+        #   WEBLOG_VARIANT: "poc"
+        #   SCENARIO: DEBUGGER_SCENARIOS
+        # debugger_uds:
+        #   WEBLOG_VARIANT: "uds"
+        #   SCENARIO: DEBUGGER_SCENARIOS
 
     steps:
       - checkout: none

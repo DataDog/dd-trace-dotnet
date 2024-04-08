@@ -4,6 +4,7 @@ stages:
   - package
   - publish
   - deploy
+  - benchmarks
 
 include:
   - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
@@ -28,7 +29,7 @@ build:
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts) { remove-item -recurse -force artifacts }
-    - docker run --rm -m 8192M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e ENABLE_MULTIPROCESSOR_COMPILATION=false -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true -e NUGET_CERT_REVOCATION_MODE=offline datadog/dd-trace-dotnet-docker-build:latest
+    - docker run --rm -m 8192M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e ENABLE_MULTIPROCESSOR_COMPILATION=false -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true -e NUGET_CERT_REVOCATION_MODE=offline registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:latest
     - mkdir artifacts
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts
     - remove-item -recurse -force build-out\${CI_JOB_ID}
@@ -202,3 +203,31 @@ package-oci:
   stage: deploy
   variables:
     PRODUCT_NAME: auto_inject-dotnet
+
+benchmark-serverless:
+  stage: benchmarks
+  image: registry.ddbuild.io/ci/serverless-tools:1
+  tags: ["arch:amd64"]
+  when: on_success
+  needs:
+    - benchmark-serverless-trigger
+  script:
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/serverless-tools.git ./serverless-tools && cd ./serverless-tools
+    - ./ci/check_trigger_status.sh
+
+benchmark-serverless-trigger:
+  stage: benchmarks
+  needs: []
+  trigger:
+    project: DataDog/serverless-tools
+    strategy: depend
+  allow_failure: true
+  variables:
+    UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
+    UPSTREAM_PROJECT_URL: $CI_PROJECT_URL
+    UPSTREAM_COMMIT_BRANCH: $CI_COMMIT_BRANCH
+    UPSTREAM_COMMIT_AUTHOR: $CI_COMMIT_AUTHOR
+    UPSTREAM_COMMIT_TITLE: $CI_COMMIT_TITLE
+    UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
+    UPSTREAM_GITLAB_USER_LOGIN: $GITLAB_USER_LOGIN
+    UPSTREAM_GITLAB_USER_EMAIL: $GITLAB_USER_EMAIL

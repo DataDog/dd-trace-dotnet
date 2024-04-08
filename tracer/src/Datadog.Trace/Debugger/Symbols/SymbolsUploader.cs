@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.ExtensionMethods;
@@ -116,6 +117,12 @@ namespace Datadog.Trace.Debugger.Symbols
 
         public static ISymbolsUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
         {
+            if (!ThirdPartyModules.IsValid)
+            {
+                Log.Warning("Third party modules load has failed. Disabling Symbol Uploader.");
+                return new NoOpUploader();
+            }
+
             if (api is not NoOpSymbolBatchUploadApi &&
                (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false")?.ToBoolean() ?? false))
             {
