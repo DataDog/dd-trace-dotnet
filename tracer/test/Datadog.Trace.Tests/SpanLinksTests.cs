@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Castle.Core.Internal;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
@@ -47,7 +48,8 @@ namespace Datadog.Trace.Tests
             var childSpan = childScope.Span;
             var spanLink = childSpan.AddSpanLink(parentSpan);
             childSpan.Finish();
-            Assert.Null(spanLink.AddAttribute("should", "return null"));
+            spanLink.AddAttribute("should", "return null");
+            Assert.Null(spanLink.Attributes);
         }
     }
 }

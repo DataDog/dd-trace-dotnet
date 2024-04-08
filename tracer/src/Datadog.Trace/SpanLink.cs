@@ -45,18 +45,17 @@ internal class SpanLink
 
     public Span DecoratedSpan { get; }
 
-    public SpanLink? AddAttribute(string name, string value)
+    public void AddAttribute(string name, string value)
     {
         if (DecoratedSpan.IsFinished)
         {
             Log.Warning("AddAttribute should not be called after the decorated span was closed");
-            return null;
+            return;
         }
 
         var newAttribute = new KeyValuePair<string, string>(name, value);
         Attributes ??= [];
 
         Attributes.Add(newAttribute);
-        return this;
     }
 }
