@@ -66,6 +66,8 @@ namespace Datadog.Trace.Ci
 
         internal static IntelligentTestRunnerClient.EarlyFlakeDetectionSettingsResponse EarlyFlakeDetectionSettings { get; private set; }
 
+        internal static IntelligentTestRunnerClient.EarlyFlakeDetectionResponse? EarlyFlakeDetectionResponse { get; private set; }
+
         public static void Initialize()
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
@@ -621,6 +623,7 @@ namespace Datadog.Trace.Ci
                         Log.Information("ITR: Early flake detection settings has been enabled by the settings api.");
                         EarlyFlakeDetectionSettings = itrSettings.EarlyFlakeDetection;
                         settings.SetEarlyFlakeDetectionEnabled(true);
+                        EarlyFlakeDetectionResponse = await lazyItrClient.Value.GetEarlyFlakeDetectionTestsAsync().ConfigureAwait(false);
                     }
                     else
                     {

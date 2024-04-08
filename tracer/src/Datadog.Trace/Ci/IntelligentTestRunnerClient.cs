@@ -32,6 +32,8 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci;
 
+#pragma warning disable CS0649
+
 /// <summary>
 /// Intelligent Test Runner Client
 /// </summary>
@@ -46,6 +48,7 @@ internal class IntelligentTestRunnerClient
     private const string CommitType = "commit";
     private const string TestParamsType = "test_params";
     private const string SettingsType = "ci_app_test_service_libraries_settings";
+    private const string EfdRequestType = "ci_app_libraries_tests_request";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntelligentTestRunnerClient));
     private static readonly Regex ShaRegex = new("[0-9a-f]+", RegexOptions.Compiled);
@@ -62,6 +65,7 @@ internal class IntelligentTestRunnerClient
     private readonly Uri _searchCommitsUrl;
     private readonly Uri _packFileUrl;
     private readonly Uri _skippableTestsUrl;
+    private readonly Uri _efdTestsUrl;
     private readonly EventPlatformProxySupport _eventPlatformProxySupport;
     private readonly Task<string> _getRepositoryUrlTask;
     private readonly Task<string> _getBranchNameTask;
@@ -89,6 +93,7 @@ internal class IntelligentTestRunnerClient
         const string searchCommitsUrlPath = "api/v2/git/repository/search_commits";
         const string packFileUrlPath = "api/v2/git/repository/packfile";
         const string skippableTestsUrlPath = "api/v2/ci/tests/skippable";
+        const string efdTestsUrlPath = "api/v2/ci/libraries/tests";
 
         if (_settings.Agentless)
         {
@@ -100,6 +105,7 @@ internal class IntelligentTestRunnerClient
                 _searchCommitsUrl = new UriBuilder(agentlessUrl) { Path = searchCommitsUrlPath }.Uri;
                 _packFileUrl = new UriBuilder(agentlessUrl) { Path = packFileUrlPath }.Uri;
                 _skippableTestsUrl = new UriBuilder(agentlessUrl) { Path = skippableTestsUrlPath }.Uri;
+                _efdTestsUrl = new UriBuilder(agentlessUrl) { Path = efdTestsUrlPath }.Uri;
             }
             else
             {
@@ -126,6 +132,12 @@ internal class IntelligentTestRunnerClient
                     host: "api." + _settings.Site,
                     port: 443,
                     pathValue: skippableTestsUrlPath).Uri;
+
+                _efdTestsUrl = new UriBuilder(
+                    scheme: "https",
+                    host: "api." + _settings.Site,
+                    port: 443,
+                    pathValue: efdTestsUrlPath).Uri;
             }
         }
         else
@@ -140,12 +152,14 @@ internal class IntelligentTestRunnerClient
                     _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{searchCommitsUrlPath}");
                     _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{packFileUrlPath}");
                     _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{skippableTestsUrlPath}");
+                    _efdTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{efdTestsUrlPath}");
                     break;
                 case EventPlatformProxySupport.V4:
                     _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{settingsUrlPath}");
                     _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{searchCommitsUrlPath}");
                     _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{packFileUrlPath}");
                     _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{skippableTestsUrlPath}");
+                    _efdTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{efdTestsUrlPath}");
                     break;
                 default:
                     throw new NotSupportedException("Event platform proxy not supported by the agent.");
@@ -352,7 +366,7 @@ internal class IntelligentTestRunnerClient
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
-        Log.Debug("ITR: JSON RQ = {Json}", jsonQuery);
+        Log.Debug("ITR: Settings.JSON RQ = {Json}", jsonQuery);
 
         return await WithRetries(InternalGetSettingsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
 
@@ -388,7 +402,7 @@ internal class IntelligentTestRunnerClient
                     throw;
                 }
 
-                Log.Debug("ITR: JSON RS = {Json}", responseContent);
+                Log.Debug("ITR: Settings.JSON RS = {Json}", responseContent);
                 if (string.IsNullOrEmpty(responseContent))
                 {
                     return default;
@@ -450,7 +464,7 @@ internal class IntelligentTestRunnerClient
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
-        Log.Debug("ITR: JSON RQ = {Json}", jsonQuery);
+        Log.Debug("ITR: Skippable.JSON RQ = {Json}", jsonQuery);
 
         return await WithRetries(InternalGetSkippableTestsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
 
@@ -487,7 +501,7 @@ internal class IntelligentTestRunnerClient
                     throw;
                 }
 
-                Log.Debug("ITR: JSON RS = {Json}", responseContent);
+                Log.Debug("ITR: Skippable.JSON RS = {Json}", responseContent);
                 if (string.IsNullOrEmpty(responseContent))
                 {
                     return new SkippableTestsResponse();
@@ -531,7 +545,7 @@ internal class IntelligentTestRunnerClient
 
                 if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
                 {
-                    Log.Debug("ITR: JSON Filtered = {Json}", JsonConvert.SerializeObject(testAttributes));
+                    Log.Debug("ITR: Skippable.JSON Filtered = {Json}", JsonConvert.SerializeObject(testAttributes));
                 }
 
                 var totalSkippableTests = testAttributes.ToArray();
@@ -563,7 +577,7 @@ internal class IntelligentTestRunnerClient
         }
 
         var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository), SerializerSettings);
-        Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
+        Log.Debug("ITR: ObjPack.JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackFiles(packFilesObject.Files.Length);
@@ -644,6 +658,105 @@ internal class IntelligentTestRunnerClient
         }
     }
 
+    public async Task<EarlyFlakeDetectionResponse> GetEarlyFlakeDetectionTestsAsync()
+    {
+        Log.Debug("ITR: Getting early flake detection tests...");
+        var framework = FrameworkDescription.Instance;
+        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
+        var currentSha = await _getShaTask.ConfigureAwait(false);
+        if (string.IsNullOrEmpty(repository))
+        {
+            Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
+            return default;
+        }
+
+        if (string.IsNullOrEmpty(currentSha))
+        {
+            Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
+            return default;
+        }
+
+        var query = new DataEnvelope<Data<EarlyFlakeDetectionQuery>>(
+            new Data<EarlyFlakeDetectionQuery>(
+                currentSha,
+                EfdRequestType,
+                new EarlyFlakeDetectionQuery(
+                    _serviceName,
+                    _environment,
+                    repository,
+                    new TestsConfigurations(
+                        framework.OSPlatform,
+                        CIVisibility.GetOperatingSystemVersion(),
+                        framework.OSArchitecture,
+                        framework.Name,
+                        framework.ProductVersion,
+                        framework.ProcessArchitecture,
+                        _customConfigurations))),
+            default);
+        var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
+        var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
+        Log.Debug("ITR: Efd.JSON RQ = {Json}", jsonQuery);
+
+        return await WithRetries(InternalGetEarlyFlakeDetectionTestsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
+
+        async Task<EarlyFlakeDetectionResponse> InternalGetEarlyFlakeDetectionTestsAsync(byte[] state, bool finalTry)
+        {
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                // TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettings();
+                var request = _apiRequestFactory.Create(_efdTestsUrl);
+                SetRequestHeader(request);
+
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("ITR: Getting early flake detection tests from: {Url}", _efdTestsUrl.ToString());
+                }
+
+                string? responseContent;
+                try
+                {
+                    using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                    responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                    if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                    {
+                        // TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(errorType);
+                    }
+
+                    CheckResponseStatusCode(response, responseContent, finalTry);
+                }
+                catch
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(MetricTags.CIVisibilityErrorType.Network);
+                    throw;
+                }
+
+                Log.Debug("ITR: Efd.JSON RS = {Json}", responseContent);
+                if (string.IsNullOrEmpty(responseContent))
+                {
+                    return default;
+                }
+
+                var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<EarlyFlakeDetectionResponse>?>>(responseContent);
+                var finalResponse = deserializedResult.Data?.Attributes ?? default;
+                /*
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsResponse(finalResponse switch
+                {
+                    { CodeCoverage: true, TestsSkipping: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled,
+                    { CodeCoverage: true, TestsSkipping: !true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled,
+                    { CodeCoverage: !true, TestsSkipping: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled,
+                    _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled,
+                });
+                */
+                return finalResponse;
+            }
+            finally
+            {
+                // TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSettingsMs(sw.Elapsed.TotalMilliseconds);
+            }
+        }
+    }
+
     private async Task<SearchCommitResponse> GetCommitsAsync()
     {
         var gitLogOutput = await RunGitCommandAsync("log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits).ConfigureAwait(false);
@@ -689,7 +802,7 @@ internal class IntelligentTestRunnerClient
 
             var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
             var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, repository), SerializerSettings);
-            Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
+            Log.Debug("ITR: Commits.JSON RQ = {Json}", jsonPushedSha);
             var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
             return await WithRetries(InternalSearchCommitAsync, jsonPushedShaBytes, MaxRetries).ConfigureAwait(false);
@@ -726,7 +839,7 @@ internal class IntelligentTestRunnerClient
                         throw;
                     }
 
-                    Log.Debug("ITR: JSON RS = {Json}", responseContent);
+                    Log.Debug("ITR: Commits.JSON RS = {Json}", responseContent);
                     if (string.IsNullOrEmpty(responseContent))
                     {
                         return Array.Empty<string>();
@@ -1208,7 +1321,6 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-#pragma warning disable CS0649 // Readonly field is never assigned to - this is created using JSON deserialization
     public readonly struct SettingsResponse
     {
         [JsonProperty("code_coverage")]
@@ -1250,7 +1362,43 @@ internal class IntelligentTestRunnerClient
         [JsonProperty("5m")]
         public readonly int? FiveMinutes;
     }
-#pragma warning restore CS0649
+
+    public readonly struct EarlyFlakeDetectionQuery
+    {
+        [JsonProperty("service")]
+        public readonly string Service;
+
+        [JsonProperty("env")]
+        public readonly string Environment;
+
+        [JsonProperty("repository_url")]
+        public readonly string RepositoryUrl;
+
+        [JsonProperty("configurations")]
+        public readonly TestsConfigurations Configurations;
+
+        public EarlyFlakeDetectionQuery(string service, string environment, string repositoryUrl, TestsConfigurations configurations)
+        {
+            Service = service;
+            Environment = environment;
+            RepositoryUrl = repositoryUrl;
+            Configurations = configurations;
+        }
+    }
+
+    public readonly struct EarlyFlakeDetectionResponse
+    {
+        [JsonProperty("tests")]
+        public readonly EfdResponseModules? Tests;
+
+        public class EfdResponseSuites : Dictionary<string, string[]?>
+        {
+        }
+
+        public class EfdResponseModules : Dictionary<string, EfdResponseSuites?>
+        {
+        }
+    }
 
     private class ObjectPackFilesResult
     {
