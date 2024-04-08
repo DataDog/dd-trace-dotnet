@@ -168,7 +168,6 @@ namespace Datadog.Trace.Debugger
                     {
                         MaxCollectionSize = 1000,
                         MaxFieldCount = 10000,
-                        MaxFieldDepth = 3,
                         MaxLength = int.MaxValue,
                         MaxReferenceDepth = 3
                     };
