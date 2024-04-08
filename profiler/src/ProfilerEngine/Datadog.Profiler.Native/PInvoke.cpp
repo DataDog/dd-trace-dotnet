@@ -168,3 +168,23 @@ extern "C" void __stdcall SetGitMetadataForApplication(const char* runtimeId, co
         commitSha != nullptr ? commitSha : std::string()
     );
 }
+
+
+extern "C" void __stdcall FlushProfile()
+{
+    const auto profiler = CorProfilerCallback::GetInstance();
+
+    if (profiler == nullptr)
+    {
+        Log::Error("FlushProfile is called BEFORE CLR initialize");
+        return;
+    }
+
+    if (!profiler->GetClrLifetime()->IsRunning())
+    {
+        return;
+    }
+
+    Log::Debug("FlushProfile called by Managed code");
+    profiler->GetSamplesCollector()->Export();
+}
