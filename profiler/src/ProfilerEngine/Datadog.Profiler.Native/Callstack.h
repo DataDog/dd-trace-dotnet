@@ -18,7 +18,7 @@ public:
     // default ctor is needed because there are instances of Callstack that can
     // be fields of classes.
     Callstack();
-    Callstack(shared::pmr::memory_resource* memoryResource);
+    explicit Callstack(shared::pmr::memory_resource* memoryResource);
 
     ~Callstack();
 

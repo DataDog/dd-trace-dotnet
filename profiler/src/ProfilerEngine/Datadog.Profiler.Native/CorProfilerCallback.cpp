@@ -426,9 +426,7 @@ bool CorProfilerCallback::InitializeServices()
         _pWallTimeProvider,
         _pCpuTimeProvider,
         _metricsRegistry,
-        // By design, there is no need to synchronize the callstack allocator because
-        // the stacksampler loop collects callstacks in sequence.
-        CallstackProvider(_memoryResourceManager.GetUnSynchronizedPool(100, Callstack::MaxSize)));
+        CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 

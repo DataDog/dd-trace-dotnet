@@ -24,13 +24,13 @@ shared::pmr::memory_resource* MemoryResourceManager::GetDefault()
     return shared::pmr::get_default_resource();
 }
 
-shared::pmr::memory_resource* MemoryResourceManager::GetUnSynchronizedPool(std::size_t maxBlocksPerChunk, std::size_t maxBlockSize)
+shared::pmr::memory_resource* MemoryResourceManager::GetSynchronizedPool(std::size_t maxBlocksPerChunk, std::size_t maxBlockSize)
 {
-#if ARM64
-#warning "unsynchronized_pool_resource is not defined. Use the default (new/delete) memory resource for now."
+#if defined(__cpp_lib_experimental_memory_resources) && (__cpp_lib_experimental_memory_resources <= 201402L)
+#pragma GCC warning "synchronized_pool_resource does not exist. Use the default (new/delete) memory resource for now."
     return GetDefault();
 #else
-    _resources.push_back(std::make_unique<shared::pmr::unsynchronized_pool_resource>(
+    _resources.push_back(std::make_unique<shared::pmr::synchronized_pool_resource>(
         shared::pmr::pool_options{.max_blocks_per_chunk = maxBlocksPerChunk, .largest_required_pool_block = maxBlockSize}));
 
     return _resources.back().get();

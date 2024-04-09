@@ -59,7 +59,7 @@ TEST(CallstackTest, CheckAddApi)
 TEST(CallstackTest, CheckBufferSetCountApi)
 {
     auto manager = MemoryResourceManager();
-    auto p = CallstackProvider(manager.GetUnSynchronizedPool(1, Callstack::MaxSize));
+    auto p = CallstackProvider(manager.GetSynchronizedPool(1, Callstack::MaxSize));
 
     auto s = p.Get();
 
