@@ -81,11 +81,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
             }
 
-            if (automaticTraceEnabled)
-            {
-                StartupLogger.Log("Invoking managed tracer.");
-                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
-            }
+            // We need to invoke the managed tracer regardless of whether tracing is enabled
+            // because other products rely on it
+            StartupLogger.Log("Invoking managed tracer.");
+            TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
         }
 
         internal static string? ManagedProfilerDirectory { get; }
