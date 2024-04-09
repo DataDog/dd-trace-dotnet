@@ -30,6 +30,8 @@ internal class RetryMessageBus : IMessageBus
 
     public bool? TestIsNew { get; set; }
 
+    public bool AbortByThreshold { get; set; }
+
     [DuckReverseMethod]
     public void Dispose()
     {

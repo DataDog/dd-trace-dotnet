@@ -125,7 +125,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
     {
         if (state.State is TestRunnerState { MessageBus: { } messageBus } testRunnerState)
         {
-            if (messageBus.TestIsNew == true)
+            if (messageBus is { TestIsNew: true, AbortByThreshold: false })
             {
                 Common.Log.Debug("Calculating execution index.");
                 var index = messageBus.ExecutionIndex;

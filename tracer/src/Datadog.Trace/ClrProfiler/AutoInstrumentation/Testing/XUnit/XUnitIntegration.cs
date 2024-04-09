@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
@@ -16,6 +17,9 @@ internal static class XUnitIntegration
 {
     internal const string IntegrationName = nameof(IntegrationId.XUnit);
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.XUnit;
+
+    private static long _totalTestCases;
+    private static long _newTestCases;
 
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
@@ -80,15 +84,51 @@ internal static class XUnitIntegration
         }
 
         // Early flake detection flags
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true && retryMessageBus is not null)
+        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true)
         {
-            retryMessageBus.TestIsNew = !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
-            if (retryMessageBus.TestIsNew == true)
+            var testIsNew = !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
+            if (testIsNew)
             {
                 test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
-                if (retryMessageBus.ExecutionIndex > 0)
+
+                if (retryMessageBus is null)
                 {
-                    test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                    Interlocked.Increment(ref _newTestCases);
+                }
+            }
+
+            if (retryMessageBus is not null)
+            {
+                retryMessageBus.TestIsNew = testIsNew;
+                if (testIsNew)
+                {
+                    if (retryMessageBus.ExecutionIndex > 0)
+                    {
+                        test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                    }
+                    else
+                    {
+                        Interlocked.Increment(ref _newTestCases);
+                    }
+                }
+
+                var newTestCases = Interlocked.Read(ref _newTestCases);
+                var totalTestCases = Interlocked.Read(ref _totalTestCases);
+                if (totalTestCases > 0 && newTestCases > 0 && CIVisibility.EarlyFlakeDetectionSettings.FaultySessionThreshold is { } faultySessionThreshold and > 0)
+                {
+                    if (((double)newTestCases * 100 / (double)totalTestCases) > faultySessionThreshold)
+                    {
+                        /* Spec:
+                         * If the number of new tests goes above a threshold:
+                         *      We will stop the feature altogether: no more tests will be considered new and no retries will be done.
+                         */
+
+                        // We need to stop the EFD feature off and set the session as a faulty.
+                        // But session object is not available from the test host
+                        test.SetTag(EarlyFlakeDetectionTags.TestIsNew, (string?)null);
+                        retryMessageBus.AbortByThreshold = true;
+                        Common.Log.Warning<long, long, int>("The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", newTestCases, totalTestCases, faultySessionThreshold);
+                    }
                 }
             }
         }
@@ -169,5 +209,10 @@ internal static class XUnitIntegration
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
         isForcedRun = itrShouldSkip && isUnskippable;
         return itrShouldSkip && !isUnskippable;
+    }
+
+    internal static void IncrementTotalTestCases()
+    {
+        Interlocked.Increment(ref _totalTestCases);
     }
 }
