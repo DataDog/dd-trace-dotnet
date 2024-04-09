@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
@@ -123,6 +124,8 @@ namespace Datadog.Trace
         internal ITags Tags { get; set; }
 
         internal SpanContext Context { get; }
+
+        internal List<SpanLink> SpanLinks { get; private set; }
 
         internal DateTimeOffset StartTime { get; private set; }
 
@@ -544,6 +547,26 @@ namespace Datadog.Trace
             Log.Debug(
                 "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])\nDetails:{ToString}",
                 new object[] { Context.RawSpanId, Context.ParentIdInternal, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags, ToString() });
+        }
+
+        /// <summary>
+        /// Adds a SpanLink to the current Span if the Span is active.
+        /// </summary>
+        /// <param name="spanLinkToAdd">The Span to add as a SpanLink</param>
+        /// <param name="attributes">List of KeyValue pairings of attributes to add to the SpanLink. Defaults to null</param>
+        /// <returns>returns the SpanLink on success or null on failure (span is closed already)</returns>
+        internal SpanLink AddSpanLink(Span spanLinkToAdd, List<KeyValuePair<string, string>> attributes = null)
+        {
+            if (IsFinished)
+            {
+                Log.Warning("AddSpanLink should not be called after the span was closed");
+                return null;
+            }
+
+            SpanLinks ??= new List<SpanLink>();
+            var spanLink = new SpanLink(spanLinkToAdd, this, attributes);
+            SpanLinks.Add(spanLink);
+            return spanLink;
         }
     }
 }
