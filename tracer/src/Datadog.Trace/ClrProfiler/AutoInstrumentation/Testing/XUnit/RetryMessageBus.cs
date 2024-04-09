@@ -13,30 +13,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 internal class RetryMessageBus : IMessageBus
 {
     private readonly IMessageBus _innerMessageBus;
-    private int _totalExecutions;
-    private int _executionNumber;
     private List<object>?[]? _listOfMessages;
 
     public RetryMessageBus(IMessageBus innerMessageBus, int totalExecutions, int executionNumber)
     {
         _innerMessageBus = innerMessageBus;
-        _totalExecutions = totalExecutions;
-        _executionNumber = executionNumber;
+        TotalExecutions = totalExecutions;
+        ExecutionNumber = executionNumber;
     }
 
-    public int TotalExecutions
-    {
-        get => _totalExecutions;
-        set => _totalExecutions = value;
-    }
+    public int TotalExecutions { get; set; }
 
-    public int ExecutionNumber
-    {
-        get => _executionNumber;
-        set => _executionNumber = value;
-    }
+    public int ExecutionNumber { get; set; }
 
-    public int ExecutionIndex => _totalExecutions - (_executionNumber + 1);
+    public int ExecutionIndex => TotalExecutions - (ExecutionNumber + 1);
 
     public bool? TestIsNew { get; set; }
 
@@ -54,23 +44,24 @@ internal class RetryMessageBus : IMessageBus
         }
 
         var messageType = message.GetType();
+        var totalExecutions = TotalExecutions;
 
         // Let's store all messages for all executions of the given test, when the test case is finished,
         // we will try to find a passing execution to flush, is not we will flush the first one.
-        Common.Log.Debug<string, int>("QueueMessage: Found ITestCaseMessage: {Type} [{TotalExecutions}]", messageType.Name, _totalExecutions);
-        var currentExecutionNumber = _executionNumber + 1;
-        var index = _totalExecutions - currentExecutionNumber;
+        Common.Log.Debug<string, int>("QueueMessage: Found ITestCaseMessage: {Type} [{TotalExecutions}]", messageType.Name, totalExecutions);
+        var currentExecutionNumber = ExecutionNumber + 1;
+        var index = totalExecutions - currentExecutionNumber;
 
         Common.Log.Debug<int, int>("QueueMessage: Current execution number is {CurrentExecutionNumber}, index is {Index}.", currentExecutionNumber, index);
         if (_listOfMessages is null)
         {
-            Common.Log.Debug<int>("Creating list of messages for {Executions} executions.", _totalExecutions);
-            _listOfMessages = new List<object>[_totalExecutions];
+            Common.Log.Debug<int>("Creating list of messages for {Executions} executions.", totalExecutions);
+            _listOfMessages = new List<object>[totalExecutions];
         }
-        else if (_listOfMessages.Length < _totalExecutions)
+        else if (_listOfMessages.Length < totalExecutions)
         {
-            Common.Log.Debug<int>("Resizing array with list of messages for {Executions} executions.", _totalExecutions);
-            Array.Resize(ref _listOfMessages, _totalExecutions);
+            Common.Log.Debug<int>("Resizing array with list of messages for {Executions} executions.", totalExecutions);
+            Array.Resize(ref _listOfMessages, totalExecutions);
         }
 
         if (_listOfMessages[index] is not { } lstRetryInstance)
