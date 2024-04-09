@@ -1,7 +1,7 @@
 steps:
 - bash: |
     ids=$(docker ps -q -a)
-    if [ ! -z "$VAR" ]; then
+    if [ ! -z "$ids" ]; then
       docker rm -f $ids
     fi
   displayName: Clean docker
