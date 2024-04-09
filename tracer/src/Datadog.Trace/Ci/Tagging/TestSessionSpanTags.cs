@@ -107,6 +107,12 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
     [Tag(IntelligentTestRunnerTags.SkippingType)]
     public string IntelligentTestRunnerSkippingType { get; set; }
 
+    [Tag(EarlyFlakeDetectionTags.Enabled)]
+    public string EarlyFlakeDetectionTestEnabled { get; set; }
+
+    [Tag(EarlyFlakeDetectionTags.AbortReason)]
+    public string EarlyFlakeDetectionTestAbortReason { get; set; }
+
     public void SetCIEnvironmentValues(CIEnvironmentValues environmentValues)
     {
         if (environmentValues is not null)

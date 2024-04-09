@@ -31,6 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
         private const string UnSkippableSuiteName = "Samples.XUnitTests.UnSkippableSuite";
         private const int ExpectedTestCount = 16;
+        private const int EarlyFlakeDetectionExpectedTestCount = 115;
 
         public XUnitEvpTests(ITestOutputHelper output)
             : base("XUnitTests", output)
@@ -327,6 +328,122 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         Assert.Contains(messages, m => m.StartsWith("Test:TraitErrorTest"));
                         Assert.Contains(messages, m => m.StartsWith("Test:SimpleParameterizedTest"));
                         Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorParameterizedTest"));
+                    }
+                }
+            }
+            catch
+            {
+                WriteSpans(tests);
+                throw;
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "TestIntegrations")]
+        [Trait("Category", "EarlyFlakeDetection")]
+        public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip)
+        {
+            var tests = new List<MockCIVisibilityTest>();
+            var testSuites = new List<MockCIVisibilityTestSuite>();
+            var testModules = new List<MockCIVisibilityTestModule>();
+
+            // Inject session
+            var sessionId = RandomIdGenerator.Shared.NextSpanId();
+            var sessionCommand = "test command";
+            var sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
+            SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+            SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+            SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
+            SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
+
+            const string gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
+            const string gitBranch = "main";
+            const string gitCommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
+
+            try
+            {
+                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
+
+                using var logsIntake = new MockLogsIntakeForCiVisibility();
+                EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
+                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
+
+                using (var agent = EnvironmentHelper.GetMockAgent())
+                {
+                    agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
+
+                    const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
+                    agent.EventPlatformProxyPayloadReceived += (sender, e) =>
+                    {
+                        if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
+                        {
+                            e.Value.Response = new MockTracerResponse("{\"data\":{\"id\":\"511938a3f19c12f8bb5e5caa695ca24f4563de3f\",\"type\":\"ci_app_tracers_test_service_settings\",\"attributes\":{\"code_coverage\":false,\"early_flake_detection\":{\"enabled\":true,\"slow_test_retries\":{\"10s\":5,\"30s\":3,\"5m\":2,\"5s\":10},\"faulty_session_threshold\":30},\"flaky_test_retries_enabled\":false,\"itr_enabled\":true,\"require_git\":false,\"tests_skipping\":true}}}", 200);
+                            return;
+                        }
+
+                        if (e.Value.PathAndQuery.EndsWith("api/v2/ci/libraries/tests"))
+                        {
+                            e.Value.Response = new MockTracerResponse("{\"data\":{\"id\":\"lNemDTwOV8U\",\"type\":\"ci_app_libraries_tests\",\"attributes\":{\"tests\":{\"Samples.XUnitTests\":{\"Samples.XUnitTests.TestSuite\":[\"TraitPassTest\"]}}}}}", 200);
+                            return;
+                        }
+
+                        if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
+                        {
+                            e.Value.Response = new MockTracerResponse($"{{\"data\":[],\"meta\":{{\"correlation_id\":\"{correlationId}\"}}}}", 200);
+                            return;
+                        }
+
+                        if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
+                        {
+                            e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
+
+                            var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                            if (payload.Events?.Length > 0)
+                            {
+                                foreach (var @event in payload.Events)
+                                {
+                                    if (@event.Content.ToString() is { } eventContent)
+                                    {
+                                        if (@event.Type == SpanTypes.Test)
+                                        {
+                                            tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
+                                        }
+                                        else if (@event.Type == SpanTypes.TestSuite)
+                                        {
+                                            testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(eventContent));
+                                        }
+                                        else if (@event.Type == SpanTypes.TestModule)
+                                        {
+                                            testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(eventContent));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    };
+
+                    using (var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
+                    {
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings("all", null, null);
+                        settings.DisableRequireUniquePrefix();
+                        await Verifier.Verify(
+                            tests
+                               .OrderBy(s => s.Resource)
+                               .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters))
+                               .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsNew))
+                               .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsRetry))
+                               .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.AbortReason)),
+                            settings);
+
+                        // Check the tests, suites and modules count
+                        Assert.Equal(EarlyFlakeDetectionExpectedTestCount, tests.Count);
+                        Assert.Equal(2, testSuites.Count);
+                        Assert.Single(testModules);
                     }
                 }
             }

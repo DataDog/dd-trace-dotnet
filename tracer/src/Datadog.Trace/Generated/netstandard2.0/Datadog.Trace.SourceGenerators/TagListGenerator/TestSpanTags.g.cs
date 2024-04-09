@@ -40,8 +40,6 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> EarlyFlakeDetectionTestIsNewBytes => new byte[] { 171, 116, 101, 115, 116, 46, 105, 115, 95, 110, 101, 119 };
         // EarlyFlakeDetectionTestIsRetryBytes = MessagePack.Serialize("test.is_retry");
         private static ReadOnlySpan<byte> EarlyFlakeDetectionTestIsRetryBytes => new byte[] { 173, 116, 101, 115, 116, 46, 105, 115, 95, 114, 101, 116, 114, 121 };
-        // EarlyFlakeDetectionTestAbortReasonBytes = MessagePack.Serialize("test.early_flake.abort_reason");
-        private static ReadOnlySpan<byte> EarlyFlakeDetectionTestAbortReasonBytes => new byte[] { 189, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 97, 98, 111, 114, 116, 95, 114, 101, 97, 115, 111, 110 };
 
         public override string? GetTag(string key)
         {
@@ -58,7 +56,6 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.itr.forced_run" => ForcedRun,
                 "test.is_new" => EarlyFlakeDetectionTestIsNew,
                 "test.is_retry" => EarlyFlakeDetectionTestIsRetry,
-                "test.early_flake.abort_reason" => EarlyFlakeDetectionTestAbortReason,
                 _ => base.GetTag(key),
             };
         }
@@ -99,9 +96,6 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "test.is_retry": 
                     EarlyFlakeDetectionTestIsRetry = value;
-                    break;
-                case "test.early_flake.abort_reason": 
-                    EarlyFlakeDetectionTestAbortReason = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -164,11 +158,6 @@ namespace Datadog.Trace.Ci.Tagging
             if (EarlyFlakeDetectionTestIsRetry is not null)
             {
                 processor.Process(new TagItem<string>("test.is_retry", EarlyFlakeDetectionTestIsRetry, EarlyFlakeDetectionTestIsRetryBytes));
-            }
-
-            if (EarlyFlakeDetectionTestAbortReason is not null)
-            {
-                processor.Process(new TagItem<string>("test.early_flake.abort_reason", EarlyFlakeDetectionTestAbortReason, EarlyFlakeDetectionTestAbortReasonBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -250,13 +239,6 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.is_retry (tag):")
                   .Append(EarlyFlakeDetectionTestIsRetry)
-                  .Append(',');
-            }
-
-            if (EarlyFlakeDetectionTestAbortReason is not null)
-            {
-                sb.Append("test.early_flake.abort_reason (tag):")
-                  .Append(EarlyFlakeDetectionTestAbortReason)
                   .Append(',');
             }
 

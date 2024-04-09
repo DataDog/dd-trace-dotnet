@@ -97,7 +97,4 @@ internal partial class TestSpanTags : TestSuiteSpanTags
 
     [Tag(EarlyFlakeDetectionTags.TestIsRetry)]
     public string EarlyFlakeDetectionTestIsRetry { get; set; }
-
-    [Tag(EarlyFlakeDetectionTags.AbortReason)]
-    public string EarlyFlakeDetectionTestAbortReason { get; set; }
 }

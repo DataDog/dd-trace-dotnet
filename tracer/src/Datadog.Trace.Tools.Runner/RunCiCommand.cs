@@ -307,7 +307,10 @@ namespace Datadog.Trace.Tools.Runner
                 session = TestSession.InternalGetOrCreate(command, null, null, null, true);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, codeCoverageEnabled ? "true" : "false");
-                session.SetTag(EarlyFlakeDetectionTags.Enabled, earlyFlakeDetectionEnabled ? "true" : "false");
+                if (earlyFlakeDetectionEnabled)
+                {
+                    session.SetTag(EarlyFlakeDetectionTags.Enabled, "true");
+                }
 
                 // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
                 // In that case we tell the backend no tests are going to be skipped.

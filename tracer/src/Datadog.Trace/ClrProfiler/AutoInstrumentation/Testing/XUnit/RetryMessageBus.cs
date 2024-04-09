@@ -33,6 +33,7 @@ internal class RetryMessageBus : IMessageBus
     [DuckReverseMethod]
     public void Dispose()
     {
+        _innerMessageBus.Dispose();
     }
 
     [DuckReverseMethod]

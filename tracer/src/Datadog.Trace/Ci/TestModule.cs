@@ -152,6 +152,11 @@ public sealed class TestModule
                     tags.SessionId = fakeSessionTags.SessionId;
                     tags.Command = fakeSessionTags.Command;
                     tags.WorkingDirectory = fakeSessionTags.WorkingDirectory;
+
+                    if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true)
+                    {
+                        fakeSessionTags.EarlyFlakeDetectionTestEnabled = "true";
+                    }
                 }
             }
         }
