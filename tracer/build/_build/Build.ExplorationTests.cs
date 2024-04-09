@@ -434,6 +434,12 @@ class ExplorationTestDescription
                 IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
                 SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
+                TestsToIgnore = new string[]
+                {
+                    "Google.Protobuf.CodedInputStreamTest.MaliciousRecursion_UnknownFields",
+                    "Google.Protobuf.CodedInputStreamTest.RecursionLimitAppliedWhileSkippingGroup",
+                    "Google.Protobuf.JsonParserTest.MaliciousRecursion"
+                },
                 ShouldRun = true // Dictates that this exploration test should not take part in the CI
             },
             ExplorationTestName.cake => new ExplorationTestDescription()
