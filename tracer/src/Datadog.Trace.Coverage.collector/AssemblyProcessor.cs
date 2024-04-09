@@ -842,8 +842,8 @@ namespace Datadog.Trace.Coverage.Collector
                         break;
                 }
 
-                var datadogTraceDllPath = Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.dll");
-                var datadogTracePdbPath = Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.pdb");
+                var datadogTraceDllPath = Path.Combine(_settings.TracerHome!, targetFolder, "Datadog.Trace.dll");
+                var datadogTracePdbPath = Path.Combine(_settings.TracerHome!, targetFolder, "Datadog.Trace.pdb");
 
                 // Global lock for copying the Datadog.Trace assembly to the output folder
                 lock (PadLock)

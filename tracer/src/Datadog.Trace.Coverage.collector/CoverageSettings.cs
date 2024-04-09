@@ -102,9 +102,14 @@ internal class CoverageSettings
         if (xmlNodeList is { } nodeList)
         {
             var lstElements = (List<string>)elements;
-            foreach (XmlElement element in nodeList)
+            foreach (XmlElement? element in nodeList)
             {
-                var item = element.InnerText;
+                if (element is null)
+                {
+                    continue;
+                }
+
+                var item = element!.InnerText;
                 if (string.IsNullOrWhiteSpace(item))
                 {
                     continue;
