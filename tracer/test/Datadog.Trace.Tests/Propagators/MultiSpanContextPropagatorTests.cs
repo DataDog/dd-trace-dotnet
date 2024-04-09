@@ -294,6 +294,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           IsRemote = true,
                        });
         }
 
@@ -319,6 +320,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           IsRemote = true,
                        });
         }
 
@@ -349,6 +351,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                            PropagatedTags = EmptyPropagatedTags,
+                           IsRemote = true,
                        });
         }
 
@@ -385,6 +388,7 @@ namespace Datadog.Trace.Tests.Propagators
                            PropagatedTags = PropagatedTagsCollection,
                            Parent = null,
                            ParentId = null,
+                           IsRemote = true,
                        });
         }
 
@@ -424,6 +428,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Origin = "rum",
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                            PropagatedTags = PropagatedTagsCollection,
+                           IsRemote = true,
                        });
         }
 
@@ -571,6 +576,7 @@ namespace Datadog.Trace.Tests.Propagators
                            AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
                            Parent = null,
                            ParentId = null,
+                           IsRemote = true,
                        });
         }
 
@@ -622,6 +628,7 @@ namespace Datadog.Trace.Tests.Propagators
                            AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
                            Parent = null,
                            ParentId = null,
+                           IsRemote = true,
                        });
         }
 
@@ -673,6 +680,7 @@ namespace Datadog.Trace.Tests.Propagators
                            AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
                            Parent = null,
                            ParentId = null,
+                           IsRemote = true,
                        });
         }
 
@@ -724,6 +732,7 @@ namespace Datadog.Trace.Tests.Propagators
                            AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
                            Parent = null,
                            ParentId = null,
+                           IsRemote = true,
                        });
         }
 
@@ -777,6 +786,7 @@ namespace Datadog.Trace.Tests.Propagators
                            AdditionalW3CTraceState = w3CHeaderFirst ? "foo=1" : null,
                            Parent = null,
                            ParentId = null,
+                           IsRemote = true,
                        });
         }
 

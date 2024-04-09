@@ -82,12 +82,14 @@ namespace Datadog.Trace
         /// <param name="samplingPriority">The propagated sampling priority.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
         /// <param name="origin">The propagated origin of the trace.</param>
-        internal SpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin)
+        /// <param name="isRemote">Whether this <see cref="SpanContext"/> was from a distributed context.</param>
+        internal SpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, bool isRemote = false)
             : this(traceId, serviceName)
         {
             SpanId = spanId;
             SamplingPriority = samplingPriority;
             Origin = origin;
+            IsRemote = isRemote;
         }
 
         /// <summary>
@@ -102,7 +104,8 @@ namespace Datadog.Trace
         /// <param name="origin">The propagated origin of the trace.</param>
         /// <param name="rawTraceId">The raw propagated trace id</param>
         /// <param name="rawSpanId">The raw propagated span id</param>
-        internal SpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId)
+        /// <param name="isRemote">Whether this <see cref="SpanContext"/> was from a distributed context.</param>
+        internal SpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId, bool isRemote = false)
             : this(traceId, serviceName)
         {
             SpanId = spanId;
@@ -110,6 +113,7 @@ namespace Datadog.Trace
             Origin = origin;
             _rawTraceId = rawTraceId;
             _rawSpanId = rawSpanId;
+            IsRemote = isRemote;
         }
 
         /// <summary>
@@ -123,7 +127,8 @@ namespace Datadog.Trace
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="rawTraceId">Raw trace id value</param>
         /// <param name="rawSpanId">Raw span id value</param>
-        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
+        /// <param name="isRemote">Whether this <see cref="SpanContext"/> was from a distributed context.</param>
+        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool isRemote = false)
             : this(GetTraceId(parent, traceId), serviceName)
         {
             // if 128-bit trace ids are enabled, also use full uint64 for span id,
@@ -145,6 +150,7 @@ namespace Datadog.Trace
             }
 
             _rawSpanId = rawSpanId;
+            IsRemote = isRemote;
         }
 
         private SpanContext(TraceId traceId, string serviceName)
@@ -256,6 +262,11 @@ namespace Datadog.Trace
         internal string AdditionalW3CTraceState { get; set; }
 
         internal PathwayContext? PathwayContext { get; private set; }
+
+        /// <summary>
+        ///  Gets a value indicating whether this <see cref="SpanContext"/> was propagated from a remote parent.
+        /// </summary>
+        internal bool IsRemote { get; }
 
         /// <inheritdoc/>
         int IReadOnlyCollection<KeyValuePair<string, string>>.Count => KeyNames.Length;
