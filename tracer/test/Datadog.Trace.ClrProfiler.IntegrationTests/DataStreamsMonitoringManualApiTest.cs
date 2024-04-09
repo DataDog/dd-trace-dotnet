@@ -35,7 +35,7 @@ public class DataStreamsMonitoringManualApiTest : TestHelper
 
         var spans = agent.WaitForSpans(count: 2);
         spans.Should().HaveCount(expected: 2);
-        spans[index: 1].TraceId.Should().Be(spans[index: 0].TraceId); // trace context propagation
+        spans[1].TraceId.Should().Be(spans[0].TraceId); // trace context propagation
 
         var dsPoints = agent.WaitForDataStreamsPoints(statsCount: 2);
         // using span verifier to add all the default scrubbers
