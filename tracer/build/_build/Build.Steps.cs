@@ -217,23 +217,13 @@ partial class Build
                 return;
             }
 
-            if (IsWin)
-            {
-                NuGetTasks.NuGetRestore(s => s
-                    .SetTargetPath(Solution)
-                    .SetVerbosity(NuGetVerbosity.Normal)
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                        o.SetPackagesDirectory(NugetPackageDirectory)));
-            }
-            else
-            {
-                DotNetRestore(s => s
-                    .SetProjectFile(Solution)
-                    .SetVerbosity(DotNetVerbosity.Normal)
-                    .SetProperty("configuration", BuildConfiguration.ToString())
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                        o.SetPackageDirectory(NugetPackageDirectory)));
-            }
+            DotNetRestore(s => s
+                                .SetProjectFile(Solution)
+                                .SetVerbosity(DotNetVerbosity.Normal)
+                                .SetProperty("configuration", BuildConfiguration.ToString())
+                                .SetProperty("RestoreUseStaticGraphEvaluation", "true")
+                                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
+                                    o.SetPackageDirectory(NugetPackageDirectory)));
         });
 
     Target CompileNativeSrcWindows => _ => _
