@@ -74,39 +74,30 @@ namespace Datadog.Trace
                     return;
                 }
 
-                var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
-                var automaticProfilingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)?.ToBoolean() ?? false;
-
-                if (azureAppServiceSettings.CustomTracingEnabled || automaticTraceEnabled || automaticProfilingEnabled)
+                if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
                 {
-                    if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
-                    {
-                        Log.Warning("Requested to start the Trace Agent but the process path hasn't been supplied in environment.");
-                    }
-                    else if (!Directory.Exists(TraceAgentMetadata.DirectoryPath))
-                    {
-                        Log.Warning("Directory for trace agent does not exist: {Directory}. The process won't be started.", TraceAgentMetadata.DirectoryPath);
-                    }
-                    else
-                    {
-                        Processes.Add(TraceAgentMetadata);
-                    }
+                    Log.Warning("Requested to start the Trace Agent but the process path hasn't been supplied in environment.");
+                }
+                else if (!Directory.Exists(TraceAgentMetadata.DirectoryPath))
+                {
+                    Log.Warning("Directory for trace agent does not exist: {Directory}. The process won't be started.", TraceAgentMetadata.DirectoryPath);
+                }
+                else
+                {
+                    Processes.Add(TraceAgentMetadata);
                 }
 
-                if (azureAppServiceSettings.NeedsDogStatsD || automaticTraceEnabled)
+                if (string.IsNullOrWhiteSpace(DogStatsDMetadata.ProcessPath))
                 {
-                    if (string.IsNullOrWhiteSpace(DogStatsDMetadata.ProcessPath))
-                    {
-                        Log.Warning("Requested to start dogstatsd but the process path hasn't been supplied in environment.");
-                    }
-                    else if (!Directory.Exists(DogStatsDMetadata.DirectoryPath))
-                    {
-                        Log.Warning("Directory for dogstatsd does not exist: {Directory}. The process won't be started.", DogStatsDMetadata.DirectoryPath);
-                    }
-                    else
-                    {
-                        Processes.Add(DogStatsDMetadata);
-                    }
+                    Log.Warning("Requested to start dogstatsd but the process path hasn't been supplied in environment.");
+                }
+                else if (!Directory.Exists(DogStatsDMetadata.DirectoryPath))
+                {
+                    Log.Warning("Directory for dogstatsd does not exist: {Directory}. The process won't be started.", DogStatsDMetadata.DirectoryPath);
+                }
+                else
+                {
+                    Processes.Add(DogStatsDMetadata);
                 }
 
                 if (Processes.Count > 0)
