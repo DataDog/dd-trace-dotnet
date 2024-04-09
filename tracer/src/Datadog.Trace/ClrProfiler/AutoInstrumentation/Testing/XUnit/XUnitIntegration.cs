@@ -19,7 +19,7 @@ internal static class XUnitIntegration
 
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-    internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, Type targetType, bool isRetry)
+    internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, Type targetType, RetryMessageBus? retryMessageBus = null)
     {
         // Get the test suite instance
         var testSuite = TestSuite.Current;
@@ -80,15 +80,17 @@ internal static class XUnitIntegration
         }
 
         // Early flake detection flags
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true &&
-            !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty))
+        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true && retryMessageBus is not null)
         {
-            test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
-        }
-
-        if (isRetry)
-        {
-            test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+            retryMessageBus.TestIsNew = !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
+            if (retryMessageBus.TestIsNew == true)
+            {
+                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
+                if (retryMessageBus.ExecutionIndex > 0)
+                {
+                    test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                }
+            }
         }
 
         // Test code and code owners

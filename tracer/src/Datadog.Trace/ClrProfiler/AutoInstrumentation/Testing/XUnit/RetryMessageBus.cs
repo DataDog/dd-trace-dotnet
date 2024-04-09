@@ -13,18 +13,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 internal class RetryMessageBus : IMessageBus
 {
     private readonly IMessageBus _innerMessageBus;
-    private readonly int _totalExecutions;
-    private readonly StrongBox<int> _executionNumber;
+    private int _totalExecutions;
+    private int _executionNumber;
     private List<object>?[]? _listOfMessages;
 
-    public RetryMessageBus(IMessageBus innerMessageBus, int totalExecutions, StrongBox<int> executionNumber)
+    public RetryMessageBus(IMessageBus innerMessageBus, int totalExecutions, int executionNumber)
     {
         _innerMessageBus = innerMessageBus;
         _totalExecutions = totalExecutions;
         _executionNumber = executionNumber;
     }
 
-    public int ExecutionIndex => _totalExecutions - (_executionNumber.Value + 1);
+    public int TotalExecutions
+    {
+        get => _totalExecutions;
+        set => _totalExecutions = value;
+    }
+
+    public int ExecutionNumber
+    {
+        get => _executionNumber;
+        set => _executionNumber = value;
+    }
+
+    public int ExecutionIndex => _totalExecutions - (_executionNumber + 1);
+
+    public bool? TestIsNew { get; set; }
 
     [DuckReverseMethod]
     public void Dispose()
@@ -44,11 +58,21 @@ internal class RetryMessageBus : IMessageBus
         // Let's store all messages for all executions of the given test, when the test case is finished,
         // we will try to find a passing execution to flush, is not we will flush the first one.
         Common.Log.Debug<string, int>("QueueMessage: Found ITestCaseMessage: {Type} [{TotalExecutions}]", messageType.Name, _totalExecutions);
-        var currentExecutionNumber = _executionNumber.Value + 1;
+        var currentExecutionNumber = _executionNumber + 1;
         var index = _totalExecutions - currentExecutionNumber;
 
         Common.Log.Debug<int, int>("QueueMessage: Current execution number is {CurrentExecutionNumber}, index is {Index}.", currentExecutionNumber, index);
-        _listOfMessages ??= new List<object>[_totalExecutions];
+        if (_listOfMessages is null)
+        {
+            Common.Log.Debug<int>("Creating list of messages for {Executions} executions.", _totalExecutions);
+            _listOfMessages = new List<object>[_totalExecutions];
+        }
+        else if (_listOfMessages.Length < _totalExecutions)
+        {
+            Common.Log.Debug<int>("Resizing array with list of messages for {Executions} executions.", _totalExecutions);
+            Array.Resize(ref _listOfMessages, _totalExecutions);
+        }
+
         if (_listOfMessages[index] is not { } lstRetryInstance)
         {
             lstRetryInstance = [];
@@ -57,17 +81,12 @@ internal class RetryMessageBus : IMessageBus
 
         lstRetryInstance.Add(message);
 
-        if (messageType.Name == "TestFinished" && currentExecutionNumber == 1)
-        {
-            return FlushMessages();
-        }
-
         return true;
     }
 
-    private bool FlushMessages()
+    public bool FlushMessages()
     {
-        Common.Log.Debug("Flushing messages");
+        Common.Log.Debug("Flushing RetryMessageBus messages");
         if (_listOfMessages is null || _listOfMessages.Length == 0)
         {
             return true;
