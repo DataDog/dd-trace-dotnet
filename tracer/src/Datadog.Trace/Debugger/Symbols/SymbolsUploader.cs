@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -24,7 +25,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
-    internal class SymbolsUploader : ISymbolsUploader
+    internal class SymbolsUploader : IDebuggerUploader
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolsUploader));
 
@@ -115,22 +116,22 @@ namespace Datadog.Trace.Debugger.Symbols
             _discoveryService = null;
         }
 
-        public static ISymbolsUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
+        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
         {
+            var isSymbolUploadDisabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false")?.ToBoolean() ?? true;
+            if (isSymbolUploadDisabled)
+            {
+                Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
+                return new NoOpSymbolUploader();
+            }
+
             if (!ThirdPartyModules.IsValid)
             {
                 Log.Warning("Third party modules load has failed. Disabling Symbol Uploader.");
-                return new NoOpUploader();
+                return new NoOpSymbolUploader();
             }
 
-            if (api is not NoOpSymbolBatchUploadApi &&
-               (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false")?.ToBoolean() ?? false))
-            {
-                return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceName);
-            }
-
-            Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
-            return new NoOpUploader();
+            return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceName);
         }
 
         private void RegisterToAssemblyLoadEvent()
@@ -324,7 +325,7 @@ namespace Datadog.Trace.Debugger.Symbols
             sb.Append(rootAsString.Substring(classesIndex + classScopeString.Length));
         }
 
-        public async Task StartExtractingAssemblySymbolsAsync()
+        public async Task StartFlushingAsync()
         {
             if (await WaitForDiscoveryServiceAsync().ConfigureAwait(false) == false)
             {

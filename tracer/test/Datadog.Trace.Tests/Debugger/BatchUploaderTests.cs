@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Debugger.Upload;
 using FluentAssertions;
 using Xunit;
 

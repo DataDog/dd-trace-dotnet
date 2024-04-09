@@ -18,6 +18,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Tests.Agent;
@@ -30,7 +31,7 @@ namespace Datadog.Trace.Tests.Debugger.SymbolsTests;
 public class SymbolUploaderTest
 {
     private readonly MockBatchUploadApi _api;
-    private readonly ISymbolsUploader _uploader;
+    private readonly IDebuggerUploader _uploader;
     private readonly DiscoveryServiceMock _discoveryService;
     private readonly RcmSubscriptionManagerMock _enablementService;
 
