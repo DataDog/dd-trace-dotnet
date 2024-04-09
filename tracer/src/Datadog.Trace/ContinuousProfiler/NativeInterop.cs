@@ -41,6 +41,12 @@ namespace Datadog.Trace.ContinuousProfiler
             NativeMethods.SetGitMetadata(runtimeId, repositoryUrl, commitSha);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void FlushProfile()
+        {
+            NativeMethods.FlushProfile();
+        }
+
         // These methods are rewritten by the native tracer to use the correct paths
         private static class NativeMethods
         {
@@ -58,6 +64,9 @@ namespace Datadog.Trace.ContinuousProfiler
 
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "SetGitMetadataForApplication")]
             public static extern void SetGitMetadata(string runtimeId, string repositoryUrl, string commitSha);
+
+            [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "FlushProfile")]
+            public static extern void FlushProfile();
         }
     }
 }

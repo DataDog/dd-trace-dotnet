@@ -234,7 +234,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var probeData = asyncState.ProbeData;
             if (!TypeExtensions.IsDefaultValue(ref local))
             {
-                var localInfo = new CaptureInfo<TLocal>(asyncState.MethodMetadataIndex, value: local, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+                var localInfo = new CaptureInfo<TLocal>(asyncState.MethodMetadataIndex, value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
                 return asyncState.ProbeData.Processor.Process(ref localInfo, asyncState.SnapshotCreator, in probeData);
             }
 

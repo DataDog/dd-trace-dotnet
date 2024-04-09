@@ -1693,7 +1693,6 @@ partial class Build
                     // filter out or to integration tests that have docker dependencies
                     (null, _) => true,
                     (_, null) => true,
-                    (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
                     (false, { } p) => p.RequiresDockerDependency() == DockerDependencyType.None,
                     (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
@@ -1703,7 +1702,6 @@ partial class Build
                                   {
                                       var name when projectsToSkip.Contains(name) => false,
                                       var name when multiPackageProjects.Contains(name) => false,
-                                      "Samples.AspNetCoreRazorPages" => true,
                                       _ when !string.IsNullOrWhiteSpace(SampleName) => x.project?.Name?.Contains(SampleName, StringComparison.OrdinalIgnoreCase) ?? false,
                                       _ => x.project.TryGetTargetFrameworks().Contains(Framework),
                                   })
