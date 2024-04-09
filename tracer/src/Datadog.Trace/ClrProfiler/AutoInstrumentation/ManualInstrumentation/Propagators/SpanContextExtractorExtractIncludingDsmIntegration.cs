@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Pr
     TypeName = "Datadog.Trace.SpanContextExtractor",
     MethodName = "ExtractIncludingDsm",
     ReturnTypeName = "Datadog.Trace.ISpanContext",
-    ParameterTypeNames = ["!!0", "System.Func`3[!!0,System.String,System.String[]]", "System.String", "System.String"],
+    ParameterTypeNames = ["!!0", "System.Func`3[!!0,System.String,System.Collections.Generic.IEnumerable`1[System.String]]", "System.String", "System.String"],
     MinimumVersion = ManualInstrumentationConstants.MinVersion,
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
@@ -35,7 +35,7 @@ public class SpanContextExtractorExtractIncludingDsmIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TCarrier, TAction>(TTarget instance, in TCarrier carrier, in TAction getter, string messageType, string source)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_ExtractIncludingDsm);
-        var extract = (Func<TCarrier, string, string?[]>)(object)getter!;
+        var extract = (Func<TCarrier, string, IEnumerable<string?>>)(object)getter!;
         var extracted = SpanContextExtractor.ExtractInternal(carrier, extract, messageType, source);
         return new CallTargetState(scope: null, extracted);
     }
