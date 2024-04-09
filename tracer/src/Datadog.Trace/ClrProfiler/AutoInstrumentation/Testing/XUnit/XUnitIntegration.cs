@@ -115,6 +115,17 @@ internal static class XUnitIntegration
     {
         try
         {
+            TimeSpan? duration = null;
+            var testTags = test.GetTags();
+            if (testTags.EarlyFlakeDetectionTestIsNew == "true" && test.GetInternalSpan() is Span internalSpan)
+            {
+                duration = internalSpan.Context.TraceContext.Clock.ElapsedSince(internalSpan.StartTime);
+                if (duration.Value.TotalMinutes >= 5)
+                {
+                    testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+                }
+            }
+
             if (exceptionAggregator?.ToException() is { } exception)
             {
                 if (exception.GetType().Name == "SkipException")
@@ -124,12 +135,12 @@ internal static class XUnitIntegration
                 else
                 {
                     test.SetErrorInfo(exception);
-                    test.Close(TestStatus.Fail);
+                    test.Close(TestStatus.Fail, duration);
                 }
             }
             else
             {
-                test.Close(TestStatus.Pass);
+                test.Close(TestStatus.Pass, duration);
             }
         }
         catch (Exception ex)

@@ -8,6 +8,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -29,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class XUnitTestRunnerRunAsyncIntegration
 {
-    private static readonly int Retries = 0;
+    private static readonly int Retries = 9;
     private static readonly ConditionalWeakTable<object, StrongBox<int>> ExecutionCount = new();
 
     /// <summary>
@@ -69,8 +70,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        var retries = Retries;
-        if (retries <= 0)
+        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled != true)
         {
             return CallTargetState.GetDefault();
         }
@@ -132,6 +132,39 @@ public static class XUnitTestRunnerRunAsyncIntegration
             Common.Log.Debug("Calculating execution index.");
             var execCount = testRunnerState.ExecutionCount;
             var index = Retries - execCount.Value;
+
+            if (index == 0)
+            {
+                // Let's make decisions based on the first execution regarding slow tests
+                var duration = TraceClock.Instance.UtcNow - testRunnerState.StartTime;
+                var slowRetriesSettings = CIVisibility.EarlyFlakeDetectionSettings.SlowTestRetries;
+                if (slowRetriesSettings.FiveSeconds.HasValue && duration.TotalSeconds < 5)
+                {
+                    execCount.Value = slowRetriesSettings.FiveSeconds.Value - 1;
+                    Common.Log.Information<int>("Number of retries has been set to {Value} for this test that runs under 5 seconds.", execCount.Value);
+                }
+                else if (slowRetriesSettings.TenSeconds.HasValue && duration.TotalSeconds < 10)
+                {
+                    execCount.Value = slowRetriesSettings.TenSeconds.Value - 1;
+                    Common.Log.Information<int>("Number of retries has been set to {Value} for this test that runs under 10 seconds.", execCount.Value);
+                }
+                else if (slowRetriesSettings.ThirtySeconds.HasValue && duration.TotalSeconds < 30)
+                {
+                    execCount.Value = slowRetriesSettings.ThirtySeconds.Value - 1;
+                    Common.Log.Information<int>("Number of retries has been set to {Value} for this test that runs under 30 seconds.", execCount.Value);
+                }
+                else if (slowRetriesSettings.FiveMinutes.HasValue && duration.TotalMinutes < 5)
+                {
+                    execCount.Value = slowRetriesSettings.FiveMinutes.Value - 1;
+                    Common.Log.Information<int>("Number of retries has been set to {Value} for this test that runs under 5 minutes.", execCount.Value);
+                }
+                else
+                {
+                    execCount.Value = 0;
+                    Common.Log.Information("Number of retries has been set to 0. Current test duration is {Value}", duration);
+                }
+            }
+
             if (execCount.Value > 0)
             {
                 var retryNumber = index + 1;
@@ -192,11 +225,13 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
     private readonly struct TestRunnerState
     {
+        public readonly DateTimeOffset StartTime;
         public readonly ITestRunner TestRunner;
         public readonly StrongBox<int> ExecutionCount;
 
         public TestRunnerState(ITestRunner testRunner, StrongBox<int> executionCount)
         {
+            StartTime = TraceClock.Instance.UtcNow;
             TestRunner = testRunner;
             ExecutionCount = executionCount;
         }

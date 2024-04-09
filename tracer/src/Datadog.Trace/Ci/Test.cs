@@ -426,6 +426,11 @@ public sealed class Test
         return _scope.Span;
     }
 
+    internal TestSpanTags GetTags()
+    {
+        return (TestSpanTags)_scope.Span.Tags;
+    }
+
     internal void SetName(string name)
     {
         ((TestSpanTags)_scope.Span.Tags).Name = name;

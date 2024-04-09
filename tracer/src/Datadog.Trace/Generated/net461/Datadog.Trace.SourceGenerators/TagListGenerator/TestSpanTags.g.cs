@@ -36,6 +36,12 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> UnskippableBytes => new byte[] { 180, 116, 101, 115, 116, 46, 105, 116, 114, 46, 117, 110, 115, 107, 105, 112, 112, 97, 98, 108, 101 };
         // ForcedRunBytes = MessagePack.Serialize("test.itr.forced_run");
         private static ReadOnlySpan<byte> ForcedRunBytes => new byte[] { 179, 116, 101, 115, 116, 46, 105, 116, 114, 46, 102, 111, 114, 99, 101, 100, 95, 114, 117, 110 };
+        // EarlyFlakeDetectionTestIsNewBytes = MessagePack.Serialize("test.is_new");
+        private static ReadOnlySpan<byte> EarlyFlakeDetectionTestIsNewBytes => new byte[] { 171, 116, 101, 115, 116, 46, 105, 115, 95, 110, 101, 119 };
+        // EarlyFlakeDetectionTestIsRetryBytes = MessagePack.Serialize("test.is_retry");
+        private static ReadOnlySpan<byte> EarlyFlakeDetectionTestIsRetryBytes => new byte[] { 173, 116, 101, 115, 116, 46, 105, 115, 95, 114, 101, 116, 114, 121 };
+        // EarlyFlakeDetectionTestAbortReasonBytes = MessagePack.Serialize("test.early_flake.abort_reason");
+        private static ReadOnlySpan<byte> EarlyFlakeDetectionTestAbortReasonBytes => new byte[] { 189, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 97, 98, 111, 114, 116, 95, 114, 101, 97, 115, 111, 110 };
 
         public override string? GetTag(string key)
         {
@@ -50,6 +56,9 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.skipped_by_itr" => SkippedByIntelligentTestRunner,
                 "test.itr.unskippable" => Unskippable,
                 "test.itr.forced_run" => ForcedRun,
+                "test.is_new" => EarlyFlakeDetectionTestIsNew,
+                "test.is_retry" => EarlyFlakeDetectionTestIsRetry,
+                "test.early_flake.abort_reason" => EarlyFlakeDetectionTestAbortReason,
                 _ => base.GetTag(key),
             };
         }
@@ -84,6 +93,15 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "test.itr.forced_run": 
                     ForcedRun = value;
+                    break;
+                case "test.is_new": 
+                    EarlyFlakeDetectionTestIsNew = value;
+                    break;
+                case "test.is_retry": 
+                    EarlyFlakeDetectionTestIsRetry = value;
+                    break;
+                case "test.early_flake.abort_reason": 
+                    EarlyFlakeDetectionTestAbortReason = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -136,6 +154,21 @@ namespace Datadog.Trace.Ci.Tagging
             if (ForcedRun is not null)
             {
                 processor.Process(new TagItem<string>("test.itr.forced_run", ForcedRun, ForcedRunBytes));
+            }
+
+            if (EarlyFlakeDetectionTestIsNew is not null)
+            {
+                processor.Process(new TagItem<string>("test.is_new", EarlyFlakeDetectionTestIsNew, EarlyFlakeDetectionTestIsNewBytes));
+            }
+
+            if (EarlyFlakeDetectionTestIsRetry is not null)
+            {
+                processor.Process(new TagItem<string>("test.is_retry", EarlyFlakeDetectionTestIsRetry, EarlyFlakeDetectionTestIsRetryBytes));
+            }
+
+            if (EarlyFlakeDetectionTestAbortReason is not null)
+            {
+                processor.Process(new TagItem<string>("test.early_flake.abort_reason", EarlyFlakeDetectionTestAbortReason, EarlyFlakeDetectionTestAbortReasonBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -203,6 +236,27 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.itr.forced_run (tag):")
                   .Append(ForcedRun)
+                  .Append(',');
+            }
+
+            if (EarlyFlakeDetectionTestIsNew is not null)
+            {
+                sb.Append("test.is_new (tag):")
+                  .Append(EarlyFlakeDetectionTestIsNew)
+                  .Append(',');
+            }
+
+            if (EarlyFlakeDetectionTestIsRetry is not null)
+            {
+                sb.Append("test.is_retry (tag):")
+                  .Append(EarlyFlakeDetectionTestIsRetry)
+                  .Append(',');
+            }
+
+            if (EarlyFlakeDetectionTestAbortReason is not null)
+            {
+                sb.Append("test.early_flake.abort_reason (tag):")
+                  .Append(EarlyFlakeDetectionTestAbortReason)
                   .Append(',');
             }
 
