@@ -63,13 +63,13 @@ namespace Datadog.Trace
         /// multiple times may lead to incorrect stats when using Data Streams Monitoring.
         /// </summary>
         /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...)</param>
-        /// <param name="getter">Given a key name, returns values from the carrier. Should return an empty collection if the requested key is not present.</param>
+        /// <param name="getter">Given a key name, returns values from the carrier. Should return an empty array if the requested key is not present.</param>
         /// <param name="messageType">For Data Streams Monitoring: The type of messaging system where the message is coming from.</param>
         /// <param name="source">For Data Streams Monitoring: The queue or topic where the message is coming from.</param>
         /// <typeparam name="TCarrier">Type of the carrier</typeparam>
         /// <returns>A potentially null Datadog SpanContext</returns>
         [PublicApi]
-        public ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source)
+        public ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, string?[]> getter, string messageType, string source)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_ExtractIncludingDsm);
             return ExtractInternal(carrier, getter, messageType, source);
