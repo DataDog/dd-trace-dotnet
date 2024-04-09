@@ -1,0 +1,70 @@
+﻿{
+  Env: integration_tests,
+  Service: Samples.DataStreams.ManualAPI,
+  TracerVersion: <snip>,
+  Lang: dotnet,
+  Stats: [
+    {
+      Start: 1661520120000000000,
+      Duration: 10000000000,
+      Stats: [
+        {
+          EdgeTags: [
+            direction:out,
+            topic:_queue,
+            type:ConcurrentQueue
+          ],
+          Hash: 4846659945844582174,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            topic:_queue,
+            type:ConcurrentQueue
+          ],
+          Hash: 11038489780599490290,
+          ParentHash: 4846659945844582174,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: current
+        }
+      ]
+    },
+    {
+      Start: 1661520120000000000,
+      Duration: 10000000000,
+      Stats: [
+        {
+          EdgeTags: [
+            direction:out,
+            topic:_queue,
+            type:ConcurrentQueue
+          ],
+          Hash: 4846659945844582174,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            direction:in,
+            topic:_queue,
+            type:ConcurrentQueue
+          ],
+          Hash: 11038489780599490290,
+          ParentHash: 4846659945844582174,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          PayloadSize: /w==,
+          TimestampType: origin
+        }
+      ]
+    }
+  ]
+}
