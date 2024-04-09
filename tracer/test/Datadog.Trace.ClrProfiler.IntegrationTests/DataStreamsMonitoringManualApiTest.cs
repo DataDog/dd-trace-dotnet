@@ -40,7 +40,6 @@ public class DataStreamsMonitoringManualApiTest : TestHelper
         var dsPoints = agent.WaitForDataStreamsPoints(statsCount: 2);
         // using span verifier to add all the default scrubbers
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
         settings.AddDataStreamsScrubber();
         await Verifier.Verify(MockDataStreamsPayload.Normalize(dsPoints), settings)
                       .UseFileName($"{nameof(DataStreamsMonitoringManualApiTest)}.{nameof(ContextPropagation)}")
