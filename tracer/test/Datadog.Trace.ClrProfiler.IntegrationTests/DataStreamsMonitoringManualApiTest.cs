@@ -29,8 +29,7 @@ public class DataStreamsMonitoringManualApiTest : TestHelper
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
 
-        using var telemetry = this.ConfigureTelemetry();
-        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+        using var agent = EnvironmentHelper.GetMockAgent();
         using var processResult = await RunSampleAndWaitForExit(agent);
 
         var spans = agent.WaitForSpans(count: 2);
