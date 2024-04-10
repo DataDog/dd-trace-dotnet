@@ -74,7 +74,7 @@ public class Program
     {
         var content = raw.Split(separator: ';');
         var headers = content
-                     .SkipLast(count: 1)
+                     .Take(content.Length - 1) // SkipLast() is unavailable in older versions that we are testing on
                      .Select(s => s.Split(separator: ':'))
                      .ToDictionary(a => a[0], a => a[1]);
         msg = content.Last();
