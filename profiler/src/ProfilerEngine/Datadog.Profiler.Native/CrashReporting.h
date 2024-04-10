@@ -5,6 +5,15 @@
 #include <string>
 #include <memory>
 
+#include "cor.h"
+#include "corprof.h"
+
+extern "C"
+{
+#include "datadog/common.h"
+#include "datadog/profiling.h"
+}
+
 struct ResolveMethodData
 {
     uint64_t symbolAddress;
@@ -22,21 +31,46 @@ struct StackFrame
 
 typedef int (*ResolveManagedMethod)(uintptr_t ip, ResolveMethodData* methodData);
 
-class CrashReporting
+// {3B3BA8A9-F807-43BF-A3A9-55E369C0C532}
+const IID IID_ICrashReporting = {0x3b3ba8a9, 0xf807, 0x43bf, { 0xa3, 0xa9, 0x55, 0xe3, 0x69, 0xc0, 0xc5, 0x32} };
+
+MIDL_INTERFACE("3B3BA8A9-F807-43BF-A3A9-55E369C0C532")
+ICrashReporting : public IUnknown
+{
+public:    
+    virtual STDMETHODCALLTYPE HRESULT QueryInterface(REFIID riid, void** ppvObject) = 0;
+    virtual STDMETHODCALLTYPE ULONG AddRef() = 0;
+    virtual STDMETHODCALLTYPE ULONG Release() = 0;
+    virtual STDMETHODCALLTYPE int32_t AddTag(const char* key, const char* value) = 0;
+    virtual STDMETHODCALLTYPE int32_t SetSignalInfo(int32_t signal, const char* description) = 0;
+    virtual STDMETHODCALLTYPE int32_t ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback) = 0;
+    virtual STDMETHODCALLTYPE int32_t Send() = 0;
+};
+
+class CrashReporting : public ICrashReporting 
 {
 public:
-    CrashReporting(int32_t pid, int32_t signal);
+    CrashReporting(int32_t pid);
     virtual ~CrashReporting();
 
-    static std::unique_ptr<CrashReporting> Create(int32_t pid, int32_t signal);
+    static CrashReporting* Create(int32_t pid);
 
-    void ReportCrash(ResolveManagedMethod resolveCallback);
+    HRESULT QueryInterface(REFIID riid, void** ppvObject) override;
+    ULONG AddRef() override;
+    ULONG Release() override;
+    int32_t AddTag(const char* key, const char* value) override;
+    int32_t SetSignalInfo(int32_t signal, const char* description) override;
+    int32_t ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback) override;
+    int32_t Send() override;
 
 protected:
     int32_t _pid;
     int32_t _signal;
-
+    ddog_prof_CrashInfo _crashInfo;
     virtual std::vector<int32_t> GetThreads() = 0;
     virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod) = 0;
-    virtual std::string GetSignalInfo() = 0;
+    virtual std::string GetSignalInfo(int32_t signal) = 0;
+
+private:
+    int32_t _refCount;
 };

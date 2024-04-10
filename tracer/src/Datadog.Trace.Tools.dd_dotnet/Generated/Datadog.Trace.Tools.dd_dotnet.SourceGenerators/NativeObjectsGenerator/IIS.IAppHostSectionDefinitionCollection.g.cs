@@ -31,7 +31,9 @@ internal unsafe class IAppHostSectionDefinitionCollection : Datadog.Trace.Tools.
 
         if (_implementation != IntPtr.Zero)
         {
+            System.Console.WriteLine("Calling Release");
             Release();
+            System.Console.WriteLine("End Release");
         }
     }
 

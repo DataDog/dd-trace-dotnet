@@ -16,7 +16,7 @@ struct ModuleInfo
 class CrashReportingLinux : public CrashReporting
 {
 public:
-    CrashReportingLinux(int32_t pid, int32_t signal);
+    CrashReportingLinux(int32_t pid);
 
     ~CrashReportingLinux() override;
 
@@ -25,9 +25,8 @@ private:
     std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod) override;
     std::pair<std::string, uintptr_t> FindModule(uintptr_t ip);
     std::vector<ModuleInfo> GetModules();
-    std::string GetSignalInfo() override;
+    std::string GetSignalInfo(int32_t signal) override;
 
     unw_addr_space_t _addressSpace;
     std::vector<ModuleInfo> _modules;
 };
-

@@ -24,16 +24,19 @@ extern "C"
 #include "datadog/profiling.h"
 }
 
-std::unique_ptr<CrashReporting> CrashReporting::Create(int32_t pid, int32_t signal)
+CrashReporting* CrashReporting::Create(int32_t pid)
 {
-    return std::make_unique<CrashReportingLinux>(pid, signal);
+    auto crashReporting = new CrashReportingLinux(pid);
+    
+    return (CrashReporting*)crashReporting;
 }
 
-CrashReportingLinux::CrashReportingLinux(int32_t pid, int32_t signal)
-    : CrashReporting(pid, signal)
+CrashReportingLinux::CrashReportingLinux(int32_t pid)
+    : CrashReporting(pid)
 {
     _addressSpace = unw_create_addr_space(&_UPT_accessors, 0);
     _modules = GetModules();
+    
 }
 
 CrashReportingLinux::~CrashReportingLinux()
@@ -201,9 +204,9 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
     return frames;
 }
 
-std::string CrashReportingLinux::GetSignalInfo()
+std::string CrashReportingLinux::GetSignalInfo(int32_t signal)
 {
-    auto signalInfo = strsignal(_signal);
+    auto signalInfo = strsignal(signal);
 
     if (signalInfo == nullptr)
     {

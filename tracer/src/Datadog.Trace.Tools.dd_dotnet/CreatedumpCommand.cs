@@ -4,9 +4,11 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Diagnostics.Runtime;
@@ -82,11 +84,6 @@ internal class CreatedumpCommand : Command
         var pid = _pidArgument.GetValue(context)!;
         var signal = _signalOption.GetValue(context);
 
-        if (signal.HasValue)
-        {
-            AnsiConsole.WriteLine($"Process received signal {signal}");
-        }
-
         var crashThread = _crashthreadOption.GetValue(context);
 
         if (crashThread.HasValue)
@@ -96,24 +93,78 @@ internal class CreatedumpCommand : Command
 
         AnsiConsole.WriteLine($"Capturing crash info for process {pid}");
 
-        var lib = NativeLibrary.Load(Path.Combine(System.AppContext.BaseDirectory, "Datadog.Profiler.Native.so"));
+        var lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Datadog.Profiler.Native.so"));
 
-        var export = NativeLibrary.GetExport(lib, "ReportCrash");
+        var export = NativeLibrary.GetExport(lib, "CreateCrashReport");
 
         if (export == 0)
         {
-            AnsiConsole.WriteLine("Failed to load ReportCrash function");
+            AnsiConsole.WriteLine("Failed to load the CreateCrashReport function");
             return;
         }
 
         using var target = DataTarget.AttachToProcess(pid.Value, suspend: true);
         _runtime = target.ClrVersions[0].CreateRuntime();
 
-        // extern "C" void __stdcall ReportCrash(int32_t pid, int32_t signal, ResolveManagedMethod resolveCallback)
-        var function = (delegate* unmanaged<int, int, IntPtr, void>)export;
-        var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
+        var function = (delegate* unmanaged<int, IntPtr>)export;
 
-        function(pid.Value, signal ?? 0, (IntPtr)callback);
+        var ptr = function(pid.Value);
+
+        if (ptr == IntPtr.Zero)
+        {
+            AnsiConsole.WriteLine("Failed to create crash report");
+            return;
+        }
+
+        try
+        {
+            using var iunknown = NativeObjects.IUnknown.Wrap(ptr);
+
+            int result = iunknown.QueryInterface(ICrashReport.Guid, out var crashReportPtr);
+
+            if (result != 0)
+            {
+                AnsiConsole.WriteLine($"Failed to query interface: {result}");
+                return;
+            }
+
+            using var crashReport = NativeObjects.ICrashReport.Wrap(crashReportPtr);
+
+            // Check if there's an exception on the crash thread
+            var exception = _runtime.Threads.FirstOrDefault(t => t.ManagedThreadId == crashThread)?.CurrentException;
+
+            if (exception != null)
+            {
+                var key = Marshal.StringToHGlobalAnsi("exception");
+                var value = Marshal.StringToHGlobalAnsi(exception.ToString());
+
+                crashReport.AddTag((char*)key, (char*)value);
+
+                Marshal.FreeHGlobal(key);
+                Marshal.FreeHGlobal(value);
+            }
+
+            if (signal.HasValue)
+            {
+                crashReport.SetSignalInfo(signal.Value, null);
+            }
+
+            var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
+            crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback);
+            crashReport.Send();
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.WriteLine($"Error: {ex}");
+            return;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Tag
+    {
+        public IntPtr Key;
+        public IntPtr Value;
     }
 
     [StructLayout(LayoutKind.Sequential)]
