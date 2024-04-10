@@ -92,8 +92,10 @@ namespace Datadog.Trace.Ci
         /// <returns>Git info</returns>
         public static GitInfo GetFrom(string folder)
         {
+            var dirInfo = new DirectoryInfo(folder);
+
             // Try to load git metadata from the folder
-            if (TryGetFrom(new DirectoryInfo(folder), out var gitInfo))
+            if (TryGetFrom(dirInfo, out var gitInfo))
             {
                 return gitInfo;
             }
@@ -105,7 +107,7 @@ namespace Datadog.Trace.Ci
             }
 
             // Return the partial gitInfo instance with the initial source root
-            return gitInfo;
+            return new GitInfo { SourceRoot = dirInfo.Parent?.FullName };
         }
 
         /// <summary>
@@ -116,53 +118,52 @@ namespace Datadog.Trace.Ci
         {
             var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             var gitDirectory = GetParentGitFolder(baseDirectory) ?? GetParentGitFolder(Environment.CurrentDirectory);
-            TryGetFrom(gitDirectory, out var gitInfo);
-            return gitInfo;
+            return TryGetFrom(gitDirectory, out var gitInfo) ? gitInfo : new GitInfo { SourceRoot = gitDirectory?.Parent?.FullName };
         }
 
         private static bool TryGetFrom(DirectoryInfo gitDirectory, out GitInfo gitInfo)
         {
             if (gitDirectory == null)
             {
-                gitInfo = new GitInfo();
+                gitInfo = null;
                 return false;
             }
 
-            gitInfo = new GitInfo();
+            var tempGitInfo = new GitInfo();
 
             try
             {
-                gitInfo.SourceRoot = gitDirectory.Parent?.FullName;
+                tempGitInfo.SourceRoot = gitDirectory.Parent?.FullName;
 
                 // Get Git commit
-                string headPath = Path.Combine(gitDirectory.FullName, "HEAD");
+                var headPath = Path.Combine(gitDirectory.FullName, "HEAD");
                 if (File.Exists(headPath))
                 {
-                    string head = File.ReadAllText(headPath).Trim();
+                    var head = File.ReadAllText(headPath).Trim();
 
                     // Symbolic Reference
                     if (head.StartsWith("ref:"))
                     {
-                        gitInfo.Branch = head.Substring(4).Trim();
+                        tempGitInfo.Branch = head.Substring(4).Trim();
 
-                        string refPath = Path.Combine(gitDirectory.FullName, gitInfo.Branch);
-                        string infoRefPath = Path.Combine(gitDirectory.FullName, "info", "refs");
+                        var refPath = Path.Combine(gitDirectory.FullName, tempGitInfo.Branch);
+                        var infoRefPath = Path.Combine(gitDirectory.FullName, "info", "refs");
 
                         if (File.Exists(refPath))
                         {
                             // Get the commit from the .git/{refPath} file.
-                            gitInfo.Commit = File.ReadAllText(refPath).Trim();
+                            tempGitInfo.Commit = File.ReadAllText(refPath).Trim();
                         }
                         else if (File.Exists(infoRefPath))
                         {
                             // Get the commit from the .git/info/refs file.
-                            string[] lines = File.ReadAllLines(infoRefPath);
-                            foreach (string line in lines)
+                            var lines = File.ReadAllLines(infoRefPath);
+                            foreach (var line in lines)
                             {
-                                string[] hashRef = line.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                                if (hashRef[1] == gitInfo.Branch)
+                                var hashRef = line.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                                if (hashRef[1] == tempGitInfo.Branch)
                                 {
-                                    gitInfo.Commit = hashRef[0];
+                                    tempGitInfo.Commit = hashRef[0];
                                 }
                             }
                         }
@@ -170,77 +171,77 @@ namespace Datadog.Trace.Ci
                     else
                     {
                         // Hash reference
-                        gitInfo.Commit = head;
+                        tempGitInfo.Commit = head;
                     }
                 }
                 else
                 {
                     Log.Warning("GitInfo: HEAD file not found in the git directory: {GitDirectory}", headPath);
+                    gitInfo = null;
                     return false;
                 }
 
                 // Process Git Config
-                string configPath = Path.Combine(gitDirectory.FullName, "config");
-                List<ConfigItem> lstConfigs = GetConfigItems(configPath);
+                var configPath = Path.Combine(gitDirectory.FullName, "config");
+                var lstConfigs = GetConfigItems(configPath);
                 if (lstConfigs != null && lstConfigs.Count > 0)
                 {
                     var remote = "origin";
 
-                    var localGitInfo = gitInfo;
-                    var branchItem = lstConfigs.Find(i => i.Type == "branch" && i.Merge == localGitInfo.Branch);
+                    var branchItem = lstConfigs.Find(i => i.Type == "branch" && i.Merge == tempGitInfo.Branch);
                     if (branchItem != null)
                     {
-                        gitInfo.Branch = branchItem.Name;
+                        tempGitInfo.Branch = branchItem.Name;
                         remote = branchItem.Remote;
                     }
 
                     var remoteItem = lstConfigs.Find(i => i.Type == "remote" && i.Name == remote);
                     if (remoteItem != null)
                     {
-                        gitInfo.Repository = remoteItem.Url;
+                        tempGitInfo.Repository = remoteItem.Url;
                     }
                 }
 
                 // Get author and committer data
-                if (!string.IsNullOrEmpty(gitInfo.Commit))
+                if (!string.IsNullOrEmpty(tempGitInfo.Commit))
                 {
-                    string folder = gitInfo.Commit.Substring(0, 2);
-                    string file = gitInfo.Commit.Substring(2);
-                    string objectFilePath = Path.Combine(gitDirectory.FullName, "objects", folder, file);
+                    var folder = tempGitInfo.Commit.Substring(0, 2);
+                    var file = tempGitInfo.Commit.Substring(2);
+                    var objectFilePath = Path.Combine(gitDirectory.FullName, "objects", folder, file);
                     if (File.Exists(objectFilePath))
                     {
                         // Load and parse object file
                         if (GitCommitObject.TryGetFromObjectFile(objectFilePath, out var commitObject))
                         {
-                            gitInfo.AuthorDate = commitObject.AuthorDate;
-                            gitInfo.AuthorEmail = commitObject.AuthorEmail;
-                            gitInfo.AuthorName = commitObject.AuthorName;
-                            gitInfo.CommitterDate = commitObject.CommitterDate;
-                            gitInfo.CommitterEmail = commitObject.CommitterEmail;
-                            gitInfo.CommitterName = commitObject.CommitterName;
-                            gitInfo.Message = commitObject.Message;
-                            gitInfo.PgpSignature = commitObject.PgpSignature;
+                            tempGitInfo.AuthorDate = commitObject.AuthorDate;
+                            tempGitInfo.AuthorEmail = commitObject.AuthorEmail;
+                            tempGitInfo.AuthorName = commitObject.AuthorName;
+                            tempGitInfo.CommitterDate = commitObject.CommitterDate;
+                            tempGitInfo.CommitterEmail = commitObject.CommitterEmail;
+                            tempGitInfo.CommitterName = commitObject.CommitterName;
+                            tempGitInfo.Message = commitObject.Message;
+                            tempGitInfo.PgpSignature = commitObject.PgpSignature;
                         }
                     }
                     else
                     {
                         // Search git object file from the pack files
-                        string packFolder = Path.Combine(gitDirectory.FullName, "objects", "pack");
-                        string[] files = Directory.GetFiles(packFolder, "*.idx", SearchOption.TopDirectoryOnly);
-                        foreach (string idxFile in files)
+                        var packFolder = Path.Combine(gitDirectory.FullName, "objects", "pack");
+                        var files = Directory.GetFiles(packFolder, "*.idx", SearchOption.TopDirectoryOnly);
+                        foreach (var idxFile in files)
                         {
-                            if (GitPackageOffset.TryGetPackageOffset(idxFile, gitInfo.Commit, out var packageOffset))
+                            if (GitPackageOffset.TryGetPackageOffset(idxFile, tempGitInfo.Commit, out var packageOffset))
                             {
                                 if (GitCommitObject.TryGetFromPackageOffset(packageOffset, out var commitObject))
                                 {
-                                    gitInfo.AuthorDate = commitObject.AuthorDate;
-                                    gitInfo.AuthorEmail = commitObject.AuthorEmail;
-                                    gitInfo.AuthorName = commitObject.AuthorName;
-                                    gitInfo.CommitterDate = commitObject.CommitterDate;
-                                    gitInfo.CommitterEmail = commitObject.CommitterEmail;
-                                    gitInfo.CommitterName = commitObject.CommitterName;
-                                    gitInfo.Message = commitObject.Message;
-                                    gitInfo.PgpSignature = commitObject.PgpSignature;
+                                    tempGitInfo.AuthorDate = commitObject.AuthorDate;
+                                    tempGitInfo.AuthorEmail = commitObject.AuthorEmail;
+                                    tempGitInfo.AuthorName = commitObject.AuthorName;
+                                    tempGitInfo.CommitterDate = commitObject.CommitterDate;
+                                    tempGitInfo.CommitterEmail = commitObject.CommitterEmail;
+                                    tempGitInfo.CommitterName = commitObject.CommitterName;
+                                    tempGitInfo.Message = commitObject.Message;
+                                    tempGitInfo.PgpSignature = commitObject.PgpSignature;
                                     break;
                                 }
                             }
@@ -251,9 +252,11 @@ namespace Datadog.Trace.Ci
             catch (Exception ex)
             {
                 Log.Error(ex, "GitInfo: Error loading git information from directory");
+                gitInfo = null;
                 return false;
             }
 
+            gitInfo = tempGitInfo;
             return true;
         }
 
