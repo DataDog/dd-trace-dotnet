@@ -92,7 +92,20 @@ namespace Datadog.Trace.Ci
         /// <returns>Git info</returns>
         public static GitInfo GetFrom(string folder)
         {
-            return GetFrom(new DirectoryInfo(folder));
+            // Try to load git metadata from the folder
+            if (TryGetFrom(new DirectoryInfo(folder), out var gitInfo))
+            {
+                return gitInfo;
+            }
+
+            // If not let's try to find the .git folder in a parent folder
+            if (TryGetFrom(GetParentGitFolder(folder), out var pFolderGitInfo))
+            {
+                return pFolderGitInfo;
+            }
+
+            // Return the partial gitInfo instance with the initial source root
+            return gitInfo;
         }
 
         /// <summary>
@@ -101,19 +114,21 @@ namespace Datadog.Trace.Ci
         /// <returns>Git info</returns>
         public static GitInfo GetCurrent()
         {
-            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            DirectoryInfo gitDirectory = GetParentGitFolder(baseDirectory) ?? GetParentGitFolder(Environment.CurrentDirectory);
-            return GetFrom(gitDirectory);
+            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            var gitDirectory = GetParentGitFolder(baseDirectory) ?? GetParentGitFolder(Environment.CurrentDirectory);
+            TryGetFrom(gitDirectory, out var gitInfo);
+            return gitInfo;
         }
 
-        private static GitInfo GetFrom(DirectoryInfo gitDirectory)
+        private static bool TryGetFrom(DirectoryInfo gitDirectory, out GitInfo gitInfo)
         {
             if (gitDirectory == null)
             {
-                return new GitInfo();
+                gitInfo = new GitInfo();
+                return false;
             }
 
-            GitInfo gitInfo = new GitInfo();
+            gitInfo = new GitInfo();
 
             try
             {
@@ -158,6 +173,11 @@ namespace Datadog.Trace.Ci
                         gitInfo.Commit = head;
                     }
                 }
+                else
+                {
+                    Log.Warning("GitInfo: HEAD file not found in the git directory: {GitDirectory}", headPath);
+                    return false;
+                }
 
                 // Process Git Config
                 string configPath = Path.Combine(gitDirectory.FullName, "config");
@@ -166,7 +186,8 @@ namespace Datadog.Trace.Ci
                 {
                     var remote = "origin";
 
-                    var branchItem = lstConfigs.Find(i => i.Type == "branch" && i.Merge == gitInfo.Branch);
+                    var localGitInfo = gitInfo;
+                    var branchItem = lstConfigs.Find(i => i.Type == "branch" && i.Merge == localGitInfo.Branch);
                     if (branchItem != null)
                     {
                         gitInfo.Branch = branchItem.Name;
@@ -229,10 +250,11 @@ namespace Datadog.Trace.Ci
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error loading git information from directory");
+                Log.Error(ex, "GitInfo: Error loading git information from directory");
+                return false;
             }
 
-            return gitInfo;
+            return true;
         }
 
         private static DirectoryInfo GetParentGitFolder(string innerFolder)
