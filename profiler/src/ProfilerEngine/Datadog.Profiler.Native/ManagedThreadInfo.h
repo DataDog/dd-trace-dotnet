@@ -31,11 +31,11 @@ public:
 struct ManagedThreadInfo : public IThreadInfo
 {
 private:
-    ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle, shared::WSTRING pThreadName);
+    ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pCorProfilerInfo, DWORD osThreadId, HANDLE osThreadHandle, shared::WSTRING pThreadName);
     static std::uint32_t GenerateProfilerThreadInfoId();
 
 public:
-    explicit ManagedThreadInfo(ThreadID clrThreadId);
+    explicit ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pCorProfilerInfo);
     ~ManagedThreadInfo() = default;
 
     inline std::uint32_t GetProfilerThreadInfoId() const;
@@ -91,6 +91,8 @@ public:
 #endif
     inline bool CanBeInterrupted() const;
 
+    inline AppDomainID GetAppDomainId();
+
 private:
     inline void BuildProfileThreadId();
     inline void BuildProfileThreadName();
@@ -133,6 +135,7 @@ private:
     // to know (for now, maybe more later) if the profiler interrupted a thread which was
     // doing a syscalls.
     volatile int* _sharedMemoryArea;
+    ICorProfilerInfo4* _info;
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()
@@ -415,3 +418,10 @@ inline void ManagedThreadInfo::SetSharedMemory(volatile int* memoryArea)
     _sharedMemoryArea = memoryArea;
 }
 #endif
+
+inline AppDomainID ManagedThreadInfo::GetAppDomainId()
+{
+    AppDomainID appDomainId{NULL};
+    HRESULT hr = _info->GetThreadAppDomain(_clrThreadId, &appDomainId);
+    return appDomainId;
+}

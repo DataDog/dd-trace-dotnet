@@ -19,12 +19,12 @@ std::uint32_t ManagedThreadInfo::GenerateProfilerThreadInfoId()
     return newId;
 }
 
-ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId) :
-    ManagedThreadInfo(clrThreadId, 0, static_cast<HANDLE>(0), shared::WSTRING())
+ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pCorProfilerInfo) :
+    ManagedThreadInfo(clrThreadId,pCorProfilerInfo, 0, static_cast<HANDLE>(0), shared::WSTRING())
 {
 }
 
-ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle, shared::WSTRING pThreadName) :
+ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pCorProfilerInfo, DWORD osThreadId, HANDLE osThreadHandle, shared::WSTRING pThreadName) :
     _profilerThreadInfoId{GenerateProfilerThreadInfoId()},
     _clrThreadId(clrThreadId),
     _osThreadId(osThreadId),
@@ -43,6 +43,7 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HAN
     _stackWalkLock(1),
     _isThreadDestroyed{false},
     _traceContextTrackingInfo{},
-    _sharedMemoryArea{nullptr}
+    _sharedMemoryArea{nullptr},
+    _info{pCorProfilerInfo}
 {
 }

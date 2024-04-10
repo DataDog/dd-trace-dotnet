@@ -155,14 +155,13 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     }
 
     result->SetUnixTimeUtc(GetCurrentTimestamp());
-    result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
     RawExceptionSample rawSample;
 
     rawSample.Timestamp = result->GetUnixTimeUtc();
     rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
     rawSample.SpanId = result->GetSpanId();
-    rawSample.AppDomainId = result->GetAppDomainId();
+    rawSample.AppDomainId = threadInfo->GetAppDomainId();
     result->CopyInstructionPointers(rawSample.Stack);
     rawSample.ThreadInfo = threadInfo;
     rawSample.ExceptionMessage = std::move(message);
