@@ -31,7 +31,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
         private const string UnSkippableSuiteName = "Samples.XUnitTests.UnSkippableSuite";
         private const int ExpectedTestCount = 16;
-        private const int EarlyFlakeDetectionExpectedTestCount = 115;
 
         public XUnitEvpTests(ITestOutputHelper output)
             : base("XUnitTests", output)
@@ -46,6 +45,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 yield return version.Concat("evp_proxy/v2", true);
                 yield return version.Concat("evp_proxy/v4", false);
+            }
+        }
+
+        public static IEnumerable<object[]> GetDataForEarlyFlakeDetection()
+        {
+            foreach (var row in GetData())
+            {
+                // settings json, efd tests json, expected spans
+
+                // EFD for all tests
+                yield return row.Concat(
+                    "{\"data\":{\"id\":\"511938a3f19c12f8bb5e5caa695ca24f4563de3f\",\"type\":\"ci_app_tracers_test_service_settings\",\"attributes\":{\"code_coverage\":false,\"early_flake_detection\":{\"enabled\":true,\"slow_test_retries\":{\"10s\":5,\"30s\":3,\"5m\":2,\"5s\":10},\"faulty_session_threshold\":100},\"flaky_test_retries_enabled\":false,\"itr_enabled\":true,\"require_git\":false,\"tests_skipping\":true}}}",
+                    "{\"data\":{\"id\":\"lNemDTwOV8U\",\"type\":\"ci_app_libraries_tests\",\"attributes\":{\"tests\":{}}}}",
+                    124);
+
+                // EFD with 1 test to bypass (TraitPassTest)
+                yield return row.Concat(
+                    "{\"data\":{\"id\":\"511938a3f19c12f8bb5e5caa695ca24f4563de3f\",\"type\":\"ci_app_tracers_test_service_settings\",\"attributes\":{\"code_coverage\":false,\"early_flake_detection\":{\"enabled\":true,\"slow_test_retries\":{\"10s\":5,\"30s\":3,\"5m\":2,\"5s\":10},\"faulty_session_threshold\":100},\"flaky_test_retries_enabled\":false,\"itr_enabled\":true,\"require_git\":false,\"tests_skipping\":true}}}",
+                    "{\"data\":{\"id\":\"lNemDTwOV8U\",\"type\":\"ci_app_libraries_tests\",\"attributes\":{\"tests\":{\"Samples.XUnitTests\":{\"Samples.XUnitTests.TestSuite\":[\"TraitPassTest\"]}}}}}",
+                    115);
+
+                // EFD with failure threshold
+                yield return row.Concat(
+                    "{\"data\":{\"id\":\"511938a3f19c12f8bb5e5caa695ca24f4563de3f\",\"type\":\"ci_app_tracers_test_service_settings\",\"attributes\":{\"code_coverage\":false,\"early_flake_detection\":{\"enabled\":true,\"slow_test_retries\":{\"10s\":5,\"30s\":3,\"5m\":2,\"5s\":10},\"faulty_session_threshold\":50},\"flaky_test_retries_enabled\":false,\"itr_enabled\":true,\"require_git\":false,\"tests_skipping\":true}}}",
+                    "{\"data\":{\"id\":\"lNemDTwOV8U\",\"type\":\"ci_app_libraries_tests\",\"attributes\":{\"tests\":{}}}}",
+                    79);
             }
         }
 
@@ -339,11 +364,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetData))]
+        [MemberData(nameof(GetDataForEarlyFlakeDetection))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
         [Trait("Category", "EarlyFlakeDetection")]
-        public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip)
+        public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans)
         {
             var tests = new List<MockCIVisibilityTest>();
             var testSuites = new List<MockCIVisibilityTestSuite>();
@@ -382,13 +407,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     {
                         if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
                         {
-                            e.Value.Response = new MockTracerResponse("{\"data\":{\"id\":\"511938a3f19c12f8bb5e5caa695ca24f4563de3f\",\"type\":\"ci_app_tracers_test_service_settings\",\"attributes\":{\"code_coverage\":false,\"early_flake_detection\":{\"enabled\":true,\"slow_test_retries\":{\"10s\":5,\"30s\":3,\"5m\":2,\"5s\":10},\"faulty_session_threshold\":100},\"flaky_test_retries_enabled\":false,\"itr_enabled\":true,\"require_git\":false,\"tests_skipping\":true}}}", 200);
+                            e.Value.Response = new MockTracerResponse(settingsJson, 200);
                             return;
                         }
 
                         if (e.Value.PathAndQuery.EndsWith("api/v2/ci/libraries/tests"))
                         {
-                            e.Value.Response = new MockTracerResponse("{\"data\":{\"id\":\"lNemDTwOV8U\",\"type\":\"ci_app_libraries_tests\",\"attributes\":{\"tests\":{\"Samples.XUnitTests\":{\"Samples.XUnitTests.TestSuite\":[\"TraitPassTest\"]}}}}}", 200);
+                            e.Value.Response = new MockTracerResponse(testsJson, 200);
                             return;
                         }
 
@@ -429,7 +454,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     using (var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings("all", null, null);
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings("all", null, null, null, null, expectedSpans);
                         settings.DisableRequireUniquePrefix();
                         await Verifier.Verify(
                             tests
@@ -441,7 +466,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             settings);
 
                         // Check the tests, suites and modules count
-                        Assert.Equal(EarlyFlakeDetectionExpectedTestCount, tests.Count);
+                        Assert.Equal(expectedSpans, tests.Count);
                         Assert.Equal(2, testSuites.Count);
                         Assert.Single(testModules);
                     }
