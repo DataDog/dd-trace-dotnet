@@ -34,7 +34,7 @@ namespace Samples.StackExchangeRedis
             catch (Exception ex)
                 when (ex.GetType().Name == "RedisConnectionException"
                    && (ex.Message.Contains("No connection is available to service this operation")
-                      || ex.Message.Contains("It was not possible to connect to the redis server"))
+                      || ex.Message.Contains("It was not possible to connect to the redis server")))
             {
                 // If the redis server is being too slow in responding, we can end up with timeouts
                 // We could do retries, but then we risk butting up against timeout limits etc
