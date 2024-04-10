@@ -51,19 +51,16 @@ internal class RetryMessageBus : IMessageBus
 
         // Let's store all messages for all executions of the given test, when the test case is finished,
         // we will try to find a passing execution to flush, is not we will flush the first one.
-        Common.Log.Debug<string, int>("QueueMessage: Found ITestCaseMessage: {Type} [{TotalExecutions}]", messageType.Name, totalExecutions);
         var currentExecutionNumber = ExecutionNumber + 1;
         var index = totalExecutions - currentExecutionNumber;
-
-        Common.Log.Debug<int, int>("QueueMessage: Current execution number is {CurrentExecutionNumber}, index is {Index}.", currentExecutionNumber, index);
         if (_listOfMessages is null)
         {
-            Common.Log.Debug<int>("Creating list of messages for {Executions} executions.", totalExecutions);
+            Common.Log.Debug<int>("EFD: RetryMessageBus.QueueMessage: Creating list of messages for {Executions} executions.", totalExecutions);
             _listOfMessages = new List<object>[totalExecutions];
         }
         else if (_listOfMessages.Length < totalExecutions)
         {
-            Common.Log.Debug<int>("Resizing array with list of messages for {Executions} executions.", totalExecutions);
+            Common.Log.Debug<int>("EFD: RetryMessageBus.QueueMessage: Resizing array with list of messages for {Executions} executions.", totalExecutions);
             Array.Resize(ref _listOfMessages, totalExecutions);
         }
 
@@ -80,7 +77,7 @@ internal class RetryMessageBus : IMessageBus
 
     public bool FlushMessages()
     {
-        Common.Log.Debug("Flushing RetryMessageBus messages");
+        Common.Log.Debug("EFD: RetryMessageBus.FlushMessages: Flushing messages");
         if (_listOfMessages is null || _listOfMessages.Length == 0)
         {
             return true;

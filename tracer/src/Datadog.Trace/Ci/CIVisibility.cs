@@ -639,7 +639,7 @@ namespace Datadog.Trace.Ci
                         settings.SetTestsSkippingEnabled(itrSettings.TestsSkipping.Value);
                     }
 
-                    if (itrSettings.EarlyFlakeDetection.Enabled == true)
+                    if (settings.EarlyFlakeDetectionEnabled == true || itrSettings.EarlyFlakeDetection.Enabled == true)
                     {
                         Log.Information("ITR: Early flake detection settings has been enabled by the settings api.");
                         EarlyFlakeDetectionSettings = itrSettings.EarlyFlakeDetection;

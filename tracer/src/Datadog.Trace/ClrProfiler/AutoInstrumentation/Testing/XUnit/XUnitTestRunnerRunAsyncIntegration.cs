@@ -73,10 +73,9 @@ public static class XUnitTestRunnerRunAsyncIntegration
         }
 
         // Try to ducktype the current instance to ITestClassRunner
-        Common.Log.Debug("Let's check if the current message bus is our own implementation.");
         if (!instance.TryDuckCast<ITestRunner>(out testRunnerInstance))
         {
-            Common.Log.Error("Current test runner instance cannot be ducktyped.");
+            Common.Log.Error("EFD: Current test runner instance cannot be ducktyped.");
             return CallTargetState.GetDefault();
         }
 
@@ -84,24 +83,21 @@ public static class XUnitTestRunnerRunAsyncIntegration
         RetryMessageBus retryMessageBus;
         if (testRunnerInstance.MessageBus is IDuckType { Instance: { } } ducktypedMessageBus)
         {
-            Common.Log.Debug("Current message bus is a duck type, retrieving RetryMessageBus instance");
+            Common.Log.Debug("EFD: Current message bus is a duck type, retrieving RetryMessageBus instance");
             retryMessageBus = (RetryMessageBus)ducktypedMessageBus.Instance;
         }
         else if (testRunnerInstance.MessageBus is { } messageBus)
         {
             // Let's replace the IMessageBus with our own implementation to process all results before sending them to the original bus
-            Common.Log.Debug("Current message bus is not a duck type");
+            Common.Log.Debug("EFD: Current message bus is not a duck type, creating new RetryMessageBus");
             var duckMessageBus = messageBus.DuckCast<IMessageBus>();
-            Common.Log.Debug("Getting the interface");
             var messageBusInterfaceType = messageBus.GetType().GetInterface("IMessageBus")!;
-            Common.Log.Debug("Create the new bus");
             retryMessageBus = new RetryMessageBus(duckMessageBus, 1, 1);
-            Common.Log.Debug("Create the new reverse duck type");
             testRunnerInstance.MessageBus = retryMessageBus.DuckImplement(messageBusInterfaceType);
         }
         else
         {
-            Common.Log.Error("Message bus is null.");
+            Common.Log.Error("EFD: Message bus is null.");
             return CallTargetState.GetDefault();
         }
 
@@ -127,7 +123,6 @@ public static class XUnitTestRunnerRunAsyncIntegration
         {
             if (messageBus is { TestIsNew: true, AbortByThreshold: false })
             {
-                Common.Log.Debug("Calculating execution index.");
                 var index = messageBus.ExecutionIndex;
                 if (index == 0)
                 {
@@ -137,27 +132,27 @@ public static class XUnitTestRunnerRunAsyncIntegration
                     if (slowRetriesSettings.FiveSeconds.HasValue && duration.TotalSeconds < 5)
                     {
                         messageBus.TotalExecutions = slowRetriesSettings.FiveSeconds.Value;
-                        Common.Log.Information<int>("Number of executions has been set to {Value} for this test that runs under 5 seconds.", messageBus.TotalExecutions);
+                        Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 seconds.", messageBus.TotalExecutions);
                     }
                     else if (slowRetriesSettings.TenSeconds.HasValue && duration.TotalSeconds < 10)
                     {
                         messageBus.TotalExecutions = slowRetriesSettings.TenSeconds.Value;
-                        Common.Log.Information<int>("Number of executions has been set to {Value} for this test that runs under 10 seconds.", messageBus.TotalExecutions);
+                        Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 10 seconds.", messageBus.TotalExecutions);
                     }
                     else if (slowRetriesSettings.ThirtySeconds.HasValue && duration.TotalSeconds < 30)
                     {
                         messageBus.TotalExecutions = slowRetriesSettings.ThirtySeconds.Value;
-                        Common.Log.Information<int>("Number of executions has been set to {Value} for this test that runs under 30 seconds.", messageBus.TotalExecutions);
+                        Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 30 seconds.", messageBus.TotalExecutions);
                     }
                     else if (slowRetriesSettings.FiveMinutes.HasValue && duration.TotalMinutes < 5)
                     {
                         messageBus.TotalExecutions = slowRetriesSettings.FiveMinutes.Value;
-                        Common.Log.Information<int>("Number of executions has been set to {Value} for this test that runs under 5 minutes.", messageBus.TotalExecutions);
+                        Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 minutes.", messageBus.TotalExecutions);
                     }
                     else
                     {
                         messageBus.TotalExecutions = 1;
-                        Common.Log.Information("Number of executions has been set to 1. Current test duration is {Value}", duration);
+                        Common.Log.Information("EFD: Number of executions has been set to 1. Current test duration is {Value}", duration);
                     }
 
                     messageBus.ExecutionNumber = messageBus.TotalExecutions - 1;
@@ -166,57 +161,63 @@ public static class XUnitTestRunnerRunAsyncIntegration
                 if (messageBus.ExecutionNumber > 0)
                 {
                     var retryNumber = messageBus.ExecutionIndex + 1;
-                    Common.Log.Debug<int, int>("[Retry {Num}] We need to retry, the current retry value is {Value}", retryNumber, messageBus.ExecutionNumber);
-
                     // Set the retry as a continuation of this execution. This will be executing recursively until the execution count is 0/
-                    Common.Log.Debug<int>("[Retry {Num}] Test class runner is duck casted, running a retry.", retryNumber);
+                    Common.Log.Debug<int, int>("EFD: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, messageBus.ExecutionNumber);
                     var innerReturnValue = await ((Task<TReturn>)testRunnerState.TestRunner.RunAsync()).ConfigureAwait(false);
-                    Common.Log.Debug<int>("[Retry {Num}] Duck casting the inner run summary.", retryNumber);
-                    var innerRunSummary = innerReturnValue.DuckCast<IRunSummary>()!;
-                    Common.Log.Debug<int>("[Retry {Num}] Duck casting the run summary.", retryNumber);
-                    var runSummary = returnValue.DuckCast<IRunSummary>()!;
-                    Common.Log.Debug<int>("[Retry {Num}] Aggregating.", retryNumber);
-                    runSummary.Aggregate(innerRunSummary);
+                    if (innerReturnValue.TryDuckCast<IRunSummary>(out var innerRunSummary) &&
+                        returnValue.TryDuckCast<IRunSummary>(out var runSummary))
+                    {
+                        Common.Log.Debug<int>("EFD: [Retry {Num}] Aggregating results.", retryNumber);
+                        runSummary.Aggregate(innerRunSummary);
+                    }
+                    else
+                    {
+                        Common.Log.Error<int>("EFD: [Retry {Num}] Unable to duck cast the return value to IRunSummary.", retryNumber);
+                    }
                 }
                 else
                 {
-                    Common.Log.Debug("All retries were executed.");
+                    Common.Log.Debug("EFD: All retries were executed.");
                 }
 
                 if (index == 0)
                 {
                     messageBus.FlushMessages();
 
-                    Common.Log.Debug("Removing skipped and failed if there's a least 1 success.");
-                    var runSummary = returnValue.DuckCast<IRunSummary>()!;
-
-                    // Let's clear the failed and skipped runs if we have at least one successful run
+                    if (returnValue.TryDuckCast<IRunSummary>(out var runSummary))
+                    {
+                        // Let's clear the failed and skipped runs if we have at least one successful run
 #pragma warning disable DDLOG004
-                    Common.Log.Debug($"Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
+                        Common.Log.Debug($"EFD: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
 #pragma warning restore DDLOG004
-                    var passed = runSummary.Total - runSummary.Skipped - runSummary.Failed;
-                    if (passed > 0)
-                    {
-                        runSummary.Total = 1;
-                        runSummary.Failed = 0;
-                        runSummary.Skipped = 0;
-                    }
-                    else if (runSummary.Skipped > 0)
-                    {
-                        runSummary.Total = 1;
-                        runSummary.Skipped = 1;
-                        runSummary.Failed = 0;
-                    }
-                    else if (runSummary.Failed > 0)
-                    {
-                        runSummary.Total = 1;
-                        runSummary.Skipped = 0;
-                        runSummary.Failed = 1;
-                    }
+                        var passed = runSummary.Total - runSummary.Skipped - runSummary.Failed;
+                        if (passed > 0)
+                        {
+                            runSummary.Total = 1;
+                            runSummary.Failed = 0;
+                            runSummary.Skipped = 0;
+                        }
+                        else if (runSummary.Skipped > 0)
+                        {
+                            runSummary.Total = 1;
+                            runSummary.Skipped = 1;
+                            runSummary.Failed = 0;
+                        }
+                        else if (runSummary.Failed > 0)
+                        {
+                            runSummary.Total = 1;
+                            runSummary.Skipped = 0;
+                            runSummary.Failed = 1;
+                        }
 
 #pragma warning disable DDLOG004
-                    Common.Log.Debug($"Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
+                        Common.Log.Debug($"EFD: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
 #pragma warning restore DDLOG004
+                    }
+                    else
+                    {
+                        Common.Log.Error("EFD: Unable to duck cast the return value to IRunSummary.");
+                    }
                 }
             }
             else
