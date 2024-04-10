@@ -92,9 +92,10 @@ internal class BlockingMiddleware
                 var result = securityCoordinator.Scan(_startPipeline);
                 if (result is not null)
                 {
-                    if (result.ShouldBlock)
+                    if (result.BlockInfo != null)
                     {
-                        var action = security.GetBlockingAction(result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                        // Use block info here
+                        var action = security.GetBlockingAction("block", context.Request.Headers.GetCommaSeparatedValues("Accept"));
                         await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                         securityCoordinator.MarkBlocked();
                     }
@@ -118,7 +119,8 @@ internal class BlockingMiddleware
             }
             catch (Exception e) when (GetBlockException(e) is { } blockException)
             {
-                var action = security.GetBlockingAction(blockException.Result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                // Use blockinfo here
+                var action = security.GetBlockingAction("block", context.Request.Headers.GetCommaSeparatedValues("Accept"));
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                 if (security.Enabled)
                 {

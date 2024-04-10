@@ -40,7 +40,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(WafReturnCode.Match);
             result!.Actions.Should().NotBeEmpty();
-            result!.Actions.Should().Contain("block");
+            result!.Actions!.ContainsKey("block_request").Should().BeTrue();
             result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
                 WafTests.TimeoutMicroSeconds);
@@ -90,8 +90,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(WafReturnCode.Match);
             result.Actions.Should().NotBeEmpty();
-            result.Actions.Should().Contain("block");
-            result.ShouldBlock.Should().BeTrue();
+            result.Actions!.ContainsKey("block_request").Should().BeTrue();
+            result.BlockInfo.Should().NotBeNull();
         }
     }
 }

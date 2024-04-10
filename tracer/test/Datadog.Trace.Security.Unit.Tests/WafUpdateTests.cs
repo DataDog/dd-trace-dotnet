@@ -161,8 +161,8 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             if (expectedAction != null)
             {
-                result.ShouldBlock.Should().BeTrue();
-                result.Actions.Should().OnlyContain(s => s == expectedAction);
+                result.BlockInfo.Should().NotBeNull();
+                result.Actions.Keys.Should().OnlyContain(s => s == expectedAction);
             }
         }
     }

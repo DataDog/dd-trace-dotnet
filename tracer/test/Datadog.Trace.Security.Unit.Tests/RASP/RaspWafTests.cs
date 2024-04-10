@@ -19,7 +19,7 @@ namespace Datadog.Trace.Rasp.Unit.Tests;
 public class RaspWafTests : WafLibraryRequiredTest
 {
     [Theory]
-    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "block")]
+    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "block_request")]
     public void PathTraversalRule(string value, string paramValue, string rule, string ruleFile, string action)
     {
         Execute(
@@ -41,11 +41,12 @@ public class RaspWafTests : WafLibraryRequiredTest
 
     private void ExecuteInternal(string address, object value, string requestParam, string rule, bool newEncoder, string ruleFile, string expectedAction = null, int runNtimes = 1)
     {
-        var args = new Dictionary<string, object>();
-
-        args.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
-        args.Add(AddressesConstants.RequestBody, new[] { "param", requestParam });
-        args.Add(AddressesConstants.RequestMethod, "GET");
+        var args = new Dictionary<string, object>
+        {
+            { AddressesConstants.RequestUriRaw, "http://localhost:54587/" },
+            { AddressesConstants.RequestBody, new[] { "param", requestParam } },
+            { AddressesConstants.RequestMethod, "GET" }
+        };
 
         var initResult = Waf.Create(
             WafLibraryInvoker,
@@ -72,7 +73,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         result.ReturnCode.Should().Be(WafReturnCode.Match);
         if (!string.IsNullOrEmpty(expectedAction))
         {
-            result.Actions[0].Should().BeEquivalentTo(expectedAction);
+            result.Actions.ContainsKey(expectedAction).Should().BeTrue();
         }
 
         var jsonString = JsonConvert.SerializeObject(result.Data);

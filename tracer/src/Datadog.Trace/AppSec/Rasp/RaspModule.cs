@@ -45,7 +45,7 @@ internal static class RaspModule
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, Tracer.Instance.InternalActiveScope.Root.Span);
         var result = securityCoordinator.RunWaf(arguments, (log, ex) => log.Error(ex, "Error in RASP."), true);
 
-        if (result?.ShouldSendStack == true && Security.Instance.Settings.StackTraceEnabled)
+        if (result?.SendStackInfo != null && Security.Instance.Settings.StackTraceEnabled)
         {
             // TODO: Right now, the WAF does not generate a stack_id, but it will in the future, so
             // we are creating a stack id and adding it to the result as a temporary solution.

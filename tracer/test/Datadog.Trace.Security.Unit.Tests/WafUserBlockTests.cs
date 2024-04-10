@@ -40,7 +40,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(WafReturnCode.Match);
             result!.Actions.Should().NotBeEmpty();
-            result!.Actions.Should().Contain("block");
+            result!.Actions!.ContainsKey("block").Should().BeTrue();
             result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.UserId, "user4" } },
                 WafTests.TimeoutMicroSeconds);

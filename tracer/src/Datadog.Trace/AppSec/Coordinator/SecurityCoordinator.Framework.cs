@@ -277,9 +277,9 @@ internal readonly partial struct SecurityCoordinator
         {
             var reporting = MakeReportingFunction(result);
             // here we assume if we haven't blocked we'll have collected the correct status elsewhere
-            reporting(null, result.ShouldBlock);
+            reporting(null, result.BlockInfo != null);
 
-            if (result.ShouldBlock)
+            if (result.BlockInfo != null)
             {
                 ChooseBlockingMethodAndBlock(result, reporting);
             }
@@ -292,13 +292,13 @@ internal readonly partial struct SecurityCoordinator
         {
             var reporting = MakeReportingFunction(result);
 
-            if (result.ShouldBlock)
+            if (result.BlockInfo != null)
             {
                 ChooseBlockingMethodAndBlock(result, reporting);
             }
 
             // here we assume if we haven't blocked we'll have collected the correct status elsewhere
-            reporting(null, result.ShouldBlock);
+            reporting(null, result.BlockInfo != null);
         }
     }
 
@@ -307,7 +307,7 @@ internal readonly partial struct SecurityCoordinator
         var securityCoordinator = this;
         return (status, blocked) =>
         {
-            if (result.ShouldBlock)
+            if (result.BlockInfo != null)
             {
                 securityCoordinator._httpTransport.MarkBlocked();
             }
@@ -318,7 +318,7 @@ internal readonly partial struct SecurityCoordinator
 
     private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting)
     {
-        var blockingAction = _security.GetBlockingAction(result.Actions[0], [_context.Request.Headers["Accept"]]);
+        var blockingAction = _security.GetBlockingAction("block", [_context.Request.Headers["Accept"]]);
         var isWebApiRequest = _context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
         if (isWebApiRequest)
         {
