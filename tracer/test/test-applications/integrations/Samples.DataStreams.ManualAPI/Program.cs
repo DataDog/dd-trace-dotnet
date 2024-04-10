@@ -46,7 +46,7 @@ public class Program
             Console.WriteLine("Retrying to receive");
         }
 
-        var (headers, content) = Parse(result);
+        var headers = Parse(result, out var content);
         Console.WriteLine($"Parsed {headers.Count} headers");
         var extractor = new SpanContextExtractor();
         var extractedContext = extractor.ExtractIncludingDsm(
@@ -70,13 +70,14 @@ public class Program
     }
 
     /// <returns>headers and message</returns>
-    private static (Dictionary<string, string>, string) Parse(string msg)
+    private static Dictionary<string, string> Parse(string raw, out string msg)
     {
-        var content = msg.Split(separator: ';');
+        var content = raw.Split(separator: ';');
         var headers = content
                      .SkipLast(count: 1)
                      .Select(s => s.Split(separator: ':'))
                      .ToDictionary(a => a[0], a => a[1]);
-        return (headers, content.Last());
+        msg = content.Last();
+        return headers;
     }
 }
