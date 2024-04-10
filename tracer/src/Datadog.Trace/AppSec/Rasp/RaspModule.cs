@@ -15,6 +15,8 @@ namespace Datadog.Trace.AppSec.Rasp;
 
 internal static class RaspModule
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
+
     internal static void OnLfi(string file)
     {
         CheckVulnerability(AddressesConstants.FileAccess, file);
@@ -47,46 +49,32 @@ internal static class RaspModule
 
         if (result?.SendStackInfo != null && Security.Instance.Settings.StackTraceEnabled)
         {
-            // TODO: Right now, the WAF does not generate a stack_id, but it will in the future, so
-            // we are creating a stack id and adding it to the result as a temporary solution.
-            // This code will be removed when the WAF generates the stack id.
-            var stackId = SendStack(rootSpan);
+            result.SendStackInfo.TryGetValue("stack_id", out var stackIdObject);
+            var stackId = stackIdObject as string;
 
-            if (!string.IsNullOrEmpty(stackId))
+            if (stackId is null)
             {
-                AddStackIdToResult(stackId!, result);
+                Log.Warning("RASP: A stack was received without Id.");
+            }
+            else
+            {
+                SendStack(rootSpan, stackId);
             }
         }
 
         securityCoordinator.CheckAndBlockRasp(result);
     }
 
-    private static void AddStackIdToResult(string stackId, IResult result)
+    private static bool SendStack(Span rootSpan, string id)
     {
-        var data = result.Data as List<object>;
-
-        if (data is not null)
-        {
-            foreach (var item in data)
-            {
-                if (item is Dictionary<string, object> dictionary)
-                {
-                    dictionary["stack_id"] = stackId;
-                }
-            }
-        }
-    }
-
-    private static string? SendStack(Span rootSpan)
-    {
-        var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth);
+        var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, id);
 
         if (stack.HasValue)
         {
             rootSpan.Context.TraceContext.AddStackTraceElement(stack.Value, Security.Instance.Settings.MaxStackTraces);
-            return stack.Value.Id;
+            return true;
         }
 
-        return null;
+        return false;
     }
 }

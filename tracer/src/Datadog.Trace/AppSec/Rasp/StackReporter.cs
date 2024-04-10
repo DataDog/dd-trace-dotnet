@@ -17,7 +17,7 @@ internal static class StackReporter
 {
     private const string _language = "dotnet";
 
-    public static StackTraceInfo? GetStack(int maxStaxckTraceDepth)
+    public static StackTraceInfo? GetStack(int maxStaxckTraceDepth, string id)
     {
         var frames = GetFrames(maxStaxckTraceDepth);
 
@@ -26,7 +26,6 @@ internal static class StackReporter
             return null;
         }
 
-        var id = Guid.NewGuid().ToString();
         var stack = new StackTraceInfo(null, _language, id, null, frames);
 
         return stack;
