@@ -17,8 +17,8 @@ public class Program
         var writing = Send("my message");
         var reading = Receive();
 
-        // wait up to 1 second for threads
-        await Task.WhenAny(Task.WhenAll(reading, writing), Task.Delay(millisecondsDelay: 1000));
+        // wait up to 20 second for threads
+        await Task.WhenAny(Task.WhenAll(reading, writing), Task.Delay(TimeSpan.FromSeconds(value: 20)));
     }
 
     private static async Task Send(string message)
