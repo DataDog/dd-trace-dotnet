@@ -128,7 +128,7 @@ internal static class XUnitIntegration
                         // TODO: Implement an IPC mechanism to communicate with the parent process with the test session instance
                         test.SetTag(EarlyFlakeDetectionTags.TestIsNew, (string?)null);
                         retryMessageBus.AbortByThreshold = true;
-                        Common.Log.Warning<long, long, int>("The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", newTestCases, totalTestCases, faultySessionThreshold);
+                        Common.Log.Warning<long, long, int>("EFD: The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", newTestCases, totalTestCases, faultySessionThreshold);
                     }
                 }
             }
