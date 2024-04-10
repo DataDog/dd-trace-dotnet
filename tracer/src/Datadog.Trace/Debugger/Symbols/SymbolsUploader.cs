@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 using System;
 using System.Collections.Generic;
@@ -48,7 +49,13 @@ namespace Datadog.Trace.Debugger.Symbols
         private string? _symDbEndpoint;
         private bool _isSymDbEnabled;
 
-        private SymbolsUploader(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
+        private SymbolsUploader(
+            IBatchUploadApi api,
+            IDiscoveryService discoveryService,
+            IRcmSubscriptionManager remoteConfigurationManager,
+            DebuggerSettings settings,
+            ImmutableTracerSettings tracerSettings,
+            string serviceName)
         {
             _symDbEndpoint = null;
             _alreadyProcessed = new HashSet<string>();
@@ -118,8 +125,8 @@ namespace Datadog.Trace.Debugger.Symbols
 
         public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
         {
-            var isSymbolUploadDisabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false")?.ToBoolean() ?? true;
-            if (isSymbolUploadDisabled)
+            var isSymbolUploadEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false")?.ToBoolean() ?? false;
+            if (!isSymbolUploadEnabled)
             {
                 Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
                 return new NoOpSymbolUploader();
@@ -341,9 +348,9 @@ namespace Datadog.Trace.Debugger.Symbols
 
             RegisterToAssemblyLoadEvent();
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            for (var i = 0; i < assemblies.Length; i++)
+            foreach (var assembly in assemblies)
             {
-                await ProcessItemAsync(assemblies[i]).ConfigureAwait(false);
+                await ProcessItemAsync(assembly).ConfigureAwait(false);
             }
         }
 

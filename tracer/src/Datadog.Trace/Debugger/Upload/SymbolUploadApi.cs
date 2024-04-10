@@ -35,7 +35,7 @@ namespace Datadog.Trace.Debugger.Upload
             _apiRequestFactory = apiRequestFactory;
             _eventMetadata = eventMetadata;
 
-            discoveryService.SubscribeToChanges(c => Endpoint = c.DebuggerEndpoint);
+            discoveryService.SubscribeToChanges(c => Endpoint = c.SymbolDbEndpoint);
         }
 
         public static IBatchUploadApi Create(
