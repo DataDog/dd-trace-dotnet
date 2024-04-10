@@ -171,7 +171,8 @@ namespace Datadog.Trace.AppSec
 
             try
             {
-                var anyChange = _configurationStatus.StoreConfigs(configsByProduct, removedConfigs);
+                // store the last config state, clearing any previous state, without deserializing any payloads yet.
+                var anyChange = _configurationStatus.StoreLastConfigState(configsByProduct, removedConfigs);
                 var securityStateChange = Enabled != _configurationStatus.EnableAsm;
 
                 // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case

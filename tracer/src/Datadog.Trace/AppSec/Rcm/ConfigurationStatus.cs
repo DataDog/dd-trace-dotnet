@@ -8,21 +8,24 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using Datadog.Trace.Vendors.Serilog;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
+/// <summary>
+/// This class represents the state of RCM for ASM.
+/// It has 2 possible status:
+/// - ASM is not activated, and _fileUpdates/_fileRemoves contain some pending non-deserialized changes to apply when ASM_FEATURES activate ASM. Every time an RC payload is received here, pending changes are reset to the last ones
+/// - ASM is activated, stored configs in _fileUpdates/_fileRemoves are applied every time.
+/// </summary>
 internal record ConfigurationStatus
 {
     internal const string WafRulesKey = "rules";
@@ -145,10 +148,12 @@ internal record ConfigurationStatus
     }
 
     /// <summary>
-    /// Calls each file updater to deserialize all remote config payloads and store them in the proper dictionaries with involved merges
+    /// Calls each product updater to deserialize all remote config payloads and store them properly in dictionaries which might involve various logical merges
+    /// This method deserializes everything stored in _fileUpdates. ConfigurationStatus will have a *bigger* memory footprint.
     /// </summary>
     public void ApplyStoredFiles()
     {
+        // no need to clear _fileUpdates / _fileRemoves after they've been applied, as when we receive a new config, `StoreLastConfigState` method will clear anything remaining anyway.
         foreach (var updater in _productConfigUpdaters)
         {
             var fileUpdates = _fileUpdates.TryGetValue(updater.Key, out var value);
@@ -165,9 +170,16 @@ internal record ConfigurationStatus
         }
     }
 
-    public bool StoreConfigs(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
+    /// <summary>
+    /// This method just stores the config state without deserializing anything, this state will be ready to use and deserialized if ASM is enabled later on.
+    /// This method considers that RC sends us everything again, the whole state together. That's why it's clearing all unapplied updates / removals before processing the last ones received.
+    /// In case ASM remained disabled, we discard previous updates and removals stored here that were never applied.
+    /// </summary>
+    /// <param name="configsByProduct">configsByProduct</param>
+    /// <param name="removedConfigs">removedConfigs</param>
+    /// <returns>whether or not there is any change, i.e any update/removal</returns>
+    public bool StoreLastConfigState(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
     {
-        // todo make sure remote config sends everything again, normally yes
         _fileUpdates.Clear();
         _fileRemoves.Clear();
         List<RemoteConfiguration> asmFeaturesToUpdate = new();
