@@ -421,7 +421,11 @@ inline void ManagedThreadInfo::SetSharedMemory(volatile int* memoryArea)
 
 inline AppDomainID ManagedThreadInfo::GetAppDomainId()
 {
-    AppDomainID appDomainId{NULL};
+    // This function will be called in the signal handler.
+    // As far as I saw, this function is safe'ish to be called from a signal handler.
+    // If at some point, it's not safe anymore, we will have to rethink how we get
+    // the AppDomainID from a signal handler.
+    AppDomainID appDomainId{0};
     HRESULT hr = _info->GetThreadAppDomain(_clrThreadId, &appDomainId);
     return appDomainId;
 }
