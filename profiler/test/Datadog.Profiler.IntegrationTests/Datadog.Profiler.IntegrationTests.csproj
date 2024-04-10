@@ -28,6 +28,9 @@
     <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockSpan.cs">
       <Link>Tracer\MockSpan.cs</Link>
     </Compile>
+    <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockSpanLink.cs">
+      <Link>Tracer\MockSpanLink.cs</Link>
+    </Compile>
     <Compile Include="..\..\..\tracer\src\Datadog.Trace\Tags.cs">
       <Link>Tracer\Tags.cs</Link>
     </Compile>

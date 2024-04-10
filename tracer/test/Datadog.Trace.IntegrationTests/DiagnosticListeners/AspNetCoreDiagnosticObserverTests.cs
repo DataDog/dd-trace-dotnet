@@ -94,18 +94,12 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 expandRouteParameters: true);
         }
 
+#if NETCOREAPP3_0_OR_GREATER
         [SkippableTheory]
         [MemberData(nameof(AspNetCoreRazorPagesTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreRazorPagesTestData))]
         public async Task DiagnosticObserver_ForRazorPages_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
         {
-#if NETCOREAPP2_1
-            if (EnvironmentTools.IsLinux())
-            {
-                throw new SkipException("This test fails on Linux due to `The configured user limit (128) on the number of inotify instances has been reached`. Reenable if/when we find time to resolve it");
-            }
-#endif
-
-            await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(path, statusCode, isError, resourceName, expectedTags);
+            await AssertDiagnosticObserverSubmitsSpans<RazorPagesStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
 
         [SkippableTheory]
@@ -122,7 +116,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             string childSpan2ResourceName,
             SerializableDictionary secondChildSpanTags)
         {
-            await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(
+            await AssertDiagnosticObserverSubmitsSpans<RazorPagesStartup>(
                 path,
                 statusCode,
                 isError,
@@ -150,14 +144,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             string childSpan2ResourceName,
             SerializableDictionary secondChildSpanTags)
         {
-#if NETCOREAPP2_1
-            if (EnvironmentTools.IsLinux())
-            {
-                throw new SkipException("This test fails on Linux due to `The configured user limit (128) on the number of inotify instances has been reached`. Reenable if/when we find time to resolve it");
-            }
-#endif
-
-            await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(
+            await AssertDiagnosticObserverSubmitsSpans<RazorPagesStartup>(
                 path,
                 statusCode,
                 isError,
@@ -172,7 +159,6 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 expandRouteParameters: true);
         }
 
-#if !NETCOREAPP2_1
         [SkippableTheory]
         [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
         public async Task DiagnosticObserver_ForEndpointRouting_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
