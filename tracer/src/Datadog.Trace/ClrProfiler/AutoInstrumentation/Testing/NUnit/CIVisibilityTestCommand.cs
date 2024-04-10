@@ -14,32 +14,65 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 internal class CIVisibilityTestCommand
 {
     private readonly ITestCommand _innerCommand;
-    private readonly int _retries;
 
-    public CIVisibilityTestCommand(ITestCommand innerCommand, int retries)
+    public CIVisibilityTestCommand(ITestCommand innerCommand)
     {
         _innerCommand = innerCommand;
-        _retries = retries;
     }
 
     [DuckReverseMethod]
-    public object Execute(object contextObject)
+    public object? Execute(object contextObject)
     {
         var context = contextObject.TryDuckCast<ITestExecutionContextWithRepeatCount>(out var contextWithRepeatCount) ?
                           contextWithRepeatCount :
                           contextObject.DuckCast<ITestExecutionContext>();
-
         var executionNumber = 0;
-        var result = ExecuteTest(context, executionNumber++);
+        var startTime = TraceClock.Instance.UtcNow;
+        var result = ExecuteTest(context, executionNumber++, out var isTestNew);
+        var duration = TraceClock.Instance.UtcNow - startTime;
         if (result.ResultState.Status != TestStatus.Skipped &&
-            result.ResultState.Status != TestStatus.Inconclusive)
+            result.ResultState.Status != TestStatus.Inconclusive &&
+            isTestNew)
         {
+            // Get retries number
+            int remainingRetries;
+            var slowRetriesSettings = CIVisibility.EarlyFlakeDetectionSettings.SlowTestRetries;
+            if (slowRetriesSettings.FiveSeconds.HasValue && duration.TotalSeconds < 5)
+            {
+                remainingRetries = slowRetriesSettings.FiveSeconds.Value;
+                Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 seconds.", remainingRetries);
+            }
+            else if (slowRetriesSettings.TenSeconds.HasValue && duration.TotalSeconds < 10)
+            {
+                remainingRetries = slowRetriesSettings.TenSeconds.Value;
+                Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 10 seconds.", remainingRetries);
+            }
+            else if (slowRetriesSettings.ThirtySeconds.HasValue && duration.TotalSeconds < 30)
+            {
+                remainingRetries = slowRetriesSettings.ThirtySeconds.Value;
+                Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 30 seconds.", remainingRetries);
+            }
+            else if (slowRetriesSettings.FiveMinutes.HasValue && duration.TotalMinutes < 5)
+            {
+                remainingRetries = slowRetriesSettings.FiveMinutes.Value;
+                Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 minutes.", remainingRetries);
+            }
+            else
+            {
+                remainingRetries = 1;
+                Common.Log.Information("EFD: Number of executions has been set to 1. Current test duration is {Value}", duration);
+            }
+
             // Retries
-            ClearResultForRetry();
-            var remainingRetries = _retries;
+            var retryNumber = 0;
+            var totalRetries = --remainingRetries;
             while (remainingRetries-- > 0)
             {
-                var retryResult = ExecuteTest(context, executionNumber++);
+                retryNumber++;
+                Common.Log.Debug<int, int>("EFD: [Retry {Num}] Running retry of {TotalRetries}.", retryNumber, totalRetries);
+                ClearResultForRetry(context);
+                var retryResult = ExecuteTest(context, executionNumber++, out _);
+                Common.Log.Debug<int>("EFD: [Retry {Num}] Aggregating results.", retryNumber);
                 result.Duration += retryResult.Duration;
                 result.StartTime = result.StartTime < retryResult.StartTime ? result.StartTime : retryResult.StartTime;
                 result.EndTime = result.EndTime > retryResult.EndTime ? result.EndTime : retryResult.EndTime;
@@ -73,30 +106,29 @@ internal class CIVisibilityTestCommand
                         result.AssertionResults.Add(assertionResult);
                     }
                 }
+            }
 
-                // Clear result for retry
-                if (remainingRetries > 0)
-                {
-                    ClearResultForRetry();
-                }
+            if (retryNumber > 0)
+            {
+                Common.Log.Debug("EFD: All retries were executed.");
             }
         }
 
         context.CurrentResult = result;
         return result.Instance!;
+    }
 
-        void ClearResultForRetry()
+    private void ClearResultForRetry(ITestExecutionContext context)
+    {
+        context.CurrentResult = context.CurrentTest.MakeTestResult();
+        if (context is ITestExecutionContextWithRepeatCount tmpContextWithRepeatCount)
         {
-            context.CurrentResult = context.CurrentTest.MakeTestResult();
-            if (context is ITestExecutionContextWithRepeatCount tmpContextWithRepeatCount)
-            {
-                // increment Retry count for next iteration. will only happen if we are guaranteed another iteration
-                tmpContextWithRepeatCount.CurrentRepeatCount++;
-            }
+            // increment Retry count for next iteration. will only happen if we are guaranteed another iteration
+            tmpContextWithRepeatCount.CurrentRepeatCount++;
         }
     }
 
-    private ITestResult ExecuteTest(ITestExecutionContext context, int executionNumber)
+    private ITestResult ExecuteTest(ITestExecutionContext context, int executionNumber, out bool isTestNew)
     {
         var test = NUnitIntegration.GetOrCreateTest(context.CurrentTest, executionNumber);
         ITestResult? testResult = null;
@@ -112,8 +144,10 @@ internal class CIVisibilityTestCommand
             testResult.RecordException(ex);
         }
 
+        isTestNew = false;
         if (test is not null)
         {
+            isTestNew = test.GetTags().EarlyFlakeDetectionTestIsNew == "true";
             NUnitIntegration.FinishTest(test, testResult);
         }
 

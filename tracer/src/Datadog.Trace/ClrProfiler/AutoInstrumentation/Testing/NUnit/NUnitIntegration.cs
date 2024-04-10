@@ -35,7 +35,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         internal static Test? GetOrCreateTest(ITest currentTest, int repeatCount = 0)
         {
             var key = $"{currentTest.Id}|{repeatCount}";
-            Common.Log.Information("GetOrCreateTest: {Key}", key);
             lock (Tests)
             {
                 if (Tests.TryGetValue(key, out var testReference) && testReference.TryGetTarget(out var test))
@@ -82,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         {
             if (testCommand.TryDuckCast<ITestCommand>(out var duckTypedTestCommand))
             {
-                var retryTestCommand = new CIVisibilityTestCommand(duckTypedTestCommand, 0);
+                var retryTestCommand = new CIVisibilityTestCommand(duckTypedTestCommand);
                 return (TTestCommand)retryTestCommand.DuckImplement(typeof(TTestCommand));
             }
 
@@ -286,15 +285,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             // Early flake detection flags
-            if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true &&
-                !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty))
+            if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true)
             {
-                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
-            }
+                var isTestNew = !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
+                if (isTestNew)
+                {
+                    test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
+                }
 
-            if (isRetry)
-            {
-                test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                if (isRetry)
+                {
+                    test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                }
             }
 
             // Test code and code owners
