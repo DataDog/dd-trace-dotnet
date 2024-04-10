@@ -1343,9 +1343,6 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: tracer\build.cmd CheckBuildLogsForErrors
-      displayName: Check logs for errors
-
 - stage: integration_tests_windows_debugger
   condition: >
     and(
@@ -1406,9 +1403,6 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: tracer\build.cmd CheckBuildLogsForErrors
-      displayName: Check logs for errors
-
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
@@ -1466,9 +1460,6 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: tracer\build.cmd CheckBuildLogsForErrors
-      displayName: Check logs for errors
-
 - stage: integration_tests_windows_iis_security
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
@@ -1525,9 +1516,6 @@ stages:
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-    - script: tracer\build.cmd CheckBuildLogsForErrors
-      displayName: Check logs for errors
 
 - stage: integration_tests_azure_functions
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
@@ -1593,9 +1581,6 @@ stages:
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-    - script: tracer\build.cmd CheckBuildLogsForErrors
-      displayName: Check logs for errors
 
     - script: |
         $(runtimeUninstall)
@@ -1819,9 +1804,6 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: tracer\build.cmd CheckBuildLogsForErrors
-      displayName: Check logs for errors
-
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_linux, generate_variables, merge_commit_id]
@@ -1908,12 +1890,6 @@ stages:
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        baseImage: $(baseImage)
-        command: "CheckBuildLogsForErrors"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
 
   - job: DockerTest
     timeoutInMinutes: 60 #default value
@@ -2013,12 +1989,6 @@ stages:
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        baseImage: $(baseImage)
-        command: "CheckBuildLogsForErrors"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
 
   - job: Serverless
     timeoutInMinutes: 60
@@ -2204,12 +2174,6 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - template: steps/run-in-docker.yml
-      parameters:
-        baseImage: $(baseImage)
-        command: "CheckBuildLogsForErrors"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
-
 - stage: integration_tests_linux_debugger
   condition: >
     and(
@@ -2299,12 +2263,6 @@ stages:
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        baseImage: $(baseImage)
-        command: "CheckBuildLogsForErrors"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: profiler_integration_tests_windows
   condition: >
@@ -2720,12 +2678,6 @@ stages:
           condition: succeededOrFailed()
           continueOnError: true
 
-        - template: steps/run-in-docker.yml
-          parameters:
-            baseImage: $(baseImage)
-            command: "CheckBuildLogsForErrors"
-            apiKey: $(DD_LOGGER_DD_API_KEY)
-
     - job: DockerTest
       timeoutInMinutes: 60 #default value
       strategy:
@@ -2821,12 +2773,6 @@ stages:
           condition: succeededOrFailed()
           continueOnError: true
 
-        - template: steps/run-in-docker.yml
-          parameters:
-            baseImage: $(baseImage)
-            command: "CheckBuildLogsForErrors"
-            apiKey: $(DD_LOGGER_DD_API_KEY)
-
 - stage: integration_tests_arm64_debugger
   condition: >
     and(
@@ -2909,12 +2855,6 @@ stages:
           condition: succeededOrFailed()
           continueOnError: true
 
-        - template: steps/run-in-docker.yml
-          parameters:
-            baseImage: $(baseImage)
-            command: "CheckBuildLogsForErrors"
-            apiKey: $(DD_LOGGER_DD_API_KEY)
-
 - stage: exploration_tests_windows
   condition: >
     and(
@@ -2970,9 +2910,6 @@ stages:
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-    - script: tracer\build.cmd CheckBuildLogsForErrors
-      displayName: Check logs for errors
 
 - stage: exploration_tests_linux
   condition: >
@@ -3072,11 +3009,6 @@ stages:
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        baseImage: $(baseImage)
-        command: "CheckBuildLogsForErrors"
 
 - stage: benchmarks
   condition: and(succeeded(), eq(variables.isMainRepository, true))
@@ -6080,3 +6012,51 @@ stages:
         -d '{"commit": "'$sha'"}' \
           $(slackWebhookUrl)
       displayName: "notify"
+
+# Run this stage if the dependencies succeeded or were skipped
+# Don't run if they failed to avoid additional noise
+- stage: check_logs_for_errors
+  condition: |
+    and(
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      in(dependencies.integration_tests_windows.result, 'Succeeded','SucceededWithIssues','Skipped'),
+      in(dependencies.integration_tests_windows_debugger.result, 'Succeeded','SucceededWithIssues','Skipped'),
+      in(dependencies.integration_tests_windows_iis.result, 'Succeeded','SucceededWithIssues','Skipped'),
+      in(dependencies.integration_tests_windows_iis_security.result, 'Succeeded','SucceededWithIssues','Skipped'),
+      in(dependencies.integration_tests_azure_functions.result, 'Succeeded','SucceededWithIssues','Skipped'),
+      in(dependencies.msi_integration_tests_windows.result, 'Succeeded','SucceededWithIssues','Skipped'),
+      in(dependencies.integration_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
+      in(dependencies.integration_tests_linux_debugger.result, 'Succeeded','SucceededWithIssues','Skipped'),
+      in(dependencies.integration_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
+      in(dependencies.integration_tests_arm64_debugger.result, 'Succeeded','SucceededWithIssues','Skipped'),
+      in(dependencies.exploration_tests_windows.result, 'Succeeded','SucceededWithIssues','Skipped'),
+      in(dependencies.exploration_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped')
+    )
+  dependsOn:
+  - integration_tests_windows
+  - integration_tests_windows_debugger
+  - integration_tests_windows_iis
+  - integration_tests_windows_iis_security
+  - integration_tests_azure_functions
+  - msi_integration_tests_windows
+  - integration_tests_linux
+  - integration_tests_linux_debugger
+  - integration_tests_arm64
+  - integration_tests_arm64_debugger
+  - exploration_tests_windows
+  - exploration_tests_linux
+
+  jobs:
+    - job: check_logs
+      timeoutInMinutes: 60 #default value
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+        - template: steps/install-latest-dotnet-sdk.yml
+
+        - task: DownloadPipelineArtifact@2
+          inputs:
+            patterns: '*_logs_*/**/*.log'
+            path: $(Build.SourcesDirectory)/tracer/build_data
+
+        - bash: ./tracer/build.sh CheckBuildLogsForErrors 
