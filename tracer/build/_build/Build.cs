@@ -436,9 +436,9 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetPack(x => x
-                // we have to restore and build dependencies to make sure we remove the pdb and xml files
                 .SetProject(Solution.GetProject(Projects.DdTrace))
                 .SetConfiguration(BuildConfiguration)
+                .EnableNoDependencies()
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
@@ -471,7 +471,7 @@ partial class Build : NukeBuild
                 .SetProject(Solution.GetProject(Projects.DdTrace))
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
-                // .EnableNoDependencies()
+                .EnableNoDependencies()
                 .SetFramework(TargetFramework.NET7_0)
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
