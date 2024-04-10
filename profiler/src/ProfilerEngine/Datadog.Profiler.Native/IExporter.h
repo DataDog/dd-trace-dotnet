@@ -5,6 +5,10 @@
 #include <memory>
 #include <string>
 
+#include "ApplicationInfo.h"
+
+#include "IProfilerTelemetry.h"
+
 // forward declarations
 class IProfile;
 class IUpscaleProvider;
@@ -20,4 +24,6 @@ public:
     virtual bool Export() = 0;
     virtual void RegisterUpscaleProvider(IUpscaleProvider* provider) = 0;
     virtual void RegisterProcessSamplesProvider(ISamplesProvider* provider) = 0;
+    virtual void SendProcessSsiMetrics(uint64_t duration, bool isDeployedWithSsi, SkipProfileHeuristicType heuristics) = 0;
+    virtual void CreateTelemetryMetricsWorker(ApplicationInfo* pInfo) = 0;
 };

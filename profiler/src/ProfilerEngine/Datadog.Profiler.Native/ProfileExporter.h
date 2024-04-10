@@ -52,6 +52,15 @@ public:
     void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
     void RegisterUpscaleProvider(IUpscaleProvider* provider) override;
     void RegisterProcessSamplesProvider(ISamplesProvider* provider) override;
+    void SendProcessSsiMetrics(uint64_t duration, bool isDeployedWithSsi, SkipProfileHeuristicType heuristics) override;
+    void CreateTelemetryMetricsWorker(ApplicationInfo* pInfo) override;
+
+    static std::string BuildAgentEndpoint(IConfiguration* configuration);
+
+    // TODO: move to a common place (also used for the telemetry metrics)
+    static std::string const LibraryName;
+    static std::string const LibraryVersion;
+    static std::string const LanguageFamily;
 
 private:
     class ProfileInfo
@@ -86,7 +95,6 @@ private:
     void AddProcessSamples(libdatadog::Profile* profile, std::list<std::shared_ptr<Sample>> const& samples);
     void Add(libdatadog::Profile* profile, std::shared_ptr<Sample> const& sample);
 
-    std::string BuildAgentEndpoint(IConfiguration* configuration);
     ProfileInfoScope GetOrCreateInfo(std::string_view runtimeId);
 
     static void AddUpscalingRules(libdatadog::Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos);
@@ -102,9 +110,6 @@ private:
     static tags CommonTags;
     static std::string const ProcessId;
     static int const RequestTimeOutMs;
-    static std::string const LibraryName;
-    static std::string const LibraryVersion;
-    static std::string const LanguageFamily;
     static std::string const MetricsFilename;
     static std::string const AllocationsExtension;
 

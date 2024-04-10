@@ -9,4 +9,7 @@ public:
     std::string Version;
     std::string RepositoryUrl;
     std::string CommitSha;
+
+    // TODO: add telemetry metrics worker
+
 };

@@ -5,7 +5,7 @@
 
 #include "IConfiguration.h"
 #include "IProfilerTelemetry.h"
-
+#include "IExporter.h"
 
 class ProfilerTelemetry : public IProfilerTelemetry
 {
@@ -17,13 +17,16 @@ public:
     // from IProfilerTelemetry
     void ProcessStart(DeploymentMode deployment) override;
     void ProcessEnd(uint64_t duration, uint64_t sentProfiles, SkipProfileHeuristicType heuristics) override;
+    void SetExporter(IExporter* pExporter) override;
 
 private:
     std::string GetDeploymentModeTag();
     std::string GetHeuristicTag(SkipProfileHeuristicType heuristics);
+    void SendMetrics(uint64_t duration, uint64_t sentProfiles, SkipProfileHeuristicType heuristics);
 
 private:
     IConfiguration* _pConfiguration;
     bool _isSsiDeployed = false;
+    IExporter* _pExporter;
 };
 

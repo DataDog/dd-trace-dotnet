@@ -448,6 +448,12 @@
     <ClInclude Include="ProfilerTelemetry.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
+    <ClInclude Include="LinkedList.hpp" />
+    <ClInclude Include="ISsiManager.h" />
+    <ClInclude Include="SsiManager.h" />
+    <ClInclude Include="TelemetryMetricsWorker.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -685,6 +691,12 @@
     <ClCompile Include="ProfilerTelemetry.cpp">
       <Filter>CorProfiler-Infrastructure</Filter>
 >>>>>>> 577d2ec4d (Add entry points for profiler telemetry related to SSI)
+    </ClCompile>
+    <ClCompile Include="SsiManager.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="TelemetryMetricsWorker.cpp">
+      <Filter>libdatadog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

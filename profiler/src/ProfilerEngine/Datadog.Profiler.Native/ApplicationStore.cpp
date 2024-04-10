@@ -34,7 +34,7 @@ ApplicationInfo ApplicationStore::GetApplicationInfo(const std::string& runtimeI
     };
 }
 
-void ApplicationStore::SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version)
+ApplicationInfo* ApplicationStore::SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version)
 {
     std::lock_guard lock(_infosLock);
     auto& info = _infos[runtimeId];
@@ -43,6 +43,8 @@ void ApplicationStore::SetApplicationInfo(const std::string& runtimeId, const st
     info.Version = version;
     info.RepositoryUrl = _pConfiguration->GetGitRepositoryUrl();
     info.CommitSha = _pConfiguration->GetGitCommitSha();
+
+    return &info;
 }
 
 void ApplicationStore::SetGitMetadata(std::string runtimeId, std::string respositoryUrl, std::string commitSha)

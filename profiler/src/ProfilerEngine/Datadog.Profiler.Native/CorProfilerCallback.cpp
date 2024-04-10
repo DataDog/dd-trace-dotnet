@@ -456,7 +456,7 @@ void CorProfilerCallback::InitializeServices()
         _pMetadataProvider.get(),
         _pAllocationsRecorder.get()
         );
-
+    _pProfilerTelemetry->SetExporter(_pExporter.get());
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
         _pCpuTimeProvider != nullptr &&
         _pRuntimeInfo->GetDotnetMajorVersion() >= 5)
@@ -1108,30 +1108,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Init global state:
     OpSysTools::InitHighPrecisionTimer();
 
-    // if the profiler is not enabled (either manually or via SSI), nothing is profiled
-    if (!_pSsiManager->IsProfilerEnabled())
-    {
-        Log::Info("Profiler is not enabled: nothing will be profiled.");
-        return S_OK;
-    }
-
     // create services without starting them
     InitializeServices();
-
-    // Start services only if the profiler is activated
-    // For SSI deployment, the services will be started later based on heuristics
-    if (_pConfiguration->IsProfilerEnabled())
-    {
-        auto started = StartServices();
-        if (!started)
-        {
-            Log::Error("One or multiple services failed to start. Stopping all services.");
-            StopServices();
-
-            Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
-            return E_FAIL;
-        }
-    }
 
     // Configure which profiler callbacks we want to receive by setting the event mask:
     DWORD eventMask = COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT;
@@ -1219,9 +1197,31 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         }
     }
 
-    // Initialization complete:
+    // the Tracer needs to know that the Profiler is here to enable code hotspots
     _isInitialized.store(true);
     ProfilerEngineStatus::WriteIsProfilerEngineActive(true);
+
+    // if the profiler is not enabled (either manually or via SSI), nothing is profiled
+    if (!_pSsiManager->IsProfilerEnabled())
+    {
+        Log::Info("Profiler is not enabled: nothing will be profiled.");
+        return S_OK;
+    }
+
+    // Start services only if the profiler is activated
+    // For SSI deployment, the services will be started later based on heuristics
+    if (_pConfiguration->IsProfilerEnabled())
+    {
+        auto started = StartServices();
+        if (!started)
+        {
+            Log::Error("One or multiple services failed to start. Stopping all services.");
+            StopServices();
+
+            Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
+            return E_FAIL;
+        }
+    }
 
     return S_OK;
 }
@@ -1230,13 +1230,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 {
     Log::Info("CorProfilerCallback::Shutdown()");
 
-    _pSsiManager->ProcessEnd();
-
     // A final .pprof should be generated before exiting
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
     _pStackSamplerLoopManager->Stop();
 
     _pSamplesCollector->Stop();
+
+    // wait until the last .pprof is generated to send the telemetry metrics
+    _pSsiManager->ProcessEnd();
 
     // Calling Stop on providers transforms the last raw samples
     if (_pWallTimeProvider != nullptr)

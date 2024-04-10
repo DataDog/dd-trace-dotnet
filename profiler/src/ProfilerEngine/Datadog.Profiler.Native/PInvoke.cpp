@@ -88,12 +88,16 @@ extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, 
         return;
     }
 
+    // TODO: we will probably need to go through the exporter because we need
+    // to associate a telemetry metrics worker to the ApplicationInfo
     // Engine is active. Get info for current thread.
-    profiler->GetApplicationStore()->SetApplicationInfo(
+    ApplicationInfo* pApplicationInfo = profiler->GetApplicationStore()->SetApplicationInfo(
         runtimeId ? runtimeId : std::string(),
         serviceName ? serviceName : std::string(),
         environment ? environment : std::string(),
         version ? version : std::string());
+
+    profiler->GetExporter()->CreateTelemetryMetricsWorker(pApplicationInfo);
 }
 
 extern "C" void __stdcall SetEndpointForTrace(const char* runtimeId, uint64_t traceId, const char* endpoint)

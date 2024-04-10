@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <string>
 
+class IExporter;
+
 // This is a bits flag that represents the heuristics that were not triggered
 // For example:
 //   if
@@ -49,6 +51,7 @@ public:
     // send metrics
     virtual void ProcessStart(DeploymentMode deployment) = 0;
     virtual void ProcessEnd(uint64_t duration, uint64_t sentProfiles, SkipProfileHeuristicType heuristics) = 0;
+    virtual void SetExporter(IExporter* pExporter) = 0;
 
     virtual ~IProfilerTelemetry() = default;
 };

@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<<<<<<< HEAD
   <Import Project="..\..\..\..\packages\libdatadog.9.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.9.0.0\build\native\libdatadog.props')" />
+=======
+  <Import Project="..\..\..\..\packages\libdatadog.7.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.7.0.0\build\native\libdatadog.props')" />
+>>>>>>> 30bfd0cd4 (refactor to emit telemetry metrics per runtime)
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -363,6 +367,7 @@
     <ClInclude Include="SumMetric.h" />
     <ClInclude Include="Tags.h" />
     <ClInclude Include="TagsHelper.h" />
+    <ClInclude Include="TelemetryMetricsWorker.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadLifetimeProvider.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
@@ -446,6 +451,7 @@
     <ClCompile Include="SumMetric.cpp" />
     <ClCompile Include="Tags.cpp" />
     <ClCompile Include="TagsHelper.cpp" />
+    <ClCompile Include="TelemetryMetricsWorker.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadLifetimeProvider.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />
@@ -468,6 +474,10 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
+<<<<<<< HEAD
     <Error Condition="!Exists('..\..\..\..\packages\libdatadog.9.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.9.0.0\build\native\libdatadog.props'))" />
+=======
+    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.7.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.7.0.0\build\native\libdatadog.props'))" />
+>>>>>>> 30bfd0cd4 (refactor to emit telemetry metrics per runtime)
   </Target>
 </Project>

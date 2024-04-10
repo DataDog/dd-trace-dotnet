@@ -26,6 +26,11 @@
 #include "ScopeFinalizer.h"
 #include "dd_profiler_version.h"
 
+extern "C"
+{
+#include "datadog/telemetry.h"
+}
+
 #include <cassert>
 #include <fstream>
 #include <iomanip>
@@ -581,6 +586,94 @@ bool ProfileExporter::Export()
 
     return exported;
 }
+
+void ProfileExporter::SendProcessSsiMetrics(uint64_t duration, bool isDeployedWithSsi, SkipProfileHeuristicType heuristics)
+{
+    // for each service, send the corresponding SSI metrics
+    std::vector<std::string_view> keys;
+    {
+        std::lock_guard lock(_perAppInfoLock);
+        for (const auto& [key, _] : _perAppInfo)
+        {
+            keys.push_back(key);
+        }
+    }
+
+    // it is possible that the Tracer was started (special sqlserver or dd-trace case for example)
+    if (keys.empty())
+    {
+        auto rid = ::shared::GenerateRuntimeId();  // fake but unique GUID
+        auto appInfo = _applicationStore->GetApplicationInfo(rid); // to get the default service information
+
+        // TODO: send metrics corresponding to this unique fake runtime ID
+
+        return;
+    }
+
+    // for each runtime ID, send the corresponding SSI metrics
+    for (auto& runtimeId : keys)
+    {
+        int32_t exportsCount;
+
+        // The goal here is to minimize the amount of time we hold the profileInfo lock.
+        // The lock in ProfileInfoScope guarantees that nobody else is currently holding a reference to the profileInfo.
+        // While inside the lock owned by the profileinfo scope, its profile is moved to the profile local variable
+        // (i.e. the profileinfo will then contains a null profile field when the next sample will be added)
+        // This way, we know that nobody else will ever use that profile again, and we can take our time to manipulate it
+        // outside of the lock.
+        {
+            const auto scope = GetOrCreateInfo(runtimeId);
+
+            // Get everything we need then release the lock
+            //profile = std::move(scope.profileInfo.profile);
+            //samplesCount = scope.profileInfo.samplesCount;
+
+            exportsCount = scope.profileInfo.exportsCount;
+        }
+
+        const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(runtimeId));
+
+        // TODO: send metrics corresponding to this runtime ID
+    }
+}
+
+void ProfileExporter::CreateTelemetryMetricsWorker(ApplicationInfo* pInfo)
+{
+    if (pInfo == nullptr)
+    {
+        assert(false);
+        return;
+    }
+
+    // TODO: check that the telemetry worker is not already created
+
+    // TODO: create the worker and assign it to the application info
+
+
+}
+
+
+
+// Tags
+// -----------------------------------------------
+//  installation:  CONSTANT
+//     ssi(only case where we emit the telemetry)
+//
+//  enablement_choice:  CONSTANT
+//      manually_enabled(DD_PROFILING_ENABLED = TRUE)
+//      ssi_enabled (does not exist yet)
+//      not_enabled (DD_PROFILING_ENABLED is not set. We cannot emit the telemetry when DD_PROFILING_ENABLED = false but this is supposedly an edge case)
+//
+//  has_sent_profiles :  should be CONSTANT even for short lived
+//      true (profiler indeed sent profiles)
+//      false
+//
+//  heuristic_hypothetical_decision :  VARIABLE
+//      triggered (heuristics are triggered, ie process is not short lived and emitted at least one span. Important: it does not matter if they are actually used to decide if profile are emitted or not)
+//      no_span
+//      short_lived
+//      no_span, short_lived
+
 
 std::string ProfileExporter::CreateMetricsFileContent() const
 {
