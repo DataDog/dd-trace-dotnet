@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -13,6 +14,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
@@ -107,6 +109,86 @@ public class SpanMessagePackFormatterTests
             else
             {
                 metricsProcessor.Remaining.Should().BeEmpty();
+            }
+        }
+    }
+
+    [Fact]
+    public void SpanLink_Tag_Serialization()
+    {
+        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
+
+        var parentContext = new SpanContext(new TraceId(0, 1), 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
+
+        var spans = new[]
+        {
+            new Span(parentContext, DateTimeOffset.UtcNow),
+            new Span(new SpanContext(parentContext, new TraceContext(Mock.Of<IDatadogTracer>()), "ServiceName1"), DateTimeOffset.UtcNow),
+            new Span(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
+        };
+        var attributesToAdd = new List<KeyValuePair<string, string>>
+        {
+            new("link.name", "manually_linking"),
+            new("pair", "false"),
+            new("arbitrary", "56709")
+        };
+        spans[0].AddSpanLink(spans[1], attributesToAdd);
+        var tmpSpanLink = spans[1].AddSpanLink(spans[2]);
+        tmpSpanLink.AddAttribute("attribute1", "value1");
+        tmpSpanLink.AddAttribute("attribute2", "value2");
+        spans[1].AddSpanLink(spans[0]);
+
+        foreach (var span in spans)
+        {
+            span.SetDuration(TimeSpan.FromSeconds(1));
+        }
+
+        var traceChunk = new TraceChunkModel(new(spans));
+
+        byte[] bytes = [];
+
+        var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
+        var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
+
+        for (int i = 0; i < result.Length; i++)
+        {
+            var expected = spans[i];
+            var actual = result[i];
+
+            if (expected.SpanLinks is not null)
+            {
+                for (int j = 0; j < expected.SpanLinks.Count; j++)
+                {
+                    var expectedSpanlink = expected.SpanLinks[j];
+                    var actualSpanLink = actual.SpanLinks[j];
+                    actualSpanLink.TraceIdHigh.Should().Be(expectedSpanlink.Context.TraceId128.Upper);
+                    actualSpanLink.TraceIdLow.Should().Be(expectedSpanlink.Context.TraceId128.Lower);
+                    actualSpanLink.SpanId.Should().Be(expectedSpanlink.Context.SpanId);
+                    var expectedTraceState = W3CTraceContextPropagator.CreateTraceStateHeader(expectedSpanlink.Context);
+                    // tracestate is only added when trace is from distributed tracing
+                    if (expectedSpanlink.Context.IsRemote)
+                    {
+                        actualSpanLink.TraceState.Should().Be(expectedTraceState);
+                    }
+
+                    // 3 possible values, 1, 0 or null
+                    var samplingPriority = expectedSpanlink.Context.TraceContext?.SamplingPriority ?? expectedSpanlink.Context.SamplingPriority;
+                    var expectedTraceFlags = samplingPriority switch
+                    {
+                        null => 0u,             // not set
+                        > 0 => 1u + (1u << 31), // keep
+                        <= 0 => 1u << 31,       // drop
+                    };
+                    if (expectedTraceFlags > 0)
+                    {
+                        actualSpanLink.TraceFlags.Should().Be(expectedTraceFlags);
+                    }
+
+                    if (expectedSpanlink.Attributes is { Count: > 0 })
+                    {
+                        actualSpanLink.Attributes.Should().BeEquivalentTo(expectedSpanlink.Attributes);
+                    }
+                }
             }
         }
     }

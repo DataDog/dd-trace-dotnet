@@ -10,6 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
@@ -254,7 +255,7 @@ namespace Datadog.Trace.Pdb
 
                     if (count >= sequencePoints.Length)
                     {
-                        memory = EnlargeBuffer(memory, count);
+                        memory = memory.EnlargeBuffer(count);
                         sequencePoints = memory.Memory.Span;
                     }
 
@@ -336,23 +337,6 @@ namespace Datadog.Trace.Pdb
             var generatedType = MetadataReader.GetTypeDefinition(nestedTypeHandle);
             var moveNext = generatedType.GetMethods().FirstOrDefault(handle => MetadataReader.GetString(MetadataReader.GetMethodDefinition(handle).Name) == "MoveNext");
             return moveNext;
-        }
-
-        private bool IsAsyncMethodOld(CustomAttribute att)
-        {
-            var attributeTypeName = MetadataReader.GetMemberReference((MemberReferenceHandle)att.Constructor).Parent.FullName(MetadataReader);
-            return attributeTypeName == AsyncStateMachineAttribute;
-        }
-
-        /// <summary>
-        /// Return a new IMemoryOwner of size 'currentSize * 2' and dispose the old one
-        /// </summary>
-        protected IMemoryOwner<T> EnlargeBuffer<T>(IMemoryOwner<T> memoryOwner, int currentSize)
-        {
-            var newMemory = ArrayMemoryPool<T>.Shared.Rent(currentSize * 2);
-            memoryOwner.Memory.Span.CopyTo(newMemory.Memory.Span);
-            memoryOwner.Dispose();
-            return newMemory;
         }
 
         private string? GetDocumentName(DocumentHandle doc)

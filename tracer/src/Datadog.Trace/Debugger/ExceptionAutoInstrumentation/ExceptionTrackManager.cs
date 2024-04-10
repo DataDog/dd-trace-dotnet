@@ -18,6 +18,7 @@ using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -552,7 +553,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 var assembly = method.Module.Assembly;
                 var assemblyName = assembly.GetName().Name;
 
-                if (assemblyName != null && FrameFilter.IsDatadogAssembly(assemblyName))
+                if (assemblyName != null && AssemblyFilter.IsDatadogAssembly(assemblyName))
                 {
                     continue;
                 }

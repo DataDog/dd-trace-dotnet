@@ -25,7 +25,23 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
         internal static Room GetRoomById(string id)
         {
-            return Rooms.First(room => room.Id == id);
+            return First(Rooms, room => room.Id == id);
+        }
+
+        internal static TSource First<TSource>(IEnumerable<TSource> source, Func<TSource, bool> predicate)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (predicate == null)
+                throw new ArgumentNullException(nameof(predicate));
+
+            foreach (TSource source1 in source)
+            {
+                if (predicate(source1))
+                    return source1;
+            }
+
+            throw new InvalidOperationException("Sequence contains no matching element");
         }
 
         private static readonly List<Room> Rooms = new List<Room>

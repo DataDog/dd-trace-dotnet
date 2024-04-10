@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -23,7 +24,13 @@ internal static class SnapshotHelper
     /// </summary>
     private static string GenerateSnapshot(object instance, object[] args, object[] locals, bool prettify)
     {
-        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" });
+        var maxInfo = new CaptureLimitInfo(
+            MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+            MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+            MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
+            MaxLength: DebuggerSettings.DefaultMaxStringLength);
+
+        var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, new[] { "Tag1", "Tag2" }, maxInfo);
         {
             // method entry
             snapshotCreator.StartEntry();

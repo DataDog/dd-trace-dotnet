@@ -69,6 +69,19 @@ namespace Datadog.Trace.Debugger.Expressions
 
             SetExpressions(probe);
 
+            var capture = (probe as LogProbe)?.Capture;
+            var maxInfo = capture != null
+                ? new CaptureLimitInfo(
+                    MaxReferenceDepth: capture.Value.MaxReferenceDepth <= 0 ? DebuggerSettings.DefaultMaxDepthToSerialize : capture.Value.MaxReferenceDepth,
+                    MaxCollectionSize: capture.Value.MaxCollectionSize <= 0 ? DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy : capture.Value.MaxCollectionSize,
+                    MaxFieldCount: capture.Value.MaxFieldCount <= 0 ? DebuggerSettings.DefaultMaxNumberOfFieldsToCopy : capture.Value.MaxFieldCount,
+                    MaxLength: capture.Value.MaxLength <= 0 ? DebuggerSettings.DefaultMaxStringLength : capture.Value.MaxLength)
+                : new CaptureLimitInfo(
+                    MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                    MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                    MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
+                    MaxLength: DebuggerSettings.DefaultMaxStringLength);
+
             ProbeInfo = new ProbeInfo(
                 probe.Id,
                 probe.Version ?? 0,
@@ -79,7 +92,8 @@ namespace Datadog.Trace.Debugger.Expressions
                 (probe as MetricProbe)?.MetricName,
                 HasCondition(),
                 probe.Tags,
-                (probe as SpanDecorationProbe)?.TargetSpan);
+                (probe as SpanDecorationProbe)?.TargetSpan,
+                maxInfo);
         }
 
         [DebuggerStepThrough]
@@ -102,7 +116,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public IDebuggerSnapshotCreator CreateSnapshotCreator()
         {
-            return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags);
+            return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags, ProbeInfo.CaptureLimitInfo);
         }
 
         private void SetExpressions(ProbeDefinition probe)

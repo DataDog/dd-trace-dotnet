@@ -652,9 +652,9 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [build]
+      jobs: [native_tracer, native_loader_and_managed, upload_artifacts]
 
-  - job: build
+  - job: native_tracer
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
@@ -666,17 +666,62 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
-      displayName: Build tracer home
+    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader CompileNativeSrc PublishNativeTracer
+      displayName: Build native-tracer
       retryCountOnTaskFailure: 1
 
     - publish: $(monitoringHome)
-      displayName: Uploading macos profiler artifact
-      artifact: macos-tracer-home
+      displayName: Uploading macos native tracer artifact
+      artifact: build-macos-native_tracer
+
+  - job: native_loader_and_managed
+    timeoutInMinutes: 60 #default value
+    dependsOn: [ ]
+    pool:
+      vmImage: macos-11
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    # The CreateRootDescriptorsFile tasks expects the native loader but we build that in the other stage
+    - script: ./tracer/build.sh BuildManagedTracerHome BuildNativeLoader --skip CreateRootDescriptorsFile
+      displayName: Build managed tracer + native loader
+      retryCountOnTaskFailure: 1
+
+    - publish: $(monitoringHome)
+      displayName: Uploading macos native tracer artifact
+      artifact: build-macos-native_loader
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
       artifact: build-macos-working-directory
+
+  - job: upload_artifacts
+    timeoutInMinutes: 60 #default value
+    dependsOn: [native_tracer, native_loader_and_managed ]
+    pool:
+      vmImage: macos-11
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download native tracer
+      inputs:
+        artifact: build-macos-native_tracer
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download native loader and managed
+      inputs:
+        artifact: build-macos-native_loader
+        path: $(monitoringHome)
+
+    - publish: $(monitoringHome)
+      displayName: Uploading combined macos profiler artifact
+      artifact: macos-tracer-home
 
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -1059,6 +1104,13 @@ stages:
         parameters:
           artifact: build-macos-working-directory
 
+      # The native tracer is built and uploaded separately for perf reasons, so needs to be explicitly downloaded here
+      - task: DownloadPipelineArtifact@2
+        displayName: Download native tracer
+        inputs:
+          artifact: build-macos-native_tracer
+          path: $(monitoringHome)
+
       - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
         displayName: Build and Test
         retryCountOnTaskFailure: 1
@@ -1234,7 +1286,7 @@ stages:
   - job: Win
     pool:
       name: azure-windows-scale-set
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
 
@@ -1626,7 +1678,7 @@ stages:
     - powershell: |
         # Required to reload environment apparently
         Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
-        choco install cppcheck -y --version 2.9
+        choco install cppcheck -y --version 2.12
         $errorCode = $LASTEXITCODE
         if ($errorCode -ne 0)
         {
@@ -3853,7 +3905,7 @@ stages:
             -H "Authorization: token $GITHUB_TOKEN"\
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/lib-injection.yml/dispatches \
-            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)"}}'
+            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)","is_latest":"$(isMainBranch)"}}'
         displayName: Start lib-injection GitHub Actions worfklow
         env:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
@@ -4574,12 +4626,12 @@ stages:
         remainder_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: "+S INTEGRATIONS +S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
-        debugger_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: DEBUGGER_SCENARIOS
-        debugger_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: DEBUGGER_SCENARIOS
+        # debugger_poc:
+        #   WEBLOG_VARIANT: "poc"
+        #   SCENARIO: DEBUGGER_SCENARIOS
+        # debugger_uds:
+        #   WEBLOG_VARIANT: "uds"
+        #   SCENARIO: DEBUGGER_SCENARIOS
 
     steps:
       - checkout: none

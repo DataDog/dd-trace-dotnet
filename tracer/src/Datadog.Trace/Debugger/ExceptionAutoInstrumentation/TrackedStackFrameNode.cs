@@ -127,7 +127,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 members = new MethodScopeMembers(0, 0);
             }
 
-            using var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, location: ProbeLocation.Method, hasCondition: false, Array.Empty<string>(), members);
+            var limitInfo = new CaptureLimitInfo(
+                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
+                MaxLength: DebuggerSettings.DefaultMaxStringLength);
+
+            using var snapshotCreator = new DebuggerSnapshotCreator(isFullSnapshot: true, location: ProbeLocation.Method, hasCondition: false, Array.Empty<string>(), members, limitInfo: limitInfo);
 
             _snapshotId = snapshotCreator.SnapshotId;
 
