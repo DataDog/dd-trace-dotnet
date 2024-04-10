@@ -644,6 +644,14 @@ namespace Datadog.Trace.Configuration
             public const string OpenTelemetryLegacyOperationNameEnabled = "DD_TRACE_OTEL_LEGACY_OPERATION_NAME_ENABLED";
 
             /// <summary>
+            /// Enables whether the instrumentation to instrument the Open call of a SqlConnection is enabled.
+            /// <para>
+            /// This may be removed.
+            /// </para>
+            /// </summary>
+            public const string ExperimentalSqlClientOpenEnabled = "DD_TRACE_EXPERIMENTAL_SQL_CLIENT_OPEN_ENABLED";
+
+            /// <summary>
             /// Enables generating 128-bit trace ids instead of 64-bit trace ids.
             /// Note that a 128-bit trace id may be received from an upstream service or from
             /// an Activity even if we are not generating them ourselves.

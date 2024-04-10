@@ -133,6 +133,7 @@ namespace Datadog.Trace.Configuration
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
             OpenTelemetryLegacyOperationNameEnabled = settings.OpenTelemetryLegacyOperationNameEnabled;
+            ExperimentalSqlClientOpenEnabled = settings.ExperimentalSqlClientOpenEnabled;
 
             _isDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
             IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
@@ -484,6 +485,14 @@ namespace Datadog.Trace.Configuration
         /// into the <c>resourceName</c> of a span.
         /// </summary>
         internal bool WcfObfuscationEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the instrumentation to instrument the Open call of a SqlConnection is enabled.
+        /// <para>
+        /// This may be removed.
+        /// </para>
+        /// </summary>
+        internal bool ExperimentalSqlClientOpenEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating the injection propagation style.

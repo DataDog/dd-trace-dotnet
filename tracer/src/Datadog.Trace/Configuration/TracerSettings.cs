@@ -320,6 +320,10 @@ namespace Datadog.Trace.Configuration
                                                      .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled)
                                                      .AsBool(false);
 
+            ExperimentalSqlClientOpenEnabled = config
+                                               .WithKeys(ConfigurationKeys.FeatureFlags.ExperimentalSqlClientOpenEnabled)
+                                               .AsBool(false);
+
             PropagationStyleInject = config
                                     .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
                                     .GetAs(
@@ -871,6 +875,14 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether <see cref="ISpan.OperationName"/> should be set to the legacy value for OpenTelemetry.
         /// </summary>
         internal bool OpenTelemetryLegacyOperationNameEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the instrumentation to instrument the Open call of a SqlConnection is enabled.
+        /// <para>
+        /// This may be removed.
+        /// </para>
+        /// </summary>
+        internal bool ExperimentalSqlClientOpenEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.
