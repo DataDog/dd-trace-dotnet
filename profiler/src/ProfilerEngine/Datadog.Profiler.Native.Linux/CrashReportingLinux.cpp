@@ -26,22 +26,40 @@ extern "C"
 
 CrashReporting* CrashReporting::Create(int32_t pid)
 {
-    auto crashReporting = new CrashReportingLinux(pid);
-    
+    auto crashReporting = new CrashReportingLinux(pid);    
     return (CrashReporting*)crashReporting;
 }
 
 CrashReportingLinux::CrashReportingLinux(int32_t pid)
     : CrashReporting(pid)
 {
-    _addressSpace = unw_create_addr_space(&_UPT_accessors, 0);
-    _modules = GetModules();
-    
 }
 
 CrashReportingLinux::~CrashReportingLinux()
 {
-    unw_destroy_addr_space(_addressSpace);
+    if (_addressSpace != nullptr)
+    {
+        unw_destroy_addr_space(_addressSpace);
+    }
+}
+
+int32_t CrashReportingLinux::Initialize()
+{
+    auto result = CrashReporting::Initialize();
+
+    if (result == 0)
+    {
+        _addressSpace = unw_create_addr_space(&_UPT_accessors, 0);
+
+        if (_addressSpace == nullptr)
+        {
+            return 999;
+        }
+
+        _modules = GetModules();
+    }
+
+    return result;
 }
 
 std::pair<std::string, uintptr_t> CrashReportingLinux::FindModule(uintptr_t ip)
@@ -128,7 +146,6 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
     if (result != 0)
     {
-        std::cout << "Failed to initialize cursor: " << result << "\n";
         return frames;
     }
 

@@ -20,6 +20,8 @@ public:
 
     ~CrashReportingLinux() override;
 
+    int32_t Initialize() override;
+
 private:
     std::vector<int32_t> GetThreads() override;
     std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod) override;

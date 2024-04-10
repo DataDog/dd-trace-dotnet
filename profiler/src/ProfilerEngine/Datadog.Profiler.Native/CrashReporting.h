@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <optional>
 
 #include "cor.h"
 #include "corprof.h"
@@ -41,6 +42,8 @@ public:
     virtual STDMETHODCALLTYPE HRESULT QueryInterface(REFIID riid, void** ppvObject) = 0;
     virtual STDMETHODCALLTYPE ULONG AddRef() = 0;
     virtual STDMETHODCALLTYPE ULONG Release() = 0;
+    virtual STDMETHODCALLTYPE int32_t Initialize() = 0;
+    virtual STDMETHODCALLTYPE int32_t GetLastError(const char** message, int32_t* length) = 0;
     virtual STDMETHODCALLTYPE int32_t AddTag(const char* key, const char* value) = 0;
     virtual STDMETHODCALLTYPE int32_t SetSignalInfo(int32_t signal, const char* description) = 0;
     virtual STDMETHODCALLTYPE int32_t ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback) = 0;
@@ -56,19 +59,23 @@ public:
 
     static CrashReporting* Create(int32_t pid);
 
-    HRESULT QueryInterface(REFIID riid, void** ppvObject) override;
-    ULONG AddRef() override;
-    ULONG Release() override;
-    int32_t AddTag(const char* key, const char* value) override;
-    int32_t SetSignalInfo(int32_t signal, const char* description) override;
-    int32_t ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback) override;
-    int32_t SetMetadata(const char* libraryName, const char* libraryVersion, const char* family) override;
-    int32_t Send() override;
+    STDMETHODCALLTYPE HRESULT QueryInterface(REFIID riid, void** ppvObject) override;
+    STDMETHODCALLTYPE ULONG AddRef() override;
+    STDMETHODCALLTYPE ULONG Release() override;
+    STDMETHODCALLTYPE int32_t GetLastError(const char** message, int32_t* length) override;
+    STDMETHODCALLTYPE int32_t Initialize() override;
+    STDMETHODCALLTYPE int32_t AddTag(const char* key, const char* value) override;
+    STDMETHODCALLTYPE int32_t SetSignalInfo(int32_t signal, const char* description) override;
+    STDMETHODCALLTYPE int32_t ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback) override;
+    STDMETHODCALLTYPE int32_t SetMetadata(const char* libraryName, const char* libraryVersion, const char* family) override;
+    STDMETHODCALLTYPE int32_t Send() override;
 
 protected:
     int32_t _pid;
     int32_t _signal;
+    std::optional<ddog_Error> _error;
     ddog_prof_CrashInfo _crashInfo;
+    void SetLastError(ddog_Error error);
     virtual std::vector<int32_t> GetThreads() = 0;
     virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod) = 0;
     virtual std::string GetSignalInfo(int32_t signal) = 0;

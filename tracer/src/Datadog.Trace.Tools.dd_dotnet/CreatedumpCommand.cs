@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -128,43 +130,149 @@ internal class CreatedumpCommand : Command
 
         using var crashReport = NativeObjects.ICrashReport.Wrap(crashReportPtr);
 
-        // Check if there's an exception on the crash thread
-        var exception = _runtime.Threads.FirstOrDefault(t => t.ManagedThreadId == crashThread)?.CurrentException;
-
-        if (exception != null)
+        try
         {
-            var key = Marshal.StringToHGlobalAnsi("exception");
-            var value = Marshal.StringToHGlobalAnsi(exception.ToString());
+            crashReport.Initialize();
+        }
+        catch (Win32Exception ex)
+        {
+            AnsiConsole.WriteLine($"Failed to initialize crash report: {GetLastError(crashReport, ex)}");
+            return;
+        }
 
-            crashReport.AddTag((char*)key, (char*)value);
+        // Check if there's an exception on the crash thread
+        if (crashThread != null)
+        {
+            var exception = _runtime.Threads.FirstOrDefault(t => t.ManagedThreadId == crashThread.Value)?.CurrentException;
 
-            Marshal.FreeHGlobal(key);
-            Marshal.FreeHGlobal(value);
+            if (exception != null)
+            {
+                AnsiConsole.WriteLine($"Managed exception found: {exception}");
+                _ = SetException(crashReport, exception);
+            }
         }
 
         if (signal.HasValue)
         {
-            crashReport.SetSignalInfo(signal.Value, null);
+            _ = SetSignal(crashReport, signal.Value);
         }
 
-        SetMetadata(crashReport);
+        _ = SetMetadata(crashReport);
 
-        var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
-        crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback);
-        crashReport.Send();
+        try
+        {
+            var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
+            crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback);
+        }
+        catch (Win32Exception ex)
+        {
+            AnsiConsole.WriteLine($"Failed to resolve stacks: {GetLastError(crashReport, ex)}");
+        }
+
+        try
+        {
+            crashReport.Send();
+        }
+        catch (Win32Exception ex)
+        {
+            AnsiConsole.WriteLine($"Failed to send crash report: {GetLastError(crashReport, ex)}");
+            return;
+        }
+
+        AnsiConsole.WriteLine("Crash report sent successfully");
     }
 
-    private unsafe void SetMetadata(ICrashReport crashReport)
+    private string GetLastError(ICrashReport crashReport, Win32Exception exception)
     {
-        var libraryName = Marshal.StringToHGlobalAnsi("dd-dotnet");
-        var libraryVersion = Marshal.StringToHGlobalAnsi("1.0.0"); // TODO: Extract the version
-        var family = Marshal.StringToHGlobalAnsi("csharp");
+        if (exception.NativeErrorCode == 1)
+        {
+            // libdatadog error
+            crashReport.GetLastError(out var message, out var length);
 
-        crashReport.SetMetadata((char*)libraryName, (char*)libraryVersion, (char*)family);
+            if (message == IntPtr.Zero)
+            {
+                return "unknown error";
+            }
 
-        Marshal.FreeHGlobal(libraryName);
-        Marshal.FreeHGlobal(libraryVersion);
-        Marshal.FreeHGlobal(family);
+            return Marshal.PtrToStringAnsi(message, length);
+        }
+
+        return $"unspecified error: {exception.NativeErrorCode}";
+    }
+
+    private bool SetSignal(ICrashReport crashReport, int signal)
+    {
+        try
+        {
+            crashReport.SetSignalInfo(signal, IntPtr.Zero);
+        }
+        catch (Win32Exception ex)
+        {
+            AnsiConsole.WriteLine($"Failed to set signal info: {GetLastError(crashReport, ex)}");
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool SetException(ICrashReport crashReport, ClrException exception)
+    {
+        var key = IntPtr.Zero;
+        var value = IntPtr.Zero;
+
+        try
+        {
+            key = Marshal.StringToHGlobalAnsi("exception");
+            value = Marshal.StringToHGlobalAnsi(exception.ToString());
+
+            try
+            {
+                crashReport.AddTag(key, value);
+                return true;
+            }
+            catch (Win32Exception ex)
+            {
+                AnsiConsole.WriteLine($"Failed to add exception tag: {GetLastError(crashReport, ex)}");
+                return false;
+            }
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(key);
+            Marshal.FreeHGlobal(value);
+        }
+    }
+
+    private bool SetMetadata(ICrashReport crashReport)
+    {
+        var libraryName = IntPtr.Zero;
+        var libraryVersion = IntPtr.Zero;
+        var family = IntPtr.Zero;
+
+        try
+        {
+            libraryName = Marshal.StringToHGlobalAnsi("dd-dotnet");
+            libraryVersion = Marshal.StringToHGlobalAnsi("1.0.0"); // TODO: Extract the version
+            family = Marshal.StringToHGlobalAnsi("csharp");
+
+            try
+            {
+                crashReport.SetMetadata(libraryName, libraryVersion, family);
+            }
+            catch (Win32Exception ex)
+            {
+                AnsiConsole.WriteLine($"Failed to set metadata: {GetLastError(crashReport, ex)}");
+                return false;
+            }
+
+            return true;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(libraryName);
+            Marshal.FreeHGlobal(libraryVersion);
+            Marshal.FreeHGlobal(family);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
