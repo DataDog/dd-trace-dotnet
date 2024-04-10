@@ -31,9 +31,7 @@ internal unsafe class IAppHostPathMapper : Datadog.Trace.Tools.dd_dotnet.Checks.
 
         if (_implementation != IntPtr.Zero)
         {
-            System.Console.WriteLine("Calling Release");
             Release();
-            System.Console.WriteLine("End Release");
         }
     }
 

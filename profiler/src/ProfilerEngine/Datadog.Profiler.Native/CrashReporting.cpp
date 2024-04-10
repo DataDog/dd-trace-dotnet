@@ -188,29 +188,25 @@ STDMETHODCALLTYPE int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId
     return 0;
 }
 
-STDMETHODCALLTYPE int32_t CrashReporting::Send()
+STDMETHODCALLTYPE int32_t CrashReporting::SetMetadata(const char* libraryName, const char* libraryVersion, const char* family)
 {
-    auto libName = "testCrashTracking";
-    auto libVersion = "1.0.0";
-    auto family = "csharp";
-
     const ddog_prof_CrashtrackerMetadata metadata = {
-        .profiling_library_name = { libName, std::strlen(libName) },
-        .profiling_library_version = { libVersion, std::strlen(libVersion) },
-        .family = { family, std::strlen(family) },
+        .profiling_library_name = libdatadog::FfiHelper::StringToCharSlice(std::string_view(libraryName)) ,
+        .profiling_library_version = libdatadog::FfiHelper::StringToCharSlice(std::string_view(libraryVersion)),
+        .family = libdatadog::FfiHelper::StringToCharSlice(std::string_view(family)),
     };
 
     auto result = ddog_crashinfo_set_metadata(&_crashInfo, metadata);
 
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
-    {
-        std::cout << "Error setting metadata: " << libdatadog::FfiHelper::GetErrorMessage(result.err) << std::endl;
-    }
+    return result.tag;
+}
 
+STDMETHODCALLTYPE int32_t CrashReporting::Send()
+{
     const std::string endpointUrl = "file://tmp/crash.txt";
     auto endpoint = ddog_Endpoint_file(libdatadog::FfiHelper::StringToCharSlice(endpointUrl));
 
-    result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, endpoint, 30);
+    auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, endpoint, 30);
 
     int32_t statusCode = 0;
 

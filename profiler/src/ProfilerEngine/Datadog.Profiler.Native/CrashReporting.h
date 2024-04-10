@@ -44,6 +44,7 @@ public:
     virtual STDMETHODCALLTYPE int32_t AddTag(const char* key, const char* value) = 0;
     virtual STDMETHODCALLTYPE int32_t SetSignalInfo(int32_t signal, const char* description) = 0;
     virtual STDMETHODCALLTYPE int32_t ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback) = 0;
+    virtual STDMETHODCALLTYPE int32_t SetMetadata(const char* libraryName, const char* libraryVersion, const char* family) = 0;
     virtual STDMETHODCALLTYPE int32_t Send() = 0;
 };
 
@@ -61,6 +62,7 @@ public:
     int32_t AddTag(const char* key, const char* value) override;
     int32_t SetSignalInfo(int32_t signal, const char* description) override;
     int32_t ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback) override;
+    int32_t SetMetadata(const char* libraryName, const char* libraryVersion, const char* family) override;
     int32_t Send() override;
 
 protected:

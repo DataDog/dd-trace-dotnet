@@ -31,9 +31,7 @@ internal unsafe class IAppHostElementSchemaCollection : Datadog.Trace.Tools.dd_d
 
         if (_implementation != IntPtr.Zero)
         {
-            System.Console.WriteLine("Calling Release");
             Release();
-            System.Console.WriteLine("End Release");
         }
     }
 

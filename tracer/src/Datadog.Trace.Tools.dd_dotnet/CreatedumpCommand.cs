@@ -116,48 +116,55 @@ internal class CreatedumpCommand : Command
             return;
         }
 
-        try
+        using var iunknown = NativeObjects.IUnknown.Wrap(ptr);
+
+        int result = iunknown.QueryInterface(ICrashReport.Guid, out var crashReportPtr);
+
+        if (result != 0)
         {
-            using var iunknown = NativeObjects.IUnknown.Wrap(ptr);
-
-            int result = iunknown.QueryInterface(ICrashReport.Guid, out var crashReportPtr);
-
-            if (result != 0)
-            {
-                AnsiConsole.WriteLine($"Failed to query interface: {result}");
-                return;
-            }
-
-            using var crashReport = NativeObjects.ICrashReport.Wrap(crashReportPtr);
-
-            // Check if there's an exception on the crash thread
-            var exception = _runtime.Threads.FirstOrDefault(t => t.ManagedThreadId == crashThread)?.CurrentException;
-
-            if (exception != null)
-            {
-                var key = Marshal.StringToHGlobalAnsi("exception");
-                var value = Marshal.StringToHGlobalAnsi(exception.ToString());
-
-                crashReport.AddTag((char*)key, (char*)value);
-
-                Marshal.FreeHGlobal(key);
-                Marshal.FreeHGlobal(value);
-            }
-
-            if (signal.HasValue)
-            {
-                crashReport.SetSignalInfo(signal.Value, null);
-            }
-
-            var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
-            crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback);
-            crashReport.Send();
-        }
-        catch (Exception ex)
-        {
-            AnsiConsole.WriteLine($"Error: {ex}");
+            AnsiConsole.WriteLine($"Failed to query interface: {result}");
             return;
         }
+
+        using var crashReport = NativeObjects.ICrashReport.Wrap(crashReportPtr);
+
+        // Check if there's an exception on the crash thread
+        var exception = _runtime.Threads.FirstOrDefault(t => t.ManagedThreadId == crashThread)?.CurrentException;
+
+        if (exception != null)
+        {
+            var key = Marshal.StringToHGlobalAnsi("exception");
+            var value = Marshal.StringToHGlobalAnsi(exception.ToString());
+
+            crashReport.AddTag((char*)key, (char*)value);
+
+            Marshal.FreeHGlobal(key);
+            Marshal.FreeHGlobal(value);
+        }
+
+        if (signal.HasValue)
+        {
+            crashReport.SetSignalInfo(signal.Value, null);
+        }
+
+        SetMetadata(crashReport);
+
+        var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
+        crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback);
+        crashReport.Send();
+    }
+
+    private unsafe void SetMetadata(ICrashReport crashReport)
+    {
+        var libraryName = Marshal.StringToHGlobalAnsi("dd-dotnet");
+        var libraryVersion = Marshal.StringToHGlobalAnsi("1.0.0"); // TODO: Extract the version
+        var family = Marshal.StringToHGlobalAnsi("csharp");
+
+        crashReport.SetMetadata((char*)libraryName, (char*)libraryVersion, (char*)family);
+
+        Marshal.FreeHGlobal(libraryName);
+        Marshal.FreeHGlobal(libraryVersion);
+        Marshal.FreeHGlobal(family);
     }
 
     [StructLayout(LayoutKind.Sequential)]

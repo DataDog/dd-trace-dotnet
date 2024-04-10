@@ -31,9 +31,7 @@ internal unsafe class IAppHostConfigManager : Datadog.Trace.Tools.dd_dotnet.Chec
 
         if (_implementation != IntPtr.Zero)
         {
-            System.Console.WriteLine("Calling Release");
             Release();
-            System.Console.WriteLine("End Release");
         }
     }
 
