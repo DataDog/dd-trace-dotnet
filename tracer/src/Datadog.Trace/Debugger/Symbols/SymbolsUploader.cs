@@ -125,7 +125,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
         {
-            if (!settings.IsSymbolsDatabaseEnabled)
+            if (!settings.SymbolDatabaseUploadEnabled)
             {
                 Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
                 return new NoOpSymbolUploader();

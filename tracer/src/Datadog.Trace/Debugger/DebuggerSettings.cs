@@ -34,7 +34,7 @@ namespace Datadog.Trace.Debugger
             var config = new ConfigurationBuilder(source, telemetry);
 
             Enabled = config.WithKeys(ConfigurationKeys.Debugger.Enabled).AsBool(false);
-            IsSymbolsDatabaseEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal).AsBool(false);
+            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(false);
 
             MaximumDepthOfMembersToCopy = config
                                          .WithKeys(ConfigurationKeys.Debugger.MaxDepthToSerialize)
@@ -66,8 +66,6 @@ namespace Datadog.Trace.Debugger
 
             SymbolDatabaseIncludes = new HashSet<string>(includeLibraries, StringComparer.OrdinalIgnoreCase);
 
-            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(false);
-
             DiagnosticsIntervalSeconds = config
                                         .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
                                         .AsInt32(DefaultDiagnosticsIntervalSeconds, interval => interval > 0)
@@ -97,7 +95,7 @@ namespace Datadog.Trace.Debugger
 
         public bool Enabled { get; }
 
-        public bool IsSymbolsDatabaseEnabled { get; }
+        public bool SymbolDatabaseUploadEnabled { get; }
 
         public int MaxSerializationTimeInMilliseconds { get; }
 
@@ -106,8 +104,6 @@ namespace Datadog.Trace.Debugger
         public int UploadBatchSize { get; }
 
         public int SymbolDatabaseBatchSizeInBytes { get; }
-
-        public bool SymbolDatabaseUploadEnabled { get; }
 
         public HashSet<string> SymbolDatabaseIncludes { get; }
 

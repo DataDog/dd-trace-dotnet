@@ -54,6 +54,19 @@ namespace Datadog.Trace.Tests.Debugger
             settings.Enabled.Should().BeFalse();
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("false")]
+        public void SymbolsDisabled(string enabled)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, enabled }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.SymbolDatabaseUploadEnabled.Should().BeFalse();
+        }
+
         [Fact]
         public void DebuggerSettings_UseSettings()
         {
@@ -61,12 +74,14 @@ namespace Datadog.Trace.Tests.Debugger
                 new NameValueConfigurationSource(new()
                 {
                     { ConfigurationKeys.Debugger.Enabled, "true" },
+                    { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" },
                     { ConfigurationKeys.Debugger.MaxDepthToSerialize, "100" },
                     { ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000" },
                 }),
                 NullConfigurationTelemetry.Instance);
 
             settings.Enabled.Should().BeTrue();
+            settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
             settings.MaximumDepthOfMembersToCopy.Should().Be(100);
             settings.MaxSerializationTimeInMilliseconds.Should().Be(1000);
         }
