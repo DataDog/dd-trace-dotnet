@@ -11,9 +11,9 @@ namespace Datadog.Trace.Debugger.Symbols
 {
     internal class NoOpSymbolUploader : IDebuggerUploader
     {
-        public async Task StartFlushingAsync()
+        public Task StartFlushingAsync()
         {
-            await Task.CompletedTask.ConfigureAwait(false);
+            return Task.CompletedTask;
         }
 
         public void Dispose()
