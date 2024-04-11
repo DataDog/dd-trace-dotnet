@@ -128,7 +128,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             if (_snapshotSink == null)
             {
-                Log.Warning("The sink of the Exception Debugging is null. Skipping the reporting of the snapshot: {Snapshot}", snapshot);
+                Log.Debug("The sink of the Exception Debugging is null. Skipping the reporting of the snapshot: {Snapshot}", snapshot);
                 return;
             }
 
