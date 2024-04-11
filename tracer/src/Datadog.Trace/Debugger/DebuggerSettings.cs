@@ -10,6 +10,7 @@ using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger
 {
@@ -33,6 +34,7 @@ namespace Datadog.Trace.Debugger
             var config = new ConfigurationBuilder(source, telemetry);
 
             Enabled = config.WithKeys(ConfigurationKeys.Debugger.Enabled).AsBool(false);
+            IsSymbolsDatabaseEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal).AsBool(false);
 
             MaximumDepthOfMembersToCopy = config
                                          .WithKeys(ConfigurationKeys.Debugger.MaxDepthToSerialize)
@@ -94,6 +96,8 @@ namespace Datadog.Trace.Debugger
         }
 
         public bool Enabled { get; }
+
+        public bool IsSymbolsDatabaseEnabled { get; }
 
         public int MaxSerializationTimeInMilliseconds { get; }
 
