@@ -115,6 +115,10 @@ namespace Datadog.Trace.AppSec
             WafDebugEnabled = config
                              .WithKeys(ConfigurationKeys.AppSec.WafDebugEnabled)
                              .AsBool(defaultValue: false);
+
+            ScaEnabled = config
+                             .WithKeys(ConfigurationKeys.AppSec.ScaEnabled)
+                             .AsBool();
         }
 
         public double ApiSecuritySampleDelay { get; set; }
@@ -199,6 +203,11 @@ namespace Datadog.Trace.AppSec
         /// Gets a value indicating whether or not api security is enabled, defaults to false.
         /// </summary>
         public bool ApiSecurityEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether or not sca is enabled, defaults to null.
+        /// </summary>
+        public bool? ScaEnabled { get; }
 
         public static SecuritySettings FromDefaultSources()
         {

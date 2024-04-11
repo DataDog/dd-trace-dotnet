@@ -8,12 +8,15 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry
 {
     internal class TelemetrySettings
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TelemetrySettings));
+
         public TelemetrySettings(
             bool telemetryEnabled,
             string? configurationError,
