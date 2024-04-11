@@ -34,7 +34,6 @@ internal static class MsTestIntegration
         where TTestMethod : ITestMethod
     {
         var testMethod = testMethodInstance.MethodInfo;
-        var testMethodArguments = testMethodInstance.Arguments;
         var testName = testMethodInstance.TestMethodName;
 
         var suite = TestSuite.Current;
@@ -76,15 +75,21 @@ internal static class MsTestIntegration
         }
 
         // Early flake detection flags
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true &&
-            !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty))
+        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true)
         {
-            test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
-        }
-
-        if (isRetry)
-        {
-            test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+            var isTestNew = !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
+            if (isTestNew)
+            {
+                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
+                if (isRetry)
+                {
+                    test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                }
+                else
+                {
+                    // ...
+                }
+            }
         }
 
         // Set test method

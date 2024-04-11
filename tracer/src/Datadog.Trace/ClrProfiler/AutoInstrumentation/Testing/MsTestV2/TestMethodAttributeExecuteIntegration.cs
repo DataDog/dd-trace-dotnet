@@ -41,8 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodAttributeExecuteIntegration
 {
-    private static readonly int Retries = 0;
-
     /// <summary>
     /// OnMethodBegin callback
     /// </summary>
@@ -65,7 +63,7 @@ public static class TestMethodAttributeExecuteIntegration
             return CallTargetState.GetDefault();
         }
 
-        return new CallTargetState(null, new TestRunnerState(testMethod, MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: false), Retries));
+        return new CallTargetState(null, new TestRunnerState(testMethod, MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: false)));
     }
 
     /// <summary>
@@ -82,7 +80,9 @@ public static class TestMethodAttributeExecuteIntegration
     {
         if (state.State is TestRunnerState testMethodState)
         {
+            var duration = TraceClock.Instance.UtcNow - testMethodState.StartTime;
             var testMethod = testMethodState.TestMethod;
+            var isTestNew = false;
             var allowRetries = false;
             if (returnValue is IList { Count: > 0 } returnValueList)
             {
@@ -90,6 +90,7 @@ public static class TestMethodAttributeExecuteIntegration
                 {
                     var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: false, testMethodState.Test.StartTime);
                     var result = HandleTestResult(test, testMethod, returnValueList[i], exception);
+                    isTestNew = isTestNew || test.GetTags().EarlyFlakeDetectionTestIsNew == "true";
                     allowRetries = allowRetries || result != TestStatus.Skip;
                 }
             }
@@ -100,49 +101,80 @@ public static class TestMethodAttributeExecuteIntegration
                 return new CallTargetReturn<TReturn>(returnValue);
             }
 
-            if (allowRetries && testMethodState.Retries > 0)
+            if (isTestNew && allowRetries)
             {
-                // Handle retries
-                var retries = testMethodState.Retries;
-                var results = new IList[retries + 1];
-                results[0] = returnValueList;
-                Common.Log.Debug<int>("We need to retry {Times} times", retries);
-                for (var i = 0; i < retries; i++)
+                // Get retries number
+                int remainingRetries;
+                var slowRetriesSettings = CIVisibility.EarlyFlakeDetectionSettings.SlowTestRetries;
+                if (slowRetriesSettings.FiveSeconds.HasValue && duration.TotalSeconds < 5)
                 {
-                    Common.Log.Debug<int>("Retry number: {RetryNumber}", i);
-                    var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
-                    object? retryTestResult = null;
-                    Exception? retryException = null;
-                    try
-                    {
-                        retryTestResult = testMethodState.TestMethod.Invoke(null);
-                    }
-                    catch (Exception ex)
-                    {
-                        retryException = ex;
-                    }
-                    finally
-                    {
-                        if (retryTestResult is IList { Count: > 0 } retryTestResultList)
-                        {
-                            for (var j = 0; j < retryTestResultList.Count; j++)
-                            {
-                                var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true, retryTest.StartTime);
-                                HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j], retryException);
-                            }
-
-                            results[i + 1] = retryTestResultList;
-                        }
-                        else
-                        {
-                            HandleTestResult(retryTest, testMethod, retryTestResult, retryException);
-                            results[i + 1] = new List<object?> { retryTestResult };
-                        }
-                    }
+                    remainingRetries = slowRetriesSettings.FiveSeconds.Value;
+                    Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 seconds.", remainingRetries);
+                }
+                else if (slowRetriesSettings.TenSeconds.HasValue && duration.TotalSeconds < 10)
+                {
+                    remainingRetries = slowRetriesSettings.TenSeconds.Value;
+                    Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 10 seconds.", remainingRetries);
+                }
+                else if (slowRetriesSettings.ThirtySeconds.HasValue && duration.TotalSeconds < 30)
+                {
+                    remainingRetries = slowRetriesSettings.ThirtySeconds.Value;
+                    Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 30 seconds.", remainingRetries);
+                }
+                else if (slowRetriesSettings.FiveMinutes.HasValue && duration.TotalMinutes < 5)
+                {
+                    remainingRetries = slowRetriesSettings.FiveMinutes.Value;
+                    Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 minutes.", remainingRetries);
+                }
+                else
+                {
+                    remainingRetries = 1;
+                    Common.Log.Information("EFD: Number of executions has been set to 1. Current test duration is {Value}", duration);
                 }
 
-                // Calculate final results
-                returnValue = (TReturn)GetFinalResults(results);
+                if (--remainingRetries > 0)
+                {
+                    // Handle retries
+                    var results = new IList[remainingRetries + 1];
+                    results[0] = returnValueList;
+                    Common.Log.Debug<int>("EFD: We need to retry {Times} times", remainingRetries);
+                    for (var i = 0; i < remainingRetries; i++)
+                    {
+                        Common.Log.Debug<int>("EFD: Retry number: {RetryNumber}", i);
+                        var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
+                        object? retryTestResult = null;
+                        Exception? retryException = null;
+                        try
+                        {
+                            retryTestResult = testMethodState.TestMethod.Invoke(null);
+                        }
+                        catch (Exception ex)
+                        {
+                            retryException = ex;
+                        }
+                        finally
+                        {
+                            if (retryTestResult is IList { Count: > 0 } retryTestResultList)
+                            {
+                                for (var j = 0; j < retryTestResultList.Count; j++)
+                                {
+                                    var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true, retryTest.StartTime);
+                                    HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j], retryException);
+                                }
+
+                                results[i + 1] = retryTestResultList;
+                            }
+                            else
+                            {
+                                HandleTestResult(retryTest, testMethod, retryTestResult, retryException);
+                                results[i + 1] = new List<object?> { retryTestResult };
+                            }
+                        }
+                    }
+
+                    // Calculate final results
+                    returnValue = (TReturn)GetFinalResults(results);
+                }
             }
         }
 
@@ -275,13 +307,13 @@ public static class TestMethodAttributeExecuteIntegration
     {
         public readonly ITestMethod TestMethod;
         public readonly Test Test;
-        public readonly int Retries;
+        public readonly DateTimeOffset StartTime;
 
-        public TestRunnerState(ITestMethod testMethod, Test test, int retries)
+        public TestRunnerState(ITestMethod testMethod, Test test)
         {
             TestMethod = testMethod;
             Test = test;
-            Retries = retries;
+            StartTime = TraceClock.Instance.UtcNow;
         }
     }
 }
