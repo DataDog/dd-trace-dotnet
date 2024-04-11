@@ -12,6 +12,7 @@
 #include <ucontext.h>
 #include <unordered_map>
 
+#include "CallstackProvider.h"
 #include "IConfiguration.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
@@ -25,8 +26,11 @@ using namespace std::chrono_literals;
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
-LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* const configuration) :
-    StackFramesCollectorBase(configuration),
+LinuxStackFramesCollector::LinuxStackFramesCollector(
+    ProfilerSignalManager* signalManager,
+    IConfiguration const* const configuration,
+    CallstackProvider* callstackProvider) :
+    StackFramesCollectorBase(configuration, callstackProvider),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
     _processId{OpSysTools::GetProcId()},
@@ -258,8 +262,8 @@ std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
     auto* context = reinterpret_cast<unw_context_t*>(ctx);
 
     // Now walk the stack:
-    auto [data, size] = Data();
-    auto count = unw_backtrace2((void**)data, size, context, UNW_INIT_SIGNAL_FRAME);
+    auto buffer = Data();
+    auto count = unw_backtrace2((void**)buffer.data(), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
 
     if (count == 0)
     {
@@ -267,6 +271,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
     }
 
     SetFrameCount(count);
+
     return S_OK;
 }
 

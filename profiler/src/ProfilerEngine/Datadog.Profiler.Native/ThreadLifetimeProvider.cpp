@@ -39,7 +39,6 @@ RawThreadLifetimeSample ThreadLifetimeProvider::CreateSample(std::shared_ptr<Man
     rawSample.LocalRootSpanId = 0;
     rawSample.SpanId = 0;
     rawSample.AppDomainId = (AppDomainID) nullptr;
-    rawSample.Stack.clear();
     rawSample.ThreadInfo = std::move(pThreadInfo);
     rawSample.Kind = kind;
 

@@ -235,6 +235,8 @@
   <ItemGroup>
     <ClInclude Include="AdaptiveSampler.h" />
     <ClInclude Include="AllocationsRecorder.h" />
+    <ClInclude Include="Callstack.h" />
+    <ClInclude Include="CallstackProvider.h" />
     <ClInclude Include="CounterMetric.h" />
     <ClInclude Include="DebugInfoStore.h" />
     <ClInclude Include="EnabledProfilers.h" />
@@ -247,6 +249,7 @@
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
     <ClInclude Include="LinkedList.hpp" />
+    <ClInclude Include="MemoryResourceManager.h" />
     <ClInclude Include="RawSamples.hpp" />
     <ClInclude Include="SamplesEnumerator.h" />
     <ClInclude Include="Success.h" />
@@ -369,6 +372,8 @@
     <ClCompile Include="AllocationsRecorder.cpp" />
     <ClCompile Include="AppDomainStore.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />
+    <ClCompile Include="Callstack.cpp" />
+    <ClCompile Include="CallstackProvider.cpp" />
     <ClCompile Include="ClrEventsParser.cpp" />
     <ClCompile Include="cgroup.cpp" />
     <ClCompile Include="ClrLifetime.cpp" />
@@ -385,6 +390,7 @@
     <ClCompile Include="ExporterBuilder.cpp" />
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
+    <ClCompile Include="MemoryResourceManager.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />

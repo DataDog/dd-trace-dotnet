@@ -9,6 +9,7 @@
 // end
 
 #include "StackFramesCollectorBase.h"
+#include "CallstackProvider.h"
 
 class StackSnapshotResultReusableBuffer;
 struct ManagedThreadInfo;
@@ -17,7 +18,7 @@ class IManagedThreadList;
 class Windows32BitStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    Windows32BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IConfiguration const* configuration);
+    Windows32BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IConfiguration const* configuration, CallstackProvider* callstackPool);
     ~Windows32BitStackFramesCollector() override;
 
     void OnDeadlock() override;

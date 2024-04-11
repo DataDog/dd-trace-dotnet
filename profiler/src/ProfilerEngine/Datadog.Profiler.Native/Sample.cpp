@@ -94,7 +94,7 @@ void Sample::AddFrame(FrameInfoView const& frame)
     _callstack.push_back(frame);
 }
 
-const CallStack& Sample::GetCallstack() const
+const std::vector<FrameInfoView>& Sample::GetCallstack() const
 {
     return _callstack;
 }

@@ -22,7 +22,7 @@
 #include "AllocationsProvider.h"
 #include "AppDomainStore.h"
 #include "ApplicationStore.h"
-#include "EventPipeEventsManager.h"
+#include "CallstackProvider.h"
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
@@ -30,6 +30,7 @@
 #include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
 #include "EnvironmentVariables.h"
+#include "EventPipeEventsManager.h"
 #include "ExceptionsProvider.h"
 #include "FrameStore.h"
 #include "GCThreadsCpuProvider.h"
@@ -179,7 +180,8 @@ bool CorProfilerCallback::InitializeServices()
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
             pRuntimeIdStore,
-            _metricsRegistry);
+            _metricsRegistry,
+            CallstackProvider(_memoryResourceManager.GetDefault()));
     }
 
     // _pCorProfilerInfoEvents must have been set for any .NET 5+ CLR events-based profiler to work
@@ -211,7 +213,8 @@ bool CorProfilerCallback::InitializeServices()
                     pRuntimeIdStore,
                     _pConfiguration.get(),
                     _pLiveObjectsProvider,
-                    _metricsRegistry
+                    _metricsRegistry,
+                    CallstackProvider(_memoryResourceManager.GetDefault())
                     );
 
                 if (!_pConfiguration->IsAllocationProfilingEnabled())
@@ -238,7 +241,8 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 nullptr, // no listener
-                _metricsRegistry
+                _metricsRegistry,
+                CallstackProvider(_memoryResourceManager.GetDefault())
                 );
         }
 
@@ -253,7 +257,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
                 _pConfiguration.get(),
-                _metricsRegistry
+                _metricsRegistry,
+                CallstackProvider(_memoryResourceManager.GetDefault())
                 );
         }
 
@@ -316,7 +321,8 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 nullptr, // no listener
-                _metricsRegistry);
+                _metricsRegistry,
+                CallstackProvider(_memoryResourceManager.GetDefault()));
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
@@ -330,7 +336,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
                 _pConfiguration.get(),
-                _metricsRegistry);
+                _metricsRegistry,
+                CallstackProvider(_memoryResourceManager.GetDefault()));
         }
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
@@ -418,7 +425,8 @@ bool CorProfilerCallback::InitializeServices()
         _pCodeHotspotsThreadList,
         _pWallTimeProvider,
         _pCpuTimeProvider,
-        _metricsRegistry);
+        _metricsRegistry,
+        CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 

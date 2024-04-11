@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "CallstackProvider.h"
 #include "CollectorBase.h"
 #include "CounterMetric.h"
 #include "GenericSampler.h"
@@ -11,6 +12,8 @@
 #include "MetricsRegistry.h"
 #include "RawAllocationSample.h"
 #include "SumMetric.h"
+
+#include <memory>
 
 class IConfiguration;
 class IManagedThreadList;
@@ -38,7 +41,8 @@ public:
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
         ISampledAllocationsListener* pListener,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        CallstackProvider callstackProvider);
 
     AllocationsProvider(
         std::vector<SampleValueTypeProvider::Offset> valueTypeProvider,
@@ -50,7 +54,8 @@ public:
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
         ISampledAllocationsListener* pListener,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        CallstackProvider callstackProvider);
 
     void OnAllocation(uint32_t allocationKind,
                       ClassID classId,
@@ -75,4 +80,5 @@ private:
     std::shared_ptr<CounterMetric> _sampledAllocationsCountMetric;
     std::shared_ptr<MeanMaxMetric> _sampledAllocationsSizeMetric;
     std::shared_ptr<SumMetric> _totalAllocationsSizeMetric;
+    CallstackProvider _callstackProvider;
 };

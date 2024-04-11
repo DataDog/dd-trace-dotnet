@@ -9,10 +9,12 @@
 #include <vector>
 
 #include "AppDomainStoreHelper.h"
+#include "CallstackProvider.h"
 #include "CpuTimeProvider.h"
 #include "FrameStoreHelper.h"
 #include "IAppDomainStore.h"
 #include "IFrameStore.h"
+#include "MemoryResourceManager.h"
 #include "ProfilerMockedInterface.h"
 #include "RawCpuSample.h"
 #include "RawWallTimeSample.h"
@@ -22,6 +24,8 @@
 #include "WallTimeProvider.h"
 
 using namespace std::chrono_literals;
+
+CallstackProvider callstackProvider(MemoryResourceManager::GetDefault());
 
 RawWallTimeSample GetWallTimeRawSample(
     std::uint64_t timeStamp,
@@ -38,10 +42,10 @@ RawWallTimeSample GetWallTimeRawSample(
     raw.LocalRootSpanId = traceId;
     raw.SpanId = spanId;
 
-    raw.Stack.reserve(frameCount);
+    raw.Stack = callstackProvider.Get();
     for (size_t i = 0; i < frameCount; i++)
     {
-        raw.Stack.push_back(i + 1); // instruction pointers start at 1 (convention in this test)
+        raw.Stack.Add(i + 1); // instruction pointers start at 1 (convention in this test)
     }
 
     // skip thread info resolution
@@ -65,10 +69,10 @@ RawCpuSample GetRawCpuSample(
     raw.LocalRootSpanId = traceId;
     raw.SpanId = spanId;
 
-    raw.Stack.reserve(frameCount);
+    raw.Stack = callstackProvider.Get();
     for (size_t i = 0; i < frameCount; i++)
     {
-        raw.Stack.push_back(i + 1); // instruction pointers start at 1 (convention in this test)
+        raw.Stack.Add(i + 1); // instruction pointers start at 1 (convention in this test)
     }
 
     // skip thread info resolution

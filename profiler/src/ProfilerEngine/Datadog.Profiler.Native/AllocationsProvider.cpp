@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "AllocationsProvider.h"
+
 #include "COMHelpers.h"
 #include "HResultConverter.h"
 #include "IConfiguration.h"
@@ -19,7 +20,6 @@
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
-
 std::vector<SampleValueType> AllocationsProvider::SampleTypeDefinitions(
     {
         {"alloc-samples", "count"},
@@ -35,7 +35,8 @@ AllocationsProvider::AllocationsProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration,
     ISampledAllocationsListener* pListener,
-    MetricsRegistry& metricsRegistry)
+    MetricsRegistry& metricsRegistry,
+    CallstackProvider pool)
     :
     AllocationsProvider(
         valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
@@ -43,7 +44,8 @@ AllocationsProvider::AllocationsProvider(
         pThreadsCpuManager, pAppDomainStore, pRuntimeIdStore,
         pConfiguration,
         pListener,
-        metricsRegistry)
+        metricsRegistry,
+        std::move(pool))
 {
 }
 
@@ -57,7 +59,8 @@ AllocationsProvider::AllocationsProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration,
     ISampledAllocationsListener* pListener,
-    MetricsRegistry& metricsRegistry) :
+    MetricsRegistry& metricsRegistry,
+    CallstackProvider pool) :
     CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
@@ -65,7 +68,8 @@ AllocationsProvider::AllocationsProvider(
     _pListener(pListener),
     _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval()),
     _sampleLimit(pConfiguration->AllocationSampleLimit()),
-    _pConfiguration(pConfiguration)
+    _pConfiguration(pConfiguration),
+    _callstackProvider{std::move(pool)}
 {
     _allocationsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_allocations");
     _allocationsSizeMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_allocations_size");
@@ -100,7 +104,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     std::shared_ptr<ManagedThreadInfo> threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, &_callstackProvider);
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;
@@ -121,7 +125,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
     rawSample.SpanId = result->GetSpanId();
     rawSample.AppDomainId = threadInfo->GetAppDomainId();
-    result->CopyInstructionPointers(rawSample.Stack);
+    rawSample.Stack = result->GetCallstack();
     rawSample.ThreadInfo = threadInfo;
     rawSample.AllocationSize = objectSize;
     rawSample.Address = address;
