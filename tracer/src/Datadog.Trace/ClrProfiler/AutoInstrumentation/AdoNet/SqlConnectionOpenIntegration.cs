@@ -33,8 +33,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         {
             var tracer = Tracer.Instance;
 
-            // TODO gate for ID and env var
-
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.SqlClient) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
             {
                 // integration disabled, don't create a scope, skip this span
@@ -47,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return CallTargetState.GetDefault();
             }
 
-            string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DbType.SqlServer);
+            string operationName = "sql-server.open";
             string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DbType.SqlServer);
 
             var scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags());
