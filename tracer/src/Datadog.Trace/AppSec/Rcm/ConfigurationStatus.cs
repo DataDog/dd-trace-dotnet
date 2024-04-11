@@ -8,18 +8,24 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
+using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.AppSec.Waf.Initialization;
-using Datadog.Trace.Logging;
+using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using Datadog.Trace.Vendors.Serilog;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
+/// <summary>
+/// This class represents the state of RCM for ASM.
+/// It has 2 possible status:
+/// - ASM is not activated, and _fileUpdates/_fileRemoves contain some pending non-deserialized changes to apply when ASM_FEATURES activate ASM. Every time an RC payload is received here, pending changes are reset to the last ones
+/// - ASM is activated, stored configs in _fileUpdates/_fileRemoves are applied every time.
+/// </summary>
 internal record ConfigurationStatus
 {
     internal const string WafRulesKey = "rules";
@@ -27,10 +33,13 @@ internal record ConfigurationStatus
     internal const string WafExclusionsKey = "exclusions";
     internal const string WafRulesDataKey = "rules_data";
     internal const string WafCustomRulesKey = "custom_rules";
+    private readonly IAsmConfigUpdater _asmFeatureProduct = new AsmFeaturesProduct();
 
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationStatus>();
+    private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater> { { RcmProducts.Asm, new AsmProduct() }, { RcmProducts.AsmDd, new AsmDdProduct() }, { RcmProducts.AsmData, new AsmDataProduct() } };
 
     private readonly string? _embeddedRulesPath;
+    private Dictionary<string, List<RemoteConfiguration>> _fileUpdates = new();
+    private Dictionary<string, List<RemoteConfigurationPath>> _fileRemoves = new();
 
     public ConfigurationStatus(string? embeddedRulesPath) => _embeddedRulesPath = embeddedRulesPath;
 
@@ -136,6 +145,96 @@ internal record ConfigurationStatus
         }
 
         return dictionary;
+    }
+
+    /// <summary>
+    /// Calls each product updater to deserialize all remote config payloads and store them properly in dictionaries which might involve various logical merges
+    /// This method deserializes everything stored in _fileUpdates. ConfigurationStatus will have a *bigger* memory footprint.
+    /// </summary>
+    public void ApplyStoredFiles()
+    {
+        // no need to clear _fileUpdates / _fileRemoves after they've been applied, as when we receive a new config, `StoreLastConfigState` method will clear anything remaining anyway.
+        foreach (var updater in _productConfigUpdaters)
+        {
+            var fileUpdates = _fileUpdates.TryGetValue(updater.Key, out var value);
+            if (fileUpdates)
+            {
+                updater.Value.ProcessUpdates(this, value!);
+            }
+
+            var fileRemoves = _fileRemoves.TryGetValue(updater.Key, out var valueRemove);
+            if (fileRemoves)
+            {
+                updater.Value.ProcessRemovals(this, valueRemove!);
+            }
+        }
+    }
+
+    /// <summary>
+    /// This method just stores the config state without deserializing anything, this state will be ready to use and deserialized if ASM is enabled later on.
+    /// This method considers that RC sends us everything again, the whole state together. That's why it's clearing all unapplied updates / removals before processing the last ones received.
+    /// In case ASM remained disabled, we discard previous updates and removals stored here that were never applied.
+    /// </summary>
+    /// <param name="configsByProduct">configsByProduct</param>
+    /// <param name="removedConfigs">removedConfigs</param>
+    /// <returns>whether or not there is any change, i.e any update/removal</returns>
+    public bool StoreLastConfigState(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
+    {
+        _fileUpdates.Clear();
+        _fileRemoves.Clear();
+        List<RemoteConfiguration> asmFeaturesToUpdate = new();
+        List<RemoteConfigurationPath> asmFeaturesToRemove = new();
+        var anyChange = configsByProduct.Count > 0 || removedConfigs?.Count > 0;
+        if (anyChange)
+        {
+            foreach (var configByProduct in configsByProduct)
+            {
+                if (configByProduct.Key == RcmProducts.AsmFeatures)
+                {
+                    asmFeaturesToUpdate.AddRange(configByProduct.Value);
+                }
+                else
+                {
+                    if (_fileUpdates.ContainsKey(configByProduct.Key))
+                    {
+                        _fileUpdates[configByProduct.Key].AddRange(configByProduct.Value);
+                    }
+                    else
+                    {
+                        _fileUpdates[configByProduct.Key] = configByProduct.Value;
+                    }
+                }
+            }
+
+            if (removedConfigs != null)
+            {
+                foreach (var configByProductToRemove in removedConfigs)
+                {
+                    if (configByProductToRemove.Key == RcmProducts.AsmFeatures)
+                    {
+                        asmFeaturesToRemove.AddRange(configByProductToRemove.Value);
+                    }
+                    else
+                    {
+                        if (_fileRemoves.ContainsKey(configByProductToRemove.Key))
+                        {
+                            _fileRemoves[configByProductToRemove.Key].AddRange(configByProductToRemove.Value);
+                        }
+                        else
+                        {
+                            _fileRemoves[configByProductToRemove.Key] = configByProductToRemove.Value;
+                        }
+                    }
+                }
+
+                // only treat asm_features as it will decide if asm gets toggled on and if we deserialize all the others
+                _asmFeatureProduct.ProcessUpdates(this, asmFeaturesToUpdate);
+                _asmFeatureProduct.ProcessRemovals(this, asmFeaturesToRemove);
+                EnableAsm = !AsmFeaturesByFile.IsEmpty() && AsmFeaturesByFile.All(a => a.Value.Enabled == true);
+            }
+        }
+
+        return anyChange;
     }
 
     public void ResetUpdateMarkers() => IncomingUpdateState.Reset();
