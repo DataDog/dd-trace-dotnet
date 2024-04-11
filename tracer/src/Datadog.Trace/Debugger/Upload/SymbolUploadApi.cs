@@ -73,17 +73,15 @@ namespace Datadog.Trace.Debugger.Upload
             var retries = 0;
             var sleepDuration = StartingSleepDuration;
 
+            var items = new MultipartFormItem[]
+            {
+                new("file", MimeTypes.Json, "file.json", symbols),
+                new("event", MimeTypes.Json, "event.json", _eventMetadata)
+            };
+
             while (retries < MaxRetries)
             {
-                using var response =
-                    await multipartRequest
-                         .PostAsync(new MultipartFormItem[]
-                          {
-                              new("file", MimeTypes.Json, "file.json", symbols),
-                              new("event", MimeTypes.Json, "event.json", _eventMetadata)
-                          })
-                         .ConfigureAwait(false);
-
+                using var response =  await multipartRequest.PostAsync(items).ConfigureAwait(false);
                 if (response.StatusCode is >= 200 and <= 299)
                 {
                     return true;
