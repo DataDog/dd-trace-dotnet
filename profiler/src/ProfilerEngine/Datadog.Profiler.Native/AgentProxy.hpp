@@ -133,8 +133,6 @@ private:
         ddog_prof_Exporter_Slice_File uncompressed_files_view = {uncompressed_files.data(), uncompressed_files.size()};
         ddog_prof_Exporter_Slice_File to_compress_files_view = {to_compress_files.data(), to_compress_files.size()};
 
-        auto* endpoints_stats = encodedProfile->endpoints_stats;
-
         ddog_CharSlice* pMetadata = nullptr;
         ddog_CharSlice ffi_metadata{};
         if (!metadata.empty())
@@ -146,6 +144,7 @@ private:
         // json defined in internal RFC - Pprof System Info Support
         // Mostly already passed through tags today
         ddog_CharSlice* pOptions = nullptr;
+        auto* endpoints_stats = encodedProfile->endpoints_stats;
         auto requestResult =
             ddog_prof_Exporter_Request_build(
                 _exporter.get(), start, end,

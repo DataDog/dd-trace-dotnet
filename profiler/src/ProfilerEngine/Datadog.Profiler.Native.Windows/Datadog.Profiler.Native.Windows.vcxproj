@@ -176,7 +176,6 @@
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan_dbg-x86_64.lib /wholearchive:clang_rt.asan_cxx_dbg-x86_64.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
