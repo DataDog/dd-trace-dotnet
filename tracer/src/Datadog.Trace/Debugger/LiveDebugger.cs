@@ -174,7 +174,7 @@ namespace Datadog.Trace.Debugger
 
             Task StartAsync()
             {
-                AddShutdownTask();
+                LifetimeManager.Instance.AddShutdownTask(ShutdownTask);
 
                 _probeStatusPoller.StartPolling();
                 _symbolsUploader.StartFlushingAsync();
@@ -182,15 +182,15 @@ namespace Datadog.Trace.Debugger
                 return _snapshotUploader.StartFlushingAsync();
             }
 
-            void AddShutdownTask()
+            void ShutdownTask()
             {
-                LifetimeManager.Instance.AddShutdownTask(() => _discoveryService.RemoveSubscription(DiscoveryCallback));
-                LifetimeManager.Instance.AddShutdownTask(_snapshotUploader.Dispose);
-                LifetimeManager.Instance.AddShutdownTask(_diagnosticsUploader.Dispose);
-                LifetimeManager.Instance.AddShutdownTask(_probeStatusPoller.Dispose);
-                LifetimeManager.Instance.AddShutdownTask(_dogStats.Dispose);
-                LifetimeManager.Instance.AddShutdownTask(() => _subscriptionManager.Unsubscribe(_subscription));
-                LifetimeManager.Instance.AddShutdownTask(_symbolsUploader.Dispose);
+                _discoveryService.RemoveSubscription(DiscoveryCallback);
+                _snapshotUploader.Dispose();
+                _diagnosticsUploader.Dispose();
+                _symbolsUploader.Dispose();
+                _probeStatusPoller.Dispose();
+                _subscriptionManager.Unsubscribe(_subscription);
+                _dogStats.Dispose();
             }
         }
 
