@@ -45,11 +45,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return CallTargetState.GetDefault();
             }
 
-            string operationName = "sql-server.open";
+            string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DbType.SqlServer); // sql_server.query
             string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DbType.SqlServer);
 
             var scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags());
             scope.Span.Type = SpanTypes.Db;
+            scope.Span.ResourceName = "Open";
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.SqlClient);
             return new CallTargetState(scope);
         }
