@@ -2,14 +2,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include <list>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <vector>
-
-#include "Log.h"
-#include "OpSysTools.h"
 
 #include "IAppDomainStore.h"
 #include "ICollector.h"
@@ -18,13 +10,22 @@
 #include "IRuntimeIdStore.h"
 #include "IService.h"
 #include "IThreadsCpuManager.h"
+#include "Log.h"
+#include "OpSysTools.h"
 #include "ProviderBase.h"
 #include "RawSample.h"
 #include "RawSamples.hpp"
 #include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
 
+#include "shared/src/native-src/dd_memory_resource.hpp"
 #include "shared/src/native-src/string.h"
+
+#include <list>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
 
 // forward declarations
 class IConfiguration;
@@ -57,14 +58,15 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore)
+        IRuntimeIdStore* pRuntimeIdStore,
+        shared::pmr::memory_resource* memoryResource)
         :
         ProviderBase(name),
         _pFrameStore{pFrameStore},
         _pAppDomainStore{pAppDomainStore},
         _pRuntimeIdStore{pRuntimeIdStore},
         _pThreadsCpuManager{pThreadsCpuManager},
-        _collectedSamples{}
+        _collectedSamples{memoryResource}
     {
         _valueOffsets = std::move(valueOffsets);
     }

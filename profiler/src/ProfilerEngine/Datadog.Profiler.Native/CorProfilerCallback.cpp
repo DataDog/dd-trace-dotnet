@@ -156,17 +156,18 @@ bool CorProfilerCallback::InitializeServices()
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
             pRuntimeIdStore,
-            _pConfiguration.get());
+            _pConfiguration.get(),
+            MemoryResourceManager::GetDefault());
     }
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get(), MemoryResourceManager::GetDefault());
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
+        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get(), MemoryResourceManager::GetDefault());
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -181,7 +182,8 @@ bool CorProfilerCallback::InitializeServices()
             _pAppDomainStore.get(),
             pRuntimeIdStore,
             _metricsRegistry,
-            CallstackProvider(_memoryResourceManager.GetDefault()));
+            CallstackProvider(_memoryResourceManager.GetDefault()),
+            MemoryResourceManager::GetDefault());
     }
 
     // _pCorProfilerInfoEvents must have been set for any .NET 5+ CLR events-based profiler to work
@@ -214,7 +216,8 @@ bool CorProfilerCallback::InitializeServices()
                     _pConfiguration.get(),
                     _pLiveObjectsProvider,
                     _metricsRegistry,
-                    CallstackProvider(_memoryResourceManager.GetDefault())
+                    CallstackProvider(_memoryResourceManager.GetDefault()),
+                    MemoryResourceManager::GetDefault()
                     );
 
                 if (!_pConfiguration->IsAllocationProfilingEnabled())
@@ -242,7 +245,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 nullptr, // no listener
                 _metricsRegistry,
-                CallstackProvider(_memoryResourceManager.GetDefault())
+                CallstackProvider(_memoryResourceManager.GetDefault()),
+                MemoryResourceManager::GetDefault()
                 );
         }
 
@@ -258,7 +262,8 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
-                CallstackProvider(_memoryResourceManager.GetDefault())
+                CallstackProvider(_memoryResourceManager.GetDefault()),
+                MemoryResourceManager::GetDefault()
                 );
         }
 
@@ -270,7 +275,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get()
+                _pConfiguration.get(),
+                MemoryResourceManager::GetDefault()
                 );
             _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
                 valueTypeProvider,
@@ -279,7 +285,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
                 _pConfiguration.get(),
-                _metricsRegistry
+                _metricsRegistry,
+                MemoryResourceManager::GetDefault()
                 );
         }
         else
@@ -322,7 +329,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 nullptr, // no listener
                 _metricsRegistry,
-                CallstackProvider(_memoryResourceManager.GetDefault()));
+                CallstackProvider(_memoryResourceManager.GetDefault()),
+                MemoryResourceManager::GetDefault());
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
@@ -337,7 +345,8 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
-                CallstackProvider(_memoryResourceManager.GetDefault()));
+                CallstackProvider(_memoryResourceManager.GetDefault()),
+                MemoryResourceManager::GetDefault());
         }
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
@@ -348,7 +357,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get());
+                _pConfiguration.get(),
+                MemoryResourceManager::GetDefault());
 
             _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
                 valueTypeProvider,
@@ -357,7 +367,8 @@ bool CorProfilerCallback::InitializeServices()
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
                 _pConfiguration.get(),
-                _metricsRegistry);
+                _metricsRegistry,
+                MemoryResourceManager::GetDefault());
         }
         else
         {

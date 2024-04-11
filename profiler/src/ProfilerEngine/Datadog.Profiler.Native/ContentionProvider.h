@@ -16,6 +16,8 @@
 #include "MetricsRegistry.h"
 #include "RawContentionSample.h"
 
+#include "shared/src/native-src/dd_memory_resource.hpp"
+
 #include <memory>
 
 class IConfiguration;
@@ -43,7 +45,8 @@ public:
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
         MetricsRegistry& metricsRegistry,
-        CallstackProvider callstackProvider);
+        CallstackProvider callstackProvider,
+        shared::pmr::memory_resource* memoryResource);
 
     // IContentionListener implementation
     void OnContention(double contentionDurationNs) override;

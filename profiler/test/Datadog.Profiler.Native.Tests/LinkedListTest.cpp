@@ -11,9 +11,11 @@
 
 #include "gtest/gtest.h"
 
+#include "shared/src/native-src/dd_memory_resource.hpp"
+
 TEST(LinkedListTest, PushBack)
 {
-    LinkedList<int> x;
+    LinkedList<int> x(shared::pmr::get_default_resource());
 
     ASSERT_EQ(x.Size(), 0);
 
@@ -26,7 +28,7 @@ TEST(LinkedListTest, PushBack)
 
 TEST(LinkedListTest, ForEach)
 {
-    LinkedList<std::string> x;
+    LinkedList<std::string> x(shared::pmr::get_default_resource());
 
     ASSERT_TRUE(x.Append("1"));
     ASSERT_TRUE(x.Append("2"));
@@ -50,7 +52,7 @@ struct Person
 
 TEST(LinkedListTest, Move)
 {
-    LinkedList<Person> l;
+    LinkedList<Person> l(shared::pmr::get_default_resource());
 
     l.Append({.Name = "Georges", .Age = 42});
     l.Append({.Name = "Ralph", .Age = 101});
@@ -88,7 +90,7 @@ TEST(LinkedListTest, Move)
 
 TEST(LinkedListTest, Assign)
 {
-    LinkedList<Person> l;
+    LinkedList<Person> l(shared::pmr::get_default_resource());
 
     l.Append({.Name = "Georges", .Age = 42});
     l.Append({.Name = "Ralph", .Age = 101});
@@ -97,7 +99,7 @@ TEST(LinkedListTest, Assign)
 
     ASSERT_EQ(l.Size(), 4);
 
-    LinkedList<Person> other;
+    LinkedList<Person> other(shared::pmr::get_default_resource());
 
     other = std::move(l);
 
@@ -179,7 +181,7 @@ TEST(LinkedListTest, ObjectDtorCalled)
 
     bool dtorCalled = false;
     {
-        LinkedList<Dummy> l;
+        LinkedList<Dummy> l(shared::pmr::get_default_resource());
 
         l.Append({&dtorCalled});
 
@@ -220,10 +222,10 @@ TEST(LinkedListTest, CannotAllocate)
 TEST(LinkedListTest, EnsureMoveAssignementOperatorDoesNotLeakOrLeavesTheCollectionInInconsitentState)
 {
     {
-        LinkedList<int> l2;
+        LinkedList<int> l2(shared::pmr::get_default_resource());
         l2.Append(21);
 
-        LinkedList<int> ll;
+        LinkedList<int> ll(shared::pmr::get_default_resource());
         EXPECT_NO_THROW(ll = std::move(l2));
 
         ASSERT_EQ(l2.Size(), 0);
@@ -232,9 +234,9 @@ TEST(LinkedListTest, EnsureMoveAssignementOperatorDoesNotLeakOrLeavesTheCollecti
     }
 
     {
-        LinkedList<int> l2;
+        LinkedList<int> l2(shared::pmr::get_default_resource());
 
-        LinkedList<int> ll;
+        LinkedList<int> ll(shared::pmr::get_default_resource());
         ll.Append(21);
 
         EXPECT_NO_THROW(ll = std::move(l2));
@@ -245,8 +247,8 @@ TEST(LinkedListTest, EnsureMoveAssignementOperatorDoesNotLeakOrLeavesTheCollecti
     }
 
     {
-        LinkedList<int> l2;
-        LinkedList<int> ll;
+        LinkedList<int> l2(shared::pmr::get_default_resource());
+        LinkedList<int> ll(shared::pmr::get_default_resource());
 
         EXPECT_NO_THROW(ll = std::move(l2));
 
@@ -257,7 +259,7 @@ TEST(LinkedListTest, EnsureMoveAssignementOperatorDoesNotLeakOrLeavesTheCollecti
 
 __declspec(noinline) void SwapWithContent(LinkedList<int>& ll)
 {
-    LinkedList<int> l;
+    LinkedList<int> l(shared::pmr::get_default_resource());
     l.Append(41);
     l.Append(43);
     l.Swap(ll);
@@ -266,9 +268,9 @@ __declspec(noinline) void SwapWithContent(LinkedList<int>& ll)
 TEST(LinkedListTest, SwapAll)
 {
     {
-        LinkedList<int> l;
+        LinkedList<int> l(shared::pmr::get_default_resource());
 
-        LinkedList<int> ll;
+        LinkedList<int> ll(shared::pmr::get_default_resource());
         ll.Append(21);
 
         ll.Swap(l);
@@ -277,9 +279,9 @@ TEST(LinkedListTest, SwapAll)
         ASSERT_EQ(ll.Size(), 0);
     }
     {
-        LinkedList<int> l;
+        LinkedList<int> l(shared::pmr::get_default_resource());
 
-        LinkedList<int> ll;
+        LinkedList<int> ll(shared::pmr::get_default_resource());
         ll.Append(21);
 
         l.Swap(ll);
@@ -288,12 +290,12 @@ TEST(LinkedListTest, SwapAll)
         ASSERT_EQ(ll.Size(), 0);
     }
     {
-        LinkedList<int> l;
+        LinkedList<int> l(shared::pmr::get_default_resource());
         l.Append(1);
         l.Append(2);
         l.Append(3);
 
-        LinkedList<int> ll;
+        LinkedList<int> ll(shared::pmr::get_default_resource());
         ll.Append(21);
 
         ll.Swap(l);
@@ -303,7 +305,7 @@ TEST(LinkedListTest, SwapAll)
     }
 
     {
-        LinkedList<int> l;
+        LinkedList<int> l(shared::pmr::get_default_resource());
         SwapWithContent(l);
 
         ASSERT_EQ(l.Size(), 2);
@@ -312,8 +314,8 @@ TEST(LinkedListTest, SwapAll)
         ASSERT_EQ(l.Size(), 3);
     }
     {
-        LinkedList<double> l;
-        LinkedList<double> ll;
+        LinkedList<double> l(shared::pmr::get_default_resource());
+        LinkedList<double> ll(shared::pmr::get_default_resource());
 
         EXPECT_NO_THROW(l.Swap(ll));
     }

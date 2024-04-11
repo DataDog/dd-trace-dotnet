@@ -23,6 +23,8 @@
 #include "ThreadsCpuManagerHelper.h"
 #include "WallTimeProvider.h"
 
+#include "shared/src/native-src/dd_memory_resource.hpp"
+
 using namespace std::chrono_literals;
 
 CallstackProvider callstackProvider(MemoryResourceManager::GetDefault());
@@ -94,7 +96,7 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration);
+    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -126,7 +128,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     std::string secondExpectedRuntimeId = "OtherRid";
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(2))).WillRepeatedly(::testing::Return(secondExpectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration);
+    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -207,7 +209,7 @@ TEST(WallTimeProviderTest, CheckFrames)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(1))).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration);
+    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -268,7 +270,7 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration);
+    WallTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -312,7 +314,7 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     RuntimeIdStoreHelper runtimeIdStore;
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
-    CpuTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration);
+    CpuTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
     Sample::ValuesCount = 1;
     provider.Start();
 

@@ -49,7 +49,8 @@ LiveObjectsProvider::LiveObjectsProvider(
         pConfiguration,
         nullptr,
         metricsRegistry,
-        CallstackProvider(shared::pmr::null_memory_resource())); // safe to pass nullptr for the provider. This provider does not collect callstack
+        CallstackProvider(shared::pmr::null_memory_resource()), // safe to pass the null memory resource for the provider. This provider does not collect callstack
+        shared::pmr::null_memory_resource()); // safe to pass null memory resource for the provider. This provider is only used to transform RawSamples
 }
 
 const char* LiveObjectsProvider::GetName()

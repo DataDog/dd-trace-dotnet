@@ -13,12 +13,13 @@ ThreadLifetimeProvider::ThreadLifetimeProvider(
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration)
+    IConfiguration* pConfiguration,
+    shared::pmr::memory_resource* memoryResource)
     :
     CollectorBase<RawThreadLifetimeSample>(
         "ThreadLifetimeProvider",
         valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions),
-        pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
+        pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource)
 {
 }
 
