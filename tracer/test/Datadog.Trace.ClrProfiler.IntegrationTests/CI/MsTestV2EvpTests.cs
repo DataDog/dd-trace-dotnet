@@ -402,80 +402,77 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
 
-                using (var agent = EnvironmentHelper.GetMockAgent())
+                using var agent = EnvironmentHelper.GetMockAgent();
+                agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
+
+                const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
+                agent.EventPlatformProxyPayloadReceived += (sender, e) =>
                 {
-                    agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
-
-                    const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
-                    agent.EventPlatformProxyPayloadReceived += (sender, e) =>
+                    if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
                     {
-                        if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
-                        {
-                            e.Value.Response = new MockTracerResponse(settingsJson, 200);
-                            return;
-                        }
+                        e.Value.Response = new MockTracerResponse(settingsJson, 200);
+                        return;
+                    }
 
-                        if (e.Value.PathAndQuery.EndsWith("api/v2/ci/libraries/tests"))
-                        {
-                            e.Value.Response = new MockTracerResponse(testsJson, 200);
-                            return;
-                        }
+                    if (e.Value.PathAndQuery.EndsWith("api/v2/ci/libraries/tests"))
+                    {
+                        e.Value.Response = new MockTracerResponse(testsJson, 200);
+                        return;
+                    }
 
-                        if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
-                        {
-                            e.Value.Response = new MockTracerResponse($"{{\"data\":[],\"meta\":{{\"correlation_id\":\"{correlationId}\"}}}}", 200);
-                            return;
-                        }
+                    if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
+                    {
+                        e.Value.Response = new MockTracerResponse($"{{\"data\":[],\"meta\":{{\"correlation_id\":\"{correlationId}\"}}}}", 200);
+                        return;
+                    }
 
-                        if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
-                        {
-                            e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
+                    if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
+                    {
+                        e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
 
-                            var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
-                            if (payload.Events?.Length > 0)
+                        var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                        if (payload.Events?.Length > 0)
+                        {
+                            foreach (var @event in payload.Events)
                             {
-                                foreach (var @event in payload.Events)
+                                if (@event.Content.ToString() is { } eventContent)
                                 {
-                                    if (@event.Content.ToString() is { } eventContent)
+                                    if (@event.Type == SpanTypes.Test)
                                     {
-                                        if (@event.Type == SpanTypes.Test)
-                                        {
-                                            tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
-                                        }
-                                        else if (@event.Type == SpanTypes.TestSuite)
-                                        {
-                                            testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(eventContent));
-                                        }
-                                        else if (@event.Type == SpanTypes.TestModule)
-                                        {
-                                            testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(eventContent));
-                                        }
+                                        tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
+                                    }
+                                    else if (@event.Type == SpanTypes.TestSuite)
+                                    {
+                                        testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(eventContent));
+                                    }
+                                    else if (@event.Type == SpanTypes.TestModule)
+                                    {
+                                        testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(eventContent));
                                     }
                                 }
                             }
                         }
-                    };
-
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
-                    {
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == expectedSpansForPre225 ? "pre_2_2_5" : "post_2_2_5", null, null, null, null, expectedSpansForPre225, expectedSpansForPost225);
-                        settings.DisableRequireUniquePrefix();
-                        await Verifier.Verify(
-                            tests
-                               .OrderBy(s => s.Resource)
-                               .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Name))
-                               .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters))
-                               .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsNew))
-                               .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsRetry))
-                               .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.AbortReason)),
-                            settings);
-
-                        // Check the tests, suites and modules count
-                        Assert.Equal(expectedTestCount, tests.Count);
-                        testSuites.Should().HaveCountLessThanOrEqualTo(2);
-                        Assert.Single(testModules);
                     }
-                }
+                };
+
+                using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
+
+                var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == expectedSpansForPre225 ? "pre_2_2_5" : "post_2_2_5", null, null, null, null, expectedSpansForPre225, expectedSpansForPost225);
+                settings.DisableRequireUniquePrefix();
+                await Verifier.Verify(
+                    tests
+                       .OrderBy(s => s.Resource)
+                       .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Name))
+                       .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters))
+                       .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsNew))
+                       .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsRetry))
+                       .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.AbortReason)),
+                    settings);
+
+                // Check the tests, suites and modules count
+                Assert.Equal(expectedTestCount, tests.Count);
+                testSuites.Should().HaveCountLessThanOrEqualTo(2);
+                Assert.Single(testModules);
             }
             catch
             {
