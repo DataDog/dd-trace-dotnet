@@ -79,12 +79,6 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private ApplyDetails[] Callback(Dictionary<string, List<RemoteConfiguration>> addedConfig, Dictionary<string, List<RemoteConfigurationPath>>? removedConfig)
         {
-            // TODO: should we do something with `removedConfig`?
-            // Assumptions:
-            // 1. Only one value at a time (No `true` and `false` in the same RC update)
-            // 2. Once first `true` arrives, no need to act for another `true`
-            // 3. Once `false` arrives, stop uploading and act for next `true`
-
             var result =
                 (from configByProduct in addedConfig
                  where configByProduct.Key == RcmProducts.LiveDebuggingSymbolDb
