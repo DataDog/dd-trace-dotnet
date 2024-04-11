@@ -86,6 +86,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.Couchbase\\Samples.Couchbase.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Dapper\\Samples.Dapper.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.DataStreams.Kafka\\Samples.DataStreams.Kafka.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.DataStreams.ManualAPI\\Samples.DataStreams.ManualAPI.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Deduplication\\Samples.Deduplication.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Elasticsearch.V5\\Samples.Elasticsearch.V5.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Elasticsearch.V7\\Samples.Elasticsearch.V7.csproj",
