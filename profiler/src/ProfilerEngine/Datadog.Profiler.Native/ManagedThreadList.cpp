@@ -66,7 +66,7 @@ std::shared_ptr<ManagedThreadInfo> ManagedThreadList::GetOrCreate(ThreadID clrTh
     auto pInfo = FindByClrId(clrThreadId);
     if (pInfo == nullptr)
     {
-        pInfo = std::make_shared<ManagedThreadInfo>(clrThreadId);
+        pInfo = std::make_shared<ManagedThreadInfo>(clrThreadId, _pCorProfilerInfo);
         _threads.push_back(pInfo);
 
         _lookupByClrThreadId[clrThreadId] = pInfo;
