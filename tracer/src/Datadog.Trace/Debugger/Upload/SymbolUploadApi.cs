@@ -46,13 +46,7 @@ namespace Datadog.Trace.Debugger.Upload
         {
             ArraySegment<byte> GetEventMetadataAsArraySegment()
             {
-                var sb = new StringBuilder();
-                sb.Append(@"{");
-                sb.Append(@"""ddsource"": ""dd_debugger"",");
-                sb.Append(@$"""service"": ""{serviceName}"",");
-                sb.Append(@$"""runtimeId"": ""{Tracer.RuntimeId}""");
-                sb.Append(@"}");
-                var eventMetadata = sb.ToString();
+                var eventMetadata = $@"{{""ddsource"": ""dd_debugger"", ""service"": ""{serviceName}"", ""runtimeId"": ""{Tracer.RuntimeId}""}}";
 
                 var count = Encoding.UTF8.GetByteCount(eventMetadata);
                 var eventAsBytes = new byte[count];
