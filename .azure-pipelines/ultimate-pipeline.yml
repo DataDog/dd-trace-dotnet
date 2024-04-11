@@ -2564,6 +2564,12 @@ stages:
     - script: tracer\build.cmd RunProfilerAsanTest -Framework net8.0
       displayName: Run Profiler ASAN test
 
+    - publish: $(monitoringHome)
+      displayName: Uploading binaries built with Asan
+      artifact: _$(System.StageName)_$(Agent.JobName)_binaries_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: false
+
     - publish: profiler/build_data
       displayName: Uploading Address sanitizer test results
       artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
