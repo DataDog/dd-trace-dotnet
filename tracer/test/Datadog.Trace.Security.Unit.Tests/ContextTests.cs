@@ -38,7 +38,7 @@ public class ContextTests : WafLibraryRequiredTest
             AppSec.WafEncoding.Encoder.SetPoolSize(0);
         }
 
-        var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, setupWafSchemaExtraction: true, useUnsafeEncoder: useUnsafeEncoder);
+        var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, useUnsafeEncoder: useUnsafeEncoder);
         using var waf = initResult.Waf;
         waf.Should().NotBeNull();
 
