@@ -6057,6 +6057,6 @@ stages:
         - task: DownloadPipelineArtifact@2
           inputs:
             patterns: '*_logs_*/**/*.log'
-            path: $(Build.SourcesDirectory)/tracer/build_data
+            path: $(Build.SourcesDirectory)/tracer/build_data/logs
 
         - bash: ./tracer/build.sh CheckBuildLogsForErrors 
