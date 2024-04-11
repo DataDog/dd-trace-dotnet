@@ -59,6 +59,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                              {
                                  new("X-SigSci-Tags", "SQLI"),
                                  new("X-Amzn-Trace-Id", "Test"),
+                                 new("Cloudfront-Viewer-Ja3-Fingerprint", "Cloudfront-test"),
                                  new("CF-ray", "Test"),
                                  new("X-Cloud-Trace-Context", "Test"),
                                  new("X-Appgw-Trace-id", "Test"),

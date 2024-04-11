@@ -5,9 +5,7 @@
 
 #nullable enable
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf
 {

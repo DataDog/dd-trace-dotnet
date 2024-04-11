@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf;
@@ -18,6 +19,8 @@ internal abstract class HttpTransportBase
     internal abstract int StatusCode { get; }
 
     internal abstract IDictionary<string, object>? RouteData { get; }
+
+    internal abstract bool ReportedExternalWafsRequestHeaders { get; set; }
 
     internal abstract IContext? GetAdditiveContext();
 

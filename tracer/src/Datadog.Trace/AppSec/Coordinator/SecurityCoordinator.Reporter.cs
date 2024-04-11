@@ -50,11 +50,12 @@ internal readonly partial struct SecurityCoordinator
 
     private static readonly Dictionary<string, string?> ExternalWafsRequestHeaders = new()
     {
-        { "X-Amzn-Trace-Id", string.Empty },
-        { "CF-ray", string.Empty },
-        { "X-Cloud-Trace-Context", string.Empty },
-        { "X-Appgw-Trace-id", string.Empty },
         { "Akamai-User-Risk", string.Empty },
+        { "CF-ray", string.Empty },
+        { "Cloudfront-Viewer-Ja3-Fingerprint", string.Empty },
+        { "X-Amzn-Trace-Id", string.Empty },
+        { "X-Appgw-Trace-id", string.Empty },
+        { "X-Cloud-Trace-Context", string.Empty },
         { "X-SigSci-RequestID", string.Empty },
         { "X-SigSci-Tags", string.Empty },
     };
@@ -104,6 +105,14 @@ internal readonly partial struct SecurityCoordinator
     /// <param name="status">returned status code</param>
     internal void TryReport(IResult result, bool blocked, int? status = null)
     {
+        IHeadersCollection? headers = null;
+        if (!_httpTransport.ReportedExternalWafsRequestHeaders)
+        {
+            headers = _httpTransport.GetRequestHeaders();
+            AddHeaderTags(_localRootSpan, headers, ExternalWafsRequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+            _httpTransport.ReportedExternalWafsRequestHeaders = true;
+        }
+
         if (result.ShouldReportSecurityResult)
         {
             _localRootSpan.SetTag(Tags.AppSecEvent, "true");
@@ -137,7 +146,7 @@ internal readonly partial struct SecurityCoordinator
             _localRootSpan.SetTag(Tags.AppSecRuleFileVersion, _security.WafRuleFileVersion);
             _localRootSpan.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             _localRootSpan.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
-            var headers = _httpTransport.GetRequestHeaders();
+            headers ??= _httpTransport.GetRequestHeaders();
             AddHeaderTags(_localRootSpan, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
             if (status is not null)

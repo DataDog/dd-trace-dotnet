@@ -14,6 +14,7 @@
       http.method: GET,
       http.request.headers.akamai-user-risk: Test,
       http.request.headers.cf-ray: Test,
+      http.request.headers.cloudfront-viewer-ja3-fingerprint: Cloudfront-test,
       http.request.headers.host: localhost:00000,
       http.request.headers.x-amzn-trace-id: Test,
       http.request.headers.x-appgw-trace-id: Test,
