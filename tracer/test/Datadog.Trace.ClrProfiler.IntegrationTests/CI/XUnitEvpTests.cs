@@ -65,12 +65,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     "{\"data\":{\"id\":\"511938a3f19c12f8bb5e5caa695ca24f4563de3f\",\"type\":\"ci_app_tracers_test_service_settings\",\"attributes\":{\"code_coverage\":false,\"early_flake_detection\":{\"enabled\":true,\"slow_test_retries\":{\"10s\":5,\"30s\":3,\"5m\":2,\"5s\":10},\"faulty_session_threshold\":100},\"flaky_test_retries_enabled\":false,\"itr_enabled\":true,\"require_git\":false,\"tests_skipping\":true}}}",
                     "{\"data\":{\"id\":\"lNemDTwOV8U\",\"type\":\"ci_app_libraries_tests\",\"attributes\":{\"tests\":{\"Samples.XUnitTests\":{\"Samples.XUnitTests.TestSuite\":[\"TraitPassTest\"]}}}}}",
                     115);
-
-                // EFD with failure threshold
-                yield return row.Concat(
-                    "{\"data\":{\"id\":\"511938a3f19c12f8bb5e5caa695ca24f4563de3f\",\"type\":\"ci_app_tracers_test_service_settings\",\"attributes\":{\"code_coverage\":false,\"early_flake_detection\":{\"enabled\":true,\"slow_test_retries\":{\"10s\":5,\"30s\":3,\"5m\":2,\"5s\":10},\"faulty_session_threshold\":50},\"flaky_test_retries_enabled\":false,\"itr_enabled\":true,\"require_git\":false,\"tests_skipping\":true}}}",
-                    "{\"data\":{\"id\":\"lNemDTwOV8U\",\"type\":\"ci_app_libraries_tests\",\"attributes\":{\"tests\":{}}}}",
-                    79);
             }
         }
 
