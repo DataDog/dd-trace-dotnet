@@ -14,6 +14,8 @@ parameters:
     default: ''
 
 steps:
+- template: ./clean-docker-containers.yml
+
 - bash: |
     echo "##vso[task.setvariable variable=TOKEN]$(System.JobId)"
     echo "##vso[task.setvariable variable=START_ENDPOINT]/test/session/start?test_session_token=$(System.JobId)"

@@ -313,7 +313,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     CallstackProvider p(MemoryResourceManager::GetDefault());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
-    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
 
     std::uint32_t hr;
@@ -338,7 +338,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWith
     CallstackProvider p(MemoryResourceManager::GetDefault());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
-    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
 
     std::uint32_t hr;
@@ -365,7 +365,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCa
     CallstackProvider p(MemoryResourceManager::GetDefault());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
-    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
 
     std::uint32_t hr;
@@ -387,7 +387,7 @@ TEST_F(LinuxStackFramesCollectorFixture, MustNotCollectIfUnknownThreadId)
     CallstackProvider p(MemoryResourceManager::GetDefault());
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
-    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
     threadInfo.SetOsInfo(0, (HANDLE)0);
 
     std::uint32_t hr;
@@ -412,7 +412,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
 
     // Validate the profiler is working correctly
     auto threadId = (DWORD)GetWorkerThreadId();
-    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
     threadInfo.SetOsInfo(threadId, (HANDLE)0);
 
     std::uint32_t hr;
@@ -479,7 +479,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
     auto threadId = GetWorkerThreadId();
-    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
     threadInfo.SetOsInfo((DWORD)threadId, (HANDLE)0);
 
     // validate it's working
@@ -523,7 +523,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
     auto threadId = GetWorkerThreadId();
-    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
     threadInfo.SetOsInfo((DWORD)threadId, (HANDLE)0);
 
     // validate it's working
@@ -568,7 +568,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     StackSnapshotResultBuffer* buffer;
 
     auto threadId = GetWorkerThreadId();
-    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
     threadInfo.SetOsInfo((DWORD)threadId, (HANDLE)0);
 
     // validate it's working
@@ -635,7 +635,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandler
 
     // Validate the profiler is still working correctly
     auto threadId = (DWORD)GetWorkerThreadId();
-    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
     threadInfo.SetOsInfo(threadId, (HANDLE)0);
 
     std::uint32_t hr;
@@ -690,7 +690,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     auto collector = LinuxStackFramesCollector(signalManager, configuration.get(), &p);
 
     const auto threadId = GetWorkerThreadId();
-    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
     threadInfo.SetOsInfo((DWORD)threadId, (HANDLE)0);
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;

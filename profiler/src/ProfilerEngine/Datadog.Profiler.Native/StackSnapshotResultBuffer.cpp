@@ -6,7 +6,6 @@
 StackSnapshotResultBuffer::StackSnapshotResultBuffer() :
     _unixTimeUtc{0},
     _representedDurationNanoseconds{0},
-    _appDomainId{0},
     _localRootSpanId{0},
     _spanId{0},
     _callstack{}
@@ -17,7 +16,6 @@ StackSnapshotResultBuffer::~StackSnapshotResultBuffer()
 {
     _unixTimeUtc = 0;
     _representedDurationNanoseconds = 0;
-    _appDomainId = static_cast<AppDomainID>(0);
     _localRootSpanId = 0;
     _spanId = 0;
 }
@@ -26,8 +24,6 @@ void StackSnapshotResultBuffer::Reset()
 {
     _localRootSpanId = 0;
     _spanId = 0;
-
-    _appDomainId = static_cast<AppDomainID>(0);
     _representedDurationNanoseconds = 0;
     _unixTimeUtc = 0;
     _callstack = {};

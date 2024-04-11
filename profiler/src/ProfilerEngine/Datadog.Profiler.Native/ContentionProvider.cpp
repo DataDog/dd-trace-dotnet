@@ -132,11 +132,10 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         }
 
         result->SetUnixTimeUtc(GetCurrentTimestamp());
-        result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
         rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
         rawSample.SpanId = result->GetSpanId();
-        rawSample.AppDomainId = result->GetAppDomainId();
+        rawSample.AppDomainId = threadInfo->GetAppDomainId();
         rawSample.Timestamp = result->GetUnixTimeUtc();
         rawSample.Stack = result->GetCallstack();
         rawSample.ThreadInfo = threadInfo;

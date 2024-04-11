@@ -32,9 +32,6 @@ public:
     inline std::uint64_t GetRepresentedDurationNanoseconds() const;
     inline std::uint64_t SetRepresentedDurationNanoseconds(std::uint64_t value);
 
-    inline AppDomainID GetAppDomainId() const;
-    inline AppDomainID SetAppDomainId(AppDomainID appDomainId);
-
     inline std::uint64_t GetLocalRootSpanId() const;
     inline std::uint64_t SetLocalRootSpanId(std::uint64_t value);
 
@@ -43,8 +40,6 @@ public:
 
     inline std::size_t GetFramesCount() const;
     inline void SetFramesCount(std::uint16_t count);
-
-    inline void DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo);
 
     void Reset();
 
@@ -62,7 +57,6 @@ protected:
 
     std::uint64_t _unixTimeUtc;
     std::uint64_t _representedDurationNanoseconds;
-    AppDomainID _appDomainId;
     Callstack _callstack;
 
     std::uint64_t _localRootSpanId;
@@ -92,18 +86,6 @@ inline std::uint64_t StackSnapshotResultBuffer::SetRepresentedDurationNanosecond
 {
     std::uint64_t prevValue = _representedDurationNanoseconds;
     _representedDurationNanoseconds = value;
-    return prevValue;
-}
-
-inline AppDomainID StackSnapshotResultBuffer::GetAppDomainId() const
-{
-    return _appDomainId;
-}
-
-inline AppDomainID StackSnapshotResultBuffer::SetAppDomainId(AppDomainID value)
-{
-    AppDomainID prevValue = _appDomainId;
-    _appDomainId = value;
     return prevValue;
 }
 
@@ -139,35 +121,6 @@ inline std::size_t StackSnapshotResultBuffer::GetFramesCount() const
 inline void StackSnapshotResultBuffer::SetFramesCount(std::uint16_t count)
 {
     _callstack.SetCount(count);
-}
-
-inline void StackSnapshotResultBuffer::DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo)
-{
-    // Determine the AppDomain currently running the sampled thread:
-    //
-    // (Note: On Windows, the target thread is still suspended and the AddDomain ID will be correct.
-    // However, on Linux the signal handler that performed the stack walk has finished and the target
-    // thread is making progress again.
-    // So, it is possible that since we walked the stack, the thread's AppDomain changed and the AppDomain ID we
-    // read here does not correspond to the stack sample. In practice we expect this to occur very rarely,
-    // so we accept this for now.
-    // If, however, this is observed frequently enough to present a problem, we will need to move the AppDomain
-    // ID read logic into _pStackFramesCollector->CollectStackSample(). Collectors that suspend the target thread
-    // will be able to read the ID at any time, but non-suspending collectors (e.g. Linux) will need to do it from
-    // within the signal handler. An example for this is the
-    // StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot() API which exists
-    // to address the same synchronization issue with TraceContextTracking-related data.
-    // There is an additional complexity with the AppDomain case, because it is likely not safe to call
-    // _pCorProfilerInfo->GetThreadAppDomain() from the collector's signal handler directly (needs to be investigated).
-    // To address this, we will need to do it via a SynchronousOffThreadWorkerBase-based mechanism, similar to how
-    // the SymbolsResolver uses a Worker and synchronously waits for results to avoid calling
-    // symbol resolution APIs on a CLR thread.)
-    AppDomainID appDomainId;
-    HRESULT hr = pCorProfilerInfo->GetThreadAppDomain(threadId, &appDomainId);
-    if (SUCCEEDED(hr))
-    {
-        SetAppDomainId(appDomainId);
-    }
 }
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------

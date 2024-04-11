@@ -119,13 +119,12 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     }
 
     result->SetUnixTimeUtc(GetCurrentTimestamp());
-    result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
     RawAllocationSample rawSample;
     rawSample.Timestamp = result->GetUnixTimeUtc();
     rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
     rawSample.SpanId = result->GetSpanId();
-    rawSample.AppDomainId = result->GetAppDomainId();
+    rawSample.AppDomainId = threadInfo->GetAppDomainId();
     rawSample.Stack = result->GetCallstack();
     rawSample.ThreadInfo = threadInfo;
     rawSample.AllocationSize = objectSize;
