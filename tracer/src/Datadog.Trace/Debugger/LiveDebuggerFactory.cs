@@ -117,7 +117,7 @@ internal class LiveDebuggerFactory
             productName: "debugger",
             tcpTimeout: TimeSpan.FromSeconds(15),
             AgentHttpHeaderNames.MinimalHeaders,
-            () => isMultipart ? new MultipartAgentHeaderHelper() : new MinimalAgentHeaderHelper(),
+            isMultipart ? () => new MultipartAgentHeaderHelper() : () => new MinimalAgentHeaderHelper(),
             uri => uri);
     }
 }
