@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
         {
             if (response.Instance is not null && response.ApiCall?.Uri is { } uri)
             {
-                var tags = (ElasticsearchTags)state.State;
+                var tags = (ElasticsearchTags?)state.State;
 
                 if (tags != null)
                 {

@@ -210,9 +210,7 @@ internal partial class MainViewModel
 
                 if (withConstraint)
                 {
-                    argsParameters.Add(realPType.IsValueType
-                        ? $"{gentTypeName} {parameterName}"
-                        : $"{gentTypeName}? {parameterName}");
+                    argsParameters.Add($"{gentTypeName} {parameterName}");
                 }
                 else
                 {
@@ -277,7 +275,7 @@ internal partial class MainViewModel
             {
                 returnTypeParamDocumentation = Environment.NewLine + $"    /// <typeparam name=\"TReturn\">Type of the return value ({returnTypeCleaned})</typeparam>";
                 returnType = ", TReturn";
-                returnTypeParameter = rType.IsValueType ? "TReturn" : "TReturn?";
+                returnTypeParameter = "TReturn";
                 if (CreateDucktypeReturnValue && methodDef.ReturnType.TryGetTypeDef() is { } returnTypeDef)
                 {
                     var proxyDefinition = EditorHelper.GetDuckTypeProxies(returnTypeDef, DucktypeReturnValueFields, DucktypeReturnValueProperties, DucktypeReturnValueMethods, DucktypeReturnValueDuckChaining, UseDuckCopyStruct, duckTypeProxyDefinitions);
@@ -285,6 +283,10 @@ internal partial class MainViewModel
                     {
                         argsConstraint.Add($"        where TReturn : {proxyDefinition.Value.ProxyName}");
                     }
+                }
+                else if (!rType.IsValueType)
+                {
+                    returnTypeParameter = "TReturn?";
                 }
             }
 
@@ -332,7 +334,7 @@ internal partial class MainViewModel
             returnParamDocumentation = Environment.NewLine + $"    /// <param name=\"returnValue\">Instance of return type</param>";
             returnTypeParamDocumentation = Environment.NewLine + $"    /// <typeparam name=\"TReturn\">Type of the return value</typeparam>";
             returnType = ", TReturn";
-            returnTypeParameter = "TReturn";
+            returnTypeParameter = "TReturn?";
         }
         else
         {
@@ -353,7 +355,7 @@ internal partial class MainViewModel
             {
                 returnTypeParamDocumentation = Environment.NewLine + $"    /// <typeparam name=\"TReturn\">Type of the return value ({returnTypeCleaned})</typeparam>";
                 returnType = ", TReturn";
-                returnTypeParameter = genericReturnType.IsValueType ? "TReturn" : "TReturn?";
+                returnTypeParameter = "TReturn";
                 if (CreateDucktypeAsyncReturnValue && genericReturnValue.TryGetTypeDef() is { } returnTypeDef)
                 {
                     var proxyDefinition = EditorHelper.GetDuckTypeProxies(returnTypeDef, DucktypeAsyncReturnValueFields, DucktypeAsyncReturnValueProperties, DucktypeAsyncReturnValueMethods, DucktypeAsyncReturnValueDuckChaining, UseDuckCopyStruct, duckTypeProxyDefinitions);
@@ -361,6 +363,10 @@ internal partial class MainViewModel
                     {
                         argsConstraint.Add($"        where TReturn : {proxyDefinition.Value.ProxyName}");
                     }
+                }
+                else if (!genericReturnType.IsValueType)
+                {
+                    returnTypeParameter = "TReturn?";
                 }
             }
         }
