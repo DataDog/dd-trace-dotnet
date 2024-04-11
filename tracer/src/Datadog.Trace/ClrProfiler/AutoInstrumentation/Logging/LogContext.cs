@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
 internal static class LogContext
 {
     private static string GetTraceId(SpanContext context, bool use128Bits) =>
-        use128Bits ?
+        use128Bits && context.TraceId128.Upper > 0 ?
             context.RawTraceId :
             context.TraceId128.Lower.ToString(CultureInfo.InvariantCulture);
 
