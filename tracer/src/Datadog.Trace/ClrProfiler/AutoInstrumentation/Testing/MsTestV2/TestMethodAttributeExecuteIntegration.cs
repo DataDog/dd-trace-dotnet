@@ -86,6 +86,7 @@ public static class TestMethodAttributeExecuteIntegration
             var allowRetries = false;
             if (returnValue is IList { Count: > 0 } returnValueList)
             {
+                MsTestIntegration.AddTotalTestCases(returnValueList.Count - 1);
                 for (var i = 0; i < returnValueList.Count; i++)
                 {
                     var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: false, testMethodState.Test.StartTime);

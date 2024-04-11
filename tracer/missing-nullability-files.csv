@@ -796,7 +796,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestPropertyA
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestOutcome.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestResultOutcome.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestResultStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestRunnerIsTestMethodRunnableIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestRunnerRunCleanupIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestRunnerRunSingleTestIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/FailureSite.cs

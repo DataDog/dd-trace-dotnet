@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -36,7 +37,7 @@ public static class UnitTestRunnerIsTestMethodRunnableIntegration
     /// <param name="testMethodInfo">Test method info argument</param>
     /// <param name="notRunnableResult">Not runnable result argument</param>
     /// <returns>Calltarget state value</returns>
-    internal static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, TArg3>(TTarget instance, TArg1 testMethod, TArg2 testMethodInfo, ref TArg3 notRunnableResult)
+    internal static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, TArg3>(TTarget instance, ref TArg1? testMethod, ref TArg2? testMethodInfo, ref TArg3? notRunnableResult)
     {
         if (MsTestIntegration.IsEnabled)
         {

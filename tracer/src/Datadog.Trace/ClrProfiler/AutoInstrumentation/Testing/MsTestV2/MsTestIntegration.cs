@@ -28,6 +28,9 @@ internal static class MsTestIntegration
     internal static readonly ConditionalWeakTable<object, TestModule> TestModuleByTestAssemblyInfos = new();
     internal static readonly ConditionalWeakTable<object, TestSuite> TestSuiteByTestClassInfos = new();
 
+    private static long _totalTestCases;
+    private static long _newTestCases;
+
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, bool isRetry, DateTimeOffset? startDate = null)
@@ -87,7 +90,24 @@ internal static class MsTestIntegration
                 }
                 else
                 {
-                    // ...
+                    var newTestCases = Interlocked.Increment(ref _newTestCases);
+                    var totalTestCases = Interlocked.Read(ref _totalTestCases);
+                    if (totalTestCases > 0 && CIVisibility.EarlyFlakeDetectionSettings.FaultySessionThreshold is { } faultySessionThreshold and > 0 and < 100)
+                    {
+                        if (((double)newTestCases * 100 / (double)totalTestCases) > faultySessionThreshold)
+                        {
+                            /* Spec:
+                             * If the number of new tests goes above a threshold:
+                             *      We will stop the feature altogether: no more tests will be considered new and no retries will be done.
+                             */
+
+                            // We need to stop the EFD feature off and set the session as a faulty.
+                            // But session object is not available from the test host
+                            // TODO: Implement in another PR an IPC mechanism to communicate with the parent process with the test session instance
+                            test.SetTag(EarlyFlakeDetectionTags.TestIsNew, (string)null);
+                            Common.Log.Warning<long, long, int>("EFD: The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", newTestCases, totalTestCases, faultySessionThreshold);
+                        }
+                    }
                 }
             }
         }
@@ -281,5 +301,10 @@ internal static class MsTestIntegration
                 var classTypeName = testClassInfo.ClassType?.FullName ?? throw new NullReferenceException("ClassType is null, a new suite cannot be created.");
                 return module.InternalGetOrCreateSuite(classTypeName);
             });
+    }
+
+    internal static void AddTotalTestCases(int count)
+    {
+        Interlocked.Add(ref _totalTestCases, count);
     }
 }
