@@ -81,7 +81,7 @@ namespace Datadog.Trace.Debugger.Upload
 
             while (retries < MaxRetries)
             {
-                using var response =  await multipartRequest.PostAsync(items).ConfigureAwait(false);
+                using var response = await multipartRequest.PostAsync(items).ConfigureAwait(false);
                 if (response.StatusCode is >= 200 and <= 299)
                 {
                     return true;
