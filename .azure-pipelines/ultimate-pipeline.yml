@@ -3311,7 +3311,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
-    - template: steps/restore-working-directory.yml
+    # download _everything_ not just the bin/obj/package files
+    - task: DownloadPipelineArtifact@2
+      displayName: Download working dir
+      inputs:
+        artifact: build-windows-working-directory
+        path: $(System.DefaultWorkingDirectory)
+      retryCountOnTaskFailure: 5
 
     # Download everything to monitoring home
     # BuildBundleNuget moves everything to the required folders
