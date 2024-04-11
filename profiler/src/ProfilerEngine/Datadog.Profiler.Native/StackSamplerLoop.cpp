@@ -489,7 +489,6 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             if (isStackSnapshotSuccessful)
             {
                 UpdateSnapshotInfos(pStackSnapshotResult, duration, thisSampleTimestampNanosecs);
-                pStackSnapshotResult->DetermineAppDomain(pThreadInfo->GetClrThreadId(), _pCorProfilerInfo);
             }
 
             // If we got here, then either target thread == sampler thread (we are sampling the current thread),
@@ -580,7 +579,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         rawSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
         rawSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawSample.SpanId = pSnapshotResult->GetSpanId();
-        rawSample.AppDomainId = pSnapshotResult->GetAppDomainId();
+        rawSample.AppDomainId = pThreadInfo->GetAppDomainId();
         pSnapshotResult->CopyInstructionPointers(rawSample.Stack);
         rawSample.ThreadInfo = pThreadInfo;
         rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
@@ -594,7 +593,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
         rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
-        rawCpuSample.AppDomainId = pSnapshotResult->GetAppDomainId();
+        rawCpuSample.AppDomainId = pThreadInfo->GetAppDomainId();
         pSnapshotResult->CopyInstructionPointers(rawCpuSample.Stack);
         rawCpuSample.ThreadInfo = pThreadInfo;
         rawCpuSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
