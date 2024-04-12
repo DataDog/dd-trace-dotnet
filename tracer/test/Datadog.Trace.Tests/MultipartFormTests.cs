@@ -30,69 +30,82 @@ namespace Datadog.Trace.Tests
             VerifyHelper.InitializeGlobalSettings();
         }
 
-        [Fact]
-        public async Task ApiWebRequest_MultipartTest()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task ApiWebRequest_MultipartTest(bool useStream)
         {
             using var agent = MockTracerAgent.Create(_output);
             var url = new Uri($"http://localhost:{agent.Port}/");
             var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
-            await RunTest(agent, () => (IMultipartApiRequest)factory.Create(url), nameof(ApiWebRequest_MultipartTest));
+            await RunTest(agent, () => (IMultipartApiRequest)factory.Create(url), useStream, nameof(ApiWebRequest_MultipartTest));
         }
 
-        [Fact]
-        public async Task ApiWebRequest_ValidationTest()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task ApiWebRequest_ValidationTest(bool useStream)
         {
             using var agent = MockTracerAgent.Create(_output);
             var url = new Uri($"http://localhost:{agent.Port}/");
             var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
-            await RunValidationTest(agent, () => (IMultipartApiRequest)factory.Create(url), nameof(ApiWebRequest_ValidationTest));
+            await RunValidationTest(agent, () => (IMultipartApiRequest)factory.Create(url), useStream, nameof(ApiWebRequest_ValidationTest));
         }
 
 #if NETCOREAPP3_1_OR_GREATER
-        [Fact]
-        public async Task HttpClientRequest_MultipartTest()
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task HttpClientRequest_MultipartTest(bool useStream)
         {
             using var agent = MockTracerAgent.Create(_output);
             var url = new Uri($"http://localhost:{agent.Port}/");
             var factory = new HttpClientRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
-            await RunTest(agent, () => (IMultipartApiRequest)factory.Create(url), nameof(HttpClientRequest_MultipartTest));
+            await RunTest(agent, () => (IMultipartApiRequest)factory.Create(url), useStream, nameof(HttpClientRequest_MultipartTest));
         }
 
-        [Fact]
-        public async Task HttpClientRequest_ValidationTest()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task HttpClientRequest_ValidationTest(bool useStream)
         {
             using var agent = MockTracerAgent.Create(_output);
             var url = new Uri($"http://localhost:{agent.Port}/");
             var factory = new HttpClientRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
-            await RunValidationTest(agent, () => (IMultipartApiRequest)factory.Create(url), nameof(HttpClientRequest_ValidationTest));
+            await RunValidationTest(agent, () => (IMultipartApiRequest)factory.Create(url), useStream, nameof(HttpClientRequest_ValidationTest));
         }
 
 #if NET6_0_OR_GREATER
-        [Fact]
-        public async Task HttpClientRequest_UDS_MultipartTest()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task HttpClientRequest_UDS_MultipartTest(bool useStream)
         {
             using var agent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null));
             var factory = new SocketHandlerRequestFactory(
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
                 AgentHttpHeaderNames.DefaultHeaders,
                 Localhost);
-            await RunTest(agent, () => (IMultipartApiRequest)factory.Create(Localhost), nameof(HttpClientRequest_MultipartTest));
+            await RunTest(agent, () => (IMultipartApiRequest)factory.Create(Localhost), useStream, nameof(HttpClientRequest_MultipartTest));
         }
 
-        [Fact]
-        public async Task HttpClientRequest_UDS_ValidationTest()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task HttpClientRequest_UDS_ValidationTest(bool useStream)
         {
             using var agent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null));
             var factory = new SocketHandlerRequestFactory(
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
                 AgentHttpHeaderNames.DefaultHeaders,
                 Localhost);
-            await RunValidationTest(agent, () => (IMultipartApiRequest)factory.Create(Localhost), nameof(HttpClientRequest_ValidationTest));
+            await RunValidationTest(agent, () => (IMultipartApiRequest)factory.Create(Localhost), useStream, nameof(HttpClientRequest_ValidationTest));
         }
 #endif
 #endif
 
-        private async Task RunTest(MockTracerAgent agent, Func<IMultipartApiRequest> createRequest, string snapshotName)
+        private async Task RunTest(MockTracerAgent agent, Func<IMultipartApiRequest> createRequest, bool useStream, string snapshotName)
         {
             agent.ShouldDeserializeTraces = false;
             string requestBody = null;
@@ -104,8 +117,8 @@ namespace Datadog.Trace.Tests
             var request = createRequest();
             await request.PostAsync(new MultipartFormItem[]
             {
-                new("Name 1", MimeTypes.Json, "FileName 1.json", new ArraySegment<byte>(new byte[] { 42 })),
-                new("Name 2", MimeTypes.MsgPack, "FileName 2.msgpack", new ArraySegment<byte>(new byte[] { 42 })),
+                GetItem("Name 1", MimeTypes.Json, "FileName 1.json", useStream),
+                GetItem("Name 2", MimeTypes.MsgPack, "FileName 2.msgpack", useStream),
             });
 
             Assert.NotNull(requestBody);
@@ -114,7 +127,7 @@ namespace Datadog.Trace.Tests
                           .DisableRequireUniquePrefix();
         }
 
-        private async Task RunValidationTest(MockTracerAgent agent, Func<IMultipartApiRequest> createRequest, string snapshotName)
+        private async Task RunValidationTest(MockTracerAgent agent, Func<IMultipartApiRequest> createRequest, bool useStream, string snapshotName)
         {
             agent.ShouldDeserializeTraces = false;
             string requestBody = null;
@@ -126,8 +139,8 @@ namespace Datadog.Trace.Tests
             var request = createRequest();
             await request.PostAsync(new MultipartFormItem[]
             {
-                new("Name\" 1\"", MimeTypes.Json, "FileName 1.json", new ArraySegment<byte>(new byte[] { 42 })),
-                new("Name 2", MimeTypes.MsgPack, "FileName '2'.msgpack", new ArraySegment<byte>(new byte[] { 42 })),
+                GetItem("Name\" 1\"", MimeTypes.Json, "FileName 1.json", useStream),
+                GetItem("Name 2", MimeTypes.MsgPack, "FileName '2'.msgpack", useStream),
             });
 
             var emptyRequest = "--faa0a896-8bc8-48f3-b46d-016f2b15a884\r\n\r\n--faa0a896-8bc8-48f3-b46d-016f2b15a884--\r\n";
@@ -137,8 +150,8 @@ namespace Datadog.Trace.Tests
             request = createRequest();
             await request.PostAsync(new MultipartFormItem[]
             {
-                new("Name\" 1\"", MimeTypes.Json, "FileName 1.json", new ArraySegment<byte>(new byte[] { 42 })),
-                new("Name 2", MimeTypes.MsgPack, "FileName2.msgpack", new ArraySegment<byte>(new byte[] { 42 })),
+                GetItem("Name\" 1\"", MimeTypes.Json, "FileName 1.json", useStream),
+                GetItem("Name 2", MimeTypes.MsgPack, "FileName2.msgpack", useStream),
             });
 
             Assert.NotNull(requestBody);
@@ -146,5 +159,10 @@ namespace Datadog.Trace.Tests
                           .UseFileName($"{nameof(MultipartFormTests)}.{snapshotName}")
                           .DisableRequireUniquePrefix();
         }
+
+        private MultipartFormItem GetItem(string name, string contentType, string fileName, bool useStream)
+            => useStream
+                   ? new(name, contentType, fileName, new MemoryStream([42]))
+                   : new(name, contentType, fileName, new ArraySegment<byte>([42]));
     }
 }
