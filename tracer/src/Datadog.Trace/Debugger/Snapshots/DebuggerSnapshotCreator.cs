@@ -763,7 +763,32 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static MethodLocation ExtractFilePathAndLineNumbersFromPdb(MethodBase method)
         {
-            var sequencePoints = DatadogMetadataReader.CreatePdbReader(method.Module.Assembly)?.GetMethodSequencePoints((int)(method.MetadataToken));
+            if (method == null)
+            {
+                throw new ArgumentNullException(nameof(method));
+            }
+
+            if (method.Module == null)
+            {
+                throw new InvalidOperationException("Method's module is null for method " + method.Name);
+            }
+
+            if (method.Module.Assembly == null)
+            {
+                throw new InvalidOperationException("Method's module assembly is null for module " + method.Module.Name);
+            }
+
+            var pdbReader = DatadogMetadataReader.CreatePdbReader(method.Module.Assembly);
+            if (pdbReader == null)
+            {
+                throw new InvalidOperationException("Failed to create PDB reader.");
+            }
+
+            var sequencePoints = pdbReader.GetMethodSequencePoints((int)method.MetadataToken);
+            if (sequencePoints == null)
+            {
+                throw new InvalidOperationException("Failed to get method sequence points.");
+            }
 
             if (sequencePoints != null && sequencePoints.Any())
             {
