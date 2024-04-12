@@ -65,7 +65,7 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
         readSize = 0;
         if (!ReadEvents(hPipe, buffer.get(), bufferSize, readSize))
         {
-            _logger->Warn("Stop reading events");
+            _logger->Info("Stop reading events");
             break;
         }
 
@@ -155,7 +155,7 @@ bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSi
             {
                 if (lastError == ERROR_BROKEN_PIPE)
                 {
-                    _logger->Warn("Disconnected named pipe client...");
+                    _logger->Info("Disconnected named pipe client...");
                 }
                 else
                 {
