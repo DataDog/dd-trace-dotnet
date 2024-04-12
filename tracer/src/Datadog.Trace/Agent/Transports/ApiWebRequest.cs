@@ -15,7 +15,7 @@ using static Datadog.Trace.HttpOverStreams.DatadogHttpValues;
 
 namespace Datadog.Trace.Agent.Transports
 {
-    internal class ApiWebRequest : IApiRequest, IMultipartApiRequest
+    internal class ApiWebRequest : IApiRequest
     {
         private const string BoundarySeparator = $"{CrLf}--{Boundary}{CrLf}";
         private const string BoundaryTrailer = $"{CrLf}--{Boundary}--{CrLf}";

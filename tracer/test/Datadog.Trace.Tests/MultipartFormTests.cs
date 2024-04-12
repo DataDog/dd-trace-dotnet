@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests
             using var agent = MockTracerAgent.Create(_output);
             var url = new Uri($"http://localhost:{agent.Port}/");
             var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
-            await RunTest(agent, () => (IMultipartApiRequest)factory.Create(url), useStream, useGzip, nameof(ApiWebRequest_MultipartTest));
+            await RunTest(agent, () => factory.Create(url), useStream, useGzip, nameof(ApiWebRequest_MultipartTest));
         }
 
         [Theory]
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tests
             using var agent = MockTracerAgent.Create(_output);
             var url = new Uri($"http://localhost:{agent.Port}/");
             var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
-            await RunValidationTest(agent, () => (IMultipartApiRequest)factory.Create(url), useStream, useGzip, nameof(ApiWebRequest_ValidationTest));
+            await RunValidationTest(agent, () => factory.Create(url), useStream, useGzip, nameof(ApiWebRequest_ValidationTest));
         }
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Tests
             using var agent = MockTracerAgent.Create(_output);
             var url = new Uri($"http://localhost:{agent.Port}/");
             var factory = new HttpClientRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
-            await RunTest(agent, () => (IMultipartApiRequest)factory.Create(url), useStream, useGzip, nameof(HttpClientRequest_MultipartTest));
+            await RunTest(agent, () => factory.Create(url), useStream, useGzip, nameof(HttpClientRequest_MultipartTest));
         }
 
         [Theory]
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tests
             using var agent = MockTracerAgent.Create(_output);
             var url = new Uri($"http://localhost:{agent.Port}/");
             var factory = new HttpClientRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
-            await RunValidationTest(agent, () => (IMultipartApiRequest)factory.Create(url), useStream, useGzip, nameof(HttpClientRequest_ValidationTest));
+            await RunValidationTest(agent, () => factory.Create(url), useStream, useGzip, nameof(HttpClientRequest_ValidationTest));
         }
 
 #if NET6_0_OR_GREATER
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Tests
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
                 AgentHttpHeaderNames.DefaultHeaders,
                 Localhost);
-            await RunTest(agent, () => (IMultipartApiRequest)factory.Create(Localhost), useStream, useGzip, nameof(HttpClientRequest_MultipartTest));
+            await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(HttpClientRequest_MultipartTest));
         }
 
         [Theory]
@@ -101,12 +101,12 @@ namespace Datadog.Trace.Tests
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
                 AgentHttpHeaderNames.DefaultHeaders,
                 Localhost);
-            await RunValidationTest(agent, () => (IMultipartApiRequest)factory.Create(Localhost), useStream, useGzip, nameof(HttpClientRequest_ValidationTest));
+            await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(HttpClientRequest_ValidationTest));
         }
 #endif
 #endif
 
-        private async Task RunTest(MockTracerAgent agent, Func<IMultipartApiRequest> createRequest, bool useStream, bool useGzip, string snapshotName)
+        private async Task RunTest(MockTracerAgent agent, Func<IApiRequest> createRequest, bool useStream, bool useGzip, string snapshotName)
         {
             agent.ShouldDeserializeTraces = false;
             string requestBody = null;
@@ -130,7 +130,7 @@ namespace Datadog.Trace.Tests
                           .DisableRequireUniquePrefix();
         }
 
-        private async Task RunValidationTest(MockTracerAgent agent, Func<IMultipartApiRequest> createRequest, bool useStream, bool useGzip, string snapshotName)
+        private async Task RunValidationTest(MockTracerAgent agent, Func<IApiRequest> createRequest, bool useStream, bool useGzip, string snapshotName)
         {
             agent.ShouldDeserializeTraces = false;
             string requestBody = null;
