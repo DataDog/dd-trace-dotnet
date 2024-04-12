@@ -71,6 +71,11 @@ void initLibrary(void) {
     {
         char* enableMiniDump = getenv("DOTNET_DbgEnableMiniDump");
 
+        if (enableMiniDump == NULL)
+        {
+            enableMiniDump = getenv("COMPlus_DbgEnableMiniDump");
+        }
+
         if (enableMiniDump != NULL && enableMiniDump[0] == '1')
         {
             setenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", "1", 1);
