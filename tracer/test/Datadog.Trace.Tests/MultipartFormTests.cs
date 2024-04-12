@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
@@ -103,8 +104,104 @@ namespace Datadog.Trace.Tests
                 Localhost);
             await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(HttpClientRequest_ValidationTest));
         }
+#else
+        [Theory]
+        [MemberData(nameof(GetTestData))]
+        public async Task HttpStreamRequest_UDS_MultipartTest(bool useStream, bool useGzip)
+        {
+            using var agent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null));
+            var factory = new HttpStreamRequestFactory(
+                new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
+                new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
+                Localhost);
+            await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(ApiWebRequest_MultipartTest));
+        }
+
+        [Theory]
+        [MemberData(nameof(GetTestData))]
+        public async Task HttpStreamRequest_UDS_ValidationTest(bool useStream, bool useGzip)
+        {
+            using var agent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null));
+            var factory = new HttpStreamRequestFactory(
+                new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
+                new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
+                Localhost);
+            await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(ApiWebRequest_ValidationTest));
+        }
 #endif
 #endif
+
+        [Theory]
+        [MemberData(nameof(GetTestData))]
+        public async Task HttpStreamRequest_NamedPipes_MultipartTest(bool useStream, bool useGzip)
+        {
+            if (!EnvironmentTools.IsWindows())
+            {
+                // Can't use WindowsNamedPipes on non-Windows
+                return;
+            }
+
+            // named pipes is notoriously flaky
+            var attemptsRemaining = 1;
+            while (true)
+            {
+                try
+                {
+                    attemptsRemaining--;
+                    await RunNamedPipesTest();
+                    return;
+                }
+                catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
+                {
+                }
+            }
+
+            async Task RunNamedPipesTest()
+            {
+                using var agent = MockTracerAgent.Create(_output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", null));
+                var factory = new HttpStreamRequestFactory(
+                    new NamedPipeClientStreamFactory(agent.TracesWindowsPipeName, timeoutMs: 100),
+                    new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
+                    Localhost);
+                await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(ApiWebRequest_MultipartTest));
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetTestData))]
+        public async Task HttpStreamRequest_NamedPipes_VerificationTest(bool useStream, bool useGzip)
+        {
+            if (!EnvironmentTools.IsWindows())
+            {
+                // Can't use WindowsNamedPipes on non-Windows
+                return;
+            }
+
+            // named pipes is notoriously flaky
+            var attemptsRemaining = 1;
+            while (true)
+            {
+                try
+                {
+                    attemptsRemaining--;
+                    await RunNamedPipesTest();
+                    return;
+                }
+                catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
+                {
+                }
+            }
+
+            async Task RunNamedPipesTest()
+            {
+                using var agent = MockTracerAgent.Create(_output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", null));
+                var factory = new HttpStreamRequestFactory(
+                    new NamedPipeClientStreamFactory(agent.TracesWindowsPipeName, timeoutMs: 100),
+                    new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
+                    Localhost);
+                await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(ApiWebRequest_ValidationTest));
+            }
+        }
 
         private async Task RunTest(MockTracerAgent agent, Func<IApiRequest> createRequest, bool useStream, bool useGzip, string snapshotName)
         {
