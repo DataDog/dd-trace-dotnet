@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -26,7 +27,14 @@ internal unsafe interface ICrashReport : IUnknown
 
     int ResolveStacks(int crashingThreadId, IntPtr resolveCallback);
 
-    int SetMetadata(IntPtr libraryName, IntPtr libraryVersion, IntPtr family);
+    int SetMetadata(IntPtr libraryName, IntPtr libraryVersion, IntPtr family, Tag* tags, int tagsCount);
 
     int Send();
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct Tag
+    {
+        public IntPtr Key;
+        public IntPtr Value;
+    }
 }

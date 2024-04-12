@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <ctime>
 
 #include <execinfo.h>
 #include <stdio.h>
@@ -45,9 +46,9 @@ CrashReporting::~CrashReporting()
 
 int32_t CrashReporting::Initialize()
 {
-        auto crashInfoResult = ddog_crashinfo_new();
+    auto crashInfoResult = ddog_crashinfo_new();
 
-    if (crashInfoResult.tag != DDOG_PROF_CRASH_INFO_NEW_RESULT_OK)
+    if (crashInfoResult.tag == DDOG_PROF_CRASH_INFO_NEW_RESULT_ERR)
     {
         SetLastError(crashInfoResult.err);
         return 1;
@@ -55,12 +56,25 @@ int32_t CrashReporting::Initialize()
 
     _crashInfo = crashInfoResult.ok;
 
+    auto result = ddog_crashinfo_set_timestamp_to_now(&_crashInfo);
+
+    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+    {
+        SetLastError(result.err);
+        return 1;
+    }
+
     if (AddTag("crashreport", "crashreport") != 0)
     {
         return 1;
     }
 
     if (AddTag("runtime_name", ".NET") != 0)
+    {
+        return 1;
+    }
+
+    if (AddTag("status", "ERROR") != 0)
     {
         return 1;
     }
@@ -236,15 +250,26 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedMe
     return 0;
 }
 
-int32_t CrashReporting::SetMetadata(const char* libraryName, const char* libraryVersion, const char* family)
+int32_t CrashReporting::SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount)
 {
+    auto vecTags = ddog_Vec_Tag_new();
+
     const ddog_prof_CrashtrackerMetadata metadata = {
         .profiling_library_name = libdatadog::FfiHelper::StringToCharSlice(std::string_view(libraryName)) ,
         .profiling_library_version = libdatadog::FfiHelper::StringToCharSlice(std::string_view(libraryVersion)),
         .family = libdatadog::FfiHelper::StringToCharSlice(std::string_view(family)),
+        .tags = &vecTags
     };
 
+    for (int32_t i = 0; i < tagCount; i++)
+    {
+        auto tag = tags[i];
+        ddog_Vec_Tag_push(&vecTags, libdatadog::FfiHelper::StringToCharSlice(std::string_view(tag.key)), libdatadog::FfiHelper::StringToCharSlice(std::string_view(tag.value)));
+    }
+
     auto result = ddog_crashinfo_set_metadata(&_crashInfo, metadata);
+
+    ddog_Vec_Tag_drop(vecTags);
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {
@@ -268,9 +293,9 @@ int32_t CrashReporting::Send()
         return 1;
     }
 
-    std::string url = "http://172.30.64.1:8126/";
     ddog_prof_CrashtrackerConfiguration config {};
-    config.endpoint = ddog_prof_Endpoint_agent(DDOG_CHARSLICE_C("http://172.30.64.1:8126/")),
+    //config.endpoint = ddog_prof_Endpoint_agent(DDOG_CHARSLICE_C("http://172.30.64.1:8126/"));
+    //config.endpoint = ddog_prof_Endpoint_agent(DDOG_CHARSLICE_C("http://172.30.64.1:8126/"));
     config.path_to_receiver_binary = DDOG_CHARSLICE_C("FIXME - point me to receiver binary path");
     config.timeout_secs = 30;
 

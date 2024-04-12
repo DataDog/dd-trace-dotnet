@@ -11,10 +11,12 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Diagnostics.Runtime;
 using Spectre.Console;
+using Spectre.Console.Rendering;
 
 namespace Datadog.Trace.Tools.dd_dotnet;
 
@@ -143,7 +145,7 @@ internal class CreatedumpCommand : Command
         // Check if there's an exception on the crash thread
         if (crashThread != null)
         {
-            var exception = _runtime.Threads.FirstOrDefault(t => t.ManagedThreadId == crashThread.Value)?.CurrentException;
+            var exception = _runtime.Threads.FirstOrDefault(t => t.OSThreadId == crashThread.Value)?.CurrentException;
 
             if (exception != null)
             {
@@ -151,6 +153,12 @@ internal class CreatedumpCommand : Command
                 _ = SetException(crashReport, exception);
             }
         }
+
+        var runtimeId = Guid.NewGuid().ToString();
+
+        AnsiConsole.WriteLine($"Setting runtime-id to {runtimeId}");
+
+        _ = AddTag(crashReport, "runtime-id", runtimeId);
 
         if (signal.HasValue)
         {
@@ -215,6 +223,34 @@ internal class CreatedumpCommand : Command
         return true;
     }
 
+    private bool AddTag(ICrashReport crashReport, string key, string value)
+    {
+        var keyPtr = IntPtr.Zero;
+        var valuePtr = IntPtr.Zero;
+
+        try
+        {
+            keyPtr = Marshal.StringToHGlobalAnsi(key);
+            valuePtr = Marshal.StringToHGlobalAnsi(value);
+
+            try
+            {
+                crashReport.AddTag(keyPtr, valuePtr);
+                return true;
+            }
+            catch (Win32Exception ex)
+            {
+                AnsiConsole.WriteLine($"Failed to add tag: {GetLastError(crashReport, ex)}");
+                return false;
+            }
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(keyPtr);
+            Marshal.FreeHGlobal(valuePtr);
+        }
+    }
+
     private bool SetException(ICrashReport crashReport, ClrException exception)
     {
         var key = IntPtr.Zero;
@@ -243,21 +279,50 @@ internal class CreatedumpCommand : Command
         }
     }
 
-    private bool SetMetadata(ICrashReport crashReport)
+    private unsafe bool SetMetadata(ICrashReport crashReport)
     {
-        var libraryName = IntPtr.Zero;
-        var libraryVersion = IntPtr.Zero;
-        var family = IntPtr.Zero;
+        var tags = new (string Key, string Value)[]
+        {
+            ("runtime-id", Guid.NewGuid().ToString()),
+            ("language", "dotnet"),
+            ("service", "testcrashreport"),
+            ("runtime_version", "4.8"),
+            ("library_version", "2.0.0.0")
+        };
+
+        var bag = new List<IntPtr>();
 
         try
         {
-            libraryName = Marshal.StringToHGlobalAnsi("dd-dotnet");
-            libraryVersion = Marshal.StringToHGlobalAnsi("1.0.0"); // TODO: Extract the version
-            family = Marshal.StringToHGlobalAnsi("csharp");
+            var libraryName = Marshal.StringToHGlobalAnsi("dd-dotnet");
+            bag.Add(libraryName);
+
+            var libraryVersion = Marshal.StringToHGlobalAnsi("1.0.0"); // TODO: Extract the version
+            bag.Add(libraryVersion);
+
+            var family = Marshal.StringToHGlobalAnsi("csharp");
+            bag.Add(family);
+
+            var nativeTags = Marshal.AllocHGlobal(Marshal.SizeOf<ICrashReport.Tag>() * tags.Length);
+            bag.Add(nativeTags);
+
+            var destination = (ICrashReport.Tag*)nativeTags;
+
+            for (int i = 0; i < tags.Length; i++)
+            {
+                var tag = tags[i];
+                var key = Marshal.StringToHGlobalAnsi(tag.Key);
+                bag.Add(key);
+
+                var value = Marshal.StringToHGlobalAnsi(tag.Value);
+                bag.Add(value);
+
+                destination[i] = new ICrashReport.Tag { Key = key, Value = value };
+            }
 
             try
             {
-                crashReport.SetMetadata(libraryName, libraryVersion, family);
+                crashReport.SetMetadata(libraryName, libraryVersion, family, (ICrashReport.Tag*)nativeTags, tags.Length);
             }
             catch (Win32Exception ex)
             {
@@ -269,17 +334,11 @@ internal class CreatedumpCommand : Command
         }
         finally
         {
-            Marshal.FreeHGlobal(libraryName);
-            Marshal.FreeHGlobal(libraryVersion);
-            Marshal.FreeHGlobal(family);
+            foreach (var ptr in bag)
+            {
+                Marshal.FreeHGlobal(ptr);
+            }
         }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct Tag
-    {
-        public IntPtr Key;
-        public IntPtr Value;
     }
 
     [StructLayout(LayoutKind.Sequential)]

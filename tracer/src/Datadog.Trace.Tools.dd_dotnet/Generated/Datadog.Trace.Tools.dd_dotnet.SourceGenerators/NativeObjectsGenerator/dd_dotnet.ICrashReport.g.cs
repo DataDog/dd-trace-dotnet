@@ -107,10 +107,10 @@ internal unsafe class ICrashReport : Datadog.Trace.Tools.dd_dotnet.ICrashReport
         }
         return returnvalue;
     }
-    public int SetMetadata(nint a0, nint a1, nint a2)
+    public int SetMetadata(nint a0, nint a1, nint a2, Datadog.Trace.Tools.dd_dotnet.ICrashReport.Tag* a3, int a4)
     {
-        var func = (delegate* unmanaged[Stdcall]<IntPtr, nint, nint, nint, out int, int>)*(VTable + 8);
-        var result = func(_implementation, a0, a1, a2, out var returnvalue);
+        var func = (delegate* unmanaged[Stdcall]<IntPtr, nint, nint, nint, Datadog.Trace.Tools.dd_dotnet.ICrashReport.Tag*, int, out int, int>)*(VTable + 8);
+        var result = func(_implementation, a0, a1, a2, a3, a4, out var returnvalue);
         if (result != 0)
         {
             throw new System.ComponentModel.Win32Exception(result);
