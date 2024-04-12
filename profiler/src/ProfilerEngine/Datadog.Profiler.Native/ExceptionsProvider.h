@@ -18,6 +18,8 @@
 #include "CounterMetric.h"
 #include "IUpscaleProvider.h"
 
+#include "shared/src/native-src/dd_memory_resource.hpp"
+
 #include <memory>
 
 class IConfiguration;
@@ -38,7 +40,8 @@ public:
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         MetricsRegistry& metricsRegistry,
-        CallstackProvider pool);
+        CallstackProvider pool,
+        shared::pmr::memory_resource* memoryResource);
 
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);

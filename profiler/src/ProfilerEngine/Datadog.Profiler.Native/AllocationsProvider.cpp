@@ -36,7 +36,8 @@ AllocationsProvider::AllocationsProvider(
     IConfiguration* pConfiguration,
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry,
-    CallstackProvider pool)
+    CallstackProvider pool,
+    shared::pmr::memory_resource* memoryResource)
     :
     AllocationsProvider(
         valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
@@ -45,7 +46,8 @@ AllocationsProvider::AllocationsProvider(
         pConfiguration,
         pListener,
         metricsRegistry,
-        std::move(pool))
+        std::move(pool),
+        memoryResource)
 {
 }
 
@@ -60,8 +62,9 @@ AllocationsProvider::AllocationsProvider(
     IConfiguration* pConfiguration,
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry,
-    CallstackProvider pool) :
-    CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
+    CallstackProvider pool,
+    shared::pmr::memory_resource* memoryResource) :
+    CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),

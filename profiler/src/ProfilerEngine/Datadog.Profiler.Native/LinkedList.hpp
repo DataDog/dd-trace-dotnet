@@ -21,7 +21,7 @@ template <class T>
 class LinkedList
 {
 public:
-    LinkedList(shared::pmr::memory_resource* allocator = shared::pmr::get_default_resource()) noexcept :
+    LinkedList(shared::pmr::memory_resource* allocator) noexcept :
         _head{nullptr}, _tail{&_head}, _nbElements{0}, _allocator{allocator}
     {
     }
@@ -43,7 +43,7 @@ public:
     LinkedList(LinkedList const&) = delete;
     LinkedList& operator=(LinkedList const&) = delete;
 
-    LinkedList(LinkedList&& other) NOEXCEPT : LinkedList()
+    LinkedList(LinkedList&& other) NOEXCEPT : LinkedList(shared::pmr::get_default_resource())
     {
         *this = std::move(other);
     }

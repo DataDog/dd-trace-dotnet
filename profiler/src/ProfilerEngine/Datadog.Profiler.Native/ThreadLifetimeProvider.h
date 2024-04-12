@@ -9,6 +9,8 @@
 #include "IThreadLifetimeListener.h"
 #include "RawThreadLifetimeSample.h"
 
+#include "shared/src/native-src/dd_memory_resource.hpp"
+
 class IFrameStore;
 class IThreadsCpuManager;
 class IAppDomainStore;
@@ -28,7 +30,8 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration);
+        IConfiguration* pConfiguration,
+        shared::pmr::memory_resource* memoryResource);
 
     // Inherited via IThreadLifetimeListener
     void OnThreadStart(std::shared_ptr<ManagedThreadInfo> threadInfo) override;

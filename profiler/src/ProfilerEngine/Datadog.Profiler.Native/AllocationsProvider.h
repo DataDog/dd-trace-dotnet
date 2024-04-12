@@ -13,6 +13,8 @@
 #include "RawAllocationSample.h"
 #include "SumMetric.h"
 
+#include "shared/src/native-src/dd_memory_resource.hpp"
+
 #include <memory>
 
 class IConfiguration;
@@ -42,7 +44,8 @@ public:
         IConfiguration* pConfiguration,
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
-        CallstackProvider callstackProvider);
+        CallstackProvider callstackProvider,
+        shared::pmr::memory_resource* memoryResource);
 
     AllocationsProvider(
         std::vector<SampleValueTypeProvider::Offset> valueTypeProvider,
@@ -55,7 +58,8 @@ public:
         IConfiguration* pConfiguration,
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
-        CallstackProvider callstackProvider);
+        CallstackProvider callstackProvider,
+        shared::pmr::memory_resource* memoryResource);
 
     void OnAllocation(uint32_t allocationKind,
                       ClassID classId,
