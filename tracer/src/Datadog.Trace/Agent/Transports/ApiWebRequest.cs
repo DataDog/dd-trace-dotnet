@@ -150,10 +150,12 @@ namespace Datadog.Trace.Agent.Transports
                     itemsWritten++;
                 }
 
-                if (itemsWritten > 0)
+                if (itemsWritten == 0)
                 {
-                    await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
+                    await requestStream.WriteAsync(boundaryBytes, 2, boundaryBytes.Length - 2).ConfigureAwait(false);
                 }
+
+                await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
             }
         }
 

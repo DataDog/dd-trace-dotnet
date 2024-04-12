@@ -130,7 +130,8 @@ namespace Datadog.Trace.Tests
                 new("Name 2", MimeTypes.MsgPack, "FileName '2'.msgpack", new ArraySegment<byte>(new byte[] { 42 })),
             });
 
-            Assert.Equal(string.Empty, requestBody);
+            var emptyRequest = "--faa0a896-8bc8-48f3-b46d-016f2b15a884\r\n\r\n--faa0a896-8bc8-48f3-b46d-016f2b15a884--\r\n";
+            Assert.Equal(emptyRequest, requestBody);
 
             requestBody = null;
             request = createRequest();
