@@ -135,6 +135,11 @@ namespace Datadog.Trace.Agent.Transports
             using var formDataContent = new MultipartFormDataContent(boundary: Boundary);
             foreach (var item in items)
             {
+                if (!item.IsValid(Log))
+                {
+                    continue;
+                }
+
                 HttpContent content = null;
 
                 // Adds a form data item

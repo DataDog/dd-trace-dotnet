@@ -115,38 +115,15 @@ namespace Datadog.Trace.Agent.Transports
                 var itemsWritten = 0;
                 foreach (var item in multipartItems)
                 {
-                    byte[] headerBytes = null;
-
-                    // Check name is not null (required)
-                    if (item.Name is null)
+                    if (!item.IsValid(Log))
                     {
-                        Log.Warning("Error encoding multipart form item name is null. Ignoring item");
                         continue;
                     }
 
-                    // Ignore the item if the name contains ' or "
-                    if (item.Name.IndexOf("\"", StringComparison.Ordinal) != -1 || item.Name.IndexOf("'", StringComparison.Ordinal) != -1)
-                    {
-                        Log.Warning("Error encoding multipart form item name: {Name}. Ignoring item.", item.Name);
-                        continue;
-                    }
-
-                    // Do the same checks for FileName if not null
-                    if (item.FileName is not null)
-                    {
-                        // Ignore the item if the name contains ' or "
-                        if (item.FileName.IndexOf("\"", StringComparison.Ordinal) != -1 || item.FileName.IndexOf("'", StringComparison.Ordinal) != -1)
-                        {
-                            Log.Warning("Error encoding multipart form item filename: {FileName}. Ignoring item.", item.FileName);
-                            continue;
-                        }
-
-                        headerBytes = Encoding.ASCII.GetBytes(
-                            $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"; filename=\"{item.FileName}\"\r\n\r\n");
-                    }
-
-                    headerBytes ??= Encoding.ASCII.GetBytes(
-                        $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"\r\n\r\n");
+                    var headerBytes = Encoding.ASCII.GetBytes(
+                        item.FileName is not null
+                            ? $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"; filename=\"{item.FileName}\"\r\n\r\n"
+                            : $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"\r\n\r\n");
 
                     if (itemsWritten == 0)
                     {
