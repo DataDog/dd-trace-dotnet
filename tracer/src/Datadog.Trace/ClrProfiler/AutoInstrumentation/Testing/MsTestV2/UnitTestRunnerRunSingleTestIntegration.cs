@@ -44,16 +44,20 @@ public static class UnitTestRunnerRunSingleTestIntegration
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        var objTestMethodInfo = MsTestIntegration.IsTestMethodRunnableThreadLocal.Value;
+        var methodInfoCacheItem = (MethodInfoCacheItem)MsTestIntegration.IsTestMethodRunnableThreadLocal.Value;
         MsTestIntegration.IsTestMethodRunnableThreadLocal.Value = null;
-        if (objTestMethodInfo is not null && returnValue is Array { Length: 1 } returnValueArray)
+        if (methodInfoCacheItem is not null && returnValue is Array { Length: 1 } returnValueArray)
         {
             var unitTestResultObject = returnValueArray.GetValue(0);
 
             if (unitTestResultObject != null &&
                 unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult) &&
-                objTestMethodInfo.TryDuckCast<ITestMethod>(out var testMethodInfo))
+                methodInfoCacheItem.TestMethodInfo.TryDuckCast<ITestMethod>(out var testMethodInfo))
             {
+#pragma warning disable DDLOG004
+                Common.Log.Warning($"UnitTestRunner.RunSingleTest Finished: {testMethodInfo.TestClassName}.{testMethodInfo.TestMethodName} | {testMethodInfo.Arguments?.Length} | {unitTestResult.Outcome}");
+#pragma warning restore DDLOG004
+
                 if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
                 {
                     if (!MsTestIntegration.ShouldSkip(testMethodInfo, out _, out _))

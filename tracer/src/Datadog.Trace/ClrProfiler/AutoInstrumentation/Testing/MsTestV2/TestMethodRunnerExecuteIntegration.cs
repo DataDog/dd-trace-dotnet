@@ -52,7 +52,12 @@ public static class TestMethodRunnerExecuteIntegration
             {
                 if (unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult))
                 {
-                    if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
+#pragma warning disable DDLOG004
+                    Common.Log.Warning($"TestMethodRunner.Execute Finished: {instance.TestMethodInfo.TestClassName}.{instance.TestMethodInfo.TestMethodName} | {instance.TestMethodInfo.Arguments?.Length} | {unitTestResult.Outcome}");
+#pragma warning restore DDLOG004
+
+                    // or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
+                    if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive)
                     {
                         if (!MsTestIntegration.ShouldSkip(instance.TestMethodInfo, out _, out _))
                         {
@@ -64,20 +69,32 @@ public static class TestMethodRunnerExecuteIntegration
                     else if (unitTestResult.Outcome is UnitTestResultOutcome.Error or UnitTestResultOutcome.Failed)
                     {
                         // We need to check if the test is failing because a Class initialization error
-                        if (instance.TestMethodInfo.Parent.Instance.TryDuckCast<ClassInfoExceptionsStruct>(out var classInfoExceptionsStruct))
+                        if (instance.TestMethodInfo.Parent.Instance.TryDuckCast<ClassInfoInitializationExceptionStruct>(out var classInfoInitializationExceptionStruct))
                         {
-                            if (classInfoExceptionsStruct.ClassInitializationException is { } classInitializationException &&
+                            if (classInfoInitializationExceptionStruct.ClassInitializationException is { } classInitializationException &&
                                 MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false) is { } test)
                             {
                                 test.SetErrorInfo(classInitializationException);
                                 test.Close(TestStatus.Fail);
                             }
+                        }
+                        else
+                        {
+                            Common.Log.Warning("Parent class cannot be duck casted to ClassInfoInitializationExceptionStruct.");
+                        }
 
-                            if (classInfoExceptionsStruct.ClassCleanupException is { } classCleanupException &&
+                        // We need to check if the test is failing because a Class cleanup error
+                        if (instance.TestMethodInfo.Parent.Instance.TryDuckCast<ClassInfoCleanupExceptionsStruct>(out var classInfoCleanupExceptionsStruct))
+                        {
+                            if (classInfoCleanupExceptionsStruct.ClassCleanupException is { } classCleanupException &&
                                 MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(instance.TestMethodInfo.Parent) is { } suite)
                             {
                                 suite.SetErrorInfo(classCleanupException);
                             }
+                        }
+                        else
+                        {
+                            Common.Log.Warning("Parent class cannot be duck casted to ClassInfoCleanupExceptionsStruct.");
                         }
 
                         // We need to check if the test is failing because a Assembly initialization error
@@ -90,7 +107,15 @@ public static class TestMethodRunnerExecuteIntegration
                                 test.Close(TestStatus.Fail);
                             }
                         }
+                        else
+                        {
+                            Common.Log.Warning("Parent assembly cannot be duck casted to AssemblyInfoExceptionsStruct.");
+                        }
                     }
+                }
+                else
+                {
+                    Common.Log.Warning("Result cannot be duck casted to UnitTestResultStruct.");
                 }
             }
         }
@@ -99,9 +124,14 @@ public static class TestMethodRunnerExecuteIntegration
     }
 
     [DuckCopy]
-    internal struct ClassInfoExceptionsStruct
+    internal struct ClassInfoInitializationExceptionStruct
     {
         public Exception? ClassInitializationException;
+    }
+
+    [DuckCopy]
+    internal struct ClassInfoCleanupExceptionsStruct
+    {
         public Exception? ClassCleanupException;
     }
 
