@@ -89,7 +89,7 @@ public static class TestMethodRunnerExecuteIntegration
                         }
                         else
                         {
-                            Common.Log.Warning("Parent class cannot be duck casted to ClassInfoCleanupExceptionsStruct.");
+                            Common.Log.Debug("Parent class cannot be duck casted to ClassInfoCleanupExceptionsStruct.");
                         }
 
                         // We need to check if the test is failing because a Assembly initialization error

@@ -20,9 +20,9 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
-    public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output, pre225TestCount: 19, post225TestCount: 22);
+    public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output, pre224TestCount: 20, post224TestCount: 22);
 
-    public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output, pre225TestCount: 19, post225TestCount: 21);
+    public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output, pre224TestCount: 19, post224TestCount: 21);
 
     [Collection("MsTestV2Tests")]
     [UsesVerify]
@@ -30,14 +30,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         private readonly GacFixture _gacFixture;
 
-        public MsTestV2TestsBase(string sampleAppName, ITestOutputHelper output, int pre225TestCount, int post225TestCount)
+        public MsTestV2TestsBase(string sampleAppName, ITestOutputHelper output, int pre224TestCount, int post224TestCount)
             : base(sampleAppName, output)
         {
             TestBundleName = $"Samples.{sampleAppName}";
             TestSuiteName = "Samples.MSTestTests.TestSuite";
             ClassInitializationExceptionTestSuiteName = "Samples.MSTestTests.ClassInitializeExceptionTestSuite";
-            Pre225TestCount = pre225TestCount;
-            Post225TestCount = post225TestCount;
+            Pre224TestCount = pre224TestCount;
+            Post224TestCount = post224TestCount;
             SetServiceName("mstest-tests");
             SetServiceVersion("1.0.0");
             _gacFixture = new GacFixture();
@@ -50,9 +50,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         protected virtual string ClassInitializationExceptionTestSuiteName { get; }
 
-        protected virtual int Pre225TestCount { get; }
+        protected virtual int Pre224TestCount { get; }
 
-        protected virtual int Post225TestCount { get; }
+        protected virtual int Post224TestCount { get; }
 
         public override void Dispose()
         {
@@ -65,9 +65,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public async Task SubmitTraces(string packageVersion)
         {
-            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
+            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.3") : new Version(packageVersion);
             List<MockSpan> spans = null;
-            var expectedSpanCount = version.CompareTo(new Version("2.2.5")) < 0 ? Pre225TestCount : Post225TestCount;
+            var expectedSpanCount = version.CompareTo(new Version("2.2.3")) <= 0 ? Pre224TestCount : Post224TestCount;
 
             try
             {
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                      .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                                      .ToList();
 
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedSpanCount == Pre225TestCount ? "pre_2_2_5" : "post_2_2_5");
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedSpanCount == Pre224TestCount ? "pre_2_2_4" : "post_2_2_4");
                         settings.DisableRequireUniquePrefix();
                         await Verifier.Verify(spans.OrderBy(s => s.Resource).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Name)).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Parameters)), settings);
 

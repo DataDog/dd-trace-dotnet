@@ -57,14 +57,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 yield return row.Concat(
                     "{\"data\":{\"id\":\"511938a3f19c12f8bb5e5caa695ca24f4563de3f\",\"type\":\"ci_app_tracers_test_service_settings\",\"attributes\":{\"code_coverage\":false,\"early_flake_detection\":{\"enabled\":true,\"slow_test_retries\":{\"10s\":5,\"30s\":3,\"5m\":2,\"5s\":10},\"faulty_session_threshold\":100},\"flaky_test_retries_enabled\":false,\"itr_enabled\":true,\"require_git\":false,\"tests_skipping\":true}}}",
                     "{\"data\":{\"id\":\"lNemDTwOV8U\",\"type\":\"ci_app_libraries_tests\",\"attributes\":{\"tests\":{}}}}",
-                    147,
+                    146,
                     148);
 
                 // EFD with 1 test to bypass (TraitPassTest)
                 yield return row.Concat(
                     "{\"data\":{\"id\":\"511938a3f19c12f8bb5e5caa695ca24f4563de3f\",\"type\":\"ci_app_tracers_test_service_settings\",\"attributes\":{\"code_coverage\":false,\"early_flake_detection\":{\"enabled\":true,\"slow_test_retries\":{\"10s\":5,\"30s\":3,\"5m\":2,\"5s\":10},\"faulty_session_threshold\":100},\"flaky_test_retries_enabled\":false,\"itr_enabled\":true,\"require_git\":false,\"tests_skipping\":true}}}",
                     "{\"data\":{\"id\":\"lNemDTwOV8U\",\"type\":\"ci_app_libraries_tests\",\"attributes\":{\"tests\":{\"Samples.MSTestTests\":{\"Samples.MSTestTests.TestSuite\":[\"TraitPassTest\"]}}}}}",
-                    138,
+                    137,
                     139);
             }
         }
@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var tests = new List<MockCIVisibilityTest>();
             var testSuites = new List<MockCIVisibilityTestSuite>();
             var testModules = new List<MockCIVisibilityTestModule>();
-            var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 19 : 22;
+            var expectedTestCount = version.CompareTo(new Version("2.2.3")) <= 0 ? 20 : 22;
 
             var sessionId = RandomIdGenerator.Shared.NextSpanId();
             var sessionCommand = "test command";
@@ -150,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == 19 ? "pre_2_2_5" : "post_2_2_5", null, null);
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == 20 ? "pre_2_2_4" : "post_2_2_4", null, null);
                         settings.DisableRequireUniquePrefix();
                         await Verifier.Verify(
                             tests
@@ -368,13 +368,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
         [Trait("Category", "EarlyFlakeDetection")]
-        public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpansForPre225, int expectedSpansForPost225)
+        public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpansForPre224, int expectedSpansForPost224)
         {
             var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
             var tests = new List<MockCIVisibilityTest>();
             var testSuites = new List<MockCIVisibilityTestSuite>();
             var testModules = new List<MockCIVisibilityTestModule>();
-            var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? expectedSpansForPre225 : expectedSpansForPost225;
+            var expectedTestCount = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
 
             var sessionId = RandomIdGenerator.Shared.NextSpanId();
             var sessionCommand = "test command";
@@ -450,7 +450,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                 using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
 
-                var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == expectedSpansForPre225 ? "pre_2_2_5" : "post_2_2_5", null, null, null, null, expectedSpansForPre225, expectedSpansForPost225);
+                var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4", null, null, null, null, expectedSpansForPre224, expectedSpansForPost224);
                 settings.DisableRequireUniquePrefix();
                 await Verifier.Verify(
                     tests
