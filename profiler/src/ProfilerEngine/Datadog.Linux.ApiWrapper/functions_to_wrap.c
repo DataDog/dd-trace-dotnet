@@ -59,6 +59,29 @@ unsigned long long dd_inside_wrapped_functions()
     return functions_entered_counter;
 }
 
+__attribute__((constructor))
+void initLibrary(void) {
+    // If crashtracking is enabled, check the value of DOTNET_DbgEnableMiniDump
+    // If set, set DD_TRACE_CRASH_HANDLER_PASSTHROUGH to indicate dd-dotnet that it should call createdump
+    // If not set, set it to 1 so that .NET calls createdump in case of crash
+    // (and we will redirect the call to dd-dotnet)
+    char* crashHandler = getenv("DD_TRACE_CRASH_HANDLER");
+
+    if (crashHandler != NULL && crashHandler[0] != '\0')
+    {
+        char* enableMiniDump = getenv("DOTNET_DbgEnableMiniDump");
+
+        if (enableMiniDump != NULL && enableMiniDump[0] == '1')
+        {
+            setenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", "1", 1);
+        }
+        else
+        {
+            setenv("DOTNET_DbgEnableMiniDump", "1", 1);
+        }
+    }
+}
+
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_dl_iterate_phdr)(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data) = NULL;
 
