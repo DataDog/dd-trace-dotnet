@@ -294,8 +294,7 @@ int32_t CrashReporting::Send()
     }
 
     ddog_prof_CrashtrackerConfiguration config {};
-    //config.endpoint = ddog_prof_Endpoint_agent(DDOG_CHARSLICE_C("http://172.30.64.1:8126/"));
-    //config.endpoint = ddog_prof_Endpoint_agent(DDOG_CHARSLICE_C("http://172.30.64.1:8126/"));
+    config.endpoint = ddog_prof_Endpoint_agent(DDOG_CHARSLICE_C("http://172.30.64.1:8126/"));
     config.path_to_receiver_binary = DDOG_CHARSLICE_C("FIXME - point me to receiver binary path");
     config.timeout_secs = 30;
 

@@ -156,7 +156,8 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
             int argc = 0;
             while (argv[argc++] != NULL);
 
-            char** newArgv = malloc((argc + 1) * sizeof(char*));
+            // We add two arguments: the path to dd-dotnet, and "createdump"
+            char** newArgv = malloc((argc + 2) * sizeof(char*));
 
             // By convention, argv[0] contains the name of the executable
             // Insert createdump as the first actual argument
@@ -164,7 +165,7 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
             newArgv[1] = "createdump";
 
             // Copy the remaining arguments
-            memcpy(newArgv + 2, argv + 1, sizeof(char*) * (argc - 1));
+            memcpy(newArgv + 2, argv, sizeof(char*) * argc);
 
             size_t envp_count;
             for (envp_count = 0; envp[envp_count]; ++envp_count);

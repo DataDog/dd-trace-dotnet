@@ -26,18 +26,28 @@ internal class CreatedumpCommand : Command
 
     private static ClrRuntime? _runtime;
 
+    private readonly Argument<string> _createdumpPathArgument = new("createdump") { Arity = ArgumentArity.ExactlyOne };
     private readonly Argument<int?> _pidArgument = new("pid") { Arity = ArgumentArity.ExactlyOne };
     private readonly Option<bool> _fullOption = new("--full");
+    private readonly Option<bool> _normalOption = new("--normal");
+    private readonly Option<bool> _withheapOption = new("--withheap");
+    private readonly Option<bool> _triageOption = new("--triage");
     private readonly Option<int?> _signalOption = new("--signal");
     private readonly Option<int?> _crashthreadOption = new("--crashthread");
 
     public CreatedumpCommand()
         : base("createdump")
     {
+        AddArgument(_createdumpPathArgument);
         AddArgument(_pidArgument);
         AddOption(_fullOption);
+        AddOption(_normalOption);
+        AddOption(_withheapOption);
+        AddOption(_triageOption);
         AddOption(_signalOption);
         AddOption(_crashthreadOption);
+
+        this.TreatUnmatchedTokensAsErrors = false;
         this.SetHandler(Execute);
     }
 
@@ -83,8 +93,6 @@ internal class CreatedumpCommand : Command
 
     private unsafe void Execute(InvocationContext context)
     {
-        Console.WriteLine($"Command: {Environment.CommandLine}");
-
         var pid = _pidArgument.GetValue(context)!;
         var signal = _signalOption.GetValue(context);
 
@@ -107,87 +115,116 @@ internal class CreatedumpCommand : Command
             return;
         }
 
-        using var target = DataTarget.AttachToProcess(pid.Value, suspend: true);
-        _runtime = target.ClrVersions[0].CreateRuntime();
-
-        var function = (delegate* unmanaged<int, IntPtr>)export;
-
-        var ptr = function(pid.Value);
-
-        if (ptr == IntPtr.Zero)
+        using (var target = DataTarget.AttachToProcess(pid.Value, suspend: true))
         {
-            AnsiConsole.WriteLine("Failed to create crash report");
-            return;
-        }
+            _runtime = target.ClrVersions[0].CreateRuntime();
 
-        using var iunknown = NativeObjects.IUnknown.Wrap(ptr);
+            var function = (delegate* unmanaged<int, IntPtr>)export;
 
-        int result = iunknown.QueryInterface(ICrashReport.Guid, out var crashReportPtr);
+            var ptr = function(pid.Value);
 
-        if (result != 0)
-        {
-            AnsiConsole.WriteLine($"Failed to query interface: {result}");
-            return;
-        }
-
-        using var crashReport = NativeObjects.ICrashReport.Wrap(crashReportPtr);
-
-        try
-        {
-            crashReport.Initialize();
-        }
-        catch (Win32Exception ex)
-        {
-            AnsiConsole.WriteLine($"Failed to initialize crash report: {GetLastError(crashReport, ex)}");
-            return;
-        }
-
-        // Check if there's an exception on the crash thread
-        if (crashThread != null)
-        {
-            var exception = _runtime.Threads.FirstOrDefault(t => t.OSThreadId == crashThread.Value)?.CurrentException;
-
-            if (exception != null)
+            if (ptr == IntPtr.Zero)
             {
-                AnsiConsole.WriteLine($"Managed exception found: {exception}");
-                _ = SetException(crashReport, exception);
+                AnsiConsole.WriteLine("Failed to create crash report");
+                return;
+            }
+
+            using var iunknown = NativeObjects.IUnknown.Wrap(ptr);
+
+            int result = iunknown.QueryInterface(ICrashReport.Guid, out var crashReportPtr);
+
+            if (result != 0)
+            {
+                AnsiConsole.WriteLine($"Failed to query interface: {result}");
+                return;
+            }
+
+            using var crashReport = NativeObjects.ICrashReport.Wrap(crashReportPtr);
+
+            try
+            {
+                crashReport.Initialize();
+            }
+            catch (Win32Exception ex)
+            {
+                AnsiConsole.WriteLine($"Failed to initialize crash report: {GetLastError(crashReport, ex)}");
+                return;
+            }
+
+            // Check if there's an exception on the crash thread
+            if (crashThread != null)
+            {
+                var exception = _runtime.Threads.FirstOrDefault(t => t.OSThreadId == crashThread.Value)?.CurrentException;
+
+                if (exception != null)
+                {
+                    AnsiConsole.WriteLine($"Managed exception found: {exception}");
+                    _ = SetException(crashReport, exception);
+                }
+            }
+
+            var runtimeId = Guid.NewGuid().ToString();
+
+            AnsiConsole.WriteLine($"Setting runtime-id to {runtimeId}");
+
+            _ = AddTag(crashReport, "runtime-id", runtimeId);
+
+            if (signal.HasValue)
+            {
+                _ = SetSignal(crashReport, signal.Value);
+            }
+
+            _ = SetMetadata(crashReport);
+
+            try
+            {
+                var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
+                crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback);
+            }
+            catch (Win32Exception ex)
+            {
+                AnsiConsole.WriteLine($"Failed to resolve stacks: {GetLastError(crashReport, ex)}");
+            }
+
+            try
+            {
+                crashReport.Send();
+            }
+            catch (Win32Exception ex)
+            {
+                AnsiConsole.WriteLine($"Failed to send crash report: {GetLastError(crashReport, ex)}");
+                return;
+            }
+
+            AnsiConsole.WriteLine("Crash report sent successfully");
+        }
+
+        // We must make sure to dispose the ClrRuntime before calling createdump,
+        // otherwise the calls to ptrace from createdump will fail
+        if (Environment.GetEnvironmentVariable("DD_TRACE_CRASH_HANDLER_PASSTHROUGH") == "1")
+        {
+            var createdumpPath = _createdumpPathArgument.GetValue(context);
+            InvokeCreatedump(createdumpPath);
+        }
+    }
+
+    private void InvokeCreatedump(string createdumpPath)
+    {
+        if (File.Exists(createdumpPath))
+        {
+            var commandLineArgs = Environment.GetCommandLineArgs();
+
+            if (commandLineArgs.Length <= 2)
+            {
+                // It shouldn't ever happen, but who knows
+                AnsiConsole.WriteLine("Unable to call createdump, missing arguments");
+            }
+            else
+            {
+                AnsiConsole.WriteLine($"Calling createdump with arguments: {string.Join(" ", commandLineArgs[2..])}");
+                System.Diagnostics.Process.Start(commandLineArgs[2], commandLineArgs[3..]).WaitForExit();
             }
         }
-
-        var runtimeId = Guid.NewGuid().ToString();
-
-        AnsiConsole.WriteLine($"Setting runtime-id to {runtimeId}");
-
-        _ = AddTag(crashReport, "runtime-id", runtimeId);
-
-        if (signal.HasValue)
-        {
-            _ = SetSignal(crashReport, signal.Value);
-        }
-
-        _ = SetMetadata(crashReport);
-
-        try
-        {
-            var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
-            crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback);
-        }
-        catch (Win32Exception ex)
-        {
-            AnsiConsole.WriteLine($"Failed to resolve stacks: {GetLastError(crashReport, ex)}");
-        }
-
-        try
-        {
-            crashReport.Send();
-        }
-        catch (Win32Exception ex)
-        {
-            AnsiConsole.WriteLine($"Failed to send crash report: {GetLastError(crashReport, ex)}");
-            return;
-        }
-
-        AnsiConsole.WriteLine("Crash report sent successfully");
     }
 
     private string GetLastError(ICrashReport crashReport, Win32Exception exception)
