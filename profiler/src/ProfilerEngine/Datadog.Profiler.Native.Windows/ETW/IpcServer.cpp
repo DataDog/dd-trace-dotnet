@@ -4,6 +4,7 @@
 #include "IpcClient.h"  // TODO: return codes should be defined in another shared header file
 #include "IpcServer.h"
 #include "..\SecurityDescriptorHelpers.h"
+
 #include <iostream>
 #include <sstream>
 #include <memory>
@@ -13,14 +14,58 @@ IpcServer::IpcServer()
 {
     _showMessages = false;
     _pHandler = nullptr;
-    _serverCount = 0;
     _stopRequested.store(false);
     _pLogger = nullptr;
+
+    _hInitializedEvent = ::CreateEvent(nullptr, true, false, nullptr);
 }
 
 IpcServer::~IpcServer()
 {
     Stop();
+
+    ::CloseHandle(_hInitializedEvent);
+    _hInitializedEvent = nullptr;
+}
+
+void IpcServer::Stop()
+{
+    _stopRequested.store(true);
+
+    // we also need to close the handle to the named pipe the server is listing to in order to unblock the ConnectNamedPipe() call
+    // and allow the server to really stop
+    if (_hNamedPipe != nullptr)
+    {
+        // connecting to the server pipe will unblock the ConnectNamedPipe() call
+        HANDLE hPipe = ::CreateFileA(
+            _portName.c_str(),
+            GENERIC_READ | GENERIC_WRITE,
+            0,
+            nullptr,
+            OPEN_EXISTING,
+            0,
+            nullptr);
+        if (hPipe != INVALID_HANDLE_VALUE)
+        {
+            ::CloseHandle(hPipe);
+        }
+
+        // cleanup the server pipe
+        ::DisconnectNamedPipe(_hNamedPipe);
+        ::CloseHandle(_hNamedPipe);
+        _hNamedPipe = nullptr;
+    }
+}
+
+void IpcServer::WaitForNamedPipe(DWORD timeoutMS)
+{
+    if (_hInitializedEvent == nullptr)
+    {
+        return;
+    }
+
+    // returns 0 if the event is signaled and WAIT_TIMEOUT if the timeout is reached (and the event is not signaled)
+    ::WaitForSingleObject(_hInitializedEvent, timeoutMS);
 }
 
 IpcServer::IpcServer(IIpcLogger* pLogger,
@@ -37,8 +82,12 @@ IpcServer::IpcServer(IIpcLogger* pLogger,
     _maxInstances = maxInstances;
     _timeoutMS = timeoutMS;
     _pHandler = pHandler;
-    _serverCount = 0;
     _pLogger = pLogger;
+    _hNamedPipe = nullptr;
+    _showMessages = false;
+
+    // will be set when the named pipe is initialized
+    _hInitializedEvent = ::CreateEvent(nullptr, true, false, nullptr);
 }
 
 std::unique_ptr<IpcServer> IpcServer::StartAsync(
@@ -60,20 +109,22 @@ std::unique_ptr<IpcServer> IpcServer::StartAsync(
         pLogger, portName, pHandler, inBufferSize, outBufferSize, maxInstances, timeoutMS
         );
 
-    // let a threadpool thread process the command; allowing the server to process more incoming commands
+    // let a threadpool thread process the command because there is a blocking call to ConnectNamedPipe()
     if (!::TrySubmitThreadpoolCallback(StartCallback, (PVOID)server.get(), nullptr))
     {
         server->ShowLastError("Impossible to add the Start callback into the threadpool...");
         return nullptr;
     }
 
+    // wait until the server has created the named pipe so the Agent will be able to connect
+    server->WaitForNamedPipe(200);
+
+    // wait a bit more for the blocking ConnectNamedPipe call is made to ensure that the Agent will be able to connect
+    ::Sleep(100);
+
     return server;
  }
 
-void IpcServer::Stop()
-{
-    _stopRequested.store(true);
-}
 
 void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID context)
 {
@@ -91,66 +142,89 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
         return;
     }
 
-    while (!pThis->_stopRequested.load())
+    pThis->_hNamedPipe =
+        ::CreateNamedPipeA(
+            pThis->_portName.c_str(),
+            PIPE_ACCESS_DUPLEX,
+            PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
+            pThis->_maxInstances,
+            pThis->_outBufferSize,
+            pThis->_inBufferSize,
+            pThis->_timeoutMS,
+            emptySA.get()
+            );
+
+    if (pThis->_hNamedPipe == INVALID_HANDLE_VALUE)
     {
-        HANDLE hNamedPipe =
-            ::CreateNamedPipeA(
-                pThis->_portName.c_str(),
-                PIPE_ACCESS_DUPLEX,
-                PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
-                pThis->_maxInstances,
-                pThis->_outBufferSize,
-                pThis->_inBufferSize,
-                pThis->_timeoutMS,
-                emptySA.get()
-                );
-
-        pThis->_serverCount++;
-
-        if (hNamedPipe == INVALID_HANDLE_VALUE)
-        {
-            pThis->ShowLastError("Failed to create named pipe...");
-            if (pThis->_pLogger != nullptr)
-            {
-                std::stringstream builder;
-                builder << "--> for server #" << pThis->_serverCount << "...";
-                pThis->_pLogger->Error(builder.str());
-            }
-
-            pThis->_pHandler->OnStartError();
-            return;
-        }
-
-        if (pThis->_pHandler != nullptr)
+        pThis->ShowLastError("Failed to create named pipe...");
+        if (pThis->_pLogger != nullptr)
         {
             std::stringstream builder;
-            builder << "Listening to server #" << pThis->_serverCount << "...";
-            pThis->_pLogger->Info(builder.str());
+            builder << "--> for server...";
+            pThis->_pLogger->Error(builder.str());
         }
 
-        if (!::ConnectNamedPipe(hNamedPipe, nullptr) && ::GetLastError() != ERROR_PIPE_CONNECTED)
-        {
-            pThis->ShowLastError("ConnectNamedPipe failed...");
-            ::CloseHandle(hNamedPipe);
-
-            pThis->_pHandler->OnConnectError();
-            return;
-        }
-
-        auto pServerInfo = new ServerInfo();
-        pServerInfo->pThis = pThis;
-        pServerInfo->hPipe = hNamedPipe;
-
-        // let a threadpool thread process the read/write communication; allowing the server to process more incoming connections
-        if (!::TrySubmitThreadpoolCallback(ConnectCallback, pServerInfo, nullptr))
-        {
-            delete pServerInfo;
-
-            pThis->ShowLastError("Impossible to add the Connect callback into the threadpool...");
-            pThis->_pHandler->OnStartError();
-            return;
-        }
+        pThis->_pHandler->OnStartError();
+        ::SetEvent(pThis->_hInitializedEvent);
+        return;
     }
+
+    std::stringstream builder;
+    builder << "Listening to named pipe '" << pThis->_portName << "'...";
+    pThis->_pLogger->Info(builder.str());
+
+    // the Agent can connect to the named pipe
+    ::SetEvent(pThis->_hInitializedEvent);
+
+    // this is a blocking call waiting for the Agent to connect
+    // if the agent is not running, it is going to block until the pipe is closed
+    // --> the ETW manager should detect the agent is not running and close the pipe
+    if (!::ConnectNamedPipe(pThis->_hNamedPipe, nullptr) && ::GetLastError() != ERROR_PIPE_CONNECTED)
+    {
+        pThis->ShowLastError("ConnectNamedPipe failed...");
+        pThis->_pHandler->OnConnectError();
+
+        ::CloseHandle(pThis->_hNamedPipe);
+        pThis->_hNamedPipe = nullptr;
+
+        return;
+    }
+
+    // it is possible that an error occured when trying to connect to the Agent
+    // in that case, the server should stop
+    if (pThis->_stopRequested.load())
+    {
+        ::CloseHandle(pThis->_hNamedPipe);
+        pThis->_hNamedPipe = nullptr;
+        pThis->_pHandler->OnConnectError();
+        return;
+    }
+
+    // this is a blocking call until the communication ends on this named pipe
+    pThis->_pHandler->OnConnect(pThis->_hNamedPipe);
+
+    // cleanup
+    ::DisconnectNamedPipe(pThis->_hNamedPipe);
+    ::CloseHandle(pThis->_hNamedPipe);
+    pThis->_hNamedPipe = nullptr;
+
+    //auto pServerInfo = new ServerInfo();
+    //pServerInfo->pThis = pThis;
+    //pServerInfo->hPipe = pThis->_hNamedPipe;
+
+    //// TODO: we don't really need to use a threadpool thread because we are already in a threadpool thread
+    //if (!::TrySubmitThreadpoolCallback(ConnectCallback, pServerInfo, nullptr))
+    //{
+    //    delete pServerInfo;
+
+    //    pThis->ShowLastError("Impossible to add the Connect callback into the threadpool...");
+    //    pThis->_pHandler->OnStartError();
+
+    //    ::CloseHandle(pThis->_hNamedPipe);
+    //    pThis->_hNamedPipe = nullptr;
+
+    //    return;
+    //}
 }
 
 void CALLBACK IpcServer::ConnectCallback(PTP_CALLBACK_INSTANCE instance, PVOID context)
