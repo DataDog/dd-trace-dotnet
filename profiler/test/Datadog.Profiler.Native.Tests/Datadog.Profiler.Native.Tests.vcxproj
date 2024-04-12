@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\packages\libdatadog.5.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\packages\libdatadog.5.0.0\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\packages\libdatadog.8.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\packages\libdatadog.8.0.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -55,6 +55,7 @@
     <ClCompile Include="AdaptiveSamplerTest.cpp" />
     <ClCompile Include="AppDomainStoreHelper.cpp" />
     <ClCompile Include="ApplicationStoreTest.cpp" />
+    <ClCompile Include="CallstackTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
     <ClCompile Include="EnabledProfilersTest.cpp" />
     <ClCompile Include="EnvironmentHelper.cpp" />
@@ -114,7 +115,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;DD_TEST;WIN32;_DEBUG;_CONSOLE;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DD_TEST;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;WIN32;_DEBUG;_CONSOLE;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
@@ -137,7 +138,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;DD_TEST;X64;_DEBUG;_CONSOLE;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DD_TEST;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;X64;_DEBUG;_CONSOLE;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
@@ -158,7 +159,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;DD_TEST;WIN32;NDEBUG;_CONSOLE;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DD_TEST;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;WIN32;NDEBUG;_CONSOLE;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -181,7 +182,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;DD_TEST;X64;NDEBUG;_CONSOLE;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DD_TEST;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;X64;NDEBUG;_CONSOLE;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -206,6 +207,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(PackagesDir)\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\gmock.1.11.0\build\native\gmock.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\gmock.1.11.0\build\native\gmock.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\libdatadog.5.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\libdatadog.5.0.0\build\native\libdatadog.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\libdatadog.8.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\libdatadog.8.0.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>

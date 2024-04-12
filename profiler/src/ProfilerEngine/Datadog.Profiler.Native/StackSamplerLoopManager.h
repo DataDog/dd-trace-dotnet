@@ -13,6 +13,7 @@
 #include "corprof.h"
 // end
 
+#include "CallstackProvider.h"
 #include "CounterMetric.h"
 #include "ICollector.h"
 #include "IMetricsSender.h"
@@ -82,7 +83,8 @@ public:
         IManagedThreadList* pCodeHotspotThreadList,
         ICollector<RawWallTimeSample>* pWallTimeCollector,
         ICollector<RawCpuSample>* pCpuTimeCollector,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        CallstackProvider callstackProvider);
 
     ~StackSamplerLoopManager() override;
 
@@ -203,8 +205,8 @@ private:
     ICollector<RawWallTimeSample>* _pWallTimeCollector = nullptr;
     ICollector<RawCpuSample>* _pCpuTimeCollector = nullptr;
 
-    std::unique_ptr<StackFramesCollectorBase> _pStackFramesCollector;
     std::unique_ptr<StackSamplerLoop> _pStackSamplerLoop;
+    std::unique_ptr<StackFramesCollectorBase> _pStackFramesCollector;
     std::uint8_t _deadlockInterventionInProgress;
 
     std::unique_ptr<std::thread> _pWatcherThread;
@@ -237,4 +239,6 @@ private:
     std::shared_ptr<CounterMetric> _deadlockCountMetric;
 
     bool _isStopped = false;
+
+    CallstackProvider _callstackProvider;
 };

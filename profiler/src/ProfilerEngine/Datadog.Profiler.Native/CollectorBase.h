@@ -2,14 +2,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include <list>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <vector>
-
-#include "Log.h"
-#include "OpSysTools.h"
 
 #include "IAppDomainStore.h"
 #include "ICollector.h"
@@ -18,13 +10,22 @@
 #include "IRuntimeIdStore.h"
 #include "IService.h"
 #include "IThreadsCpuManager.h"
+#include "Log.h"
+#include "OpSysTools.h"
 #include "ProviderBase.h"
 #include "RawSample.h"
 #include "RawSamples.hpp"
 #include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
 
+#include "shared/src/native-src/dd_memory_resource.hpp"
 #include "shared/src/native-src/string.h"
+
+#include <list>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
 
 // forward declarations
 class IConfiguration;
@@ -57,14 +58,15 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore)
+        IRuntimeIdStore* pRuntimeIdStore,
+        shared::pmr::memory_resource* memoryResource)
         :
         ProviderBase(name),
         _pFrameStore{pFrameStore},
         _pAppDomainStore{pAppDomainStore},
         _pRuntimeIdStore{pRuntimeIdStore},
         _pThreadsCpuManager{pThreadsCpuManager},
-        _collectedSamples{}
+        _collectedSamples{memoryResource}
     {
         _valueOffsets = std::move(valueOffsets);
     }
@@ -121,7 +123,7 @@ public:
     // with std::shared_ptr<Sample> as out parameter (avoid alloc/dealloc and add up overhead)
     std::shared_ptr<Sample> TransformRawSample(const TRawSample& rawSample)
     {
-        auto sample = std::make_shared<Sample>(0, std::string_view(), rawSample.Stack.size());
+        auto sample = std::make_shared<Sample>(0, std::string_view(), rawSample.Stack.Size());
 
         TransformRawSample(rawSample, sample);
 
@@ -216,7 +218,7 @@ private:
                 (rawSample.LocalRootSpanId == 0) &&
                 (rawSample.SpanId == 0) &&
                 (rawSample.AppDomainId == 0) &&
-                (rawSample.Stack.size() == 0))
+                (rawSample.Stack.Size() == 0))
             {
                 sample->SetThreadId("GC");
                 sample->SetThreadName("CLR thread (garbage collector)");

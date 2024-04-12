@@ -1,5 +1,6 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
 #include "ContentionProvider.h"
 
 #include "COMHelpers.h"
@@ -15,6 +16,8 @@
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
 
+#include <math.h>
+
 
 std::vector<uintptr_t> ContentionProvider::_emptyStack;
 
@@ -23,7 +26,6 @@ std::vector<SampleValueType> ContentionProvider::SampleTypeDefinitions(
         {"lock-count", "count"},
         {"lock-time", "nanoseconds"}
     });
-
 
 ContentionProvider::ContentionProvider(
     SampleValueTypeProvider& valueTypeProvider,
@@ -34,15 +36,18 @@ ContentionProvider::ContentionProvider(
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration,
-    MetricsRegistry& metricsRegistry)
+    MetricsRegistry& metricsRegistry,
+    CallstackProvider callstackProvider,
+    shared::pmr::memory_resource* memoryResource)
     :
-    CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
+    CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
     _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval(), false),
     _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
     _sampleLimit{pConfiguration->ContentionSampleLimit()},
-    _pConfiguration{pConfiguration}
+    _pConfiguration{pConfiguration},
+    _callstackProvider{std::move(callstackProvider)}
 {
     _lockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_lock_contentions");
     _lockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_lock_contentions_duration");
@@ -114,7 +119,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         std::shared_ptr<ManagedThreadInfo> threadInfo;
         CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-        const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration);
+        const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, &_callstackProvider);
         pStackFramesCollector->PrepareForNextCollection();
 
         uint32_t hrCollectStack = E_FAIL;
@@ -133,7 +138,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         rawSample.SpanId = result->GetSpanId();
         rawSample.AppDomainId = threadInfo->GetAppDomainId();
         rawSample.Timestamp = result->GetUnixTimeUtc();
-        result->CopyInstructionPointers(rawSample.Stack);
+        rawSample.Stack = result->GetCallstack();
         rawSample.ThreadInfo = threadInfo;
     }
     else
@@ -151,8 +156,8 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         // We know that we don't have any span ID nor end point details
 
         rawSample.Timestamp = timestamp;
-        rawSample.Stack.reserve(stack.size());
-        rawSample.Stack.insert(rawSample.Stack.end(), stack.begin(), stack.end());
+        auto end_stack = stack.begin() + std::min(stack.size(), static_cast<std::size_t>(rawSample.Stack.Capacity()));
+        std::copy(stack.begin(), end_stack, rawSample.Stack.begin());
 
         // we need to create a fake IThreadInfo if there is no thread in ManagedThreadList with the same OS thread id
         // There is one race condition here: the contention events are received asynchronously so the event thread might be dead

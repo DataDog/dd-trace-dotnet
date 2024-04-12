@@ -563,11 +563,12 @@ int64_t StackSamplerLoop::ComputeWallTime(int64_t currentTimestampNs, int64_t pr
 }
 
 void StackSamplerLoop::PersistStackSnapshotResults(
-    StackSnapshotResultBuffer const* pSnapshotResult,
+    StackSnapshotResultBuffer* pSnapshotResult,
     std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
     PROFILING_TYPE profilingType)
 {
-    if (pSnapshotResult == nullptr || pSnapshotResult->GetFramesCount() == 0)
+    auto callstack = pSnapshotResult->GetCallstack();
+    if (pSnapshotResult == nullptr || callstack.Size() == 0)
     {
         return;
     }
@@ -580,7 +581,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         rawSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawSample.SpanId = pSnapshotResult->GetSpanId();
         rawSample.AppDomainId = pThreadInfo->GetAppDomainId();
-        pSnapshotResult->CopyInstructionPointers(rawSample.Stack);
+        rawSample.Stack = std::move(callstack);
         rawSample.ThreadInfo = pThreadInfo;
         rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
         _pWallTimeCollector->Add(std::move(rawSample));
@@ -594,7 +595,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
         rawCpuSample.AppDomainId = pThreadInfo->GetAppDomainId();
-        pSnapshotResult->CopyInstructionPointers(rawCpuSample.Stack);
+        rawCpuSample.Stack = std::move(callstack);
         rawCpuSample.ThreadInfo = pThreadInfo;
         rawCpuSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
         _pCpuTimeCollector->Add(std::move(rawCpuSample));

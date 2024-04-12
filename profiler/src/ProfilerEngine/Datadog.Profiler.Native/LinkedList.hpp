@@ -3,28 +3,13 @@
 
 #pragma once
 
-#ifdef __has_include                 // Check if __has_include is present
-#if __has_include(<memory_resource>) // Check for a standard library
-#include <memory_resource>
-namespace pmr {
-using namespace std::pmr;
-}
-#elif __has_include(<experimental/memory_resource>) // Check for an experimental version
-#include <experimental/memory_resource>
-namespace pmr {
-using namespace std::experimental::pmr;
-}
-#else // Not found at all
-// cppcheck-suppress preprocessorErrorDirective
-#error "Missing <memory_resource>"
-#endif
-#endif
-
 #include <cassert>
 #include <cstdlib>
 #include <memory>
 #include <stdexcept>
 #include <utility>
+
+#include "shared/src/native-src/dd_memory_resource.hpp"
 
 #ifdef DD_TEST
 #define NOEXCEPT noexcept(false)
@@ -36,7 +21,7 @@ template <class T>
 class LinkedList
 {
 public:
-    LinkedList(pmr::memory_resource* allocator = pmr::get_default_resource()) noexcept :
+    LinkedList(shared::pmr::memory_resource* allocator) noexcept :
         _head{nullptr}, _tail{&_head}, _nbElements{0}, _allocator{allocator}
     {
     }
@@ -58,7 +43,7 @@ public:
     LinkedList(LinkedList const&) = delete;
     LinkedList& operator=(LinkedList const&) = delete;
 
-    LinkedList(LinkedList&& other) NOEXCEPT : LinkedList()
+    LinkedList(LinkedList&& other) NOEXCEPT : LinkedList(shared::pmr::get_default_resource())
     {
         *this = std::move(other);
     }
@@ -211,7 +196,7 @@ private:
     struct NodeGuard
     {
     public:
-        constexpr explicit NodeGuard(pmr::memory_resource* mr) :
+        constexpr explicit NodeGuard(shared::pmr::memory_resource* mr) :
             _mr{mr}, _Node{nullptr}
         {
         }
@@ -237,7 +222,7 @@ private:
             return std::exchange(_Node, nullptr);
         }
 
-        pmr::memory_resource* _mr;
+        shared::pmr::memory_resource* _mr;
         Node* _Node;
     };
 
@@ -260,5 +245,5 @@ private:
     Node** _tail;
     std::size_t _nbElements;
 
-    pmr::memory_resource* _allocator;
+    shared::pmr::memory_resource* _allocator;
 };

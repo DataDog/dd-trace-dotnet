@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 
+#include "CallstackProvider.h"
 #include "ManagedThreadInfo.h"
 #include "StackSnapshotResultBuffer.h"
 
@@ -16,14 +17,14 @@ class IConfiguration;
 class StackFramesCollectorBase
 {
 protected:
-    StackFramesCollectorBase(IConfiguration const * _configuration);
+    StackFramesCollectorBase(IConfiguration const * _configuration, CallstackProvider* callstackProvider);
 
     bool TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
     bool AddFrame(std::uintptr_t ip);
     void AddFakeFrame();
     void SetFrameCount(std::uint16_t count);
 
-    std::pair<uintptr_t*, std::uint16_t> Data();
+    shared::span<uintptr_t> Data();
 
     StackSnapshotResultBuffer* GetStackSnapshotResult();
     bool IsCurrentCollectionAbortRequested();
@@ -52,6 +53,7 @@ public:
 
 protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;
+    CallstackProvider* _callstackProvider;
 
 private:
     std::unique_ptr<StackSnapshotResultBuffer> _pStackSnapshotResult;

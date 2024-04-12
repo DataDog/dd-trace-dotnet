@@ -13,12 +13,13 @@ ThreadLifetimeProvider::ThreadLifetimeProvider(
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration)
+    IConfiguration* pConfiguration,
+    shared::pmr::memory_resource* memoryResource)
     :
     CollectorBase<RawThreadLifetimeSample>(
         "ThreadLifetimeProvider",
         valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions),
-        pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
+        pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource)
 {
 }
 
@@ -39,7 +40,6 @@ RawThreadLifetimeSample ThreadLifetimeProvider::CreateSample(std::shared_ptr<Man
     rawSample.LocalRootSpanId = 0;
     rawSample.SpanId = 0;
     rawSample.AppDomainId = (AppDomainID) nullptr;
-    rawSample.Stack.clear();
     rawSample.ThreadInfo = std::move(pThreadInfo);
     rawSample.Kind = kind;
 
