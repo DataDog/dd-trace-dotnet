@@ -207,39 +207,6 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
     ::DisconnectNamedPipe(pThis->_hNamedPipe);
     ::CloseHandle(pThis->_hNamedPipe);
     pThis->_hNamedPipe = nullptr;
-
-    //auto pServerInfo = new ServerInfo();
-    //pServerInfo->pThis = pThis;
-    //pServerInfo->hPipe = pThis->_hNamedPipe;
-
-    //// TODO: we don't really need to use a threadpool thread because we are already in a threadpool thread
-    //if (!::TrySubmitThreadpoolCallback(ConnectCallback, pServerInfo, nullptr))
-    //{
-    //    delete pServerInfo;
-
-    //    pThis->ShowLastError("Impossible to add the Connect callback into the threadpool...");
-    //    pThis->_pHandler->OnStartError();
-
-    //    ::CloseHandle(pThis->_hNamedPipe);
-    //    pThis->_hNamedPipe = nullptr;
-
-    //    return;
-    //}
-}
-
-void CALLBACK IpcServer::ConnectCallback(PTP_CALLBACK_INSTANCE instance, PVOID context)
-{
-    ServerInfo* pInfo = reinterpret_cast<ServerInfo*>(context);
-    IpcServer* pThis = pInfo->pThis;
-    HANDLE hPipe = pInfo->hPipe;
-    delete pInfo;
-
-    // this is a blocking call until the communication ends on this named pipe
-    pThis->_pHandler->OnConnect(hPipe);
-
-    // cleanup
-    ::DisconnectNamedPipe(hPipe);
-    ::CloseHandle(hPipe);
 }
 
 void IpcServer::ShowLastError(const char* message, uint32_t lastError)

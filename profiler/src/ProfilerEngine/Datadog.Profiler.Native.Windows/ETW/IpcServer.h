@@ -40,8 +40,6 @@ public:
 
 private:
     static void CALLBACK StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID context);
-    static void CALLBACK StartCallbackEx(PTP_CALLBACK_INSTANCE instance, PVOID context);
-    static void CALLBACK ConnectCallback(PTP_CALLBACK_INSTANCE instance, PVOID context);
     void ShowLastError(const char* message, uint32_t lastError = ::GetLastError());
 
 private:
