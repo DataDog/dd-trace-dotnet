@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.ComponentModel;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -46,25 +47,23 @@ public static class UnitTestRunnerRunSingleTestIntegration
 
         var methodInfoCacheItem = (MethodInfoCacheItem)MsTestIntegration.IsTestMethodRunnableThreadLocal.Value;
         MsTestIntegration.IsTestMethodRunnableThreadLocal.Value = null;
-        if (methodInfoCacheItem is not null && returnValue is Array { Length: 1 } returnValueArray)
+
+        if (methodInfoCacheItem is not null && returnValue is IList { Count: > 0 } lstResults)
         {
-            var unitTestResultObject = returnValueArray.GetValue(0);
-
-            if (unitTestResultObject != null &&
-                unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult) &&
-                methodInfoCacheItem.TestMethodInfo.TryDuckCast<ITestMethod>(out var testMethodInfo))
+            foreach (var unitTestResultObject in lstResults)
             {
-#pragma warning disable DDLOG004
-                Common.Log.Warning($"UnitTestRunner.RunSingleTest Finished: {testMethodInfo.TestClassName}.{testMethodInfo.TestMethodName} | {testMethodInfo.Arguments?.Length} | {unitTestResult.Outcome}");
-#pragma warning restore DDLOG004
-
-                if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
+                if (unitTestResultObject != null &&
+                    unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult) &&
+                    methodInfoCacheItem.TestMethodInfo.TryDuckCast<ITestMethod>(out var testMethodInfo))
                 {
-                    if (!MsTestIntegration.ShouldSkip(testMethodInfo, out _, out _))
+                    if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
                     {
-                        // This instrumentation catches all tests being ignored
-                        MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType(), isRetry: false)?
-                                         .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                        if (!MsTestIntegration.ShouldSkip(testMethodInfo, out _, out _))
+                        {
+                            // This instrumentation catches all tests being ignored
+                            MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType(), isRetry: false)?
+                               .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                        }
                     }
                 }
             }

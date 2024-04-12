@@ -28,6 +28,36 @@ internal static class MsTestIntegration
     internal static readonly ConditionalWeakTable<object, TestModule> TestModuleByTestAssemblyInfos = new();
     internal static readonly ConditionalWeakTable<object, TestSuite> TestSuiteByTestClassInfos = new();
 
+    private static readonly Dictionary<string, string> MsTestVersionByModuleId = new()
+    {
+        ["ac1340e1-462b-4480-ac43-8e76805462fb"] = "1.4.0",
+        ["329476f1-575d-44d9-a739-1642e867e4ae"] = "2.0.0",
+        ["6da31905-7bda-4426-9718-8b227d1459ed"] = "2.1.0",
+        ["31f86fec-2f3d-4f5f-a4c3-5ec01361289b"] = "2.1.1",
+        ["34618455-3692-446e-965f-f6a103113a53"] = "2.1.2",
+        ["18322e86-0271-44e9-a9b8-0b699d39647c"] = "2.2.1",
+        ["ad41042f-522c-4a01-9198-e4e1d74f4d78"] = "2.2.2",
+        ["6476fc3e-b436-4c36-896a-ab6f57e16ecc"] = "2.2.3",
+        ["6002ad1a-da72-4178-89fe-3598b8df09d7"] = "2.2.4",
+        ["cc144791-2265-41dc-97ea-b19d3254a037"] = "2.2.5",
+        ["99cbd7af-0f2e-4019-8a0e-67c467f96658"] = "2.2.6",
+        ["26671011-cacf-4203-8b5a-7d023d37851c"] = "2.2.7",
+        ["60e77dfc-476b-4b69-937f-e6b73366af47"] = "2.2.8",
+        ["a6135a87-904b-4976-b9cd-2ed60305f9b6"] = "2.2.9",
+        ["4472e9d6-a19b-4c92-bcc9-a80bd60ca17d"] = "2.2.10",
+        ["43b5503d-b0bb-4bd3-a538-a42c1996331c"] = "3.0.0",
+        ["058e8d58-ca0b-437f-bbeb-e3dac0622385"] = "3.0.1",
+        ["1fc9e418-9b26-4b39-bd75-982a2b47ce8f"] = "3.0.2",
+        ["fca00577-fd3c-4b9a-b20f-13210bcb2bb0"] = "3.0.3",
+        ["7a68ce0a-7f00-4fd2-9a39-e7e22579b7e6"] = "3.0.4",
+        ["e78be70d-3050-48cb-9914-e5b7afd525a2"] = "3.1.1",
+        ["76f80564-bfa8-4c6a-810d-fb8d8ff9904b"] = "3.2.0",
+        ["601b9a9e-4ec5-4d00-bd02-b9990a2ef6c1"] = "3.2.1",
+        ["82f48315-774a-4e06-afb3-f1f684eca38d"] = "3.2.2",
+        ["82c42f21-febe-4eb2-80ad-8e793eabd8f2"] = "3.3.0",
+        ["139449f1-8ab4-46b1-bf76-1a0e70ed75c7"] = "3.3.1"
+    };
+
     private static long _totalTestCases;
     private static long _newTestCases;
 
@@ -273,7 +303,19 @@ internal static class MsTestIntegration
                     assemblyName = string.Empty;
                 }
 
-                var frameworkVersion = testAssemblyInfo.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
+                var testAssembly = testAssemblyInfo.Type.Assembly;
+                var frameworkVersion = testAssembly.GetName().Version?.ToString() ?? string.Empty;
+                foreach (var module in testAssembly.Modules)
+                {
+                    if (MsTestVersionByModuleId.TryGetValue(module.ModuleVersionId.ToString(), out var actualVersion))
+                    {
+                        frameworkVersion = actualVersion;
+                        break;
+                    }
+
+                    Common.Log.Warning("MSTest framework version could not be detected. MVID: {ModuleVersionId}", module.ModuleVersionId);
+                }
+
                 Common.Log.Debug("Module: {Module}, Framework version: {Version}", assemblyName, frameworkVersion);
                 return TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
             });

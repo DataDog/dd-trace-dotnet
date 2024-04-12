@@ -52,11 +52,6 @@ public static class TestMethodRunnerExecuteIntegration
             {
                 if (unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult))
                 {
-#pragma warning disable DDLOG004
-                    Common.Log.Warning($"TestMethodRunner.Execute Finished: {instance.TestMethodInfo.TestClassName}.{instance.TestMethodInfo.TestMethodName} | {instance.TestMethodInfo.Arguments?.Length} | {unitTestResult.Outcome}");
-#pragma warning restore DDLOG004
-
-                    // or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
                     if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive)
                     {
                         if (!MsTestIntegration.ShouldSkip(instance.TestMethodInfo, out _, out _))
