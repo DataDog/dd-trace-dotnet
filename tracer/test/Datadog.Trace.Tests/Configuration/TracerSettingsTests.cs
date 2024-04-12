@@ -356,7 +356,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("k.e y?!1", false, new[] { "k.e y?!1|" })]
         [InlineData(":leadingcolon", false, new string[0])]
         [InlineData(":leadingcolon", true, new string[0])]
-        [InlineData("one:two:three", true, new[] { "one|two:three" })]
+        [InlineData("one:two:three", true, new[] { "one:two|three" })]
         public void HeaderTags(string value, bool normalizationFixEnabled, string[] expected)
         {
             var source = CreateConfigurationSource(
