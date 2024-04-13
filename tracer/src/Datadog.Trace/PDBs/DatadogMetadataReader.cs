@@ -21,6 +21,12 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
 
 namespace Datadog.Trace.Pdb
 {
+    internal enum PdbReaderType
+    {
+        ReflectionMetadata,
+        Dnlib
+    }
+
     /// <summary>
     /// Reads metadata as well as both Windows and Portable PDBs.
     /// Note: reading Windows PDBs is only supported on Windows.
@@ -38,7 +44,6 @@ namespace Datadog.Trace.Pdb
         private static readonly Guid StateMachineHoistedLocalScopes = new("6DA9A61E-F8C7-4874-BE62-68BC5630DF71");
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogMetadataReader>();
         private readonly PEReader _peReader;
-        private readonly bool _isDnlibPdbReader;
         private bool _disposed;
 
         private DatadogMetadataReader(PEReader peReader, MetadataReader metadataReader, MetadataReader? pdbReader, string? pdbFullPath, Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols.SymbolReader? dnlibPdbReader, Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD? dnlibModule)
@@ -49,7 +54,7 @@ namespace Datadog.Trace.Pdb
             _dnlibModule = dnlibModule;
             DnlibPdbReader = dnlibPdbReader;
             PdbFullPath = pdbFullPath;
-            _isDnlibPdbReader = dnlibPdbReader != null;
+            PdbReaderType = dnlibPdbReader != null ? PdbReaderType.Dnlib : PdbReaderType.ReflectionMetadata;
             IsPdbExist = PdbReader != null || DnlibPdbReader != null;
         }
 
@@ -58,6 +63,8 @@ namespace Datadog.Trace.Pdb
         internal MetadataReader MetadataReader { get; }
 
         internal MetadataReader? PdbReader { get; }
+
+        internal PdbReaderType PdbReaderType { get; }
 
         internal bool IsPdbExist { get; set; }
 
@@ -175,7 +182,7 @@ namespace Datadog.Trace.Pdb
 
         internal string? GetSourceLinkJsonDocument()
         {
-            if (_isDnlibPdbReader)
+            if (PdbReaderType == PdbReaderType.Dnlib)
             {
                 return GetSourceLinkJsonDocumentDnlib();
             }
@@ -215,7 +222,7 @@ namespace Datadog.Trace.Pdb
         internal IMemoryOwner<DatadogSequencePoint>? GetMethodSequencePointsAsMemoryOwner(int rowId, bool searchMoveNext, out int count)
         {
             count = 0;
-            if (_isDnlibPdbReader)
+            if (PdbReaderType == PdbReaderType.Dnlib)
             {
                 return GetMethodSequencePointsDnlib(rowId, searchMoveNext, out count);
             }
@@ -359,7 +366,7 @@ namespace Datadog.Trace.Pdb
         {
             byteCodeOffset = null;
 
-            if (_isDnlibPdbReader)
+            if (PdbReaderType == PdbReaderType.Dnlib)
             {
                 return GetContainingMethodTokenAndOffsetDnlib(filePath, line, column, out byteCodeOffset);
             }
@@ -395,7 +402,7 @@ namespace Datadog.Trace.Pdb
         internal IList<string>? GetDocuments()
         {
             List<string>? docs = null;
-            if (_isDnlibPdbReader)
+            if (PdbReaderType == PdbReaderType.Dnlib)
             {
                 docs = new List<string>(DnlibPdbReader!.Documents.Count);
                 for (int i = 0; i < DnlibPdbReader.Documents.Count; i++)
@@ -441,7 +448,7 @@ namespace Datadog.Trace.Pdb
 
         internal string[]? GetLocalVariableNames(int methodToken, int localVariablesCount, bool searchMoveNext)
         {
-            if (_isDnlibPdbReader)
+            if (PdbReaderType == PdbReaderType.Dnlib)
             {
                 return GetLocalVariableNamesDnlib(methodToken & RidMask, localVariablesCount, searchMoveNext);
             }
@@ -514,7 +521,7 @@ namespace Datadog.Trace.Pdb
 
         internal CustomDebugInfoAsyncAndClosure GetAsyncAndClosureCustomDebugInfo(int methodRid)
         {
-            if (_isDnlibPdbReader)
+            if (PdbReaderType == PdbReaderType.Dnlib)
             {
                 return GetAsyncAndClosureCustomDebugInfoDnlib(methodRid);
             }
@@ -562,7 +569,7 @@ namespace Datadog.Trace.Pdb
 
         internal bool IsCompilerGeneratedAttributeDefinedOnMethod(int methodRid)
         {
-            if (_isDnlibPdbReader)
+            if (PdbReaderType == PdbReaderType.Dnlib)
             {
                 var attributes = _dnlibModule!.ResolveMethod((uint)methodRid)?.CustomAttributes;
                 return attributes?.IsDefined(CompilerGeneratedAttribute) ?? false;
@@ -617,7 +624,7 @@ namespace Datadog.Trace.Pdb
 
         internal bool IsCompilerGeneratedAttributeDefinedOnType(int typeRid)
         {
-            if (_isDnlibPdbReader)
+            if (PdbReaderType == PdbReaderType.Dnlib)
             {
                 var attributes = _dnlibModule!.ResolveTypeDefOrRef((uint)typeRid).CustomAttributes;
                 return attributes.IsDefined(CompilerGeneratedAttribute);
@@ -680,7 +687,7 @@ namespace Datadog.Trace.Pdb
 
         internal ImmutableArray<LocalScope>? GetLocalSymbols(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
         {
-            if (_isDnlibPdbReader)
+            if (PdbReaderType == PdbReaderType.Dnlib)
             {
                 return GetLocalSymbolsDnlib(rowId, sequencePoints, searchMoveNext);
             }

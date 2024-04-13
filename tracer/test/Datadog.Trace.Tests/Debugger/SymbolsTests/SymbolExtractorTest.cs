@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using VerifyTests;
@@ -27,15 +28,10 @@ public class SymbolExtractorTest
     public static IEnumerable<object[]> TestSamples =>
         typeof(SymbolExtractorTest).Assembly.GetTypes().Where(t => t.Namespace == TestSamplesNamespace && !t.Name.StartsWith("<") && !t.IsNested).Select(type => new object[] { type });
 
-    [SkippableTheory]
+    [SkippableTheory(typeof(NoPdbException), typeof(SkipException))]
     [MemberData(nameof(TestSamples))]
     private async Task Test(Type type)
     {
-#if NETFRAMEWORK
-        _ = type;
-        await Task.Yield();
-        throw new SkipException("This test is flaky - The .NET Framework snapshots produced are different in CI and locally");
-#else
         if (!EnvironmentTools.IsWindows())
         {
             throw new SkipException("PDB test only on windows");
@@ -44,13 +40,13 @@ public class SymbolExtractorTest
         var assembly = Assembly.GetAssembly(type);
         Assert.NotNull(assembly);
         var root = GetSymbols(assembly, type.FullName);
+        Assert.NotNull(root.Scopes);
         Assert.True(root.Scopes.Count == 1);
         Assert.True(root.Scopes.First().Scopes.Length == 1);
         Assert.True(root.Scopes.First().Scopes.First().Name == type.FullName);
         var settings = ConfigureVerifySettings(type.Name);
         var toVerify = GetStringToVerify(root);
         await Verifier.Verify(toVerify, settings);
-#endif
     }
 
     [SkippableTheory(Skip = "Implement this")]
@@ -65,6 +61,7 @@ public class SymbolExtractorTest
         var assembly = Assembly.GetAssembly(type);
         Assert.NotNull(assembly);
         var root = GetSymbols(assembly, type.FullName);
+        Assert.NotNull(root.Scopes);
         Assert.True(root.Scopes.Count == 1);
         Assert.True(root.Scopes.First().Scopes.Length == 1);
         Assert.True(root.Scopes.First().Scopes.First().Name == type.FullName);
@@ -76,9 +73,6 @@ public class SymbolExtractorTest
     [SkippableFact]
     private void CompilerGeneratedClassTest()
     {
-#if NETFRAMEWORK
-        throw new SkipException("This test is flaky - root.Scopes.First().Scopes is sometimes not null on .NET Framework");
-#else
         var assembly = Assembly.GetExecutingAssembly();
         Assert.NotNull(assembly);
         var compilerGeneratedTypes = CompilerGeneratedTypes(10);
@@ -87,6 +81,7 @@ public class SymbolExtractorTest
         {
             Assert.NotNull(generatedType);
             var root = GetSymbols(assembly, generatedType.FullName);
+            Assert.NotNull(root.Scopes);
             Assert.True(root.Scopes.Count == 1);
             Assert.Null(root.Scopes.First().Scopes);
         }
@@ -95,7 +90,6 @@ public class SymbolExtractorTest
         {
             return assembly.GetTypes().SelectMany(t => t.GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)).Where(t => t.GetCustomAttribute<CompilerGeneratedAttribute>() != null).Take(numberOfTypes).ToList();
         }
-#endif
     }
 
     private string GetStringToVerify(Root root)
@@ -167,6 +161,11 @@ public class SymbolExtractorTest
         var root = GetRoot();
         var extractor = SymbolExtractor.Create(assembly);
         Assert.NotNull(extractor);
+        if (extractor is not SymbolPdbExtractor || extractor.DatadogMetadataReader.PdbReaderType == PdbReaderType.Dnlib)
+        {
+            throw new NoPdbException("PDB does not exist");
+        }
+
         var assemblyScope = extractor.GetAssemblySymbol();
         var classSymbol = extractor.GetClassSymbols(className);
         assemblyScope.Scopes = classSymbol.HasValue ? new[] { classSymbol.Value } : null;
@@ -185,5 +184,13 @@ public class SymbolExtractorTest
         };
 
         return root;
+    }
+
+    private class NoPdbException : Exception
+    {
+        public NoPdbException(string message)
+            : base(message)
+        {
+        }
     }
 }
