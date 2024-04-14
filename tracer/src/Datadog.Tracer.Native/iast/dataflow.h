@@ -28,16 +28,34 @@ namespace iast
     {
     public:
         ModuleInfo* _module;
-        std::vector<DataflowAspectReference*> _aspects;
 
     private:
         std::unordered_map<DataflowAspectFilterValue, AspectFilter*> _filters;
+        std::vector<DataflowAspectReference*> _aspects;
+        std::unordered_map<mdToken, std::vector<DataflowAspectReference*>*> _methodSiteAspects;
 
     public:
         ModuleAspects(Dataflow* dataflow, ModuleInfo* module);
         virtual ~ModuleAspects();
 
+        std::vector<DataflowAspectReference*> GetAspects(MethodInfo* method, std::vector<DataflowAspectClass*>* methodCallSiteAspects);
         AspectFilter* GetFilter(DataflowAspectFilterValue filterValue);
+    };
+
+    class ModuleSiteFilteredAspects
+    {
+    public:
+        WSTRING _moduleName;
+        std::unordered_map<WSTRING, std::vector<DataflowAspectClass*>*> _siteFilteredAspectClasses;
+
+    public:
+        ModuleSiteFilteredAspects(const WSTRING& moduleName);
+        virtual ~ModuleSiteFilteredAspects();
+
+        inline std::vector<DataflowAspectClass*>* GetSiteFilteredAspects(WSTRING methodName)
+        {
+            return Get(_siteFilteredAspectClasses, methodName);
+        }
     };
 
     class Dataflow
@@ -54,8 +72,8 @@ namespace iast
         VersionInfo m_runtimeVersion = VersionInfo{4, 0, 0, 0};
 
         std::thread* _initThread = nullptr;
-        std::map<ModuleID, ModuleInfo*> _modules;
-        std::map<AppDomainID, AppDomainInfo*> _appDomains;
+        std::unordered_map<ModuleID, ModuleInfo*> _modules;
+        std::unordered_map<AppDomainID, AppDomainInfo*> _appDomains;
 
         std::vector<WSTRING> _domainIncludeFilters;
         std::vector<WSTRING> _domainExcludeFilters;
@@ -74,13 +92,20 @@ namespace iast
 
         std::vector<DataflowAspectClass*> _aspectClasses;
         std::vector<DataflowAspect*> _aspects;
-        std::map<ModuleID, ModuleAspects*> _moduleAspects;
+       
+        std::unordered_map<WSTRING, ModuleSiteFilteredAspects*> _siteFilteredAspectClasses;
 
-        HRESULT RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl* pFunctionControl);
+        std::unordered_map<ModuleID, ModuleAspects*> _moduleAspects;
+
+        HRESULT RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl* pFunctionControl, std::vector<DataflowAspectClass*>* methodCallSiteAspects = nullptr);
         MethodInfo* JITProcessMethod(ModuleID moduleId, mdToken methodId, bool isRejit = false);
 
+        ModuleAspects* GetModuleAspects(ModuleInfo* module);
         std::vector<DataflowAspectReference*> GetAspects(ModuleInfo* module);
+        std::vector<DataflowAspectReference*> GetAspects(MethodInfo* method, std::vector<DataflowAspectClass*>* methodCallSiteAspects = nullptr);
         static InstrumentResult InstrumentInstruction(ILRewriter* rewriter, ILInstr* instruction, std::vector<DataflowAspectReference*>& aspects);
+
+        bool IsMethodExcluded(ModuleID moduleId, mdToken methodId, ModuleInfo** module, MethodInfo** method, std::vector<DataflowAspectClass*>** methodCallSiteAspects);
 
     public:
         bool IsInitialized();

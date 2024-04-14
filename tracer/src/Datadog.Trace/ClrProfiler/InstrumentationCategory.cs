@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler
     {
         Tracing = 1,
         AppSec = 2,
-        Iast = 4
+        Iast = 4,
+        Rasp = 8,
     }
 }

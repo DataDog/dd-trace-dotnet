@@ -81,6 +81,15 @@ namespace iast
         {
             _vulnerabilityTypes = ParseVulnerabilityTypes(shared::ToString(parts[part]));
         }
+        if ((int) parts.size() > ++part) // AspectFilter
+        {
+            _categories = ConvertToInt(parts[part]);
+        }
+        if ((int) parts.size() > ++part)
+        {
+            _callSiteFilters = parts[part];
+        }
+
         _aspectTypeName = Trim(line.substr(offset));
         _isValid = true;
     }

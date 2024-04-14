@@ -46,19 +46,8 @@
     <ClCompile Include="debugger_probes_tracker.cpp">
       <Filter>Debugger</Filter>
     </ClCompile>
-    <ClCompile Include="iast\iast_util.cpp" />
-    <ClCompile Include="iast\aspect.cpp" />
-    <ClCompile Include="iast\dataflow_il_analysis.cpp" />
-    <ClCompile Include="iast\dataflow_il_rewriter.cpp" />
-    <ClCompile Include="iast\aspect_filter.cpp" />
     <ClCompile Include="iast\signature_info.cpp" />
-    <ClCompile Include="iast\method_info.cpp" />
-    <ClCompile Include="iast\module_info.cpp" />
     <ClCompile Include="iast\signature_types.cpp" />
-    <ClCompile Include="iast\dataflow_aspects.cpp" />
-    <ClCompile Include="iast\dataflow.cpp" />
-    <ClCompile Include="iast\string_literal_aspect_filter.cpp" />
-    <ClCompile Include="iast\string_optimization_aspect_filter.cpp" />
     <ClCompile Include="fault_tolerant_tracker.cpp">
       <Filter>FaultTolerant</Filter>
     </ClCompile>
@@ -80,6 +69,39 @@
     <ClCompile Include="iast\method_analyzers.cpp" />
     <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp" />
     <ClCompile Include="iast\method_analyzer.cpp" />
+    <ClCompile Include="iast\aspect.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\dataflow.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\dataflow_aspects.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\dataflow_il_analysis.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\dataflow_il_rewriter.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\iast_util.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\string_literal_aspect_filter.cpp">
+      <Filter>Iast\Filters</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\string_optimization_aspect_filter.cpp">
+      <Filter>Iast\Filters</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\aspect_filter.cpp">
+      <Filter>Iast\Filters</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\method_info.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\module_info.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -150,22 +172,9 @@
     <ClInclude Include="debugger_probes_tracker.h">
       <Filter>Debugger</Filter>
     </ClInclude>
-    <ClInclude Include="iast\dataflow.h" />
-    <ClInclude Include="iast\iast_util.h" />
-    <ClInclude Include="iast\aspect.h" />
-    <ClInclude Include="iast\iast_constants.h" />
-    <ClInclude Include="iast\method_info.h" />
     <ClInclude Include="iast\signature_info.h" />
     <ClInclude Include="iast\signature_types.h" />
-    <ClInclude Include="iast\module_info.h" />
     <ClInclude Include="iast\app_domain_info.h" />
-    <ClInclude Include="iast\dataflow_aspects.h" />
-    <ClInclude Include="iast\aspect_filter_factory.h" />
-    <ClInclude Include="iast\aspect_filter.h" />
-    <ClInclude Include="iast\string_literal_aspect_filter.h" />
-    <ClInclude Include="iast\string_optimization_aspect_filter.h" />
-    <ClInclude Include="iast\dataflow_il_rewriter.h" />
-    <ClInclude Include="iast\dataflow_il_analysis.h" />
     <ClInclude Include="iast\method_analyzers.h" />
     <ClInclude Include="iast\method_analyzer.h" />
     <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h" />
@@ -192,6 +201,45 @@
     <ClInclude Include="fault_tolerant_cor_profiler_function_control.h">
       <Filter>FaultTolerant\Hooks</Filter>
     </ClInclude>
+    <ClInclude Include="iast\aspect.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\dataflow.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\dataflow_aspects.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\dataflow_il_analysis.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\dataflow_il_rewriter.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\iast_constants.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\iast_util.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\string_literal_aspect_filter.h">
+      <Filter>Iast\Filters</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\string_optimization_aspect_filter.h">
+      <Filter>Iast\Filters</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\aspect_filter.h">
+      <Filter>Iast\Filters</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\aspect_filter_factory.h">
+      <Filter>Iast\Filters</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\method_info.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\module_info.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">
@@ -205,6 +253,12 @@
     </Filter>
     <Filter Include="FaultTolerant\Hooks">
       <UniqueIdentifier>{35c3ef95-c2c0-4141-8a54-ee60d6a8c348}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Iast">
+      <UniqueIdentifier>{b5024cc7-e05a-4afe-adcc-a4df58c82dbd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Iast\Filters">
+      <UniqueIdentifier>{45553cf9-6297-4ec0-95c9-6d29ff17504f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

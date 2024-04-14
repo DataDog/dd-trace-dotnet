@@ -26,7 +26,7 @@ namespace iast
         None,
         StringOptimization, //Common string optimizations
         StringLiterals,     //Filter if all params are String Literals
-        StringLiterals_Any, //Filter if any pf the params are String Literals
+        StringLiterals_Any, //Filter if any of the params are String Literals
         StringLiteral_0,    //Filter if param0 is String Literal
         StringLiteral_1,    //Filter if param1 is String Literal
     };
@@ -48,11 +48,18 @@ namespace iast
         WSTRING _aspectTypeName;
         AspectType _aspectType = AspectType::None;// "PROPAGATION"_W;
         std::vector<VulnerabilityType> _vulnerabilityTypes;
-        std::vector<DataflowAspect> _aspects;
+        std::vector<DataflowAspect*> _aspects;
         std::vector<DataflowAspectFilterValue> _filters;
+        UINT32 _categories;
+        WSTRING _callSiteFilters;
 
         bool IsValid();
         bool IsTargetModule(ModuleInfo* module);
+        bool IsSiteFunction(MethodInfo* method);
+        inline bool IsSiteFiltered()
+        {
+            return _callSiteFilters.size() > 0;
+        }
 
         WSTRING ToString();
     };

@@ -187,15 +187,15 @@ namespace Datadog.Trace.ClrProfiler
         return data.AttributeClass.Name switch
         {
             // Coments are to have the original attributes overloads present
-            // AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType = AspectType.Propagation, VulnerabilityType[] defaultVulnerabilityTypes)
+            // AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType, VulnerabilityType[] defaultVulnerabilityTypes, InstrumentationCategory categories, string includeFilter, string excludeFilter)
             "AspectClassAttribute" => arguments.Length switch
             {
-                // AspectClassAttribute(string defaultAssembly)
-                1 => $"[AspectClass({arguments[0]},[None],Propagation,[])]",
+                // AspectClassAttribute(string defaultAssembly, params string[] siteFilters)
+                2 => $"[AspectClass({arguments[0]},[None],Propagation,[],4,{Check(arguments[1])})]",
                 // AspectClassAttribute(string defaultAssembly, AspectType defaultAspectType, params VulnerabilityType[] defaultVulnerabilityTypes)
-                3 => $"[AspectClass({arguments[0]},[None],{arguments[1]},{Check(arguments[2])})]",
+                3 => $"[AspectClass({arguments[0]},[None],{arguments[1]},{Check(arguments[2])},4,[])]",
                 // AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
-                4 => $"[AspectClass({arguments[0]},{arguments[1]},{arguments[2]},{Check(arguments[3])})]",
+                4 => $"[AspectClass({arguments[0]},{arguments[1]},{arguments[2]},{Check(arguments[3])},4,[])]",
                 _ => throw new ArgumentException($"Could not find AspectClassAttribute overload with {arguments.Length} parameters")
             },
             // AspectAttribute(string targetMethod, string targetType, int[] paramShift, bool[] boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Propagation, VulnerabilityType[] vulnerabilityTypes)

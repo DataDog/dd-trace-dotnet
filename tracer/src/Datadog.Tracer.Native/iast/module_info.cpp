@@ -68,6 +68,11 @@ bool ModuleInfo::IsCoreLib()
     return false;
 }
 
+WSTRING& ModuleInfo::GetName()
+{
+    return _name;
+}
+
 WSTRING ModuleInfo::GetModuleFullName()
 {
     std::stringstream res;

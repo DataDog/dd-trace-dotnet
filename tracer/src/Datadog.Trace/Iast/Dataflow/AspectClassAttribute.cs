@@ -21,7 +21,7 @@ internal sealed class AspectClassAttribute : Attribute
     {
     }
 
-    public AspectClassAttribute(string defaultAssembly)
+    public AspectClassAttribute(string defaultAssembly, params string[] siteFilters)
         : this(defaultAssembly, new AspectFilter[0], AspectType.Propagation)
     {
     }
@@ -32,25 +32,26 @@ internal sealed class AspectClassAttribute : Attribute
     }
 
     public AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
+        : this(defaultAssembly, filters, defaultAspectType, defaultVulnerabilityTypes, string.Empty)
     {
-        if (filters.Length == 0) { filters = new AspectFilter[] { AspectFilter.None }; }
+    }
 
-        parameters.Add(defaultAssembly);
-        parameters.Add(filters);
-        parameters.Add(defaultAspectType);
-        parameters.Add(defaultVulnerabilityTypes ?? new VulnerabilityType[0]);
-
-        DefaultAssembly = AspectAttribute.GetAssemblyList(defaultAssembly);
+    public AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType, VulnerabilityType[] defaultVulnerabilityTypes, params string[] siteFilters)
+    {
+        TargetAssembly = AspectAttribute.GetAssemblyList(defaultAssembly);
         Filters = filters;
         DefaultAspectType = defaultAspectType;
         DefaultVulnerabilityTypes = defaultVulnerabilityTypes ?? new VulnerabilityType[0];
+        SiteFilters = siteFilters;
     }
 
-    public List<string> DefaultAssembly { get; private set; }
+    public List<string> TargetAssembly { get; private set; }
 
     public AspectFilter[] Filters { get; private set; }
 
     public AspectType DefaultAspectType { get; private set; }
 
     public VulnerabilityType[] DefaultVulnerabilityTypes { get; private set; }
+
+    public string[] SiteFilters { get; private set; }
 }

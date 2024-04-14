@@ -26,7 +26,7 @@ namespace iast
     {
         if (_targetMemberRefs.empty()) { return true; }
         ILInstr* instr = instruction->m_pNext;
-        // if the resulting string it is stored we cannot filter
+        // if the resulting string is stored we cannot filter
         if (IsStLoc(instr->m_opcode)) { return true; }
 
         for (int i = 0; i < _stackLength; i++)
