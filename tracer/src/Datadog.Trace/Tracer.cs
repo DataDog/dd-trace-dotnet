@@ -595,19 +595,14 @@ namespace Datadog.Trace
             span.Tags.SetTag("_dd.exit_location.file", sequencePoint.Document.Url);
             span.Tags.SetTag("_dd.exit_location.line", sequencePoint.StartLine.ToString());
             span.Tags.SetTag("_dd.exit_location.snapshot_id", DebuggerSnapshotCreator.LastSnapshotId.ToString());
-            FakeProbeCreator.CreateAndInstallLineProbe("ExitLocation", new NativeLineProbeDefinition(
-                $"SpanExit_{userMethod.DeclaringType?.FullName}_{userMethod.Name}",
+            FakeProbeCreator.CreateAndInstallLineProbe("SpanExit", new NativeLineProbeDefinition(
+                $"{userMethod.DeclaringType?.FullName}_{userMethod.Name}",
                 userMethod.Module.ModuleVersionId,
                 userMethod.MetadataToken,
                 (int)offsetOfSpanOrigin,
                 sequencePoint.StartLine,
                 sequencePoint.Document.Url));
-            // // Add probes
-            // DebuggerNativeMethods.InstrumentProbes(
-            //     Array.Empty<NativeMethodProbeDefinition>(),
-            //     lineProbes,
-            //     Array.Empty<NativeSpanProbeDefinition>(),
-            //     Array.Empty<NativeRemoveProbeRequest>());
+
         }
 
         private static bool LocalSpanOriginMethod(out MethodBase nonUserMethod, out MethodBase userMethod)
