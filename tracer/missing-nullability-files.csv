@@ -382,13 +382,6 @@ src/Datadog.Trace/Debugger/ProbeStatuses/ProbeStatusPoller.cs
 src/Datadog.Trace/Debugger/RateLimiting/AdaptiveSampler.cs
 src/Datadog.Trace/Debugger/RateLimiting/AtomicInt64.cs
 src/Datadog.Trace/Debugger/RateLimiting/ProbeRateLimiter.cs
-src/Datadog.Trace/Debugger/Sink/BatchUploader.cs
-src/Datadog.Trace/Debugger/Sink/DebuggerSink.cs
-src/Datadog.Trace/Debugger/Sink/IBatchUploadApi.cs
-src/Datadog.Trace/Debugger/Sink/IDebuggerSink.cs
-src/Datadog.Trace/Debugger/Sink/NopProbeStatusSink.cs
-src/Datadog.Trace/Debugger/Sink/ProbeStatusSink.cs
-src/Datadog.Trace/Debugger/Sink/SnapshotSink.cs
 src/Datadog.Trace/Debugger/Snapshots/DebuggerSnapshotCreator.cs
 src/Datadog.Trace/Debugger/Snapshots/DebuggerSnapshotSerializer.cs
 src/Datadog.Trace/Debugger/Snapshots/DebuggerSnapshotSerializer.NotCapturedReason.cs

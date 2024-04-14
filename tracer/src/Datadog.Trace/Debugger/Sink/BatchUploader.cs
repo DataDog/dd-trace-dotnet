@@ -3,10 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Sink

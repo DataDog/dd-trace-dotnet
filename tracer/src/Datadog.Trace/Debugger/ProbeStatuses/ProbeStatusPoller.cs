@@ -11,7 +11,6 @@ using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Debugger.ProbeStatuses
 {
@@ -19,7 +18,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeStatusPoller));
 
-        private readonly ProbeStatusSink _probeStatusSink;
+        private readonly DiagnosticsSink _diagnosticsSink;
         private readonly TimeSpan _shortPeriod = TimeSpan.FromSeconds(10);
         private readonly TimeSpan _longPeriod = TimeSpan.FromMinutes(60);
         private readonly HashSet<FetchProbeStatus> _probes = new();
@@ -28,14 +27,14 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         private bool _isPolling;
         private bool _isRecentlyForcedSchedule;
 
-        private ProbeStatusPoller(ProbeStatusSink probeStatusSink)
+        private ProbeStatusPoller(DiagnosticsSink diagnosticsSink)
         {
-            _probeStatusSink = probeStatusSink;
+            _diagnosticsSink = diagnosticsSink;
         }
 
-        internal static ProbeStatusPoller Create(ProbeStatusSink probeStatusSink, DebuggerSettings settings)
+        internal static ProbeStatusPoller Create(DiagnosticsSink diagnosticsSink, DebuggerSettings settings)
         {
-            return new ProbeStatusPoller(probeStatusSink);
+            return new ProbeStatusPoller(diagnosticsSink);
         }
 
         private void PollerCallback(object state)
@@ -137,7 +136,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
                 // Normalize `INSTRUMENTED` status to `INSTALLED`. The `INSTRUMENTED` status is not recognized by the backend,
                 // it was added to satisfy Exception Debugging to better distinguish between RequestReJIT (INSTALLED) and actual instrumentation (INSTRUMENTED).
                 var status = probeStatus.Status == Status.INSTRUMENTED ? Status.INSTALLED : probeStatus.Status;
-                _probeStatusSink.AddProbeStatus(probeStatus.ProbeId, status, probeVersion, errorMessage: probeStatus.ErrorMessage);
+                _diagnosticsSink.AddProbeStatus(probeStatus.ProbeId, status, probeVersion, errorMessage: probeStatus.ErrorMessage);
             }
         }
 
@@ -189,7 +188,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
                 foreach (var rmProbe in removedProbes)
                 {
-                    _probeStatusSink.Remove(rmProbe);
+                    _diagnosticsSink.Remove(rmProbe);
                 }
             }
         }

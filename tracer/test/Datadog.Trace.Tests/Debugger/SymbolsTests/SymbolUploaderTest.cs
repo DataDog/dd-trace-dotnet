@@ -18,6 +18,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Tests.Agent;
@@ -30,7 +31,7 @@ namespace Datadog.Trace.Tests.Debugger.SymbolsTests;
 public class SymbolUploaderTest
 {
     private readonly MockBatchUploadApi _api;
-    private readonly ISymbolsUploader _uploader;
+    private readonly IDebuggerUploader _uploader;
     private readonly DiscoveryServiceMock _discoveryService;
     private readonly RcmSubscriptionManagerMock _enablementService;
 
@@ -40,9 +41,9 @@ public class SymbolUploaderTest
         _enablementService = new RcmSubscriptionManagerMock();
         _api = new MockBatchUploadApi();
         var settings = new DebuggerSettings(
-            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "true" }, { ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes, "10000" } }),
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" }, { ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes, "10000" } }),
             NullConfigurationTelemetry.Instance);
-        EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "true");
+        EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true");
         _uploader = SymbolsUploader.Create(_api, _discoveryService, _enablementService, settings, ImmutableTracerSettings.FromDefaultSources(), "test");
     }
 

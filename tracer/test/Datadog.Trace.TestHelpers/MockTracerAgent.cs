@@ -492,9 +492,14 @@ namespace Datadog.Trace.TestHelpers
                 response = JsonConvert.SerializeObject(Configuration);
                 responseType = MockTracerResponseType.Info;
             }
-            else if (request.PathAndQuery.StartsWith("/debugger"))
+            else if (request.PathAndQuery.StartsWith("/debugger/v1/input"))
             {
                 HandlePotentialDebuggerData(request);
+                responseType = MockTracerResponseType.Debugger;
+            }
+            else if (request.PathAndQuery.StartsWith("/debugger/v1/diagnostics"))
+            {
+                HandlePotentialDiagnosticsData(request);
                 responseType = MockTracerResponseType.Debugger;
             }
             else if (request.PathAndQuery.StartsWith("/v0.6/stats"))
@@ -631,6 +636,7 @@ namespace Datadog.Trace.TestHelpers
                     using var stream = new MemoryStream(body);
                     using var streamReader = new StreamReader(stream);
                     var batch = streamReader.ReadToEnd();
+
                     ReceiveDebuggerBatch(batch);
                 }
                 catch (Exception ex)
@@ -646,6 +652,68 @@ namespace Datadog.Trace.TestHelpers
 
                     throw;
                 }
+            }
+
+            void ReceiveDebuggerBatch(string batch)
+            {
+                var snapshots =
+                    JArray
+                       .Parse(batch)
+                       .Select(token => token.ToString())
+                       .ToList();
+
+                Snapshots = Snapshots.AddRange(snapshots);
+            }
+        }
+
+        private void HandlePotentialDiagnosticsData(MockHttpParser.MockHttpRequest request)
+        {
+            if (request.ContentLength >= 1)
+            {
+                try
+                {
+                    var body = ReadStreamBody(request);
+                    using var stream = new MemoryStream(body);
+                    using var streamReader = new StreamReader(stream);
+                    var batch = streamReader.ReadToEnd();
+
+                    ReceiveDiagnosticsBatch(batch);
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+
+            void ReceiveDiagnosticsBatch(string batch)
+            {
+                var startIndex = batch.IndexOf('[');
+                var endIndex = batch.LastIndexOf(']') + 1;
+                var jsonString = batch.Substring(startIndex, endIndex - startIndex + 1);
+
+                var arr = JArray.Parse(jsonString);
+
+                var probeStatuses = new Dictionary<string, string>();
+
+                foreach (var token in arr)
+                {
+                    var tokenStr = token.ToString();
+                    var id = token["debugger"]["diagnostics"]["probeId"].ToString();
+                    probeStatuses[id] = tokenStr;
+                }
+
+                // We override the previous Probes Statuses as the debugger-agent is always emitting complete set of probes statuses, so we can
+                // solely rely on that.
+                ProbesStatuses = probeStatuses.Values.ToImmutableArray();
             }
         }
 
@@ -956,33 +1024,6 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return body;
-        }
-
-        private void ReceiveDebuggerBatch(string batch)
-        {
-            var arr = JArray.Parse(batch);
-
-            var probeStatuses = new Dictionary<string, string>();
-            var snapshots = new List<string>();
-
-            foreach (var token in arr)
-            {
-                var stringifiedToken = token.ToString();
-                var id = token["debugger"]?["diagnostics"]?["probeId"]?.ToString();
-                if (id != null)
-                {
-                    probeStatuses[id] = stringifiedToken;
-                }
-                else
-                {
-                    snapshots.Add(stringifiedToken);
-                }
-            }
-
-            // We override the previous Probes Statuses as the debugger-agent is always emitting complete set of probes statuses, so we can
-            // solely rely on that.
-            ProbesStatuses = probeStatuses.Values.ToImmutableArray();
-            Snapshots = Snapshots.AddRange(snapshots);
         }
 
         public class EvpProxyPayload

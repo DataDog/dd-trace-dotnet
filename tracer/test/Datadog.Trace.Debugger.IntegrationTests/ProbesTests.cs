@@ -404,7 +404,7 @@ public class ProbesTests : TestHelper
         await RunMethodProbeTests(testDescription, false);
     }
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NET6_0_OR_GREATER
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "False")]
