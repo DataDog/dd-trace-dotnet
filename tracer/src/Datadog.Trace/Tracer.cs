@@ -628,8 +628,12 @@ namespace Datadog.Trace
 
                 static bool IsUserCode(string methodFullName) // Not Comprehensive Enough
                 {
-                    return !(methodFullName.StartsWith("Microsoft") ||
-                             methodFullName.StartsWith("System") ||
+                    if (methodFullName.StartsWith("Microsoft") && !methodFullName.Contains("eShop"))
+                    {
+                        return false;
+                    }
+
+                    return !(methodFullName.StartsWith("System") ||
                              methodFullName.StartsWith("Datadog.Trace") ||
                              methodFullName.StartsWith("Serilog") ||
                              methodFullName.StartsWith("NHibernate") ||
