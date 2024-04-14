@@ -736,11 +736,11 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        private static void WriteSnapshotJsonToDisk(string probeId, string snapshot)
+        private void WriteSnapshotJsonToDisk(string probeId, string snapshot)
         {
             try
             {
-                File.WriteAllText(Path.Combine(GetSnapshotsDirectory(), probeId + ".json"), JsonPrettify(snapshot));
+                File.WriteAllText(Path.Combine(GetSnapshotsDirectory(), $"{probeId}_{_snapshotId}.json"), JsonPrettify(snapshot));
                 Console.WriteLine($@"Snapshot written to {GetSnapshotsDirectory()}: {probeId}.json");
 
             }

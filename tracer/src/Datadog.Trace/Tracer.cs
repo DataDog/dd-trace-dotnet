@@ -596,7 +596,7 @@ namespace Datadog.Trace
             span.Tags.SetTag("_dd.exit_location.line", sequencePoint.StartLine.ToString());
             span.Tags.SetTag("_dd.exit_location.snapshot_id", DebuggerSnapshotCreator.LastSnapshotId.ToString());
             FakeProbeCreator.CreateAndInstallLineProbe("ExitLocation", new NativeLineProbeDefinition(
-                "SpanExit",
+                $"SpanExit_{userMethod.DeclaringType?.FullName}_{userMethod.Name}",
                 userMethod.Module.ModuleVersionId,
                 userMethod.MetadataToken,
                 (int)offsetOfSpanOrigin,
