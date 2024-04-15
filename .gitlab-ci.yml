@@ -156,6 +156,16 @@ deploy_latest_musl_tag_to_docker_registries:
     IMG_DESTINATIONS: dd-lib-dotnet-init:latest-musl
     IMG_SIGNING: "false"
 
+package-snapshot:
+  extends: .package
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'robertomonteromiguel/add_onboarding_tests'
+      when: on_success
+  script:
+    - ../.gitlab/build-deb-rpm-snapshot.sh
+  variables:
+    ARCH: amd64
+
 package:
   extends: .package
   rules:
