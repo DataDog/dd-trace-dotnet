@@ -591,7 +591,7 @@ namespace Datadog.Trace
             if (matchingCall == null)
             {
                 Log.Warning("SpanOriginResolution - No calls to {0} found in {1}. Taking first sequence point instead, this is buggy and wrong", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
-                matchingCall = userMdMethod.Body.Instructions.FirstOrDefault(i => i?.SequencePoint.StartLine != 0);
+                matchingCall = userMdMethod.Body.Instructions.FirstOrDefault(i => i?.SequencePoint?.StartLine != 0);
                 if (matchingCall == null)
                 {
                     Log.Warning("SpanOriginResolution - no sequence points found in {0}", userMdMethod);
