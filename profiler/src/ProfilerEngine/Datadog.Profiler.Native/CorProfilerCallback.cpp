@@ -645,11 +645,6 @@ void CorProfilerCallback::DisposeInternal()
         ProfilerEngineStatus::WriteIsProfilerEngineActive(false);
         _isInitialized.store(false);
 
-        // From that time, we need to ensure that ALL native threads are stop and don't call back to managed world
-        // So, don't sleep before stopping the threads
-
-        DisposeServices();
-
         // Don't forget to stop the CLR events session if any
         auto* pInfo = _pCorProfilerInfoEvents;
         if (pInfo != nullptr)
@@ -669,6 +664,8 @@ void CorProfilerCallback::DisposeInternal()
         {
             _pEtwEventsManager->Stop();
         }
+
+        DisposeServices();
 
         ICorProfilerInfo5* pCorProfilerInfo = _pCorProfilerInfo;
         if (pCorProfilerInfo != nullptr)
@@ -1424,7 +1421,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         auto success = _pEtwEventsManager->Start();
         if (!success)
         {
-            Log::Error("Failed to the contact Datadog Agent named pipe dedicated to profiling. Try to install the latest version for lock contention and GC profiling.");
+            Log::Error("Failed to the contact Datadog Agent named pipe dedicated to profiling. Try to install the latest version.");
 
             _pEtwEventsManager->Stop();
             _pEtwEventsManager = nullptr;

@@ -271,7 +271,6 @@ bool EtwEventsManager::Start()
     std::string pipeName = buffer.str();
     Log::Info("Exposing ", pipeName);
 
-    // create the client part to send the registration command
     _eventsHandler = std::make_unique<EtwEventsHandler>(_logger.get(), this);
     _IpcServer = IpcServer::StartAsync(
         _logger.get(),
@@ -279,7 +278,7 @@ bool EtwEventsManager::Start()
         _eventsHandler.get(),
         (1 << 16) + sizeof(IpcHeader),  // in buffer size = 64K + header
         sizeof(SuccessResponse),        // out buffer contains only the response
-        MaxInstances,                   // max number of instances (2 = the Agent + one pending)
+        1,                              // only one instance
         TimeoutMS);
     if (_IpcServer == nullptr)
     {
