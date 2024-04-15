@@ -125,6 +125,46 @@ namespace Datadog.Trace.TestHelpers
                     Body = new StreamContent(request.InputStream, request.ContentLength64),
                 };
             }
+
+            internal byte[] ReadStreamBody()
+            {
+                return ContentLength is { } length
+                           ? ReadBytes(length, Body.Stream)
+                           : ReadChunked(Body.Stream);
+
+                static byte[] ReadChunked(Stream stream)
+                {
+                    using var ms = new MemoryStream();
+                    stream.CopyTo(ms);
+                    // Does another copy but meh
+                    return ms.ToArray();
+                }
+
+                static byte[] ReadBytes(long length, Stream stream)
+                {
+                    var i = 0;
+                    var body = new byte[length];
+
+                    while (i < length)
+                    {
+                        var read = stream.Read(body, i, body.Length - i);
+
+                        i += read;
+
+                        if (read == 0 || read == body.Length)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (i < length)
+                    {
+                        throw new Exception($"Less bytes were sent than we counted. {i} read versus {length} expected.");
+                    }
+
+                    return body;
+                }
+            }
         }
 
         private class StreamReaderHelper(Stream stream)

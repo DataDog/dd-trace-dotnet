@@ -548,7 +548,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
 
                     var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(body);
                     OnRequestDeserialized(spans);
@@ -593,7 +593,7 @@ namespace Datadog.Trace.TestHelpers
                     var apiVersion = request.Headers.GetValue(TelemetryConstants.ApiVersionHeader);
                     var requestType = request.Headers.GetValue(TelemetryConstants.RequestTypeHeader);
 
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
                     using var stream = new MemoryStream(body);
 
                     var telemetry = MockTelemetryAgent.DeserializeResponse(stream, apiVersion, requestType);
@@ -632,7 +632,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
                     using var stream = new MemoryStream(body);
                     using var streamReader = new StreamReader(stream);
                     var batch = streamReader.ReadToEnd();
@@ -672,7 +672,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
                     using var stream = new MemoryStream(body);
                     using var streamReader = new StreamReader(stream);
                     var batch = streamReader.ReadToEnd();
@@ -723,7 +723,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
 
                     var statsPayload = MessagePackSerializer.Deserialize<MockClientStatsPayload>(body);
                     OnStatsDeserialized(statsPayload);
@@ -755,7 +755,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
                     var rc = Encoding.UTF8.GetString(body);
                     RemoteConfigRequests.Enqueue(rc);
                 }
@@ -781,7 +781,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
                     if (request.Headers.GetValue("Content-Encoding") == "gzip")
                     {
                         using var compressed = new MemoryStream(body);
@@ -827,7 +827,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
                     var headerCollection = new NameValueCollection();
                     foreach (var header in request.Headers)
                     {
@@ -994,36 +994,6 @@ namespace Datadog.Trace.TestHelpers
 
             var responseBytes = Encoding.UTF8.GetBytes(sb.ToString());
             return responseBytes;
-        }
-
-        private byte[] ReadStreamBody(MockHttpParser.MockHttpRequest request)
-        {
-            if (request.ContentLength is null)
-            {
-                return Array.Empty<byte>();
-            }
-
-            var i = 0;
-            var body = new byte[request.ContentLength.Value];
-
-            while (i < request.ContentLength)
-            {
-                var read = request.Body.Stream.Read(body, i, body.Length - i);
-
-                i += read;
-
-                if (read == 0 || read == body.Length)
-                {
-                    break;
-                }
-            }
-
-            if (i < request.ContentLength)
-            {
-                throw new Exception($"Less bytes were sent than we counted. {i} read versus {request.ContentLength} expected.");
-            }
-
-            return body;
         }
 
         public class EvpProxyPayload
