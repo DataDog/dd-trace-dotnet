@@ -599,7 +599,9 @@
         "event_type",
         "has_codeowner",
         "is_unsupported_ci",
-        "is_benchmark"
+        "is_benchmark",
+        "is_new",
+        "early_flake_detection_abort_reason"
       ],
       "metric_type": "count",
       "data_type": "events",
@@ -955,6 +957,48 @@
       "metric_type": "count",
       "data_type": "coverages",
       "description": "The number of errors while processing code coverage",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "early_flake_detection.request": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the known tests endpoint, regardless of success",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "early_flake_detection.request_ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to get the response of the known tests endpoint request in ms",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "early_flake_detection.request_errors": {
+      "tags": [
+        "error_type"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of known tests requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "early_flake_detection.response_bytes": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "The number of bytes received by the endpoint",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "early_flake_detection.response_tests": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "tests",
+      "description": "The number of known tests returned by the endpoint",
       "send_to_user": false,
       "user_tags":[]
     }

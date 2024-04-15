@@ -405,7 +405,7 @@ public sealed class Test
         scope.Dispose();
 
         // Record EventFinished telemetry metric
-        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
+        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
                 MetricTags.CIVisibilityTestingEventType.Test,
                 tags.Type == TestTags.TypeBenchmark,
                 tags.EarlyFlakeDetectionTestIsNew == "true",

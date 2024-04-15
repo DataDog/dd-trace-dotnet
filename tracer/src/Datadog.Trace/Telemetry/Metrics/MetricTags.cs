@@ -317,6 +317,18 @@ internal static class MetricTags
         [Description("event_type:session;is_unsupported_ci")] Session_NoCodeOwner_UnsupportedCi,
         [Description("event_type:session;has_codeowner;is_unsupported_ci")] Session_HasCodeOwner_UnsupportedCi,
         [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
+    }
+
+    public enum CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection
+    {
+        [Description("event_type:test")] Test,
+        [Description("event_type:test;is_benchmark")] Test_IsBenchmark,
+        [Description("event_type:suite")] Suite,
+        [Description("event_type:module")] Module,
+        [Description("event_type:session")] Session_NoCodeOwner_IsSupportedCi,
+        [Description("event_type:session;is_unsupported_ci")] Session_NoCodeOwner_UnsupportedCi,
+        [Description("event_type:session;has_codeowner;is_unsupported_ci")] Session_HasCodeOwner_UnsupportedCi,
+        [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
         [Description("event_type:test;is_new:true")] Test_EFDTestIsNew,
         [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow")] Test_EFDTestIsNew_EFDTestAbortSlow,
     }

@@ -78,19 +78,7 @@ internal static class TelemetryHelper
         switch (eventType)
         {
             case MetricTags.CIVisibilityTestingEventType.Test:
-                if (isBenchmark)
-                {
-                    return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test_IsBenchmark;
-                }
-
-                if (isEfdTestNew)
-                {
-                    return isEfdTestAbortSlow ?
-                               MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test_EFDTestIsNew_EFDTestAbortSlow :
-                               MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test_EFDTestIsNew;
-                }
-
-                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test;
+                return isBenchmark ? MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test_IsBenchmark : MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test;
             case MetricTags.CIVisibilityTestingEventType.Suite:
                 return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Suite;
             case MetricTags.CIVisibilityTestingEventType.Module:
@@ -103,6 +91,51 @@ internal static class TelemetryHelper
                     { CodeOwners: not null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Session_HasCodeOwner_UnsupportedCi,
                     { CodeOwners: null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Session_NoCodeOwner_IsSupportedCi,
                     { CodeOwners: null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Session_NoCodeOwner_UnsupportedCi,
+                };
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection enum from the current data
+    /// </summary>
+    /// <param name="eventType">Event Type</param>
+    /// <param name="isBenchmark">True if is a benchmark event</param>
+    /// <param name="isEfdTestNew">True if is a new EFD test</param>
+    /// <param name="isEfdTestAbortSlow">True if is an EFD test that aborts because is too slow</param>
+    /// <returns>MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark</returns>
+    public static MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection? GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(MetricTags.CIVisibilityTestingEventType eventType, bool isBenchmark, bool isEfdTestNew = false, bool isEfdTestAbortSlow = false)
+    {
+        switch (eventType)
+        {
+            case MetricTags.CIVisibilityTestingEventType.Test:
+                if (isBenchmark)
+                {
+                    return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Test_IsBenchmark;
+                }
+
+                if (isEfdTestNew)
+                {
+                    return isEfdTestAbortSlow ?
+                               MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Test_EFDTestIsNew_EFDTestAbortSlow :
+                               MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Test_EFDTestIsNew;
+                }
+
+                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Test;
+            case MetricTags.CIVisibilityTestingEventType.Suite:
+                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Suite;
+            case MetricTags.CIVisibilityTestingEventType.Module:
+                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Module;
+            case MetricTags.CIVisibilityTestingEventType.Session:
+            {
+                return CIEnvironmentValues.Instance switch
+                {
+                    { CodeOwners: not null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Session_HasCodeOwner_IsSupportedCi,
+                    { CodeOwners: not null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Session_HasCodeOwner_UnsupportedCi,
+                    { CodeOwners: null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Session_NoCodeOwner_IsSupportedCi,
+                    { CodeOwners: null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Session_NoCodeOwner_UnsupportedCi,
                 };
             }
         }

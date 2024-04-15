@@ -476,7 +476,7 @@ public sealed class TestModule
         span.Finish(duration.Value);
 
         // Record EventFinished telemetry metric
-        TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Module);
+        TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Module);
 
         Current = null;
         CIVisibility.Log.Debug("### Test Module Closed: {Name} | {Status}", Name, Tags.Status);
