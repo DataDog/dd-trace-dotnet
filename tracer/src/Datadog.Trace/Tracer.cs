@@ -551,18 +551,23 @@ namespace Datadog.Trace
             //
             //     nextSnapshotToBeUploaded = nextSnapshotToBeUploaded.Replace("TO_BE_ADDED_SPAN_ID", span.SpanId.ToString())
             //                                                        .Replace("TO_BE_ADDED_TRACE_ID", span.TraceId.ToString());
-                
+
+            Log.Information("SpanOriginResolution - started for span {0} {1}", span.OperationName, span.ResourceName);
             if (LocalSpanOriginMethod(out var nonUserMethod, out var userMethod))
             {
+                Log.Information("SpanOriginResolution - failed to find local span origin method");
                 return;
             }
+
+            Log.Information("SpanOriginResolution - found local span origin method {0} {1}", userMethod.DeclaringType?.FullName, userMethod.Name);
+
             var userModule = ModuleDefMD.Load(userMethod.Module.Assembly.ManifestModule);
             var userRid = MDToken.ToRID(userMethod.MetadataToken);
             var userMdMethod = userModule.ResolveMethod(userRid);
 
             if (!userMdMethod.Body.HasInstructions)
             {
-                Log.Warning("Method {0} has no instructions", userMdMethod.FullName);
+                Log.Warning("SpanOriginResolution - Method {0} has no instructions", userMdMethod.FullName);
                 return;
             }
 
@@ -583,7 +588,7 @@ namespace Datadog.Trace
             var calls = callsToInstrument as Instruction[] ?? callsToInstrument.ToArray();
             if (!calls.Any())
             {
-                Log.Warning("No calls to {0} found in {1}", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
+                Log.Warning("SpanOriginResolution - No calls to {0} found in {1}", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
                 return;
             }
 
@@ -615,6 +620,7 @@ namespace Datadog.Trace
 
             foreach (var frame in stackFrames.GetFrames()!)
             {
+                Log.Information("SpanOriginResolution - frame {0}", frame?.ToString());
                 var method = frame.GetMethod();
                 if (method?.DeclaringType == null)
                 {
