@@ -601,12 +601,14 @@ namespace Datadog.Trace
 
             uint offsetOfSpanOrigin = matchingCall.Offset;
             var instructions = TimeTravelInitiator.FindMethod((MethodInfo)userMethod).Body.Instructions;
-            var sequencePoint = instructions.Reverse().First(instruction => instruction.SequencePoint != null && 
-                                                                            instruction.Offset < offsetOfSpanOrigin).SequencePoint;            
-            
+            var sequencePoint = instructions.Reverse().First(instruction => instruction.SequencePoint != null &&
+                                                                            instruction.Offset <= offsetOfSpanOrigin).SequencePoint;            
+
             span.Tags.SetTag("_dd.exit_location.file", sequencePoint.Document.Url);
             span.Tags.SetTag("_dd.exit_location.line", sequencePoint.StartLine.ToString());
             span.Tags.SetTag("_dd.exit_location.snapshot_id", DebuggerSnapshotCreator.LastSnapshotId.ToString());
+            Log.Information("SpanOriginResolution - success - {0} {1} {2}", sequencePoint.Document.Url, sequencePoint.StartLine, DebuggerSnapshotCreator.LastSnapshotId);
+            
             FakeProbeCreator.CreateAndInstallLineProbe("SpanExit", new NativeLineProbeDefinition(
                 $"{userMethod.DeclaringType?.FullName}_{userMethod.Name}",
                 userMethod.Module.ModuleVersionId,
