@@ -11,14 +11,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using static Datadog.Trace.HttpOverStreams.DatadogHttpValues;
 
 namespace Datadog.Trace.Agent.Transports
 {
     internal class ApiWebRequest : IApiRequest, IMultipartApiRequest
     {
-        private const string Boundary = "faa0a896-8bc8-48f3-b46d-016f2b15a884";
-        private const string BoundarySeparator = "\r\n--" + Boundary + "\r\n";
-        private const string BoundaryTrailer = "\r\n--" + Boundary + "--\r\n";
+        private const string BoundarySeparator = $"{CrLf}--{Boundary}{CrLf}";
+        private const string BoundaryTrailer = $"{CrLf}--{Boundary}--{CrLf}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
         private readonly HttpWebRequest _request;
