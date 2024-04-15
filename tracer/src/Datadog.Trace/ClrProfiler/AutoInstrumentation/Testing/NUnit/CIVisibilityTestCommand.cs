@@ -6,6 +6,7 @@
 
 using System;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
@@ -26,9 +27,7 @@ internal class CIVisibilityTestCommand
                           contextWithRepeatCount :
                           contextObject.DuckCast<ITestExecutionContext>();
         var executionNumber = 0;
-        var startTime = TraceClock.Instance.UtcNow;
-        var result = ExecuteTest(context, executionNumber++, out var isTestNew);
-        var duration = TraceClock.Instance.UtcNow - startTime;
+        var result = ExecuteTest(context, executionNumber++, out var isTestNew, out var duration);
         if (result.ResultState.Status != TestStatus.Skipped &&
             result.ResultState.Status != TestStatus.Inconclusive &&
             isTestNew)
@@ -70,7 +69,7 @@ internal class CIVisibilityTestCommand
                 retryNumber++;
                 Common.Log.Debug<int, int>("EFD: [Retry {Num}] Running retry of {TotalRetries}.", retryNumber, totalRetries);
                 ClearResultForRetry(context);
-                var retryResult = ExecuteTest(context, executionNumber++, out _);
+                var retryResult = ExecuteTest(context, executionNumber++, out _, out _);
                 Common.Log.Debug<int>("EFD: [Retry {Num}] Aggregating results.", retryNumber);
                 result.Duration += retryResult.Duration;
                 result.StartTime = result.StartTime < retryResult.StartTime ? result.StartTime : retryResult.StartTime;
@@ -127,10 +126,13 @@ internal class CIVisibilityTestCommand
         }
     }
 
-    private ITestResult ExecuteTest(ITestExecutionContext context, int executionNumber, out bool isTestNew)
+    private ITestResult ExecuteTest(ITestExecutionContext context, int executionNumber, out bool isTestNew, out TimeSpan duration)
     {
-        var test = NUnitIntegration.GetOrCreateTest(context.CurrentTest, executionNumber);
         ITestResult? testResult = null;
+        duration = TimeSpan.Zero;
+        var test = NUnitIntegration.GetOrCreateTest(context.CurrentTest, executionNumber);
+        var clock = TraceClock.Instance;
+        var startTime = clock.UtcNow;
         try
         {
             testResult = _innerCommand.Execute(context);
@@ -142,11 +144,23 @@ internal class CIVisibilityTestCommand
             testResult ??= context.CurrentTest.MakeTestResult();
             testResult.RecordException(ex);
         }
+        finally
+        {
+            duration = clock.UtcNow - startTime;
+        }
 
         isTestNew = false;
         if (test is not null)
         {
-            isTestNew = test.GetTags().EarlyFlakeDetectionTestIsNew == "true";
+            if (test.GetTags() is { } testTags)
+            {
+                isTestNew = testTags.EarlyFlakeDetectionTestIsNew == "true";
+                if (isTestNew && duration.TotalMinutes >= 5)
+                {
+                    testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+                }
+            }
+
             NUnitIntegration.FinishTest(test, testResult);
         }
 

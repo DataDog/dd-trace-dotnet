@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -80,7 +81,7 @@ public static class TestMethodAttributeExecuteIntegration
     {
         if (state.State is TestRunnerState testMethodState)
         {
-            var duration = TraceClock.Instance.UtcNow - testMethodState.StartTime;
+            var duration = testMethodState.Elapsed;
             var testMethod = testMethodState.TestMethod;
             var isTestNew = false;
             var allowRetries = false;
@@ -90,8 +91,16 @@ public static class TestMethodAttributeExecuteIntegration
                 for (var i = 0; i < returnValueList.Count; i++)
                 {
                     var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: false, testMethodState.Test.StartTime);
+                    if (test.GetTags() is { } testTags)
+                    {
+                        isTestNew = isTestNew || testTags.EarlyFlakeDetectionTestIsNew == "true";
+                        if (isTestNew && duration.TotalMinutes >= 5)
+                        {
+                            testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+                        }
+                    }
+
                     var result = HandleTestResult(test, testMethod, returnValueList[i], exception);
-                    isTestNew = isTestNew || test.GetTags().EarlyFlakeDetectionTestIsNew == "true";
                     allowRetries = allowRetries || result != TestStatus.Skip;
                 }
             }
@@ -306,6 +315,7 @@ public static class TestMethodAttributeExecuteIntegration
 
     private readonly struct TestRunnerState
     {
+        private readonly TraceClock _clock;
         public readonly ITestMethod TestMethod;
         public readonly Test Test;
         public readonly DateTimeOffset StartTime;
@@ -314,7 +324,10 @@ public static class TestMethodAttributeExecuteIntegration
         {
             TestMethod = testMethod;
             Test = test;
-            StartTime = TraceClock.Instance.UtcNow;
+            _clock = TraceClock.Instance;
+            StartTime = _clock.UtcNow;
         }
+
+        public TimeSpan Elapsed => _clock.UtcNow - StartTime;
     }
 }
