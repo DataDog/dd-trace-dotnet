@@ -507,9 +507,9 @@ namespace Datadog.Trace
             {
                 SpanOriginResolution(span);
             }
-            catch
+            catch(Exception e)
             {
-                // Ignored
+                Log.Warning(e, "SpanOriginResolution - failed to resolve span origin");
             }
             
             // Apply any global tags
