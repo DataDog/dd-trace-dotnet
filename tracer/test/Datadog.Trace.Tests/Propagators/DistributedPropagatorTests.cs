@@ -21,7 +21,6 @@ public class DistributedPropagatorTests
     private const string AdditionalW3CTraceState = "key3=value3,key4=value4";
     private const ulong SpanId = 0x1122334455667788;                       // 1234605616436508552
     private const string RawSpanId = "1122334455667788";                   // 1234605616436508552
-    private const string LastParentId = "1122334455667788";                // 1234605616436508552
     private const string RawTraceId = "00000000000000001234567890abcdef";  // 1311768467294899695
     private static readonly TraceId TraceId = (TraceId)0x1234567890abcdef; // 1311768467294899695
 
@@ -39,7 +38,6 @@ public class DistributedPropagatorTests
         new("__DistributedKey-RawSpanId", RawSpanId),
         new("__DistributedKey-PropagatedTags", PropagatedTagsString),
         new("__DistributedKey-AdditionalW3CTraceState", AdditionalW3CTraceState),
-        new("__DistributedKey-LastParentId", LastParentId),
     };
 
     private static readonly TraceTagCollection PropagatedTagsCollection = new(
@@ -93,7 +91,6 @@ public class DistributedPropagatorTests
                        SamplingPriority = SamplingPriority,
                        PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState,
-                       LastParentId = LastParentId
                    });
     }
 
@@ -209,7 +206,6 @@ public class DistributedPropagatorTests
                        SamplingPriority = SamplingPriority,
                        PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState,
-                       LastParentId = LastParentId
                    });
     }
 
@@ -248,7 +244,6 @@ public class DistributedPropagatorTests
                        SamplingPriority = expectedSamplingPriority,
                        PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState,
-                       LastParentId = LastParentId,
                    });
     }
 

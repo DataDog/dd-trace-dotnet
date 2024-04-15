@@ -51,7 +51,6 @@ namespace Datadog.Trace.Propagators
             var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.RawSpanId);
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.PropagatedTags);
             var w3CTraceState = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.AdditionalW3CTraceState);
-            var lastParentId = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.LastParentId);
             var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
 
             if (traceId == TraceId.Zero)
@@ -64,7 +63,6 @@ namespace Datadog.Trace.Propagators
                           {
                               PropagatedTags = traceTags,
                               AdditionalW3CTraceState = w3CTraceState,
-                              LastParentId = lastParentId,
                           };
 
             return true;
