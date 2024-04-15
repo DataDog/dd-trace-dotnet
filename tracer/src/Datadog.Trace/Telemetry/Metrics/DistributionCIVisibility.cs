@@ -84,4 +84,19 @@ internal enum DistributionCIVisibility
     /// The number of files covered inside a coverage payload by CI Visibility
     /// </summary>
     [TelemetryMetric("code_coverage.files", isCommon: true, NS.CIVisibility)] CodeCoverageFiles,
+
+    /// <summary>
+    /// The time it takes to get the response of the early flake detection endpoint request in ms by CI Visibility
+    /// </summary>
+    [TelemetryMetric("early_flake_detection.request_ms", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionRequestMs,
+
+    /// <summary>
+    /// The number of bytes received by the endpoint by CI Visibility
+    /// </summary>
+    [TelemetryMetric("early_flake_detection.response_bytes", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionResponseBytes,
+
+    /// <summary>
+    /// The number of bytes received by the endpoint by CI Visibility
+    /// </summary>
+    [TelemetryMetric("early_flake_detection.response_tests", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionResponseTests,
 }

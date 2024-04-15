@@ -70,15 +70,27 @@ internal static class TelemetryHelper
     /// </summary>
     /// <param name="eventType">Event Type</param>
     /// <param name="isBenchmark">True if is a benchmark event</param>
+    /// <param name="isEfdTestNew">True if is a new EFD test</param>
+    /// <param name="isEfdTestAbortSlow">True if is an EFD test that aborts because is too slow</param>
     /// <returns>MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark</returns>
-    public static MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark? GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(MetricTags.CIVisibilityTestingEventType eventType, bool isBenchmark)
+    public static MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark? GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(MetricTags.CIVisibilityTestingEventType eventType, bool isBenchmark, bool isEfdTestNew = false, bool isEfdTestAbortSlow = false)
     {
         switch (eventType)
         {
             case MetricTags.CIVisibilityTestingEventType.Test:
-                return isBenchmark ?
-                           MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test_IsBenchmark :
-                           MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test;
+                if (isBenchmark)
+                {
+                    return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test_IsBenchmark;
+                }
+
+                if (isEfdTestNew)
+                {
+                    return isEfdTestAbortSlow ?
+                               MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test_EFDTestIsNew_EFDTestAbortSlow :
+                               MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test_EFDTestIsNew;
+                }
+
+                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test;
             case MetricTags.CIVisibilityTestingEventType.Suite:
                 return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Suite;
             case MetricTags.CIVisibilityTestingEventType.Module:

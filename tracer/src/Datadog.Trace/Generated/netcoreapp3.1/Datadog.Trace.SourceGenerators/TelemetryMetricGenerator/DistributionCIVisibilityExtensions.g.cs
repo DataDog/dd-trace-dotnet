@@ -12,7 +12,7 @@ internal static partial class DistributionCIVisibilityExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility" /> metric.
     /// </summary>
-    public const int Length = 13;
+    public const int Length = 16;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -35,6 +35,9 @@ internal static partial class DistributionCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.ITRSkippableTestsRequestMs => "itr_skippable_tests.request_ms",
             Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.ITRSkippableTestsResponseBytes => "itr_skippable_tests.response_bytes",
             Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.CodeCoverageFiles => "code_coverage.files",
+            Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.EarlyFlakeDetectionRequestMs => "early_flake_detection.request_ms",
+            Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.EarlyFlakeDetectionResponseBytes => "early_flake_detection.response_bytes",
+            Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.EarlyFlakeDetectionResponseTests => "early_flake_detection.response_tests",
             _ => null!,
         };
 
@@ -70,6 +73,9 @@ internal static partial class DistributionCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.ITRSkippableTestsRequestMs => "civisibility",
             Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.ITRSkippableTestsResponseBytes => "civisibility",
             Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.CodeCoverageFiles => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.EarlyFlakeDetectionRequestMs => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.EarlyFlakeDetectionResponseBytes => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.EarlyFlakeDetectionResponseTests => "civisibility",
             _ => null,
         };
 }

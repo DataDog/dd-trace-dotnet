@@ -34,4 +34,10 @@ internal partial interface IMetricsTelemetryCollector
     public void RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(double value);
 
     public void RecordDistributionCIVisibilityCodeCoverageFiles(double value);
+
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionRequestMs(double value);
+
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(double value);
+
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseTests(double value);
 }

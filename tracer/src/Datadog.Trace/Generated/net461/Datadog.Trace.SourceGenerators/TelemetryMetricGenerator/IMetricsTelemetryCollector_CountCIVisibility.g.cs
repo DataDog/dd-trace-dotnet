@@ -62,4 +62,8 @@ internal partial interface IMetricsTelemetryCollector
     public void RecordCountCIVisibilityCodeCoverageIsEmpty(int increment = 1);
 
     public void RecordCountCIVisibilityCodeCoverageErrors(int increment = 1);
+
+    public void RecordCountCIVisibilityEarlyFlakeDetectionRequest(int increment = 1);
+
+    public void RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1);
 }

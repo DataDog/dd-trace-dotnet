@@ -407,7 +407,9 @@ public sealed class Test
         // Record EventFinished telemetry metric
         if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
                 MetricTags.CIVisibilityTestingEventType.Test,
-                tags.Type == TestTags.TypeBenchmark) is { } eventTypeWithMetadata)
+                tags.Type == TestTags.TypeBenchmark,
+                tags.EarlyFlakeDetectionTestIsNew == "true",
+                tags.EarlyFlakeDetectionTestAbortReason == "slow") is { } eventTypeWithMetadata)
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework), eventTypeWithMetadata);
         }

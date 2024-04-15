@@ -396,9 +396,10 @@ internal class IntelligentTestRunnerClient
 
                     CheckResponseStatusCode(response, responseContent, finalTry);
                 }
-                catch
+                catch (Exception ex)
                 {
                     TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(MetricTags.CIVisibilityErrorType.Network);
+                    Log.Error(ex, "ITR: Get settings request failed.");
                     throw;
                 }
 
@@ -412,9 +413,13 @@ internal class IntelligentTestRunnerClient
                 var settingsResponse = deserializedResult.Data?.Attributes ?? default;
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsResponse(settingsResponse switch
                 {
-                    { CodeCoverage: true, TestsSkipping: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled,
-                    { CodeCoverage: true, TestsSkipping: !true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled,
-                    { CodeCoverage: !true, TestsSkipping: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled,
+                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: !true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled,
+                    { CodeCoverage: true, TestsSkipping: !true, EarlyFlakeDetection.Enabled: !true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled,
+                    { CodeCoverage: !true, TestsSkipping: true, EarlyFlakeDetection.Enabled: !true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled,
+                    { CodeCoverage: !true, TestsSkipping: !true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled,
+                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled,
+                    { CodeCoverage: true, TestsSkipping: !true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled,
+                    { CodeCoverage: !true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled,
                     _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled,
                 });
                 return settingsResponse;
@@ -495,9 +500,10 @@ internal class IntelligentTestRunnerClient
 
                     CheckResponseStatusCode(response, responseContent, finalTry);
                 }
-                catch
+                catch (Exception ex)
                 {
                     TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsRequestErrors(MetricTags.CIVisibilityErrorType.Network);
+                    Log.Error(ex, "ITR: Get skippable tests request failed.");
                     throw;
                 }
 
@@ -643,9 +649,10 @@ internal class IntelligentTestRunnerClient
 
                     CheckResponseStatusCode(response, responseContent, finalTry);
                 }
-                catch
+                catch (Exception ex)
                 {
                     TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(MetricTags.CIVisibilityErrorType.Network);
+                    Log.Error(ex, "ITR: Send object pack file request failed.");
                     throw;
                 }
 
@@ -704,7 +711,7 @@ internal class IntelligentTestRunnerClient
             var sw = Stopwatch.StartNew();
             try
             {
-                // TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettings();
+                TelemetryFactory.Metrics.RecordCountCIVisibilityEarlyFlakeDetectionRequest();
                 var request = _apiRequestFactory.Create(_efdTestsUrl);
                 SetRequestHeader(request);
 
@@ -720,14 +727,26 @@ internal class IntelligentTestRunnerClient
                     responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
                     if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
                     {
-                        // TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(errorType);
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(errorType);
                     }
 
                     CheckResponseStatusCode(response, responseContent, finalTry);
+                    try
+                    {
+                        if (response.ContentLength is { } contentLength and > 0)
+                        {
+                            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(contentLength);
+                        }
+                    }
+                    catch
+                    {
+                        // If calling ContentLength throws we just ignore it
+                    }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(MetricTags.CIVisibilityErrorType.Network);
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(MetricTags.CIVisibilityErrorType.Network);
+                    Log.Error(ex, "ITR: Early flake detection tests request failed.");
                     throw;
                 }
 
@@ -739,20 +758,29 @@ internal class IntelligentTestRunnerClient
 
                 var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<EarlyFlakeDetectionResponse>?>>(responseContent);
                 var finalResponse = deserializedResult.Data?.Attributes ?? default;
-                /*
-                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsResponse(finalResponse switch
+
+                // Count the number of tests for telemetry
+                var testsCount = 0;
+                if (finalResponse.Tests is { Count: > 0 } modulesDictionary)
                 {
-                    { CodeCoverage: true, TestsSkipping: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled,
-                    { CodeCoverage: true, TestsSkipping: !true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled,
-                    { CodeCoverage: !true, TestsSkipping: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled,
-                    _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled,
-                });
-                */
+                    foreach (var suitesDictionary in modulesDictionary.Values)
+                    {
+                        if (suitesDictionary?.Count > 0)
+                        {
+                            foreach (var testsArray in suitesDictionary.Values)
+                            {
+                                testsCount += testsArray?.Length ?? 0;
+                            }
+                        }
+                    }
+                }
+
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityEarlyFlakeDetectionResponseTests(testsCount);
                 return finalResponse;
             }
             finally
             {
-                // TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSettingsMs(sw.Elapsed.TotalMilliseconds);
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityEarlyFlakeDetectionRequestMs(sw.Elapsed.TotalMilliseconds);
             }
         }
     }
@@ -833,9 +861,10 @@ internal class IntelligentTestRunnerClient
 
                         CheckResponseStatusCode(response, responseContent, finalTry);
                     }
-                    catch
+                    catch (Exception ex)
                     {
                         TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(MetricTags.CIVisibilityErrorType.Network);
+                        Log.Error(ex, "ITR: Search commit request failed.");
                         throw;
                     }
 

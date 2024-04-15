@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int DistributionCIVisibilityLength = 25;
+    private const int DistributionCIVisibilityLength = 28;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility" /> values.
@@ -57,6 +57,12 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(null),
             // code_coverage.files, index = 24
             new(null),
+            // early_flake_detection.request_ms, index = 25
+            new(null),
+            // early_flake_detection.response_bytes, index = 26
+            new(null),
+            // early_flake_detection.response_tests, index = 27
+            new(null),
         };
 
     /// <summary>
@@ -65,7 +71,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] DistributionCIVisibilityEntryCounts { get; }
-        = new int[]{ 2, 2, 2, 2, 9, 1, 1, 1, 1, 1, 1, 1, 1, };
+        = new int[]{ 2, 2, 2, 2, 9, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, };
 
     public void RecordDistributionCIVisibilityEndpointPayloadBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
     {
@@ -135,5 +141,20 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     public void RecordDistributionCIVisibilityCodeCoverageFiles(double value)
     {
         _buffer.DistributionCIVisibility[24].TryEnqueue(value);
+    }
+
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionRequestMs(double value)
+    {
+        _buffer.DistributionCIVisibility[25].TryEnqueue(value);
+    }
+
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(double value)
+    {
+        _buffer.DistributionCIVisibility[26].TryEnqueue(value);
+    }
+
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseTests(double value)
+    {
+        _buffer.DistributionCIVisibility[27].TryEnqueue(value);
     }
 }
