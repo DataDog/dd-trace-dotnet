@@ -562,7 +562,10 @@ namespace Datadog.Trace.TestHelpers
                         var headerCollection = new NameValueCollection();
                         foreach (var header in request.Headers)
                         {
-                            headerCollection.Add(header.Name, header.Value);
+                            foreach (var value in header.Value)
+                            {
+                                headerCollection.Add(header.Key, value);
+                            }
                         }
 
                         TraceRequestHeaders = TraceRequestHeaders.Add(headerCollection);
@@ -604,7 +607,10 @@ namespace Datadog.Trace.TestHelpers
                         var headerCollection = new NameValueCollection();
                         foreach (var header in request.Headers)
                         {
-                            headerCollection.Add(header.Name, header.Value);
+                            foreach (var value in header.Value)
+                            {
+                                headerCollection.Add(header.Key, value);
+                            }
                         }
 
                         TelemetryRequestHeaders = TelemetryRequestHeaders.Add(headerCollection);
@@ -782,21 +788,15 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     var body = request.ReadStreamBody();
-                    if (request.Headers.GetValue("Content-Encoding") == "gzip")
-                    {
-                        using var compressed = new MemoryStream(body);
-                        using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
-                        using var decompressed = new MemoryStream();
-                        gzip.CopyTo(decompressed);
-                        gzip.Flush();
-                        body = decompressed.GetBuffer();
-                    }
 
                     var dataStreamsPayload = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(body);
                     var headerCollection = new NameValueCollection();
                     foreach (var header in request.Headers)
                     {
-                        headerCollection.Add(header.Name, header.Value);
+                        foreach (var value in header.Value)
+                        {
+                            headerCollection.Add(header.Key, value);
+                        }
                     }
 
                     lock (this)
@@ -831,19 +831,10 @@ namespace Datadog.Trace.TestHelpers
                     var headerCollection = new NameValueCollection();
                     foreach (var header in request.Headers)
                     {
-                        headerCollection.Add(header.Name, header.Value);
-                    }
-
-                    if (headerCollection["Content-Encoding"] == "gzip")
-                    {
-                        var bodyMs = new MemoryStream(body);
-                        var uncompressedStream = new MemoryStream();
-                        using (var gzipStream = new GZipStream(bodyMs, CompressionMode.Decompress))
+                        foreach (var value in header.Value)
                         {
-                            gzipStream.CopyTo(uncompressedStream);
+                            headerCollection.Add(header.Key, value);
                         }
-
-                        body = uncompressedStream.ToArray();
                     }
 
                     var bodyAsJson = headerCollection["Content-Type"] switch
@@ -885,7 +876,10 @@ namespace Datadog.Trace.TestHelpers
                     var headerCollection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                     foreach (var header in request.Headers)
                     {
-                        headerCollection.Add(header.Name, header.Value);
+                        foreach (var value in header.Value)
+                        {
+                            headerCollection.Add(header.Key, value);
+                        }
                     }
 
                     var contentTypeHeader = headerCollection["Content-Type"];
@@ -906,7 +900,7 @@ namespace Datadog.Trace.TestHelpers
 
                     var encoding = contentType.CharSet ?? "utf-8";
 
-                    var formData = MultipartFormDataParser.Parse(request.Body.Stream, boundary.Value, Encoding.GetEncoding(encoding));
+                    var formData = MultipartFormDataParser.Parse(request.Body, boundary.Value, Encoding.GetEncoding(encoding));
                     TracerFlareRequests = TracerFlareRequests.Add((headerCollection, formData));
                 }
                 catch (Exception ex)

@@ -5,27 +5,28 @@
 
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Net;
 using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.HttpOverStreams.HttpContent;
+using HttpHeaders = System.Net.Http.Headers.HttpHeaders;
 
 namespace Datadog.Trace.TestHelpers;
 
-internal class MockHttpRequest
+public class MockHttpRequest
 {
-    public HttpHeaders Headers { get; set; } = new HttpHeaders();
+    public MockHeaders Headers { get; init; }
 
-    public string Method { get; set; }
+    public string Method { get; init; }
 
-    public string PathAndQuery { get; set; }
+    public string PathAndQuery { get; init; }
 
-    public long? ContentLength { get; set; }
+    public long? ContentLength { get; init; }
 
-    public StreamContent Body { get; set; }
+    public Stream Body { get; init; }
 
     public static MockHttpRequest Create(HttpListenerRequest request)
     {
-        var headers = new HttpHeaders(request.Headers.Count);
+        var headers = new MockHeaders();
 
         foreach (var key in request.Headers.AllKeys)
         {
@@ -41,23 +42,49 @@ internal class MockHttpRequest
             Method = request.HttpMethod,
             PathAndQuery = request.Url?.PathAndQuery,
             ContentLength = request.ContentLength64,
-            Body = new StreamContent(request.InputStream, request.ContentLength64),
+            Body = request.InputStream, // HttpListener de-chunks a chunked body for us automatically
         };
     }
 
     internal byte[] ReadStreamBody()
     {
-        return ContentLength is { } length
-                   ? ReadBytes(length, Body.Stream)
-                   : ReadChunked(Body.Stream);
+        // var isChunkEncoded = Headers.TryGetValue("Transfer-Encoding", out var chunking) && chunking is "chunked";
+        var isGzip = Headers.TryGetValue("Content-Encoding", out var encoding) && encoding is "gzip";
 
-        static byte[] ReadChunked(Stream stream)
+        byte[] bytes = null;
+        if (ContentLength is > 0)
         {
-            using var ms = new MemoryStream();
-            stream.CopyTo(ms);
-            // Does another copy but meh
+            bytes = ReadBytes(ContentLength.Value, Body);
+            if (!isGzip)
+            {
+                return bytes;
+            }
+        }
+
+        // yes this is a bit horrible, but without it we get weirdness in .NET FX/netcoreapp2.1
+        // where the copy doesn't actually read to the end
+        using var ms = bytes is not null ? new MemoryStream(bytes) : new();
+        if (bytes is null)
+        {
+            Body.CopyTo(ms);
+            ms.Position = 0;
+        }
+
+        if (!isGzip)
+        {
             return ms.ToArray();
         }
+
+        ms.Position = 0;
+        using var finalStream = new MemoryStream();
+        using (var gzip = new GZipStream(ms, CompressionMode.Decompress, leaveOpen: true))
+        {
+            gzip.CopyTo(finalStream);
+            gzip.Flush();
+        }
+
+        ms.Dispose();
+        return finalStream.ToArray();
 
         static byte[] ReadBytes(long length, Stream stream)
         {
@@ -82,6 +109,34 @@ internal class MockHttpRequest
             }
 
             return body;
+        }
+    }
+
+    public class MockHeaders : HttpHeaders
+    {
+        public string GetValue(string name)
+        {
+            foreach (var value in GetValues(name))
+            {
+                return value;
+            }
+
+            return null;
+        }
+
+        public bool TryGetValue(string name, out string value)
+        {
+            if (TryGetValues(name, out var values))
+            {
+                foreach (var val in values)
+                {
+                    value = val;
+                    return true;
+                }
+            }
+
+            value = default;
+            return false;
         }
     }
 }
