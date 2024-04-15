@@ -585,16 +585,21 @@ namespace Datadog.Trace
                 instruction => instruction.OpCode.FlowControl == FlowControl.Call &&
                                (instruction.Operand as IMethod != null &&
                                 (instruction.Operand as IMethod)!.Name == nonUserMethodFullName));
-                
 
-            var calls = callsToInstrument as Instruction[] ?? callsToInstrument.ToArray();
-            if (!calls.Any())
+
+            Instruction matchingCall = callsToInstrument.FirstOrDefault();
+            if (matchingCall == null)
             {
-                Log.Warning("SpanOriginResolution - No calls to {0} found in {1}", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
-                return;
+                Log.Warning("SpanOriginResolution - No calls to {0} found in {1}. Taking first sequence point instead, this is buggy and wrong", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
+                matchingCall = userMdMethod.Body.Instructions.FirstOrDefault(i => i?.SequencePoint.StartLine != 0);
+                if (matchingCall == null)
+                {
+                    Log.Warning("SpanOriginResolution - no sequence points found in {0}", userMdMethod);
+                    return;
+                }
             }
 
-            uint offsetOfSpanOrigin = calls.First().Offset;
+            uint offsetOfSpanOrigin = matchingCall.Offset;
             var instructions = TimeTravelInitiator.FindMethod((MethodInfo)userMethod).Body.Instructions;
             var sequencePoint = instructions.Reverse().First(instruction => instruction.SequencePoint != null && 
                                                                             instruction.Offset < offsetOfSpanOrigin).SequencePoint;            
