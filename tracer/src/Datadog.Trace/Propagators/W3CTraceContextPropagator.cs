@@ -465,10 +465,7 @@ namespace Datadog.Trace.Propagators
                     propagatedTags = null;
                 }
 
-                if (lastParent is null)
-                {
-                    lastParent = ZeroLastParent;
-                }
+                lastParent ??= ZeroLastParent;
 
                 return new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
             }
