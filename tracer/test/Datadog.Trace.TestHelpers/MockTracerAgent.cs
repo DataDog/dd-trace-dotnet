@@ -44,7 +44,11 @@ namespace Datadog.Trace.TestHelpers
             TransportType = transport;
         }
 
-        public event EventHandler<EventArgs<HttpListenerContext>> RequestReceived;
+        /// <summary>
+        /// Allow intercepting the traces. Note, if you subscribe to this event,
+        /// you should also set <see cref="ShouldDeserializeTraces"/> to <c>false</c>
+        /// </summary>
+        public event EventHandler<EventArgs<MockHttpRequest>> RequestReceived;
 
         public event EventHandler<EventArgs<IList<IList<MockSpan>>>> RequestDeserialized;
 
@@ -457,11 +461,6 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        protected virtual void OnRequestReceived(HttpListenerContext context)
-        {
-            RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(context));
-        }
-
         protected virtual void OnRequestDeserialized(IList<IList<MockSpan>> traces)
         {
             RequestDeserialized?.Invoke(this, new EventArgs<IList<IList<MockSpan>>>(traces));
@@ -477,7 +476,12 @@ namespace Datadog.Trace.TestHelpers
             MetricsReceived?.Invoke(this, new EventArgs<string>(stats));
         }
 
-        private protected MockTracerResponse HandleHttpRequest(MockHttpParser.MockHttpRequest request)
+        private protected void OnRequestReceived(MockHttpRequest request)
+        {
+            RequestReceived?.Invoke(this, new EventArgs<MockHttpRequest>(request));
+        }
+
+        private protected MockTracerResponse HandleHttpRequest(MockHttpRequest request)
         {
             string response = null;
             var responseType = MockTracerResponseType.Unknown;
@@ -1149,14 +1153,16 @@ namespace Datadog.Trace.TestHelpers
                         var ctx = _listener.GetContext();
                         try
                         {
-                            OnRequestReceived(ctx);
-
                             if (Version != null)
                             {
                                 ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                             }
 
-                            var mockTracerResponse = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
+                            var request = MockHttpRequest.Create(ctx.Request);
+
+                            OnRequestReceived(request);
+
+                            var mockTracerResponse = HandleHttpRequest(request);
 
                             if (!mockTracerResponse.SendResponse)
                             {
@@ -1305,6 +1311,7 @@ namespace Datadog.Trace.TestHelpers
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
                 var request = await MockHttpParser.ReadRequest(namedPipeServerStream);
+                OnRequestReceived(request);
                 var mockTracerResponse = HandleHttpRequest(request);
 
                 if (mockTracerResponse.SendResponse)
@@ -1542,6 +1549,7 @@ namespace Datadog.Trace.TestHelpers
                         using var stream = new NetworkStream(handler);
 
                         var request = await MockHttpParser.ReadRequest(stream);
+                        OnRequestReceived(request);
                         var mockTracerResponse = HandleHttpRequest(request);
 
                         if (mockTracerResponse.SendResponse)
