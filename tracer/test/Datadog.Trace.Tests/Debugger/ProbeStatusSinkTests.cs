@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tests.Debugger
     public class ProbeStatusSinkTests
     {
         private readonly TimeLord _timeLord;
-        private readonly ProbeStatusSink _sink;
+        private readonly DiagnosticsSink _sink;
         private readonly DebuggerSettings _settings;
 
         public ProbeStatusSinkTests()
@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests.Debugger
             Clock.SetForCurrentThread(_timeLord);
 
             _settings = DebuggerSettings.FromDefaultSource();
-            _sink = ProbeStatusSink.Create(nameof(ProbeStatusSinkTests), _settings);
+            _sink = DiagnosticsSink.Create(nameof(ProbeStatusSinkTests), _settings);
         }
 
         [Fact]
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var probeId = Guid.NewGuid().ToString();
 
-            _sink.AddReceived(probeId);
+            _sink.AddProbeStatus(probeId, Status.RECEIVED);
 
             var probes = _sink.GetDiagnostics();
             probes.Count.Should().Be(1);
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var probeId = Guid.NewGuid().ToString();
 
-            _sink.AddInstalled(probeId);
+            _sink.AddProbeStatus(probeId, Status.INSTALLED);
 
             var probes = _sink.GetDiagnostics();
             probes.Count.Should().Be(1);
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var probeId = Guid.NewGuid().ToString();
 
-            _sink.AddBlocked(probeId);
+            _sink.AddProbeStatus(probeId, Status.BLOCKED);
 
             var probes = _sink.GetDiagnostics();
             probes.Count.Should().Be(1);
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Tests.Debugger
             var probeId = Guid.NewGuid().ToString();
             var exception = new InvalidOperationException($"Test exceptions at ${nameof(AddError)}");
 
-            _sink.AddError(probeId, exception);
+            _sink.AddProbeStatus(probeId, Status.ERROR, exception: exception);
 
             var probes = _sink.GetDiagnostics();
             probes.Count.Should().Be(1);
@@ -110,8 +110,8 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var probeId = Guid.NewGuid().ToString();
 
-            _sink.AddReceived(probeId);
-            _sink.AddInstalled(probeId);
+            _sink.AddProbeStatus(probeId, Status.RECEIVED);
+            _sink.AddProbeStatus(probeId, Status.INSTALLED);
 
             var probes = _sink.GetDiagnostics();
             probes.Should().Equal(new[]
@@ -126,8 +126,8 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var probeId = Guid.NewGuid().ToString();
 
-            _sink.AddReceived(probeId);
-            _sink.AddBlocked(probeId);
+            _sink.AddProbeStatus(probeId, Status.RECEIVED);
+            _sink.AddProbeStatus(probeId, Status.BLOCKED);
 
             var probes = _sink.GetDiagnostics();
             probes.Should().Equal(new[]
@@ -143,8 +143,8 @@ namespace Datadog.Trace.Tests.Debugger
             var probeId = Guid.NewGuid().ToString();
             var exception = new InvalidOperationException($"Test exceptions at ${nameof(AddError)}");
 
-            _sink.AddReceived(probeId);
-            _sink.AddError(probeId, exception);
+            _sink.AddProbeStatus(probeId, Status.RECEIVED);
+            _sink.AddProbeStatus(probeId, Status.ERROR, exception: exception);
 
             var probes = _sink.GetDiagnostics();
             probes.Should().Equal(new[]
@@ -160,9 +160,9 @@ namespace Datadog.Trace.Tests.Debugger
             var probeId = Guid.NewGuid().ToString();
             var exception = new InvalidOperationException($"Test exceptions at ${nameof(AddError)}");
 
-            _sink.AddReceived(probeId);
-            _sink.AddInstalled(probeId);
-            _sink.AddError(probeId, exception);
+            _sink.AddProbeStatus(probeId, Status.RECEIVED);
+            _sink.AddProbeStatus(probeId, Status.INSTALLED);
+            _sink.AddProbeStatus(probeId, Status.ERROR, exception: exception);
 
             var probes = _sink.GetDiagnostics();
             probes.Should().Equal(new[]
@@ -178,7 +178,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var probeId = Guid.NewGuid().ToString();
 
-            _sink.AddReceived(probeId);
+            _sink.AddProbeStatus(probeId, Status.RECEIVED);
             _sink.Remove(probeId);
 
             var probes = _sink.GetDiagnostics();
@@ -190,7 +190,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var probeId = Guid.NewGuid().ToString();
 
-            _sink.AddReceived(probeId);
+            _sink.AddProbeStatus(probeId, Status.RECEIVED);
 
             _sink.GetDiagnostics().Should().NotBeEmpty();
             _sink.GetDiagnostics().Should().BeEmpty();
@@ -202,7 +202,7 @@ namespace Datadog.Trace.Tests.Debugger
             _timeLord.StopTime();
             var probeId = Guid.NewGuid().ToString();
 
-            _sink.AddReceived(probeId);
+            _sink.AddProbeStatus(probeId, Status.RECEIVED);
 
             _sink.GetDiagnostics().Should().NotBeEmpty();
             _timeLord.TravelTo(_timeLord.UtcNow.AddSeconds(_settings.DiagnosticsIntervalSeconds));
@@ -216,8 +216,8 @@ namespace Datadog.Trace.Tests.Debugger
             var probeId = Guid.NewGuid().ToString();
             var exception = new InvalidOperationException($"Custom exception for {nameof(ReemitOnlyLatestMessage)}");
 
-            _sink.AddReceived(probeId);
-            _sink.AddError(probeId, exception);
+            _sink.AddProbeStatus(probeId, Status.RECEIVED);
+            _sink.AddProbeStatus(probeId, Status.ERROR, exception: exception);
             _sink.GetDiagnostics().Should().NotBeEmpty();
 
             _timeLord.TravelTo(_timeLord.UtcNow.AddSeconds(_settings.DiagnosticsIntervalSeconds));
@@ -231,15 +231,15 @@ namespace Datadog.Trace.Tests.Debugger
         public void DropDiagnostics()
         {
             var probeId = Guid.NewGuid().ToString();
-            _sink.AddReceived(probeId);
+            _sink.AddProbeStatus(probeId, Status.RECEIVED);
 
             var exception = new InvalidOperationException($"Custom exception for {nameof(ReemitOnlyLatestMessage)}");
             for (var i = 0; i < 999; i++)
             {
-                _sink.AddError(probeId, exception);
+                _sink.AddProbeStatus(probeId, Status.ERROR, exception: exception);
             }
 
-            _sink.AddError(probeId, exception);
+            _sink.AddProbeStatus(probeId, Status.ERROR, exception: exception);
             _sink.GetDiagnostics().Should().Equal(new[]
             {
                 new ProbeStatus(nameof(ProbeStatusSinkTests), probeId, Status.ERROR, exception: exception)

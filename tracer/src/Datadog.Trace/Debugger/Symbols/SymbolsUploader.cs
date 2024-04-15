@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -24,7 +26,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
-    internal class SymbolsUploader : ISymbolsUploader
+    internal class SymbolsUploader : IDebuggerUploader
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolsUploader));
 
@@ -47,7 +49,13 @@ namespace Datadog.Trace.Debugger.Symbols
         private string? _symDbEndpoint;
         private bool _isSymDbEnabled;
 
-        private SymbolsUploader(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
+        private SymbolsUploader(
+            IBatchUploadApi api,
+            IDiscoveryService discoveryService,
+            IRcmSubscriptionManager remoteConfigurationManager,
+            DebuggerSettings settings,
+            ImmutableTracerSettings tracerSettings,
+            string serviceName)
         {
             _symDbEndpoint = null;
             _alreadyProcessed = new HashSet<string>();
@@ -71,12 +79,6 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private ApplyDetails[] Callback(Dictionary<string, List<RemoteConfiguration>> addedConfig, Dictionary<string, List<RemoteConfigurationPath>>? removedConfig)
         {
-            // TODO: should we do something with `removedConfig`?
-            // Assumptions:
-            // 1. Only one value at a time (No `true` and `false` in the same RC update)
-            // 2. Once first `true` arrives, no need to act for another `true`
-            // 3. Once `false` arrives, stop uploading and act for next `true`
-
             var result =
                 (from configByProduct in addedConfig
                  where configByProduct.Key == RcmProducts.LiveDebuggingSymbolDb
@@ -115,22 +117,21 @@ namespace Datadog.Trace.Debugger.Symbols
             _discoveryService = null;
         }
 
-        public static ISymbolsUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
+        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
         {
+            if (!settings.SymbolDatabaseUploadEnabled)
+            {
+                Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
+                return new NoOpSymbolUploader();
+            }
+
             if (!ThirdPartyModules.IsValid)
             {
                 Log.Warning("Third party modules load has failed. Disabling Symbol Uploader.");
-                return new NoOpUploader();
+                return new NoOpSymbolUploader();
             }
 
-            if (api is not NoOpSymbolBatchUploadApi &&
-               (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false")?.ToBoolean() ?? false))
-            {
-                return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceName);
-            }
-
-            Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
-            return new NoOpUploader();
+            return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceName);
         }
 
         private void RegisterToAssemblyLoadEvent()
@@ -324,7 +325,7 @@ namespace Datadog.Trace.Debugger.Symbols
             sb.Append(rootAsString.Substring(classesIndex + classScopeString.Length));
         }
 
-        public async Task StartExtractingAssemblySymbolsAsync()
+        public async Task StartFlushingAsync()
         {
             if (await WaitForDiscoveryServiceAsync().ConfigureAwait(false) == false)
             {
@@ -340,9 +341,9 @@ namespace Datadog.Trace.Debugger.Symbols
 
             RegisterToAssemblyLoadEvent();
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            for (var i = 0; i < assemblies.Length; i++)
+            foreach (var assembly in assemblies)
             {
-                await ProcessItemAsync(assemblies[i]).ConfigureAwait(false);
+                await ProcessItemAsync(assembly).ConfigureAwait(false);
             }
         }
 

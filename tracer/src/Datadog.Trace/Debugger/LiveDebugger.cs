@@ -22,7 +22,6 @@ using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -40,8 +39,9 @@ namespace Datadog.Trace.Debugger
         private readonly IDiscoveryService _discoveryService;
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ISubscription _subscription;
-        private readonly IDebuggerSink _debuggerSink;
-        private readonly ISymbolsUploader _symbolsUploader;
+        private readonly ISnapshotUploader _snapshotUploader;
+        private readonly IDebuggerUploader _diagnosticsUploader;
+        private readonly IDebuggerUploader _symbolsUploader;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
         private readonly IProbeStatusPoller _probeStatusPoller;
@@ -57,8 +57,9 @@ namespace Datadog.Trace.Debugger
             IDiscoveryService discoveryService,
             IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
-            IDebuggerSink debuggerSink,
-            ISymbolsUploader symbolsUploader,
+            ISnapshotUploader snapshotUploader,
+            IDebuggerUploader diagnosticsUploader,
+            IDebuggerUploader symbolsUploader,
             IProbeStatusPoller probeStatusPoller,
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
@@ -66,7 +67,8 @@ namespace Datadog.Trace.Debugger
             _settings = settings;
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
-            _debuggerSink = debuggerSink;
+            _snapshotUploader = snapshotUploader;
+            _diagnosticsUploader = diagnosticsUploader;
             _symbolsUploader = symbolsUploader;
             _probeStatusPoller = probeStatusPoller;
             _subscriptionManager = remoteConfigurationManager;
@@ -95,15 +97,28 @@ namespace Datadog.Trace.Debugger
             IDiscoveryService discoveryService,
             IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
-            IDebuggerSink debuggerSink,
-            ISymbolsUploader symbolsUploader,
+            ISnapshotUploader snapshotUploader,
+            IDebuggerUploader diagnosticsUploader,
+            IDebuggerUploader symbolsUploader,
             IProbeStatusPoller probeStatusPoller,
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
         {
             lock (GlobalLock)
             {
-                return Instance ??= new LiveDebugger(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, configurationUpdater, dogStats);
+                return Instance ??=
+                           new LiveDebugger(
+                               settings: settings,
+                               serviceName: serviceName,
+                               discoveryService: discoveryService,
+                               remoteConfigurationManager: remoteConfigurationManager,
+                               lineProbeResolver: lineProbeResolver,
+                               snapshotUploader: snapshotUploader,
+                               diagnosticsUploader: diagnosticsUploader,
+                               symbolsUploader: symbolsUploader,
+                               probeStatusPoller: probeStatusPoller,
+                               configurationUpdater: configurationUpdater,
+                               dogStats: dogStats);
             }
         }
 
@@ -159,21 +174,23 @@ namespace Datadog.Trace.Debugger
 
             Task StartAsync()
             {
-                AddShutdownTask();
+                LifetimeManager.Instance.AddShutdownTask(ShutdownTask);
 
                 _probeStatusPoller.StartPolling();
-                _symbolsUploader.StartExtractingAssemblySymbolsAsync();
-                return _debuggerSink.StartFlushingAsync();
+                _symbolsUploader.StartFlushingAsync();
+                _diagnosticsUploader.StartFlushingAsync();
+                return _snapshotUploader.StartFlushingAsync();
             }
 
-            void AddShutdownTask()
+            void ShutdownTask()
             {
-                LifetimeManager.Instance.AddShutdownTask(() => _discoveryService.RemoveSubscription(DiscoveryCallback));
-                LifetimeManager.Instance.AddShutdownTask(_debuggerSink.Dispose);
-                LifetimeManager.Instance.AddShutdownTask(_probeStatusPoller.Dispose);
-                LifetimeManager.Instance.AddShutdownTask(_dogStats.Dispose);
-                LifetimeManager.Instance.AddShutdownTask(() => _subscriptionManager.Unsubscribe(_subscription));
-                LifetimeManager.Instance.AddShutdownTask(_symbolsUploader.Dispose);
+                _discoveryService.RemoveSubscription(DiscoveryCallback);
+                _snapshotUploader.Dispose();
+                _diagnosticsUploader.Dispose();
+                _symbolsUploader.Dispose();
+                _probeStatusPoller.Dispose();
+                _subscriptionManager.Unsubscribe(_subscription);
+                _dogStats.Dispose();
             }
         }
 
@@ -438,7 +455,7 @@ namespace Datadog.Trace.Debugger
 
         internal void AddSnapshot(ProbeInfo probe, string snapshot)
         {
-            _debuggerSink.AddSnapshot(probe.ProbeId, snapshot);
+            _snapshotUploader.Add(probe.ProbeId, snapshot);
             SetProbeStatusToEmitting(probe);
         }
 
@@ -451,26 +468,6 @@ namespace Datadog.Trace.Debugger
                 _probeStatusPoller.UpdateProbe(probe.ProbeId, fetchProbeStatus);
                 probe.IsEmitted = true;
             }
-        }
-
-        internal void AddReceivedProbeStatus(string probeId)
-        {
-            _debuggerSink.AddReceivedProbeStatus(probeId);
-        }
-
-        internal void AddInstalledProbeStatus(string probeId)
-        {
-            _debuggerSink.AddInstalledProbeStatus(probeId);
-        }
-
-        internal void AddBlockedProbeStatus(string probeId)
-        {
-            _debuggerSink.AddBlockedProbeStatus(probeId);
-        }
-
-        internal void AddErrorProbeStatus(string probeId, int probeVersion = 0, Exception exception = null, string errorMessage = null)
-        {
-            _debuggerSink.AddErrorProbeStatus(probeId, probeVersion, exception, errorMessage);
         }
 
         internal void SendMetrics(ProbeInfo probe, MetricKind metricKind, string metricName, double value, string probeId)

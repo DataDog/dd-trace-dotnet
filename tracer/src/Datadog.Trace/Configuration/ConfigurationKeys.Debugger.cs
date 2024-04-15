@@ -55,12 +55,6 @@ namespace Datadog.Trace.Configuration
             public const string SymbolDatabaseUploadEnabled = "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_UPLOAD_ENABLED";
 
             /// <summary>
-            /// Configuration key for forcing the client library to upload symbol data, regardless of whether it is requested by our backend. For internal use and testing.
-            /// Default value is false (disabled).
-            /// </summary>
-            public const string SymbolDatabaseUploadEnabledInternal = "DD_DYNAMIC_INSTRUMENTATION_INTERAL_FORCE_SYMBOL_DATABASE_UPLOAD";
-
-            /// <summary>
             /// Configuration key for a separated comma list of libraries to include in the symbol database upload
             /// Default value is empty.
             /// </summary>

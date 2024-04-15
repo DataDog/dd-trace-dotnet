@@ -16,8 +16,6 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
@@ -37,16 +35,18 @@ public class LiveDebuggerTests
         var discoveryService = new DiscoveryServiceMock();
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
-        var debuggerSink = new DebuggerSinkMock();
-        var symbolsUploader = new SymbolsUploaderMock();
+        var snapshotUploader = new SnapshotUploaderMock();
+        var diagnosticsUploader = new UploaderMock();
+        var symbolsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         probeStatusPoller.Called.Should().BeTrue();
-        debuggerSink.Called.Should().BeTrue();
+        snapshotUploader.Called.Should().BeTrue();
+        diagnosticsUploader.Called.Should().BeTrue();
         rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeTrue();
     }
 
@@ -60,16 +60,19 @@ public class LiveDebuggerTests
         var discoveryService = new DiscoveryServiceMock();
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
-        var debuggerSink = new DebuggerSinkMock();
-        var symbolsUploader = new SymbolsUploaderMock();
+        var snapshotUploader = new SnapshotUploaderMock();
+        var diagnosticsUploader = new UploaderMock();
+        var symbolsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         lineProbeResolver.Called.Should().BeFalse();
-        debuggerSink.Called.Should().BeFalse();
+        probeStatusPoller.Called.Should().BeFalse();
+        snapshotUploader.Called.Should().BeFalse();
+        diagnosticsUploader.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
         rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeFalse();
     }
@@ -164,7 +167,7 @@ public class LiveDebuggerTests
         }
     }
 
-    private class DebuggerSinkMock : IDebuggerSink
+    private class UploaderMock : IDebuggerUploader
     {
         internal bool Called { get; private set; }
 
@@ -174,30 +177,15 @@ public class LiveDebuggerTests
             return Task.CompletedTask;
         }
 
-        public void AddSnapshot(string probeId, string snapshot)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception exception = null, string errorMessage = null)
-        {
-            throw new NotImplementedException();
-        }
-
         public void Dispose()
         {
         }
     }
 
-    private class SymbolsUploaderMock : ISymbolsUploader
+    private class SnapshotUploaderMock : UploaderMock, ISnapshotUploader
     {
-        public void Dispose()
+        public void Add(string probeId, string snapshot)
         {
-        }
-
-        public Task StartExtractingAssemblySymbolsAsync()
-        {
-            return Task.CompletedTask;
         }
     }
 

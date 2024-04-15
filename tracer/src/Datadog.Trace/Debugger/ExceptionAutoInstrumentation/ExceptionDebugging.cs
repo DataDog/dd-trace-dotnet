@@ -11,20 +11,22 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionDebugging
     {
+        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionDebugging));
+
         private static ExceptionDebuggingSettings? _settings;
         private static int _firstInitialization = 1;
         private static bool _isDisabled;
-        private static DebuggerSink? _sink;
 
-        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionDebugging));
+        private static SnapshotUploader? _uploader;
+        private static SnapshotSink? _snapshotSink;
 
         public static ExceptionDebuggingSettings Settings
         {
@@ -67,7 +69,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             // Set up the snapshots sink.
             var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
-            var snapshotStatusSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+            _snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
             var apiFactory = AgentTransportStrategy.Get(
                 tracer.Settings.ExporterInternal,
                 productName: "debugger",
@@ -78,17 +80,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var discoveryService = tracer.TracerManager.DiscoveryService;
             var gitMetadataTagsProvider = tracer.TracerManager.GitMetadataTagsProvider;
 
-            var snapshotBatchUploadApi = AgentBatchUploadApi.Create(apiFactory, discoveryService, gitMetadataTagsProvider, false);
-            var snapshotBatchUploader = BatchUploader.Create(snapshotBatchUploadApi);
+            var snapshotUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
+            var snapshotBatchUploader = BatchUploader.Create(snapshotUploadApi);
 
-            _sink = DebuggerSink.Create(
-                snapshotSink: snapshotStatusSink,
-                probeStatusSink: new NopProbeStatusSink(),
+            _uploader = SnapshotUploader.Create(
+                snapshotSink: _snapshotSink,
                 snapshotBatchUploader: snapshotBatchUploader,
-                diagnosticsBatchUploader: new NonBatchUploader(),
                 debuggerSettings);
 
-            Task.Run(async () => await _sink.StartFlushingAsync().ConfigureAwait(false));
+            Task.Run(async () => await _uploader.StartFlushingAsync().ConfigureAwait(false));
         }
 
         public static void Report(Span span, Exception exception)
@@ -126,19 +126,19 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public static void AddSnapshot(string probeId, string snapshot)
         {
-            if (_sink == null)
+            if (_snapshotSink == null)
             {
-                Log.Warning("The sink of the Exception Debugging is null. Skipping the reporting of the snapshot: {Snapshot}", snapshot);
+                Log.Debug("The sink of the Exception Debugging is null. Skipping the reporting of the snapshot: {Snapshot}", snapshot);
                 return;
             }
 
-            _sink.AddSnapshot(probeId, snapshot);
+            _snapshotSink.Add(probeId, snapshot);
         }
 
         public static void Dispose()
         {
             ExceptionTrackManager.Dispose();
-            _sink?.Dispose();
+            _uploader?.Dispose();
         }
     }
 }

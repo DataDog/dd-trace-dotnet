@@ -477,6 +477,12 @@ internal readonly partial struct SecurityCoordinator
 
         internal override IDictionary<string, object>? RouteData => _context.Request.RequestContext.RouteData?.Values;
 
+        internal override bool ReportedExternalWafsRequestHeaders
+        {
+            get => _context.Items["ReportedExternalWafsRequestHeaders"] is true;
+            set => _context.Items["ReportedExternalWafsRequestHeaders"] = value;
+        }
+
         internal override void MarkBlocked() => _context.Items["block"] = true;
 
         internal override IContext? GetAdditiveContext() => _context.Items[WafKey] as IContext;

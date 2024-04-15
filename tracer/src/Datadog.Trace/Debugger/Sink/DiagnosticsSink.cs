@@ -1,8 +1,9 @@
-// <copyright file="ProbeStatusSink.cs" company="Datadog">
+// <copyright file="DiagnosticsSink.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Sink
 {
-    internal class ProbeStatusSink
+    internal class DiagnosticsSink
     {
         private const int QueueLimit = 1000;
         private readonly ConcurrentDictionary<string, TimedMessage> _diagnostics;
@@ -22,11 +23,7 @@ namespace Datadog.Trace.Debugger.Sink
 
         private BoundedConcurrentQueue<ProbeStatus> _queue;
 
-        protected ProbeStatusSink()
-        {
-        }
-
-        protected ProbeStatusSink(string serviceName, int batchSize, TimeSpan interval)
+        protected DiagnosticsSink(string serviceName, int batchSize, TimeSpan interval)
         {
             _serviceName = serviceName;
             _batchSize = batchSize;
@@ -36,32 +33,12 @@ namespace Datadog.Trace.Debugger.Sink
             _queue = new BoundedConcurrentQueue<ProbeStatus>(QueueLimit);
         }
 
-        public static ProbeStatusSink Create(string serviceName, DebuggerSettings settings)
+        public static DiagnosticsSink Create(string serviceName, DebuggerSettings settings)
         {
-            return new ProbeStatusSink(serviceName, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
+            return new DiagnosticsSink(serviceName, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
         }
 
-        internal virtual void AddReceived(string probeId)
-        {
-            AddProbeStatus(probeId, Status.RECEIVED);
-        }
-
-        internal virtual void AddInstalled(string probeId)
-        {
-            AddProbeStatus(probeId, Status.INSTALLED);
-        }
-
-        internal virtual void AddBlocked(string probeId)
-        {
-            AddProbeStatus(probeId, Status.BLOCKED);
-        }
-
-        internal virtual void AddError(string probeId, Exception e)
-        {
-            AddProbeStatus(probeId, Status.ERROR, exception: e);
-        }
-
-        public virtual void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception exception = null, string errorMessage = null)
+        public virtual void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception? exception = null, string? errorMessage = null)
         {
             var shouldSkip =
                 _diagnostics.TryGetValue(probeId, out var current) &&
@@ -163,6 +140,11 @@ namespace Datadog.Trace.Debugger.Sink
             {
                 return now - latEmit >= _interval;
             }
+        }
+
+        public int RemainingCapacity()
+        {
+            return QueueLimit - _queue.Count;
         }
     }
 }
