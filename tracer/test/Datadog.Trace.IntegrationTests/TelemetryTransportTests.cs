@@ -200,8 +200,6 @@ namespace Datadog.Trace.IntegrationTests
 
             protected override void HandleHttpRequest(HttpListenerContext ctx)
             {
-                OnRequestReceived(ctx);
-
                 // make sure it works correctly
                 var apiVersion = ctx.Request.Headers[TelemetryConstants.ApiVersionHeader];
                 var requestType = ctx.Request.Headers[TelemetryConstants.RequestTypeHeader];
