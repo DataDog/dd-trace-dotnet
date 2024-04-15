@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
@@ -37,6 +39,37 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             await Fixture.TryStartApp(this, EnableSecurity);
             SetHttpPort(Fixture.HttpPort);
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestExternalWafHeaders()
+        {
+            await TryStartApp();
+            var agent = Fixture.Agent;
+
+            var now = DateTime.UtcNow;
+            var url = "/?test=external-waf-headers";
+            var result = await SubmitRequest(
+                             url,
+                             null,
+                             null,
+                             null,
+                             new List<KeyValuePair<string, string>>
+                             {
+                                 new("X-SigSci-Tags", "SQLI"),
+                                 new("X-Amzn-Trace-Id", "Test"),
+                                 new("Cloudfront-Viewer-Ja3-Fingerprint", "Cloudfront-test"),
+                                 new("CF-ray", "Test"),
+                                 new("X-Cloud-Trace-Context", "Test"),
+                                 new("X-Appgw-Trace-id", "Test"),
+                                 new("Akamai-User-Risk", "Test"),
+                                 new("X-SigSci-RequestID", "Test")
+                             });
+            var spans = WaitForSpans(agent, 1, string.Empty, now, url);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            await VerifyHelper.VerifySpans(spans, settings)
+                              .UseFileName($"{GetTestName()}.test-external-waf-headers");
         }
 
         [SkippableTheory]
