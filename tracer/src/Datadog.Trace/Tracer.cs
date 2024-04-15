@@ -587,7 +587,7 @@ namespace Datadog.Trace
                                 (instruction.Operand as IMethod)!.Name == nonUserMethodFullName));
 
 
-            Instruction matchingCall = callsToInstrument.FirstOrDefault();
+            Instruction matchingCall = callsToInstrument.FirstOrDefault(); // this doesn't work in all cases, doesn't work for async methods with weird compiler generated names, doesn't take into account virtual methods, etc.
             if (matchingCall == null)
             {
                 Log.Warning("SpanOriginResolution - No calls to {0} found in {1}. Taking first sequence point instead, this is buggy and wrong", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
