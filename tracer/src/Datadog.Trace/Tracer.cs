@@ -18,6 +18,7 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.TimeTravel;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Sampling;
@@ -28,7 +29,6 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
-using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -40,6 +40,8 @@ namespace Datadog.Trace
     {
         private static readonly object GlobalInstanceLock = new();
 
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
+        
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.
         /// This is used in the heartbeat metrics to estimate the number of
