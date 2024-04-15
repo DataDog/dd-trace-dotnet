@@ -622,12 +622,13 @@ namespace Datadog.Trace
 
             foreach (var frame in stackFrames.GetFrames()!)
             {
-                Log.Information("SpanOriginResolution - frame {0}", frame?.ToString());
                 var method = frame.GetMethod();
                 if (method?.DeclaringType == null)
                 {
                     continue;
                 }
+
+                Log.Information("SpanOriginResolution - frame {0}", $"{method.DeclaringType?.FullName} {method.Name}- file {frame.GetFileName()} line {frame.GetFileLineNumber()}");
 
                 static bool IsUserCode(string methodFullName) // Not Comprehensive Enough
                 {
