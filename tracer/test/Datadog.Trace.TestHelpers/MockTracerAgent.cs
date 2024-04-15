@@ -542,7 +542,7 @@ namespace Datadog.Trace.TestHelpers
                        : new MockTracerResponse(response ?? "{}");
         }
 
-        private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialTraces(MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
@@ -584,7 +584,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialTelemetryData(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialTelemetryData(MockHttpRequest request)
         {
             if (request.ContentLength >= 1)
             {
@@ -626,7 +626,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialDebuggerData(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialDebuggerData(MockHttpRequest request)
         {
             if (request.ContentLength >= 1)
             {
@@ -666,7 +666,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialDiagnosticsData(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialDiagnosticsData(MockHttpRequest request)
         {
             if (request.ContentLength >= 1)
             {
@@ -717,7 +717,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialStatsData(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialStatsData(MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
@@ -749,7 +749,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialRemoteConfig(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialRemoteConfig(MockHttpRequest request)
         {
             if (request.ContentLength >= 1)
             {
@@ -775,7 +775,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialDataStreams(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialDataStreams(MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
@@ -821,7 +821,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private MockTracerResponse HandleEvpProxyPayload(MockHttpParser.MockHttpRequest request)
+        private MockTracerResponse HandleEvpProxyPayload(MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
@@ -875,7 +875,7 @@ namespace Datadog.Trace.TestHelpers
             return null;
         }
 
-        private void HandleTracerFlarePayload(MockHttpParser.MockHttpRequest request)
+        private void HandleTracerFlarePayload(MockHttpRequest request)
         {
             // we don't send content length header in the request, so just deserialize into bytes
             if (ShouldDeserializeTraces)
