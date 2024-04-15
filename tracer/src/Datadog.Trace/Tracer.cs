@@ -430,7 +430,12 @@ namespace Datadog.Trace
                     traceContext.AdditionalW3CTraceState = parentSpanContext.AdditionalW3CTraceState;
                 }
 
-                lastParentId = parentSpanContext.LastParentId;
+                // if the parent is a remote context, set the last parent id that came from the distributed header
+                // note that parentSpanContext.LastParent may be null
+                if (parentSpanContext.IsRemote)
+                {
+                    lastParentId = parentSpanContext.LastParentId;
+                }
             }
             else
             {
@@ -465,7 +470,7 @@ namespace Datadog.Trace
             }
 
             var context = new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
-            context.LastParentId = lastParentId;
+            context.LastParentId = lastParentId; // lastParentId is only non-null when parent is extracted from W3C headers
             return context;
         }
 
