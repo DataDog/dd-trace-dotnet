@@ -8,15 +8,17 @@ partial class Program
 {
     static void InitCallSiteDebug()
     {
+        Datadog.Trace.Iast.Aspects.DiagnosticsAspects.Hook = (str) => Console.WriteLine(str);
+
         string[] aspects = new string[]
         {
-                @"[AspectClass(""CallTargetNativeTest"",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.DebugAspects",
-                @"  [AspectCtorReplace(""CallTargetNativeTest.Program+CallSiteTargets::.ctor(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectCtorReplace(System.String,System.String)",
-                @"  [AspectMethodReplace(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodReplace(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectMethodReplace(System.String,System.String)",
-                @"  [AspectMethodInsertBefore(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertBefore_0(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectMethodInsertBefore_0(System.String)",
-                @"  [AspectMethodInsertBefore(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertBefore_1(System.String,System.String)"","""",[1],[False],[None],Propagation,[])] AspectMethodInsertBefore_1(System.String)",
-                @"  [AspectMethodInsertAfter(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertAfter(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectMethodInsertAfter(System.String)",
-                @"  [AspectMethodReplace(""CallTargetNativeTest.Program+CallSiteTargets+TestStruct::GetText()"","""",[0],[True],[None],Propagation,[])] AspectMethodReplace(System.Object)",
+            @"[AspectClass(""CallTargetNativeTest"",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.DiagnosticsAspects",
+            @"  [AspectCtorReplace(""CallTargetNativeTest.Program+CallSiteTargets::.ctor(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectCtorReplace(System.String,System.String)",
+            @"  [AspectMethodReplace(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodReplace(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectMethodReplace(System.String,System.String)",
+            @"  [AspectMethodInsertBefore(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertBefore_0(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectMethodInsertBefore_0(System.String)",
+            @"  [AspectMethodInsertBefore(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertBefore_1(System.String,System.String)"","""",[1],[False],[None],Propagation,[])] AspectMethodInsertBefore_1(System.String)",
+            @"  [AspectMethodInsertAfter(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertAfter(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectMethodInsertAfter(System.String)",
+            @"  [AspectMethodReplace(""CallTargetNativeTest.Program+CallSiteTargets+TestStruct::GetText()"","""",[0],[True],[None],Propagation,[])] AspectMethodReplace(System.Object)",
         };
         NativeMethods.RegisterIastAspects(aspects);
     }
@@ -30,12 +32,12 @@ partial class Program
         string param1 = "concat1";
         string param2 = "CONCAT2";
         string expected = param1 + param2;
-        CallSiteTests.RunMethod(() => tests.AspectCtorReplace(param1, param2, expected), $"[AspectCtorReplace]DebugAspects.AspectCtorReplace(string {param1}, string {param2})");
-        CallSiteTests.RunMethod(() => tests.AspectMethodReplace(param1, param2, expected), $"[AspectMethodReplace]DebugAspects.AspectMethodReplace(string {param1}, string {param2})");
-        CallSiteTests.RunMethod(() => tests.AspectMethodInsertBefore_0(param1, param2, expected), $"[AspectMethodInsertBefore]DebugAspects.AspectMethodInsertBefore_0(string {param2})");
-        CallSiteTests.RunMethod(() => tests.AspectMethodInsertBefore_1(param1, param2, expected), $"[AspectMethodInsertBefore]DebugAspects.AspectMethodInsertBefore_1(string {param1})");
-        CallSiteTests.RunMethod(() => tests.AspectMethodInsertAfter(param1, param2, expected), $"[AspectMethodInsertAfter]DebugAspects.AspectMethodInsertAfter(string {expected})");
-        CallSiteTests.RunMethod(() => tests.AspectMethodReplaceStruct(expected), $"[AspectMethodReplace]DebugAspects.AspectMethodReplace(object TestStruct {{{expected}}})");
+        CallSiteTests.RunMethod(() => tests.AspectCtorReplace(param1, param2, expected), $"[AspectCtorReplace]DiagnosticsAspects.AspectCtorReplace(string {param1}, string {param2})");
+        CallSiteTests.RunMethod(() => tests.AspectMethodReplace(param1, param2, expected), $"[AspectMethodReplace]DiagnosticsAspects.AspectMethodReplace(string {param1}, string {param2})");
+        CallSiteTests.RunMethod(() => tests.AspectMethodInsertBefore_0(param1, param2, expected), $"[AspectMethodInsertBefore]DiagnosticsAspects.AspectMethodInsertBefore_0(string {param2})");
+        CallSiteTests.RunMethod(() => tests.AspectMethodInsertBefore_1(param1, param2, expected), $"[AspectMethodInsertBefore]DiagnosticsAspects.AspectMethodInsertBefore_1(string {param1})");
+        CallSiteTests.RunMethod(() => tests.AspectMethodInsertAfter(param1, param2, expected), $"[AspectMethodInsertAfter]DiagnosticsAspects.AspectMethodInsertAfter(string {expected})");
+        CallSiteTests.RunMethod(() => tests.AspectMethodReplaceStruct(expected), $"[AspectMethodReplace]DiagnosticsAspects.AspectMethodReplace(object TestStruct {{{expected}}})");
     }
 
     public class CallSiteTests

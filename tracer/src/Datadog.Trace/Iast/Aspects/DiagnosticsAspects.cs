@@ -1,23 +1,24 @@
-// <copyright file="DebugAspects.cs" company="Datadog">
+// <copyright file="DiagnosticsAspects.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if DEBUG
+#nullable enable
 
 using System;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
 
-/// <summary> String class aspects </summary>
-internal class DebugAspects
+/// <summary> Diagnostics aspects </summary>
+internal class DiagnosticsAspects
 {
-    private interface ITestStruct
+    private interface ITextProviderStruct
     {
         public string GetText();
     }
+
+    public static Action<string>? Hook { get; set; } = null;
 
     /// <summary>
     /// AspectMethodReplace test method
@@ -27,7 +28,7 @@ internal class DebugAspects
     /// <returns>target concatenated to param1</returns>
     public static string AspectMethodReplace(string target, string param1)
     {
-        Console.WriteLine($"[AspectMethodReplace]DebugAspects.AspectMethodReplace(string {target}, string {param1})");
+        Hook?.Invoke($"[AspectMethodReplace]DiagnosticsAspects.AspectMethodReplace(string {target}, string {param1})");
         return string.Concat(target, param1);
     }
 
@@ -38,8 +39,8 @@ internal class DebugAspects
     /// <returns>target concatenated to param1</returns>
     public static string AspectMethodReplace(object target)
     {
-        Console.WriteLine($"[AspectMethodReplace]DebugAspects.AspectMethodReplace(object {target})");
-        var tTarget = target.DuckCast<ITestStruct>();
+        Hook?.Invoke($"[AspectMethodReplace]DiagnosticsAspects.AspectMethodReplace(object {target})");
+        var tTarget = target.DuckCast<ITextProviderStruct>();
         return tTarget.GetText();
     }
 
@@ -50,7 +51,7 @@ internal class DebugAspects
     /// <returns>Returns the target parameter</returns>
     public static string AspectMethodInsertBefore_0(string target)
     {
-        Console.WriteLine($"[AspectMethodInsertBefore]DebugAspects.AspectMethodInsertBefore_0(string {target})");
+        Hook?.Invoke($"[AspectMethodInsertBefore]DiagnosticsAspects.AspectMethodInsertBefore_0(string {target})");
         return target;
     }
 
@@ -61,7 +62,7 @@ internal class DebugAspects
     /// <returns>Returns the target parameter</returns>
     public static string AspectMethodInsertBefore_1(string target)
     {
-        Console.WriteLine($"[AspectMethodInsertBefore]DebugAspects.AspectMethodInsertBefore_1(string {target})");
+        Hook?.Invoke($"[AspectMethodInsertBefore]DiagnosticsAspects.AspectMethodInsertBefore_1(string {target})");
         return target;
     }
 
@@ -72,7 +73,7 @@ internal class DebugAspects
     /// <returns>Returns the target parameter</returns>
     public static string AspectMethodInsertAfter(string target)
     {
-        Console.WriteLine($"[AspectMethodInsertAfter]DebugAspects.AspectMethodInsertAfter(string {target})");
+        Hook?.Invoke($"[AspectMethodInsertAfter]DiagnosticsAspects.AspectMethodInsertAfter(string {target})");
         return target;
     }
 
@@ -84,9 +85,7 @@ internal class DebugAspects
     /// <returns>Returns the new object instance</returns>
     public static object AspectCtorReplace(string param1, string param2)
     {
-        Console.WriteLine($"[AspectCtorReplace]DebugAspects.AspectCtorReplace(string {param1}, string {param2})");
+        Hook?.Invoke($"[AspectCtorReplace]DiagnosticsAspects.AspectCtorReplace(string {param1}, string {param2})");
         return param1 + param2;
     }
 }
-
-#endif

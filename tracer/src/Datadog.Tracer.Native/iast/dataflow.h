@@ -101,7 +101,6 @@ namespace iast
         MethodInfo* JITProcessMethod(ModuleID moduleId, mdToken methodId, bool isRejit = false);
 
         ModuleAspects* GetModuleAspects(ModuleInfo* module);
-        std::vector<DataflowAspectReference*> GetAspects(ModuleInfo* module);
         std::vector<DataflowAspectReference*> GetAspects(MethodInfo* method, std::vector<DataflowAspectClass*>* methodCallSiteAspects = nullptr);
         static InstrumentResult InstrumentInstruction(ILRewriter* rewriter, ILInstr* instruction, std::vector<DataflowAspectReference*>& aspects);
 

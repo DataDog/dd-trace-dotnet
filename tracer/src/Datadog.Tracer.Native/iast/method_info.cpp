@@ -122,7 +122,10 @@ namespace iast
             {
                 _fullName = fullName;
             }
-            return fullName;
+            if(_fullName.size() == 0)
+            {
+                return _name;
+            }
         }
         return _fullName;
     }

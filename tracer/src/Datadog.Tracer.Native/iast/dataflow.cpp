@@ -354,6 +354,10 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength)
         }
         if (BeginsWith(line, WStr("  [Aspect")) && aspectClass != nullptr)
         {
+            if (!aspectClass->IsValid())
+            {
+                continue;
+            }
             auto aspect = new DataflowAspect(aspectClass, line);
             if (!aspect->IsValid())
             {
@@ -765,9 +769,8 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl*
 
         MethodAnalyzers::ProcessMethod(method);
 
-        auto module = method->GetModuleInfo();
-        auto moduleAspectRefs = GetAspects(module);
-        if (moduleAspectRefs.size() > 0)
+        auto aspectRefs = GetAspects(method, methodCallSiteAspects);
+        if (aspectRefs.size() > 0)
         {
             ILRewriter* rewriter;
             hr = method->GetILRewriter(&rewriter);
@@ -780,7 +783,7 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl*
                     if (IsCandidate(pInstr->m_opcode))
                     {
                         // Instrument instruction
-                        auto result = InstrumentInstruction(rewriter, pInstr, moduleAspectRefs);
+                        auto result = InstrumentInstruction(rewriter, pInstr, aspectRefs);
                         pInstr = result.instruction;
                         written |= result.written;
                     }
