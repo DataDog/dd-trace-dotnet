@@ -20,7 +20,7 @@ namespace Datadog.Trace.Configuration
 
         public double? GlobalSamplingRate { get; init; }
 
-        public string? SpanSamplingRules { get; init; }
+        public string? CustomSamplingRules { get; init; }
 
         public bool? LogsInjectionEnabled { get; init; }
 
@@ -47,7 +47,7 @@ namespace Datadog.Trace.Configuration
              && RuntimeMetricsEnabled == other.RuntimeMetricsEnabled
              && DataStreamsMonitoringEnabled == other.DataStreamsMonitoringEnabled
              && Nullable.Equals(GlobalSamplingRate, other.GlobalSamplingRate)
-             && SpanSamplingRules == other.SpanSamplingRules
+             && CustomSamplingRules == other.CustomSamplingRules
              && LogsInjectionEnabled == other.LogsInjectionEnabled
              && AreEqual(HeaderTags, other.HeaderTags)
              && AreEqual(ServiceNameMappings, other.ServiceNameMappings)
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Configuration
                 RuntimeMetricsEnabled,
                 DataStreamsMonitoringEnabled,
                 GlobalSamplingRate,
-                SpanSamplingRules,
+                CustomSamplingRules,
                 LogsInjectionEnabled);
         }
 
