@@ -126,16 +126,20 @@ namespace Datadog.Trace
 
             foreach (var metadata in Processes)
             {
-                if (!string.IsNullOrWhiteSpace(metadata.ProcessPath))
+                if (string.IsNullOrWhiteSpace(metadata.ProcessPath))
+                {
+                    Log.Debug("There is no path configured for {ProcessName}.", metadata.Name);
+                }
+                else if (!File.Exists(metadata.ProcessPath))
+                {
+                    Log.Warning("Request path for {Name} does not exist: {Path}. The process won't be started.", metadata.Name, metadata.ProcessPath);
+                }
+                else
                 {
                     if (!metadata.IsBeingManaged)
                     {
                         metadata.KeepAliveTask = StartProcessWithKeepAlive(metadata);
                     }
-                }
-                else
-                {
-                    Log.Debug("There is no path configured for {ProcessName}.", metadata.Name);
                 }
             }
         }
