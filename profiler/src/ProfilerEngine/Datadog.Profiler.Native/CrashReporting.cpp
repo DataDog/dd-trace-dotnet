@@ -18,7 +18,7 @@ extern "C"
 #include "datadog/profiling.h"
 }
 
-extern "C" IUnknown* STDMETHODCALLTYPE CreateCrashReport(int32_t pid)
+extern "C" IUnknown * STDMETHODCALLTYPE CreateCrashReport(int32_t pid)
 {
 #ifdef _WIN32
     return nullptr;
@@ -30,8 +30,8 @@ extern "C" IUnknown* STDMETHODCALLTYPE CreateCrashReport(int32_t pid)
 }
 
 CrashReporting::CrashReporting(int32_t pid)
-        : _pid(pid)
-{    
+    : _pid(pid)
+{
 }
 
 CrashReporting::~CrashReporting()
@@ -61,21 +61,6 @@ int32_t CrashReporting::Initialize()
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {
         SetLastError(result.err);
-        return 1;
-    }
-
-    if (AddTag("crashreport", "crashreport") != 0)
-    {
-        return 1;
-    }
-
-    if (AddTag("runtime_name", ".NET") != 0)
-    {
-        return 1;
-    }
-
-    if (AddTag("status", "ERROR") != 0)
-    {
         return 1;
     }
 
@@ -223,7 +208,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedMe
 
         if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
         {
-            SetLastError(result.err);          
+            SetLastError(result.err);
             continue;
         }
 
@@ -239,7 +224,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedMe
                 SetLastError(result.err);
                 continue;
             }
-        }        
+        }
     }
 
     if (successfulThreads != threads.size())
@@ -293,7 +278,7 @@ int32_t CrashReporting::Send()
         return 1;
     }
 
-    ddog_prof_CrashtrackerConfiguration config {};
+    ddog_prof_CrashtrackerConfiguration config{};
     config.endpoint = ddog_prof_Endpoint_agent(DDOG_CHARSLICE_C("http://172.30.64.1:8126/"));
     config.path_to_receiver_binary = DDOG_CHARSLICE_C("FIXME - point me to receiver binary path");
     config.timeout_secs = 30;

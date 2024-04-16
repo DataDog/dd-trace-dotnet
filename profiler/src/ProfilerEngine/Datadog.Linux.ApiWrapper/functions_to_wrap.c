@@ -69,6 +69,18 @@ void initLibrary(void) {
 
     if (crashHandler != NULL && crashHandler[0] != '\0')
     {
+        char* passthrough = getenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH");
+
+        if (passthrough != NULL && passthrough[0] != '\0')
+        {
+            // If passthrough is already set, ignore everything else.
+            // This handles the case when, for example, the user calls dotnet run
+            //  - dotnet run sets DOTNET_DbgEnableMiniDump=1
+            //  - dotnet then launches the target app
+            //  - the target app thinks DOTNET_DbgEnableMiniDump has been set by the user and enables passthrough
+            return;
+        }
+
         char* enableMiniDump = getenv("DOTNET_DbgEnableMiniDump");
 
         if (enableMiniDump == NULL)
@@ -82,7 +94,9 @@ void initLibrary(void) {
         }
         else
         {
+            setenv("COMPlus_DbgEnableMiniDump", "1", 1);
             setenv("DOTNET_DbgEnableMiniDump", "1", 1);
+            setenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", "0", 1);
         }
     }
 }

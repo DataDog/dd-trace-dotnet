@@ -104,6 +104,7 @@ internal class CreatedumpCommand : Command
         }
 
         AnsiConsole.WriteLine($"Capturing crash info for process {pid}");
+        AnsiConsole.WriteLine($"Command-line: {Environment.CommandLine}");
 
         var lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Datadog.Profiler.Native.so"));
 
@@ -151,6 +152,16 @@ internal class CreatedumpCommand : Command
                 return;
             }
 
+            if (crashThread == null)
+            {
+                var firstThreadWithException = _runtime.Threads.FirstOrDefault(t => t.CurrentException != null);
+
+                if (firstThreadWithException != null)
+                {
+                    crashThread = (int)firstThreadWithException.OSThreadId;
+                }
+            }
+
             // Check if there's an exception on the crash thread
             if (crashThread != null)
             {
@@ -163,18 +174,12 @@ internal class CreatedumpCommand : Command
                 }
             }
 
-            var runtimeId = Guid.NewGuid().ToString();
-
-            AnsiConsole.WriteLine($"Setting runtime-id to {runtimeId}");
-
-            _ = AddTag(crashReport, "runtime-id", runtimeId);
-
             if (signal.HasValue)
             {
                 _ = SetSignal(crashReport, signal.Value);
             }
 
-            _ = SetMetadata(crashReport);
+            _ = SetMetadata(crashReport, _runtime);
 
             try
             {
@@ -316,15 +321,50 @@ internal class CreatedumpCommand : Command
         }
     }
 
-    private unsafe bool SetMetadata(ICrashReport crashReport)
+    private unsafe bool SetMetadata(ICrashReport crashReport, ClrRuntime runtime)
     {
+        var flavor = runtime.ClrInfo.Flavor switch
+        {
+            ClrFlavor.Core => ".NET Core",
+            ClrFlavor.Desktop => ".NET Framework",
+            ClrFlavor.NativeAOT => "NativeAOT",
+            ClrFlavor f => f.ToString()
+        };
+
+        var version = string.Empty;
+
+        if (runtime.ClrInfo.Version.Major != 0)
+        {
+            version = runtime.ClrInfo.Version.ToString();
+        }
+        else if (runtime.ClrInfo.ModuleInfo.Version.Major != 0)
+        {
+            version = runtime.ClrInfo.ModuleInfo.Version.ToString();
+        }
+        else
+        {
+            // Shared libraries have no version number on Linux :(
+            // Make a best effort to try to figure out the version of .NET from the path
+            var fileName = runtime.ClrInfo.ModuleInfo.FileName;
+
+            if (Path.GetDirectoryName(fileName) is { } folder)
+            {
+                // Check if the parent folder is Microsoft.NETCore.App
+                if (Path.GetDirectoryName(folder) is { } parentFolder)
+                {
+                    if (Path.GetFileName(parentFolder) == "Microsoft.NETCore.App")
+                    {
+                        version = Path.GetFileName(folder);
+                    }
+                }
+            }
+        }
+
         var tags = new (string Key, string Value)[]
         {
-            ("runtime-id", Guid.NewGuid().ToString()),
             ("language", "dotnet"),
-            ("service", "testcrashreport"),
-            ("runtime_version", "4.8"),
-            ("library_version", "2.0.0.0")
+            ("runtime_version", $"{flavor} {version}"),
+            ("library_version", TracerConstants.AssemblyVersion)
         };
 
         var bag = new List<IntPtr>();
@@ -334,10 +374,10 @@ internal class CreatedumpCommand : Command
             var libraryName = Marshal.StringToHGlobalAnsi("dd-dotnet");
             bag.Add(libraryName);
 
-            var libraryVersion = Marshal.StringToHGlobalAnsi("1.0.0"); // TODO: Extract the version
+            var libraryVersion = Marshal.StringToHGlobalAnsi(TracerConstants.AssemblyVersion);
             bag.Add(libraryVersion);
 
-            var family = Marshal.StringToHGlobalAnsi("csharp");
+            var family = Marshal.StringToHGlobalAnsi("dotnet");
             bag.Add(family);
 
             var nativeTags = Marshal.AllocHGlobal(Marshal.SizeOf<ICrashReport.Tag>() * tags.Length);
