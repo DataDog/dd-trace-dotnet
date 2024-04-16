@@ -24,12 +24,14 @@ namespace Datadog.Trace.AppSec.Waf
                 Data = returnStruct.Events.DecodeObjectArray();
             }
 
-            if (Actions is not null)
+            if (Actions is not null && Actions.Count > 0)
             {
-                Actions.TryGetValue("block_request", out var value);
+                Actions.TryGetValue(BlockingAction.BlockRequestType, out var value);
                 BlockInfo = value as Dictionary<string, object?>;
-                Actions.TryGetValue("generate_stack", out value);
+                Actions.TryGetValue(BlockingAction.GenerateStackType, out value);
                 SendStackInfo = value as Dictionary<string, object?>;
+                Actions.TryGetValue(BlockingAction.RedirectRequestType, out value);
+                RedirectInfo = value as Dictionary<string, object?>;
             }
 
             AggregatedTotalRuntime = aggregatedTotalRuntime;
@@ -58,6 +60,8 @@ namespace Datadog.Trace.AppSec.Waf
         public ulong AggregatedTotalRuntimeWithBindings { get; }
 
         public Dictionary<string, object?>? BlockInfo { get; }
+
+        public Dictionary<string, object?>? RedirectInfo { get; }
 
         public Dictionary<string, object?>? SendStackInfo { get; }
 

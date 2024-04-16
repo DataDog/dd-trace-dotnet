@@ -5,19 +5,12 @@
   },
   "actions": [
     {
-      "id": "block_request",
+      "id": "customblock",
       "type": "block_request",
       "parameters": {
         "status_code": 403,
         "grpc_status_code": "10",
         "type": "auto"
-      }
-    },
-    {
-      "id": "generate_stack",
-      "type": "generate_stack",
-      "parameters": {
-        "stack_id": "f96a33a2-f5c1-11ee-99aa-9bdcccee26aa"
       }
     }
   ],
@@ -63,8 +56,8 @@
         }
       ],
       "on_match": [
-        "block_request",
-        "generate_stack"
+        "customblock",
+        "stack_trace"
       ]
     },
     {
@@ -80,13 +73,7 @@
           "parameters": {
             "inputs": [
               {
-                "address": "server.request.query"
-              },
-              {
                 "address": "server.request.body"
-              },
-              {
-                "address": "server.request.path_params"
               }
             ],
             "list": [
@@ -96,11 +83,35 @@
           "operator": "phrase_match"
         }
       ],
-      "transformers": [
-        "lowercase"
+      "on_match": [
+        "block"
+      ]
+    },
+    {
+      "id": "test-dummy-rule2",
+      "name": "Dummy rule to test blocking2",
+      "tags": {
+        "type": "security_scanner",
+        "crs_id": "913121",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "list": [
+              "dummyrule2"
+            ]
+          },
+          "operator": "phrase_match"
+        }
       ],
       "on_match": [
-        "block_request"
+        "customblock"
       ]
     }
   ]

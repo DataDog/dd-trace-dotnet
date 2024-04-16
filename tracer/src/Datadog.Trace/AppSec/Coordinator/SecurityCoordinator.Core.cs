@@ -66,7 +66,7 @@ internal readonly partial struct SecurityCoordinator
         {
             if (result!.BlockInfo is not null)
             {
-                throw new BlockException(result);
+                throw new BlockException(result, result!.BlockInfo);
             }
 
             TryReport(result, result.BlockInfo is not null);
@@ -81,7 +81,7 @@ internal readonly partial struct SecurityCoordinator
 
             if (result!.BlockInfo is not null)
             {
-                throw new BlockException(result, true);
+                throw new BlockException(result, result!.BlockInfo, true);
             }
         }
     }

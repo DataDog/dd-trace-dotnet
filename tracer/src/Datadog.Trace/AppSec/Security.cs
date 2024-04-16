@@ -204,6 +204,7 @@ namespace Datadog.Trace.AppSec
                         // no point in updating the waf with potentially new rules as it's initialized here with new rules
                         _configurationStatus.IncomingUpdateState.WafKeysToApply.Remove(ConfigurationStatus.WafRulesKey);
                         // reapply others
+                        _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
                         _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
                         _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
                         _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
@@ -261,10 +262,54 @@ namespace Datadog.Trace.AppSec
             return applyDetails;
         }
 
-        internal BlockingAction GetBlockingAction(string id, string[]? requestAcceptHeaders)
+        internal BlockingAction GetBlockingAction(string id, string[]? requestAcceptHeaders, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
         {
             var blockingAction = new BlockingAction();
             _configurationStatus.Actions.TryGetValue(id, out var action);
+
+            if (id == BlockingAction.RedirectRequestType && redirectInfo is not null && action?.Parameters is not null)
+            {
+                redirectInfo.TryGetValue("status_code", out var actionStatusCode);
+                redirectInfo.TryGetValue("type", out var actionType);
+                redirectInfo.TryGetValue("location", out var actionLocation);
+
+                if (actionStatusCode is not null)
+                {
+                    if (actionStatusCode is string statusCodeString && int.TryParse(statusCodeString, out var statusCode))
+                    {
+                        action.Parameters.StatusCode = statusCode;
+                    }
+                }
+
+                if (actionType is string type)
+                {
+                    action.Parameters.Type = type;
+                }
+
+                if (actionLocation is string location)
+                {
+                    action.Parameters.Location = location;
+                }
+            }
+
+            if (id == BlockingAction.BlockActionName && blockInfo is not null && action?.Parameters is not null)
+            {
+                blockInfo.TryGetValue("status_code", out var actionStatusCode);
+                blockInfo.TryGetValue("type", out var actionType);
+
+                if (actionStatusCode is not null)
+                {
+                    if (actionStatusCode is string statusCodeString && int.TryParse(statusCodeString, out var statusCode))
+                    {
+                        action.Parameters.StatusCode = statusCode;
+                    }
+                }
+
+                if (actionType is string type)
+                {
+                    action.Parameters.Type = type;
+                }
+            }
 
             void SetAutomaticResponseContent()
             {

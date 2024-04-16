@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -32,8 +33,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         }
 
         [SkippableTheory]
-        [InlineData("block_request", 200)]
-        [InlineData("redirect_request", 302)]
+        [InlineData(BlockingAction.BlockRequestType, 200)]
+        [InlineData(BlockingAction.RedirectRequestType, 302)]
         [Trait("RunOnWindows", "True")]
         public async Task TestBlockingAction(string type, int statusCode)
         {

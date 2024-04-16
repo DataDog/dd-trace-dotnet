@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
@@ -12,20 +13,18 @@ namespace Datadog.Trace.AppSec
 {
     internal class BlockException : CallTargetBubbleUpException
     {
-        public BlockException(IResult result)
-            : this(result, false)
-        {
-        }
-
-        public BlockException(IResult result, bool reported = false)
+        public BlockException(IResult result, Dictionary<string, object?> blockInfo, bool reported = false)
         {
             Result = result;
             Reported = reported;
+            BlockInfo = blockInfo;
         }
 
         public IResult Result { get; }
 
         public bool Reported { get; }
+
+        public Dictionary<string, object?> BlockInfo { get; }
 
         internal static BlockException? GetBlockException(Exception? exception)
         {
