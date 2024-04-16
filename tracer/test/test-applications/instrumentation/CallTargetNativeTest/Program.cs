@@ -79,6 +79,7 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(WithRefArguments).FullName, "VoidRefMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntRefModificationVoidIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(WithRefArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericRefModificationVoidIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(WithRefArguments).FullName, "VoidRefMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericRefModificationVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(WithRefArguments).FullName, "VoidRefMethod2", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericRefModificationVoidIntegration).FullName));
 
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsParentType.WithRefArguments).FullName, "VoidMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntRefModificationVoidIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsParentType.WithRefArguments).FullName, "VoidRefMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntRefModificationVoidIntegration).FullName));
