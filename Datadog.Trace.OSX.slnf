@@ -103,8 +103,8 @@
       "tracer\\test\\test-applications\\integrations\\Samples.Microsoft.Data.Sqlite\\Samples.Microsoft.Data.Sqlite.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MongoDB\\Samples.MongoDB.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Msmq\\Samples.Msmq.csproj",
-      "tracer\\test\\test-applications\\integrations\\Samples.MSTestTests\\Samples.MSTestTests.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MSTestTests2\\Samples.MSTestTests2.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.MSTestTests\\Samples.MSTestTests.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MySqlConnector\\Samples.MySqlConnector.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MySql\\Samples.MySql.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.NetActivitySdk\\Samples.NetActivitySdk.csproj",
@@ -165,7 +165,8 @@
       "tracer\\test\\test-applications\\Samples.Shared\\Samples.Shared.shproj",
       "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCore2\\Samples.Security.AspNetCore2.csproj",
       "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCore5\\Samples.Security.AspNetCore5.csproj",
-      "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCoreBare\\Samples.Security.AspNetCoreBare.csproj"
+      "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCoreBare\\Samples.Security.AspNetCoreBare.csproj",
+      "tracer\\test\\test-applications\\security\\Samples.Security.Blazor\\Samples.Security.Blazor.csproj"
     ]
   }
 }
