@@ -57,13 +57,24 @@ namespace Datadog.Trace.Sampling
             }
         }
 
-        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.TraceSamplingRule;
+        public int SamplingMechanism => _provenance switch
+        {
+            SamplingRuleProvenance.Local => Datadog.Trace.Sampling.SamplingMechanism.TraceSamplingRule,
+            SamplingRuleProvenance.Remote => Datadog.Trace.Sampling.SamplingMechanism.RemoteUserSamplingRule,
+            SamplingRuleProvenance.Automatic => Datadog.Trace.Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule,
+            _ => Datadog.Trace.Sampling.SamplingMechanism.Default
+        };
 
         /// <summary>
         /// Gets the priority of the rule.
-        /// Configuration rules will default to 1 as a priority and rely on order of specification.
         /// </summary>
-        public int Priority => 1;
+        public int Priority => _provenance switch
+        {
+            SamplingRuleProvenance.Local => 1,
+            SamplingRuleProvenance.Remote => 2,
+            SamplingRuleProvenance.Automatic => 3,
+            _ => 0
+        };
 
         public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, string patternFormat, TimeSpan timeout)
         {
