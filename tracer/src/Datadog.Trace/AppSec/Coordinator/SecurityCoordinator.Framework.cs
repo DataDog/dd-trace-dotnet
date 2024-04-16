@@ -318,7 +318,7 @@ internal readonly partial struct SecurityCoordinator
 
     private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
     {
-        var blockingAction = _security.GetBlockingAction(BlockingAction.BlockActionName, [_context.Request.Headers["Accept"]], blockInfo, redirectInfo);
+        var blockingAction = _security.GetBlockingAction(BlockingAction.BlockDefaultActionName, [_context.Request.Headers["Accept"]], blockInfo, redirectInfo);
         var isWebApiRequest = _context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
         if (isWebApiRequest)
         {
@@ -502,9 +502,9 @@ internal readonly partial struct SecurityCoordinator
 
         public HttpTransport(HttpContext context) => _context = context;
 
-        internal override bool IsBlocked => _context.Items["block"] is true;
+        internal override bool IsBlocked => _context.Items[BlockingAction.BlockDefaultActionName] is true;
 
-        internal override void MarkBlocked() => _context.Items["block"] = true;
+        internal override void MarkBlocked() => _context.Items[BlockingAction.BlockDefaultActionName] = true;
 
         internal override IContext? GetAdditiveContext() => _context.Items[WafKey] as IContext;
 

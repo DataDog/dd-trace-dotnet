@@ -54,7 +54,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 { "status_code", statusCode.ToString() },
             };
 
-            var action = target.GetBlockingAction(BlockingAction.BlockActionName, new[] { "application/json" }, blockInfo, null);
+            var action = target.GetBlockingAction("block", new[] { "application/json" }, blockInfo, null);
             action.StatusCode.Should().Be(expectedStatusCode);
             action.ResponseContent.Should().Be(expectedContent);
             action.ContentType.Should().Be(expectedContentType);

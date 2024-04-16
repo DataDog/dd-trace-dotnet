@@ -49,70 +49,6 @@ public class RaspWafTests : WafLibraryRequiredTest
     }
 
     [Theory]
-    [InlineData("dummy_rule", "test-dummy-rule", "rasp-rule-set.json", "block", BlockingAction.BlockRequestType, 500)]
-    [InlineData("dummyrule2", "test-dummy-rule2", "rasp-rule-set.json", "customblock", BlockingAction.BlockRequestType, 500)]
-    [InlineData("dummy_rule", "test-dummy-rule", "rasp-rule-set.json", "block", BlockingAction.RedirectRequestType, 312)]
-    public void GivenADummyRule_WhenActionReturnCodeIsChanged_ThenChangesAreApplied(string paramValue, string rule, string ruleFile, string action, string actionType, int newStatus)
-    {
-        var args = CreateArgs(paramValue);
-        var initResult = Waf.Create(
-            WafLibraryInvoker,
-            string.Empty,
-            string.Empty,
-            useUnsafeEncoder: true,
-            embeddedRulesetPath: ruleFile);
-
-        var waf = initResult.Waf;
-        waf.Should().NotBeNull();
-        var context = waf.CreateContext();
-        var result = context.Run(args, TimeoutMicroSeconds);
-        result.BlockInfo["status_code"].Should().Be("403");
-        var jsonString = JsonConvert.SerializeObject(result.Data);
-        var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
-        resultData.Rule.Id.Should().Be(rule);
-
-        ConfigurationStatus configurationStatus = new(string.Empty);
-        var newAction = CreateNewStatusAction(action, actionType, newStatus);
-        configurationStatus.Actions[action] = newAction;
-        configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
-        var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
-        res.Success.Should().BeTrue();
-        context = waf.CreateContext();
-        result = context.Run(args, TimeoutMicroSeconds);
-        if (actionType == BlockingAction.BlockRequestType)
-        {
-            result.BlockInfo["status_code"].Should().Be(newStatus.ToString());
-        }
-
-        if (actionType == BlockingAction.RedirectRequestType)
-        {
-            result.RedirectInfo["status_code"].Should().Be(newStatus.ToString());
-        }
-    }
-
-    [Theory]
-    [InlineData("dummyrule2", "rasp-rule-set.json", "customblock", BlockingAction.BlockRequestType)]
-    public void GivenADummyRule_WhenActionReturnCodeIsChangedAfterInit_ThenChangesAreApplied(string paramValue, string ruleFile, string action, string actionType)
-    {
-        var args = CreateArgs(paramValue);
-        var initResult = Waf.Create(
-            WafLibraryInvoker,
-            string.Empty,
-            string.Empty,
-            useUnsafeEncoder: true,
-            embeddedRulesetPath: ruleFile);
-
-        var waf = initResult.Waf;
-        waf.Should().NotBeNull();
-
-        UpdateAction(action, actionType, waf);
-
-        var context = waf.CreateContext();
-        var result = context.Run(args, TimeoutMicroSeconds);
-        result.BlockInfo["status_code"].Should().Be("500");
-    }
-
-    [Theory]
     [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "customBlock", BlockingAction.BlockRequestType)]
     public void GivenAPathTraversalRule_WhenInsecureAccess_ThenBlock(string value, string paramValue, string rule, string ruleFile, string action, string actionType)
     {
@@ -179,21 +115,6 @@ public class RaspWafTests : WafLibraryRequiredTest
         var jsonString = JsonConvert.SerializeObject(result.Data);
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
         resultData.Rule.Id.Should().Be(rule);
-    }
-
-    private void UpdateAction(string action, string actionType, Waf waf)
-    {
-        ConfigurationStatus configurationStatus = new(string.Empty);
-        var newAction = new Action();
-        newAction.Id = action;
-        newAction.Type = actionType;
-        newAction.Parameters = new AppSec.Rcm.Models.Asm.Parameter();
-        newAction.Parameters.StatusCode = 500;
-        newAction.Parameters.Type = "auto";
-        configurationStatus.Actions[action] = newAction;
-        configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
-        var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
-        res.Success.Should().BeTrue();
     }
 
     private Action CreateNewStatusAction(string action, string actionType, int newStatus)

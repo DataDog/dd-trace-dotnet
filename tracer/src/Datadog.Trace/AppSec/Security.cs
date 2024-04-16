@@ -22,6 +22,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
+using Parameter = Datadog.Trace.AppSec.Rcm.Models.Asm.Parameter;
 
 namespace Datadog.Trace.AppSec
 {
@@ -267,11 +268,26 @@ namespace Datadog.Trace.AppSec
             var blockingAction = new BlockingAction();
             _configurationStatus.Actions.TryGetValue(id, out var action);
 
-            if (id == BlockingAction.RedirectRequestType && redirectInfo is not null && action?.Parameters is not null)
+            if (id == BlockingAction.BlockDefaultActionName && redirectInfo is not null)
             {
                 redirectInfo.TryGetValue("status_code", out var actionStatusCode);
                 redirectInfo.TryGetValue("type", out var actionType);
                 redirectInfo.TryGetValue("location", out var actionLocation);
+
+                // If we don't have the default action in the list of actions, we add it.
+                if (action is null)
+                {
+                    action = new Action
+                    {
+                        Id = id,
+                        Type = BlockingAction.RedirectRequestType,
+                    };
+                }
+
+                if (action.Parameters is null)
+                {
+                    action.Parameters = new();
+                }
 
                 if (actionStatusCode is not null)
                 {
@@ -290,12 +306,29 @@ namespace Datadog.Trace.AppSec
                 {
                     action.Parameters.Location = location;
                 }
+
+                _configurationStatus.Actions[id] = action;
             }
 
-            if (id == BlockingAction.BlockActionName && blockInfo is not null && action?.Parameters is not null)
+            if (id == BlockingAction.BlockDefaultActionName && blockInfo is not null)
             {
                 blockInfo.TryGetValue("status_code", out var actionStatusCode);
                 blockInfo.TryGetValue("type", out var actionType);
+
+                // If we don't have the default action in the list of actions, we add it.
+                if (action is null)
+                {
+                    action = new Action
+                    {
+                        Id = id,
+                        Type = BlockingAction.BlockRequestType,
+                    };
+                }
+
+                if (action.Parameters is null)
+                {
+                    action.Parameters = new();
+                }
 
                 if (actionStatusCode is not null)
                 {

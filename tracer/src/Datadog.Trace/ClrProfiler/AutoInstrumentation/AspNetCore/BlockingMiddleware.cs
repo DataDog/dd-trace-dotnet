@@ -94,7 +94,7 @@ internal class BlockingMiddleware
                 {
                     if (result.BlockInfo is not null || result.RedirectInfo is not null)
                     {
-                        var action = security.GetBlockingAction(BlockingAction.BlockActionName, context.Request.Headers.GetCommaSeparatedValues("Accept"), result.BlockInfo, result.RedirectInfo);
+                        var action = security.GetBlockingAction(BlockingAction.BlockDefaultActionName, context.Request.Headers.GetCommaSeparatedValues("Accept"), result.BlockInfo, result.RedirectInfo);
                         await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                         securityCoordinator.MarkBlocked();
                     }
@@ -119,7 +119,7 @@ internal class BlockingMiddleware
             catch (Exception e) when (GetBlockException(e) is { } blockException)
             {
                 // Use blockinfo here
-                var action = security.GetBlockingAction(BlockingAction.BlockActionName, context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.BlockInfo, null);
+                var action = security.GetBlockingAction(BlockingAction.BlockDefaultActionName, context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.BlockInfo, null);
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                 if (security.Enabled)
                 {

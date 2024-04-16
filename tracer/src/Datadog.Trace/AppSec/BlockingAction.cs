@@ -9,7 +9,7 @@ namespace Datadog.Trace.AppSec;
 
 internal record BlockingAction
 {
-    public const string BlockActionName = "block";
+    public const string BlockDefaultActionName = "block";
 
     public const string BlockRequestType = "block_request";
 
