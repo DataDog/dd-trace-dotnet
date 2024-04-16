@@ -261,7 +261,6 @@ internal class WithRefArguments
 
     public void VoidRefMethod2(ref ReadOnlyRefStruct arg1)
     {
-        arg1 = new ReadOnlyRefStruct("Hello world");
     }
 }
 
