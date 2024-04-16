@@ -6,6 +6,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 #pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 
@@ -53,6 +54,7 @@ public readonly struct CallTargetRefStruct
     /// <param name="refStructPointer">Stack pointer of the ref struct instance</param>
     /// <param name="refStructTypeHandle">Runtime type handle of the ref struct</param>
     /// <returns>A new instance of the CallTargetRefStruct container</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe CallTargetRefStruct Create(void* refStructPointer, RuntimeTypeHandle refStructTypeHandle)
         => new((nint)refStructPointer, refStructTypeHandle);
 
@@ -62,6 +64,7 @@ public readonly struct CallTargetRefStruct
     /// <param name="success">True if the ref struct is a ReadOnlySpan</param>
     /// <typeparam name="T">Type of the read-only span</typeparam>
     /// <returns>Reference to the same ReadOnlySpan instance of the caller</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #if NETCOREAPP
     public unsafe ref ReadOnlySpan<T> GetReadOnlySpan<T>(out bool success)
 #else
@@ -85,6 +88,7 @@ public readonly struct CallTargetRefStruct
     /// <param name="success">True if the ref struct is a Span</param>
     /// <typeparam name="T">Type of the span</typeparam>
     /// <returns>Reference to the same Span instance of the caller</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #if NETCOREAPP
     public unsafe ref Span<T> GetSpan<T>(out bool success)
 #else
