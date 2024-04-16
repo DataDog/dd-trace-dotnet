@@ -1,8 +1,9 @@
-// <copyright file="BatchExecuteNonQueryIntegration.cs" company="Datadog">
+// <copyright file="BatchExecuteIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.ComponentModel;
 using System.Data.Common;
@@ -12,12 +13,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 
 /// <summary>
 /// CallTarget instrumentation for:
-/// int [Command].ExecuteNonQuery()
+/// * [DbBatch].Execute*(*)
 /// </summary>
 [Browsable(browsable: false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class BatchExecuteNonQueryIntegration
+public class BatchExecuteIntegration
 {
+#if NET6_0_OR_GREATER
     /// <summary>
     /// OnMethodBegin callback
     /// </summary>
@@ -26,7 +28,7 @@ public class BatchExecuteNonQueryIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {
-        return new CallTargetState(DbScopeFactory.Cache<TTarget>.CreateDbBatchScope(Tracer.Instance, (DbBatch)(object)instance));
+        return new CallTargetState(DbScopeFactory.Cache<TTarget>.CreateDbBatchScope(Tracer.Instance, (DbBatch)(object)instance!));
     }
 
     /// <summary>
@@ -44,4 +46,5 @@ public class BatchExecuteNonQueryIntegration
         state.Scope.DisposeWithException(exception);
         return new CallTargetReturn<TReturn>(returnValue);
     }
+#endif
 }

@@ -132,6 +132,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             return scope;
         }
 
+#endif
+
         private static bool ShouldCreateScope(Tracer tracer, IntegrationId integrationId, string dbType, string commandText)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
@@ -364,6 +366,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return null;
             }
 
+#if NET6_0_OR_GREATER
             public static Scope CreateDbBatchScope(Tracer tracer, DbBatch batch)
             {
                 var commandType = batch.GetType();
@@ -401,6 +404,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 return null;
             }
+#endif
 
             private static string GetServiceName(Tracer tracer, string dbTypeName)
             {
@@ -456,16 +460,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return GetTagsFromConnectionString(connectionString);
             }
 
+#if NET6_0_OR_GREATER
             private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(DbBatch command)
             {
                 string connectionString = null;
                 try
                 {
-                    if (command.GetType().FullName == "System.Data.Common.DbDataSource.DbCommandWrapper") // TODO change
-                    {
-                        return default;
-                    }
-
                     connectionString = command.Connection?.ConnectionString;
                 }
                 catch (NotSupportedException nsException)
@@ -479,6 +479,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 return GetTagsFromConnectionString(connectionString);
             }
+#endif
 
             private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(string connectionString)
             {
