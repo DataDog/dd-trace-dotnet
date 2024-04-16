@@ -89,7 +89,7 @@ namespace Datadog.Trace.Configuration
         {
             if (dictionary1 == null || dictionary2 == null)
             {
-                return dictionary1 == dictionary2;
+                return ReferenceEquals(dictionary1, dictionary2);
             }
 
             if (dictionary1.Count != dictionary2.Count)
