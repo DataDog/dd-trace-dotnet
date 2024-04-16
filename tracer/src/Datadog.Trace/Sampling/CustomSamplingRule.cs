@@ -19,6 +19,7 @@ namespace Datadog.Trace.Sampling
 
         private readonly float _samplingRate;
         private readonly bool _alwaysMatch;
+        private readonly string _provenance;
 
         // TODO consider moving toward these https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/SimpleRegex.cs
         private readonly Regex? _serviceNameRegex;
@@ -30,6 +31,7 @@ namespace Datadog.Trace.Sampling
 
         public CustomSamplingRule(
             float rate,
+            string provenance,
             string patternFormat,
             string? serviceNamePattern,
             string? operationNamePattern,
@@ -38,6 +40,7 @@ namespace Datadog.Trace.Sampling
             TimeSpan timeout)
         {
             _samplingRate = rate;
+            _provenance = provenance;
 
             _serviceNameRegex = RegexBuilder.Build(serviceNamePattern, patternFormat, timeout);
             _operationNameRegex = RegexBuilder.Build(operationNamePattern, patternFormat, timeout);
@@ -76,6 +79,7 @@ namespace Datadog.Trace.Sampling
                         samplingRules.Add(
                             new CustomSamplingRule(
                                 rate: r.SampleRate,
+                                provenance: r.Provenance,
                                 patternFormat: patternFormat,
                                 serviceNamePattern: r.Service,
                                 operationNamePattern: r.OperationName,
@@ -139,6 +143,10 @@ namespace Datadog.Trace.Sampling
         // ReSharper disable once ClassNeverInstantiated.Local
         private class CustomRuleConfig
         {
+            [JsonRequired]
+            [JsonProperty(PropertyName = "provenance")]
+            public string Provenance { get; set; } = SamplingRuleProvenance.Local;
+
             [JsonRequired]
             [JsonProperty(PropertyName = "sample_rate")]
             public float SampleRate { get; set; }
