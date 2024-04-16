@@ -60,9 +60,6 @@ namespace Samples.AspNetCoreSimpleController
             }
 #endif
 
-            Console.WriteLine(" * DD_INTERNAL_TELEMETRY_V2_ENABLED: '{0}'",
-                              Environment.GetEnvironmentVariable("DD_INTERNAL_TELEMETRY_V2_ENABLED"));
-
             Console.WriteLine(" * DD_TELEMETRY_METRICS_ENABLED: '{0}'",
                               Environment.GetEnvironmentVariable("DD_TELEMETRY_METRICS_ENABLED"));
 
