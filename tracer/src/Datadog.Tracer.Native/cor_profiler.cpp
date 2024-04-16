@@ -53,7 +53,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
 
     // we used to bail-out if tracing was disabled, but we now allow the tracer to be loaded
-    // in all cases, so that we can enabled other products
+    // in all cases, so that we can enable other products
 
     const auto process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
