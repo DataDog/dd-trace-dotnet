@@ -580,7 +580,9 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
+                           // since Trace ID and Span ID for the headers match this will be extracted
+                           // only when extract first and Datadog,tracecontext is defined will this not be extracted
+                           LastParentId = (extractFirst && !w3CHeaderFirst) ? null : "0123456789abcdef",
                        });
         }
 
@@ -633,7 +635,9 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
+                           // since Trace ID and Span ID for the headers match this will be extracted
+                           // only when extract first and Datadog,tracecontext is defined will this not be extracted
+                           LastParentId = (extractFirst && !w3CHeaderFirst) ? null : "0123456789abcdef",
                        });
         }
 
@@ -686,7 +690,9 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           LastParentId = w3CHeaderFirst ? ZeroLastParentId : null,
+                           // for extract first and Datadog,tracecontext we won't set the last parent to zero
+                           // in all other cases it will be set to zero
+                           LastParentId = (extractFirst && !w3CHeaderFirst) ? null : ZeroLastParentId,
                        });
         }
 
@@ -739,6 +745,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
+                           // since the ParentIds differ between the headers we don't set the LastParentId when we have Datadog,tracecontext
                            LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
                        });
         }
