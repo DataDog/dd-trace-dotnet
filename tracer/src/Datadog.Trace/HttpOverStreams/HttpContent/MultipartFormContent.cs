@@ -49,14 +49,33 @@ internal class MultipartFormContent : IHttpContent
         // We're doing chunked encoding, so we need to wrap the destination stream
         // to ensure we add the required chunked encoding headers
         using var chunkedStream = new ChunkedEncodingWriteStream(destination);
-
-        Stream wrappedStream = _multipartCompression switch
+        GZipStream? compressionStream = _multipartCompression switch
         {
-            MultipartCompression.None => chunkedStream,
+            MultipartCompression.None => null,
             MultipartCompression.GZip => new GZipStream(chunkedStream, CompressionMode.Compress, leaveOpen: true),
             _ => throw new InvalidOperationException($"Unknown compression type: {_multipartCompression}"),
         };
 
+        var innerStream = compressionStream ?? (Stream)chunkedStream;
+        await WriteMultiPartForm(innerStream).ConfigureAwait(false);
+
+        // in .NET Framework, calling Flush() doesn't flush the underlying stream
+        // the only way to force it to flush is to dispose
+        compressionStream?.Dispose();
+
+        await chunkedStream.FinishAsync().ConfigureAwait(false); // write the terminator block
+        await chunkedStream.FlushAsync().ConfigureAwait(false); // flush the final chunk
+    }
+
+    public Task CopyToAsync(byte[] buffer)
+    {
+        // This CopyToAsync overload is only used to read responses
+        // And we never use PushStreamContent for that
+        throw new NotImplementedException();
+    }
+
+    private async Task WriteMultiPartForm(Stream wrappedStream)
+    {
         // Need to create a body that looks something like this:
         // (Plus potential GZip compression + then chunked encoding)
 
@@ -75,92 +94,72 @@ internal class MultipartFormContent : IHttpContent
         // <binary data>
         //
         // --83CAD6AA-8A24-462C-8B3D-FF9CC683B51B--
+        using var sw = new StreamWriter(wrappedStream, encoding: EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
 
-        // We need to control when this is disposed (must be disposed _before_ the gzip stream)
-        using (var sw = new StreamWriter(wrappedStream, encoding: EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true))
+        var haveValidItem = false;
+        foreach (var item in _items)
         {
-            var haveValidItem = false;
-            foreach (var item in _items)
+            if (!item.IsValid(Log))
             {
-                if (!item.IsValid(Log))
-                {
-                    continue;
-                }
-
-                haveValidItem = true;
-                await sw.WriteAsync(Header).ConfigureAwait(false);
-
-                if (item.FileName is not null)
-                {
-                    // Content-Type: text/plain"
-                    // Content-Disposition: form-data; name="flare_file"; filename="debug_logs.zip"
-                    await sw.WriteAsync("Content-Type: ").ConfigureAwait(false);
-                    await sw.WriteAsync(item.ContentType).ConfigureAwait(false);
-                    await sw.WriteAsync($"{CrLf}Content-Disposition: form-data; name=\"").ConfigureAwait(false);
-                    await sw.WriteAsync(item.Name).ConfigureAwait(false);
-                    await sw.WriteAsync("\"; filename=\"").ConfigureAwait(false);
-                    await sw.WriteAsync(item.FileName).ConfigureAwait(false);
-                    await sw.WriteAsync($"\"{CrLf}").ConfigureAwait(false);
-                }
-                else
-                {
-                    // Content-Type: text/plain"
-                    // Content-Disposition: form-data; name="flare_file"
-                    await sw.WriteAsync("Content-Type: ").ConfigureAwait(false);
-                    await sw.WriteAsync(item.ContentType).ConfigureAwait(false);
-                    await sw.WriteAsync($"{CrLf}Content-Disposition: form-data; name=\"").ConfigureAwait(false);
-                    await sw.WriteAsync(item.Name).ConfigureAwait(false);
-                    await sw.WriteAsync($"\"{CrLf}").ConfigureAwait(false);
-                }
-
-                await sw.WriteAsync(CrLf).ConfigureAwait(false);
-                // Flush the part header to the underlying stream
-                await sw.FlushAsync().ConfigureAwait(false);
-
-                // Write the item content
-                if (item.IsStream)
-                {
-                    await item.ContentInStream!.CopyToAsync(wrappedStream).ConfigureAwait(false);
-                }
-                else
-                {
-                    var arraySegment = item.ContentInBytes!.Value;
-                    await wrappedStream.WriteAsync(arraySegment.Array!, arraySegment.Offset, arraySegment.Count).ConfigureAwait(false);
-                }
-
-                await wrappedStream.FlushAsync().ConfigureAwait(false);
-                // After the content, one more CRLF
-                await sw.WriteAsync(CrLf).ConfigureAwait(false);
+                continue;
             }
 
-            if (!haveValidItem)
+            haveValidItem = true;
+            await sw.WriteAsync(Header).ConfigureAwait(false);
+
+            if (item.FileName is not null)
             {
-                // Add a boundary to make sure we have a valid multipart body, even though it won't have anything
-                await sw.WriteAsync($"{Header}{CrLf}").ConfigureAwait(false);
+                // Content-Type: text/plain"
+                // Content-Disposition: form-data; name="flare_file"; filename="debug_logs.zip"
+                await sw.WriteAsync("Content-Type: ").ConfigureAwait(false);
+                await sw.WriteAsync(item.ContentType).ConfigureAwait(false);
+                await sw.WriteAsync($"{CrLf}Content-Disposition: form-data; name=\"").ConfigureAwait(false);
+                await sw.WriteAsync(item.Name).ConfigureAwait(false);
+                await sw.WriteAsync("\"; filename=\"").ConfigureAwait(false);
+                await sw.WriteAsync(item.FileName).ConfigureAwait(false);
+                await sw.WriteAsync($"\"{CrLf}").ConfigureAwait(false);
+            }
+            else
+            {
+                // Content-Type: text/plain"
+                // Content-Disposition: form-data; name="flare_file"
+                await sw.WriteAsync("Content-Type: ").ConfigureAwait(false);
+                await sw.WriteAsync(item.ContentType).ConfigureAwait(false);
+                await sw.WriteAsync($"{CrLf}Content-Disposition: form-data; name=\"").ConfigureAwait(false);
+                await sw.WriteAsync(item.Name).ConfigureAwait(false);
+                await sw.WriteAsync($"\"{CrLf}").ConfigureAwait(false);
             }
 
-            // all done
-            await sw.WriteAsync(Footer).ConfigureAwait(false);
-            // explicitly flush to avoid any potential sync-over-async from the disposal
+            await sw.WriteAsync(CrLf).ConfigureAwait(false);
+            // Flush the part header to the underlying stream
             await sw.FlushAsync().ConfigureAwait(false);
+
+            // Write the item content
+            if (item.IsStream)
+            {
+                await item.ContentInStream!.CopyToAsync(wrappedStream).ConfigureAwait(false);
+            }
+            else
+            {
+                var arraySegment = item.ContentInBytes!.Value;
+                await wrappedStream.WriteAsync(arraySegment.Array!, arraySegment.Offset, arraySegment.Count).ConfigureAwait(false);
+            }
+
+            await wrappedStream.FlushAsync().ConfigureAwait(false);
+            // After the content, one more CRLF
+            await sw.WriteAsync(CrLf).ConfigureAwait(false);
         }
 
-        await wrappedStream.FlushAsync().ConfigureAwait(false); // flush the gzip stream
-        if (wrappedStream is GZipStream gZipStream)
+        if (!haveValidItem)
         {
-            // in .NET Framework, calling Flush() doesn't flush the underlying stream
-            // the only way to force it to flush is to dispose
-            gZipStream.Dispose();
+            // Add a boundary to make sure we have a valid multipart body, even though it won't have anything
+            await sw.WriteAsync($"{Header}{CrLf}").ConfigureAwait(false);
         }
 
-        await chunkedStream.FinishAsync().ConfigureAwait(false);
-        await chunkedStream.FlushAsync().ConfigureAwait(false); // flush the final chunk
-    }
-
-    public Task CopyToAsync(byte[] buffer)
-    {
-        // This CopyToAsync overload is only used to read responses
-        // And we never use PushStreamContent for that
-        throw new NotImplementedException();
+        // all done
+        await sw.WriteAsync(Footer).ConfigureAwait(false);
+        // explicitly flush to avoid any potential sync-over-async from the disposal
+        await sw.FlushAsync().ConfigureAwait(false);
+        await wrappedStream.FlushAsync().ConfigureAwait(false); // flush the underlying stream
     }
 }
