@@ -169,9 +169,9 @@ namespace Datadog.Trace.Propagators
                         {
                             localSpanContext.AdditionalW3CTraceState += spanContext.AdditionalW3CTraceState;
 
-                            if (!string.IsNullOrEmpty(spanContext.LastParentId))
+                            if (localSpanContext.RawSpanId == spanContext.RawSpanId && !string.IsNullOrEmpty(spanContext.LastParentId))
                             {
-                                // if we match trace IDs set the last parent
+                                // if we match trace IDs and span IDs set the last parent
                                 localSpanContext.LastParentId = spanContext.LastParentId;
                             }
                         }
