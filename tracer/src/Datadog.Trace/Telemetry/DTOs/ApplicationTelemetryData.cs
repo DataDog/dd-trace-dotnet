@@ -19,6 +19,8 @@ internal class ApplicationTelemetryData
         LanguageVersion = languageVersion;
         RuntimeName = runtimeName;
         RuntimeVersion = runtimeVersion;
+        CommitSha = commitSha;
+        RepositoryUrl = repositoryUrl;
     }
 
     public string ServiceName { get; set; }
@@ -41,5 +43,5 @@ internal class ApplicationTelemetryData
 
     public string? CommitSha { get; set; }
 
-    public string? SepositoryUrl { get; set; }
+    public string? RepositoryUrl { get; set; }
 }

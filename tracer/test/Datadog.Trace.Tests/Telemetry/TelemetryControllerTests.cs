@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryControllerTests.cs" company="Datadog">
+// <copyright file="TelemetryControllerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -29,6 +30,7 @@ public class TelemetryControllerTests
     private readonly TimeSpan _flushInterval = TimeSpan.FromMilliseconds(100);
     // private readonly TimeSpan _heartbeatInterval = TimeSpan.FromMilliseconds(10_000); // We don't need them for most tests
     private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(60_000); // definitely should receive telemetry by now
+    private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider = new TestGitMetadataTagsProvider();
 
     [Fact]
     public async Task TelemetryControllerShouldSendTelemetry()
@@ -42,7 +44,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _gitMetadataTagsProvider);
 
         controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
         controller.Start();
@@ -64,7 +67,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _gitMetadataTagsProvider);
 
         var settings = new ImmutableTracerSettings(new TracerSettings());
         controller.RecordTracerSettings(settings, "DefaultServiceName");
@@ -95,7 +99,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _gitMetadataTagsProvider);
 
         await controller.DisposeAsync();
         await controller.DisposeAsync();
@@ -113,7 +118,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _gitMetadataTagsProvider);
 
         controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
         controller.Start();
@@ -158,7 +164,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _gitMetadataTagsProvider);
 
         controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
         controller.Start();
@@ -197,7 +204,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _gitMetadataTagsProvider);
 
         // before the controller is started, nothing should be written when we try to dump telemetry
         var tempFile = Path.GetTempFileName();
@@ -408,5 +416,23 @@ public class TelemetryControllerTests
         }
 
         public string GetTransportInfo() => nameof(SlowTelemetryTransport);
+    }
+
+    internal class TestGitMetadataTagsProvider : IGitMetadataTagsProvider
+    {
+        private string _shaCommit;
+        private string _repo;
+
+        public TestGitMetadataTagsProvider(string shaCommit = "mySha", string repo = "https://github.com/gitOrg/gitRepo")
+        {
+            _shaCommit = shaCommit;
+            _repo = repo;
+        }
+
+        public bool TryExtractGitMetadata(out GitMetadata gitMetadata)
+        {
+            gitMetadata = new GitMetadata(_shaCommit, _repo);
+            return true;
+        }
     }
 }
