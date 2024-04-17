@@ -39,7 +39,9 @@ partial class Program
             {
                 throw new Exception("Error modifying string value.");
             }
-
+        });
+        RunMethod(() =>
+        {
             var strVal2 = new ReadOnlyRefStruct("MyString");
             wRefArg.VoidRefMethod2(ref strVal2);
 
@@ -47,6 +49,10 @@ partial class Program
             {
                 throw new Exception("Error modifying string value.");
             }
+        });
+        RunMethod(() =>
+        {
+            wRefArg.VoidRefMethod3("BadParam1", "BadParam2");
         });
         RunMethod(() =>
         {
@@ -261,6 +267,19 @@ internal class WithRefArguments
 
     public void VoidRefMethod2(ref ReadOnlyRefStruct arg1)
     {
+    }
+    
+    public void VoidRefMethod3(ReadOnlySpan<char> firstName, ReadOnlySpan<char> lastName)
+    {
+        if (firstName != "Hello")
+        {
+            throw new Exception("Error modifying firstName value.");
+        }
+        
+        if (lastName != "World")
+        {
+            throw new Exception("Error modifying lastName value.");
+        }
     }
 }
 
