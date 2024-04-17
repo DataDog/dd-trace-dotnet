@@ -273,9 +273,10 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                         reWriterWrapper.LoadArgumentRef(i + (isStatic ? 0 : 1));
                     }
 
-                    const auto& argumentToken = methodArguments[i].GetTypeTok(metaEmit, tracerTokens->GetCorLibAssemblyRef());
                     bool isByRefLike = false;
-                    if (SUCCEEDED(IsTypeTokenByRefLike(m_corProfiler->info_, module_metadata, argumentToken, isByRefLike) == S_OK) && isByRefLike) {
+                    if (SUCCEEDED(IsTypeByRefLike(m_corProfiler->info_, module_metadata, methodArguments[i], tracerTokens->GetCorLibAssemblyRef(), isByRefLike) == S_OK) && isByRefLike)
+                    {
+                        const auto& argumentToken = methodArguments[i].GetTypeTok(metaEmit, tracerTokens->GetCorLibAssemblyRef());
                         tracerTokens->WriteRefStructCall(&reWriterWrapper, argumentToken, refStructIndexes[structRefCount++]);
                     }
                 }

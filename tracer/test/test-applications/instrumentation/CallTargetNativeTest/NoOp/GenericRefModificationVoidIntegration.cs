@@ -37,7 +37,6 @@ namespace CallTargetNativeTest.NoOp
             {
                 success = true;
                 return ref (*(ReadOnlyRefStruct*)callTargetRefStruct.Value);
-
             }
 
             success = false;

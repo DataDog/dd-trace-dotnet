@@ -242,10 +242,8 @@ int TracerTokens::GetAdditionalLocalsCount(const std::vector<TypeSignature>& met
         const auto module_metadata = GetMetadata();
         for (int i = 0; i < methodTypeArguments.size(); i++)
         {
-            const auto& argumentToken =
-                methodTypeArguments[i].GetTypeTok(module_metadata->metadata_emit, GetCorLibAssemblyRef());
             bool isByRefLike = false;
-            if (SUCCEEDED(IsTypeTokenByRefLike(_profiler_info, *module_metadata, argumentToken, isByRefLike) == S_OK) &&
+            if (SUCCEEDED(IsTypeByRefLike(_profiler_info, *module_metadata, methodTypeArguments[i], GetCorLibAssemblyRef(), isByRefLike) == S_OK) &&
                 isByRefLike)
             {
                 refStructCount++;
@@ -287,10 +285,8 @@ void TracerTokens::AddAdditionalLocals(TypeSignature* methodReturnValue, std::ve
         const auto module_metadata = GetMetadata();
         for (int i = 0; i < methodTypeArguments->size(); i++)
         {
-            const auto& argumentToken =
-                (*methodTypeArguments)[i].GetTypeTok(module_metadata->metadata_emit, GetCorLibAssemblyRef());
             bool isByRefLike = false;
-            if (SUCCEEDED(IsTypeTokenByRefLike(_profiler_info, *module_metadata, argumentToken, isByRefLike) == S_OK) &&
+            if (SUCCEEDED(IsTypeByRefLike(_profiler_info, *module_metadata, (*methodTypeArguments)[i], GetCorLibAssemblyRef(), isByRefLike) == S_OK) &&
                 isByRefLike)
             {
                 signatureBuffer[signatureOffset++] = ELEMENT_TYPE_VALUETYPE;
@@ -425,40 +421,36 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
     {
         const auto [elementType, argTypeFlags] = methodArguments[i].GetElementTypeAndFlags();
 
-        const auto argumentToken = methodArguments[i].GetTypeTok(module_metadata->metadata_emit, GetCorLibAssemblyRef());
         bool isByRefLike = false;
-        IsTypeTokenByRefLike(_profiler_info, *module_metadata, argumentToken, isByRefLike);
-        if (enable_by_ref_instrumentation && (argTypeFlags & TypeFlagByRef))
+        IsTypeByRefLike(_profiler_info, *module_metadata, methodArguments[i], GetCorLibAssemblyRef(), isByRefLike);
+        if (enable_by_ref_instrumentation && isByRefLike)
         {
-            if (isByRefLike)
+            unsigned calltargetRefStructTypeBuffer;
+            ULONG calltargetRefStructTypeSize = CorSigCompressToken(callTargetRefStructTypeRef, &calltargetRefStructTypeBuffer);
+
+            auto argSignature = new COR_SIGNATURE[calltargetRefStructTypeSize + 1];
+            argSignature[0] = ELEMENT_TYPE_VALUETYPE;
+            memcpy(&argSignature[1], &calltargetRefStructTypeBuffer, calltargetRefStructTypeSize);
+
+            argumentsSignatureBuffer[i] = argSignature;
+            argumentsSignatureSize[i] = calltargetRefStructTypeSize + 1;
+            signatureLength += calltargetRefStructTypeSize + 1;
+        }
+        else if (enable_by_ref_instrumentation && (argTypeFlags & TypeFlagByRef))
+        {
+            PCCOR_SIGNATURE argSigBuff;
+            auto signatureSize = methodArguments[i].GetSignature(argSigBuff);
+            if (argSigBuff[0] == ELEMENT_TYPE_BYREF)
             {
-                unsigned calltargetRefStructTypeBuffer;
-                ULONG calltargetRefStructTypeSize = CorSigCompressToken(callTargetRefStructTypeRef, &calltargetRefStructTypeBuffer);
-
-                auto argSignature = new COR_SIGNATURE[calltargetRefStructTypeSize + 1];
-                argSignature[0] = ELEMENT_TYPE_VALUETYPE;
-                memcpy(&argSignature[1], &calltargetRefStructTypeBuffer, calltargetRefStructTypeSize);
-
-                argumentsSignatureBuffer[i] = argSignature;
-                argumentsSignatureSize[i] = calltargetRefStructTypeSize + 1;
-                signatureLength += calltargetRefStructTypeSize + 1;
+                argumentsSignatureBuffer[i] = argSigBuff + 1;
+                argumentsSignatureSize[i] = signatureSize - 1;
+                signatureLength += signatureSize - 1;
             }
             else
             {
-                PCCOR_SIGNATURE argSigBuff;
-                auto signatureSize = methodArguments[i].GetSignature(argSigBuff);
-                if (argSigBuff[0] == ELEMENT_TYPE_BYREF)
-                {
-                    argumentsSignatureBuffer[i] = argSigBuff + 1;
-                    argumentsSignatureSize[i] = signatureSize - 1;
-                    signatureLength += signatureSize - 1;
-                }
-                else
-                {
-                    argumentsSignatureBuffer[i] = argSigBuff;
-                    argumentsSignatureSize[i] = signatureSize;
-                    signatureLength += signatureSize;
-                }
+                argumentsSignatureBuffer[i] = argSigBuff;
+                argumentsSignatureSize[i] = signatureSize;
+                signatureLength += signatureSize;
             }
         }
         else
@@ -496,6 +488,7 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
         offset += argumentsSignatureSize[i];
     }
 
+    Logger::Warn("BeginMethod Signature: ", HexStr(signature, signatureLength));
     hr = module_metadata->metadata_emit->DefineMethodSpec(beginMethodFastPathRef, signature,
                                                           signatureLength, &beginMethodSpec);
     if (FAILED(hr))
@@ -876,7 +869,6 @@ HRESULT TracerTokens::WriteRefStructCall(void* rewriterWrapperPtr, mdTypeRef ref
         return hr;
     }
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
-    ModuleMetadata* module_metadata = GetMetadata();
 
     if (createRefStructMemberRef == mdMemberRefNil)
     {
