@@ -318,7 +318,7 @@ internal readonly partial struct SecurityCoordinator
 
     private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
     {
-        var blockingAction = _security.GetBlockingAction(BlockingAction.BlockDefaultActionName, [_context.Request.Headers["Accept"]], blockInfo, redirectInfo);
+        var blockingAction = _security.GetBlockingAction([_context.Request.Headers["Accept"]], blockInfo, redirectInfo);
         var isWebApiRequest = _context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
         if (isWebApiRequest)
         {

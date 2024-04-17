@@ -52,16 +52,7 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
         /// </summary>
-        public Security(SecuritySettings? settings = null, IWaf? waf = null, IDictionary<string, Action>? actions = null, IRcmSubscriptionManager? rcmSubscriptionManager = null)
-            : this(settings, waf, rcmSubscriptionManager)
-        {
-            if (actions != null)
-            {
-                _configurationStatus.Actions = actions;
-            }
-        }
-
-        private Security(SecuritySettings? settings = null, IWaf? waf = null, IRcmSubscriptionManager? rcmSubscriptionManager = null)
+        public Security(SecuritySettings? settings = null, IWaf? waf = null, IRcmSubscriptionManager? rcmSubscriptionManager = null)
         {
             _rcmSubscriptionManager = rcmSubscriptionManager ?? RcmSubscriptionManager.Instance;
             try
@@ -263,31 +254,23 @@ namespace Datadog.Trace.AppSec
             return applyDetails;
         }
 
-        internal BlockingAction GetBlockingAction(string id, string[]? requestAcceptHeaders, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
+        internal BlockingAction GetBlockingAction(string[]? requestAcceptHeaders, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
         {
             var blockingAction = new BlockingAction();
-            _configurationStatus.Actions.TryGetValue(id, out var action);
+            Action? action = null;
 
-            if (id == BlockingAction.BlockDefaultActionName && redirectInfo is not null)
+            if (redirectInfo is not null)
             {
                 redirectInfo.TryGetValue("status_code", out var actionStatusCode);
                 redirectInfo.TryGetValue("type", out var actionType);
                 redirectInfo.TryGetValue("location", out var actionLocation);
 
-                // If we don't have the default action in the list of actions, we add it.
-                if (action is null)
+                action = new Action
                 {
-                    action = new Action
-                    {
-                        Id = id,
-                        Type = BlockingAction.RedirectRequestType,
-                    };
-                }
-
-                if (action.Parameters is null)
-                {
-                    action.Parameters = new();
-                }
+                    Id = BlockingAction.BlockDefaultActionName,
+                    Type = BlockingAction.RedirectRequestType,
+                    Parameters = new()
+                };
 
                 if (actionStatusCode is not null)
                 {
@@ -306,29 +289,19 @@ namespace Datadog.Trace.AppSec
                 {
                     action.Parameters.Location = location;
                 }
-
-                _configurationStatus.Actions[id] = action;
             }
 
-            if (id == BlockingAction.BlockDefaultActionName && blockInfo is not null)
+            if (blockInfo is not null)
             {
                 blockInfo.TryGetValue("status_code", out var actionStatusCode);
                 blockInfo.TryGetValue("type", out var actionType);
 
-                // If we don't have the default action in the list of actions, we add it.
-                if (action is null)
+                action = new Action
                 {
-                    action = new Action
-                    {
-                        Id = id,
-                        Type = BlockingAction.BlockRequestType,
-                    };
-                }
-
-                if (action.Parameters is null)
-                {
-                    action.Parameters = new();
-                }
+                    Id = BlockingAction.BlockDefaultActionName,
+                    Type = BlockingAction.BlockRequestType,
+                    Parameters = new()
+                };
 
                 if (actionStatusCode is not null)
                 {
@@ -381,8 +354,10 @@ namespace Datadog.Trace.AppSec
                 blockingAction.ResponseContent = _settings.BlockedHtmlTemplate;
             }
 
-            if (action?.Parameters == null)
+            // This should never happen
+            if (action == null)
             {
+                Log.Warning("No blockInfo or RedirectInfo found");
                 SetAutomaticResponseContent();
                 blockingAction.StatusCode = 403;
             }
@@ -409,15 +384,15 @@ namespace Datadog.Trace.AppSec
                 }
                 else if (action.Type == BlockingAction.RedirectRequestType)
                 {
-                    if (!string.IsNullOrEmpty(action.Parameters.Location))
+                    if (!string.IsNullOrEmpty(action.Parameters?.Location))
                     {
-                        blockingAction.StatusCode = action.Parameters.StatusCode is >= 300 and < 400 ? action.Parameters.StatusCode : 303;
+                        blockingAction.StatusCode = action.Parameters!.StatusCode is >= 300 and < 400 ? action.Parameters.StatusCode : 303;
                         blockingAction.RedirectLocation = action.Parameters.Location;
                         blockingAction.IsRedirect = true;
                     }
                     else
                     {
-                        Log.Warning("Received a custom block action of type redirect with a status code {StatusCode}, an automatic response will be set", action.Parameters.StatusCode.ToString());
+                        Log.Warning("Received a custom block action of type redirect with a status code {StatusCode}, an automatic response will be set", action.Parameters?.StatusCode.ToString());
                         SetAutomaticResponseContent();
                         blockingAction.StatusCode = 403;
                     }

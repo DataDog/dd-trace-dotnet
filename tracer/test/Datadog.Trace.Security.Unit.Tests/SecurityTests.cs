@@ -18,7 +18,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void DefaultBehavior()
         {
             var target = new AppSec.Security();
-            var action = target.GetBlockingAction("block", new[] { "wrong" }, null, null);
+            var action = target.GetBlockingAction(new[] { "wrong" }, null, null);
             action.StatusCode.Should().Be(403);
             action.ResponseContent.Should().Be(SecurityConstants.BlockedJsonTemplate);
             action.ContentType.Should().Be("application/json");
@@ -34,8 +34,9 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData(BlockingAction.RedirectRequestType, "", 303, null, 403, "application/json", SecurityConstants.BlockedJsonTemplate)]
         public void CustomActions(string type, string location, int statusCode, string contentType, int expectedStatusCode, string expectedContentType, string expectedContent)
         {
-            var target = CreateTestTarget(type, location, statusCode, contentType);
-            var action = target.GetBlockingAction("block", new[] { "application/json" }, null, null);
+            var target = new AppSec.Security();
+            var blockInfo = CreateBlockParameters(type, location, statusCode, contentType);
+            var action = target.GetBlockingAction(new[] { "application/json" }, type == BlockingAction.BlockRequestType ? blockInfo : null, type == BlockingAction.RedirectRequestType ? blockInfo : null);
             action.StatusCode.Should().Be(expectedStatusCode);
             action.ResponseContent.Should().Be(expectedContent);
             action.ContentType.Should().Be(expectedContentType);
@@ -47,24 +48,23 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData(BlockingAction.RedirectRequestType, "/toto", 302, null, 302, null, null)]
         public void CustomActionsWithBlockInfo(string type, string location, int statusCode, string contentType, int expectedStatusCode, string expectedContentType, string expectedContent)
         {
-            var target = CreateTestTarget(type, location, 190, "invalid");
-            var blockInfo = new Dictionary<string, object>
-            {
-                { "type", contentType },
-                { "status_code", statusCode.ToString() },
-            };
+            var target = new AppSec.Security();
+            var blockInfo = CreateBlockParameters(type, location, statusCode, contentType);
 
-            var action = target.GetBlockingAction("block", new[] { "application/json" }, blockInfo, null);
+            var action = target.GetBlockingAction(new[] { "application/json" }, type == BlockingAction.BlockRequestType ? blockInfo : null, type == BlockingAction.RedirectRequestType ? blockInfo : null);
             action.StatusCode.Should().Be(expectedStatusCode);
             action.ResponseContent.Should().Be(expectedContent);
             action.ContentType.Should().Be(expectedContentType);
         }
 
-        private static AppSec.Security CreateTestTarget(string type, string location, int statusCode, string contentType)
+        private static Dictionary<string, object> CreateBlockParameters(string type, string location, int statusCode, string contentType)
         {
-            var security = new AppSec.Security(actions: new ReadOnlyDictionary<string, Action>(new Dictionary<string, Action> { { "block", new Action { Id = "block", Type = type, Parameters = new Parameter { Location = location, StatusCode = statusCode, Type = contentType } } } }));
-
-            return security;
+            return new Dictionary<string, object>
+            {
+                { "type", contentType },
+                { "status_code", statusCode.ToString() },
+                { "location", location },
+            };
         }
     }
 }
