@@ -243,7 +243,7 @@ int TracerTokens::GetAdditionalLocalsCount(const std::vector<TypeSignature>& met
         for (int i = 0; i < methodTypeArguments.size(); i++)
         {
             bool isByRefLike = false;
-            if (SUCCEEDED(IsTypeByRefLike(_profiler_info, *module_metadata, methodTypeArguments[i], GetCorLibAssemblyRef(), isByRefLike) == S_OK) &&
+            if (SUCCEEDED(IsTypeByRefLike(_profiler_info, *module_metadata, methodTypeArguments[i], GetCorLibAssemblyRef(), isByRefLike)) &&
                 isByRefLike)
             {
                 refStructCount++;
@@ -286,7 +286,7 @@ void TracerTokens::AddAdditionalLocals(TypeSignature* methodReturnValue, std::ve
         for (int i = 0; i < methodTypeArguments->size(); i++)
         {
             bool isByRefLike = false;
-            if (SUCCEEDED(IsTypeByRefLike(_profiler_info, *module_metadata, (*methodTypeArguments)[i], GetCorLibAssemblyRef(), isByRefLike) == S_OK) &&
+            if (SUCCEEDED(IsTypeByRefLike(_profiler_info, *module_metadata, (*methodTypeArguments)[i], GetCorLibAssemblyRef(), isByRefLike)) &&
                 isByRefLike)
             {
                 signatureBuffer[signatureOffset++] = ELEMENT_TYPE_VALUETYPE;
@@ -422,7 +422,11 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
         const auto [elementType, argTypeFlags] = methodArguments[i].GetElementTypeAndFlags();
 
         bool isByRefLike = false;
-        IsTypeByRefLike(_profiler_info, *module_metadata, methodArguments[i], GetCorLibAssemblyRef(), isByRefLike);
+        if (FAILED(IsTypeByRefLike(_profiler_info, *module_metadata, methodArguments[i], GetCorLibAssemblyRef(), isByRefLike)))
+        {
+            isByRefLike = false;
+        }
+
         if (enable_by_ref_instrumentation && isByRefLike)
         {
             unsigned calltargetRefStructTypeBuffer;

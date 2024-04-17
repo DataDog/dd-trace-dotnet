@@ -58,6 +58,7 @@ public readonly struct CallTargetRefStruct
     public static unsafe CallTargetRefStruct Create(void* refStructPointer, RuntimeTypeHandle refStructTypeHandle)
         => new((nint)refStructPointer, refStructTypeHandle);
 
+#if NETCOREAPP
     /// <summary>
     /// Gets a read-only span from the ref struct instance
     /// </summary>
@@ -65,11 +66,7 @@ public readonly struct CallTargetRefStruct
     /// <typeparam name="T">Type of the read-only span</typeparam>
     /// <returns>Reference to the same ReadOnlySpan instance of the caller</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#if NETCOREAPP
     public unsafe ref ReadOnlySpan<T> GetReadOnlySpan<T>(out bool success)
-#else
-    internal unsafe ref ReadOnlySpan<T> GetReadOnlySpan<T>(out bool success)
-#endif
     {
         if (Type.GetTypeFromHandle(_refStructTypeHandle) == typeof(ReadOnlySpan<T>))
         {
@@ -81,7 +78,9 @@ public readonly struct CallTargetRefStruct
         // Null pointer (same code as Unsafe.NullRef)
         return ref (*(ReadOnlySpan<T>*)null);
     }
+#endif
 
+#if NETCOREAPP
     /// <summary>
     /// Gets a span from the ref struct instance
     /// </summary>
@@ -89,11 +88,7 @@ public readonly struct CallTargetRefStruct
     /// <typeparam name="T">Type of the span</typeparam>
     /// <returns>Reference to the same Span instance of the caller</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#if NETCOREAPP
     public unsafe ref Span<T> GetSpan<T>(out bool success)
-#else
-    internal unsafe ref Span<T> GetSpan<T>(out bool success)
-#endif
     {
         if (Type.GetTypeFromHandle(_refStructTypeHandle) == typeof(Span<T>))
         {
@@ -105,4 +100,5 @@ public readonly struct CallTargetRefStruct
         // Null pointer (same code as Unsafe.NullRef)
         return ref (*(Span<T>*)null);
     }
+#endif
 }

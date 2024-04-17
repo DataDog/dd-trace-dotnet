@@ -274,7 +274,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                     }
 
                     bool isByRefLike = false;
-                    if (SUCCEEDED(IsTypeByRefLike(m_corProfiler->info_, module_metadata, methodArguments[i], tracerTokens->GetCorLibAssemblyRef(), isByRefLike) == S_OK) && isByRefLike)
+                    if (SUCCEEDED(IsTypeByRefLike(m_corProfiler->info_, module_metadata, methodArguments[i], tracerTokens->GetCorLibAssemblyRef(), isByRefLike)) && isByRefLike)
                     {
                         const auto& argumentToken = methodArguments[i].GetTypeTok(metaEmit, tracerTokens->GetCorLibAssemblyRef());
                         tracerTokens->WriteRefStructCall(&reWriterWrapper, argumentToken, refStructIndexes[structRefCount++]);
