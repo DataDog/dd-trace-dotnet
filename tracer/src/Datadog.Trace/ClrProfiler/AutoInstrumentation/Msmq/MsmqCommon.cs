@@ -36,17 +36,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                 tags.Command = command;
                 try
                 {
-                    tags.Path = messageQueue.Path;
-                    tags.Host = messageQueue.MachineName;
-                    tags.IsTransactionalQueue = messageQueue.Transactional.ToString();
                 }
-                catch
+                finally
                 {
-                    // Depending on the permissions available, messageQueue.Transactional may throw
-                    // a MessageQueueException. The Path and machine name are apparently fraught
-                    // with potential issues too, so playing it safe and swallowing any issues here
-                    // We could consider diving into the internals to fish out the value, but not
-                    // worth it IMO, especially as that would effectively bypass a "security" feature
+                    // MessageQueue.Path and MessageQueue.MachineName are not resilient to ThreadAbortException
+                    // This is technically not *our* problem, but at the same time maybe those methods wouldn't
+                    // be called at all if it wasn't for us. So let's play safe.
+
+                    try
+                    {
+                        tags.Path = messageQueue.Path;
+                        tags.Host = messageQueue.MachineName;
+                        tags.IsTransactionalQueue = messageQueue.Transactional.ToString();
+                    }
+                    catch
+                    {
+                        // Depending on the permissions available, messageQueue.Transactional may throw
+                        // a MessageQueueException. The Path and machine name are apparently fraught
+                        // with potential issues too, so playing it safe and swallowing any issues here
+                        // We could consider diving into the internals to fish out the value, but not
+                        // worth it IMO, especially as that would effectively bypass a "security" feature
+                    }
                 }
 
                 if (isMessagePartOfTransaction.HasValue)
@@ -58,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
-                span.ResourceName = $"{command} {messageQueue.Path}";
+                span.ResourceName = $"{command} {tags.Path}";
 
                 // TODO: PBT: I think this span should be measured when span kind is consumer or producer
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
