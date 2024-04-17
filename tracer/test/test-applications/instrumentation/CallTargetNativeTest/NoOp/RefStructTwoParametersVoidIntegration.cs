@@ -8,7 +8,7 @@ public static class RefStructTwoParametersVoidIntegration
     public static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, ref TArg1 arg01, ref TArg2 arg02)
     {
         var returnValue = CallTargetState.GetDefault();
-        Console.WriteLine($"ProfilerOK: BeginMethod(1)<{typeof(RefStructTwoParametersVoidIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}>({instance}, {arg01}, {arg02})");
+        Console.WriteLine($"ProfilerOK: BeginMethod(2)<{typeof(RefStructTwoParametersVoidIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}, {typeof(TArg2)}>({instance}, {arg01}, {arg02})");
 
         bool success;
         if (arg01 is CallTargetRefStruct callTargetRefStruct)

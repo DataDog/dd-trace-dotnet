@@ -8,7 +8,7 @@ public static class RefStructFourParametersVoidIntegration
     public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref string arg01, ref CallTargetRefStruct arg02, ref CallTargetRefStruct arg03, ref CallTargetRefStruct arg04)
     {
         var returnValue = CallTargetState.GetDefault();
-        Console.WriteLine($"ProfilerOK: BeginMethod(1)<{typeof(RefStructFourParametersVoidIntegration)}, {typeof(TTarget)}>({instance}, {arg01}, {arg02}, {arg03}, {arg04})");
+        Console.WriteLine($"ProfilerOK: BeginMethod(4)<{typeof(RefStructFourParametersVoidIntegration)}, {typeof(TTarget)}>({instance}, {arg01}, {arg02}, {arg03}, {arg04})");
 
         bool success;
         arg01 = "Hello";

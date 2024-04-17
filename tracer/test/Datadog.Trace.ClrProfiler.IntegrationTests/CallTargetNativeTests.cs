@@ -280,5 +280,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 VerifyInstrumentation(processResult.Process);
             }
         }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task MethodRefStructArguments()
+        {
+            SetInstrumentationVerification();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = await RunSampleAndWaitForExit(agent, arguments: "withrefstruct"))
+            {
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
+                int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
+                int begin4MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({4}\\)").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames =
+                {
+                    "ReadOnlySpan<char>",
+                    "Span<char>",
+                    "ReadOnlyRefStruct",
+                    "VoidMixedMethod",
+                };
+
+                Assert.Equal(6, beginMethodCount);
+                Assert.Equal(9, begin2MethodCount);
+                Assert.Equal(3, begin4MethodCount);
+                Assert.Equal(18, endMethodCount);
+
+                foreach (var typeName in typeNames)
+                {
+                    Assert.Contains(typeName, processResult.StandardOutput);
+                }
+
+                VerifyInstrumentation(processResult.Process);
+            }
+        }
     }
 }
