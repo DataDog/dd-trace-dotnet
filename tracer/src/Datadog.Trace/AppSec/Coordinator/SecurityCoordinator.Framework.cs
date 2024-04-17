@@ -277,9 +277,9 @@ internal readonly partial struct SecurityCoordinator
         {
             var reporting = MakeReportingFunction(result);
             // here we assume if we haven't blocked we'll have collected the correct status elsewhere
-            reporting(null, result.BlockInfo != null);
+            reporting(null, result.BlockInfo is not null || result.RedirectInfo is not null);
 
-            if (result.BlockInfo is not null)
+            if (result.BlockInfo is not null || result.RedirectInfo is not null)
             {
                 ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
             }
@@ -292,13 +292,13 @@ internal readonly partial struct SecurityCoordinator
         {
             var reporting = MakeReportingFunction(result);
 
-            if (result.BlockInfo is not null)
+            if (result.BlockInfo is not null || result.RedirectInfo is not null)
             {
                 ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
             }
 
             // here we assume if we haven't blocked we'll have collected the correct status elsewhere
-            reporting(null, result.BlockInfo != null);
+            reporting(null, result.BlockInfo is not null || result.RedirectInfo is not null);
         }
     }
 
@@ -307,7 +307,7 @@ internal readonly partial struct SecurityCoordinator
         var securityCoordinator = this;
         return (status, blocked) =>
         {
-            if (result.BlockInfo != null)
+            if (result.BlockInfo is not null || result.RedirectInfo is not null)
             {
                 securityCoordinator._httpTransport.MarkBlocked();
             }

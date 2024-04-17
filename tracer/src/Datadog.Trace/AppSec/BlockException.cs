@@ -13,6 +13,18 @@ namespace Datadog.Trace.AppSec
 {
     internal class BlockException : CallTargetBubbleUpException
     {
+        // This constructor is not referenced but it's used with reflection
+        public BlockException(IResult result)
+            : this(result, false)
+        {
+        }
+
+        public BlockException(IResult result, bool reported = false)
+        {
+            Result = result;
+            Reported = reported;
+        }
+
         public BlockException(IResult result, Dictionary<string, object?> blockInfo, bool reported = false)
         {
             Result = result;
@@ -24,7 +36,7 @@ namespace Datadog.Trace.AppSec
 
         public bool Reported { get; }
 
-        public Dictionary<string, object?> BlockInfo { get; }
+        public Dictionary<string, object?>? BlockInfo { get; }
 
         internal static BlockException? GetBlockException(Exception? exception)
         {
