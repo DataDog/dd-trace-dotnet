@@ -48,11 +48,11 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
                 static IUnmanagedMemoryAllocator GetPool()
                 {
-                    var instanceCount = UnmanagedMemoryPool.InstanceCount;
+                    var instanceCount = UnmanagedMemoryPoolAllocator.InstanceCount;
                     if (instanceCount < WafConstants.MaxUnmanagedPools)
                     {
                         Log.Debug<int>("Created fast WAF unmanaged pool. Current pools -> Fast: {PoolCount}", instanceCount);
-                        return new UnmanagedMemoryPool(MaxBytesForMaxStringLength, _poolSize, MetricTags.UnmanagedMemoryPoolComponent.AsmEncoder);
+                        return new UnmanagedMemoryPoolAllocator(MaxBytesForMaxStringLength, _poolSize, MetricTags.UnmanagedMemoryPoolComponent.AsmEncoder);
                     }
 
                     Log.Debug<int>("Created slow WAF unmanaged allocator. Current pools -> Fast: {PoolCount} ", instanceCount);
@@ -662,13 +662,12 @@ namespace Datadog.Trace.AppSec.WafEncoding
         {
             private readonly List<IntPtr> _pointers;
             private readonly IUnmanagedMemoryAllocator _innerAllocator;
-            private readonly IUnmanagedMemoryPool _innerPool;
             private DdwafObjectStruct _result;
 
             internal EncodeResult(List<IntPtr> pointers, IUnmanagedMemoryAllocator pool, ref DdwafObjectStruct result)
             {
                 _pointers = pointers;
-				_innerAllocator = pool;
+                _innerAllocator = pool;
                 _result = result;
             }
 
@@ -676,7 +675,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
             public void Dispose()
             {
-				_innerAllocator.Return(_pointers);
+                _innerAllocator.Return(_pointers);
                 _pointers.Clear();
             }
         }

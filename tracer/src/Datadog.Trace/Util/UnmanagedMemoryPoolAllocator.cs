@@ -1,4 +1,4 @@
-﻿// <copyright file="UnmanagedMemoryPool.cs" company="Datadog">
+// <copyright file="UnmanagedMemoryPoolAllocator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,7 +18,9 @@ namespace Datadog.Trace.Util;
 /// <summary>
 /// Beware that this type is not thread safe and should be used with [ThreadStatic]
 /// </summary>
-internal unsafe class UnmanagedMemoryPool : IUnmanagedMemoryAllocator
+internal unsafe class UnmanagedMemoryPoolAllocator
+
+    : IUnmanagedMemoryAllocator
 {
     private static int _instanceCount;
 
@@ -30,7 +32,7 @@ internal unsafe class UnmanagedMemoryPool : IUnmanagedMemoryAllocator
 
     private bool _isDisposed;
 
-    public UnmanagedMemoryPool(int blockSize, int poolSize, MetricTags.UnmanagedMemoryPoolComponent component)
+    public UnmanagedMemoryPoolAllocator(int blockSize, int poolSize, MetricTags.UnmanagedMemoryPoolComponent component)
     {
         _blockSize = blockSize;
         _items = (IntPtr*)Marshal.AllocCoTaskMem(poolSize * sizeof(IntPtr));
@@ -47,7 +49,7 @@ internal unsafe class UnmanagedMemoryPool : IUnmanagedMemoryAllocator
         TelemetryFactory.Metrics.RecordGaugeUnmanagedMemoryPool(MetricTags.UnmanagedMemoryPoolType.Pooled, _component, _instanceCount);
     }
 
-    ~UnmanagedMemoryPool()
+    ~UnmanagedMemoryPoolAllocator()
     {
         Dispose();
     }
@@ -171,6 +173,6 @@ internal unsafe class UnmanagedMemoryPool : IUnmanagedMemoryAllocator
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowObjectDisposedException()
     {
-        throw new ObjectDisposedException(nameof(UnmanagedMemoryPool));
+        throw new ObjectDisposedException(nameof(UnmanagedMemoryPoolAllocator));
     }
 }
