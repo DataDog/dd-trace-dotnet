@@ -1,0 +1,36 @@
+@page "/Iast/UnvalidatedRedirect/"
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.WebUtilities
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>Unvalidated Redirect</h3>
+
+<p>@_message</p>
+
+@code {
+    public required string Param { get; set; }
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("param", out var param))
+        {
+            Param = param!;
+        }
+        
+        try
+        {
+            var location = $"Redirected?param={Param}";
+            HttpContextAccessor.HttpContext?.Response.Redirect(location);
+            _message = $"Request redirected to {location}";
+        }
+        catch (Exception err)
+        {
+            _message = "Error in request. " + err;
+        }
+    }
+}

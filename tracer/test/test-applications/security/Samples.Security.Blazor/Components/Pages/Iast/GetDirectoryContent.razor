@@ -1,0 +1,23 @@
+@page "/Iast/GetDirectoryContent/{Directory}"
+
+<h3>Get Directory Content</h3>
+
+<p>@_message</p>
+
+@code {
+    [Parameter]
+    public string? Directory { get; set; }
+    
+    private string _message = "No directory specified";
+
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrEmpty(Directory)) return;
+
+        var result = System.IO.Directory.GetFiles(Directory);
+        var resultFiles = string.Empty;
+        Array.ForEach(result, x => resultFiles += x.ToString() + Environment.NewLine);
+        _message = "Directory content: " + resultFiles;
+    }
+}
+

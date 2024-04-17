@@ -1,0 +1,14 @@
+@page "/Iast/WeakRandomness/"
+
+<h3>Weak Randomness</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        _message = "Random number: " + (new Random()).Next().ToString();
+    }
+}

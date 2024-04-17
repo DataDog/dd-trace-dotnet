@@ -1,0 +1,23 @@
+@page "/Iast/AllVulnerabilitiesCookie/"
+@using Datadog.Trace.Annotations.Controllers
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>All Vulnerabilities Cookies</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var cookieOptions = IastController.GetDefaultCookieOptionsInstance();
+        cookieOptions.SameSite = SameSiteMode.None;
+        cookieOptions.HttpOnly = false;
+        cookieOptions.Secure = false;
+        HttpContextAccessor.HttpContext?.Response.Cookies.Append("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue", cookieOptions);
+        HttpContextAccessor.HttpContext?.Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
+
+        _message = "Cookies have been set";
+    }
+}

@@ -1,0 +1,27 @@
+@page "/Iast/NHibernateQuery/{Username}"
+@using Samples.Security.Data
+
+<h3>NHibernate Query</h3>
+
+<p>@_message</p>
+
+@code {
+    [Parameter]
+    public required string Username { get; set; }
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            var taintedQuery = "SELECT Value from FakeData where Name = '" + Username + "'";
+            var result = NHibernateHelper.CreateSqlQuery(taintedQuery);
+            _message = $"Result: {result}";
+        }
+        catch (Exception ex)
+        {
+            _message = $"Error: " + ex.Message;
+        }
+    }
+}

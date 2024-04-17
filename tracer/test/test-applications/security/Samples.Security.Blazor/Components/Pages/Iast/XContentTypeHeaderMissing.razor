@@ -1,0 +1,64 @@
+@page "/Iast/XContentTypeHeaderMissing/"
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.WebUtilities
+@using Datadog.Trace.Annotations.Controllers
+@using System.Net
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>XContentType Header Missing</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? _contentType = "text/html";
+    private int? _returnCode = 200;
+    private string? _xContentTypeHeaderValue = string.Empty;
+
+    private string _message = "Failed";
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("xContentTypeHeaderValue", out var xContentTypeHeaderValue))
+        {
+            _xContentTypeHeaderValue = xContentTypeHeaderValue;
+        }
+        
+        if (query.TryGetValue("returnCode", out var returnCode))
+        {
+            _returnCode = int.Parse(returnCode!);
+        }
+        
+        if (query.TryGetValue("contentType", out var contentType))
+        {
+            _contentType = contentType;
+        }
+        
+        // We don't want a header injection vulnerability here, so we un-taint the header values.
+        var xContentTypeHeaderValueUntainted = IastController.CopyStringAvoidTainting(_xContentTypeHeaderValue);
+        var contentTypeUntainted = IastController.CopyStringAvoidTainting(_contentType);
+        
+        if (HttpContextAccessor.HttpContext == null) return;
+        
+        if (!string.IsNullOrEmpty(xContentTypeHeaderValueUntainted))
+        {
+            HttpContextAccessor.HttpContext.Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValueUntainted);
+        }
+
+        if (_returnCode != (int) HttpStatusCode.OK)
+        {
+            HttpContextAccessor.HttpContext.Response.StatusCode = _returnCode!.Value;
+        }
+
+        if (!string.IsNullOrEmpty(contentTypeUntainted))
+        {
+            _message = $"XContentTypeHeaderMissing: {contentTypeUntainted}";
+        }
+        else
+        {
+            _message = "XContentTypeHeaderMissing";
+        }
+    }
+}

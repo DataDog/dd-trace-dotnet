@@ -1,0 +1,26 @@
+@page "/Iast/InsecureAuthProtocol/{Forbidden:bool}"
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>Insecure Authentication Protocol</h3>
+
+<p>@_message</p>
+
+@code {
+    [Parameter]
+    public bool Forbidden { get; set; }
+    
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        if (Forbidden && HttpContextAccessor.HttpContext != null)
+        {
+            _message = "You are not allowed to access this page.";
+            HttpContextAccessor.HttpContext.Response.StatusCode = 403;
+        }
+        else
+        {
+            _message = "You are allowed to access this page.";
+        }
+    }
+}

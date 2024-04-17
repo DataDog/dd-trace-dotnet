@@ -1,0 +1,28 @@
+@page "/Iast/GetFileContent/{File}"
+
+<h3>Get File Content</h3>
+
+<p>@_message</p>
+
+@code {
+    [Parameter]
+    public string? File { get; set; }
+    
+    private string _message = "No file was provided";
+
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrEmpty(File)) return;
+
+        try
+        {
+            var result = System.IO.File.ReadAllText(File);
+            _message = "File content: " + result;
+        }
+        catch (Exception ex)
+        {
+            _message = "Error: " + ex.Message;
+        }
+    }
+}
+

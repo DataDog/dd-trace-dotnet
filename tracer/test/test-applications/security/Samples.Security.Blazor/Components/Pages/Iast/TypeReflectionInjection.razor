@@ -1,0 +1,40 @@
+@page "/Iast/TypeReflectionInjection/"
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.WebUtilities
+@using Samples.Security.Data
+
+<h3>Type Reflection Injection</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? _type;
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("type", out var type))
+        {
+            _type = type;
+        }
+        
+        try
+        {
+            if (!string.IsNullOrEmpty(_type))
+            {
+                var vulnerableType = Type.GetType(_type!);
+                _message = $"Result: {vulnerableType}";
+            }
+        }
+        catch (Exception ex)
+        {
+            _message = IastControllerHelper.ToFormattedString(ex);
+        }
+
+        _message = "No type was provided";
+    }
+}

@@ -1,0 +1,27 @@
+@page "/Iast/WeakHashing/{Delay1:int}/{Delay2:int}"
+@using System.Security.Cryptography
+
+<h3>Weak Hashing</h3>
+
+<p>@_message</p>
+
+@code {
+    [Parameter]
+    public int Delay1 { get; set; }  
+
+    [Parameter]
+    public int Delay2 { get; set; }
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        Thread.Sleep(Delay1 + Delay2);
+#pragma warning disable SYSLIB0021 // Type or member is obsolete
+        var byteArg = new byte[] { 3, 5, 6 };
+        MD5.Create().ComputeHash(byteArg);
+        SHA1.Create().ComputeHash(byteArg);
+#pragma warning restore SYSLIB0021 // Type or member is obsolete
+        _message = $"Weak hashes launched with delays {Delay1} and {Delay2}.";
+    }
+}

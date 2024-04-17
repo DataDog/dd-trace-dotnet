@@ -1,0 +1,45 @@
+@page "/Iast/TBV/"
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.WebUtilities
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>Trust Boundary Violation</h3>
+
+<p>@_message</p>
+
+@code {
+    public required string Name { get; set; }
+    public required string Value { get; set; }
+
+    private string _message = "Failed";
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("name", out var name) && query.TryGetValue("value", out var value))
+        {
+            Name = name!;
+            Value = value!;
+        }
+        
+        try
+        {
+            if (HttpContextAccessor.HttpContext?.Session == null)
+            {
+                _message = "No session";
+            }
+            else
+            {
+                HttpContextAccessor.HttpContext.Session.SetString(Name, Value);
+                HttpContextAccessor.HttpContext.Session.SetInt32(Name + "-" + Value, 42);
+                _message = "Request parameters added to session (TrustBoundaryViolation)";
+            }
+        }
+        catch (Exception err)
+        {
+            _message = "Error in request. " + err.ToString();
+        }
+    }
+}

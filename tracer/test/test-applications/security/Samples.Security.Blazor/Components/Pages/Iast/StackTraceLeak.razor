@@ -1,0 +1,9 @@
+@page "/Iast/StackTraceLeak/"
+<h3>Stack Trace Leak</h3>
+
+@code {
+    protected override void OnInitialized()
+    {
+        throw new SystemException("Custom exception message");
+    }
+}

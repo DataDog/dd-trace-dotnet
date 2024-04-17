@@ -1,0 +1,36 @@
+@page "/Iast/NewtonsoftJsonParseTainting/{json}"
+@using Newtonsoft.Json.Linq
+@using Datadog.Trace.Annotations.Controllers
+
+<h3>Newtonsoft Json Parse Tainting</h3>
+
+<p>@_message</p>
+
+@code {
+    [Parameter]
+    public required string Json { get; set; }
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            var doc = JObject.Parse(Json);
+            var str = doc.Value<string>("key");
+
+            // Trigger a vulnerability with the tainted string
+            IastController.ExecuteCommandInternal(str, "");
+            _message = "Parsed JSON: " + str;
+        }
+        catch (Exception ex)
+        {
+            _message = "Error: " + ex.Message;
+        }
+
+        if (string.IsNullOrEmpty(_message))
+        {
+            _message = "No json was provided";
+        }
+    }
+}

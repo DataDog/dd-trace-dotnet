@@ -1,0 +1,77 @@
+@page "/Iast/HeaderInjection/{UseValueFromOriginHeader:bool?}"
+@using Microsoft.Extensions.Primitives
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>Insecure Authentication Protocol</h3>
+
+<p>@_message</p>
+
+@code {
+
+    [Parameter]
+    public bool UseValueFromOriginHeader { get; set; }
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        if (HttpContextAccessor.HttpContext == null)
+        {
+            _message = "HttpContext is null";
+            return;
+        }
+
+        const string defaultHeaderName = "defaultName";
+        const string defaultHeaderValue = "defaultValue";
+
+        var originValue = HttpContextAccessor.HttpContext.Request.Headers["origin"];
+        var headerValue = HttpContextAccessor.HttpContext.Request.Headers["value"];
+        var cookieValue = HttpContextAccessor.HttpContext.Request.Cookies["value"];
+        var headerName = HttpContextAccessor.HttpContext.Request.Headers["name"];
+        var cookieName = HttpContextAccessor.HttpContext.Request.Cookies["name"];
+        var propagationHeader = HttpContextAccessor.HttpContext.Request.Headers["propagation"];
+
+        if (!string.IsNullOrEmpty(propagationHeader))
+        {
+            HttpContextAccessor.HttpContext.Response.Headers.Add("propagation", propagationHeader);
+            _message = "returned propagation header";
+            return;
+        }
+
+        var returnedName = Combine(headerName, cookieName, defaultHeaderName);
+        var returnedValue = UseValueFromOriginHeader ? originValue.ToString() : Combine(headerValue, cookieValue, defaultHeaderValue);
+
+        if (returnedName != "extraName")
+        {
+            HttpContextAccessor.HttpContext.Response.Headers.Add(returnedName, returnedValue);
+        }
+        else
+        {
+            HttpContextAccessor.HttpContext.Response.Headers.Add("extraName", new StringValues([returnedValue, "extraValue"]));
+        }
+
+        _message = $"returned header {returnedName},{returnedValue}";
+        return;
+
+        string Combine(string? name1, string? name2, string defaultValue)
+        {
+            var null1 = string.IsNullOrWhiteSpace(name1);
+            var null2 = string.IsNullOrWhiteSpace(name2);
+
+            if (null1 && null2)
+            {
+                return defaultValue;
+            }
+
+            if (!null1 && !null2)
+            {
+                return name1 + name2;
+            }
+            else
+            {
+                return null1 ? name2 : name1;
+            }
+        }
+    }
+
+}

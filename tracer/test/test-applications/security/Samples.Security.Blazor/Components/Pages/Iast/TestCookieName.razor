@@ -1,0 +1,31 @@
+@page "/Iast/TestCookieName/"
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>Test Cookie Name</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var cookieName = HttpContextAccessor.HttpContext?.Request.Cookies.Keys.First(x => x == "cookiename");
+        try
+        {
+            if (!string.IsNullOrEmpty(cookieName))
+            {
+                var result = System.IO.File.ReadAllText(cookieName);
+                _message = "File content: " + result;
+            }
+            else
+            {
+                _message = "No file was provided";
+            }
+        }
+        catch
+        {
+            _message = "The provided file " + cookieName + " could not be opened";
+        }
+    }
+}

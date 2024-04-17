@@ -1,0 +1,21 @@
+@page "/Iast/NoHttpOnlyCookie/"
+@using Datadog.Trace.Annotations.Controllers
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>No HttpOnly Cookie</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var cookieOptions = IastController.GetDefaultCookieOptionsInstance();
+        cookieOptions.HttpOnly = false;
+        HttpContextAccessor.HttpContext?.Response.Cookies.Append("NoHttpOnlyKey", "NoHttpOnlyValue", cookieOptions);
+        HttpContextAccessor.HttpContext?.Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
+        
+        _message = "No HttpOnly cookie has been set.";
+    }
+}

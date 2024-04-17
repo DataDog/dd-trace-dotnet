@@ -1,0 +1,45 @@
+@page "/Iast/XpathInjection/"
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.WebUtilities
+@using System.Xml
+
+<h3>Xpath Injection</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? _user;
+    private string? _value;
+
+    private string? _message;
+
+    private const string XmlContent = @"<?xml version=""1.0"" encoding=""ISO-8859-1""?>
+                <data><user><name>jaime</name><password>1234</password><account>administrative_account</account></user>
+                <user><name>tom</name><password>12345</password><account>toms_acccount</account></user>
+                <user><name>guest</name><password>anonymous1234</password><account>guest_account</account></user>
+                </data>";
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("user", out var user))
+        {
+            _user = user;
+        }
+        
+        if (query.TryGetValue("value", out var value))
+        {
+            _value = value;
+        }
+        
+        var findUserXPath = "/data/user[name/text()='" + _user + "' and password/text()='" + _value + "}']";
+        var doc = new XmlDocument();
+        doc.LoadXml(XmlContent);
+        var result = doc.SelectSingleNode(findUserXPath);
+        _message = result is null ?
+                   "Invalid user/password" :
+                   "User " + result.ChildNodes[0].InnerText + " successfully logged.";
+    }
+}

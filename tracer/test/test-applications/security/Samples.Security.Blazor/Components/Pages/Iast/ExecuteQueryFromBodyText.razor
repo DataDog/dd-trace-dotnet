@@ -1,0 +1,35 @@
+@page "/Iast/ExecuteQueryFromBodyText/"
+@using Datadog.Trace.Annotations.Controllers
+@using System.Data.SQLite
+@using Samples.Security.Data
+
+<h3>Execute Query From Body Text</h3>
+
+<p>@_message</p>
+
+@code {
+    public string? QueryText { get; set; }
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(QueryText))
+            {
+                var rname = new SQLiteCommand(QueryText, IastController.Instance.DbConnection).ExecuteScalar();
+                _message = $"Result: {rname}";
+            }
+        }
+        catch (Exception ex)
+        {
+            _message = IastControllerHelper.ToFormattedString(ex);
+        }
+
+        if (string.IsNullOrEmpty(_message))
+        {
+            _message = $"No query text was provided";
+        }
+    }
+}

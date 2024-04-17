@@ -1,0 +1,52 @@
+@page "/Iast/NoSqlQueryMongoDb/{Price:int}"
+@page "/Iast/NoSqlQueryMongoDb/{Query}"
+
+@using MongoDB.Bson
+@using Datadog.Trace.Annotations.Controllers
+@using MongoDB.Driver
+
+<h3>NoSQL Query MongoDB</h3>
+
+<p>@_message</p>
+
+@code {
+    [Parameter]
+    public int? Price { get; set; }
+
+    [Parameter]
+    public string? Query { get; set; }
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            if (Price.HasValue)
+            {
+                var taintedQuery = "{ \"Price\" :\"" + Price + "\"}";
+                var document = BsonDocument.Parse(taintedQuery);
+                var collection = IastController.Instance.MongoDb.GetCollection<BsonDocument>("Books");
+                var find = collection.Find(document).ToList();
+                _message = $"Found {find.Count} books with price {Price}";
+            }
+
+            if (!string.IsNullOrEmpty(Query))
+            {
+                var document = BsonDocument.Parse(Query);
+                var collection = IastController.Instance.MongoDb.GetCollection<BsonDocument>("Books");
+                var find = collection.Find(document).ToList();
+                _message = $"Found {find.Count} books with query {Query}";
+            }
+        }
+        catch (Exception ex)
+        {
+            _message = $"Error: " + ex.Message;
+        }
+
+        if (string.IsNullOrEmpty(_message))
+        {
+            _message = $"No price or query was provided";
+        }
+    }
+}
