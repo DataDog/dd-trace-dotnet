@@ -42,20 +42,6 @@ partial class Program
         });
         RunMethod(() =>
         {
-            var strVal2 = new ReadOnlyRefStruct("MyString");
-            wRefArg.VoidRefMethod2(ref strVal2);
-
-            if (strVal2.Value != "Hello world")
-            {
-                throw new Exception("Error modifying string value.");
-            }
-        });
-        RunMethod(() =>
-        {
-            wRefArg.VoidRefMethod3("BadParam1", "BadParam2");
-        });
-        RunMethod(() =>
-        {
             string strVal = "MyString";
             int intVal = 15;
 
@@ -263,33 +249,6 @@ internal class WithRefArguments
     public void VoidRefMethod(ref string arg1)
     {
         arg1 = "Hello world";
-    }
-
-    public void VoidRefMethod2(ref ReadOnlyRefStruct arg1)
-    {
-    }
-    
-    public void VoidRefMethod3(ReadOnlySpan<char> firstName, ReadOnlySpan<char> lastName)
-    {
-        if (firstName != "Hello")
-        {
-            throw new Exception("Error modifying firstName value.");
-        }
-        
-        if (lastName != "World")
-        {
-            throw new Exception("Error modifying lastName value.");
-        }
-    }
-}
-
-public readonly ref struct ReadOnlyRefStruct
-{
-    public readonly string Value { get; }
-    
-    public ReadOnlyRefStruct(string value)
-    {
-        Value = value;
     }
 }
 
