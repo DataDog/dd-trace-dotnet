@@ -1,5 +1,4 @@
 using System;
-using System.Security;
 
 namespace CallTargetNativeTest;
 
@@ -233,7 +232,6 @@ internal class WithRefArguments
         IntValue = arg2;
     }
 
-    [SecurityCritical]
     public void VoidRefMethod(ref string arg1, ref int arg2)
     {
         StringValue = arg1;
@@ -245,7 +243,6 @@ internal class WithRefArguments
     {
     }
 
-    [SecurityCritical]
     public void VoidRefMethod(ref string arg1)
     {
         arg1 = "Hello world";
@@ -276,7 +273,6 @@ partial class ArgumentsParentType
         {
         }
 
-        [SecurityCritical]
         public void VoidRefMethod(ref string arg1)
         {
             arg1 = "Hello world";
@@ -328,7 +324,6 @@ partial class ArgumentsGenericParentType<PType>
             IntValue = arg2;
         }
 
-        [SecurityCritical]
         public void VoidRefMethod(ref string arg1, ref int arg2)
         {
             StringValue = arg1;
@@ -340,7 +335,6 @@ partial class ArgumentsGenericParentType<PType>
         {
         }
 
-        [SecurityCritical]
         public void VoidRefMethod(ref string arg1)
         {
             arg1 = "Hello world";
