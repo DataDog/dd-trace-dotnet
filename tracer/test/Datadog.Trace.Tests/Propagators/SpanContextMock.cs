@@ -29,6 +29,8 @@ internal class SpanContextMock
 
     public bool IsRemote { get; set; }
 
+    public string LastParentId { get; set; }
+
     public ISpanContext Parent { get; set; }
 
     public ulong? ParentId { get; set; }

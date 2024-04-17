@@ -46,6 +46,7 @@ public class SpanMessagePackFormatterTests
         spans[1].Tags.SetMetric("Metric1", 1.1);
         spans[1].Tags.SetMetric("Metric2", 2.1);
         spans[1].Tags.SetMetric("Metric3", 3.1);
+        spans[1].Context.LastParentId = "0123456789abcdef";
 
         spans[2].Error = true;
 
@@ -92,8 +93,16 @@ public class SpanMessagePackFormatterTests
             }
             else
             {
-                tagsProcessor.Remaining.Should()
-                             .HaveCount(1).And.Contain(new KeyValuePair<string, string>("language", "dotnet"));
+                if (!string.IsNullOrEmpty(expected.Context.LastParentId))
+                {
+                    tagsProcessor.Remaining.Should()
+                                 .HaveCount(2).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("_dd.parent_id", "0123456789abcdef"));
+                }
+                else
+                {
+                    tagsProcessor.Remaining.Should()
+                                 .HaveCount(1).And.Contain(new KeyValuePair<string, string>("language", "dotnet"));
+                }
             }
 
             var metricsProcessor = new TagsProcessor<double>(actual.Metrics);
@@ -234,6 +243,28 @@ public class SpanMessagePackFormatterTests
             tagValue0.Should().BeNull();
             tagValue1.Should().BeNull();
         }
+    }
+
+    [Fact]
+    public async Task LastParentId_Tag()
+    {
+        var mockApi = new MockApi();
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, false } });
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null);
+        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+
+        using (var scope = tracer.StartActiveInternal("root"))
+        {
+            scope.Span.Context.LastParentId = "0123456789abcdef";
+        }
+
+        await tracer.FlushAsync();
+        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
+
+        var span0 = traceChunks[0][0];
+        var tagValue0 = span0.GetTag("_dd.parent_id");
+
+        tagValue0.Should().Be("0123456789abcdef");
     }
 
     private readonly struct TagsProcessor<T> : IItemProcessor<T>

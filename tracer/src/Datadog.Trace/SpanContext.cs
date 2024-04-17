@@ -32,6 +32,7 @@ namespace Datadog.Trace
             Keys.RawSpanId,
             Keys.PropagatedTags,
             Keys.AdditionalW3CTraceState,
+            Keys.LastParentId,
 
             // For mismatch version support we need to keep supporting old keys.
             HttpHeaderNames.TraceId,
@@ -261,6 +262,12 @@ namespace Datadog.Trace
         /// </summary>
         internal string AdditionalW3CTraceState { get; set; }
 
+        /// <summary>
+        /// Gets or sets the last span ID of the most recently seen Datadog span that will be propagated downstream
+        /// to allow for the re-parenting of spans in cases where spans in distributed traces have missing spans.
+        /// </summary>
+        internal string LastParentId { get; set; }
+
         internal PathwayContext? PathwayContext { get; private set; }
 
         /// <summary>
@@ -383,6 +390,10 @@ namespace Datadog.Trace
                     value = TraceContext?.AdditionalW3CTraceState ?? AdditionalW3CTraceState;
                     return true;
 
+                case Keys.LastParentId:
+                    value = LastParentId;
+                    return true;
+
                 default:
                     value = null;
                     return false;
@@ -481,6 +492,7 @@ namespace Datadog.Trace
             public const string RawSpanId = $"{Prefix}RawSpanId";
             public const string PropagatedTags = $"{Prefix}PropagatedTags";
             public const string AdditionalW3CTraceState = $"{Prefix}AdditionalW3CTraceState";
+            public const string LastParentId = $"{Prefix}LastParentId";
         }
     }
 }
