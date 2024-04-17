@@ -19,6 +19,147 @@
 
 
 
+
+## [Release 2.50.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.50.0)
+
+## Summary
+
+- [CI Visibility] - Improvements for MSTest: custom `TestMethod`, custom `DisplayName`, and missing tests
+- [IAST] - NHibernate SQLI vulnerability detection
+- [ASM] - Add support for null-returning controller actions
+- [Dynamic Instrumentation] - Improvements to async method handling
+- [Dynamic Instrumentation] - Improvements to symbol database
+
+## Changes
+
+### Tracer
+* [ASM] Report external wafs headers (#5178)
+* Add rate limit for the log written by `TraceRateLimiter` (#5229)
+* Optimize HttpMessage.GetContentEncoding using spans (#5301)
+* Use `TraceId128` in log instead of `TraceId` (#5312)
+* Use vendored span in HexString (#5313)
+* Add support for span links (#5354)
+* [Tracing] Add `IsRemote` to `SpanContext` (#5385)
+* Adding nullability to CallTarget code and null checks to the ducktyping constraints proxy (#5393)
+* Add try/finally to Msmq integration (#5457)
+
+### CI Visibility
+* [CI Visibility] - New CI Visibility code coverage algorithm (#5254)
+* [CI Visibility] Fix some test to avoid flakiness on retries. (#5325)
+* [CI Visibility] - MSTest2 Improvements and Fixes (#5381)
+* [CI Visibility] - Fix ITR Code Coverage collector attach algorithm (#5412)
+* [CI Visibility] - Find .git folder when using GetFrom method as a fallback (#5425)
+
+### ASM
+* [ASM][ApiSecurity] Change Api Securitysampling algorithm (#5257)
+* [ASM] never log WAF at debug level, since (#5295)
+* [ASM] Dont deserialize rcm payloads until they are needed for memory optimization (#5296)
+* [ASM] Fix our legacy encoder benchmarks memory leak  (#5308)
+* Fix how security settings are read (#5317)
+* [ASM] Ensure new sample and agent are used on each test (#5339)
+* [ASM][IAST] NHibernate support (SQLI Vuln) (#5347)
+* [ASM] Fix nullreference exception escalation on response body instrumentation for NET Fx (#5365)
+
+### Continuous Profiler
+* [Profiler] Use a homemade implementation of linked-list (#5284)
+* [Profiler] Add FlushProfile public method (#5303)
+* [Profiler] Remove flakiness for GC CPU comsumption (#5323)
+* [Profiler] Add callstack provider (#5328)
+* [Profiler] Avoid named pipe test flackiness (#5331)
+* [Profiler] Bump to libdatadog 8 (#5348)
+* Update libunwind to 1.8.1 (#5358)
+* [Profiler] Fix bug in case of Agent error with .NET Framework (#5368)
+* Include the libunwind double-free fix (#5397)
+* [Profiler] Upgrade cppcheck to 2.12 (#5398)
+* Fix profiler integration tests (#5423)
+* [Profiler] Move GetAppDomain to ManagedThreadInfo (#5427)
+* [Profiler] Pass memory_resource around (#5434)
+* [Profiler] Fix possible crash when Agent does not answer namedpipe connection (#5437)
+* [Profiler] Fix use-after-free ASAN diagnostic (#5441)
+
+### Debugger
+* [Dynamic Instrumentation] Consider 3rd party assemblies on SymDB (#5380)
+* [Dynamic Instrumentation] Support legacy endpoint for diagnostics uploading (#5456)
+* [Dynamic Instrumentation] Reduce allocations in probe processing (#5132)
+* [Dynamic Instrumentation] Handle Out Of Range exception in SymDB (#5162)
+* [Dynamic Instrumentation] Fix number of locals in async method (#5131)
+* [Dynamic Instrumentation] Add NotCapturedReason for unreachable local var value in async method (#5161)
+* [Dynamic Instrumentation] Normalize redaction keywords + add missing keywords (#5350)
+* [Dynamic Instrumentation] Acknowledge log probe capture limits (#5364)
+* [Dynamic Instrumentation] Added emitting status for probes (#5372)
+* [Dynamic Instrumentation] Introduce diagnostics endpoint (#5373)
+* [Dynamic Instrumentation] Temporary disable system tests (#5411)
+* [Dynamic Instrumentation] Fix type of local in async method (#5414)
+* [Dynamic Instrumentation] Fix probe status upload + refactor upload process (#5422)
+
+### Exception Debugging
+* [Exception Debugging] Introducing the Exception Debugging product (#5163)
+* [Exception Debugging] Minor post-merge fix to Exception Debugging unwinding logic (#5327)
+* [Exception Debugging] Better communicate non-captured exceptions (#5371)
+* [Exception Debugging] Enhanced the reporting of non-captured exceptions (#5391)
+
+### Serverless
+* [Serverless] add serverless benchmarks (#5374)
+* [Serverless] update benchmark variables (#5409)
+
+### Fixes
+* Add some more `#nullable enable` (#5332)
+
+### Build / Test
+* Fix 2.7.0 XUnit tests (#5341)
+* Update CI support for release branches (#4811)
+* Add explicit "clean" step to clone repo (#5309)
+* Clean dangling AgentWriter instances in unit tests (#5311)
+* Fix lib-injection container images (#5322)
+* Increase the margin for the number of threads in RuntimeMetricsWriterTests (#5329)
+* Remove automatic deploy to di (#5330)
+* [Test] Running AspNetCore5IastTestsFullSampling Tests Serially (#5333)
+* Disable inlining for restsharp exploration tests (#5335)
+* Start pushing `latest_snapshot` images for lib-injection images (#5336)
+* Filtering out Timer ExitApp span (#5337)
+* [Test Package Versions Bump] Updating package versions (#5338)
+* [ci] Add oci package build (#5340)
+* Update CODEOWNERS file for MethodSymbolResolver.cs (#5342)
+* [Build] Extend Azure Service Bus testing from versions 7.4.x - 7.17.x (#5343)
+* Disable Inlining to 0 for both Cake & swashbuckle tests (#5344)
+* Disabling ASM Throughput Job  (#5345)
+* Running all WafLibraryRequiredTest tests serially (#5346)
+* Exclude known error from smoke tests (#5349)
+* Update some packages (#5353)
+* Fix some warnings in the samples (#5366)
+* separate DSM tests for more clarity (#5367)
+* Fix smoke test issue and pin versions (#5376)
+* Fix some more build warnings from the samples (#5378)
+* Don't print snapshots diff unless running in CI (#5379)
+* [Auto instrumentation generator] Add support for nested types (#5382)
+* K8s Lib Injection: Migration (#5383)
+* Try fix macos unit test crash (#5384)
+* Try working around missing Docker Compose v1 in hosted runners (#5386)
+* _Really_ clean up before doing anything (#5387)
+* Only publish `:latest` lib-injection container images on merges to master (#5388)
+* Temporarily disable profiler CppCheck (#5389)
+* Split the macos build into 2 jobs and parallelise (#5390)
+* Ensure we also clean hidden folders (#5399)
+* Use docker mirror image in GitLab instead of dockerhub (#5401)
+* Remove direct reference to Samples.AspNetCore.RazorPages from integration test project (#5402)
+* Set the obfuscation querystring regex to something large to avoid flake in integration tests (#5403)
+* Don't specify port for Yarp test to avoid flake (#5404)
+* [Test Package Versions Bump] Updating package versions (#5405)
+* Update approvals for debugger async tests (#5406)
+* Update GitHub token to one that's not about to expire (#5407)
+* Ignore complaints from NuGet about out of support packages (#5415)
+* Add an explicit "clean docker" step (#5417)
+* Don't re-build everything when building the runner in CI (#5424)
+* Bump the timeout of the integration_tests_windows stage (#5426)
+* Bump the macos timeout (#5430)
+
+### Miscellaneous
+* [Tracer][Logs] ILogger sample in Azure Functions (#4065)
+* [DSM] - Use the same header adapter on get and put (#5361)
+
+
+[Changes since 2.49.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.49.0...v2.50.0)
+
 ## [Release 2.49.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.49.0)
 
 ## Summary
