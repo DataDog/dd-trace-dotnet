@@ -7,16 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Diagnostics.Runtime;
 using Spectre.Console;
-using Spectre.Console.Rendering;
 
 namespace Datadog.Trace.Tools.dd_dotnet;
 
@@ -26,28 +24,16 @@ internal class CreatedumpCommand : Command
 
     private static ClrRuntime? _runtime;
 
-    private readonly Argument<string> _createdumpPathArgument = new("createdump") { Arity = ArgumentArity.ExactlyOne };
-    private readonly Argument<int?> _pidArgument = new("pid") { Arity = ArgumentArity.ExactlyOne };
-    private readonly Option<bool> _fullOption = new("--full");
-    private readonly Option<bool> _normalOption = new("--normal");
-    private readonly Option<bool> _withheapOption = new("--withheap");
-    private readonly Option<bool> _triageOption = new("--triage");
-    private readonly Option<int?> _signalOption = new("--signal");
-    private readonly Option<int?> _crashthreadOption = new("--crashthread");
+    private readonly Argument<string[]> _allArguments = new("args");
 
     public CreatedumpCommand()
         : base("createdump")
     {
-        AddArgument(_createdumpPathArgument);
-        AddArgument(_pidArgument);
-        AddOption(_fullOption);
-        AddOption(_normalOption);
-        AddOption(_withheapOption);
-        AddOption(_triageOption);
-        AddOption(_signalOption);
-        AddOption(_crashthreadOption);
+        // Use a string[] argument to match everything
+        // We want to be able to forward the command to createdump even when we don't understand it
+        AddArgument(_allArguments);
+        IsHidden = true;
 
-        this.TreatUnmatchedTokensAsErrors = false;
         this.SetHandler(Execute);
     }
 
@@ -71,6 +57,7 @@ internal class CreatedumpCommand : Command
 
             methodData->SymbolAddress = method.NativeCode;
             methodData->ModuleAddress = method.Type.Module.ImageBase;
+            methodData->IsSuspicious = IsSuspicious(method);
 
             var name = $"{Path.GetFileName(method.Type.Module.AssemblyName)}!{method.Type}.{method.Name}";
 
@@ -91,21 +78,92 @@ internal class CreatedumpCommand : Command
         }
     }
 
-    private unsafe void Execute(InvocationContext context)
+    private static bool IsSuspicious(ClrMethod method)
     {
-        var pid = _pidArgument.GetValue(context)!;
-        var signal = _signalOption.GetValue(context);
+        var assemblyName = method.Type.Module.AssemblyName;
 
-        var crashThread = _crashthreadOption.GetValue(context);
-
-        if (crashThread.HasValue)
+        if (assemblyName != null && assemblyName.StartsWith("Datadog", StringComparison.OrdinalIgnoreCase))
         {
-            AnsiConsole.WriteLine($"Crash thread: {crashThread}");
+            // TODO: we need to whitelist some methods
+            return true;
         }
 
-        AnsiConsole.WriteLine($"Capturing crash info for process {pid}");
-        AnsiConsole.WriteLine($"Command-line: {Environment.CommandLine}");
+        if (method.Type.Module.IsDynamic && assemblyName != null && assemblyName.StartsWith("DuckType"))
+        {
+            return true;
+        }
 
+        return false;
+    }
+
+    private static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? crashThread)
+    {
+        pid = default;
+        signal = default;
+        crashThread = default;
+
+        if (arguments.Length < 2)
+        {
+            return false;
+        }
+
+        if (!int.TryParse(arguments[1], out pid))
+        {
+            return false;
+        }
+
+        for (int i = 2; i < arguments.Length - 1; i++)
+        {
+            if (arguments[i] == "--signal")
+            {
+                if (int.TryParse(arguments[i + 1], out int s))
+                {
+                    signal = s;
+                }
+            }
+            else if (arguments[i] == "--crashthread")
+            {
+                if (int.TryParse(arguments[i + 1], out int t))
+                {
+                    crashThread = t;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private unsafe void Execute(InvocationContext context)
+    {
+        var allArguments = _allArguments.GetValue(context);
+
+        try
+        {
+            if (ParseArguments(allArguments, out var pid, out var signal, out var crashThread))
+            {
+                GenerateCrashReport(pid, signal, crashThread);
+            }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.WriteLine($"Error while generating the crash report: {ex}");
+        }
+        finally
+        {
+            // Note: if refactoring, make sure to dispose the ClrMD DataTarget before calling createdump,
+            // otherwise the calls to ptrace from createdump will fail
+            if (Environment.GetEnvironmentVariable("DD_TRACE_CRASH_HANDLER_PASSTHROUGH") == "1")
+            {
+                if (allArguments.Length > 0)
+                {
+                    InvokeCreatedump(allArguments[0]);
+                }
+            }
+        }
+    }
+
+    private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread)
+    {
         var lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Datadog.Profiler.Native.so"));
 
         var export = NativeLibrary.GetExport(lib, "CreateCrashReport");
@@ -116,101 +174,98 @@ internal class CreatedumpCommand : Command
             return;
         }
 
-        using (var target = DataTarget.AttachToProcess(pid.Value, suspend: true))
+        using var target = DataTarget.AttachToProcess(pid, suspend: true);
+        _runtime = target.ClrVersions[0].CreateRuntime();
+
+        var function = (delegate* unmanaged<int, IntPtr>)export;
+
+        var ptr = function(pid);
+
+        if (ptr == IntPtr.Zero)
         {
-            _runtime = target.ClrVersions[0].CreateRuntime();
-
-            var function = (delegate* unmanaged<int, IntPtr>)export;
-
-            var ptr = function(pid.Value);
-
-            if (ptr == IntPtr.Zero)
-            {
-                AnsiConsole.WriteLine("Failed to create crash report");
-                return;
-            }
-
-            using var iunknown = NativeObjects.IUnknown.Wrap(ptr);
-
-            int result = iunknown.QueryInterface(ICrashReport.Guid, out var crashReportPtr);
-
-            if (result != 0)
-            {
-                AnsiConsole.WriteLine($"Failed to query interface: {result}");
-                return;
-            }
-
-            using var crashReport = NativeObjects.ICrashReport.Wrap(crashReportPtr);
-
-            try
-            {
-                crashReport.Initialize();
-            }
-            catch (Win32Exception ex)
-            {
-                AnsiConsole.WriteLine($"Failed to initialize crash report: {GetLastError(crashReport, ex)}");
-                return;
-            }
-
-            if (crashThread == null)
-            {
-                var firstThreadWithException = _runtime.Threads.FirstOrDefault(t => t.CurrentException != null);
-
-                if (firstThreadWithException != null)
-                {
-                    crashThread = (int)firstThreadWithException.OSThreadId;
-                }
-            }
-
-            // Check if there's an exception on the crash thread
-            if (crashThread != null)
-            {
-                var exception = _runtime.Threads.FirstOrDefault(t => t.OSThreadId == crashThread.Value)?.CurrentException;
-
-                if (exception != null)
-                {
-                    AnsiConsole.WriteLine($"Managed exception found: {exception}");
-                    _ = SetException(crashReport, exception);
-                }
-            }
-
-            if (signal.HasValue)
-            {
-                _ = SetSignal(crashReport, signal.Value);
-            }
-
-            _ = SetMetadata(crashReport, _runtime);
-
-            try
-            {
-                var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
-                crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback);
-            }
-            catch (Win32Exception ex)
-            {
-                AnsiConsole.WriteLine($"Failed to resolve stacks: {GetLastError(crashReport, ex)}");
-            }
-
-            try
-            {
-                crashReport.Send();
-            }
-            catch (Win32Exception ex)
-            {
-                AnsiConsole.WriteLine($"Failed to send crash report: {GetLastError(crashReport, ex)}");
-                return;
-            }
-
-            AnsiConsole.WriteLine("Crash report sent successfully");
+            AnsiConsole.WriteLine("Failed to create crash report");
+            return;
         }
 
-        // We must make sure to dispose the ClrRuntime before calling createdump,
-        // otherwise the calls to ptrace from createdump will fail
-        if (Environment.GetEnvironmentVariable("DD_TRACE_CRASH_HANDLER_PASSTHROUGH") == "1")
+        using var iunknown = NativeObjects.IUnknown.Wrap(ptr);
+
+        int result = iunknown.QueryInterface(ICrashReport.Guid, out var crashReportPtr);
+
+        if (result != 0)
         {
-            var createdumpPath = _createdumpPathArgument.GetValue(context);
-            InvokeCreatedump(createdumpPath);
+            AnsiConsole.WriteLine($"Failed to query interface: {result}");
+            return;
         }
+
+        using var crashReport = NativeObjects.ICrashReport.Wrap(crashReportPtr);
+
+        try
+        {
+            crashReport.Initialize();
+        }
+        catch (Win32Exception ex)
+        {
+            AnsiConsole.WriteLine($"Failed to initialize crash report: {GetLastError(crashReport, ex)}");
+            return;
+        }
+
+        if (crashThread == null)
+        {
+            var firstThreadWithException = _runtime.Threads.FirstOrDefault(t => t.CurrentException != null);
+
+            if (firstThreadWithException != null)
+            {
+                crashThread = (int)firstThreadWithException.OSThreadId;
+            }
+        }
+
+        // Check if there's an exception on the crash thread
+        if (crashThread != null)
+        {
+            var exception = _runtime.Threads.FirstOrDefault(t => t.OSThreadId == crashThread.Value)?.CurrentException;
+
+            if (exception != null)
+            {
+                _ = SetException(crashReport, exception);
+            }
+        }
+
+        bool isSuspicious = false;
+
+        try
+        {
+            var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
+            crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback, out isSuspicious);
+
+            if (!isSuspicious)
+            {
+                AnsiConsole.WriteLine("No suspicious methods found in the stack trace");
+                return;
+            }
+        }
+        catch (Win32Exception ex)
+        {
+            AnsiConsole.WriteLine($"Failed to resolve stacks: {GetLastError(crashReport, ex)}");
+        }
+
+        if (signal.HasValue)
+        {
+            _ = SetSignal(crashReport, signal.Value);
+        }
+
+        _ = SetMetadata(crashReport, _runtime);
+
+        try
+        {
+            crashReport.Send();
+        }
+        catch (Win32Exception ex)
+        {
+            AnsiConsole.WriteLine($"Failed to send crash report: {GetLastError(crashReport, ex)}");
+            return;
+        }
+
+        AnsiConsole.WriteLine("Crash report sent successfully");
     }
 
     private void InvokeCreatedump(string createdumpPath)
@@ -423,6 +478,7 @@ internal class CreatedumpCommand : Command
     {
         public ulong SymbolAddress;
         public ulong ModuleAddress;
+        public bool IsSuspicious;
         public fixed byte Name[MethodNameMaxLength];
     }
 }

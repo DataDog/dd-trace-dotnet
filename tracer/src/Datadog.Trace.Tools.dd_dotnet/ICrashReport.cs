@@ -25,7 +25,7 @@ internal unsafe interface ICrashReport : IUnknown
 
     int SetSignalInfo(int signal, IntPtr description);
 
-    int ResolveStacks(int crashingThreadId, IntPtr resolveCallback);
+    int ResolveStacks(int crashingThreadId, IntPtr resolveCallback, out bool isSuspicious);
 
     int SetMetadata(IntPtr libraryName, IntPtr libraryVersion, IntPtr family, Tag* tags, int tagsCount);
 

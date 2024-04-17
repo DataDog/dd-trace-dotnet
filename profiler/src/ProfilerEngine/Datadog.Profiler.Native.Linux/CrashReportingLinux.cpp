@@ -26,7 +26,7 @@ extern "C"
 
 CrashReporting* CrashReporting::Create(int32_t pid)
 {
-    auto crashReporting = new CrashReportingLinux(pid);    
+    auto crashReporting = new CrashReportingLinux(pid);
     return (CrashReporting*)crashReporting;
 }
 
@@ -158,6 +158,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
         StackFrame stackFrame;
         stackFrame.ip = ip;
+        stackFrame.isSuspicious = false;
 
         ResolveMethodData methodData;
 
@@ -171,7 +172,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             stackFrame.moduleAddress = module.second;
 
             unw_proc_info_t procInfo;
-            result = unw_get_proc_info(&cursor, &procInfo);            
+            result = unw_get_proc_info(&cursor, &procInfo);
 
             if (result == 0)
             {
@@ -203,13 +204,17 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
                     unknownModule << module.first << "!<unknown>+" << std::hex << (ip - module.second);
                     stackFrame.method = unknownModule.str();
                 }
-            }            
+            }
+
+            // TODO: Check if the stacktrace is from the tracer or the profiler
+            stackFrame.isSuspicious = false;
         }
         else if (resolved == 0)
         {
             stackFrame.method = std::string(methodData.symbolName);
             stackFrame.moduleAddress = methodData.moduleAddress;
             stackFrame.symbolAddress = methodData.symbolAddress;
+            stackFrame.isSuspicious = methodData.isSuspicious;
         }
 
         frames.push_back(stackFrame);

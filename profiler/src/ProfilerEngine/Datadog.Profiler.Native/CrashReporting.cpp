@@ -56,6 +56,7 @@ int32_t CrashReporting::Initialize()
 
     _crashInfo = crashInfoResult.ok;
 
+    /*
     auto result = ddog_crashinfo_set_timestamp_to_now(&_crashInfo);
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
@@ -63,6 +64,7 @@ int32_t CrashReporting::Initialize()
         SetLastError(result.err);
         return 1;
     }
+    */
 
     return 0;
 }
@@ -151,11 +153,13 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
     return 0;
 }
 
-int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback)
+int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback, bool* isSuspicious)
 {
     auto threads = GetThreads();
 
     int32_t successfulThreads = 0;
+
+    *isSuspicious = false;
 
     for (auto threadId : threads)
     {
@@ -176,6 +180,11 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedMe
         for (int i = 0; i < count; i++)
         {
             auto frame = frames.at(i);
+
+            if (threadId == crashingThreadId && frame.isSuspicious)
+            {
+                *isSuspicious = true;
+            }
 
             strings[i] = frame.method;
 
@@ -279,7 +288,17 @@ int32_t CrashReporting::Send()
     }
 
     ddog_prof_CrashtrackerConfiguration config{};
-    config.endpoint = ddog_prof_Endpoint_agent(DDOG_CHARSLICE_C("http://172.30.64.1:8126/"));
+
+    // TODO: This should be done by libdatadog
+    const char* agentUrl = getenv("DD_TRACE_AGENT_URL");
+
+    // If agent is not set, default to localhost
+    if (agentUrl == nullptr)
+    {
+        agentUrl = "http://127.0.0.1:8126";
+    }
+
+    config.endpoint = ddog_prof_Endpoint_agent(libdatadog::FfiHelper::StringToCharSlice(std::string_view(agentUrl)));
     config.path_to_receiver_binary = DDOG_CHARSLICE_C("FIXME - point me to receiver binary path");
     config.timeout_secs = 30;
 
