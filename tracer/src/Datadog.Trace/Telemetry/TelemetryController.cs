@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryController.cs" company="Datadog">
+// <copyright file="TelemetryController.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -39,6 +39,7 @@ internal class TelemetryController : ITelemetryController
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly Task _flushTask;
     private readonly Scheduler _scheduler;
+    private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
     private TelemetryTransportManager _transportManager;
     private bool _sendTelemetry;
     private bool _isStarted;
@@ -50,7 +51,8 @@ internal class TelemetryController : ITelemetryController
         IMetricsTelemetryCollector metrics,
         RedactedErrorLogCollector? redactedErrorLogs,
         TelemetryTransportManager transportManager,
-        TimeSpan flushInterval)
+        TimeSpan flushInterval,
+        IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
@@ -61,6 +63,7 @@ internal class TelemetryController : ITelemetryController
         // It simplifies some of the logic we need to do in the scheduler
         var redactedErrorLogsTask = () => _redactedErrorLogs?.WaitForLogsAsync() ?? Task.Delay(Timeout.Infinite);
         _scheduler = new(flushInterval, redactedErrorLogsTask, _processExit);
+        _gitMetadataTagsProvider = gitMetadataTagsProvider;
 
         try
         {
@@ -89,7 +92,7 @@ internal class TelemetryController : ITelemetryController
         // ImmutableTracerSettings, at which point that config would become "current", so we
         // need to keep it around
         settings.Telemetry.CopyTo(_configuration);
-        _application.RecordTracerSettings(settings, defaultServiceName);
+        _application.RecordTracerSettings(settings, defaultServiceName, _gitMetadataTagsProvider);
         _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
         _queue.Enqueue(new WorkItem(WorkItem.ItemType.EnableSending, null));
     }

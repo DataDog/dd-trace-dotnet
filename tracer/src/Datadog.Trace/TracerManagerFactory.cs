@@ -139,7 +139,7 @@ namespace Datadog.Trace
                 settings.ServiceVersionInternal,
                 gitMetadataTagsProvider);
 
-            telemetry ??= CreateTelemetryController(settings, discoveryService);
+            telemetry ??= CreateTelemetryController(settings, discoveryService, gitMetadataTagsProvider);
             telemetry.RecordTracerSettings(settings, defaultServiceName);
 
             TelemetryFactory.Metrics.SetWafVersion(Security.Instance.DdlibWafVersion);
@@ -215,9 +215,9 @@ namespace Datadog.Trace
                 tracerFlareManager);
         }
 
-        protected virtual ITelemetryController CreateTelemetryController(ImmutableTracerSettings settings, IDiscoveryService discoveryService)
+        protected virtual ITelemetryController CreateTelemetryController(ImmutableTracerSettings settings, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
-            return TelemetryFactory.Instance.CreateTelemetryController(settings, discoveryService);
+            return TelemetryFactory.Instance.CreateTelemetryController(settings, discoveryService, gitMetadataTagsProvider);
         }
 
         protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)

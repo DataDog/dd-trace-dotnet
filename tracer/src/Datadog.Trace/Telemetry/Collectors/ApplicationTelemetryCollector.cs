@@ -1,4 +1,4 @@
-﻿// <copyright file="ApplicationTelemetryCollector.cs" company="Datadog">
+// <copyright file="ApplicationTelemetryCollector.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,8 +18,10 @@ internal class ApplicationTelemetryCollector
 
     public void RecordTracerSettings(
         ImmutableTracerSettings tracerSettings,
-        string defaultServiceName)
+        string defaultServiceName,
+        IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
+        gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata);
         var frameworkDescription = FrameworkDescription.Instance;
         var application = new ApplicationTelemetryData(
             serviceName: defaultServiceName,
@@ -29,7 +31,9 @@ internal class ApplicationTelemetryCollector
             languageName: TracerConstants.Language,
             languageVersion: frameworkDescription.ProductVersion,
             runtimeName: frameworkDescription.Name,
-            runtimeVersion: frameworkDescription.ProductVersion);
+            runtimeVersion: frameworkDescription.ProductVersion,
+            commitSha: gitMetadata?.CommitSha,
+            repositoryUrl: gitMetadata?.RepositoryUrl);
 
         Interlocked.Exchange(ref _applicationData, application);
 

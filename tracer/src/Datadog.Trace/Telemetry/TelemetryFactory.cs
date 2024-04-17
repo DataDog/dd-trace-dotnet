@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryFactory.cs" company="Datadog">
+// <copyright file="TelemetryFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -59,13 +59,13 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         public static TelemetryFactory CreateFactory() => new();
 
-        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, IDiscoveryService discoveryService)
-            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings, isAgentAvailable: null), discoveryService, useCiVisibilityTelemetry: false);
+        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider)
+            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings, isAgentAvailable: null), discoveryService, useCiVisibilityTelemetry: false, gitMetadataTagsProvider: gitMetadataTagsProvider);
 
-        public ITelemetryController CreateCiVisibilityTelemetryController(ImmutableTracerSettings tracerSettings, IDiscoveryService discoveryService, bool isAgentAvailable)
-            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings, isAgentAvailable), discoveryService, useCiVisibilityTelemetry: true);
+        public ITelemetryController CreateCiVisibilityTelemetryController(ImmutableTracerSettings tracerSettings, IDiscoveryService discoveryService, bool isAgentAvailable, IGitMetadataTagsProvider gitMetadataTagsProvider)
+            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings, isAgentAvailable), discoveryService, useCiVisibilityTelemetry: true, gitMetadataTagsProvider: gitMetadataTagsProvider);
 
-        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, TelemetrySettings settings, IDiscoveryService discoveryService, bool useCiVisibilityTelemetry)
+        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, TelemetrySettings settings, IDiscoveryService discoveryService, bool useCiVisibilityTelemetry, IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
             // Deliberately not a static field, because otherwise creates a circular dependency during startup
             var log = DatadogLogging.GetLoggerFor<TelemetryFactory>();
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Telemetry
                 }
 
                 log.Debug("Creating telemetry controller v2");
-                return CreateController(telemetryTransports, settings, discoveryService);
+                return CreateController(telemetryTransports, settings, discoveryService, gitMetadataTagsProvider);
             }
             catch (Exception ex)
             {
@@ -157,7 +157,8 @@ namespace Datadog.Trace.Telemetry
         private ITelemetryController CreateController(
             TelemetryTransports telemetryTransports,
             TelemetrySettings settings,
-            IDiscoveryService discoveryService)
+            IDiscoveryService discoveryService,
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
             var transportManager = new TelemetryTransportManager(telemetryTransports, discoveryService);
             // The telemetry controller must be a singleton, so we initialize once
@@ -176,7 +177,8 @@ namespace Datadog.Trace.Telemetry
                         Metrics,
                         _logs.IsValueCreated ? _logs.Value : null, // if we haven't created it by now, we don't need it
                         transportManager,
-                        settings.HeartbeatInterval);
+                        settings.HeartbeatInterval,
+                        gitMetadataTagsProvider);
                 }
             }
 
