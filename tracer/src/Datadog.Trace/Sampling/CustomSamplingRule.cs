@@ -146,9 +146,13 @@ namespace Datadog.Trace.Sampling
 
         public override string ToString()
         {
-            // later this will return different values depending on the rule's provenance:
-            // local, customer (remote), or dynamic (remote)
-            return "LocalSamplingRule";
+            return _provenance switch
+            {
+                SamplingRuleProvenance.Local => "LocalSamplingRule",
+                SamplingRuleProvenance.Remote => "RemoteUserSamplingRule",
+                SamplingRuleProvenance.Automatic => "RemoteAdaptiveSamplingRule",
+                _ => "UnknownSamplingRule"
+            };
         }
 
         // ReSharper disable once ClassNeverInstantiated.Local
