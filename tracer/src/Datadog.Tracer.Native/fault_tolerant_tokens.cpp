@@ -45,6 +45,11 @@ const WSTRING& fault_tolerant::FaultTolerantTokens::GetCallTargetReturnGenericTy
     return not_implemented;
 }
 
+const WSTRING& fault_tolerant::FaultTolerantTokens::GetCallTargetRefStructType()
+{
+    return not_implemented;
+}
+
 fault_tolerant::FaultTolerantTokens::FaultTolerantTokens(ModuleMetadata* module_metadata_ptr) :
     CallTargetTokens(module_metadata_ptr, true, true)
 {

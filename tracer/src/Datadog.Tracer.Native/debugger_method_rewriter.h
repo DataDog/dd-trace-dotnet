@@ -120,10 +120,6 @@ private:
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl,
                     MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
                     SpanProbeOnMethodDefinitions& spanProbesOnMethod) const;
-    HRESULT IsTypeByRefLike(ModuleMetadata& module_metadata, const TypeSignature& typeSig,
-                                   const mdAssemblyRef& corLibAssemblyRef, bool& isTypeIsByRefLike) const;
-    HRESULT IsTypeTokenByRefLike(ModuleMetadata& module_metadata, mdToken typeDefOrRefOrSpecToken,
-                                        bool& isTypeIsByRefLike) const;
     static std::vector<ILInstr*> GetBranchTargets(ILRewriter* pRewriter);
     static void AdjustBranchTargets(ILInstr* pFromInstr, ILInstr* pToInstr, const std::vector<ILInstr*>& branchTargets);
     static void AdjustExceptionHandlingClauses(ILInstr* pFromInstr, ILInstr* pToInstr, ILRewriter* pRewriter);
