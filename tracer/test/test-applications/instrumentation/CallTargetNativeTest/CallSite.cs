@@ -19,6 +19,8 @@ partial class Program
             @"  [AspectMethodInsertBefore(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertBefore_1(System.String,System.String)"","""",[1],[False],[None],Propagation,[])] AspectMethodInsertBefore_1(System.String)",
             @"  [AspectMethodInsertAfter(""CallTargetNativeTest.Program+CallSiteTargets::TargetMethodInsertAfter(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectMethodInsertAfter(System.String)",
             @"  [AspectMethodReplace(""CallTargetNativeTest.Program+CallSiteTargets+TestStruct::GetText()"","""",[0],[True],[None],Propagation,[])] AspectMethodReplace(System.Object)",
+            @"[AspectClass(""mscorlib,netstandard,System.Private.CoreLib,System.Runtime"",[None],Propagation,[],4,[""CallTargetNativeTest|CallTargetNativeTest.Program+CallSiteTests::AspectFiltered(System.String,System.String,System.String)""])] Datadog.Trace.Iast.Aspects.DiagnosticsAspects",
+            @"  [AspectMethodInsertAfter(""System.String::Concat(System.String,System.String)"","""",[0],[False],[None],Propagation,[])] AspectMethodInsertAfterFiltered(System.String)",
         };
         NativeMethods.RegisterIastAspects(aspects);
     }
@@ -38,6 +40,7 @@ partial class Program
         CallSiteTests.RunMethod(() => tests.AspectMethodInsertBefore_1(param1, param2, expected), $"[AspectMethodInsertBefore]DiagnosticsAspects.AspectMethodInsertBefore_1(string {param1})");
         CallSiteTests.RunMethod(() => tests.AspectMethodInsertAfter(param1, param2, expected), $"[AspectMethodInsertAfter]DiagnosticsAspects.AspectMethodInsertAfter(string {expected})");
         CallSiteTests.RunMethod(() => tests.AspectMethodReplaceStruct(expected), $"[AspectMethodReplace]DiagnosticsAspects.AspectMethodReplace(object TestStruct {{{expected}}})");
+        CallSiteTests.RunMethod(() => tests.AspectFiltered(param1, param2, expected), $"[AspectMethodInsertAfter]DiagnosticsAspects.AspectMethodInsertAfterFiltered(object {expected})");
     }
 
     public class CallSiteTests
@@ -101,8 +104,6 @@ partial class Program
             return result;
         }
 
-        //---------------------------
-
         public string AspectMethodReplaceStruct(string expected)
         {
             var testStruct = new CallSiteTargets.TestStruct { text = expected };
@@ -113,6 +114,16 @@ partial class Program
 
             return result;
         }
+
+        public string AspectFiltered(string param1, string param2, string expected)
+        {
+            var result = CallSiteTargets.TargetMethodInsertAfter(param1, param2); //Tis call should NOT be probed
+            result = param1 + param2;  //This call should be probed in the result
+            System.Diagnostics.Debug.Assert(result == expected);
+
+            return result;
+        }
+
 
         private static string GetText(object obj)
         {
@@ -147,6 +158,10 @@ partial class Program
             return string.Concat(param1, param2);
         }
         public static string TargetMethodInsertAfter(string param1, string param2)
+        {
+            return string.Concat(param1, param2);
+        }
+        public static string FilteredMethodInsertAfter(string param1, string param2)
         {
             return string.Concat(param1, param2);
         }

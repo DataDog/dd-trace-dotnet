@@ -88,4 +88,15 @@ internal class DiagnosticsAspects
         Hook?.Invoke($"[AspectCtorReplace]DiagnosticsAspects.AspectCtorReplace(string {param1}, string {param2})");
         return param1 + param2;
     }
+
+    /// <summary>
+    /// AspectCtorReplace test method
+    /// </summary>
+    /// <param name="param1">first parameter (not static)</param>
+    /// <returns>Returns the new object instance</returns>
+    public static object AspectMethodInsertAfterFiltered(object param1)
+    {
+        Hook?.Invoke($"[AspectMethodInsertAfter]DiagnosticsAspects.AspectMethodInsertAfterFiltered(object {param1})");
+        return param1;
+    }
 }

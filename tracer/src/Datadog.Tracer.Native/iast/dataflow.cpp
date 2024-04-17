@@ -169,9 +169,11 @@ std::vector<DataflowAspectReference*> ModuleAspects::GetAspects(MethodInfo* meth
         return _aspects;
     }
     mdToken methodId = method->GetMemberId();
-    auto methodSites = Get<mdToken, std::vector<DataflowAspectReference*>>(_methodSiteAspects, methodId);
+    std::vector<DataflowAspectReference*>* methodSites = Get<mdToken, std::vector<DataflowAspectReference*>>(_methodSiteAspects, methodId);
     if (!methodSites)
     {
+        methodSites = new std::vector<DataflowAspectReference*>();
+        _methodSiteAspects[methodId] = methodSites;
         for (auto aspectClass : *methodCallSiteAspects)
         {
             for (auto aspect : aspectClass->_aspects)
@@ -675,72 +677,37 @@ MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, bool
         }
     }
 
-    //auto module = GetModuleInfo(moduleId);
-    //if (module && !module->IsExcluded())
-    //{
-    //    method = module->GetMethodInfo(methodId);
-    //    if (method && !method->IsExcluded())
-    //    {
-    //        auto type = method->GetTypeInfo();
-    //        if (isRejit || !method->IsProcessed())
-    //        {
-    //            method->SetProcessed();
-    //            if (_traceJitMethods)
-    //            {
-    //                trace::Logger::Debug("JITProcessMethod       -> Processing ", method->GetFullName());
-    //            }
-    //            RewriteMethod(method, nullptr);
-    //            return method;
-    //        }
-    //    }
-    //}
     return method;
 }
 
 bool Dataflow::IsMethodExcluded(ModuleID moduleId, mdToken methodId, ModuleInfo** module, MethodInfo** method, std::vector<DataflowAspectClass*>** methodCallSiteAspects)
 {
     *module = GetModuleInfo(moduleId);
-    if (!*module)
-    {
-        return true;
-    }
+    if (!*module) { return true; }
 
-    if (!(*module)->IsExcluded())
+    // Check if module has methods with callsite filters
+    auto moduleSites = Get(_siteFilteredAspectClasses, (*module)->GetName());
+    if (moduleSites)
     {
+        // Check if method has callsite filters
         *method = (*module)->GetMethodInfo(methodId);
-        if (!(*method))
-        {
-            return true;
-        }
-        if(!(*method)->IsExcluded())
+        if (!*method) { return true; }
+
+        *methodCallSiteAspects = moduleSites->GetSiteFilteredAspects((*method)->GetFullName());
+        if (*methodCallSiteAspects)
         {
             return false;
         }
     }
 
-    //Check if method has callsite filters
-    auto moduleSites = Get(_siteFilteredAspectClasses, (*module)->GetName());
-    if (!moduleSites)
+    if ((*module)->IsExcluded()) { return true; }
+    if (!*method) { *method = (*module)->GetMethodInfo(methodId); }
+    if (!*method || (*method)->IsExcluded())
     {
         return true;
     }
 
-    if (!(*method))
-    {
-        *method = (*module)->GetMethodInfo(methodId);
-    }
-    if (!(*method))
-    {
-        return true;
-    }
-
-    *methodCallSiteAspects = moduleSites->GetSiteFilteredAspects((*method)->GetFullName());
-    if ((*methodCallSiteAspects))
-    {
-        return false;
-    }
-
-    return true;
+    return false;
 }
 
 
