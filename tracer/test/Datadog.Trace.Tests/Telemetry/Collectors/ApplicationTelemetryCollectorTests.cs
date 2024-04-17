@@ -97,8 +97,8 @@ public class ApplicationTelemetryCollectorTests
             data.LanguageVersion.Should().Be(FrameworkDescription.Instance.ProductVersion);
             data.RuntimeName.Should().NotBeNullOrEmpty().And.Be(FrameworkDescription.Instance.Name);
             data.RuntimeVersion.Should().Be(FrameworkDescription.Instance.ProductVersion);
-            data.CommitSha.Should().Be("mySha");
-            data.RepositoryUrl.Should().Be("https://github.com/gitOrg/gitRepo");
+            data.CommitSha.Should().BeEmpty();
+            data.RepositoryUrl.Should().BeEmpty();
         }
     }
 
