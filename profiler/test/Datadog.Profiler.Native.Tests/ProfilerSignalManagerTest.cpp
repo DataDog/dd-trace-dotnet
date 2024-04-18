@@ -17,7 +17,12 @@ public:
 
     void SetUp() override
     {
-        ProfilerSignalManager::Get()->Reset();
+        GetSignalManager()->Reset();
+    }
+    
+    static ProfilerSignalManager* GetSignalManager()
+    {
+        return ProfilerSignalManager::Get(SIGUSR1);
     }
 };
 
@@ -33,7 +38,7 @@ bool OtherCustomHandler(int signal, siginfo_t* info, void* context)
 
 TEST_F(ProfilerSignalManagerFixture, CheckSignalIsInstallOnRegistration)
 {
-    auto* signalManager = ProfilerSignalManager::Get();
+    auto* signalManager = GetSignalManager();
 
     EXPECT_FALSE(signalManager->IsHandlerInPlace());
     EXPECT_TRUE(signalManager->RegisterHandler(CustomHandler));
@@ -42,7 +47,7 @@ TEST_F(ProfilerSignalManagerFixture, CheckSignalIsInstallOnRegistration)
 
 TEST_F(ProfilerSignalManagerFixture, CanRegisterOnlyOneCustomHandler)
 {
-    auto* signalManager = ProfilerSignalManager::Get();
+    auto* signalManager = GetSignalManager();
 
     EXPECT_TRUE(signalManager->RegisterHandler(CustomHandler));
     EXPECT_TRUE(signalManager->IsHandlerInPlace());
@@ -58,7 +63,7 @@ TEST_F(ProfilerSignalManagerFixture, CanRegisterOnlyOneCustomHandler)
 
 TEST_F(ProfilerSignalManagerFixture, CheckSignalHandlerIsSetForSignalUSR1)
 {
-    auto* signalManager = ProfilerSignalManager::Get();
+    auto* signalManager = GetSignalManager();
     EXPECT_TRUE(signalManager->RegisterHandler(CustomHandler));
 
     struct sigaction currentAction;
@@ -66,6 +71,45 @@ TEST_F(ProfilerSignalManagerFixture, CheckSignalHandlerIsSetForSignalUSR1)
     EXPECT_EQ(currentAction.sa_flags & SA_SIGINFO, SA_SIGINFO) << "sa_flags must contain the SA_SIGINFO mask to use sigaction handler.";
     EXPECT_EQ(currentAction.sa_flags & SA_RESTART, SA_RESTART) << "sa_flags must contain the SA_RESTART mask for threads that were interrupted while waiting on IO.";
     EXPECT_NE(currentAction.sa_sigaction, nullptr) << "sa_sigaction handler must not be nullptr.";
+}
+
+bool SigProfHandlerCalled = false;
+bool SigProfCustomHandler(int signal, siginfo_t* info, void* context)
+{
+    SigProfHandlerCalled = true;
+    return true;
+}
+
+TEST_F(ProfilerSignalManagerFixture, CheckTwoDifferentSignalInstallation)
+{
+    auto* sigusr1SignalManager = ProfilerSignalManager::Get(SIGUSR1);
+    auto* sigprofSignalManager = ProfilerSignalManager::Get(SIGPROF);
+
+    EXPECT_TRUE(sigusr1SignalManager->RegisterHandler(CustomHandler));
+    EXPECT_TRUE(sigprofSignalManager->RegisterHandler(SigProfCustomHandler));
+
+    SigProfHandlerCalled = false;
+    sigusr1SignalManager->SendSignal(gettid());
+
+    ASSERT_FALSE(SigProfHandlerCalled);
+
+    SigProfHandlerCalled = false;
+    sigprofSignalManager->SendSignal(gettid());
+
+    ASSERT_TRUE(SigProfHandlerCalled);
+}
+
+
+TEST_F(ProfilerSignalManagerFixture, CheckThrowIfSignalAbove31)
+{
+    ASSERT_NO_THROW(ProfilerSignalManager::Get(SIGUSR1));
+    ASSERT_NO_THROW(ProfilerSignalManager::Get(SIGUSR1));
+
+    ASSERT_THROW(ProfilerSignalManager::Get(-1), std::invalid_argument);
+    ASSERT_THROW(ProfilerSignalManager::Get(0), std::invalid_argument);
+    ASSERT_THROW(ProfilerSignalManager::Get(32), std::invalid_argument);
+    ASSERT_THROW(ProfilerSignalManager::Get(33), std::invalid_argument);
+    ASSERT_THROW(ProfilerSignalManager::Get(100), std::invalid_argument);
 }
 
 #endif
