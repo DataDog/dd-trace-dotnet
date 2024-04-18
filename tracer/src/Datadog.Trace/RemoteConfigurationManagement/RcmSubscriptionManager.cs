@@ -7,12 +7,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -169,19 +171,23 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
 
         try
         {
-            var request = BuildRequest(rcmTracer, _lastPollError);
-            _lastPollError = null;
+            var response = await TrySendRequest(rcmTracer, callback).ConfigureAwait(false);
+            if (response is null)
+            {
+                return;
+            }
 
-            var response = await callback(request).ConfigureAwait(false);
-
-            if (response?.Targets?.Signed != null)
+            if (response.Targets?.Signed != null)
             {
                 await ProcessResponse(response).ConfigureAwait(false);
             }
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _lastPollError = e.Message;
+            // this is a processing issue, not a communication issue
+            // so we should report the error to the agent next time
+            Log.Error(ex, "Error processing RCM request");
+            _lastPollError = ex.Message;
         }
         finally
         {
@@ -206,6 +212,32 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
         var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 
         return rcmRequest;
+    }
+
+    private async Task<GetRcmResponse?> TrySendRequest(RcmClientTracer rcmClientTracer, Func<GetRcmRequest, Task<GetRcmResponse>> func)
+    {
+        try
+        {
+            var request = BuildRequest(rcmClientTracer, _lastPollError);
+            _lastPollError = null;
+
+            return await func(request).ConfigureAwait(false);
+        }
+        catch (RemoteConfigurationDeserializationException e)
+        {
+            Log.Error(e, "Error sending request to RCM endpoint: serialization error");
+            // serialization errors should be reported to the agent
+            // but we want the _inner_ message
+            _lastPollError = $"{e.Message}: {e.InnerException?.Message}";
+            return null;
+        }
+        catch (Exception e)
+        {
+            // Other errors when sending requests to the agent should not be reported
+            // Which means anything that is not a deserialization error
+            Log.Warning(e, "Error sending request to RCM endpoint");
+            return null;
+        }
     }
 
     private async Task ProcessResponse(GetRcmResponse response)

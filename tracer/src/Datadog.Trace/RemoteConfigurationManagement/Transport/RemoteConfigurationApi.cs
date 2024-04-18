@@ -87,7 +87,14 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 return null;
             }
 
-            return await apiResponse.ReadAsTypeAsync<GetRcmResponse>().ConfigureAwait(false);
+            try
+            {
+                return await apiResponse.ReadAsTypeAsync<GetRcmResponse>().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new RemoteConfigurationDeserializationException(ex);
+            }
         }
     }
 }
