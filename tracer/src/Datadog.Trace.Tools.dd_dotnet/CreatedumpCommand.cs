@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.CommandLine.Parsing;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -22,6 +21,7 @@ internal class CreatedumpCommand : Command
 {
     private const int MethodNameMaxLength = 1024;
 
+    private static readonly List<string> _errors = new();
     private static ClrRuntime? _runtime;
 
     private readonly Argument<string[]> _allArguments = new("args");
@@ -44,7 +44,7 @@ internal class CreatedumpCommand : Command
         {
             if (_runtime == null)
             {
-                Console.WriteLine("Runtime is not initialized");
+                _errors.Add("ClrRuntime is not initialized");
                 return -2;
             }
 
@@ -73,18 +73,22 @@ internal class CreatedumpCommand : Command
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error resolving managed method: {ex}");
+            _errors.Add($"Error while resolving method: {ex.Message}");
             return -1;
         }
     }
 
     private static bool IsSuspicious(ClrMethod method)
     {
-        var assemblyName = method.Type.Module.AssemblyName;
+        var assemblyName = Path.GetFileName(method.Type.Module.Name ?? string.Empty);
 
         if (assemblyName != null && assemblyName.StartsWith("Datadog", StringComparison.OrdinalIgnoreCase))
         {
-            // TODO: we need to whitelist some methods
+            if (method.Type.Name == "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.BlockingMiddleware")
+            {
+                return false;
+            }
+
             return true;
         }
 
@@ -137,19 +141,36 @@ internal class CreatedumpCommand : Command
     {
         var allArguments = _allArguments.GetValue(context);
 
+        bool crashReportSent = false;
+
         try
         {
             if (ParseArguments(allArguments, out var pid, out var signal, out var crashThread))
             {
-                GenerateCrashReport(pid, signal, crashThread);
+                crashReportSent = GenerateCrashReport(pid, signal, crashThread);
             }
         }
         catch (Exception ex)
         {
-            AnsiConsole.WriteLine($"Error while generating the crash report: {ex}");
+            _errors.Add($"Unexpected exception: {ex.Message}");
         }
         finally
         {
+            if (_errors.Count > 0)
+            {
+                AnsiConsole.WriteLine("Datadog - Some errors occurred while analyzing the crash:");
+
+                foreach (var error in _errors.Take(3))
+                {
+                    AnsiConsole.WriteLine($"- {error}");
+                }
+
+                if (_errors.Count > 3)
+                {
+                    AnsiConsole.WriteLine($"... and {(_errors.Count - 3)} more");
+                }
+            }
+
             // Note: if refactoring, make sure to dispose the ClrMD DataTarget before calling createdump,
             // otherwise the calls to ptrace from createdump will fail
             if (Environment.GetEnvironmentVariable("DD_TRACE_CRASH_HANDLER_PASSTHROUGH") == "1")
@@ -162,7 +183,7 @@ internal class CreatedumpCommand : Command
         }
     }
 
-    private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread)
+    private unsafe bool GenerateCrashReport(int pid, int? signal, int? crashThread)
     {
         var lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Datadog.Profiler.Native.so"));
 
@@ -170,8 +191,8 @@ internal class CreatedumpCommand : Command
 
         if (export == 0)
         {
-            AnsiConsole.WriteLine("Failed to load the CreateCrashReport function");
-            return;
+            _errors.Add("Failed to load the CreateCrashReport function");
+            return false;
         }
 
         using var target = DataTarget.AttachToProcess(pid, suspend: true);
@@ -183,8 +204,8 @@ internal class CreatedumpCommand : Command
 
         if (ptr == IntPtr.Zero)
         {
-            AnsiConsole.WriteLine("Failed to create crash report");
-            return;
+            _errors.Add("Failed to create crash report");
+            return false;
         }
 
         using var iunknown = NativeObjects.IUnknown.Wrap(ptr);
@@ -193,8 +214,8 @@ internal class CreatedumpCommand : Command
 
         if (result != 0)
         {
-            AnsiConsole.WriteLine($"Failed to query interface: {result}");
-            return;
+            _errors.Add($"Failed to query interface: {result}");
+            return false;
         }
 
         using var crashReport = NativeObjects.ICrashReport.Wrap(crashReportPtr);
@@ -205,8 +226,8 @@ internal class CreatedumpCommand : Command
         }
         catch (Win32Exception ex)
         {
-            AnsiConsole.WriteLine($"Failed to initialize crash report: {GetLastError(crashReport, ex)}");
-            return;
+            _errors.Add($"Failed to initialize crash report: {GetLastError(crashReport, ex)}");
+            return false;
         }
 
         if (crashThread == null)
@@ -236,17 +257,19 @@ internal class CreatedumpCommand : Command
         {
             var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
             crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback, out isSuspicious);
-
-            if (!isSuspicious)
-            {
-                AnsiConsole.WriteLine("No suspicious methods found in the stack trace");
-                return;
-            }
         }
         catch (Win32Exception ex)
         {
-            AnsiConsole.WriteLine($"Failed to resolve stacks: {GetLastError(crashReport, ex)}");
+            _errors.Add($"Failed to resolve stacks: {GetLastError(crashReport, ex)}");
+            return false;
         }
+
+        if (!isSuspicious)
+        {
+            return false;
+        }
+
+        AnsiConsole.WriteLine("Datadog - The crash might have been caused by automatic instrumentation, sending crash report...");
 
         if (signal.HasValue)
         {
@@ -261,11 +284,12 @@ internal class CreatedumpCommand : Command
         }
         catch (Win32Exception ex)
         {
-            AnsiConsole.WriteLine($"Failed to send crash report: {GetLastError(crashReport, ex)}");
-            return;
+            _errors.Add($"Failed to send crash report: {GetLastError(crashReport, ex)}");
+            return false;
         }
 
-        AnsiConsole.WriteLine("Crash report sent successfully");
+        AnsiConsole.WriteLine("Datadog - Crash report sent successfully");
+        return true;
     }
 
     private void InvokeCreatedump(string createdumpPath)
@@ -276,12 +300,11 @@ internal class CreatedumpCommand : Command
 
             if (commandLineArgs.Length <= 2)
             {
-                // It shouldn't ever happen, but who knows
-                AnsiConsole.WriteLine("Unable to call createdump, missing arguments");
+                // It should never happen, but who knows
+                AnsiConsole.WriteLine($"Datadog - Unable to call createdump, missing arguments: {Environment.CommandLine}");
             }
             else
             {
-                AnsiConsole.WriteLine($"Calling createdump with arguments: {string.Join(" ", commandLineArgs[2..])}");
                 System.Diagnostics.Process.Start(commandLineArgs[2], commandLineArgs[3..]).WaitForExit();
             }
         }
@@ -313,7 +336,7 @@ internal class CreatedumpCommand : Command
         }
         catch (Win32Exception ex)
         {
-            AnsiConsole.WriteLine($"Failed to set signal info: {GetLastError(crashReport, ex)}");
+            _errors.Add($"Failed to set signal info: {GetLastError(crashReport, ex)}");
             return false;
         }
 
@@ -337,7 +360,7 @@ internal class CreatedumpCommand : Command
             }
             catch (Win32Exception ex)
             {
-                AnsiConsole.WriteLine($"Failed to add tag: {GetLastError(crashReport, ex)}");
+                _errors.Add($"Failed to add tag: {GetLastError(crashReport, ex)}");
                 return false;
             }
         }
@@ -365,7 +388,7 @@ internal class CreatedumpCommand : Command
             }
             catch (Win32Exception ex)
             {
-                AnsiConsole.WriteLine($"Failed to add exception tag: {GetLastError(crashReport, ex)}");
+                _errors.Add($"Failed to add exception tag: {GetLastError(crashReport, ex)}");
                 return false;
             }
         }
@@ -458,7 +481,7 @@ internal class CreatedumpCommand : Command
             }
             catch (Win32Exception ex)
             {
-                AnsiConsole.WriteLine($"Failed to set metadata: {GetLastError(crashReport, ex)}");
+                _errors.Add($"Failed to set metadata: {GetLastError(crashReport, ex)}");
                 return false;
             }
 
