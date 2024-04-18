@@ -31,6 +31,8 @@ public class ApplicationTelemetryCollectorTests
                     { ConfigurationKeys.ServiceName, ServiceName },
                     { ConfigurationKeys.Environment, env },
                     { ConfigurationKeys.ServiceVersion, serviceVersion },
+                    { ConfigurationKeys.GitCommitSha, "mySha" },
+                    { ConfigurationKeys.GitRepositoryUrl, "https://github.com/gitOrg/gitRepo" },
                 }),
             configurationTelemetry);
 
@@ -38,7 +40,7 @@ public class ApplicationTelemetryCollectorTests
 
         collector.GetApplicationData().Should().BeNull();
 
-        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName, new TelemetryControllerTests.TestGitMetadataTagsProvider());
+        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
 
         // calling twice should give same results
         AssertData(collector.GetApplicationData());
@@ -80,7 +82,7 @@ public class ApplicationTelemetryCollectorTests
 
         collector.GetApplicationData().Should().BeNull();
 
-        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName, new NullGitMetadataProvider());
+        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
 
         // calling twice should give same results
         AssertData(collector.GetApplicationData());
@@ -115,6 +117,8 @@ public class ApplicationTelemetryCollectorTests
                     { ConfigurationKeys.ServiceName, ServiceName },
                     { ConfigurationKeys.Environment, env },
                     { ConfigurationKeys.ServiceVersion, serviceVersion },
+                    { ConfigurationKeys.GitCommitSha, "mySha" },
+                    { ConfigurationKeys.GitRepositoryUrl, "https://github.com/gitOrg/gitRepo" },
                 }),
             configurationTelemetry);
 
@@ -122,7 +126,7 @@ public class ApplicationTelemetryCollectorTests
 
         collector.GetHostData().Should().BeNull();
 
-        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName, new NullGitMetadataProvider());
+        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
 
         // calling twice should give same results
         AssertData(collector.GetHostData());

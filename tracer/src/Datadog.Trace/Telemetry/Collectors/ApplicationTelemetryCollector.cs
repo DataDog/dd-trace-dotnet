@@ -18,10 +18,15 @@ internal class ApplicationTelemetryCollector
 
     public void RecordTracerSettings(
         ImmutableTracerSettings tracerSettings,
-        string defaultServiceName,
-        IGitMetadataTagsProvider gitMetadataTagsProvider)
+        string defaultServiceName)
     {
-        gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata);
+        // Try to retrieve config based Git Info
+        GitMetadata? gitMetadata = null;
+        if (tracerSettings.GitMetadataEnabled && !string.IsNullOrEmpty(tracerSettings.GitCommitSha) && !string.IsNullOrEmpty(tracerSettings.GitRepositoryUrl))
+        {
+            gitMetadata = new GitMetadata(tracerSettings.GitCommitSha!, tracerSettings.GitRepositoryUrl!);
+        }
+
         var frameworkDescription = FrameworkDescription.Instance;
         var application = new ApplicationTelemetryData(
             serviceName: defaultServiceName,
@@ -58,6 +63,28 @@ internal class ApplicationTelemetryCollector
             KernelRelease = host.KernelRelease,
             KernelVersion = host.KernelVersion
         };
+    }
+
+    public void RecordGitMetadata(GitMetadata gitMetadata)
+    {
+        if (_applicationData is null || gitMetadata.IsEmpty)
+        {
+            return;
+        }
+
+        var application = new ApplicationTelemetryData(
+            serviceName: _applicationData.ServiceName,
+            env: _applicationData.Env,
+            serviceVersion: _applicationData.ServiceVersion,
+            tracerVersion: _applicationData.TracerVersion,
+            languageName: _applicationData.LanguageName,
+            languageVersion: _applicationData.LanguageVersion,
+            runtimeName: _applicationData.RuntimeName,
+            runtimeVersion: _applicationData.RuntimeVersion,
+            commitSha: gitMetadata.CommitSha,
+            repositoryUrl: gitMetadata.RepositoryUrl);
+
+        Interlocked.Exchange(ref _applicationData, application);
     }
 
     /// <summary>

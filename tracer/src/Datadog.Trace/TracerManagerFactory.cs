@@ -128,7 +128,10 @@ namespace Datadog.Trace
                 runtimeMetrics = null;
             }
 
-            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager);
+            telemetry ??= CreateTelemetryController(settings, discoveryService);
+            telemetry.RecordTracerSettings(settings, defaultServiceName);
+
+            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager, telemetry);
             logSubmissionManager = DirectLogSubmissionManager.Create(
                 logSubmissionManager,
                 settings,
@@ -138,9 +141,6 @@ namespace Datadog.Trace
                 settings.EnvironmentInternal,
                 settings.ServiceVersionInternal,
                 gitMetadataTagsProvider);
-
-            telemetry ??= CreateTelemetryController(settings, discoveryService, gitMetadataTagsProvider);
-            telemetry.RecordTracerSettings(settings, defaultServiceName);
 
             TelemetryFactory.Metrics.SetWafVersion(Security.Instance.DdlibWafVersion);
             ErrorData? initError = !string.IsNullOrEmpty(Security.Instance.InitializationError)
@@ -215,14 +215,14 @@ namespace Datadog.Trace
                 tracerFlareManager);
         }
 
-        protected virtual ITelemetryController CreateTelemetryController(ImmutableTracerSettings settings, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider)
+        protected virtual ITelemetryController CreateTelemetryController(ImmutableTracerSettings settings, IDiscoveryService discoveryService)
         {
-            return TelemetryFactory.Instance.CreateTelemetryController(settings, discoveryService, gitMetadataTagsProvider);
+            return TelemetryFactory.Instance.CreateTelemetryController(settings, discoveryService);
         }
 
-        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
+        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager, ITelemetryController telemetry)
         {
-            return new GitMetadataTagsProvider(settings, scopeManager, TelemetryFactory.Config);
+            return new GitMetadataTagsProvider(settings, scopeManager, telemetry);
         }
 
         protected virtual bool ShouldEnableRemoteConfiguration(ImmutableTracerSettings settings)

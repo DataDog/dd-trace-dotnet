@@ -30,7 +30,6 @@ public class TelemetryControllerTests
     private readonly TimeSpan _flushInterval = TimeSpan.FromMilliseconds(100);
     // private readonly TimeSpan _heartbeatInterval = TimeSpan.FromMilliseconds(10_000); // We don't need them for most tests
     private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(60_000); // definitely should receive telemetry by now
-    private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider = new TestGitMetadataTagsProvider();
 
     [Fact]
     public async Task TelemetryControllerShouldSendTelemetry()
@@ -44,13 +43,40 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval,
-            _gitMetadataTagsProvider);
+            _flushInterval);
 
         controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
         controller.Start();
 
         var data = await WaitForRequestStarted(transport, _timeout);
+        await controller.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TelemetryControllerShouldSendGitMetadataWithTelemetry()
+    {
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+
+        var controller = new TelemetryController(
+            new ConfigurationTelemetry(),
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            _flushInterval);
+
+        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+
+        var sha = "testCommitSha";
+        var repo = "testRepositoryUrl";
+        controller.RecordGitMetadata(new GitMetadata(sha, repo), true);
+        controller.Start();
+
+        var data = await WaitForRequestStarted(transport, _timeout);
+        data.FirstOrDefault().Application.CommitSha.Should().Be(sha);
+        data.FirstOrDefault().Application.RepositoryUrl.Should().Be(repo);
+
         await controller.DisposeAsync();
     }
 
@@ -67,8 +93,7 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval,
-            _gitMetadataTagsProvider);
+            _flushInterval);
 
         var settings = new ImmutableTracerSettings(new TracerSettings());
         controller.RecordTracerSettings(settings, "DefaultServiceName");
@@ -99,8 +124,7 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval,
-            _gitMetadataTagsProvider);
+            _flushInterval);
 
         await controller.DisposeAsync();
         await controller.DisposeAsync();
@@ -118,8 +142,7 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval,
-            _gitMetadataTagsProvider);
+            _flushInterval);
 
         controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
         controller.Start();
@@ -164,8 +187,7 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval,
-            _gitMetadataTagsProvider);
+            _flushInterval);
 
         controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
         controller.Start();
@@ -204,8 +226,7 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval,
-            _gitMetadataTagsProvider);
+            _flushInterval);
 
         // before the controller is started, nothing should be written when we try to dump telemetry
         var tempFile = Path.GetTempFileName();
@@ -416,23 +437,5 @@ public class TelemetryControllerTests
         }
 
         public string GetTransportInfo() => nameof(SlowTelemetryTransport);
-    }
-
-    internal class TestGitMetadataTagsProvider : IGitMetadataTagsProvider
-    {
-        private string _shaCommit;
-        private string _repo;
-
-        public TestGitMetadataTagsProvider(string shaCommit = "mySha", string repo = "https://github.com/gitOrg/gitRepo")
-        {
-            _shaCommit = shaCommit;
-            _repo = repo;
-        }
-
-        public bool TryExtractGitMetadata(out GitMetadata gitMetadata)
-        {
-            gitMetadata = new GitMetadata(_shaCommit, _repo);
-            return true;
-        }
     }
 }

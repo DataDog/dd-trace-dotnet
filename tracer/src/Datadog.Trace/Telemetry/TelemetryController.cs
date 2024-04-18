@@ -39,7 +39,6 @@ internal class TelemetryController : ITelemetryController
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly Task _flushTask;
     private readonly Scheduler _scheduler;
-    private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
     private TelemetryTransportManager _transportManager;
     private bool _sendTelemetry;
     private bool _isStarted;
@@ -51,8 +50,7 @@ internal class TelemetryController : ITelemetryController
         IMetricsTelemetryCollector metrics,
         RedactedErrorLogCollector? redactedErrorLogs,
         TelemetryTransportManager transportManager,
-        TimeSpan flushInterval,
-        IGitMetadataTagsProvider gitMetadataTagsProvider)
+        TimeSpan flushInterval)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
@@ -63,7 +61,6 @@ internal class TelemetryController : ITelemetryController
         // It simplifies some of the logic we need to do in the scheduler
         var redactedErrorLogsTask = () => _redactedErrorLogs?.WaitForLogsAsync() ?? Task.Delay(Timeout.Infinite);
         _scheduler = new(flushInterval, redactedErrorLogsTask, _processExit);
-        _gitMetadataTagsProvider = gitMetadataTagsProvider;
 
         try
         {
@@ -92,9 +89,20 @@ internal class TelemetryController : ITelemetryController
         // ImmutableTracerSettings, at which point that config would become "current", so we
         // need to keep it around
         settings.Telemetry.CopyTo(_configuration);
-        _application.RecordTracerSettings(settings, defaultServiceName, _gitMetadataTagsProvider);
+        _application.RecordTracerSettings(settings, defaultServiceName);
         _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
         _queue.Enqueue(new WorkItem(WorkItem.ItemType.EnableSending, null));
+    }
+
+    public void RecordGitMetadata(GitMetadata gitMetadata, bool fromAssembly)
+    {
+        _application?.RecordGitMetadata(gitMetadata);
+
+        if (fromAssembly)
+        {
+            _configuration.Record(gitMetadata.RepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
+            _configuration.Record(gitMetadata.CommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
+        }
     }
 
     public void Start()

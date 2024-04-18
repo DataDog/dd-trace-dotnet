@@ -142,6 +142,10 @@ namespace Datadog.Trace.Tests.Telemetry
             }
 
             public Task DumpTelemetry(string filePath) => Task.CompletedTask;
+
+            public void RecordGitMetadata(GitMetadata gitMetadata, bool fromAssmbly)
+            {
+            }
         }
     }
 }

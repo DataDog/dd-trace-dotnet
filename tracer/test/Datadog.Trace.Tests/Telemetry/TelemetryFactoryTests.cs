@@ -23,8 +23,6 @@ namespace Datadog.Trace.Tests.Telemetry;
 [TelemetryRestorer]
 public class TelemetryFactoryTests
 {
-    private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider = new NullGitMetadataProvider();
-
     [Fact]
     public void TelemetryFactory_DisabledIfTelemetryIsDisabled()
     {
@@ -40,7 +38,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false, _gitMetadataTagsProvider);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
         controller.Should().Be(NullTelemetryController.Instance);
     }
@@ -60,7 +58,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false, _gitMetadataTagsProvider);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
         controller.Should().Be(NullTelemetryController.Instance);
     }
@@ -84,7 +82,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false, _gitMetadataTagsProvider);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
         controller.Should().BeOfType<TelemetryController>();
         TelemetryFactory.Config.Should().BeOfType<ConfigurationTelemetry>();
@@ -109,7 +107,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false, _gitMetadataTagsProvider);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
         TelemetryFactory.Metrics.Should().BeOfType<NullMetricsTelemetryCollector>();
     }
@@ -134,7 +132,7 @@ public class TelemetryFactoryTests
             metricsEnabled: true,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false, _gitMetadataTagsProvider);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
         TelemetryFactory.Metrics.Should().Be(metricsTelemetryCollector);
     }
@@ -159,7 +157,7 @@ public class TelemetryFactoryTests
             metricsEnabled: true,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: true, _gitMetadataTagsProvider);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: true);
 
         TelemetryFactory.Metrics
                         .Should()
@@ -189,7 +187,7 @@ public class TelemetryFactoryTests
             debugEnabled: false);
 
         // First controller
-        var controller1 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false, _gitMetadataTagsProvider);
+        var controller1 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
         var metrics1 = TelemetryFactory.Metrics;
         var config1 = TelemetryFactory.Config;
 
@@ -208,7 +206,7 @@ public class TelemetryFactoryTests
         var v1Controller1 = controller1.Should().BeOfType<TelemetryController>().Subject;
 
         // Second controller
-        var controller2 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false, _gitMetadataTagsProvider);
+        var controller2 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
         var metrics2 = TelemetryFactory.Metrics;
         var config2 = TelemetryFactory.Config;
 
