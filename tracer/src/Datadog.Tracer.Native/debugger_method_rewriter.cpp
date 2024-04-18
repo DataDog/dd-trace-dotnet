@@ -116,6 +116,13 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
             continue;
         }
 
+        if (argTypeFlags & ELEMENT_TYPE_PINNED)
+        {
+            Logger::Warn("DebuggerRewriter: Skipped ", isArgs ? "argument" : "local", " index = ", argOrLocalIndex,
+                         " because it's a pinned local.");
+            continue;
+        }
+
         if (isArgs)
         {
             hr = LoadArgument(isStatic, rewriterWrapper, argOrLocalIndex, argOrLocal);
