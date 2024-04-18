@@ -1513,6 +1513,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 #endif
 
 #ifdef LINUX
+    auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
+    // CurrentThreadInfo relies on the assumption that the native thread calling ThreadAssignedToOSThread/ThreadDestroyed
+    // is the same native thread assigned to the managed thread.
+    ManagedThreadInfo::CurrentThreadInfo = threadInfo;
+
     if (_systemCallsShield != nullptr)
     {
         // Register/Unregister rely on the following assumption:
@@ -1521,7 +1526,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
         // If at some point, it's not true, we can remove Register/Unregister on the SystemCallsShield class.
         // Then initiliaze the TLS managedThreadInfo (by calling TryGetCurrentThreadInfo) the first time a call is made in SystemCallsShield
         // SystemCallsShield::SetSharedMemory callback.
-        auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
         _systemCallsShield->Register(threadInfo);
     }
 

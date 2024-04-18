@@ -40,6 +40,10 @@ public:
     explicit ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pCorProfilerInfo);
     ~ManagedThreadInfo() = default;
 
+    // This field is set in the CorProfilerCallback. It's based on the assumption that the thread's calling ThreadAssignedToOSThread
+    // is the same native thread assigned to the managed thread.
+    static thread_local std::shared_ptr<ManagedThreadInfo> CurrentThreadInfo;
+
     inline std::uint32_t GetProfilerThreadInfoId() const;
 
     inline ThreadID GetClrThreadId() const;
