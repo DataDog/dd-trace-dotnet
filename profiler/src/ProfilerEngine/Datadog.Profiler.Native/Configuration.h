@@ -74,6 +74,7 @@ public:
     EnablementStatus GetEnablementStatus() const override;
     DeploymentMode GetDeploymentMode() const override;
     CpuProfilerType GetCpuProfilerType() const override;
+    std::chrono::milliseconds GetCpuProfilingInterval() const override;
 
 
 private:
@@ -81,6 +82,7 @@ private:
     static std::string GetDefaultSite();
     static std::string ExtractSite();
     static std::chrono::seconds ExtractUploadInterval();
+    static std::chrono::milliseconds ExtractCpuProfilingInterval();
     static fs::path GetDefaultLogDirectoryPath();
     static fs::path GetApmBaseDirectory();
     static fs::path ExtractLogDirectory();
@@ -108,6 +110,7 @@ private:
     static int32_t const DefaultAgentPort;
     static std::chrono::seconds const DefaultDevUploadInterval;
     static std::chrono::seconds const DefaultProdUploadInterval;
+    static std::chrono::milliseconds const DefaultCpuProfilingInterval;
 
     bool _isProfilingEnabled;
     bool _isCpuProfilingEnabled;
@@ -163,4 +166,5 @@ private:
     bool _isEtwLoggingEnabled;
     EnablementStatus _enablementStatus;
     CpuProfilerType _cpuProfilerType;
+    std::chrono::milliseconds _cpuProfilingInterval;
 };

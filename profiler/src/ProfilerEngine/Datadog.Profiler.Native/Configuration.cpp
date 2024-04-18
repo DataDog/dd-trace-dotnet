@@ -26,6 +26,7 @@ int32_t const Configuration::DefaultAgentPort = 8126;
 std::string const Configuration::DefaultEmptyString = "";
 std::chrono::seconds const Configuration::DefaultDevUploadInterval = 20s;
 std::chrono::seconds const Configuration::DefaultProdUploadInterval = 60s;
+std::chrono::milliseconds const Configuration::DefaultCpuProfilingInterval = 10ms;
 
 Configuration::Configuration()
 {
@@ -93,6 +94,7 @@ Configuration::Configuration()
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _enablementStatus = ExtractEnablementStatus();
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
+    _cpuProfilingInterval = ExtractCpuProfilingInterval();
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -457,6 +459,18 @@ std::chrono::seconds Configuration::ExtractUploadInterval()
     return GetDefaultUploadInterval();
 }
 
+std::chrono::milliseconds Configuration::ExtractCpuProfilingInterval()
+{
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::CpuProfilingInterval);
+    int32_t interval;
+    if (TryParse(r, interval))
+    {
+        return std::max(std::chrono::milliseconds(interval), DefaultCpuProfilingInterval);
+    }
+
+    return DefaultCpuProfilingInterval;
+}
+
 std::chrono::nanoseconds Configuration::ExtractCpuWallTimeSamplingRate(int minimum)
 {
     // default sampling rate is 9 ms; could be changed via env vars but down to a minimum of 5 ms
@@ -565,6 +579,12 @@ DeploymentMode Configuration::GetDeploymentMode() const
 CpuProfilerType Configuration::GetCpuProfilerType() const
 {
     return _cpuProfilerType;
+}
+
+=======
+std::chrono::milliseconds Configuration::GetCpuProfilingInterval() const
+{
+    return _cpuProfilingInterval;
 }
 
 static bool convert_to(shared::WSTRING const& s, bool& result)
