@@ -346,8 +346,8 @@ partial class Build : NukeBuild
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DatadogTraceBundle))
-                .EnableNoRestore()
-                .EnableNoDependencies()
+                // .EnableNoRestore()
+                // .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "bundle")
@@ -362,8 +362,8 @@ partial class Build : NukeBuild
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DatadogTraceBenchmarkDotNet))
-                .EnableNoRestore()
-                .EnableNoDependencies()
+                // .EnableNoRestore()
+                // .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "benchmark")
@@ -415,14 +415,13 @@ partial class Build : NukeBuild
 
     Target BuildRunnerTool => _ => _
         .Unlisted()
-        .DependsOn(CompileInstrumentationVerificationLibrary)
         .After(CreateBundleHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdTrace))
-                .EnableNoRestore()
-                .EnableNoDependencies()
+                // .EnableNoRestore()
+                // .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
