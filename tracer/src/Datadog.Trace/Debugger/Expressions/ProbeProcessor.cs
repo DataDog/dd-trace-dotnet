@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.RateLimiting;
@@ -122,16 +121,35 @@ namespace Datadog.Trace.Debugger.Expressions
         private void SetExpressions(ProbeDefinition probe)
         {
             // ReSharper disable once PossibleInvalidOperationException
-            _templates = (probe as LogProbe)?.Segments?.Where(seg => seg != null).Select(seg => ToDebuggerExpression(seg).Value).ToArray();
-            _condition = ToDebuggerExpression((probe as LogProbe)?.When);
-            _metric = ToDebuggerExpression((probe as MetricProbe)?.Value);
-            _spanDecorations = (probe as SpanDecorationProbe)?.Decorations?.Where(dec => dec != null).Select(dec =>
+            switch (probe)
             {
-                return new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>(
-                    ToDebuggerExpression(dec.When),
-                    dec.Tags.Select(tag => new KeyValuePair<string, DebuggerExpression[]>(
-                                        tag.Name, tag.Value.Segments?.Where(seg => seg != null).Select(seg => ToDebuggerExpression(seg).Value).ToArray())).ToArray());
-            }).ToArray();
+                case LogProbe logProbe:
+                    _templates = logProbe.Segments?.Select(seg => ToDebuggerExpression(seg).Value).ToArray();
+                    _condition = ToDebuggerExpression(logProbe.When);
+                    break;
+                case MetricProbe metricProbe:
+                    _metric = ToDebuggerExpression(metricProbe.Value);
+                    break;
+                case SpanDecorationProbe spanDecorationProbe:
+                    _spanDecorations = spanDecorationProbe.
+                        Decorations
+                      ?.Where(dec => dec != null)
+                       .Select(
+                            dec =>
+                            {
+                                var whenExpression = ToDebuggerExpression(dec.When);
+                                var keyValuePairs = dec.Tags?.Select(
+                                                            tag => new KeyValuePair<string, DebuggerExpression[]>(
+                                                                tag.Name,
+                                                                tag.Value?.Segments?.Select(seg => ToDebuggerExpression(seg).Value).ToArray()))
+                                                       .ToArray();
+
+                                return new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>(whenExpression, keyValuePairs);
+                            })
+                       .ToArray();
+
+                    break;
+            }
         }
 
         private ProbeExpressionEvaluator GetOrCreateEvaluator()

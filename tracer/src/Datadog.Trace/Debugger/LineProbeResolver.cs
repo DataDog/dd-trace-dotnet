@@ -114,7 +114,13 @@ namespace Datadog.Trace.Debugger
             location = null;
             try
             {
-                if (!TryFindAssemblyContainingFile(probe.Where.SourceFile, out var filePathFromPdb, out var assembly))
+                var sourceFile = probe.Where?.SourceFile;
+                if (sourceFile == null)
+                {
+                    return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "Source file is empty.");
+                }
+
+                if (!TryFindAssemblyContainingFile(sourceFile, out var filePathFromPdb, out var assembly))
                 {
                     return new LineProbeResolveResult(LiveProbeResolveStatus.Unbound, "Source file location for probe was not found, possibly because the relevant assembly was not yet loaded.");
                 }
@@ -125,7 +131,7 @@ namespace Datadog.Trace.Debugger
                     return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "Failed to read from PDB");
                 }
 
-                if (probe.Where.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], out var lineNum))
+                if (probe.Where?.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], out var lineNum))
                 {
                     return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "Failed to parse line number.");
                 }
