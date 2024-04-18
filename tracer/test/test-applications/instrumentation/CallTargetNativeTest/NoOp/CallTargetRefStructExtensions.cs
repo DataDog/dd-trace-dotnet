@@ -8,7 +8,7 @@ namespace CallTargetNativeTest.NoOp;
 public static class CallTargetRefStructExtensions
 {
 #if !NETCOREAPP3_1_OR_GREATER
-    public static unsafe ref ReadOnlySpan<T> GetReadOnlySpan<T>(this CallTargetRefStruct callTargetRefStruct, out bool success)
+    public static unsafe ref ReadOnlySpan<T> DangerousGetReadOnlySpan<T>(this CallTargetRefStruct callTargetRefStruct, out bool success)
     {
         if (callTargetRefStruct.StructType == typeof(ReadOnlySpan<T>))
         {
@@ -21,7 +21,7 @@ public static class CallTargetRefStructExtensions
         return ref (*(ReadOnlySpan<T>*)null);
     }
 
-    public static unsafe ref Span<T> GetSpan<T>(this CallTargetRefStruct callTargetRefStruct, out bool success)
+    public static unsafe ref Span<T> DangerousGetSpan<T>(this CallTargetRefStruct callTargetRefStruct, out bool success)
     {
         if (callTargetRefStruct.StructType == typeof(Span<T>))
         {

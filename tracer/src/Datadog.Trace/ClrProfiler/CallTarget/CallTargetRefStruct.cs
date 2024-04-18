@@ -66,7 +66,7 @@ public readonly struct CallTargetRefStruct
     /// <typeparam name="T">Type of the read-only span</typeparam>
     /// <returns>Reference to the same ReadOnlySpan instance of the caller</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe ref ReadOnlySpan<T> GetReadOnlySpan<T>(out bool success)
+    public unsafe ref ReadOnlySpan<T> DangerousGetReadOnlySpan<T>(out bool success)
     {
         if (Type.GetTypeFromHandle(_refStructTypeHandle) == typeof(ReadOnlySpan<T>))
         {
@@ -78,6 +78,18 @@ public readonly struct CallTargetRefStruct
         // Null pointer (same code as Unsafe.NullRef)
         return ref (*(ReadOnlySpan<T>*)null);
     }
+
+    /// <summary>
+    /// Gets a read-only span from the ref struct instance
+    /// </summary>
+    /// <param name="success">True if the ref struct is a ReadOnlySpan</param>
+    /// <typeparam name="T">Type of the read-only span</typeparam>
+    /// <returns>Reference to the same ReadOnlySpan instance of the caller</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ref readonly ReadOnlySpan<T> GetReadOnlySpan<T>(out bool success)
+    {
+        return ref DangerousGetReadOnlySpan<T>(out success);
+    }
 #endif
 
 #if NETCOREAPP
@@ -88,7 +100,7 @@ public readonly struct CallTargetRefStruct
     /// <typeparam name="T">Type of the span</typeparam>
     /// <returns>Reference to the same Span instance of the caller</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe ref Span<T> GetSpan<T>(out bool success)
+    public unsafe ref Span<T> DangerousGetSpan<T>(out bool success)
     {
         if (Type.GetTypeFromHandle(_refStructTypeHandle) == typeof(Span<T>))
         {
@@ -100,5 +112,81 @@ public readonly struct CallTargetRefStruct
         // Null pointer (same code as Unsafe.NullRef)
         return ref (*(Span<T>*)null);
     }
+
+    /// <summary>
+    /// Gets a span from the ref struct instance
+    /// </summary>
+    /// <param name="success">True if the ref struct is a Span</param>
+    /// <typeparam name="T">Type of the span</typeparam>
+    /// <returns>Reference to the same Span instance of the caller</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ref readonly Span<T> GetSpan<T>(out bool success)
+    {
+        return ref DangerousGetSpan<T>(out success);
+    }
 #endif
+
+    /// <summary>
+    /// Gets a read-only span from the ref struct instance
+    /// </summary>
+    /// <param name="success">True if the ref struct is a ReadOnlySpan</param>
+    /// <typeparam name="T">Type of the read-only span</typeparam>
+    /// <returns>Reference to the same ReadOnlySpan instance of the caller</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal unsafe ref VendoredMicrosoftCode.System.ReadOnlySpan<T> DangerousGetDDReadOnlySpan<T>(out bool success)
+    {
+        if (Type.GetTypeFromHandle(_refStructTypeHandle) == typeof(VendoredMicrosoftCode.System.ReadOnlySpan<T>))
+        {
+            success = true;
+            return ref (*(VendoredMicrosoftCode.System.ReadOnlySpan<T>*)_value);
+        }
+
+        success = false;
+        // Null pointer (same code as Unsafe.NullRef)
+        return ref (*(VendoredMicrosoftCode.System.ReadOnlySpan<T>*)null);
+    }
+
+    /// <summary>
+    /// Gets a read-only span from the ref struct instance
+    /// </summary>
+    /// <param name="success">True if the ref struct is a ReadOnlySpan</param>
+    /// <typeparam name="T">Type of the read-only span</typeparam>
+    /// <returns>Reference to the same ReadOnlySpan instance of the caller</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal ref readonly VendoredMicrosoftCode.System.ReadOnlySpan<T> GetDDReadOnlySpan<T>(out bool success)
+    {
+        return ref DangerousGetDDReadOnlySpan<T>(out success);
+    }
+
+    /// <summary>
+    /// Gets a span from the ref struct instance
+    /// </summary>
+    /// <param name="success">True if the ref struct is a Span</param>
+    /// <typeparam name="T">Type of the span</typeparam>
+    /// <returns>Reference to the same Span instance of the caller</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal unsafe ref VendoredMicrosoftCode.System.Span<T> DangerousDDGetSpan<T>(out bool success)
+    {
+        if (Type.GetTypeFromHandle(_refStructTypeHandle) == typeof(Span<T>))
+        {
+            success = true;
+            return ref (*(VendoredMicrosoftCode.System.Span<T>*)_value);
+        }
+
+        success = false;
+        // Null pointer (same code as Unsafe.NullRef)
+        return ref (*(VendoredMicrosoftCode.System.Span<T>*)null);
+    }
+
+    /// <summary>
+    /// Gets a span from the ref struct instance
+    /// </summary>
+    /// <param name="success">True if the ref struct is a Span</param>
+    /// <typeparam name="T">Type of the span</typeparam>
+    /// <returns>Reference to the same Span instance of the caller</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal ref readonly VendoredMicrosoftCode.System.Span<T> DDGetSpan<T>(out bool success)
+    {
+        return ref DangerousDDGetSpan<T>(out success);
+    }
 }

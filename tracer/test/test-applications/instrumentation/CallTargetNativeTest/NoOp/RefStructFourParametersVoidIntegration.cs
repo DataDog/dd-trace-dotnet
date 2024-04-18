@@ -13,13 +13,13 @@ public static class RefStructFourParametersVoidIntegration
         bool success;
         arg01 = "Hello";
 
-        ref var readOnlySpanValue = ref arg02.GetReadOnlySpan<char>(out success);
+        ref var readOnlySpanValue = ref arg02.DangerousGetReadOnlySpan<char>(out success);
         if (success)
         {
             readOnlySpanValue = "World";
         }
 
-        ref var spanValue = ref arg03.GetSpan<char>(out success);
+        ref var spanValue = ref arg03.DangerousGetSpan<char>(out success);
         if (success)
         {
             spanValue = new Span<char>(['H', 'e', 'l', 'l', 'o']);

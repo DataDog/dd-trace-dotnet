@@ -13,14 +13,14 @@ public static class RefStructTwoParametersVoidIntegration
         bool success;
         if (arg01 is CallTargetRefStruct callTargetRefStruct)
         {
-            ref var readOnlySpanValue = ref callTargetRefStruct.GetReadOnlySpan<char>(out success);
+            ref var readOnlySpanValue = ref callTargetRefStruct.DangerousGetReadOnlySpan<char>(out success);
             if (success)
             {
                 readOnlySpanValue = "Hello";
                 goto secondArgument;
             }
             
-            ref var spanValue = ref callTargetRefStruct.GetSpan<char>(out success);
+            ref var spanValue = ref callTargetRefStruct.DangerousGetSpan<char>(out success);
             if (success)
             {
                 spanValue = new Span<char>(['H', 'e', 'l', 'l', 'o']);
@@ -38,14 +38,14 @@ public static class RefStructTwoParametersVoidIntegration
         secondArgument:
         if (arg02 is CallTargetRefStruct callTargetRefStruct2)
         {
-            ref var readOnlySpanValue = ref callTargetRefStruct2.GetReadOnlySpan<char>(out success);
+            ref var readOnlySpanValue = ref callTargetRefStruct2.DangerousGetReadOnlySpan<char>(out success);
             if (success)
             {
                 readOnlySpanValue = "World";
                 goto returnValue;
             }
             
-            ref var spanValue = ref callTargetRefStruct2.GetSpan<char>(out success);
+            ref var spanValue = ref callTargetRefStruct2.DangerousGetSpan<char>(out success);
             if (success)
             {
                 spanValue = new Span<char>(['W', 'o', 'r', 'l', 'd']);

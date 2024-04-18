@@ -240,10 +240,10 @@ int TracerTokens::GetAdditionalLocalsCount(const std::vector<TypeSignature>& met
     if (enable_by_ref_instrumentation)
     {
         const auto module_metadata = GetMetadata();
-        for (int i = 0; i < methodTypeArguments.size(); i++)
+        for (auto const& typeArgument : methodTypeArguments)
         {
             bool isByRefLike = false;
-            if (SUCCEEDED(IsTypeByRefLike(_profiler_info, *module_metadata, methodTypeArguments[i], GetCorLibAssemblyRef(), isByRefLike)) &&
+            if (SUCCEEDED(IsTypeByRefLike(_profiler_info, *module_metadata, typeArgument, GetCorLibAssemblyRef(), isByRefLike)) &&
                 isByRefLike)
             {
                 refStructCount++;
@@ -283,10 +283,10 @@ void TracerTokens::AddAdditionalLocals(TypeSignature* methodReturnValue, std::ve
         auto callTargetRefStructTypeRefSize = CorSigCompressToken(callTargetRefStructTypeRef, &callTargetRefStructTypeRefBuffer);
 
         const auto module_metadata = GetMetadata();
-        for (int i = 0; i < methodTypeArguments->size(); i++)
+        for (auto const& typeArgument : *methodTypeArguments)
         {
             bool isByRefLike = false;
-            if (SUCCEEDED(IsTypeByRefLike(_profiler_info, *module_metadata, (*methodTypeArguments)[i], GetCorLibAssemblyRef(), isByRefLike)) &&
+            if (SUCCEEDED(IsTypeByRefLike(_profiler_info, *module_metadata, typeArgument, GetCorLibAssemblyRef(), isByRefLike)) &&
                 isByRefLike)
             {
                 signatureBuffer[signatureOffset++] = ELEMENT_TYPE_VALUETYPE;

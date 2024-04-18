@@ -13,14 +13,14 @@ public static class RefStructOneParametersVoidIntegration
         bool success;
         if (arg01 is CallTargetRefStruct callTargetRefStruct)
         {
-            ref var readOnlySpanValue = ref callTargetRefStruct.GetReadOnlySpan<char>(out success);
+            ref var readOnlySpanValue = ref callTargetRefStruct.DangerousGetReadOnlySpan<char>(out success);
             if (success)
             {
                 readOnlySpanValue = "Hello World";
                 return returnValue;
             }
             
-            ref var spanValue = ref callTargetRefStruct.GetSpan<char>(out success);
+            ref var spanValue = ref callTargetRefStruct.DangerousGetSpan<char>(out success);
             if (success)
             {
                 spanValue = new Span<char>(['H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd']);
