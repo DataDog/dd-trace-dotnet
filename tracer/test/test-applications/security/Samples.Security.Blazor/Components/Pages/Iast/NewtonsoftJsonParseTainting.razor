@@ -1,19 +1,28 @@
-@page "/Iast/NewtonsoftJsonParseTainting/{json}"
+@page "/Iast/NewtonsoftJsonParseTainting/"
 @using Newtonsoft.Json.Linq
 @using Datadog.Trace.Annotations.Controllers
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavigationManager
 
 <h3>Newtonsoft Json Parse Tainting</h3>
 
 <p>@_message</p>
 
 @code {
-    [Parameter]
     public required string Json { get; set; }
 
     private string? _message;
 
     protected override void OnInitialized()
     {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("json", out var json))
+        {
+            Json = json!;
+        }
+        
         try
         {
             var doc = JObject.Parse(Json);

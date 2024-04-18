@@ -1,5 +1,7 @@
-@page "/Iast/HeaderInjection/{UseValueFromOriginHeader:bool?}"
+@page "/Iast/HeaderInjection/"
 @using Microsoft.Extensions.Primitives
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavigationManager
 @inject IHttpContextAccessor HttpContextAccessor;
 
 <h3>Insecure Authentication Protocol</h3>
@@ -7,9 +9,7 @@
 <p>@_message</p>
 
 @code {
-
-    [Parameter]
-    public bool UseValueFromOriginHeader { get; set; }
+    private bool UseValueFromOriginHeader { get; set; }
 
     private string? _message;
 
@@ -19,6 +19,14 @@
         {
             _message = "HttpContext is null";
             return;
+        }
+        
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("useValueFromOriginHeader", out var value))
+        {
+            UseValueFromOriginHeader = bool.Parse(value!);
         }
 
         const string defaultHeaderName = "defaultName";

@@ -1,17 +1,26 @@
-@page "/Iast/GetDirectoryContent/{Directory}"
+@page "/Iast/GetDirectoryContent/"
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavigationManager
 
 <h3>Get Directory Content</h3>
 
 <p>@_message</p>
 
 @code {
-    [Parameter]
-    public string? Directory { get; set; }
+    private string? Directory { get; set; }
     
     private string _message = "No directory specified";
 
     protected override void OnInitialized()
     {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("Directory", out var directory))
+        {
+            Directory = directory;
+        }
+
         if (string.IsNullOrEmpty(Directory)) return;
 
         var result = System.IO.Directory.GetFiles(Directory);

@@ -42,4 +42,8 @@
     <ProjectReference Include="..\Samples.Security.AspNetCore5\Samples.Security.AspNetCore5.csproj" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+  </PropertyGroup>
+
 </Project>

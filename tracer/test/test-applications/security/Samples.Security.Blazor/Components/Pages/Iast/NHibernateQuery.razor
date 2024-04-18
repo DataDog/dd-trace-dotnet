@@ -1,18 +1,27 @@
-@page "/Iast/NHibernateQuery/{Username}"
+@page "/Iast/NHibernateQuery/"
 @using Samples.Security.Data
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavigationManager
 
 <h3>NHibernate Query</h3>
 
 <p>@_message</p>
 
 @code {
-    [Parameter]
-    public required string Username { get; set; }
+    public required string? Username { get; set; }
 
     private string? _message;
 
     protected override void OnInitialized()
     {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("username", out var username))
+        {
+            Username = username;
+        }
+        
         try
         {
             var taintedQuery = "SELECT Value from FakeData where Name = '" + Username + "'";

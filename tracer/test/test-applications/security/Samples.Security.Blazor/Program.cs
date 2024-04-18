@@ -25,4 +25,13 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+app.Map("/shutdown", builder =>
+{
+    builder.Run(async context =>
+    {
+        await context.Response.WriteAsync("Shutting down");
+        _ = Task.Run(() => builder.ApplicationServices.GetService<IHostApplicationLifetime>().StopApplication());
+    });
+});
+
 app.Run();

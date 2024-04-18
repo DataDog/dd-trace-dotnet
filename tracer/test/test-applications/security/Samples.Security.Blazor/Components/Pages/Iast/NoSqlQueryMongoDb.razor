@@ -1,25 +1,36 @@
-@page "/Iast/NoSqlQueryMongoDb/{Price:int}"
-@page "/Iast/NoSqlQueryMongoDb/{Query}"
+@page "/Iast/NoSqlQueryMongoDb/"
 
 @using MongoDB.Bson
 @using Datadog.Trace.Annotations.Controllers
 @using MongoDB.Driver
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavigationManager
 
 <h3>NoSQL Query MongoDB</h3>
 
 <p>@_message</p>
 
 @code {
-    [Parameter]
-    public int? Price { get; set; }
-
-    [Parameter]
-    public string? Query { get; set; }
+    private int? Price { get; set; }
+    private string? Query { get; set; }
 
     private string? _message;
 
     protected override void OnInitialized()
     {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("price", out var price))
+        {
+            Price = int.Parse(price!);
+        }
+        
+        if (query.TryGetValue("query", out var queryValue))
+        {
+            Query = queryValue;
+        }
+        
         try
         {
             if (Price.HasValue)

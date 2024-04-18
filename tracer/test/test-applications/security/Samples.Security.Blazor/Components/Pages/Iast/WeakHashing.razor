@@ -1,27 +1,39 @@
-@page "/Iast/WeakHashing/{Delay1:int}/{Delay2:int}"
+@page "/Iast/WeakHashing/"
 @using System.Security.Cryptography
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavigationManager
 
 <h3>Weak Hashing</h3>
 
 <p>@_message</p>
 
 @code {
-    [Parameter]
-    public int Delay1 { get; set; }  
-
-    [Parameter]
-    public int Delay2 { get; set; }
+    private int _delay1;
+    private int _delay2;
 
     private string? _message;
 
     protected override void OnInitialized()
     {
-        Thread.Sleep(Delay1 + Delay2);
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("delay1", out var delay1))
+        {
+            _delay1 = int.Parse(delay1!);
+        }
+
+        if (query.TryGetValue("delay2", out var delay2))
+        {
+            _delay2 = int.Parse(delay2!);
+        }
+
+        Thread.Sleep(_delay1 + _delay2);
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
         var byteArg = new byte[] { 3, 5, 6 };
         MD5.Create().ComputeHash(byteArg);
         SHA1.Create().ComputeHash(byteArg);
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
-        _message = $"Weak hashes launched with delays {Delay1} and {Delay2}.";
+        _message = $"Weak hashes launched with delays {_delay1} and {_delay2}.";
     }
 }
