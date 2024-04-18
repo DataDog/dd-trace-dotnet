@@ -48,17 +48,17 @@ MIDL_INTERFACE("3B3BA8A9-F807-43BF-A3A9-55E369C0C532")
 ICrashReporting : public IUnknown
 {
 public:    
-    virtual STDMETHODCALLTYPE HRESULT QueryInterface(REFIID riid, void** ppvObject) = 0;
-    virtual STDMETHODCALLTYPE ULONG AddRef() = 0;
-    virtual STDMETHODCALLTYPE ULONG Release() = 0;
-    virtual STDMETHODCALLTYPE int32_t Initialize() = 0;
-    virtual STDMETHODCALLTYPE int32_t GetLastError(const char** message, int32_t* length) = 0;
-    virtual STDMETHODCALLTYPE int32_t AddTag(const char* key, const char* value) = 0;
-    virtual STDMETHODCALLTYPE int32_t SetSignalInfo(int32_t signal, const char* description) = 0;
-    virtual STDMETHODCALLTYPE int32_t ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback, bool* isSuspicious) = 0;
-    virtual STDMETHODCALLTYPE int32_t SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) = 0;
-    virtual STDMETHODCALLTYPE int32_t Send() = 0;
-    virtual STDMETHODCALLTYPE int32_t WriteToFile(const char* url) = 0;
+    virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) = 0;
+    virtual ULONG STDMETHODCALLTYPE AddRef() = 0;
+    virtual ULONG STDMETHODCALLTYPE Release() = 0;
+    virtual int32_t STDMETHODCALLTYPE Initialize() = 0;
+    virtual int32_t STDMETHODCALLTYPE GetLastError(const char** message, int32_t* length) = 0;
+    virtual int32_t STDMETHODCALLTYPE AddTag(const char* key, const char* value) = 0;
+    virtual int32_t STDMETHODCALLTYPE SetSignalInfo(int32_t signal, const char* description) = 0;
+    virtual int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback, bool* isSuspicious) = 0;
+    virtual int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) = 0;
+    virtual int32_t STDMETHODCALLTYPE Send() = 0;
+    virtual int32_t STDMETHODCALLTYPE WriteToFile(const char* url) = 0;
 };
 
 class CrashReporting : public ICrashReporting 
@@ -69,17 +69,17 @@ public:
 
     static CrashReporting* Create(int32_t pid);
 
-    STDMETHODCALLTYPE HRESULT QueryInterface(REFIID riid, void** ppvObject) override;
-    STDMETHODCALLTYPE ULONG AddRef() override;
-    STDMETHODCALLTYPE ULONG Release() override;
-    STDMETHODCALLTYPE int32_t GetLastError(const char** message, int32_t* length) override;
-    STDMETHODCALLTYPE int32_t Initialize() override;
-    STDMETHODCALLTYPE int32_t AddTag(const char* key, const char* value) override;
-    STDMETHODCALLTYPE int32_t SetSignalInfo(int32_t signal, const char* description) override;
-    STDMETHODCALLTYPE int32_t ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback, bool* isSuspicious) override;
-    STDMETHODCALLTYPE int32_t SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) override;
-    STDMETHODCALLTYPE int32_t Send() override;
-    STDMETHODCALLTYPE int32_t WriteToFile(const char* url) override;
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
+    ULONG STDMETHODCALLTYPE AddRef() override;
+    ULONG STDMETHODCALLTYPE Release() override;
+    int32_t STDMETHODCALLTYPE GetLastError(const char** message, int32_t* length) override;
+    int32_t STDMETHODCALLTYPE Initialize() override;
+    int32_t STDMETHODCALLTYPE AddTag(const char* key, const char* value) override;
+    int32_t STDMETHODCALLTYPE SetSignalInfo(int32_t signal, const char* description) override;
+    int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback, bool* isSuspicious) override;
+    int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) override;
+    int32_t STDMETHODCALLTYPE Send() override;
+    int32_t STDMETHODCALLTYPE WriteToFile(const char* url) override;
 
 protected:
     int32_t _pid;

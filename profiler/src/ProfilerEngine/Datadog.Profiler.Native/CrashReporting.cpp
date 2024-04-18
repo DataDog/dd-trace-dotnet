@@ -2,15 +2,7 @@
 
 #include "unknwn.h"
 #include "FfiHelper.h"
-
-#include <iostream>
-#include <cstring>
-#include <ctime>
-
-#include <execinfo.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <shared/src/native-src/util.h>
 
 extern "C"
 {
@@ -148,7 +140,7 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
         signalInfo = std::string(description);
     }
 
-    ddog_crashinfo_set_siginfo(&_crashInfo, { (int64_t)signal, libdatadog::FfiHelper::StringToCharSlice(signalInfo) });
+    ddog_crashinfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::FfiHelper::StringToCharSlice(signalInfo) });
 
     return 0;
 }
@@ -279,16 +271,16 @@ int32_t CrashReporting::Send()
     ddog_prof_CrashtrackerConfiguration config{};
 
     // TODO: This should be done by libdatadog
-    const char* agentUrl = getenv("DD_TRACE_AGENT_URL");
+    auto agentUrl = shared::Trim(shared::GetEnvironmentValue(WStr("DD_TRACE_AGENT_URL")));
 
     // If agent is not set, default to localhost
-    if (agentUrl == nullptr)
+    if (agentUrl.empty())
     {
-        agentUrl = "http://127.0.0.1:8126";
+        agentUrl = WStr("http://127.0.0.1:8126");
     }
 
-    config.endpoint = ddog_prof_Endpoint_agent(libdatadog::FfiHelper::StringToCharSlice(std::string_view(agentUrl)));
-    config.path_to_receiver_binary = DDOG_CHARSLICE_C("FIXME - point me to receiver binary path");
+    config.endpoint = ddog_prof_Endpoint_agent(libdatadog::FfiHelper::StringToCharSlice(shared::ToString(agentUrl)));
+    config.path_to_receiver_binary = libdatadog::FfiHelper::StringToCharSlice(std::string_view("FIXME - point me to receiver binary path"));
     config.timeout_secs = 30;
 
     auto result = ddog_crashinfo_upload_to_telemetry(&_crashInfo, config);
