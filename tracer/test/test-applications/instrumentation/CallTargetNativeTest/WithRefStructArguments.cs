@@ -42,9 +42,12 @@ partial class Program
         RunMethod(() => wRefStructArg.VoidSpanMethod(new Span<char>(['B', 'a', 'd', 'P', 'a', 'r', 'a', 'm'])));
         RunMethod(() =>
         {
-            var arg1 = new Span<char>(['B', 'a', 'd', 'P', 'a', 'r', 'a', 'm']);
+            char[] value = ['B', 'a', 'd', 'P', 'a', 'r', 'a', 'm'];
+            var original = new Span<char>(value);
+            var arg1 = new Span<char>(value);
             wRefStructArg.VoidSpanMethod(ref arg1);
             if (arg1.ToString() != "Hello World") throw new Exception("Error modifying arg1 value.");
+            if (original.ToString() != "BadParam") throw new Exception("Error: original value has not been kept.");
         });
         RunMethod(() =>
         {

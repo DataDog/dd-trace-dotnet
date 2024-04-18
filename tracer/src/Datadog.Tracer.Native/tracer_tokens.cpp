@@ -415,6 +415,7 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
 
     auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
 
+    const auto dynamicSignatureAllocation = new std::vector<COR_SIGNATURE*>();
     PCCOR_SIGNATURE argumentsSignatureBuffer[FASTPATH_COUNT];
     ULONG argumentsSignatureSize[FASTPATH_COUNT];
     for (auto i = 0; i < numArguments; i++)
@@ -433,6 +434,8 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
             ULONG calltargetRefStructTypeSize = CorSigCompressToken(callTargetRefStructTypeRef, &calltargetRefStructTypeBuffer);
 
             auto argSignature = new COR_SIGNATURE[calltargetRefStructTypeSize + 1];
+            dynamicSignatureAllocation->push_back(argSignature);
+
             argSignature[0] = ELEMENT_TYPE_VALUETYPE;
             memcpy(&argSignature[1], &calltargetRefStructTypeBuffer, calltargetRefStructTypeSize);
 
@@ -494,6 +497,15 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
 
     hr = module_metadata->metadata_emit->DefineMethodSpec(beginMethodFastPathRef, signature,
                                                           signatureLength, &beginMethodSpec);
+
+    // freeing the dynamic signature allocation
+    for (auto i = 0; i < dynamicSignatureAllocation->size(); i++)
+    {
+        delete dynamicSignatureAllocation->at(i);
+    }
+
+    delete dynamicSignatureAllocation;
+
     if (FAILED(hr))
     {
         Logger::Warn("Error creating begin method spec.");
