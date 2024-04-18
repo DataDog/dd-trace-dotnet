@@ -492,7 +492,6 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
         offset += argumentsSignatureSize[i];
     }
 
-    Logger::Warn("BeginMethod Signature: ", HexStr(signature, signatureLength));
     hr = module_metadata->metadata_emit->DefineMethodSpec(beginMethodFastPathRef, signature,
                                                           signatureLength, &beginMethodSpec);
     if (FAILED(hr))
