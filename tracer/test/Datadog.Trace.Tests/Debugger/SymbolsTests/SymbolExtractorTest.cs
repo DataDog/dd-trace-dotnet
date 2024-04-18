@@ -31,9 +31,17 @@ public class SymbolExtractorTest
     [MemberData(nameof(TestSamples))]
     private async Task Test(Type type)
     {
-#if NETFRAMEWORK
+#if DEBUG
+        // silence compiler warnings
         _ = type;
         await Task.Yield();
+
+        throw new SkipException("This test requires RELEASE mode and will always fail in DEBUG mode");
+#elif NETFRAMEWORK
+        // silence compiler warnings
+        _ = type;
+        await Task.Yield();
+
         throw new SkipException("This test is flaky - The .NET Framework snapshots produced are different in CI and locally");
 #else
         if (!EnvironmentTools.IsWindows())

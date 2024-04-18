@@ -622,4 +622,16 @@ public static class CallTargetInvoker
     /// <returns>Default value of T</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T? GetDefaultValue<T>() => default;
+
+    /// <summary>
+    /// Create a new instance of <see cref="CallTargetRefStruct"/>
+    /// </summary>
+    /// <param name="refStructPointer">Stack pointer of the ref struct instance</param>
+    /// <param name="refStructTypeHandle">Runtime type handle of the ref struct</param>
+    /// <returns>A new instance of the CallTargetRefStruct container</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe CallTargetRefStruct CreateRefStruct(void* refStructPointer, RuntimeTypeHandle refStructTypeHandle)
+    {
+        return CallTargetRefStruct.Create(refStructPointer, refStructTypeHandle);
+    }
 }

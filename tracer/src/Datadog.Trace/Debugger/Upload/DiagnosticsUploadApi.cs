@@ -41,23 +41,13 @@ namespace Datadog.Trace.Debugger.Upload
         public override async Task<bool> SendBatchAsync(ArraySegment<byte> data)
         {
             var uri = BuildUri();
-            if (string.IsNullOrEmpty(uri))
+            if (uri == null)
             {
                 Log.Warning("Failed to upload diagnostics: debugger endpoint not yet retrieved from discovery service");
                 return false;
             }
 
-            var request = _apiRequestFactory.Create(new Uri(uri));
-            var multipartRequest = (IMultipartApiRequest)request;
-
-            using var response =
-                await multipartRequest
-                     .PostAsync(new MultipartFormItem[]
-                      {
-                          new("event", MimeTypes.Json, "event.json", data)
-                      })
-                     .ConfigureAwait(false);
-
+            using var response = await PostAsync(uri, data).ConfigureAwait(false);
             if (response.StatusCode is >= 200 and <= 299)
             {
                 return true;
@@ -66,6 +56,25 @@ namespace Datadog.Trace.Debugger.Upload
             var content = await response.ReadAsStringAsync().ConfigureAwait(false);
             Log.Warning<int, string>("Failed to upload diagnostics with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, content);
             return false;
+        }
+
+        private Task<IApiResponse> PostAsync(string uri, ArraySegment<byte> data)
+        {
+            if (uri.Contains("diagnostics"))
+            {
+                var multipart = _apiRequestFactory.Create(new Uri(uri));
+                var multipartRequest = (IMultipartApiRequest)multipart;
+
+                return
+                    multipartRequest
+                         .PostAsync(new MultipartFormItem[]
+                          {
+                              new("event", MimeTypes.Json, "event.json", data)
+                          });
+            }
+
+            var request = _apiRequestFactory.Create(new Uri(uri));
+            return request.PostAsync(data, MimeTypes.Json);
         }
     }
 }

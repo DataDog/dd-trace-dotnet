@@ -45,6 +45,7 @@ protected:
     const WSTRING& GetCallTargetStateType() override;
     const WSTRING& GetCallTargetReturnType() override;
     const WSTRING& GetCallTargetReturnGenericType() override;
+    const WSTRING& GetCallTargetRefStructType() override;
 
 public:
     FaultTolerantTokens(ModuleMetadata* module_metadata_ptr);
