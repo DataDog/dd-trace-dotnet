@@ -278,7 +278,7 @@ void TracerTokens::AddAdditionalLocals(TypeSignature* methodReturnValue, std::ve
 
     if (enable_by_ref_instrumentation)
     {
-        // Gets the exception type buffer and size
+        // Adds the CallTargetRefStruct locals for each ref struct argument in the method
         unsigned callTargetRefStructTypeRefBuffer;
         auto callTargetRefStructTypeRefSize = CorSigCompressToken(callTargetRefStructTypeRef, &callTargetRefStructTypeRefBuffer);
 
