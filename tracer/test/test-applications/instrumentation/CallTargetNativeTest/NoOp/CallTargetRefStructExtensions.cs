@@ -10,7 +10,7 @@ public static class CallTargetRefStructExtensions
 #if !NETCOREAPP3_1_OR_GREATER
     public static unsafe ref ReadOnlySpan<T> GetReadOnlySpan<T>(this CallTargetRefStruct callTargetRefStruct, out bool success)
     {
-        if (callTargetRefStruct.StructType == typeof(ReadOnlyRefStruct))
+        if (callTargetRefStruct.StructType == typeof(ReadOnlySpan<T>))
         {
             success = true;
             return ref (*(ReadOnlySpan<T>*)callTargetRefStruct.Value);
@@ -23,7 +23,7 @@ public static class CallTargetRefStructExtensions
 
     public static unsafe ref Span<T> GetSpan<T>(this CallTargetRefStruct callTargetRefStruct, out bool success)
     {
-        if (callTargetRefStruct.StructType == typeof(ReadOnlyRefStruct))
+        if (callTargetRefStruct.StructType == typeof(Span<T>))
         {
             success = true;
             return ref (*(Span<T>*)callTargetRefStruct.Value);
