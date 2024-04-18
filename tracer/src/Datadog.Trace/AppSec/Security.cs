@@ -261,59 +261,13 @@ namespace Datadog.Trace.AppSec
 
             if (redirectInfo is not null)
             {
-                redirectInfo.TryGetValue("status_code", out var actionStatusCode);
-                redirectInfo.TryGetValue("type", out var actionType);
-                redirectInfo.TryGetValue("location", out var actionLocation);
-
-                action = new Action
-                {
-                    Id = BlockingAction.BlockDefaultActionName,
-                    Type = BlockingAction.RedirectRequestType,
-                    Parameters = new()
-                };
-
-                if (actionStatusCode is not null)
-                {
-                    if (actionStatusCode is string statusCodeString && int.TryParse(statusCodeString, out var statusCode))
-                    {
-                        action.Parameters.StatusCode = statusCode;
-                    }
-                }
-
-                if (actionType is string type)
-                {
-                    action.Parameters.Type = type;
-                }
-
-                if (actionLocation is string location)
-                {
-                    action.Parameters.Location = location;
-                }
+                action = BuildAction(redirectInfo, true);
             }
-
-            if (blockInfo is not null)
+            else
             {
-                blockInfo.TryGetValue("status_code", out var actionStatusCode);
-                blockInfo.TryGetValue("type", out var actionType);
-
-                action = new Action
+                if (blockInfo is not null)
                 {
-                    Id = BlockingAction.BlockDefaultActionName,
-                    Type = BlockingAction.BlockRequestType,
-                    Parameters = new()
-                };
-
-                if (actionStatusCode is not null)
-                {
-                    if (actionStatusCode is string statusCodeString && int.TryParse(statusCodeString, out var statusCode))
-                    {
-                        action.Parameters.StatusCode = statusCode;
-                    }
-                }
-
-                if (actionType is string type)
-                {
-                    action.Parameters.Type = type;
+                    action = BuildAction(blockInfo, false);
                 }
             }
 
@@ -400,6 +354,41 @@ namespace Datadog.Trace.AppSec
             }
 
             return blockingAction;
+        }
+
+        private static Action BuildAction(Dictionary<string, object?> redirectInfo, bool isRedirect)
+        {
+            Action? action = null;
+            redirectInfo.TryGetValue("status_code", out var actionStatusCode);
+            redirectInfo.TryGetValue("type", out var actionType);
+
+            action = new Action
+            {
+                Type = isRedirect ? BlockingAction.RedirectRequestType : BlockingAction.BlockRequestType,
+                Parameters = new()
+            };
+
+            if (isRedirect)
+            {
+                redirectInfo.TryGetValue("location", out var actionLocation);
+
+                if (actionLocation is string location)
+                {
+                    action.Parameters.Location = location;
+                }
+            }
+
+            if (actionStatusCode is string statusCodeString && int.TryParse(statusCodeString, out var statusCode))
+            {
+                action.Parameters.StatusCode = statusCode;
+            }
+
+            if (actionType is string type)
+            {
+                action.Parameters.Type = type;
+            }
+
+            return action;
         }
 
         /// <summary> Frees resources </summary>
