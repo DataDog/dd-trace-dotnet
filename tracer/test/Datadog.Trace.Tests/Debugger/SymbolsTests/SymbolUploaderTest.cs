@@ -213,7 +213,7 @@ public class SymbolUploaderTest
             throw new NotImplementedException();
         }
 
-        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse>> callback)
+        public Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback)
         {
             throw new NotImplementedException();
         }

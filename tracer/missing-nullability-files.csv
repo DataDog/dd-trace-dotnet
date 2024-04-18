@@ -416,8 +416,7 @@ src/Datadog.Trace/RemoteConfigurationManagement/Protocol/RcmClient.cs
 src/Datadog.Trace/RemoteConfigurationManagement/Protocol/RcmClientState.cs
 src/Datadog.Trace/RemoteConfigurationManagement/Protocol/RcmConfigState.cs
 src/Datadog.Trace/RemoteConfigurationManagement/Protocol/RcmFile.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Transport/IRemoteConfigurationApi.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Transport/RemoteConfigurationApi.cs
+src/Datadog.Trace/RemoteConfigurationManagement/Transport/RemoteConfigurationDeserializationException.cs
 src/Datadog.Trace/Telemetry/DTOs/IPayload.cs
 src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs
 src/Datadog.Trace/Telemetry/Transports/TelemetryTransportStrategy.cs

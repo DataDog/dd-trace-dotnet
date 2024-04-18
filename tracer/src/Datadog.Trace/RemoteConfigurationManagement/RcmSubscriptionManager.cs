@@ -165,7 +165,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
         return capabilitiesArray;
     }
 
-    public async Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse>> callback)
+    public async Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback)
     {
         await _sendRequestMutex.WaitAsync().ConfigureAwait(false);
 
@@ -214,7 +214,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
         return rcmRequest;
     }
 
-    private async Task<GetRcmResponse?> TrySendRequest(RcmClientTracer rcmClientTracer, Func<GetRcmRequest, Task<GetRcmResponse>> func)
+    private async Task<GetRcmResponse?> TrySendRequest(RcmClientTracer rcmClientTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> func)
     {
         try
         {

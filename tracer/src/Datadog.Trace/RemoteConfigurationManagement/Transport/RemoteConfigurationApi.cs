@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Text;
 using System.Threading;
@@ -22,9 +24,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi));
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly string _containerId;
-        private readonly string _entityId;
-        private string _configEndpoint = null;
+        private readonly string? _containerId;
+        private readonly string? _entityId;
+        private string? _configEndpoint = null;
 
         private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
@@ -44,7 +46,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             return new RemoteConfigurationApi(apiRequestFactory, discoveryService);
         }
 
-        public async Task<GetRcmResponse> GetConfigs(GetRcmRequest request)
+        public async Task<GetRcmResponse?> GetConfigs(GetRcmRequest request)
         {
             var configEndpoint = Volatile.Read(ref _configEndpoint);
             if (string.IsNullOrEmpty(configEndpoint))
