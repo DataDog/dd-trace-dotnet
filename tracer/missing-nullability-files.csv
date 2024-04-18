@@ -591,10 +591,8 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RabbitMQ/RabbitMQConstants.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/Common.cs
 src/Datadog.Trace/Debugger/Configurations/Models/Capture.cs
 src/Datadog.Trace/Debugger/Configurations/Models/DebuggerExpression.cs
-src/Datadog.Trace/Debugger/Configurations/Models/Decoration.cs
 src/Datadog.Trace/Debugger/Configurations/Models/EvaluateAt.cs
 src/Datadog.Trace/Debugger/Configurations/Models/FilterList.cs
-src/Datadog.Trace/Debugger/Configurations/Models/LogProbe.cs
 src/Datadog.Trace/Debugger/Configurations/Models/MetricKind.cs
 src/Datadog.Trace/Debugger/Configurations/Models/MetricProbe.cs
 src/Datadog.Trace/Debugger/Configurations/Models/OpsConfiguration.cs
@@ -604,7 +602,6 @@ src/Datadog.Trace/Debugger/Configurations/Models/SnapshotSegment.cs
 src/Datadog.Trace/Debugger/Configurations/Models/SpanDecorationProbe.cs
 src/Datadog.Trace/Debugger/Configurations/Models/SpanProbe.cs
 src/Datadog.Trace/Debugger/Configurations/Models/Tag.cs
-src/Datadog.Trace/Debugger/Configurations/Models/Where.cs
 src/Datadog.Trace/Debugger/Instrumentation/Collections/EverGrowingCollection.cs
 src/Datadog.Trace/Debugger/Instrumentation/Collections/MethodMetadataCollection.cs
 src/Datadog.Trace/Debugger/Instrumentation/Collections/MethodMetadataInfo.cs
