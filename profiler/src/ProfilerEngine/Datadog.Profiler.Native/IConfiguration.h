@@ -72,4 +72,5 @@ public:
     virtual EnablementStatus GetEnablementStatus() const = 0;
     virtual DeploymentMode GetDeploymentMode() const = 0;
     virtual CpuProfilerType GetCpuProfilerType() const = 0;
+    virtual std::chrono::milliseconds GetCpuProfilingInterval() const = 0;
 };

@@ -999,3 +999,24 @@ TEST(ConfigurationTest, CheckTimerCreateCpuProfilerType)
 #endif
     ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
 }
+
+TEST(ConfigurationTest, CheckDefaultCpuProfilingInterval)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingInterval, WStr(""));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 10ms);
+}
+
+TEST(ConfigurationTest, CheckCpuProfilingIntervalSetInEnvVar)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingInterval, WStr("42"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 42ms);
+}
+
+TEST(ConfigurationTest, CheckCpuProfilingIntervalIsNotBelowDefault)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingInterval, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 10ms);
+}
