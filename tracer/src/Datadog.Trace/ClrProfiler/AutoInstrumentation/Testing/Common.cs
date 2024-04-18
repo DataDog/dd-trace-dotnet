@@ -4,10 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -114,6 +118,96 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             }
 
             return false;
+        }
+
+        internal static void InjectCodeCoverageCollector(ref IEnumerable<string> msbuildArgs)
+        {
+            const string collectProperty = "-property:VSTestCollect=";
+            const string datadogCoverageCollector = "DatadogCoverage";
+            const string testAdapterPathProperty = "-property:VSTestTestAdapterPath=";
+
+            var disableTestAdapterInjection = false;
+            var codeCoverageCollectorPath = EnvironmentHelpers.GetEnvironmentVariable("DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH") ?? string.Empty;
+            if (string.IsNullOrEmpty(codeCoverageCollectorPath))
+            {
+                Log.Warning("The tracer home directory cannot be found based on the DD_DOTNET_TRACER_HOME value. TestAdapterPath will not be injected.");
+                disableTestAdapterInjection = true;
+            }
+
+            var isCollectIndex = -1;
+            var isTestAdapterPathIndex = -1;
+            var msbuildArgsList = msbuildArgs as List<string> ?? [..msbuildArgs];
+            for (var i = 0; i < msbuildArgsList.Count; i++)
+            {
+                if (msbuildArgsList[i].StartsWith(collectProperty))
+                {
+                    isCollectIndex = i;
+                    continue;
+                }
+
+                if (msbuildArgsList[i].StartsWith(testAdapterPathProperty))
+                {
+                    isTestAdapterPathIndex = i;
+                }
+            }
+
+            if (isCollectIndex == -1)
+            {
+                // Add the collect property
+                Log.Debug("Adding the collect property with the Datadog data collector.");
+                msbuildArgsList.Add($"{collectProperty}\"{datadogCoverageCollector}\"");
+            }
+            else
+            {
+                // Modify the collect property
+                var item = msbuildArgsList[isCollectIndex];
+                var values = item.Replace(collectProperty, string.Empty)
+                                        .Replace("\"", string.Empty)
+                                        .Split(new[] { ';' }, StringSplitOptions.None);
+
+                if (!values.Contains(datadogCoverageCollector))
+                {
+                    Log.Debug("Appending the Datadog data collector.");
+                    item = $"{collectProperty}\"{string.Join(";", values.Concat(datadogCoverageCollector))}\"";
+                    msbuildArgsList[isCollectIndex] = item;
+                }
+                else
+                {
+                    Log.Debug("Datadog data collector is already in the collector enumerable.");
+                }
+            }
+
+            if (!disableTestAdapterInjection)
+            {
+                if (isTestAdapterPathIndex == -1)
+                {
+                    // Add the test adapter path property
+                    Log.Debug("Adding the test adapter path property with the Datadog data collector folder path.");
+                    msbuildArgsList.Add($"{testAdapterPathProperty}\"{codeCoverageCollectorPath}\"");
+                }
+                else
+                {
+                    // Modify the test adapter path property
+                    var item = msbuildArgsList[isTestAdapterPathIndex];
+                    var values = item.Replace(testAdapterPathProperty, string.Empty)
+                                            .Replace("\"", string.Empty)
+                                            .Split(new[] { ';' }, StringSplitOptions.None);
+
+                    if (!values.Contains(codeCoverageCollectorPath))
+                    {
+                        Log.Debug("Appending the Datadog data collector folder path.");
+                        item = $"{testAdapterPathProperty}\"{string.Join(";", values.Concat(codeCoverageCollectorPath))}\"";
+                        msbuildArgsList[isTestAdapterPathIndex] = item;
+                    }
+                    else
+                    {
+                        Log.Debug("Datadog data collector path is already in the test adapter path enumerable.");
+                    }
+                }
+            }
+
+            // Replace the msbuildArgs with the modified list
+            msbuildArgs = msbuildArgsList;
         }
     }
 }

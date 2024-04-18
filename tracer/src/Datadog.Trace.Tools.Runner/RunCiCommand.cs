@@ -218,6 +218,8 @@ namespace Datadog.Trace.Tools.Runner
             // Let's set the code coverage datacollector if the code coverage is enabled
             if (codeCoverageEnabled)
             {
+                profilerEnvironmentVariables["DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH"] = AppContext.BaseDirectory;
+
                 var isDotnetCommand = string.Equals(program, "dotnet", StringComparison.OrdinalIgnoreCase) ||
                                       string.Equals(program, "dotnet.exe", StringComparison.OrdinalIgnoreCase);
                 var isVsTestCommand = string.Equals(program, "VSTest.Console", StringComparison.OrdinalIgnoreCase) ||
@@ -247,12 +249,12 @@ namespace Datadog.Trace.Tools.Runner
                     var baseDirectory = AppContext.BaseDirectory;
                     if (isDotnetTestCommand)
                     {
-                        arguments += " --collect DatadogCoverage --test-adapter-path \"" + baseDirectory + "\"";
+                        // arguments += " --collect DatadogCoverage --test-adapter-path \"" + baseDirectory + "\"";
                         collectorAdded = true;
                     }
                     else if (isVsTestCommand)
                     {
-                        arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
+                        // arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
                         collectorAdded = true;
                     }
                     else
