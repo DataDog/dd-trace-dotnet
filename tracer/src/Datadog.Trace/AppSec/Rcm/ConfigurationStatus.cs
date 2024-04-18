@@ -33,6 +33,7 @@ internal record ConfigurationStatus
     internal const string WafExclusionsKey = "exclusions";
     internal const string WafRulesDataKey = "rules_data";
     internal const string WafCustomRulesKey = "custom_rules";
+    internal const string WafActionsKey = "actions";
     private readonly IAsmConfigUpdater _asmFeatureProduct = new AsmFeaturesProduct();
 
     private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater> { { RcmProducts.Asm, new AsmProduct() }, { RcmProducts.AsmDd, new AsmDdProduct() }, { RcmProducts.AsmData, new AsmDataProduct() } };
@@ -116,6 +117,11 @@ internal record ConfigurationStatus
         {
             var rulesData = MergeRuleData(RulesDataByFile.SelectMany(x => x.Value));
             dictionary.Add(WafRulesDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
+        }
+
+        if (IncomingUpdateState.WafKeysToApply.Contains(WafActionsKey))
+        {
+            dictionary.Add(WafActionsKey, Actions.Select(a => a.Value.ToKeyValuePair()).ToArray());
         }
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafCustomRulesKey))

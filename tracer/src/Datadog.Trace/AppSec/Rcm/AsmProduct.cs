@@ -54,6 +54,8 @@ internal class AsmProduct : IAsmConfigUpdater
                     }
                 }
 
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
+
                 if (asmConfig.Actions.Length == 0)
                 {
                     configurationStatus.Actions.Clear();

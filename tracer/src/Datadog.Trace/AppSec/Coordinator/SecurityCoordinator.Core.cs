@@ -63,12 +63,12 @@ internal readonly partial struct SecurityCoordinator
     {
         if (result is not null)
         {
-            if (result!.ShouldBlock)
+            if (result!.BlockInfo is not null)
             {
-                throw new BlockException(result);
+                throw new BlockException(result, result!.BlockInfo);
             }
 
-            TryReport(result, result.ShouldBlock);
+            TryReport(result, result.BlockInfo is not null);
         }
     }
 
@@ -139,7 +139,7 @@ internal readonly partial struct SecurityCoordinator
 
         public HttpTransport(HttpContext context) => _context = context;
 
-        internal override bool IsBlocked => _context.Items["block"] is true;
+        internal override bool IsBlocked => _context.Items[BlockingAction.BlockDefaultActionName] is true;
 
         internal override int StatusCode => _context.Response.StatusCode;
 
@@ -151,7 +151,7 @@ internal readonly partial struct SecurityCoordinator
             set => _context.Items["ReportedExternalWafsRequestHeaders"] = value;
         }
 
-        internal override void MarkBlocked() => _context.Items["block"] = true;
+        internal override void MarkBlocked() => _context.Items[BlockingAction.BlockDefaultActionName] = true;
 
         internal override IContext GetAdditiveContext() => _context.Features.Get<IContext>();
 

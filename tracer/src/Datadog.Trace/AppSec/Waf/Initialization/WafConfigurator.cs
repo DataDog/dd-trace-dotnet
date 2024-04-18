@@ -42,8 +42,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                         var emptyJValue = JValue.CreateString(string.Empty);
                         var idProp = ev.Value<JValue>("id") ?? emptyJValue;
                         var nameProp = ev.Value<JValue>("name") ?? emptyJValue;
-                        var addresses = ev.Value<JArray>("conditions")?.SelectMany(x => x.Value<JObject>("parameters")?.Value<JArray>("inputs")!);
-                        Log.Debug("DDAS-0007-00: Loaded rule: {Id} - {Name} on addresses: {Addresses}", idProp.Value, nameProp.Value, string.Join(", ", addresses ?? Enumerable.Empty<JToken>()));
+                        var conditionsArray = ev.Value<JArray>("conditions");
+                        var addresses = conditionsArray?
+                            .SelectMany(x => x.Value<JObject>("parameters")?.Value<JArray>("inputs") ?? Enumerable.Empty<JToken>())
+                            .ToList() ?? new List<JToken>();
+                        var addressesJoin = addresses.Any() ? addresses : Enumerable.Empty<JToken>();
+
+                        Log.Debug("DDAS-0007-00: Loaded rule: {Id} - {Name} on addresses: {Addresses}", idProp.Value, nameProp.Value, string.Join(", ", addressesJoin));
                     }
                 }
                 catch (Exception ex)

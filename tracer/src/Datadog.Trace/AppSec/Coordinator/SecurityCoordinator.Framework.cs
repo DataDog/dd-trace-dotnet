@@ -261,13 +261,13 @@ internal readonly partial struct SecurityCoordinator
         {
             var reporting = MakeReportingFunction(result);
 
-            if (result.ShouldBlock)
+            if (result.BlockInfo is not null || result.RedirectInfo is not null)
             {
-                ChooseBlockingMethodAndBlock(result, reporting);
+                ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
             }
 
             // here we assume if we haven't blocked we'll have collected the correct status elsewhere
-            reporting(null, result.ShouldBlock);
+            reporting(null, result.BlockInfo is not null || result.RedirectInfo is not null);
         }
     }
 
@@ -276,7 +276,7 @@ internal readonly partial struct SecurityCoordinator
         var securityCoordinator = this;
         return (status, blocked) =>
         {
-            if (result.ShouldBlock)
+            if (result.BlockInfo is not null || result.RedirectInfo is not null)
             {
                 securityCoordinator._httpTransport.MarkBlocked();
             }
@@ -285,9 +285,9 @@ internal readonly partial struct SecurityCoordinator
         };
     }
 
-    private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting)
+    private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
     {
-        var blockingAction = _security.GetBlockingAction(result.Actions[0], [_context.Request.Headers["Accept"]]);
+        var blockingAction = _security.GetBlockingAction([_context.Request.Headers["Accept"]], blockInfo, redirectInfo);
         var isWebApiRequest = _context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
         if (isWebApiRequest)
         {
@@ -471,7 +471,7 @@ internal readonly partial struct SecurityCoordinator
 
         public HttpTransport(HttpContext context) => _context = context;
 
-        internal override bool IsBlocked => _context.Items["block"] is true;
+        internal override bool IsBlocked => _context.Items[BlockingAction.BlockDefaultActionName] is true;
 
         internal override int StatusCode => _context.Response.StatusCode;
 
@@ -483,7 +483,7 @@ internal readonly partial struct SecurityCoordinator
             set => _context.Items["ReportedExternalWafsRequestHeaders"] = value;
         }
 
-        internal override void MarkBlocked() => _context.Items["block"] = true;
+        internal override void MarkBlocked() => _context.Items[BlockingAction.BlockDefaultActionName] = true;
 
         internal override IContext? GetAdditiveContext() => _context.Items[WafKey] as IContext;
 

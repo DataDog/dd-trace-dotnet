@@ -43,7 +43,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             res.Success.Should().BeTrue();
             res.LoadedRules.Should().Be(1);
             res.Errors.Should().BeEmpty();
-            Execute(waf, new[] { "testrule", "testrule", "crs-942-290-new" }, true, "block");
+            Execute(waf, new[] { "testrule", "testrule", "crs-942-290-new" }, true, BlockingAction.BlockRequestType);
         }
 
         [Theory]
@@ -125,12 +125,12 @@ namespace Datadog.Trace.Security.Unit.Tests
                 var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
                 result.Success.Should().BeTrue();
                 result.HasErrors.Should().BeFalse();
-                Execute(waf, attackParts1, true, "block");
+                Execute(waf, attackParts1, true, BlockingAction.BlockRequestType);
                 Execute(waf, attackParts2, true);
             }
         }
 
-        private static void Execute(Waf waf, string[] attackParts, bool isAttack, string expectedAction = null)
+        private static void Execute(Waf waf, string[] attackParts, bool isAttack, string expectedActionType = null)
         {
             var address = AddressesConstants.RequestQuery;
             object value = new Dictionary<string, string[]> { { attackParts[0], new[] { attackParts[1] } } };
@@ -159,10 +159,10 @@ namespace Datadog.Trace.Security.Unit.Tests
                 resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);
             }
 
-            if (expectedAction != null)
+            if (expectedActionType != null)
             {
-                result.ShouldBlock.Should().BeTrue();
-                result.Actions.Should().OnlyContain(s => s == expectedAction);
+                result.BlockInfo.Should().NotBeNull();
+                result.Actions.Keys.Should().OnlyContain(s => s == expectedActionType);
             }
         }
     }

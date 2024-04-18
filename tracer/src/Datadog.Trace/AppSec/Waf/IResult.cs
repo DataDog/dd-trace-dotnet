@@ -17,11 +17,13 @@ namespace Datadog.Trace.AppSec.Waf
         /// <summary>
         /// Gets a value indicating whether to block the request or not
         /// </summary>
-        public bool ShouldBlock { get; }
+        public Dictionary<string, object?>? BlockInfo { get; }
+
+        public Dictionary<string, object?>? RedirectInfo { get; }
 
         IReadOnlyCollection<object>? Data { get; }
 
-        List<string> Actions { get; }
+        Dictionary<string, object?>? Actions { get; }
 
         ulong AggregatedTotalRuntime { get; }
 
