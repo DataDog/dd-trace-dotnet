@@ -73,7 +73,22 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.query"
+              },
+              {
                 "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              },
+              {
+                "address": "grpc.server.request.message"
+              },
+              {
+                "address": "graphql.server.all_resolvers"
+              },
+              {
+                "address": "graphql.server.resolver"
               }
             ],
             "list": [
@@ -100,7 +115,22 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.query"
+              },
+              {
                 "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              },
+              {
+                "address": "grpc.server.request.message"
+              },
+              {
+                "address": "graphql.server.all_resolvers"
+              },
+              {
+                "address": "graphql.server.resolver"
               }
             ],
             "list": [

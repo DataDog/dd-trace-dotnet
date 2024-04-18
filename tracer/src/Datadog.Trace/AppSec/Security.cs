@@ -356,11 +356,11 @@ namespace Datadog.Trace.AppSec
             return blockingAction;
         }
 
-        private static Action BuildAction(Dictionary<string, object?> redirectInfo, bool isRedirect)
+        private static Action BuildAction(Dictionary<string, object?> blockInfo, bool isRedirect)
         {
             Action? action = null;
-            redirectInfo.TryGetValue("status_code", out var actionStatusCode);
-            redirectInfo.TryGetValue("type", out var actionType);
+            blockInfo.TryGetValue("status_code", out var actionStatusCode);
+            blockInfo.TryGetValue("type", out var actionType);
 
             action = new Action
             {
@@ -370,7 +370,7 @@ namespace Datadog.Trace.AppSec
 
             if (isRedirect)
             {
-                redirectInfo.TryGetValue("location", out var actionLocation);
+                blockInfo.TryGetValue("location", out var actionLocation);
 
                 if (actionLocation is string location)
                 {
