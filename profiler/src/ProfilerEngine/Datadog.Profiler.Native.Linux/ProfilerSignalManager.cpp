@@ -5,13 +5,15 @@
 
 #include <signal.h>
 #include <sys/syscall.h>
+#include <stdexcept>
+
 
 #include "Log.h"
 #include "OpSysTools.h"
 
 ProfilerSignalManager::ProfilerSignalManager() noexcept :
     _canReplaceSignalHandler{true},
-    _signalToSend{SIGUSR1},
+    _signalToSend{-1},
     _handler{nullptr},
     _processId{OpSysTools::GetProcId()},
     _isHandlerInPlace{false},
@@ -30,11 +32,19 @@ ProfilerSignalManager::~ProfilerSignalManager() noexcept
     _handler = nullptr;
 }
 
-ProfilerSignalManager* ProfilerSignalManager::Get()
+ProfilerSignalManager* ProfilerSignalManager::Get(int signal)
 {
-    static ProfilerSignalManager signalManager{};
+    static ProfilerSignalManager signalManagers[31]; // only for the standard signals
 
-    return &signalManager;
+    if (signal < 1 || signal > 31)
+    {
+        throw std::invalid_argument(std::string("Signal argument is invalid ") + "(" + std::to_string(signal) + "). Value must be: 1 <= signal <= 31");
+    }
+
+    auto* manager = &signalManagers[signal];
+    manager->SetSignal(signal);
+
+    return manager;
 }
 
 bool ProfilerSignalManager::RegisterHandler(HandlerFn_t handler)
@@ -62,6 +72,11 @@ bool ProfilerSignalManager::RegisterHandler(HandlerFn_t handler)
     }
 
     return _isHandlerInPlace;
+}
+
+void ProfilerSignalManager::SetSignal(int32_t signal)
+{
+    _signalToSend = signal;
 }
 
 std::int32_t ProfilerSignalManager::SendSignal(pid_t threadId)
@@ -133,18 +148,18 @@ bool ProfilerSignalManager::SetupSignalHandler()
     int32_t result = sigaction(_signalToSend, &sampleAction, &_previousAction);
     if (result != 0)
     {
-        Log::Error("ProfilerSignalManager::SetupSignalHandler: Failed to setup signal handler for SIGUSR1 signals. Reason: ",
+        Log::Error("ProfilerSignalManager::SetupSignalHandler: Failed to setup signal handler for ", _signalToSend, " signals. Reason: ",
                    strerror(errno), ".");
         return false;
     }
 
-    Log::Info("ProfilerSignalManager::SetupSignalHandler: Successfully setup signal handler for SIGUSR1 signal.");
+    Log::Info("ProfilerSignalManager::SetupSignalHandler: Successfully setup signal handler for ", _signalToSend, " signal.");
     return true;
 }
 
 void ProfilerSignalManager::SignalHandler(int signal, siginfo_t* info, void* context)
 {
-    auto* signalManager = Get();
+    auto* signalManager = Get(signal);
     if (!signalManager->CallCustomHandler(signal, info, context))
     {
         signalManager->CallOrignalHandler(signal, info, context);
