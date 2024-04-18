@@ -8,6 +8,7 @@
 
 #include "DeploymentMode.h"
 #include "EnablementStatus.h"
+#include "CpuProfilerType.h"
 #include "IConfiguration.h"
 #include "TagsHelper.h"
 #include "shared/src/native-src/string.h"
@@ -72,6 +73,8 @@ public:
     bool IsEtwLoggingEnabled() const override;
     EnablementStatus GetEnablementStatus() const override;
     DeploymentMode GetDeploymentMode() const override;
+    CpuProfilerType GetCpuProfilerType() const override;
+
 
 private:
     static tags ExtractUserTags();
@@ -159,4 +162,5 @@ private:
     DeploymentMode _deploymentMode;
     bool _isEtwLoggingEnabled;
     EnablementStatus _enablementStatus;
+    CpuProfilerType _cpuProfilerType;
 };
