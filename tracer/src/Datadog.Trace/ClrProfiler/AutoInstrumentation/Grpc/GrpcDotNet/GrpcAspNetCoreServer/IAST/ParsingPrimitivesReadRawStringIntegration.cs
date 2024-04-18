@@ -10,6 +10,7 @@ using System.IO;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.IAST;
 
@@ -21,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
     TypeName = "Google.Protobuf.ParsingPrimitives",
     MethodName = "ReadRawString",
     ReturnTypeName = ClrNames.String,
-    ParameterTypeNames = ["System.Object&", "Google.Protobuf.ParserInternalState&", ClrNames.Int32],
+    ParameterTypeNames = ["System.ReadOnlySpan`1[System.Byte]&", "Google.Protobuf.ParserInternalState&", ClrNames.Int32],
     MinimumVersion = "3.18.1",
     MaximumVersion = "3.*.*",
     IntegrationName = nameof(Grpc))]
@@ -29,13 +30,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ParsingPrimitivesReadRawStringIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TBuffer, TState>(ref TBuffer buffer, ref TState state, ref int length)
-    {
-        return CallTargetState.GetDefault();
-    }
-
     internal static CallTargetReturn<string?> OnMethodEnd<TTarget>(string? returnValue, Exception? exception, in CallTargetState state)
     {
+        if (returnValue is not null)
+        {
+            var taintedObjects = IastModule.GetIastContext()?.GetTaintedObjects();
+            taintedObjects?.TaintInputString(returnValue, new Source(SourceType.GrpcRequestBody, returnValue, returnValue));
+        }
+
         return new CallTargetReturn<string?>(returnValue);
     }
 }
