@@ -99,8 +99,8 @@ public class ApplicationTelemetryCollectorTests
             data.LanguageVersion.Should().Be(FrameworkDescription.Instance.ProductVersion);
             data.RuntimeName.Should().NotBeNullOrEmpty().And.Be(FrameworkDescription.Instance.Name);
             data.RuntimeVersion.Should().Be(FrameworkDescription.Instance.ProductVersion);
-            data.CommitSha.Should().BeEmpty();
-            data.RepositoryUrl.Should().BeEmpty();
+            data.CommitSha.Should().BeNull();
+            data.RepositoryUrl.Should().BeNull();
         }
     }
 
