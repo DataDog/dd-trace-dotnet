@@ -27,6 +27,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [SkippableTheory]
+        [InlineData("1.16.1")]
         [InlineData("1.14.0")]
         public void ShouldNotInitializeWithKnownIncompatibility(string version)
         {
