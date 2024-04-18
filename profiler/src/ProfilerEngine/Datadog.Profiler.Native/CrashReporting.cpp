@@ -276,17 +276,6 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
 
 int32_t CrashReporting::Send()
 {
-    const std::string endpointUrl = "file://tmp/crash.txt";
-    auto endpoint = ddog_Endpoint_file(libdatadog::FfiHelper::StringToCharSlice(endpointUrl));
-
-    auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, endpoint, 30);
-
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
-    {
-        SetLastError(result.err);
-        return 1;
-    }
-
     ddog_prof_CrashtrackerConfiguration config{};
 
     // TODO: This should be done by libdatadog
@@ -302,7 +291,22 @@ int32_t CrashReporting::Send()
     config.path_to_receiver_binary = DDOG_CHARSLICE_C("FIXME - point me to receiver binary path");
     config.timeout_secs = 30;
 
-    result = ddog_crashinfo_upload_to_telemetry(&_crashInfo, config);
+    auto result = ddog_crashinfo_upload_to_telemetry(&_crashInfo, config);
+
+    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+    {
+        SetLastError(result.err);
+        return 1;
+    }
+
+    return 0;
+}
+
+int32_t CrashReporting::WriteToFile(const char* url)
+{
+    auto endpoint = ddog_Endpoint_file(libdatadog::FfiHelper::StringToCharSlice(std::string_view(url)));
+
+    auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, endpoint, 30);
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {

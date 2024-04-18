@@ -58,6 +58,7 @@ public:
     virtual STDMETHODCALLTYPE int32_t ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback, bool* isSuspicious) = 0;
     virtual STDMETHODCALLTYPE int32_t SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) = 0;
     virtual STDMETHODCALLTYPE int32_t Send() = 0;
+    virtual STDMETHODCALLTYPE int32_t WriteToFile(const char* url) = 0;
 };
 
 class CrashReporting : public ICrashReporting 
@@ -78,6 +79,7 @@ public:
     STDMETHODCALLTYPE int32_t ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback, bool* isSuspicious) override;
     STDMETHODCALLTYPE int32_t SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) override;
     STDMETHODCALLTYPE int32_t Send() override;
+    STDMETHODCALLTYPE int32_t WriteToFile(const char* url) override;
 
 protected:
     int32_t _pid;

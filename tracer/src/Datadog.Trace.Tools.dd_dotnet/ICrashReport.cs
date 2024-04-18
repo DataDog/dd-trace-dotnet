@@ -31,6 +31,8 @@ internal unsafe interface ICrashReport : IUnknown
 
     int Send();
 
+    int WriteToFile(IntPtr url);
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct Tag
     {
