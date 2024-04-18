@@ -110,11 +110,17 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
     {
         PCCOR_SIGNATURE argSigBuff;
         auto signatureSize = argOrLocal.GetSignature(argSigBuff);
-        if (argSigBuff[0] == ELEMENT_TYPE_BYREF)
+        if (argSigBuff[0] == ELEMENT_TYPE_BYREF || argSigBuff[0] == ELEMENT_TYPE_PTR)
         {
             argumentSignatureBuffer = argSigBuff + 1;
             argumentSignatureSize = signatureSize - 1;
             signatureLength += signatureSize - 1;
+        }
+        else if (argSigBuff[0] == ELEMENT_TYPE_PINNED)
+        {
+            argumentSignatureBuffer = argSigBuff + 2;
+            argumentSignatureSize = signatureSize - 2;
+            signatureLength += signatureSize - 2;
         }
         else
         {
@@ -1426,17 +1432,11 @@ HRESULT DebuggerTokens::WriteRentArray(void* rewriterWrapperPtr, const TypeSigna
     {
         PCCOR_SIGNATURE argSigBuff;
         auto signatureSize = type.GetSignature(argSigBuff);
-        if (argSigBuff[0] == ELEMENT_TYPE_BYREF || argSigBuff[0] == ELEMENT_TYPE_PTR)
+        if (argSigBuff[0] == ELEMENT_TYPE_BYREF)
         {
             argumentSignatureBuffer = argSigBuff + 1;
             argumentSignatureSize = signatureSize - 1;
             signatureLength += signatureSize - 1;
-        }
-        else if (argSigBuff[0] == ELEMENT_TYPE_PINNED)
-        {
-            argumentSignatureBuffer = argSigBuff + 2;
-            argumentSignatureSize = signatureSize - 2;
-            signatureLength += signatureSize - 2;
         }
         else
         {
