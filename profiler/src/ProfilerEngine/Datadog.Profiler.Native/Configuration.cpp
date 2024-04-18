@@ -92,6 +92,7 @@ Configuration::Configuration()
     _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _enablementStatus = ExtractEnablementStatus();
+    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -559,6 +560,11 @@ EnablementStatus Configuration::GetEnablementStatus() const
 DeploymentMode Configuration::GetDeploymentMode() const
 {
     return _deploymentMode;
+}
+
+CpuProfilerType Configuration::GetCpuProfilerType() const
+{
+    return _cpuProfilerType;
 }
 
 static bool convert_to(shared::WSTRING const& s, bool& result)

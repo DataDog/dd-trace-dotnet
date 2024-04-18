@@ -12,6 +12,7 @@
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
+#include "CpuProfilerType.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "TagsHelper.h"
@@ -73,6 +74,7 @@ public:
     MOCK_METHOD(EnablementStatus, GetEnablementStatus, (), (const override));
     MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
     MOCK_METHOD(bool, IsEtwLoggingEnabled, (), (const override));
+    MOCK_METHOD(CpuProfilerType, GetCpuProfilerType, (), (const override));
 };
 
 class MockExporter : public IExporter

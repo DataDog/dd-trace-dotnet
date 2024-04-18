@@ -965,3 +965,37 @@ TEST(ConfigurationTest, CheckEtwLoggingIsEnabledIfEnvVarSetToTrue)
 #endif
     ASSERT_THAT(configuration.IsEtwLoggingEnabled(), expectedValue);
 }
+
+TEST(ConfigurationTest, CheckDefaultCpuProfilerType)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr(""));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+}
+
+TEST(ConfigurationTest, CheckUnknownCpuProfilerType)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("UnknownCpuProfilerType"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+}
+
+TEST(ConfigurationTest, CheckManualCpuProfilerType)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("ManualCpuTime"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+}
+
+TEST(ConfigurationTest, CheckTimerCreateCpuProfilerType)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    auto configuration = Configuration{};
+    auto expected =
+#ifdef LINUX
+        CpuProfilerType::TimerCreate;
+#else
+        CpuProfilerType::ManualCpuTime;
+#endif
+    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
+}
