@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using dnlib.DotNet;
 
@@ -137,17 +137,27 @@ namespace Datadog.InstrumentedAssemblyGenerator
                     break;
                 }
 
+                case ElementType.Ptr:
+                {
+                    toReturn = new PtrSig((TypeSig)CreateSigByElementType(ref offset, module, context, importedTypes));
+                    break;
+                }
+
+                case ElementType.Pinned:
+                {
+                    toReturn = new PinnedSig((TypeSig)CreateSigByElementType(ref offset, module, context, importedTypes));
+                    break;
+                }
+
                 case ElementType.Array:
                 case ElementType.End:
                 case ElementType.TypedByRef:
-                case ElementType.Ptr:
                 case ElementType.FnPtr:
                 case ElementType.CModReqd:
                 case ElementType.CModOpt:
                 case ElementType.Internal:
                 case ElementType.Module:
                 case ElementType.Sentinel:
-                case ElementType.Pinned:
                     Logger.Warn($"Unhandled element type: {elementType}");
                     break;
                 default:

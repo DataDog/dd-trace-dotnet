@@ -69,7 +69,6 @@ namespace
     {
         switch (elemType)
         {
-            case ELEMENT_TYPE_PTR:
                 // CustomMod*  VOID
                 // CustomMod*  Type
 
@@ -143,10 +142,15 @@ namespace
         // All simple types
         if (elemType <= ELEMENT_TYPE_STRING || elemType == ELEMENT_TYPE_OBJECT || elemType == ELEMENT_TYPE_I ||
             elemType == ELEMENT_TYPE_U)
+        {
             return S_OK;
+        }
 
         // Type will be in the next byte
-        if (elemType == ELEMENT_TYPE_BYREF) return ParseType(pbCur, pbEnd);
+        if (elemType == ELEMENT_TYPE_BYREF || elemType == ELEMENT_TYPE_PTR || elemType == ELEMENT_TYPE_PINNED)
+        {
+            return ParseType(pbCur, pbEnd);
+        }
 
         // Parse type
         switch (elemType)
@@ -210,9 +214,11 @@ namespace
         if (*pbCur == ELEMENT_TYPE_CMOD_OPT || *pbCur == ELEMENT_TYPE_CMOD_REQD || *pbCur == ELEMENT_TYPE_TYPEDBYREF)
             return E_FAIL;
 
-        if (*pbCur == ELEMENT_TYPE_BYREF)
+        if (*pbCur == ELEMENT_TYPE_BYREF || *pbCur == ELEMENT_TYPE_PTR)
+        {
             // Type will be in the next byte
             pbCur++;
+        }
 
         IfFailRet(ParseType(pbCur, pbEnd));
 
