@@ -4,9 +4,8 @@
 #include "ProfilerSignalManager.h"
 
 #include <signal.h>
-#include <sys/syscall.h>
 #include <stdexcept>
-
+#include <sys/syscall.h>
 
 #include "Log.h"
 #include "OpSysTools.h"
@@ -204,4 +203,9 @@ void ProfilerSignalManager::CallOrignalHandler(int32_t signal, siginfo_t* info, 
     }
 
     isExecuting = false;
+}
+
+int32_t ProfilerSignalManager::GetSignal() const
+{
+    return _signalToSend;
 }
