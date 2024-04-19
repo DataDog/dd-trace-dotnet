@@ -1,4 +1,4 @@
-﻿// <copyright file="ProcessHelper.cs" company="Datadog">
+// <copyright file="ProcessHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
@@ -24,17 +24,18 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private readonly ManualResetEventSlim _outputMutex = new();
         private readonly StringBuilder _outputBuffer = new();
         private readonly StringBuilder _errorBuffer = new();
-        private readonly Process _process;
 
         public ProcessHelper(Process process)
         {
-            _process = process;
-            _process.OutputDataReceived += OnOutputDataReceived;
-            _process.ErrorDataReceived += OnErrorDataReceived;
+            Process = process;
+            Process.OutputDataReceived += OnOutputDataReceived;
+            Process.ErrorDataReceived += OnErrorDataReceived;
 
-            _process.BeginOutputReadLine();
-            _process.BeginErrorReadLine();
+            Process.BeginOutputReadLine();
+            Process.BeginErrorReadLine();
         }
+
+        public Process Process { get; }
 
         public string StandardOutput => _outputBuffer.ToString();
 
@@ -55,8 +56,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             _errorMutex.Dispose();
             _outputMutex.Dispose();
 
-            _process.OutputDataReceived -= OnOutputDataReceived;
-            _process.ErrorDataReceived -= OnErrorDataReceived;
+            Process.OutputDataReceived -= OnOutputDataReceived;
+            Process.ErrorDataReceived -= OnErrorDataReceived;
         }
 
         private static void DrainOutput(DataReceivedEventArgs e, StringBuilder buffer, ManualResetEventSlim mutex)
