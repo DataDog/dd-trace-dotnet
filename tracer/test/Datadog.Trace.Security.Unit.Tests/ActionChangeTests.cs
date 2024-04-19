@@ -79,7 +79,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
 
         UpdateAction(action, actionType, waf);
 
-        var context = waf.CreateContext();
+        using var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
         result.BlockInfo["status_code"].Should().Be("500");
     }
