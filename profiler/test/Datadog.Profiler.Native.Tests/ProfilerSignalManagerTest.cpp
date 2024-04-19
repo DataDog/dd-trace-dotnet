@@ -5,6 +5,7 @@
 
 #include "gtest/gtest.h"
 
+#include "OpSysTools.h"
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
 
 #include <future>
@@ -88,13 +89,14 @@ TEST_F(ProfilerSignalManagerFixture, CheckTwoDifferentSignalInstallation)
     EXPECT_TRUE(sigusr1SignalManager->RegisterHandler(CustomHandler));
     EXPECT_TRUE(sigprofSignalManager->RegisterHandler(SigProfCustomHandler));
 
+    auto tid = OpSysTools::GetThreadId();
     SigProfHandlerCalled = false;
-    sigusr1SignalManager->SendSignal(gettid());
+    sigusr1SignalManager->SendSignal(tid);
 
     ASSERT_FALSE(SigProfHandlerCalled);
 
     SigProfHandlerCalled = false;
-    sigprofSignalManager->SendSignal(gettid());
+    sigprofSignalManager->SendSignal(tid);
 
     ASSERT_TRUE(SigProfHandlerCalled);
 }
@@ -103,7 +105,7 @@ TEST_F(ProfilerSignalManagerFixture, CheckTwoDifferentSignalInstallation)
 TEST_F(ProfilerSignalManagerFixture, CheckThrowIfSignalAbove31)
 {
     ASSERT_NO_THROW(ProfilerSignalManager::Get(SIGUSR1));
-    ASSERT_NO_THROW(ProfilerSignalManager::Get(SIGUSR1));
+    ASSERT_NO_THROW(ProfilerSignalManager::Get(SIGPROF));
 
     ASSERT_THROW(ProfilerSignalManager::Get(-1), std::invalid_argument);
     ASSERT_THROW(ProfilerSignalManager::Get(0), std::invalid_argument);
