@@ -1,4 +1,4 @@
-// <copyright file="DefaultSamplingRule.cs" company="Datadog">
+// <copyright file="AgentSamplingRule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,10 +13,10 @@ namespace Datadog.Trace.Sampling
 {
     // These "default" sampling rule contains the mapping of service/env names to sampling rates.
     // These rates are received in http responses from the trace agent after we send a trace payload.
-    internal class DefaultSamplingRule : ISamplingRule
+    internal class AgentSamplingRule : ISamplingRule
     {
         private const string DefaultKey = "service:,env:";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DefaultSamplingRule>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentSamplingRule>();
 
         private Dictionary<SampleRateKey, float> _sampleRates = new();
         private float? _defaultSamplingRate;
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Sampling
 
             if (_sampleRates.TryGetValue(key, out var sampleRate))
             {
-                SetSamplingAgentDecision(span, sampleRate);
+                SetSamplingRateTag(span, sampleRate);
                 return sampleRate;
             }
 
@@ -70,10 +70,10 @@ namespace Datadog.Trace.Sampling
             }
 
             defaultRate = _defaultSamplingRate ?? 1;
-            SetSamplingAgentDecision(span, defaultRate);
+            SetSamplingRateTag(span, defaultRate);
             return defaultRate;
 
-            static void SetSamplingAgentDecision(Span span, float sampleRate)
+            static void SetSamplingRateTag(Span span, float sampleRate)
             {
                 if (span.Tags is CommonTags commonTags)
                 {
