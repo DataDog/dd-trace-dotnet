@@ -33,6 +33,7 @@ namespace Datadog.Trace
 
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
+        private int? _samplingPriority;
 
         // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
@@ -43,7 +44,6 @@ namespace Datadog.Trace
         // The reason _rootSpan was chosen is to avoid
         // allocating a separate object for the lock.
         private Span? _rootSpan;
-        private int? _samplingPriority;
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection? tags = null)
         {
