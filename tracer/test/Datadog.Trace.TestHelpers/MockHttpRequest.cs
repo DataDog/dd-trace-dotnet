@@ -48,7 +48,6 @@ public class MockHttpRequest
 
     internal byte[] ReadStreamBody()
     {
-        // var isChunkEncoded = Headers.TryGetValue("Transfer-Encoding", out var chunking) && chunking is "chunked";
         var isGzip = Headers.TryGetValue("Content-Encoding", out var encoding) && encoding is "gzip";
 
         byte[] bytes = null;
@@ -63,7 +62,7 @@ public class MockHttpRequest
 
         // yes this is a bit horrible, but without it we get weirdness in .NET FX/netcoreapp2.1
         // where the copy doesn't actually read to the end
-        using var ms = bytes is not null ? new MemoryStream(bytes) : new();
+        using MemoryStream ms = bytes is not null ? new(bytes) : new();
         if (bytes is null)
         {
             Body.CopyTo(ms);
@@ -75,7 +74,6 @@ public class MockHttpRequest
             return ms.ToArray();
         }
 
-        ms.Position = 0;
         using var finalStream = new MemoryStream();
         using (var gzip = new GZipStream(ms, CompressionMode.Decompress, leaveOpen: true))
         {
@@ -83,7 +81,6 @@ public class MockHttpRequest
             gzip.Flush();
         }
 
-        ms.Dispose();
         return finalStream.ToArray();
 
         static byte[] ReadBytes(long length, Stream stream)
@@ -97,7 +94,7 @@ public class MockHttpRequest
 
                 i += read;
 
-                if (read == 0 || read == body.Length)
+                if (read == 0)
                 {
                     break;
                 }
