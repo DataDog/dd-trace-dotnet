@@ -75,7 +75,9 @@ namespace Datadog.Trace.TestHelpers
             }
             while (true);
 
-            var length = long.TryParse(headers.GetValue(ContentLengthHeaderKey), out var headerValue) ? headerValue : (long?)null;
+            var length = headers.GetValue(ContentLengthHeaderKey) is { } contentLength
+                             ? long.Parse(contentLength)
+                             : (long?)null;
             var body = headers.GetValue("Transfer-Encoding") is "chunked"
                            ? new ChunkedEncodingReadContent(stream)
                            : new StreamContent(stream, length);
