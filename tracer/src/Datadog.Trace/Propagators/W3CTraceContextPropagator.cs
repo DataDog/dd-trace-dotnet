@@ -132,7 +132,10 @@ namespace Datadog.Trace.Propagators
 
         internal static string CreateTraceParentHeader(SpanContext context)
         {
-            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority ?? SamplingPriorityValues.AutoKeep;
+            var samplingPriority = context.TraceContext?.SamplingPriority ??
+                                   context.SamplingPriority ?? // should never happen in production, but some tests rely on this
+                                   SamplingPriorityValues.AutoKeep; // fallback
+
             var sampled = SamplingPriorityValues.IsKeep(samplingPriority) ? "01" : "00";
 
 #if NET6_0_OR_GREATER
