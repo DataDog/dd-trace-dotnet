@@ -14,7 +14,12 @@ namespace Datadog.Trace.Sampling;
 
 internal static class RegexBuilder
 {
-    public static Regex? Build(string? pattern, string format)
+    /// <summary>
+    /// The default timeout used in production for most regexes.
+    /// </summary>
+    internal static readonly TimeSpan DefaultTimeout = TimeSpan.FromMilliseconds(200);
+
+    public static Regex? Build(string? pattern, string format, TimeSpan timeout)
     {
         if (pattern is null)
         {
@@ -23,7 +28,6 @@ internal static class RegexBuilder
         }
 
         const RegexOptions options = RegexOptions.Compiled | RegexOptions.IgnoreCase;
-        var timeout = TimeSpan.FromMilliseconds(200);
 
         switch (format)
         {
@@ -60,7 +64,7 @@ internal static class RegexBuilder
         }
     }
 
-    public static List<KeyValuePair<string, Regex?>> Build(ICollection<KeyValuePair<string, string?>> patterns, string format)
+    public static List<KeyValuePair<string, Regex?>> Build(ICollection<KeyValuePair<string, string?>> patterns, string format, TimeSpan timeout)
     {
         if (patterns is { Count: > 0 })
         {
@@ -68,7 +72,7 @@ internal static class RegexBuilder
 
             foreach (var pattern in patterns)
             {
-                var regex = Build(pattern.Value, format);
+                var regex = Build(pattern.Value, format, timeout);
 
                 if (regex != null)
                 {
