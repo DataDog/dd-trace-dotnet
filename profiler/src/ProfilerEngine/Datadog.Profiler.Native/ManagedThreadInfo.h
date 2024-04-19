@@ -85,7 +85,6 @@ public:
     inline TraceContextTrackingInfo* GetTraceContextPointer();
     inline std::uint64_t GetLocalRootSpanId() const;
     inline std::uint64_t GetSpanId() const;
-    inline bool CanReadTraceContext() const;
     inline bool HasTraceContext() const;
 
     inline std::string GetProfileThreadId() override;
@@ -99,9 +98,12 @@ public:
 
     inline AppDomainID GetAppDomainId();
 
+    inline std::pair<std::uint64_t, std::uint64_t> GetTracingContext() const;
+
 private:
     inline std::string BuildProfileThreadId();
     inline std::string BuildProfileThreadName();
+    inline bool CanReadTraceContext() const;
 
 private:
     static constexpr std::uint32_t MaxProfilerThreadInfoId = 0xFFFFFF; // = 16,777,215
@@ -467,4 +469,18 @@ inline AppDomainID ManagedThreadInfo::GetAppDomainId()
     AppDomainID appDomainId{0};
     HRESULT hr = _info->GetThreadAppDomain(_clrThreadId, &appDomainId);
     return appDomainId;
+}
+
+inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingContext() const
+{
+    std::uint64_t localRootSpanId = 0;
+    std::uint64_t spanId = 0;
+
+    if (CanReadTraceContext())
+    {
+        localRootSpanId = GetLocalRootSpanId();
+        spanId = GetSpanId();
+    }
+
+    return {localRootSpanId, spanId};
 }
