@@ -131,7 +131,8 @@ namespace Datadog.Trace.Sampling
 
         public override string ToString()
         {
-            // later this will return different values depending on the rule's provenance
+            // later this will return different values depending on the rule's provenance:
+            // local, customer (remote), or dynamic (remote)
             return "LocalSamplingRule";
         }
 
