@@ -10,12 +10,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
-using Datadog.Trace.Tests.HttpOverStreams;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.Tests.HttpOverStreams
 {
     public class DatadogHttpClientTests
     {
