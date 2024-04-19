@@ -130,9 +130,10 @@ namespace Datadog.Trace.RuntimeMetrics
 
         internal void PushEvents()
         {
+            var now = DateTime.UtcNow;
+
             try
             {
-                var now = DateTime.UtcNow;
                 var elapsedSinceLastUpdate = _lastUpdate == null ? _delay : now - _lastUpdate.Value;
                 _lastUpdate = now;
 
@@ -198,9 +199,18 @@ namespace Datadog.Trace.RuntimeMetrics
             }
             finally
             {
+                var callbackExecutionTime = DateTime.UtcNow - now;
+
+                var newDelay = _delay - callbackExecutionTime;
+
+                if (newDelay < TimeSpan.Zero)
+                {
+                    newDelay = _delay;
+                }
+
                 try
                 {
-                    _timer.Change(_delay, Timeout.InfiniteTimeSpan);
+                    _timer.Change(newDelay, Timeout.InfiniteTimeSpan);
                 }
                 catch (ObjectDisposedException)
                 {
