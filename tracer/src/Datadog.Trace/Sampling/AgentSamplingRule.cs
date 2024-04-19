@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
@@ -21,8 +23,6 @@ namespace Datadog.Trace.Sampling
         private Dictionary<SampleRateKey, float> _sampleRates = new();
         private float? _defaultSamplingRate;
 
-        public string RuleName => "default-rule";
-
         // if there are no rules, this normally means we haven't sent any payloads to the Agent yet (aka cold start), so the mechanism is "Default".
         // if there are rules, there should always be at least one match (the fallback "service:,env:") and the mechanism is "AgentRate".
         public int SamplingMechanism => _sampleRates.Count == 0 && _defaultSamplingRate == null ?
@@ -34,10 +34,7 @@ namespace Datadog.Trace.Sampling
         /// </summary>
         public int Priority => int.MinValue;
 
-        public bool IsMatch(Span span)
-        {
-            return true;
-        }
+        public bool IsMatch(Span span) => true;
 
         public float GetSamplingRate(Span span)
         {
@@ -49,11 +46,13 @@ namespace Datadog.Trace.Sampling
                 // either we don't have sampling rate from the agent yet (cold start),
                 // or the only rate we received is for "service:,env:", which is not added to _sampleRates
                 defaultRate = _defaultSamplingRate ?? 1;
-                SetSamplingAgentDecision(span, defaultRate); // Keep it to ease investigations
+
+                // add the _dd.agent_psr tag even if we didn't use rates from the agent (to ease investigations)
+                SetSamplingRateTag(span, defaultRate);
                 return defaultRate;
             }
 
-            var env = span.Context.TraceContext.Environment;
+            var env = span.Context.TraceContext.Environment ?? string.Empty;
             var service = span.ServiceName;
 
             var key = new SampleRateKey(service, env);
@@ -69,6 +68,7 @@ namespace Datadog.Trace.Sampling
                 Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {Rate}", span.Context.RawTraceId, _defaultSamplingRate);
             }
 
+            // no match by service/env, you default rate
             defaultRate = _defaultSamplingRate ?? 1;
             SetSamplingRateTag(span, defaultRate);
             return defaultRate;
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Sampling
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
         {
-            if (sampleRates is null || sampleRates.Count == 0)
+            if (sampleRates is not { Count: > 0 })
             {
                 Log.Debug("sampling rates received from the agent are empty");
                 return;
@@ -122,10 +122,15 @@ namespace Datadog.Trace.Sampling
             _sampleRates = rates;
         }
 
+        public override string ToString()
+        {
+            return "AgentSamplingRates";
+        }
+
         private readonly struct SampleRateKey : IEquatable<SampleRateKey>
         {
-            private static readonly char[] PartSeparator = new[] { ',' };
-            private static readonly char[] ValueSeparator = new[] { ':' };
+            private static readonly char[] PartSeparator = [','];
+            private static readonly char[] ValueSeparator = [':'];
 
             private readonly string _service;
             private readonly string _env;
@@ -169,7 +174,7 @@ namespace Datadog.Trace.Sampling
                 return _service == other._service && _env == other._env;
             }
 
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 return obj is SampleRateKey other && Equals(other);
             }
