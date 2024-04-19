@@ -23,12 +23,20 @@ namespace Datadog.Trace.AppSec.Waf
                 Data = returnStruct.Events.DecodeObjectArray();
             }
 
-            if (Actions is not null && Actions.Count > 0)
+             if (Actions is { Count: > 0 })
             {
-                Actions.TryGetValue(BlockingAction.BlockRequestType, out var value);
-                BlockInfo = value as Dictionary<string, object?>;
-                Actions.TryGetValue(BlockingAction.RedirectRequestType, out value);
-                RedirectInfo = value as Dictionary<string, object?>;
+                var blockActionFound = Actions.TryGetValue(BlockingAction.BlockRequestType, out var value);
+                if (blockActionFound)
+                {
+                    BlockInfo = value as Dictionary<string, object?>;
+                    ShouldBlock = true;
+                }
+                var redirectActionFound = Actions.TryGetValue(BlockingAction.RedirectRequestType, out value);
+                if (redirectActionFound )
+                {
+                    RedirectInfo = value as Dictionary<string, object?>;
+                    ShouldBlock = true;
+                }
             }
 
             AggregatedTotalRuntime = aggregatedTotalRuntime;
