@@ -33,10 +33,7 @@ namespace Datadog.Trace.Tests
             string requestBody = null;
             agent.RequestReceived += (sender, args) =>
             {
-                var ctx = args.Value;
-                var rq = ctx.Request;
-                using var sreader = new StreamReader(rq.InputStream, Encoding.ASCII);
-                requestBody = sreader.ReadToEnd();
+                requestBody = Encoding.ASCII.GetString(args.Value.ReadStreamBody());
             };
 
             var url = new Uri($"http://localhost:{agent.Port}/");
@@ -60,10 +57,7 @@ namespace Datadog.Trace.Tests
             string requestBody = null;
             agent.RequestReceived += (sender, args) =>
             {
-                var ctx = args.Value;
-                var rq = ctx.Request;
-                using var sreader = new StreamReader(rq.InputStream, Encoding.ASCII);
-                requestBody = sreader.ReadToEnd();
+                requestBody = Encoding.ASCII.GetString(args.Value.ReadStreamBody());
             };
 
             var url = new Uri($"http://localhost:{agent.Port}/");
@@ -99,8 +93,7 @@ namespace Datadog.Trace.Tests
             agent.RequestReceived += (sender, args) =>
             {
                 var ctx = args.Value;
-                var rq = ctx.Request;
-                using var sreader = new StreamReader(rq.InputStream, Encoding.ASCII);
+                using var sreader = new StreamReader(ctx.Body, Encoding.ASCII);
                 requestBody = sreader.ReadToEnd();
             };
 

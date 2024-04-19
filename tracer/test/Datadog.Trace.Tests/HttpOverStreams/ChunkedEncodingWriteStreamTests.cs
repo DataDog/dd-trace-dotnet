@@ -150,7 +150,7 @@ public class ChunkedEncodingWriteStreamTests
         request.Method.Should().Be("POST");
         request.PathAndQuery.Should().Be("/test");
         request.Headers
-               .Select(x => new KeyValuePair<string, string>(x.Name, x.Value))
+               .SelectMany(x => x.Value.Select(y => new KeyValuePair<string, string>(x.Key, y)))
                .Should()
                .Equal(new Dictionary<string, string>
                 {
@@ -160,7 +160,7 @@ public class ChunkedEncodingWriteStreamTests
                     { "Transfer-Encoding", "chunked" },
                 });
 
-        using var sr = new StreamReader(request.Body.Stream);
+        using var sr = new StreamReader(new MemoryStream(request.ReadStreamBody()));
         var output = await sr.ReadToEndAsync();
         output.Should().Be("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
     }

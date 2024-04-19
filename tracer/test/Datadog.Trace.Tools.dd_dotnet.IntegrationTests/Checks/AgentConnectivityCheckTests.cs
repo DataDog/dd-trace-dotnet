@@ -121,7 +121,7 @@ public class AgentConnectivityCheckTests : ConsoleTestHelper
 
         using var agent = MockTracerAgent.Create(Output, TcpPortProvider.GetOpenPort());
 
-        agent.RequestReceived += (_, e) => e.Value.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        agent.CustomResponses[MockTracerResponseType.Traces] = new MockTracerResponse() { StatusCode = (int)HttpStatusCode.InternalServerError };
 
         var result = await AgentConnectivityCheck.RunAsync(new ToolExporterSettings($"http://localhost:{agent.Port}/"));
 

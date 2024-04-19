@@ -3,9 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.IO;
-using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,7 +19,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static async Task<MockHttpRequest> ReadRequest(Stream stream)
         {
-            var headers = new HttpHeaders();
+            var headers = new MockHttpRequest.MockHeaders();
             var helper = new StreamReaderHelper(stream);
 
             var stringBuilder = new StringBuilder();
@@ -75,12 +73,13 @@ namespace Datadog.Trace.TestHelpers
             }
             while (true);
 
-            var length = headers.GetValue(ContentLengthHeaderKey) is { } contentLength
+            var length = headers.TryGetValue(ContentLengthHeaderKey, out var contentLength)
                              ? long.Parse(contentLength)
                              : (long?)null;
-            var body = headers.GetValue("Transfer-Encoding") is "chunked"
-                           ? new ChunkedEncodingReadContent(stream)
-                           : new StreamContent(stream, length);
+
+            var body = headers.TryGetValue("Transfer-Encoding", out var header) && header is "chunked"
+                           ? new ChunkedEncodingReadStream(stream)
+                           : stream;
 
             return new MockHttpRequest()
             {
@@ -90,41 +89,6 @@ namespace Datadog.Trace.TestHelpers
                 ContentLength = length,
                 Body = body
             };
-        }
-
-        internal class MockHttpRequest
-        {
-            public HttpHeaders Headers { get; set; } = new HttpHeaders();
-
-            public string Method { get; set; }
-
-            public string PathAndQuery { get; set; }
-
-            public long? ContentLength { get; set; }
-
-            public StreamContent Body { get; set; }
-
-            public static MockHttpRequest Create(HttpListenerRequest request)
-            {
-                var headers = new HttpHeaders(request.Headers.Count);
-
-                foreach (var key in request.Headers.AllKeys)
-                {
-                    foreach (var value in request.Headers.GetValues(key))
-                    {
-                        headers.Add(key, value);
-                    }
-                }
-
-                return new MockHttpRequest
-                {
-                    Headers = headers,
-                    Method = request.HttpMethod,
-                    PathAndQuery = request.Url?.PathAndQuery,
-                    ContentLength = request.ContentLength64,
-                    Body = new StreamContent(request.InputStream, request.ContentLength64),
-                };
-            }
         }
 
         private class StreamReaderHelper(Stream stream)
@@ -192,8 +156,5 @@ namespace Datadog.Trace.TestHelpers
                 return false;
             }
         }
-
-        private class ChunkedEncodingReadContent(Stream stream)
-            : StreamContent(new ChunkedEncodingReadStream(stream), length: null);
     }
 }
