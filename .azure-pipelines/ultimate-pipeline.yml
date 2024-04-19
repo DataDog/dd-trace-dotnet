@@ -3417,6 +3417,8 @@ stages:
 
     - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
       displayName: Build Bundle, Benchmark NuGet and tools
+      env:
+        MSBUILDDISABLENODEREUSE: "1"
 
     - publish: $(artifacts)/nuget/bundle
       displayName: Uploading Bundle package
