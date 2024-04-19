@@ -49,8 +49,8 @@ public class ActionChangeTests : WafLibraryRequiredTest
         configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
         var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
         res.Success.Should().BeTrue();
-        context = waf.CreateContext();
-        result = context.Run(args, TimeoutMicroSeconds);
+        using var contextNew = waf.CreateContext();
+        result = contextNew.Run(args, TimeoutMicroSeconds);
         if (actionType == BlockingAction.BlockRequestType)
         {
             result.BlockInfo["status_code"].Should().Be(newStatus.ToString());

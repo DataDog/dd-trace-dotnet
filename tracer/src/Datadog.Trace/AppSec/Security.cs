@@ -239,19 +239,6 @@ namespace Datadog.Trace.AppSec
         internal BlockingAction GetBlockingAction(string[]? requestAcceptHeaders, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
         {
             var blockingAction = new BlockingAction();
-            Action? action = null;
-
-            if (redirectInfo is not null)
-            {
-                action = BuildAction(redirectInfo, true);
-            }
-            else
-            {
-                if (blockInfo is not null)
-                {
-                    action = BuildAction(blockInfo, false);
-                }
-            }
 
             void SetAutomaticResponseContent()
             {
@@ -290,8 +277,23 @@ namespace Datadog.Trace.AppSec
                 blockingAction.ResponseContent = _settings.BlockedHtmlTemplate;
             }
 
+            int GetStatusCode(Dictionary<string, object?> information, int defaultValue)
+            {
+                information.TryGetValue("status_code", out var actionStatusCode);
+
+                if (actionStatusCode is string statusCodeString && int.TryParse(statusCodeString, out var statusCode))
+                {
+                    return statusCode;
+                }
+                else
+                {
+                    Log.Warning("Received a custom block action with an invalid status code {StatusCode}.", actionStatusCode?.ToString());
+                    return defaultValue;
+                }
+            }
+
             // This should never happen
-            if (action == null)
+            if (blockInfo is null && redirectInfo is null)
             {
                 Log.Warning("No blockInfo or RedirectInfo found");
                 SetAutomaticResponseContent();
@@ -299,9 +301,11 @@ namespace Datadog.Trace.AppSec
             }
             else
             {
-                if (action.Type == BlockingAction.BlockRequestType)
+                if (blockInfo is not null)
                 {
-                    switch (action.Parameters!.Type)
+                    blockInfo.TryGetValue("type", out var type);
+
+                    switch (type)
                     {
                         case "auto":
                             SetAutomaticResponseContent();
@@ -314,21 +318,29 @@ namespace Datadog.Trace.AppSec
                         case "html":
                             SetHtmlResponseContent();
                             break;
+
+                        default:
+                            Log.Warning("Received a custom block action of invalid type {Type}, an automatic response will be set", type?.ToString());
+                            SetAutomaticResponseContent();
+                            break;
                     }
 
-                    blockingAction.StatusCode = action.Parameters.StatusCode;
+                    blockingAction.StatusCode = GetStatusCode(blockInfo, 403);
                 }
-                else if (action.Type == BlockingAction.RedirectRequestType)
+                else
                 {
-                    if (!string.IsNullOrEmpty(action.Parameters?.Location))
+                    redirectInfo!.TryGetValue("location", out var location);
+
+                    if (location is string locationString && locationString != string.Empty)
                     {
-                        blockingAction.StatusCode = action.Parameters!.StatusCode is >= 300 and < 400 ? action.Parameters.StatusCode : 303;
-                        blockingAction.RedirectLocation = action.Parameters.Location;
+                        var statusCode = GetStatusCode(redirectInfo, 303);
+                        blockingAction.StatusCode = statusCode is >= 300 and < 400 ? statusCode : 303;
+                        blockingAction.RedirectLocation = locationString;
                         blockingAction.IsRedirect = true;
                     }
                     else
                     {
-                        Log.Warning("Received a custom block action of type redirect with a status code {StatusCode}, an automatic response will be set", action.Parameters?.StatusCode.ToString());
+                        Log.Warning("Received a custom block action of type redirect with null or empty location, an automatic response will be set");
                         SetAutomaticResponseContent();
                         blockingAction.StatusCode = 403;
                     }
@@ -336,41 +348,6 @@ namespace Datadog.Trace.AppSec
             }
 
             return blockingAction;
-        }
-
-        private static Action BuildAction(Dictionary<string, object?> blockInfo, bool isRedirect)
-        {
-            Action? action = null;
-            blockInfo.TryGetValue("status_code", out var actionStatusCode);
-            blockInfo.TryGetValue("type", out var actionType);
-
-            action = new Action
-            {
-                Type = isRedirect ? BlockingAction.RedirectRequestType : BlockingAction.BlockRequestType,
-                Parameters = new()
-            };
-
-            if (isRedirect)
-            {
-                blockInfo.TryGetValue("location", out var actionLocation);
-
-                if (actionLocation is string location)
-                {
-                    action.Parameters.Location = location;
-                }
-            }
-
-            if (actionStatusCode is string statusCodeString && int.TryParse(statusCodeString, out var statusCode))
-            {
-                action.Parameters.StatusCode = statusCode;
-            }
-
-            if (actionType is string type)
-            {
-                action.Parameters.Type = type;
-            }
-
-            return action;
         }
 
         /// <summary> Frees resources </summary>
