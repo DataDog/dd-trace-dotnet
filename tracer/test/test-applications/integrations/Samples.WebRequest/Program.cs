@@ -43,7 +43,7 @@ namespace Samples.WebRequest
                 Console.WriteLine("Sending requests with WebClient.");
                 await RequestHelpers.SendWebClientRequests(_tracingDisabled, url, RequestContent);
 
-                // send http requests using WebClient
+                // send http requests using WebRequest
                 Console.WriteLine();
                 Console.WriteLine("Sending requests with WebRequest.");
                 await RequestHelpers.SendWebRequestRequests(_tracingDisabled, url, RequestContent);
