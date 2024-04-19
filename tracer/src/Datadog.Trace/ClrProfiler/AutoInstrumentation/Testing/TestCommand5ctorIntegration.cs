@@ -29,13 +29,13 @@ public class TestCommand5ctorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref IEnumerable<string>? msbuildArgs, ref IEnumerable<string>? userDefinedArguments, ref IEnumerable<string>? trailingArguments, ref bool noRestore, ref string? msbuildPath)
     {
-        if (msbuildArgs is null || !CIVisibility.IsRunning || CIVisibility.Settings.CodeCoverageEnabled != true)
+        if (!Common.DotnetTestIntegrationEnabled || CIVisibility.Settings.CodeCoverageEnabled != true || msbuildArgs is null)
         {
             return CallTargetState.GetDefault();
         }
 
-        Common.InjectCodeCoverageCollector(ref msbuildArgs);
-        Common.WriteDebugInfo(msbuildArgs, userDefinedArguments, trailingArguments, noRestore, msbuildPath);
+        Common.InjectCodeCoverageCollectorToDotnetTest(ref msbuildArgs);
+        Common.WriteDebugInfoForDotnetTest(msbuildArgs, userDefinedArguments, trailingArguments, noRestore, msbuildPath);
         return CallTargetState.GetDefault();
     }
 }

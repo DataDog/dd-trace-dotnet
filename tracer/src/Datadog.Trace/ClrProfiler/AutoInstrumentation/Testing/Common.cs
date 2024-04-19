@@ -24,6 +24,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
         internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
 
+        internal static bool DotnetTestIntegrationEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
+
         internal static string GetParametersValueData(object paramValue)
         {
             if (paramValue is null)
@@ -123,8 +125,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             return false;
         }
 
-        internal static void InjectCodeCoverageCollector(ref IEnumerable<string> msbuildArgs)
+        internal static void InjectCodeCoverageCollectorToDotnetTest(ref IEnumerable<string> msbuildArgs)
         {
+            if (msbuildArgs == null)
+            {
+                return;
+            }
+
+            // In this case a single property contains multiple values separated by a semi colon
             const string collectProperty = "-property:VSTestCollect=";
             const string datadogCoverageCollector = "DatadogCoverage";
             const string testAdapterPathProperty = "-property:VSTestTestAdapterPath=";
@@ -133,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             var codeCoverageCollectorPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath) ?? string.Empty;
             if (string.IsNullOrEmpty(codeCoverageCollectorPath))
             {
-                Log.Warning("InjectCodeCoverageCollector: The tracer home directory cannot be found based on the DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH value. TestAdapterPath will not be injected.");
+                Log.Warning("InjectCodeCoverageCollector.DotnetTest: The tracer home directory cannot be found based on the DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH value. TestAdapterPath will not be injected.");
                 disableTestAdapterInjection = true;
             }
 
@@ -142,13 +150,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             var msbuildArgsList = msbuildArgs as List<string> ?? [..msbuildArgs];
             for (var i = 0; i < msbuildArgsList.Count; i++)
             {
-                if (msbuildArgsList[i].StartsWith(collectProperty))
+                var arg = msbuildArgsList[i];
+                if (arg.StartsWith(collectProperty, StringComparison.OrdinalIgnoreCase))
                 {
                     isCollectIndex = i;
                     continue;
                 }
 
-                if (msbuildArgsList[i].StartsWith(testAdapterPathProperty))
+                if (arg.StartsWith(testAdapterPathProperty, StringComparison.OrdinalIgnoreCase))
                 {
                     isTestAdapterPathIndex = i;
                 }
@@ -157,7 +166,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             if (isCollectIndex == -1)
             {
                 // Add the collect property
-                Log.Information("InjectCodeCoverageCollector: Adding the collect property with the Datadog data collector.");
+                Log.Information("InjectCodeCoverageCollector.DotnetTest: Adding the collect property with the Datadog data collector.");
                 msbuildArgsList.Add($"{collectProperty}\"{datadogCoverageCollector}\"");
             }
             else
@@ -166,18 +175,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                 var item = msbuildArgsList[isCollectIndex];
                 var cleanItem = item.Replace(collectProperty, string.Empty)
                                     .Replace("\"", string.Empty);
-                Log.Debug("InjectCodeCoverageCollector: Existing collect property values: {CollectProperty}", cleanItem);
+                Log.Debug("InjectCodeCoverageCollector.DotnetTest: Existing collect property values: {CollectProperty}", cleanItem);
                 var values = cleanItem.Split(new[] { ';' }, StringSplitOptions.None);
 
                 if (!values.Contains(datadogCoverageCollector))
                 {
-                    Log.Information("InjectCodeCoverageCollector: Appending the Datadog data collector.");
+                    Log.Information("InjectCodeCoverageCollector.DotnetTest: Appending the Datadog data collector.");
                     item = $"{collectProperty}\"{string.Join(";", values.Concat(datadogCoverageCollector))}\"";
                     msbuildArgsList[isCollectIndex] = item;
                 }
                 else
                 {
-                    Log.Information("InjectCodeCoverageCollector: Datadog data collector is already in the collector enumerable.");
+                    Log.Information("InjectCodeCoverageCollector.DotnetTest: Datadog data collector is already in the collector enumerable.");
                 }
             }
 
@@ -186,7 +195,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                 if (isTestAdapterPathIndex == -1)
                 {
                     // Add the test adapter path property
-                    Log.Information("InjectCodeCoverageCollector: Adding the test adapter path property with the Datadog data collector folder path.");
+                    Log.Information("InjectCodeCoverageCollector.DotnetTest: Adding the test adapter path property with the Datadog data collector folder path.");
                     msbuildArgsList.Add($"{testAdapterPathProperty}\"{codeCoverageCollectorPath}\"");
                 }
                 else
@@ -195,18 +204,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                     var item = msbuildArgsList[isTestAdapterPathIndex];
                     var cleanItem = item.Replace(testAdapterPathProperty, string.Empty)
                                         .Replace("\"", string.Empty);
-                    Log.Debug("InjectCodeCoverageCollector: Existing testAdapter property values: {CollectProperty}", cleanItem);
+                    Log.Debug("InjectCodeCoverageCollector.DotnetTest: Existing testAdapter property values: {CollectProperty}", cleanItem);
                     var values = cleanItem.Split(new[] { ';' }, StringSplitOptions.None);
 
                     if (!values.Contains(codeCoverageCollectorPath))
                     {
-                        Log.Information("InjectCodeCoverageCollector: Appending the Datadog data collector folder path.");
+                        Log.Information("InjectCodeCoverageCollector.DotnetTest: Appending the Datadog data collector folder path.");
                         item = $"{testAdapterPathProperty}\"{string.Join(";", values.Concat(codeCoverageCollectorPath))}\"";
                         msbuildArgsList[isTestAdapterPathIndex] = item;
                     }
                     else
                     {
-                        Log.Information("InjectCodeCoverageCollector: Datadog data collector path is already in the test adapter path enumerable.");
+                        Log.Information("InjectCodeCoverageCollector.DotnetTest: Datadog data collector path is already in the test adapter path enumerable.");
                     }
                 }
             }
@@ -215,12 +224,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             msbuildArgs = msbuildArgsList;
         }
 
-        internal static void WriteDebugInfo(IEnumerable<string> msbuildArgs, IEnumerable<string> userDefinedArguments, IEnumerable<string> trailingArguments, bool noRestore, string msbuildPath)
+        internal static void WriteDebugInfoForDotnetTest(IEnumerable<string> msbuildArgs, IEnumerable<string> userDefinedArguments, IEnumerable<string> trailingArguments, bool noRestore, string msbuildPath)
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-                sb.AppendLine("InjectCodeCoverageCollector: Microsoft.DotNet.Tools.Test.TestCommand..ctor arguments:");
+                sb.AppendLine("InjectCodeCoverageCollector.DotnetTest: Microsoft.DotNet.Tools.Test.TestCommand..ctor arguments:");
 
                 if (msbuildArgs is not null)
                 {
@@ -260,6 +269,125 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
                 sb.AppendLine("\tnoRestore: " + noRestore);
                 sb.AppendLine("\tmsbuildPath: " + msbuildPath);
+                Log.Debug("{MessageValue}", StringBuilderCache.GetStringAndRelease(sb));
+            }
+        }
+
+        internal static void InjectCodeCoverageCollectorToVsConsoleTest(ref string[] args)
+        {
+            if (args == null)
+            {
+                return;
+            }
+
+            // In this case each property contains just a single value, for multiple values we need to add multiple arguments
+            const string collectProperty = "/Collect:";
+            const string datadogCoverageCollector = "DatadogCoverage";
+            const string testAdapterPathProperty = "/TestAdapterPath:";
+
+            var disableCollectInjection = false;
+            var disableTestAdapterInjection = false;
+            var codeCoverageCollectorPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath) ?? string.Empty;
+            if (string.IsNullOrEmpty(codeCoverageCollectorPath))
+            {
+                Log.Warning("InjectCodeCoverageCollector.VsConsoleTest:: The tracer home directory cannot be found based on the DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH value. TestAdapterPath will not be injected.");
+                disableTestAdapterInjection = true;
+            }
+
+            var lstArgs = new List<string>(args);
+
+            UpdateIndexes(lstArgs, codeCoverageCollectorPath, out var isCollectIndex, out var isTestAdapterPathIndex, out var doubleDashIndex, ref disableCollectInjection, ref disableTestAdapterInjection);
+            if (disableCollectInjection && disableTestAdapterInjection)
+            {
+                // Nothing to modify
+                return;
+            }
+
+            if (!disableTestAdapterInjection)
+            {
+                Inject(lstArgs, $"{testAdapterPathProperty}\"{codeCoverageCollectorPath}\"", doubleDashIndex, isTestAdapterPathIndex);
+                UpdateIndexes(lstArgs, codeCoverageCollectorPath, out isCollectIndex, out isTestAdapterPathIndex, out doubleDashIndex, ref disableCollectInjection, ref disableTestAdapterInjection);
+            }
+
+            if (!disableCollectInjection)
+            {
+                Inject(lstArgs, $"{collectProperty}{datadogCoverageCollector}", doubleDashIndex, isCollectIndex);
+            }
+
+            args = lstArgs.ToArray();
+
+            static void UpdateIndexes(List<string> lstArgs, string codeCoverageCollectorPath, out int isCollectIndex, out int isTestAdapterPathIndex, out int doubleDashIndex, ref bool disableCollectInjection, ref bool disableTestAdapterInjection)
+            {
+                isCollectIndex = -1;
+                isTestAdapterPathIndex = -1;
+                doubleDashIndex = int.MaxValue;
+                for (var i = 0; i < lstArgs.Count; i++)
+                {
+                    var arg = lstArgs[i];
+                    if (arg == "--" && doubleDashIndex > i)
+                    {
+                        doubleDashIndex = i;
+                        continue;
+                    }
+
+                    if (!disableCollectInjection && arg.StartsWith(collectProperty, StringComparison.OrdinalIgnoreCase))
+                    {
+                        isCollectIndex = i;
+                        var argValue = arg.Replace(collectProperty, string.Empty)
+                                                .Replace("\"", string.Empty);
+                        disableCollectInjection = disableCollectInjection || argValue == datadogCoverageCollector;
+                        continue;
+                    }
+
+                    if (!disableTestAdapterInjection && arg.StartsWith(testAdapterPathProperty, StringComparison.OrdinalIgnoreCase))
+                    {
+                        isTestAdapterPathIndex = i;
+                        var argValue = arg.Replace(testAdapterPathProperty, string.Empty)
+                                                .Replace("\"", string.Empty);
+                        disableTestAdapterInjection = disableTestAdapterInjection || argValue == codeCoverageCollectorPath;
+                    }
+                }
+            }
+
+            static void Inject(List<string> lstArgs, string value, int doubleDashIndex, int propertyIndex)
+            {
+                Log.Debug<string, int, int>("InjectCodeCoverageCollector.VsConsoleTest: [ Value={Value} | DoubleDash={DoubleDash} | PropertyIndex={PropertyIndex} ]", value, doubleDashIndex, propertyIndex);
+                if (propertyIndex != -1 && propertyIndex < doubleDashIndex)
+                {
+                    // If there's already an existing property index we insert it just after that one.
+                    Log.Information("InjectCodeCoverageCollector.VsConsoleTest: There's already an existing property index we insert it just after that one.");
+                    lstArgs.Insert(propertyIndex + 1, value);
+                }
+                else if (doubleDashIndex < lstArgs.Count)
+                {
+                    // If we found an arg with "--" we insert it before that arg (everything after is considered as test settings).
+                    Log.Information("InjectCodeCoverageCollector.VsConsoleTest: We found an arg with \"--\" we insert it before that arg (everything after is considered as test settings).");
+                    lstArgs.Insert(doubleDashIndex, value);
+                }
+                else
+                {
+                    // If we don't have neither the "--" nor any property index, we just append the property to the current arg list.
+                    Log.Information("InjectCodeCoverageCollector.VsConsoleTest: We don't have neither the \"--\" nor a property index, we just append the property to the current arg list.");
+                    lstArgs.Add(value);
+                }
+            }
+        }
+
+        internal static void WriteDebugInfoForVsConsoleTest(string[] args)
+        {
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                sb.AppendLine("InjectCodeCoverageCollector.VsConsoleTest: arguments:");
+
+                if (args != null)
+                {
+                    for (var i = 0; i < args.Length; i++)
+                    {
+                        sb.AppendLine($"\t{i}:{args[i]}");
+                    }
+                }
+
                 Log.Debug("{MessageValue}", StringBuilderCache.GetStringAndRelease(sb));
             }
         }

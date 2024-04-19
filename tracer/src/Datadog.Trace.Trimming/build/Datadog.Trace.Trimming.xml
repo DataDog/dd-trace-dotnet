@@ -1050,6 +1050,8 @@
       <type fullname="System.Xml.XmlText" />
       <type fullname="System.Xml.XmlWhitespace" />
    </assembly>
+   <assembly fullname="vstest.console" />
+   <assembly fullname="vstest.console.arm64" />
    <assembly fullname="xunit.execution.desktop" />
    <assembly fullname="xunit.execution.dotnet" />
    <assembly fullname="Yarp.ReverseProxy" />
