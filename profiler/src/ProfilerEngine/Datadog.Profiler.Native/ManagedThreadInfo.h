@@ -93,6 +93,8 @@ public:
 #ifdef LINUX
     inline void SetSharedMemory(volatile int* memoryArea);
     inline void MarkAsInterrupted();
+    inline int32_t SetTimerId(int32_t timerId);
+    inline int32_t GetTimerId() const;
 #endif
     inline bool CanBeInterrupted() const;
 
@@ -146,6 +148,9 @@ private:
     ICorProfilerInfo4* _info;
     std::shared_mutex _threadIdMutex;
     std::shared_mutex _threadNameMutex;
+#ifdef LINUX
+    std::int32_t _timerId;
+#endif
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()
@@ -457,6 +462,16 @@ inline void ManagedThreadInfo::MarkAsInterrupted()
 inline void ManagedThreadInfo::SetSharedMemory(volatile int* memoryArea)
 {
     _sharedMemoryArea = memoryArea;
+}
+
+inline std::int32_t ManagedThreadInfo::SetTimerId(std::int32_t timerId)
+{
+    return std::exchange(_timerId, timerId);
+}
+
+inline std::int32_t ManagedThreadInfo::GetTimerId() const
+{
+    return _timerId;
 }
 #endif
 
