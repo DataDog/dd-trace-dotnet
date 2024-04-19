@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -22,6 +23,7 @@ namespace Datadog.Trace.Tests.Sampling
         private const string OperationName = "test";
         private const string ResourceName = "test-resource-name";
 
+        private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
         private static readonly Dictionary<string, float> MockAgentRates = new() { { $"service:{ServiceName},env:{Env}", FallbackRate } };
 
         [Fact]
@@ -49,7 +51,8 @@ namespace Datadog.Trace.Tests.Sampling
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
                     resourceNamePattern: ".*",
-                    tagPatterns: null));
+                    tagPatterns: null,
+                    timeout: Timeout));
 
             await RunSamplerTest(
                 sampler,
@@ -72,7 +75,8 @@ namespace Datadog.Trace.Tests.Sampling
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
                     resourceNamePattern: ".*",
-                    tagPatterns: null));
+                    tagPatterns: null,
+                    timeout: Timeout));
 
             await RunSamplerTest(
                 sampler,
@@ -95,7 +99,8 @@ namespace Datadog.Trace.Tests.Sampling
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
                     resourceNamePattern: ".*",
-                    tagPatterns: null));
+                    tagPatterns: null,
+                    timeout: Timeout));
 
             await RunSamplerTest(
                 sampler,
@@ -118,7 +123,8 @@ namespace Datadog.Trace.Tests.Sampling
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
                     resourceNamePattern: ".*",
-                    tagPatterns: null));
+                    tagPatterns: null,
+                    timeout: Timeout));
 
             await RunSamplerTest(
                 sampler,

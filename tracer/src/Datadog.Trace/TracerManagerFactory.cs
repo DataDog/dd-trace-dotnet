@@ -258,7 +258,7 @@ namespace Datadog.Trace
 
             if (patternFormatIsValid && !string.IsNullOrWhiteSpace(samplingRules))
             {
-                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(samplingRules, samplingRulesFormat))
+                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(samplingRules, samplingRulesFormat, RegexBuilder.DefaultTimeout))
                 {
                     sampler.RegisterRule(rule);
                 }
@@ -288,7 +288,7 @@ namespace Datadog.Trace
                 return new SpanSampler(Enumerable.Empty<ISpanSamplingRule>());
             }
 
-            return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules));
+            return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));
         }
 
         protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
