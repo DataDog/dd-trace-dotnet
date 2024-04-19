@@ -1495,6 +1495,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
     {
         _systemCallsShield->Unregister();
     }
+
+    if (_pCpuProfiler != nullptr)
+    {
+        _pCpuProfiler->UnregisterThread(pThreadInfo);
+    }
 #endif
 
     return S_OK;
@@ -1537,6 +1542,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     // CurrentThreadInfo relies on the assumption that the native thread calling ThreadAssignedToOSThread/ThreadDestroyed
     // is the same native thread assigned to the managed thread.
     ManagedThreadInfo::CurrentThreadInfo = threadInfo;
+
+    if (_pCpuProfiler != nullptr)
+    {
+        _pCpuProfiler->RegisterThread(threadInfo);
+    }
 
     if (_systemCallsShield != nullptr)
     {
