@@ -76,6 +76,7 @@ namespace Datadog.Trace.Tools.Runner
 
             // Enable CI Visibility mode
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
+            profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath] = AppContext.BaseDirectory;
 
             var name = _nameArgument.GetValue(context);
 
