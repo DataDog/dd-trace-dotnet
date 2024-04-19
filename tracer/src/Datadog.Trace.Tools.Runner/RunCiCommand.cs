@@ -221,31 +221,78 @@ namespace Datadog.Trace.Tools.Runner
                 profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath] = AppContext.BaseDirectory;
 
                 var isDotnetCommand = string.Equals(program, "dotnet", StringComparison.OrdinalIgnoreCase) ||
-                                      string.Equals(program, "dotnet.exe", StringComparison.OrdinalIgnoreCase);
-                var isVsTestCommand = string.Equals(program, "VSTest.Console", StringComparison.OrdinalIgnoreCase) ||
-                                      string.Equals(program, "VSTest.Console.exe", StringComparison.OrdinalIgnoreCase);
+                                      string.Equals(program, "dotnet.exe", StringComparison.OrdinalIgnoreCase) ||
+                                      program.EndsWith("/dotnet.exe", StringComparison.OrdinalIgnoreCase) ||
+                                      program.EndsWith("\\dotnet.exe", StringComparison.OrdinalIgnoreCase);
+                var isVsTestConsoleCommand = string.Equals(program, "VSTest.Console", StringComparison.OrdinalIgnoreCase) ||
+                                             string.Equals(program, "VSTest.Console.exe", StringComparison.OrdinalIgnoreCase) ||
+                                             program.EndsWith("/VSTest.Console.exe", StringComparison.OrdinalIgnoreCase) ||
+                                             program.EndsWith("\\VSTest.Console.exe", StringComparison.OrdinalIgnoreCase) ||
+                                             string.Equals(program, "VSTest.Console.Arm64", StringComparison.OrdinalIgnoreCase) ||
+                                             string.Equals(program, "VSTest.Console.Arm64.exe", StringComparison.OrdinalIgnoreCase) ||
+                                             program.EndsWith("/VSTest.Console.Arm64.exe", StringComparison.OrdinalIgnoreCase) ||
+                                             program.EndsWith("\\VSTest.Console.Arm64.exe", StringComparison.OrdinalIgnoreCase);
+
+                Log.Debug("Program = {Program} | IsDotnetCommand? {IsDotnetCommand} | IsVsTestConsoleCommand? {IsVsTestConsoleCommand}", program, isDotnetCommand, isVsTestConsoleCommand);
 
                 // Check if we are running dotnet process
-                if (isDotnetCommand || isVsTestCommand)
+                if (isDotnetCommand || isVsTestConsoleCommand)
                 {
                     // Try to find the test command type: `dotnet test` or `dotnet vstest`
                     var isDotnetTestCommand = false;
-                    if (!isVsTestCommand)
+                    var isDotnetVsTestCommand = false;
+                    if (!isVsTestConsoleCommand)
                     {
                         foreach (var arg in args.Skip(1))
                         {
                             isDotnetTestCommand |= string.Equals(arg, "test", StringComparison.OrdinalIgnoreCase);
-                            isVsTestCommand |= string.Equals(arg, "vstest", StringComparison.OrdinalIgnoreCase);
+                            isDotnetVsTestCommand |= string.Equals(arg, "vstest", StringComparison.OrdinalIgnoreCase);
 
-                            if (isDotnetTestCommand || isVsTestCommand)
+                            if (isDotnetTestCommand || isDotnetVsTestCommand)
                             {
                                 break;
                             }
                         }
                     }
 
+                    Log.Debug("IsDotnetTestCommand? {IsDotnetTestCommand} | IsDotnetVsTestCommand? {IsDotnetVsTestCommand}", isDotnetTestCommand, isDotnetVsTestCommand);
+
+                    // Add the Datadog coverage collector
+                    var collectorAdded = false;
+                    var baseDirectory = AppContext.BaseDirectory;
+                    var doubleDashIndex = arguments.IndexOf("--", StringComparison.Ordinal);
+                    string argumentValue = null;
+                    if (isDotnetTestCommand)
+                    {
+                        argumentValue = "--test-adapter-path \"" + baseDirectory + "\" --collect DatadogCoverage";
+                    }
+                    else if (isVsTestConsoleCommand || isDotnetVsTestCommand)
+                    {
+                        argumentValue = "/TestAdapterPath:" + baseDirectory + " /Collect:DatadogCoverage";
+                    }
+                    else
+                    {
+                        Log.Warning("RunCiCommand: Code coverage is enabled but the command is not a 'dotnet test' nor 'dotnet vstest' nor 'vstest.console' command. Code coverage will not be collected.");
+                    }
+
+                    if (argumentValue != null)
+                    {
+                        Log.Debug("DatadogCoverage data collector added as a command argument");
+                        if (doubleDashIndex == -1)
+                        {
+                            arguments += argumentValue;
+                        }
+                        else
+                        {
+                            arguments = arguments.Substring(0, doubleDashIndex) + argumentValue + " " + arguments.Substring(doubleDashIndex);
+                        }
+
+                        arguments = arguments.Trim();
+                        collectorAdded = true;
+                    }
+
                     // Sets the code coverage path to store the json files for each module in case we are not skipping test (global coverage is reliable).
-                    if ((isDotnetTestCommand || isVsTestCommand) && !testSkippingEnabled)
+                    if (collectorAdded && !testSkippingEnabled)
                     {
                         var outputFolders = new[] { Environment.CurrentDirectory, Path.GetTempPath(), };
                         foreach (var folder in outputFolders)
