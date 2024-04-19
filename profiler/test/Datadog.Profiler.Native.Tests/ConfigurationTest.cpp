@@ -1004,7 +1004,7 @@ TEST(ConfigurationTest, CheckDefaultCpuProfilingInterval)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingInterval, WStr(""));
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 10ms);
+    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 9ms);
 }
 
 TEST(ConfigurationTest, CheckCpuProfilingIntervalSetInEnvVar)
@@ -1018,5 +1018,5 @@ TEST(ConfigurationTest, CheckCpuProfilingIntervalIsNotBelowDefault)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingInterval, WStr("1"));
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 10ms);
+    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 9ms);
 }

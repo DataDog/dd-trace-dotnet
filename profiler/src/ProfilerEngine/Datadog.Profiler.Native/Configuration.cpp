@@ -26,7 +26,7 @@ int32_t const Configuration::DefaultAgentPort = 8126;
 std::string const Configuration::DefaultEmptyString = "";
 std::chrono::seconds const Configuration::DefaultDevUploadInterval = 20s;
 std::chrono::seconds const Configuration::DefaultProdUploadInterval = 60s;
-std::chrono::milliseconds const Configuration::DefaultCpuProfilingInterval = 10ms;
+std::chrono::milliseconds const Configuration::DefaultCpuProfilingInterval = 9ms;
 
 Configuration::Configuration()
 {
