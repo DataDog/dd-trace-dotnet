@@ -999,6 +999,16 @@ namespace Datadog.Trace.Coverage.Collector
                             }
                         }
 
+                        if (name.Name == "mscorlib")
+                        {
+                            var path = GetMscorlibBasePath(name.Version);
+                            var file = Path.Combine(path, "mscorlib.dll");
+                            if (File.Exists(file))
+                            {
+                                return AssemblyDefinition.ReadAssembly(file);
+                            }
+                        }
+
                         _logger.Error(arEx, $"Error in the Custom Resolver processing '{_assemblyFilePath}' for: {name.FullName}");
                         throw;
                     }
@@ -1014,6 +1024,52 @@ namespace Datadog.Trace.Coverage.Collector
             public void SetTracerAssemblyLocation(string assemblyLocation)
             {
                 _tracerAssemblyLocation = assemblyLocation;
+            }
+
+            private string GetMscorlibBasePath(Version version)
+            {
+                string? GetSubFolderForVersion()
+                {
+                    switch (version.Major)
+                    {
+                        case 1:
+                            if (version.MajorRevision == 3300)
+                            {
+                                return "v1.0.3705";
+                            }
+
+                            return "v1.1.4322";
+                        case 2:
+                            return "v2.0.50727";
+                        case 4:
+                            return "v4.0.30319";
+                        default:
+                            throw new NotSupportedException("Version not supported: " + version);
+                    }
+                }
+
+                var rootPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Microsoft.NET");
+                string[] frameworkPaths =
+                [
+                    Path.Combine(rootPath, "Framework"),
+                    Path.Combine(rootPath, "Framework64")
+                ];
+
+                var folder = GetSubFolderForVersion();
+
+                if (folder != null)
+                {
+                    foreach (var path in frameworkPaths)
+                    {
+                        var basePath = Path.Combine(path, folder);
+                        if (Directory.Exists(basePath))
+                        {
+                            return basePath;
+                        }
+                    }
+                }
+
+                throw new NotSupportedException("Version not supported: " + version);
             }
         }
 
