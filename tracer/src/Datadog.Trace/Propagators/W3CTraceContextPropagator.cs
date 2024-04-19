@@ -154,7 +154,7 @@ namespace Datadog.Trace.Propagators
                 sb.Append("dd=");
 
                 // sampling priority ("s:<value>")
-                if (context.SamplingPriority is { } samplingPriority)
+                if (context.TraceContext?.SamplingPriority is { } samplingPriority)
                 {
                     sb.Append("s:").Append(SamplingPriorityValues.ToString(samplingPriority)).Append(TraceStateDatadogPairsSeparator);
                 }
