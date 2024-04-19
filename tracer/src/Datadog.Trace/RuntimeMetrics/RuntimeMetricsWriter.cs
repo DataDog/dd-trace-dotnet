@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -48,8 +49,14 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();
 
+        // The time when the runtime metrics were last pushed
+        // It is wrapped in a StrongBox to have something to lock on.
+        private readonly StrongBox<DateTime?> _lastUpdate = new();
+
         private TimeSpan _previousUserCpu;
         private TimeSpan _previousSystemCpu;
+
+        private int _missedUpdates;
 
         public RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext)
             : this(statsd, delay, inAzureAppServiceContext, InitializeListenerFunc)
@@ -60,7 +67,6 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             _delay = delay;
             _statsd = statsd;
-            _timer = new Timer(_ => PushEvents(), null, delay, delay);
 
             try
             {
@@ -109,6 +115,8 @@ namespace Datadog.Trace.RuntimeMetrics
             {
                 Log.Warning(ex, "Unable to initialize runtime listener, some runtime metrics will be missing");
             }
+
+            _timer = new Timer(_ => PushEvents(), null, delay, delay);
         }
 
         /// <summary>
@@ -128,6 +136,42 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             try
             {
+                // If the last tick occured a short time ago, we skip this update.
+                // This can happen is the threadpool is swamped and has trouble dequeuing the timer callbacks.
+                var now = DateTime.UtcNow;
+
+                void LogMissedUpdates()
+                {
+                    Log.Warning<int>("Missed {MissedUpdates} runtime metrics updates", _missedUpdates);
+                    _missedUpdates = 0;
+                }
+
+                lock (_lastUpdate)
+                {
+                    var lastUpdate = _lastUpdate.Value;
+
+                    if (lastUpdate != null && (now - lastUpdate.Value).TotalMilliseconds < _delay.TotalMilliseconds / 2)
+                    {
+                        _missedUpdates++;
+
+                        // Force a log if there's more than 10 missed updates, in the very unlikely case
+                        // that there's a logic error or something, and we completely broke runtime metrics
+                        if (_missedUpdates == 10)
+                        {
+                            LogMissedUpdates();
+                        }
+
+                        return;
+                    }
+
+                    _lastUpdate.Value = now;
+
+                    if (_missedUpdates > 0)
+                    {
+                        LogMissedUpdates();
+                    }
+                }
+
                 _listener?.Refresh();
 
                 if (_enableProcessMetrics)
