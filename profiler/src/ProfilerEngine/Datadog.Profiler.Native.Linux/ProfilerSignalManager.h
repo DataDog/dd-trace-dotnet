@@ -20,6 +20,7 @@ public:
     int32_t SendSignal(pid_t threadId);
     bool CheckSignalHandler();
     bool IsHandlerInPlace() const;
+    int32_t GetSignal() const;
 
 #ifdef DD_TEST
     void Reset()

@@ -106,6 +106,9 @@ public:
         return nbElement == 3;
     }
 
+    ///
+    /// This function get the current timestamp in a signal-safe manner
+    ///
     static inline std::uint64_t GetTimestampSafe()
     {
         struct timespec ts;
