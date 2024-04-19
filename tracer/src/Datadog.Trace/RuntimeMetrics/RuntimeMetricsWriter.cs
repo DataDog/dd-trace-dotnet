@@ -146,11 +146,15 @@ namespace Datadog.Trace.RuntimeMetrics
                     _missedUpdates = 0;
                 }
 
+                TimeSpan elapsedSinceLastUpdate;
+
                 lock (_lastUpdate)
                 {
                     var lastUpdate = _lastUpdate.Value;
 
-                    if (lastUpdate != null && (now - lastUpdate.Value).TotalMilliseconds < _delay.TotalMilliseconds / 2)
+                    elapsedSinceLastUpdate = lastUpdate == null ? _delay : now - lastUpdate.Value;
+
+                    if (elapsedSinceLastUpdate.TotalMilliseconds < _delay.TotalMilliseconds / 2)
                     {
                         _missedUpdates++;
 
@@ -186,7 +190,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
                     // Note: the behavior of Environment.ProcessorCount has changed a lot accross version: https://github.com/dotnet/runtime/issues/622
                     // What we want is the number of cores attributed to the container, which is the behavior in 3.1.2+ (and, I believe, in 2.x)
-                    var maximumCpu = Environment.ProcessorCount * _delay.TotalMilliseconds;
+                    var maximumCpu = Environment.ProcessorCount * elapsedSinceLastUpdate.TotalMilliseconds;
                     var totalCpu = userCpu + systemCpu;
 
                     _statsd.Gauge(MetricsNames.ThreadsCount, threadCount);
@@ -202,8 +206,8 @@ namespace Datadog.Trace.RuntimeMetrics
 #endif
 
                     // Get CPU time in milliseconds per second
-                    _statsd.Gauge(MetricsNames.CpuUserTime, userCpu.TotalMilliseconds / _delay.TotalSeconds);
-                    _statsd.Gauge(MetricsNames.CpuSystemTime, systemCpu.TotalMilliseconds / _delay.TotalSeconds);
+                    _statsd.Gauge(MetricsNames.CpuUserTime, userCpu.TotalMilliseconds / elapsedSinceLastUpdate.TotalSeconds);
+                    _statsd.Gauge(MetricsNames.CpuSystemTime, systemCpu.TotalMilliseconds / elapsedSinceLastUpdate.TotalSeconds);
 
                     _statsd.Gauge(MetricsNames.CpuPercentage, Math.Round(totalCpu.TotalMilliseconds * 100 / maximumCpu, 1, MidpointRounding.AwayFromZero));
 
