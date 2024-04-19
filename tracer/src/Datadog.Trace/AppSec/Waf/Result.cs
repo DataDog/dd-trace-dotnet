@@ -25,14 +25,12 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (Actions is { Count: > 0 })
             {
-                var blockActionFound = Actions.TryGetValue(BlockingAction.BlockRequestType, out var value);
-                if (blockActionFound)
+                if (Actions.TryGetValue(BlockingAction.BlockRequestType, out var value))
                 {
                     BlockInfo = value as Dictionary<string, object?>;
                 }
 
-                var redirectActionFound = Actions.TryGetValue(BlockingAction.RedirectRequestType, out value);
-                if (redirectActionFound)
+                if (Actions.TryGetValue(BlockingAction.RedirectRequestType, out value))
                 {
                     RedirectInfo = value as Dictionary<string, object?>;
                 }
