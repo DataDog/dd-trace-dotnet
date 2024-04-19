@@ -36,7 +36,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
 
         var waf = initResult.Waf;
         waf.Should().NotBeNull();
-        var context = waf.CreateContext();
+        using var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
         result.BlockInfo["status_code"].Should().Be("403");
         var jsonString = JsonConvert.SerializeObject(result.Data);
