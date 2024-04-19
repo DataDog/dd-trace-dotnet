@@ -73,9 +73,9 @@ namespace Datadog.Trace.Propagators
 
         internal static void CreateHeaders(SpanContext context, out string traceId, out string spanId, out string sampled)
         {
+            // BUG: we should fall back to SamplingPriorityValues.AutoKeep
             var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
-            sampled = samplingPriority > 0 ? "1" : "0";
-
+            sampled = SamplingPriorityValues.IsKeep(samplingPriority) ? "1" : "0";
             traceId = context.RawTraceId;
             spanId = context.RawSpanId;
         }

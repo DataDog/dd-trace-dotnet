@@ -62,8 +62,8 @@ namespace Datadog.Trace.Tests.Sampling
             var nonMatchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v2/user/123" };
 
             VerifyRate(rule, 0.3f);
-            VerifySingleRule(rule, matchingSpan, isMatch: true);
-            VerifySingleRule(rule, nonMatchingSpan, isMatch: false);
+            VerifySingleRule(rule, matchingSpan, expected: true);
+            VerifySingleRule(rule, nonMatchingSpan, expected: false);
         }
 
         [Fact]
@@ -83,9 +83,9 @@ namespace Datadog.Trace.Tests.Sampling
             nonMatchingSpan2.SetTag("http.method", "POST");
 
             VerifyRate(rule, 0.3f);
-            VerifySingleRule(rule, matchingSpan, isMatch: true);
-            VerifySingleRule(rule, nonMatchingSpan1, isMatch: false);
-            VerifySingleRule(rule, nonMatchingSpan2, isMatch: false);
+            VerifySingleRule(rule, matchingSpan, expected: true);
+            VerifySingleRule(rule, nonMatchingSpan1, expected: false);
+            VerifySingleRule(rule, nonMatchingSpan2, expected: false);
         }
 
         [Fact]
@@ -173,15 +173,15 @@ namespace Datadog.Trace.Tests.Sampling
             rule.GetSamplingRate(TestSpans.CartCheckoutSpan).Should().Be(expectedRate);
         }
 
-        private static void VerifySingleRule(string config, Span span, bool isMatch)
+        private static void VerifySingleRule(string config, Span span, bool expected)
         {
             var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
-            VerifySingleRule(rule, span, isMatch);
+            VerifySingleRule(rule, span, expected);
         }
 
-        private static void VerifySingleRule(ISamplingRule rule, Span span, bool isMatch)
+        private static void VerifySingleRule(ISamplingRule rule, Span span, bool expected)
         {
-            Assert.Equal(rule.IsMatch(span), isMatch);
+            rule.IsMatch(span).Should().Be(expected);
         }
     }
 }

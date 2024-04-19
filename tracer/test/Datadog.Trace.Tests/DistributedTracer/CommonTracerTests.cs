@@ -26,7 +26,9 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             commonTracer.SetSamplingPriority(expectedSamplingPriority);
 
-            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(expectedSamplingPriority, "SetSamplingPriority should have successfully set the active trace sampling priority");
+            scope.Span.Context.TraceContext.SamplingPriority
+                 .Should()
+                 .Be(expectedSamplingPriority, "SetSamplingPriority should have successfully set the active trace sampling priority");
         }
 
         private class CommonTracerImpl : CommonTracer

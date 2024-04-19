@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Globalization;
 
 namespace Datadog.Trace.Sampling;
@@ -32,6 +33,7 @@ internal static class SamplingMechanism
     /// and <see cref="SamplingPriorityValues.AutoKeep"/> (1).
     /// (Reserved for future use.)
     /// </summary>
+    [Obsolete("This value is reserved for future use.")]
     public const int RemoteRateAuto = 2;
 
     /// <summary>
@@ -61,12 +63,14 @@ internal static class SamplingMechanism
     /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// (Reserved for future use.)
     /// </summary>
+    [Obsolete("This value is reserved for future use.")]
     public const int RemoteRateUser = 6;
 
     /// <summary>
     /// A sampling decision was made using a sampling rule configured remotely by Datadog.
     /// (Reserved for future use.)
     /// </summary>
+    [Obsolete("This value is reserved for future use.")]
     public const int RemoteRateDatadog = 7;
 
     /// <summary>
@@ -74,6 +78,28 @@ internal static class SamplingMechanism
     /// The only available sampling priority is <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int SpanSamplingRule = 8;
+
+    /// <summary>
+    /// A sampling decision was made using the OTLP-compatible probabilistic sampling in the Agent.
+    /// </summary>
+    [Obsolete("This value is used in the trace agent, not in tracing libraries.", error: false)]
+    public const int OtlpIngestProbabilisticSampling = 9;
+
+    /// <summary>
+    /// A sampling decision was made using a trace sampling rule that was configured remotely by the user
+    /// and sent via remote configuration (RCM).
+    /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
+    /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
+    /// </summary>
+    public const int RemoteUserSamplingRule = 10;
+
+    /// <summary>
+    /// A sampling decision was made using a trace sampling rule that was computed remotely by Datadog
+    /// and sent via remote configuration (RCM).
+    /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
+    /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
+    /// </summary>
+    public const int RemoteAdaptiveSamplingRule = 11;
 
     public static string GetTagValue(int mechanism)
     {
@@ -85,6 +111,7 @@ internal static class SamplingMechanism
 
         return mechanism switch
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             Default => "-0",
             AgentRate => "-1",
             RemoteRateAuto => "-2",
@@ -94,7 +121,11 @@ internal static class SamplingMechanism
             RemoteRateUser => "-6",
             RemoteRateDatadog => "-7",
             SpanSamplingRule => "-8",
+            OtlpIngestProbabilisticSampling => "-9",
+            RemoteUserSamplingRule => "-10",
+            RemoteAdaptiveSamplingRule => "-11",
             _ => $"-{mechanism.ToString(CultureInfo.InvariantCulture)}"
+#pragma warning restore CS0618 // Type or member is obsolete
         };
     }
 }

@@ -14,7 +14,7 @@ internal readonly struct SamplingDecision
     /// or no sampling rules match. For example, this value is used if the tracer has not yet
     /// received any sampling rates from agent and there are no configured sampling rates.
     /// </summary>
-    public static SamplingDecision Default = new(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default);
+    public static SamplingDecision Default = new(SamplingPriorityValues.Default, SamplingMechanism.Default);
 
     public readonly int Priority;
 

@@ -40,15 +40,7 @@ namespace Datadog.Trace.Propagators
 
             if (samplingPriority != null)
             {
-                var samplingPriorityString = samplingPriority.Value switch
-                                             {
-                                                 -1 => "-1",
-                                                 0 => "0",
-                                                 1 => "1",
-                                                 2 => "2",
-                                                 _ => samplingPriority.Value.ToString(invariantCulture)
-                                             };
-
+                var samplingPriorityString = SamplingPriorityValues.ToString(samplingPriority);
                 carrierSetter.Set(carrier, HttpHeaderNames.SamplingPriority, samplingPriorityString);
             }
 

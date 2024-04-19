@@ -51,7 +51,7 @@ public sealed class Test
 
         scope.Span.Type = SpanTypes.Test;
         scope.Span.ResourceName = $"{suite.Name}.{name}";
-        scope.Span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);
+        scope.Span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Manual);
         scope.Span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
