@@ -49,13 +49,10 @@ namespace Datadog.Trace.RuntimeMetrics
         private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();
 
         // The time when the runtime metrics were last pushed
-        // It is wrapped in a StrongBox to have something to lock on.
-        private readonly StrongBox<DateTime?> _lastUpdate = new();
+        private DateTime? _lastUpdate;
 
         private TimeSpan _previousUserCpu;
         private TimeSpan _previousSystemCpu;
-
-        private int _missedUpdates;
 
         public RuntimeMetricsWriter(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext)
             : this(statsd, delay, inAzureAppServiceContext, InitializeListenerFunc)
@@ -115,7 +112,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 Log.Warning(ex, "Unable to initialize runtime listener, some runtime metrics will be missing");
             }
 
-            _timer = new Timer(_ => PushEvents(), null, delay, delay);
+            _timer = new Timer(_ => PushEvents(), null, delay, Timeout.InfiniteTimeSpan);
         }
 
         /// <summary>
@@ -135,45 +132,9 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             try
             {
-                // If the last tick occured a short time ago, we skip this update.
-                // This can happen is the threadpool is swamped and has trouble dequeuing the timer callbacks.
                 var now = DateTime.UtcNow;
-
-                void LogMissedUpdates()
-                {
-                    Log.Warning<int>("Missed {MissedUpdates} runtime metrics updates", _missedUpdates);
-                    _missedUpdates = 0;
-                }
-
-                TimeSpan elapsedSinceLastUpdate;
-
-                lock (_lastUpdate)
-                {
-                    var lastUpdate = _lastUpdate.Value;
-
-                    elapsedSinceLastUpdate = lastUpdate == null ? _delay : now - lastUpdate.Value;
-
-                    if (elapsedSinceLastUpdate.TotalMilliseconds < _delay.TotalMilliseconds / 2)
-                    {
-                        _missedUpdates++;
-
-                        // Force a log if there's more than 10 missed updates, in the very unlikely case
-                        // that there's a logic error or something, and we completely broke runtime metrics
-                        if (_missedUpdates == 10)
-                        {
-                            LogMissedUpdates();
-                        }
-
-                        return;
-                    }
-
-                    _lastUpdate.Value = now;
-
-                    if (_missedUpdates > 0)
-                    {
-                        LogMissedUpdates();
-                    }
-                }
+                var elapsedSinceLastUpdate = _lastUpdate == null ? _delay : now - _lastUpdate.Value;
+                _lastUpdate = now;
 
                 _listener?.Refresh();
 
@@ -234,6 +195,16 @@ namespace Datadog.Trace.RuntimeMetrics
             catch (Exception ex)
             {
                 Log.Warning(ex, "Error while updating runtime metrics");
+            }
+            finally
+            {
+                try
+                {
+                    _timer.Change(_delay, Timeout.InfiniteTimeSpan);
+                }
+                catch (ObjectDisposedException)
+                {
+                }
             }
         }
 
