@@ -276,9 +276,7 @@ namespace Datadog.Trace
                 return;
             }
 
-            var samplingPriority = SamplingPriority;
-
-            if (SamplingPriorityValues.IsDrop(samplingPriority))
+            if (SamplingPriorityValues.IsDrop(SamplingPriority))
             {
                 for (int i = 0; i < spans.Count; i++)
                 {
