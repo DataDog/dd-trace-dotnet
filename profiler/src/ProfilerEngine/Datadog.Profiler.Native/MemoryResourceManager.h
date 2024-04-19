@@ -22,8 +22,17 @@ public:
     MemoryResourceManager& operator=(MemoryResourceManager&& other) noexcept;
 
     static shared::pmr::memory_resource* GetDefault();
-    shared::pmr::memory_resource* GetSynchronizedPool(std::size_t maxBlocksPerChunk, std::size_t maxBlockSize);
+    shared::pmr::memory_resource* GetSynchronizedPool(std::size_t maxBlocksPerChunk, std::size_t maxBlockSize, bool useMmapAsUpstream = false);
 
 private:
+    shared::pmr::memory_resource* GetSynchronizedPool(
+        shared::pmr::memory_resource* upstream,
+        std::size_t maxBlocksPerChunk,
+        std::size_t maxBlockSize);
+
+#ifdef LINUX
+    shared::pmr::memory_resource* GetMmapResource();
+#endif
+
     std::vector<std::unique_ptr<shared::pmr::memory_resource>> _resources;
 };
