@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -14,11 +13,15 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 {
     internal static class Common
     {
+        internal const string DotnetTestIntegrationName = nameof(IntegrationId.DotnetTest);
+        internal const IntegrationId DotnetTestIntegrationId = Configuration.IntegrationId.DotnetTest;
+
         internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
 
         internal static string GetParametersValueData(object paramValue)
@@ -127,10 +130,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             const string testAdapterPathProperty = "-property:VSTestTestAdapterPath=";
 
             var disableTestAdapterInjection = false;
-            var codeCoverageCollectorPath = EnvironmentHelpers.GetEnvironmentVariable("DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH") ?? string.Empty;
+            var codeCoverageCollectorPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath) ?? string.Empty;
             if (string.IsNullOrEmpty(codeCoverageCollectorPath))
             {
-                Log.Warning("The tracer home directory cannot be found based on the DD_DOTNET_TRACER_HOME value. TestAdapterPath will not be injected.");
+                Log.Warning("InjectCodeCoverageCollector: The tracer home directory cannot be found based on the DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH value. TestAdapterPath will not be injected.");
                 disableTestAdapterInjection = true;
             }
 
@@ -154,26 +157,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             if (isCollectIndex == -1)
             {
                 // Add the collect property
-                Log.Debug("Adding the collect property with the Datadog data collector.");
+                Log.Information("InjectCodeCoverageCollector: Adding the collect property with the Datadog data collector.");
                 msbuildArgsList.Add($"{collectProperty}\"{datadogCoverageCollector}\"");
             }
             else
             {
                 // Modify the collect property
                 var item = msbuildArgsList[isCollectIndex];
-                var values = item.Replace(collectProperty, string.Empty)
-                                        .Replace("\"", string.Empty)
-                                        .Split(new[] { ';' }, StringSplitOptions.None);
+                var cleanItem = item.Replace(collectProperty, string.Empty)
+                                    .Replace("\"", string.Empty);
+                Log.Debug("InjectCodeCoverageCollector: Existing collect property values: {CollectProperty}", cleanItem);
+                var values = cleanItem.Split(new[] { ';' }, StringSplitOptions.None);
 
                 if (!values.Contains(datadogCoverageCollector))
                 {
-                    Log.Debug("Appending the Datadog data collector.");
+                    Log.Information("InjectCodeCoverageCollector: Appending the Datadog data collector.");
                     item = $"{collectProperty}\"{string.Join(";", values.Concat(datadogCoverageCollector))}\"";
                     msbuildArgsList[isCollectIndex] = item;
                 }
                 else
                 {
-                    Log.Debug("Datadog data collector is already in the collector enumerable.");
+                    Log.Information("InjectCodeCoverageCollector: Datadog data collector is already in the collector enumerable.");
                 }
             }
 
@@ -182,32 +186,82 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                 if (isTestAdapterPathIndex == -1)
                 {
                     // Add the test adapter path property
-                    Log.Debug("Adding the test adapter path property with the Datadog data collector folder path.");
+                    Log.Information("InjectCodeCoverageCollector: Adding the test adapter path property with the Datadog data collector folder path.");
                     msbuildArgsList.Add($"{testAdapterPathProperty}\"{codeCoverageCollectorPath}\"");
                 }
                 else
                 {
                     // Modify the test adapter path property
                     var item = msbuildArgsList[isTestAdapterPathIndex];
-                    var values = item.Replace(testAdapterPathProperty, string.Empty)
-                                            .Replace("\"", string.Empty)
-                                            .Split(new[] { ';' }, StringSplitOptions.None);
+                    var cleanItem = item.Replace(testAdapterPathProperty, string.Empty)
+                                        .Replace("\"", string.Empty);
+                    Log.Debug("InjectCodeCoverageCollector: Existing testAdapter property values: {CollectProperty}", cleanItem);
+                    var values = cleanItem.Split(new[] { ';' }, StringSplitOptions.None);
 
                     if (!values.Contains(codeCoverageCollectorPath))
                     {
-                        Log.Debug("Appending the Datadog data collector folder path.");
+                        Log.Information("InjectCodeCoverageCollector: Appending the Datadog data collector folder path.");
                         item = $"{testAdapterPathProperty}\"{string.Join(";", values.Concat(codeCoverageCollectorPath))}\"";
                         msbuildArgsList[isTestAdapterPathIndex] = item;
                     }
                     else
                     {
-                        Log.Debug("Datadog data collector path is already in the test adapter path enumerable.");
+                        Log.Information("InjectCodeCoverageCollector: Datadog data collector path is already in the test adapter path enumerable.");
                     }
                 }
             }
 
             // Replace the msbuildArgs with the modified list
             msbuildArgs = msbuildArgsList;
+        }
+
+        internal static void WriteDebugInfo(IEnumerable<string> msbuildArgs, IEnumerable<string> userDefinedArguments, IEnumerable<string> trailingArguments, bool noRestore, string msbuildPath)
+        {
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                sb.AppendLine("InjectCodeCoverageCollector: Microsoft.DotNet.Tools.Test.TestCommand..ctor arguments:");
+
+                if (msbuildArgs is not null)
+                {
+                    sb.AppendLine("\tmsbuildArgs: ");
+                    if (msbuildArgs is not null)
+                    {
+                        foreach (var arg in msbuildArgs)
+                        {
+                            sb.AppendLine($"\t\t{arg}");
+                        }
+                    }
+                }
+
+                if (userDefinedArguments is not null)
+                {
+                    sb.AppendLine("\tuserDefinedArguments: ");
+                    if (userDefinedArguments is not null)
+                    {
+                        foreach (var arg in userDefinedArguments)
+                        {
+                            sb.AppendLine($"\t\t{arg}");
+                        }
+                    }
+                }
+
+                if (trailingArguments is not null)
+                {
+                    sb.AppendLine("\ttrailingArguments: ");
+                    if (trailingArguments is not null)
+                    {
+                        foreach (var arg in trailingArguments)
+                        {
+                            sb.AppendLine($"\t\t{arg}");
+                        }
+                    }
+                }
+
+                sb.AppendLine("\tnoRestore: " + noRestore);
+                sb.AppendLine("\tmsbuildPath: " + msbuildPath);
+                Log.Debug("{MessageValue}", StringBuilderCache.GetStringAndRelease(sb));
+            }
         }
     }
 }

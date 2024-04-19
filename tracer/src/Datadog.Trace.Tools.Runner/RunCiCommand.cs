@@ -218,7 +218,7 @@ namespace Datadog.Trace.Tools.Runner
             // Let's set the code coverage datacollector if the code coverage is enabled
             if (codeCoverageEnabled)
             {
-                profilerEnvironmentVariables["DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH"] = AppContext.BaseDirectory;
+                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath] = AppContext.BaseDirectory;
 
                 var isDotnetCommand = string.Equals(program, "dotnet", StringComparison.OrdinalIgnoreCase) ||
                                       string.Equals(program, "dotnet.exe", StringComparison.OrdinalIgnoreCase);
@@ -244,26 +244,8 @@ namespace Datadog.Trace.Tools.Runner
                         }
                     }
 
-                    // Add the Datadog coverage collector
-                    var collectorAdded = false;
-                    var baseDirectory = AppContext.BaseDirectory;
-                    if (isDotnetTestCommand)
-                    {
-                        // arguments += " --collect DatadogCoverage --test-adapter-path \"" + baseDirectory + "\"";
-                        collectorAdded = true;
-                    }
-                    else if (isVsTestCommand)
-                    {
-                        // arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
-                        collectorAdded = true;
-                    }
-                    else
-                    {
-                        Log.Warning("RunCiCommand: Code coverage is enabled but the command is not a 'dotnet test' nor 'dotnet vstest' nor 'vstest.console' command. Code coverage will not be collected.");
-                    }
-
                     // Sets the code coverage path to store the json files for each module in case we are not skipping test (global coverage is reliable).
-                    if (collectorAdded && !testSkippingEnabled)
+                    if ((isDotnetTestCommand || isVsTestCommand) && !testSkippingEnabled)
                     {
                         var outputFolders = new[] { Environment.CurrentDirectory, Path.GetTempPath(), };
                         foreach (var folder in outputFolders)
