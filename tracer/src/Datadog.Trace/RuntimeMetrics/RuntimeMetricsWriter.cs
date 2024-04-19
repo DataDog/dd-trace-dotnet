@@ -8,7 +8,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.StatsdClient;
