@@ -21,6 +21,8 @@ using static Datadog.Trace.Tools.dd_dotnet.Checks.Resources;
 
 namespace Datadog.Trace.Tools.dd_dotnet.IntegrationTests.Checks;
 
+#pragma warning disable CS0436 // Type conflicts with imported type
+
 [Collection(nameof(ConsoleTestsCollection))]
 public class ProcessBasicChecksTests : ConsoleTestHelper
 {
