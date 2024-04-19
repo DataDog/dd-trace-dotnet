@@ -45,14 +45,25 @@ namespace Datadog.Trace.Agent.Transports
             => (await SendAsync(WebRequestMethods.Http.Post, contentType, new HttpOverStreams.HttpContent.PushStreamContent(writeToRequestStream), contentEncoding, chunkedEncoding: true, multipartBoundary).ConfigureAwait(false)).Item1;
 
         public async Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
-            => (await SendAsync(
-                        WebRequestMethods.Http.Post,
-                        contentType: MimeTypes.MultipartFormData,
-                        new HttpOverStreams.HttpContent.MultipartFormContent(items, multipartCompression),
-                        contentEncoding: multipartCompression switch { MultipartCompression.None => null, MultipartCompression.GZip => "gzip", _ => throw new InvalidOperationException($"Unknown compression type: {multipartCompression}"), },
-                        chunkedEncoding: true,
-                        DatadogHttpValues.Boundary)
-                   .ConfigureAwait(false)).Item1;
+        {
+            var contentEncoding = multipartCompression switch
+            {
+                MultipartCompression.None => null,
+                MultipartCompression.GZip => "gzip",
+                _ => throw new InvalidOperationException($"Unknown compression type: {multipartCompression}"),
+            };
+
+            var sendResult = await SendAsync(
+                                    WebRequestMethods.Http.Post,
+                                    contentType: MimeTypes.MultipartFormData,
+                                    new HttpOverStreams.HttpContent.MultipartFormContent(items, multipartCompression),
+                                    contentEncoding: contentEncoding,
+                                    chunkedEncoding: true,
+                                    DatadogHttpValues.Boundary)
+                               .ConfigureAwait(false);
+
+            return sendResult.Item1;
+        }
 
         private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content, string contentEncoding, bool chunkedEncoding, string multipartBoundary = null)
         {
