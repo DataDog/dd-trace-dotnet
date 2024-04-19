@@ -276,7 +276,7 @@ internal readonly partial struct SecurityCoordinator
         var securityCoordinator = this;
         return (status, blocked) =>
         {
-            if (result.BlockInfo is not null || result.RedirectInfo is not null)
+            if (result.ShouldBlock)
             {
                 securityCoordinator._httpTransport.MarkBlocked();
             }
