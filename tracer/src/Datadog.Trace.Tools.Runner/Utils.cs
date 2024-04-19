@@ -264,20 +264,35 @@ namespace Datadog.Trace.Tools.Runner
                     childProcess.EnableRaisingEvents = true;
                     childProcess.Start();
 
-                    using (cancellationToken.Register(() =>
-                    {
-                        try
-                        {
-                            childProcess.Kill();
-                        }
-                        catch
-                        {
-                            // .
-                        }
-                    }))
+                    using (cancellationToken.Register(
+                               () =>
+                               {
+                                   try
+                                   {
+                                       childProcess.Kill();
+                                   }
+                                   catch
+                                   {
+                                       // .
+                                   }
+                               }))
                     {
                         childProcess.WaitForExit();
                         return cancellationToken.IsCancellationRequested ? 1 : childProcess.ExitCode;
+                    }
+                }
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                if (!File.Exists(startInfo.FileName))
+                {
+                    var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", startInfo.FileName));
+                    if (cmdResponse?.ExitCode == 0 &&
+                        cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                        outputLines[0] is { Length: > 0 } processPath)
+                    {
+                        startInfo.FileName = processPath;
+                        return RunProcess(startInfo, cancellationToken);
                     }
                 }
             }
