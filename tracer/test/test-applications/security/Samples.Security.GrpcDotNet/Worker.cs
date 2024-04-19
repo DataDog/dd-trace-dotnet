@@ -57,10 +57,8 @@ public class Worker : BackgroundService
 
             await SendUnaryRequestAsync(client);
             await SendServerStreamingRequest(client, stoppingToken);
-            // await SendClientStreamingRequest(client, stoppingToken); <-- TODO: Need to aspect these methods
-            // await SendBothStreamingRequest(client, stoppingToken);
-
-            //SendUnaryRequest(client);
+            await SendClientStreamingRequest(client, stoppingToken);
+            await SendBothStreamingRequest(client, stoppingToken);
         }
         catch (Exception ex)
         {
@@ -79,7 +77,7 @@ public class Worker : BackgroundService
         using var scope = CreateScope();
         _logger.LogInformation("Sending unary async request to self");
         var reply = await client.UnaryAsync(
-                        new HelloRequest { Name = "GreeterClient" });
+                        new HelloRequest { Name = "UnaryGreeterClient" });
 
         _logger.LogInformation("Received async reply message: {Reply}", reply.Message);
     }
@@ -99,7 +97,7 @@ public class Worker : BackgroundService
         _logger.LogInformation("Sending streaming server request to self");
 
         using var messages = client.StreamingFromServer(
-            new HelloRequest { Name = "GreeterClient" });
+            new HelloRequest { Name = "ServerStreamingGreeterClient" });
 
         while (await messages.ResponseStream.MoveNext(ct))
         {
@@ -118,7 +116,7 @@ public class Worker : BackgroundService
 
         for (int i = 0; i < 5; i++)
         {
-            var helloRequest = new HelloRequest { Name = "GreeterClient" + i };
+            var helloRequest = new HelloRequest { Name = "ClientStreamingGreeterClient" + i };
             _logger.LogInformation("Sending streaming client message: {Name}", helloRequest.Name);
             await call.RequestStream.WriteAsync(helloRequest);
         }
@@ -146,7 +144,7 @@ public class Worker : BackgroundService
 
         for (int i = 0; i < 5; i++)
         {
-            var helloRequest = new HelloRequest { Name = "GreeterClient" + i };
+            var helloRequest = new HelloRequest { Name = "BothStreamingGreeterClient" + i };
             _logger.LogInformation("Sending both streaming message: {Name}", helloRequest.Name);
             await call.RequestStream.WriteAsync(helloRequest);
         }

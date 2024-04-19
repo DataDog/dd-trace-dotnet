@@ -11,19 +11,21 @@ using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Security.IntegrationTests.IAST;
+namespace Datadog.Trace.Security.IntegrationTests.IAST.GrpcDotNet;
 
 [UsesVerify]
 public class GrpcDotNetTests : TestHelper
 {
     public GrpcDotNetTests(ITestOutputHelper output)
-        : base("Security.GrpcDotNet", output)
+        : base("Security.GrpcDotNet", samplePathOverrides: "test/test-applications/security", output)
     {
         SetServiceVersion("1.0.0");
-        SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "1");
-        SetEnvironmentVariable(ConfigurationKeys.Iast.TelemetryVerbosity, "0");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.TelemetryVerbosity, "Off");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "200");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
     }
 
     [SkippableFact]
@@ -31,8 +33,8 @@ public class GrpcDotNetTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task SubmitsTraces()
     {
-        const int expectedSpanCount = 10;
-        var filename = "Iast.GrpcDotNetTests.BodyPropagation.SubmitsTraces";
+        const int expectedSpanCount = 24;
+        const string filename = "Iast.GrpcDotNetTests.BodyPropagation.SubmitsTraces";
         using var agent = EnvironmentHelper.GetMockAgent();
         using var process = await RunSampleAndWaitForExit(agent);
         var spans = agent.WaitForSpans(expectedSpanCount);

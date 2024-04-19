@@ -35,7 +35,7 @@ public class ParsingPrimitivesReadRawStringIntegration
         if (returnValue is not null)
         {
             var taintedObjects = IastModule.GetIastContext()?.GetTaintedObjects();
-            taintedObjects?.TaintInputString(returnValue, new Source(SourceType.GrpcRequestBody, returnValue, returnValue));
+            taintedObjects?.TaintInputString(returnValue, new Source(SourceType.GrpcRequestBody, null, returnValue));
         }
 
         return new CallTargetReturn<string?>(returnValue);
