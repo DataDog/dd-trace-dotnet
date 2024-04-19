@@ -63,6 +63,7 @@ elif [ "$1" = "linux" ]; then
     rm -f profiler_exceptions_baseline_linux.json
     rm -f profiler_exceptions_linux.json
     rm -f profiler_cpu_linux.json
+    rm -f profiler_cpu_timer_create_linux.json
 
     crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler_baseline --profile linux --json profiler_baseline_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler_baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="profiler_baseline_linux.json"
@@ -76,8 +77,8 @@ elif [ "$1" = "linux" ]; then
     crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler_exceptions --profile linux --json profiler_exceptions_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler_exceptions --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="profiler_exceptions_linux.json"
 
-    crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler_cpu --profile linux --json profiler_cpu_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler_cpu --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="profiler_cpu_linux.json"
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler_cpu_timer_create --profile linux --json profiler_cpu_timer_create_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler_cpu --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="profiler_cpu_timer_create_linux.json"
 else
     echo "Unknown argument $1"
     exit 1
