@@ -25,13 +25,9 @@ namespace Datadog.Trace.AppSec
             Reported = reported;
         }
 
-       public BlockException(IResult result, Dictionary<string, object?> blockInfo, bool reported = false) : this(result, reported)
+        public BlockException(IResult result, Dictionary<string, object?> blockInfo, bool reported = false) 
+            : this(result, reported)
         {
-            BlockInfo = blockInfo;
-        }
-        {
-            Result = result;
-            Reported = reported;
             BlockInfo = blockInfo;
         }
 

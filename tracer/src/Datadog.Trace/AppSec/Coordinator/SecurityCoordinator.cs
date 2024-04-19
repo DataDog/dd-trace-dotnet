@@ -119,7 +119,7 @@ internal readonly partial struct SecurityCoordinator
         {
             TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.WafTimeout);
         }
-        else if (result.BlockInfo is not null || result.RedirectInfo is not null)
+        else if (result.ShouldBlock)
         {
             TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
         }

@@ -56,6 +56,8 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindings { get; }
 
+        public bool ShouldBlock => BlockInfo is not null || RedirectInfo is not null;
+
         public Dictionary<string, object?>? BlockInfo { get; }
 
         public Dictionary<string, object?>? RedirectInfo { get; }

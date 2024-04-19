@@ -63,12 +63,12 @@ internal readonly partial struct SecurityCoordinator
     {
         if (result is not null)
         {
-            if (result!.BlockInfo is not null)
+            if (result.ShouldBlock)
             {
-                throw new BlockException(result, result!.BlockInfo);
+                throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo!);
             }
 
-            TryReport(result, result.BlockInfo is not null);
+            TryReport(result, result.ShouldBlock);
         }
     }
 
