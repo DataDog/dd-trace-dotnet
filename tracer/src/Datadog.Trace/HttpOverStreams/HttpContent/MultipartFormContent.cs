@@ -49,22 +49,28 @@ internal class MultipartFormContent : IHttpContent
         // We're doing chunked encoding, so we need to wrap the destination stream
         // to ensure we add the required chunked encoding headers
         using var chunkedStream = new ChunkedEncodingWriteStream(destination);
-        GZipStream? compressionStream = _multipartCompression switch
+
+        using (var compressionStream = GetCompressionStream(_multipartCompression, chunkedStream))
         {
-            MultipartCompression.None => null,
-            MultipartCompression.GZip => new GZipStream(chunkedStream, CompressionMode.Compress, leaveOpen: true),
-            _ => throw new InvalidOperationException($"Unknown compression type: {_multipartCompression}"),
-        };
+            var innerStream = compressionStream ?? (Stream)chunkedStream;
+            await WriteMultiPartForm(innerStream).ConfigureAwait(false);
 
-        var innerStream = compressionStream ?? (Stream)chunkedStream;
-        await WriteMultiPartForm(innerStream).ConfigureAwait(false);
-
-        // in .NET Framework, calling Flush() doesn't flush the underlying stream
-        // the only way to force it to flush is to dispose
-        compressionStream?.Dispose();
+            // in .NET Framework, calling Flush() doesn't flush the underlying stream
+            // the only way to force it to flush is to dispose
+        }
 
         await chunkedStream.FinishAsync().ConfigureAwait(false); // write the terminator block
         await chunkedStream.FlushAsync().ConfigureAwait(false); // flush the final chunk
+
+        return;
+
+        static GZipStream? GetCompressionStream(MultipartCompression compress, Stream innerStream)
+            => compress switch
+            {
+                MultipartCompression.None => null,
+                MultipartCompression.GZip => new GZipStream(innerStream, CompressionMode.Compress, leaveOpen: true),
+                _ => throw new InvalidOperationException($"Unknown compression type: {compress}"),
+            };
     }
 
     public Task CopyToAsync(byte[] buffer)
@@ -107,30 +113,25 @@ internal class MultipartFormContent : IHttpContent
             haveValidItem = true;
             await sw.WriteAsync(Header).ConfigureAwait(false);
 
+            string partHeader;
             if (item.FileName is not null)
             {
                 // Content-Type: text/plain"
                 // Content-Disposition: form-data; name="flare_file"; filename="debug_logs.zip"
-                await sw.WriteAsync("Content-Type: ").ConfigureAwait(false);
-                await sw.WriteAsync(item.ContentType).ConfigureAwait(false);
-                await sw.WriteAsync($"{CrLf}Content-Disposition: form-data; name=\"").ConfigureAwait(false);
-                await sw.WriteAsync(item.Name).ConfigureAwait(false);
-                await sw.WriteAsync("\"; filename=\"").ConfigureAwait(false);
-                await sw.WriteAsync(item.FileName).ConfigureAwait(false);
-                await sw.WriteAsync($"\"{CrLf}").ConfigureAwait(false);
+                partHeader =
+                    $"""Content-Type: {item.ContentType}{CrLf}"""
+                  + $"""Content-Disposition: form-data; name="{item.Name}"; filename="{item.FileName}"{CrLf}{CrLf}""";
             }
             else
             {
                 // Content-Type: text/plain"
                 // Content-Disposition: form-data; name="flare_file"
-                await sw.WriteAsync("Content-Type: ").ConfigureAwait(false);
-                await sw.WriteAsync(item.ContentType).ConfigureAwait(false);
-                await sw.WriteAsync($"{CrLf}Content-Disposition: form-data; name=\"").ConfigureAwait(false);
-                await sw.WriteAsync(item.Name).ConfigureAwait(false);
-                await sw.WriteAsync($"\"{CrLf}").ConfigureAwait(false);
+                partHeader =
+                    $"""Content-Type: {item.ContentType}{CrLf}"""
+                  + $"""Content-Disposition: form-data; name="{item.Name}"{CrLf}{CrLf}""";
             }
 
-            await sw.WriteAsync(CrLf).ConfigureAwait(false);
+            await sw.WriteAsync(partHeader).ConfigureAwait(false);
             // Flush the part header to the underlying stream
             await sw.FlushAsync().ConfigureAwait(false);
 
