@@ -427,7 +427,8 @@ partial class Build : NukeBuild
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
-                .SetProperty("BuildStandalone", "false"));
+                .SetProperty("BuildStandalone", "false")
+                .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1"));
         });
 
     Target PackRunnerToolNuget => _ => _
@@ -445,7 +446,8 @@ partial class Build : NukeBuild
                 .SetProperty("BuildStandalone", "false")
                 .SetProperty("DebugSymbols", "False")
                 .SetProperty("DebugType", "None")
-                .SetProperty("GenerateDocumentationFile", "False"));
+                .SetProperty("GenerateDocumentationFile", "False")
+                .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1"));
         });
 
     Target BuildStandaloneTool => _ => _
@@ -480,6 +482,7 @@ partial class Build : NukeBuild
                 .SetProperty("DebugSymbols", "False")
                 .SetProperty("DebugType", "None")
                 .SetProperty("GenerateDocumentationFile", "False")
+                .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1")
                 .CombineWith(runtimes, (c, runtime) => c
                                 .SetProperty("PublishDir", runtime.output)
                                 .SetRuntime(runtime.rid)));
