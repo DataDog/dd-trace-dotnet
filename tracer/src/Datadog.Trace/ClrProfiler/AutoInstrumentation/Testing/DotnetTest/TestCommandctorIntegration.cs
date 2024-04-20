@@ -9,7 +9,7 @@ using System.ComponentModel;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 
 /// <summary>
 /// System.Void Microsoft.DotNet.Tools.Test.TestCommand::.ctor(System.Collections.Generic.IEnumerable`1[System.String],System.Boolean,System.String) calltarget instrumentation
@@ -34,8 +34,8 @@ public class TestCommandctorIntegration
             return CallTargetState.GetDefault();
         }
 
-        Common.InjectCodeCoverageCollectorToDotnetTest(ref msbuildArgs);
-        Common.WriteDebugInfoForDotnetTest(msbuildArgs, null, null, noRestore, msbuildPath);
+        DotnetCommon.InjectCodeCoverageCollectorToDotnetTest(ref msbuildArgs);
+        DotnetCommon.WriteDebugInfoForDotnetTest(msbuildArgs, null, null, noRestore, msbuildPath);
         return CallTargetState.GetDefault();
     }
 }

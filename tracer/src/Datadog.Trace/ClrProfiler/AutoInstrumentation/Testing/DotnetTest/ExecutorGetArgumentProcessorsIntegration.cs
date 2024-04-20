@@ -8,7 +8,7 @@ using System.ComponentModel;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 
 /// <summary>
 /// System.Int32 Microsoft.VisualStudio.TestPlatform.CommandLine.Executor::GetArgumentProcessors(System.String[],System.Collections.Generic.List`1[Microsoft.VisualStudio.TestPlatform.CommandLine.Processors.IArgumentProcessor]) calltarget instrumentation
@@ -33,8 +33,8 @@ public class ExecutorGetArgumentProcessorsIntegration
             return CallTargetState.GetDefault();
         }
 
-        Common.InjectCodeCoverageCollectorToVsConsoleTest(ref args);
-        Common.WriteDebugInfoForVsConsoleTest(args);
+        DotnetCommon.InjectCodeCoverageCollectorToVsConsoleTest(ref args);
+        DotnetCommon.WriteDebugInfoForVsConsoleTest(args);
         return CallTargetState.GetDefault();
     }
 }
