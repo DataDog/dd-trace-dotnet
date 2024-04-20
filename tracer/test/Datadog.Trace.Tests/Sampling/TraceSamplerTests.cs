@@ -46,6 +46,7 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(
                 new CustomSamplingRule(
                     rate: 1,
+                    SamplingRuleProvenance.Local,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
@@ -69,6 +70,7 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(
                 new CustomSamplingRule(
                     rate: 1,
+                    SamplingRuleProvenance.Local,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
@@ -92,6 +94,7 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(
                 new CustomSamplingRule(
                     rate: 0,
+                    SamplingRuleProvenance.Local,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
@@ -115,6 +118,7 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(
                 new CustomSamplingRule(
                     rate: 0.5f,
+                    SamplingRuleProvenance.Local,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
