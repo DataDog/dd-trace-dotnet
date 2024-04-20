@@ -235,6 +235,7 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 var context = spanLink.Context;
                 var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
+
                 var traceFlags = samplingPriority switch
                 {
                     null => 0u,             // not set

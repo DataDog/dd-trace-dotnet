@@ -82,7 +82,7 @@ internal static class SamplingMechanism
     /// <summary>
     /// A sampling decision was made using the OTLP-compatible probabilistic sampling in the Agent.
     /// </summary>
-    [Obsolete("This value is used in the trace agent, not in tracing libraries.", error: false)]
+    [Obsolete("This value is used in the trace agent, not in tracing libraries.")]
     public const int OtlpIngestProbabilisticSampling = 9;
 
     /// <summary>

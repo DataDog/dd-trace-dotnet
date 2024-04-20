@@ -89,6 +89,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             newHeaders.Verify(h => h.Set("x-b3-traceid", "0123456789abcdef1122334455667788"), Times.Once());
             newHeaders.Verify(h => h.Set("x-b3-spanid", "000000003ade68b1"), Times.Once());
+            // BUG: we should default to KEEP if there's no sampler, but this never happens in real life, will fix later
             newHeaders.Verify(h => h.Set("x-b3-sampled", "0"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
 
