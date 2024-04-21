@@ -19,8 +19,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
     MethodName = "GetArgumentProcessors",
     ReturnTypeName = ClrNames.Int32,
     ParameterTypeNames = ["System.String[]", "System.Collections.Generic.List`1[Microsoft.VisualStudio.TestPlatform.CommandLine.Processors.IArgumentProcessor]&"],
-    MinimumVersion = "10.0.0",
-    MaximumVersion = "17.*.*",
+    MinimumVersion = "15.0.0",
+    MaximumVersion = "15.*.*",
     IntegrationName = Common.DotnetTestIntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

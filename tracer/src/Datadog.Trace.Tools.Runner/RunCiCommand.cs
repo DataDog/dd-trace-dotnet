@@ -120,8 +120,6 @@ namespace Datadog.Trace.Tools.Runner
             var codeCoverageEnabled = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
             var testSkippingEnabled = ciVisibilitySettings.TestsSkippingEnabled == true;
 
-            var createTestSession = false;
-            string codeCoveragePath = null;
             var hasEvpProxy = !string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint);
             if (agentless || hasEvpProxy)
             {
@@ -153,7 +151,6 @@ namespace Datadog.Trace.Tools.Runner
                 }
 
                 // We can activate all features here (Agentless or EVP proxy mode)
-                createTestSession = true;
                 if (!agentless)
                 {
                     // EVP proxy is enabled.
@@ -305,7 +302,6 @@ namespace Datadog.Trace.Tools.Runner
                                     Directory.CreateDirectory(outputPath);
                                     profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath] = outputPath;
                                     EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, outputPath);
-                                    codeCoveragePath = outputPath;
                                     break;
                                 }
                                 catch (Exception ex)
@@ -326,141 +322,41 @@ namespace Datadog.Trace.Tools.Runner
             // Final command to execute
             var command = $"{program} {arguments}".Trim();
 
-            // We create a test session if the flag is turned on (agentless or evp proxy)
-            TestSession session = null;
-            if (createTestSession)
-            {
-                session = TestSession.InternalGetOrCreate(command, null, null, null, true);
-                session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
-                session.SetTag(CodeCoverageTags.Enabled, codeCoverageEnabled ? "true" : "false");
-
-                // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
-                // In that case we tell the backend no tests are going to be skipped.
-                if (!testSkippingEnabled)
-                {
-                    session.SetTag(IntelligentTestRunnerTags.TestsSkipped, "false");
-                }
-            }
-
             // Run child process
-            var exitCode = 0;
-            try
+            AnsiConsole.WriteLine("Running: " + command);
+
+            if (testSkippingEnabled || Program.CallbackForTests is not null)
             {
-                AnsiConsole.WriteLine("Running: " + command);
-
-                if (testSkippingEnabled || Program.CallbackForTests is not null)
-                {
-                    // Awaiting git repository task before running the command if ITR test skipping is enabled.
-                    // Test skipping requires the git upload metadata information before hand
-                    Log.Debug("RunCiCommand: Awaiting for the Git repository upload.");
-                    await uploadRepositoryChangesTask.ConfigureAwait(false);
-                }
-
-                if (Program.CallbackForTests is { } callbackForTests)
-                {
-                    callbackForTests(program, arguments, profilerEnvironmentVariables);
-                    return;
-                }
-
-                Log.Debug("RunCiCommand: Launching: {Value}", command);
-                var processInfo = Utils.GetProcessStartInfo(program, Environment.CurrentDirectory, profilerEnvironmentVariables);
-                if (!string.IsNullOrEmpty(arguments))
-                {
-                    processInfo.Arguments = arguments;
-                }
-
-                exitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
-                session?.SetTag(TestTags.CommandExitCode, exitCode);
-                Log.Debug<int>("RunCiCommand: Finished with exit code: {Value}", exitCode);
-
-                if (!testSkippingEnabled)
-                {
-                    // Awaiting git repository task after running the command if ITR test skipping is disabled.
-                    Log.Debug("RunCiCommand: Awaiting for the Git repository upload.");
-                    await uploadRepositoryChangesTask.ConfigureAwait(false);
-                }
-
-                context.ExitCode = exitCode;
+                // Awaiting git repository task before running the command if ITR test skipping is enabled.
+                // Test skipping requires the git upload metadata information before hand
+                Log.Debug("RunCiCommand: Awaiting for the Git repository upload.");
+                await uploadRepositoryChangesTask.ConfigureAwait(false);
             }
-            catch (Exception ex)
+
+            if (Program.CallbackForTests is { } callbackForTests)
             {
-                session?.SetErrorInfo(ex);
-                throw;
+                callbackForTests(program, arguments, profilerEnvironmentVariables);
+                return;
             }
-            finally
+
+            Log.Debug("RunCiCommand: Launching: {Value}", command);
+            var processInfo = Utils.GetProcessStartInfo(program, Environment.CurrentDirectory, profilerEnvironmentVariables);
+            if (!string.IsNullOrEmpty(arguments))
             {
-                if (session is not null)
-                {
-                    // If the code coverage path is set we try to read all json files created, merge them into a single one and extract the
-                    // global code coverage percentage.
-                    // Note: we also write the total global code coverage to the `session-coverage-{date}.json` file
-                    if (!string.IsNullOrEmpty(codeCoveragePath))
-                    {
-                        if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)))
-                        {
-                            Log.Warning("DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH was ignored because DD_CIVISIBILITY_CODE_COVERAGE_ENABLED is set.");
-                        }
-
-                        var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.json");
-                        if (CoverageUtils.TryCombineAndGetTotalCoverage(codeCoveragePath, outputPath, out var globalCoverage, useStdOut: false) &&
-                            globalCoverage is not null)
-                        {
-                            // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
-                            if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true)
-                            {
-                                // Adds the global code coverage percentage to the session
-                                session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
-                            }
-                        }
-                    }
-                    else
-                    {
-                        try
-                        {
-                            if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath &&
-                                File.Exists(extCodeCoverageFilePath))
-                            {
-                                // Check Code Coverage from other files.
-                                var xmlDoc = new XmlDocument();
-                                xmlDoc.Load(extCodeCoverageFilePath);
-
-                                if (xmlDoc.SelectSingleNode("/CoverageSession/Summary/@sequenceCoverage") is { } seqCovAttribute &&
-                                    double.TryParse(seqCovAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var seqCovValue))
-                                {
-                                    // Found using the OpenCover format.
-
-                                    // Adds the global code coverage percentage to the session
-                                    var coveragePercentage = Math.Round(seqCovValue, 2).ToValidPercentage();
-                                    session.SetTag(CodeCoverageTags.Enabled, "true");
-                                    session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
-                                    Log.Debug("RunCiCommand: OpenCover code coverage was reported: {Value}", seqCovValue);
-                                }
-                                else if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
-                                    double.TryParse(lineRateAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var lineRateValue))
-                                {
-                                    // Found using the Cobertura format.
-
-                                    // Adds the global code coverage percentage to the session
-                                    var coveragePercentage = Math.Round(lineRateValue * 100, 2).ToValidPercentage();
-                                    session.SetTag(CodeCoverageTags.Enabled, "true");
-                                    session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
-                                    Log.Debug("RunCiCommand: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
-                                }
-                                else
-                                {
-                                    Log.Warning("RunCiCommand: Error while reading the external file code coverage. Format is not supported.");
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Warning(ex, "RunCiCommand: Error while reading the external file code coverage.");
-                        }
-                    }
-
-                    await session.CloseAsync(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail).ConfigureAwait(false);
-                }
+                processInfo.Arguments = arguments;
             }
+
+            var exitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
+            Log.Debug<int>("RunCiCommand: Finished with exit code: {Value}", exitCode);
+
+            if (!testSkippingEnabled)
+            {
+                // Awaiting git repository task after running the command if ITR test skipping is disabled.
+                Log.Debug("RunCiCommand: Awaiting for the Git repository upload.");
+                await uploadRepositoryChangesTask.ConfigureAwait(false);
+            }
+
+            context.ExitCode = exitCode;
         }
     }
 }

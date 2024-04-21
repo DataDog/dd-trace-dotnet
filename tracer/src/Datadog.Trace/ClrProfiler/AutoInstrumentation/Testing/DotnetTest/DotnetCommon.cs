@@ -2,11 +2,16 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Xml;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -24,7 +29,119 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
         internal static bool DotnetTestIntegrationEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
 
-        internal static void InjectCodeCoverageCollectorToDotnetTest(ref IEnumerable<string> msbuildArgs)
+        internal static TestSession? CreateSession()
+        {
+            var ciVisibilitySettings = CIVisibility.Settings;
+            var agentless = ciVisibilitySettings.Agentless;
+            var isEvpProxy = CIVisibility.EventPlatformProxySupport != EventPlatformProxySupport.None;
+
+            // We create a test session if the flag is turned on (agentless or evp proxy)
+            if (agentless || isEvpProxy)
+            {
+                var session = TestSession.InternalGetOrCreate(Environment.CommandLine, null, null, null, true);
+                session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, ciVisibilitySettings.TestsSkippingEnabled == true ? "true" : "false");
+                session.SetTag(CodeCoverageTags.Enabled, ciVisibilitySettings.CodeCoverageEnabled == true ? "true" : "false");
+
+                // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
+                // In that case we tell the backend no tests are going to be skipped.
+                if (ciVisibilitySettings.TestsSkippingEnabled == false)
+                {
+                    session.SetTag(IntelligentTestRunnerTags.TestsSkipped, "false");
+                }
+
+                return session;
+            }
+
+            return null;
+        }
+
+        internal static void FinalizeSession(TestSession? session, int exitCode, Exception? exception)
+        {
+            if (session is null)
+            {
+                return;
+            }
+
+            session.SetTag(TestTags.CommandExitCode, exitCode);
+
+            if (exception is not null)
+            {
+                session.SetErrorInfo(exception);
+            }
+
+            var codeCoveragePath = EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath);
+
+            // If the code coverage path is set we try to read all json files created, merge them into a single one and extract the
+            // global code coverage percentage.
+            // Note: we also write the total global code coverage to the `session-coverage-{date}.json` file
+            if (!string.IsNullOrEmpty(codeCoveragePath))
+            {
+                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)))
+                {
+                    Log.Warning("DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH was ignored because DD_CIVISIBILITY_CODE_COVERAGE_ENABLED is set.");
+                }
+
+                var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.json");
+                if (CoverageUtils.TryCombineAndGetTotalCoverage(codeCoveragePath, outputPath, out var globalCoverage) &&
+                    globalCoverage is not null)
+                {
+                    // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
+                    if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true)
+                    {
+                        // Adds the global code coverage percentage to the session
+                        session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
+                    }
+                }
+            }
+            else
+            {
+                try
+                {
+                    if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath &&
+                        File.Exists(extCodeCoverageFilePath))
+                    {
+                        // Check Code Coverage from other files.
+                        var xmlDoc = new XmlDocument();
+                        xmlDoc.Load(extCodeCoverageFilePath);
+
+                        if (xmlDoc.SelectSingleNode("/CoverageSession/Summary/@sequenceCoverage") is { } seqCovAttribute &&
+                            double.TryParse(seqCovAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var seqCovValue))
+                        {
+                            // Found using the OpenCover format.
+
+                            // Adds the global code coverage percentage to the session
+                            var coveragePercentage = Math.Round(seqCovValue, 2).ToValidPercentage();
+                            session.SetTag(CodeCoverageTags.Enabled, "true");
+                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
+                            Log.Debug("RunCiCommand: OpenCover code coverage was reported: {Value}", seqCovValue);
+                        }
+                        else if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
+                                 double.TryParse(lineRateAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var lineRateValue))
+                        {
+                            // Found using the Cobertura format.
+
+                            // Adds the global code coverage percentage to the session
+                            var coveragePercentage = Math.Round(lineRateValue * 100, 2).ToValidPercentage();
+                            session.SetTag(CodeCoverageTags.Enabled, "true");
+                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
+                            Log.Debug("RunCiCommand: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
+                        }
+                        else
+                        {
+                            Log.Warning("RunCiCommand: Error while reading the external file code coverage. Format is not supported.");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "RunCiCommand: Error while reading the external file code coverage.");
+                }
+            }
+
+            session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
+        }
+
+        internal static void InjectCodeCoverageCollectorToDotnetTest(ref IEnumerable<string>? msbuildArgs)
         {
             if (msbuildArgs == null)
             {
@@ -123,7 +240,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             msbuildArgs = msbuildArgsList;
         }
 
-        internal static void WriteDebugInfoForDotnetTest(IEnumerable<string> msbuildArgs, IEnumerable<string> userDefinedArguments, IEnumerable<string> trailingArguments, bool noRestore, string msbuildPath)
+        internal static void WriteDebugInfoForDotnetTest(IEnumerable<string>? msbuildArgs, IEnumerable<string>? userDefinedArguments, IEnumerable<string>? trailingArguments, bool noRestore, string? msbuildPath)
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -133,36 +250,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 if (msbuildArgs is not null)
                 {
                     sb.AppendLine("\tmsbuildArgs: ");
-                    if (msbuildArgs is not null)
+                    foreach (var arg in msbuildArgs)
                     {
-                        foreach (var arg in msbuildArgs)
-                        {
-                            sb.AppendLine($"\t\t{arg}");
-                        }
+                        sb.AppendLine($"\t\t{arg}");
                     }
                 }
 
                 if (userDefinedArguments is not null)
                 {
                     sb.AppendLine("\tuserDefinedArguments: ");
-                    if (userDefinedArguments is not null)
+                    foreach (var arg in userDefinedArguments)
                     {
-                        foreach (var arg in userDefinedArguments)
-                        {
-                            sb.AppendLine($"\t\t{arg}");
-                        }
+                        sb.AppendLine($"\t\t{arg}");
                     }
                 }
 
                 if (trailingArguments is not null)
                 {
                     sb.AppendLine("\ttrailingArguments: ");
-                    if (trailingArguments is not null)
+                    foreach (var arg in trailingArguments)
                     {
-                        foreach (var arg in trailingArguments)
-                        {
-                            sb.AppendLine($"\t\t{arg}");
-                        }
+                        sb.AppendLine($"\t\t{arg}");
                     }
                 }
 
@@ -172,7 +280,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
         }
 
-        internal static void InjectCodeCoverageCollectorToVsConsoleTest(ref string[] args)
+        internal static void InjectCodeCoverageCollectorToVsConsoleTest(ref string[]? args)
         {
             if (args == null)
             {
@@ -272,7 +380,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
         }
 
-        internal static void WriteDebugInfoForVsConsoleTest(string[] args)
+        internal static void WriteDebugInfoForVsConsoleTest(string[]? args)
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
