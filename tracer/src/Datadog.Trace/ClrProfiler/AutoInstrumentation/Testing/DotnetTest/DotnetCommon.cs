@@ -35,6 +35,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             var agentless = ciVisibilitySettings.Agentless;
             var isEvpProxy = CIVisibility.EventPlatformProxySupport != EventPlatformProxySupport.None;
 
+            Log.Information("CreateSession: Agentless: {Agentless} | IsEvpProxy: {IsEvpProxy}", agentless, isEvpProxy);
+
             // We create a test session if the flag is turned on (agentless or evp proxy)
             if (agentless || isEvpProxy)
             {
@@ -52,6 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 return session;
             }
 
+            Log.Information("CreateSession: Session was not created.");
             return null;
         }
 
