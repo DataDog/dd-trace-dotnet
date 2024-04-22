@@ -72,7 +72,7 @@ namespace Datadog.Trace.Ci
 
         protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager, ITelemetryController telemetry)
         {
-            return new CIGitMetadataTagsProvider();
+            return new CIGitMetadataTagsProvider(telemetry);
         }
 
         protected override ITraceSampler GetSampler(ImmutableTracerSettings settings)
