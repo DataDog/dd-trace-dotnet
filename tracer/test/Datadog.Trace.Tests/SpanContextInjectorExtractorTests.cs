@@ -31,13 +31,13 @@ public class SpanContextInjectorExtractorTests
 
         injector.Inject(headers, (h, k, v) => h[k] = v, context);
 
-        headers.Count.Should().Be(expected: 3);
-        headers.Keys.Should().Contain("x-datadog-trace-id");
-        headers.Keys.Should().Contain("x-datadog-parent-id");
-        headers.Keys.Should().Contain("traceparent");
-        headers["x-datadog-trace-id"].Should().Be(traceId.ToString());
-        headers["x-datadog-parent-id"].Should().Be(spanId.ToString());
-        headers["traceparent"].Should().Be($"00-{traceId:x32}-{spanId:x16}-01");
+        headers.Should().BeEquivalentTo(new Dictionary<string, string>
+        {
+            ["x-datadog-trace-id"] = traceId.ToString(),
+            ["x-datadog-parent-id"] = spanId.ToString(),
+            ["traceparent"] = $"00-{traceId:x32}-{spanId:x16}-01",
+            ["tracestate"] = $"dd=p:{spanId:x16}",
+        });
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class SpanContextInjectorExtractorTests
         headers.Length--;
         headers.Append("}");
 
-        headers.ToString().Should().Be("{{x-datadog-trace-id,123456789101112},{x-datadog-parent-id,109876543210},{traceparent,00-000000000000000000007048860f3a38-000000199526feea-01}}");
+        headers.ToString().Should().Be("{{x-datadog-trace-id,123456789101112},{x-datadog-parent-id,109876543210},{traceparent,00-000000000000000000007048860f3a38-000000199526feea-01},{tracestate,dd=p:000000199526feea}}");
     }
 
     [Fact]
@@ -80,13 +80,17 @@ public class SpanContextInjectorExtractorTests
 
         injector.InjectIncludingDsm(headers, (h, k, v) => h[k] = v, context, "Pneumatic Tube", "cashier1");
 
-        headers.Count.Should().Be(expected: 4);
-        // regular trace propagation headers
-        headers.Keys.Should().Contain("x-datadog-trace-id");
-        headers.Keys.Should().Contain("x-datadog-parent-id");
-        headers.Keys.Should().Contain("traceparent");
-        // DSM specific header
-        headers.Keys.Should().Contain("dd-pathway-ctx-base64");
+        headers.Keys.Should().BeEquivalentTo(
+        [
+            // regular trace propagation headers
+            "x-datadog-trace-id",
+            "x-datadog-parent-id",
+            "traceparent",
+            "tracestate",
+            // DSM specific header
+            "dd-pathway-ctx-base64",
+        ]);
+
         // should not throw (i.e. should be valid base64)
         Convert.FromBase64String(headers["dd-pathway-ctx-base64"]).Should().NotBeEmpty();
 
@@ -105,11 +109,14 @@ public class SpanContextInjectorExtractorTests
 
         injector.InjectIncludingDsm(headers, (h, k, v) => h[k] = v, context, "Pneumatic Tube", "cashier1");
 
-        headers.Count.Should().Be(expected: 3);
-        // regular trace propagation headers only
-        headers.Keys.Should().Contain("x-datadog-trace-id");
-        headers.Keys.Should().Contain("x-datadog-parent-id");
-        headers.Keys.Should().Contain("traceparent");
+        headers.Keys.Should().BeEquivalentTo(
+        [
+            // regular trace propagation headers
+            "x-datadog-trace-id",
+            "x-datadog-parent-id",
+            "traceparent",
+            "tracestate",
+        ]);
     }
 
     [Fact]
