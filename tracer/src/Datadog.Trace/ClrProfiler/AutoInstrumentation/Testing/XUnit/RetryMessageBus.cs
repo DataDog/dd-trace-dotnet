@@ -50,7 +50,7 @@ internal class RetryMessageBus : IMessageBus
         var totalExecutions = TotalExecutions;
 
         // Let's store all messages for all executions of the given test, when the test case is finished,
-        // we will try to find a passing execution to flush, is not we will flush the first one.
+        // we will try to find a passing execution to flush, if not we will flush the first one.
         var currentExecutionNumber = ExecutionNumber + 1;
         var index = totalExecutions - currentExecutionNumber;
         if (_listOfMessages is null)

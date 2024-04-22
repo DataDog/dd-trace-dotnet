@@ -221,7 +221,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             if (testMethod == null)
             {
-                Log.Warning("Test method cannot be found.");
+                Log.Warning("Test method cannot be found. ITest.Method(IMethodInfo).MethodInfo is null.");
                 return null;
             }
 
