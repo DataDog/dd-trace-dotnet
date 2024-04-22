@@ -32,8 +32,8 @@ public class MetricTests
     private static readonly Dictionary<string, string[]> OptionalTagsByMetricName = new()
     {
         { "event_created", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
-        { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
-        { "git_requests.settings_response", new[] { "coverage_enabled", "itrskip_enabled" } },
+        { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason" } },
+        { "git_requests.settings_response", new[] { "coverage_enabled", "itrskip_enabled", "early_flake_detection_enabled" } },
     };
 
     private static readonly Dictionary<string, List<string>> OneOfTagsByMetricName = new()
@@ -111,7 +111,12 @@ public class MetricTests
                                             ? expectedPrefixes.Count - (oneOfList.Count - 1)
                                             : expectedPrefixes.Count;
 
-                    var permutationExcludingOptional = permutation.Except(optionalPrefixes);
+                    var permutationExcludingOptional = permutation.Where(
+                        item =>
+                        {
+                            item = item.Contains(":") ? item.Substring(0, item.IndexOf(":", StringComparison.Ordinal)) : item;
+                            return !optionalPrefixes.Contains(item);
+                        });
                     permutationExcludingOptional.Should().HaveCount(expectedCount, $"Received: {permutation.Length}, {implementation.Metric} should supply all the expected tags ({string.Join(",", expectedMetric.TagPrefixes)})");
                 }
             }

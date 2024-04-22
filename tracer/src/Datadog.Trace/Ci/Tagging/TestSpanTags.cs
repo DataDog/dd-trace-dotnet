@@ -91,4 +91,10 @@ internal partial class TestSpanTags : TestSuiteSpanTags
 
     [Tag(IntelligentTestRunnerTags.ForcedRunTag)]
     public string ForcedRun { get; set; }
+
+    [Tag(EarlyFlakeDetectionTags.TestIsNew)]
+    public string EarlyFlakeDetectionTestIsNew { get; set; }
+
+    [Tag(EarlyFlakeDetectionTags.TestIsRetry)]
+    public string EarlyFlakeDetectionTestIsRetry { get; set; }
 }

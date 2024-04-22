@@ -119,6 +119,7 @@ namespace Datadog.Trace.Tools.Runner
             // Initialize flags to enable code coverage and test skipping
             var codeCoverageEnabled = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
             var testSkippingEnabled = ciVisibilitySettings.TestsSkippingEnabled == true;
+            var earlyFlakeDetectionEnabled = ciVisibilitySettings.EarlyFlakeDetectionEnabled == true;
 
             var createTestSession = false;
             string codeCoveragePath = null;
@@ -173,7 +174,7 @@ namespace Datadog.Trace.Tools.Runner
 
                 // If we still don't know if we have to enable code coverage or test skipping, then let's request the configuration API
                 if (ciVisibilitySettings.IntelligentTestRunnerEnabled
-                 && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
+                 && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null || ciVisibilitySettings.EarlyFlakeDetectionEnabled == null))
                 {
                     try
                     {
@@ -192,8 +193,9 @@ namespace Datadog.Trace.Tools.Runner
                             itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
                         }
 
-                        codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
+                        codeCoverageEnabled = codeCoverageEnabled || itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
                         testSkippingEnabled = itrSettings.TestsSkipping == true;
+                        earlyFlakeDetectionEnabled = earlyFlakeDetectionEnabled || itrSettings.EarlyFlakeDetection.Enabled == true;
                     }
                     catch (Exception ex)
                     {
@@ -204,8 +206,11 @@ namespace Datadog.Trace.Tools.Runner
 
             Log.Debug("RunCiCommand: CodeCoverageEnabled = {Value}", codeCoverageEnabled);
             Log.Debug("RunCiCommand: TestSkippingEnabled = {Value}", testSkippingEnabled);
+            Log.Debug("RunCiCommand: EarlyFlakeDetectionEnabled = {Value}", earlyFlakeDetectionEnabled);
             ciVisibilitySettings.SetCodeCoverageEnabled(codeCoverageEnabled);
+            ciVisibilitySettings.SetEarlyFlakeDetectionEnabled(earlyFlakeDetectionEnabled);
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
+            profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled] = earlyFlakeDetectionEnabled ? "1" : "0";
 
             if (!testSkippingEnabled)
             {
@@ -302,6 +307,10 @@ namespace Datadog.Trace.Tools.Runner
                 session = TestSession.InternalGetOrCreate(command, null, null, null, true);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, codeCoverageEnabled ? "true" : "false");
+                if (earlyFlakeDetectionEnabled)
+                {
+                    session.SetTag(EarlyFlakeDetectionTags.Enabled, "true");
+                }
 
                 // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
                 // In that case we tell the backend no tests are going to be skipped.

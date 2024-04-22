@@ -72,6 +72,10 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> TestsSkippedBytes => new byte[] { 184, 95, 100, 100, 46, 99, 105, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 101, 100 };
         // IntelligentTestRunnerSkippingTypeBytes = MessagePack.Serialize("test.itr.tests_skipping.type");
         private static ReadOnlySpan<byte> IntelligentTestRunnerSkippingTypeBytes => new byte[] { 188, 116, 101, 115, 116, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 105, 110, 103, 46, 116, 121, 112, 101 };
+        // EarlyFlakeDetectionTestEnabledBytes = MessagePack.Serialize("test.early_flake.enabled");
+        private static ReadOnlySpan<byte> EarlyFlakeDetectionTestEnabledBytes => new byte[] { 184, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 101, 110, 97, 98, 108, 101, 100 };
+        // EarlyFlakeDetectionTestAbortReasonBytes = MessagePack.Serialize("test.early_flake.abort_reason");
+        private static ReadOnlySpan<byte> EarlyFlakeDetectionTestAbortReasonBytes => new byte[] { 189, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 97, 98, 111, 114, 116, 95, 114, 101, 97, 115, 111, 110 };
 
         public override string? GetTag(string key)
         {
@@ -106,6 +110,8 @@ namespace Datadog.Trace.Ci.Tagging
                 "_dd.ci.env_vars" => CiEnvVars,
                 "_dd.ci.itr.tests_skipped" => TestsSkipped,
                 "test.itr.tests_skipping.type" => IntelligentTestRunnerSkippingType,
+                "test.early_flake.enabled" => EarlyFlakeDetectionTestEnabled,
+                "test.early_flake.abort_reason" => EarlyFlakeDetectionTestAbortReason,
                 _ => base.GetTag(key),
             };
         }
@@ -197,6 +203,12 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "test.itr.tests_skipping.type": 
                     IntelligentTestRunnerSkippingType = value;
+                    break;
+                case "test.early_flake.enabled": 
+                    EarlyFlakeDetectionTestEnabled = value;
+                    break;
+                case "test.early_flake.abort_reason": 
+                    EarlyFlakeDetectionTestAbortReason = value;
                     break;
                 case "library_version": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(TestSessionSpanTags));
@@ -352,6 +364,16 @@ namespace Datadog.Trace.Ci.Tagging
             if (IntelligentTestRunnerSkippingType is not null)
             {
                 processor.Process(new TagItem<string>("test.itr.tests_skipping.type", IntelligentTestRunnerSkippingType, IntelligentTestRunnerSkippingTypeBytes));
+            }
+
+            if (EarlyFlakeDetectionTestEnabled is not null)
+            {
+                processor.Process(new TagItem<string>("test.early_flake.enabled", EarlyFlakeDetectionTestEnabled, EarlyFlakeDetectionTestEnabledBytes));
+            }
+
+            if (EarlyFlakeDetectionTestAbortReason is not null)
+            {
+                processor.Process(new TagItem<string>("test.early_flake.abort_reason", EarlyFlakeDetectionTestAbortReason, EarlyFlakeDetectionTestAbortReasonBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -559,6 +581,20 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.itr.tests_skipping.type (tag):")
                   .Append(IntelligentTestRunnerSkippingType)
+                  .Append(',');
+            }
+
+            if (EarlyFlakeDetectionTestEnabled is not null)
+            {
+                sb.Append("test.early_flake.enabled (tag):")
+                  .Append(EarlyFlakeDetectionTestEnabled)
+                  .Append(',');
+            }
+
+            if (EarlyFlakeDetectionTestAbortReason is not null)
+            {
+                sb.Append("test.early_flake.abort_reason (tag):")
+                  .Append(EarlyFlakeDetectionTestAbortReason)
                   .Append(',');
             }
 

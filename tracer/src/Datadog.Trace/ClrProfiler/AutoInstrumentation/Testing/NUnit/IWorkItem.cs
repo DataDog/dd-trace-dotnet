@@ -5,13 +5,14 @@
 
 using System;
 using System.Reflection;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     /// <summary>
     /// DuckTyping interface for NUnit.Framework.Internal.Execution.WorkItem
     /// </summary>
-    internal interface IWorkItem
+    internal interface IWorkItem : IDuckType
     {
         /// <summary>
         /// Gets the test being executed by the work item
