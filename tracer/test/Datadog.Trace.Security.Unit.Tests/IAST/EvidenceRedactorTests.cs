@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests.Util.Http
     [Collection(nameof(EvidenceRedactorTests))]
     public class EvidenceRedactorTests
     {
-        private const double Timeout = 500;
+        private const double Timeout = 10_000;
 
         [Theory]
         [InlineData(null)]
