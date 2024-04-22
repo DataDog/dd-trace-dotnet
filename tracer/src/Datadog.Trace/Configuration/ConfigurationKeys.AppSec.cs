@@ -98,7 +98,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Unless set to true or 1, tracers don’t collect schemas. After the experiment, the environment variable will be removed and schema collection will be enabled only when ASM is enabled
             /// </summary>
-            internal const string ApiExperimentalSecurityEnabled = "DD_EXPERIMENTAL_API_SECURITY_ENABLED";
+            internal const string ApiSecurityEnabled = "DD_API_SECURITY_ENABLED";
 
             /// <summary>
             /// Api security sample delay in seconds , should be a float. Set to 0 for testing purposes. default value of 30.
