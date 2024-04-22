@@ -167,8 +167,7 @@
       "tracer\\test\\test-applications\\Samples.Shared\\Samples.Shared.shproj",
       "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCore2\\Samples.Security.AspNetCore2.csproj",
       "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCore5\\Samples.Security.AspNetCore5.csproj",
-      "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCoreBare\\Samples.Security.AspNetCoreBare.csproj",
-      "tracer\\test\\test-applications\\security\\Samples.Security.GrpcDotNet\\Samples.Security.GrpcDotNet.csproj"
+      "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCoreBare\\Samples.Security.AspNetCoreBare.csproj"
     ]
   }
 }
