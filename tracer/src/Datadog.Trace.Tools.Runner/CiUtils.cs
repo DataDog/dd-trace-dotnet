@@ -285,15 +285,13 @@ internal static class CiUtils
                 {
                     if (doubleDashIndex == -1)
                     {
-                        lstArguments.Add("/TestAdapterPath:");
-                        lstArguments.Add(baseDirectory);
+                        lstArguments.Add("/TestAdapterPath:" + baseDirectory);
                         lstArguments.Add("/Collect:DatadogCoverage");
                     }
                     else
                     {
-                        lstArguments.Insert(doubleDashIndex, "/TestAdapterPath:");
-                        lstArguments.Insert(doubleDashIndex + 1, baseDirectory);
-                        lstArguments.Insert(doubleDashIndex + 2, "/Collect:DatadogCoverage");
+                        lstArguments.Insert(doubleDashIndex, "/TestAdapterPath:" + baseDirectory);
+                        lstArguments.Insert(doubleDashIndex + 1, "/Collect:DatadogCoverage");
                     }
 
                     Log.Debug("DatadogCoverage data collector added as a command argument");
