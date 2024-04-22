@@ -48,7 +48,7 @@ internal class IntelligentTestRunnerClient
     private const string CommitType = "commit";
     private const string TestParamsType = "test_params";
     private const string SettingsType = "ci_app_test_service_libraries_settings";
-    private const string EfdRequestType = "ci_app_libraries_tests_request";
+    private const string EarlyFlakeDetectionRequestType = "ci_app_libraries_tests_request";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntelligentTestRunnerClient));
     private static readonly Regex ShaRegex = new("[0-9a-f]+", RegexOptions.Compiled);
@@ -65,7 +65,7 @@ internal class IntelligentTestRunnerClient
     private readonly Uri _searchCommitsUrl;
     private readonly Uri _packFileUrl;
     private readonly Uri _skippableTestsUrl;
-    private readonly Uri _efdTestsUrl;
+    private readonly Uri _earlyFlakeDetectionTestsUrl;
     private readonly EventPlatformProxySupport _eventPlatformProxySupport;
     private readonly Task<string> _getRepositoryUrlTask;
     private readonly Task<string> _getBranchNameTask;
@@ -105,7 +105,7 @@ internal class IntelligentTestRunnerClient
                 _searchCommitsUrl = new UriBuilder(agentlessUrl) { Path = searchCommitsUrlPath }.Uri;
                 _packFileUrl = new UriBuilder(agentlessUrl) { Path = packFileUrlPath }.Uri;
                 _skippableTestsUrl = new UriBuilder(agentlessUrl) { Path = skippableTestsUrlPath }.Uri;
-                _efdTestsUrl = new UriBuilder(agentlessUrl) { Path = efdTestsUrlPath }.Uri;
+                _earlyFlakeDetectionTestsUrl = new UriBuilder(agentlessUrl) { Path = efdTestsUrlPath }.Uri;
             }
             else
             {
@@ -133,7 +133,7 @@ internal class IntelligentTestRunnerClient
                     port: 443,
                     pathValue: skippableTestsUrlPath).Uri;
 
-                _efdTestsUrl = new UriBuilder(
+                _earlyFlakeDetectionTestsUrl = new UriBuilder(
                     scheme: "https",
                     host: "api." + _settings.Site,
                     port: 443,
@@ -152,14 +152,14 @@ internal class IntelligentTestRunnerClient
                     _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{searchCommitsUrlPath}");
                     _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{packFileUrlPath}");
                     _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{skippableTestsUrlPath}");
-                    _efdTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{efdTestsUrlPath}");
+                    _earlyFlakeDetectionTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{efdTestsUrlPath}");
                     break;
                 case EventPlatformProxySupport.V4:
                     _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{settingsUrlPath}");
                     _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{searchCommitsUrlPath}");
                     _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{packFileUrlPath}");
                     _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{skippableTestsUrlPath}");
-                    _efdTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{efdTestsUrlPath}");
+                    _earlyFlakeDetectionTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{efdTestsUrlPath}");
                     break;
                 default:
                     throw new NotSupportedException("Event platform proxy not supported by the agent.");
@@ -413,13 +413,13 @@ internal class IntelligentTestRunnerClient
                 var settingsResponse = deserializedResult.Data?.Attributes ?? default;
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsResponse(settingsResponse switch
                 {
-                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: !true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled,
-                    { CodeCoverage: true, TestsSkipping: !true, EarlyFlakeDetection.Enabled: !true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled,
-                    { CodeCoverage: !true, TestsSkipping: true, EarlyFlakeDetection.Enabled: !true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled,
-                    { CodeCoverage: !true, TestsSkipping: !true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled,
+                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled,
+                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled,
+                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled,
+                    { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled,
                     { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled,
-                    { CodeCoverage: true, TestsSkipping: !true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled,
-                    { CodeCoverage: !true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled,
+                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled,
+                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled,
                     _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled,
                 });
                 return settingsResponse;
@@ -686,7 +686,7 @@ internal class IntelligentTestRunnerClient
         var query = new DataEnvelope<Data<EarlyFlakeDetectionQuery>>(
             new Data<EarlyFlakeDetectionQuery>(
                 currentSha,
-                EfdRequestType,
+                EarlyFlakeDetectionRequestType,
                 new EarlyFlakeDetectionQuery(
                     _serviceName,
                     _environment,
@@ -712,12 +712,12 @@ internal class IntelligentTestRunnerClient
             try
             {
                 TelemetryFactory.Metrics.RecordCountCIVisibilityEarlyFlakeDetectionRequest();
-                var request = _apiRequestFactory.Create(_efdTestsUrl);
+                var request = _apiRequestFactory.Create(_earlyFlakeDetectionTestsUrl);
                 SetRequestHeader(request);
 
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("ITR: Getting early flake detection tests from: {Url}", _efdTestsUrl.ToString());
+                    Log.Debug("ITR: Getting early flake detection tests from: {Url}", _earlyFlakeDetectionTestsUrl.ToString());
                 }
 
                 string? responseContent;

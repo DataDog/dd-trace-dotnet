@@ -139,10 +139,11 @@ public static class TestMethodAttributeExecuteIntegration
                 else
                 {
                     remainingRetries = 1;
-                    Common.Log.Information("EFD: Number of executions has been set to 1. Current test duration is {Value}", duration);
+                    Common.Log.Information("EFD: Number of executions has been set to 1 (No retries). Current test duration is {Value}", duration);
                 }
 
-                if (--remainingRetries > 0)
+                remainingRetries--;
+                if (remainingRetries > 0)
                 {
                     // Handle retries
                     var results = new IList[remainingRetries + 1];

@@ -45,7 +45,7 @@ public static class UnitTestRunnerRunSingleTestIntegration
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        var methodInfoCacheItem = (MethodInfoCacheItem)MsTestIntegration.IsTestMethodRunnableThreadLocal.Value;
+        var methodInfoCacheItem = MsTestIntegration.IsTestMethodRunnableThreadLocal.Value;
         MsTestIntegration.IsTestMethodRunnableThreadLocal.Value = null;
 
         if (methodInfoCacheItem is not null && returnValue is IList { Count: > 0 } lstResults)

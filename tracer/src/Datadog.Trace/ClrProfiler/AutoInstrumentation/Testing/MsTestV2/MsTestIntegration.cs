@@ -23,7 +23,7 @@ internal static class MsTestIntegration
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.MsTestV2;
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsTestIntegration));
 
-    internal static readonly ThreadLocal<object> IsTestMethodRunnableThreadLocal = new();
+    internal static readonly ThreadLocal<MethodInfoCacheItem> IsTestMethodRunnableThreadLocal = new();
 
     internal static readonly ConditionalWeakTable<object, TestModule> TestModuleByTestAssemblyInfos = new();
     internal static readonly ConditionalWeakTable<object, TestSuite> TestSuiteByTestClassInfos = new();
