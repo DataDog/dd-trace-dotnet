@@ -36,6 +36,7 @@ public class SpanContextInjectorExtractorTests
             ["x-datadog-trace-id"] = traceId.ToString(),
             ["x-datadog-parent-id"] = spanId.ToString(),
             ["traceparent"] = $"00-{traceId:x32}-{spanId:x16}-01",
+            ["tracestate"] = $"dd=p:{spanId:x16}",
         });
     }
 
@@ -51,7 +52,7 @@ public class SpanContextInjectorExtractorTests
         headers.Length--;
         headers.Append("}");
 
-        headers.ToString().Should().Be("{{x-datadog-trace-id,123456789101112},{x-datadog-parent-id,109876543210},{traceparent,00-000000000000000000007048860f3a38-000000199526feea-01}}");
+        headers.ToString().Should().Be("{{x-datadog-trace-id,123456789101112},{x-datadog-parent-id,109876543210},{traceparent,00-000000000000000000007048860f3a38-000000199526feea-01},{tracestate,dd=p:000000199526feea}}");
     }
 
     [Fact]
@@ -85,6 +86,7 @@ public class SpanContextInjectorExtractorTests
             "x-datadog-trace-id",
             "x-datadog-parent-id",
             "traceparent",
+            "tracestate",
             // DSM specific header
             "dd-pathway-ctx-base64",
         ]);
@@ -113,6 +115,7 @@ public class SpanContextInjectorExtractorTests
             "x-datadog-trace-id",
             "x-datadog-parent-id",
             "traceparent",
+            "tracestate",
         ]);
     }
 
