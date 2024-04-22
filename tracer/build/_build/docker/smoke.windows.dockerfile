@@ -34,8 +34,7 @@ RUN mkdir /logs; \
     rm /install -r -fo
 
 # Set the additional env vars
-ENV DD_TRACE_PROPAGATION_STYLE_EXTRACT=Datadog \
-    DD_PROFILING_ENABLED=1 \
+ENV DD_PROFILING_ENABLED=1 \
     DD_APPSEC_ENABLED=1 \
     DD_TRACE_DEBUG=1 \
     CORECLR_ENABLE_PROFILING=1 \
