@@ -70,9 +70,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             PrintTestInfo();
         }
 
-        public ProcessHelper LaunchProcess(MockDatadogAgent agent = null)
+        public ProcessHelper LaunchProcess(MockDatadogAgent agent = null, bool catchsegv = true)
         {
-            var (executor, arguments) = BuildTestCommandLine();
+            var (executor, arguments) = BuildTestCommandLine(catchsegv);
 
             var process = new Process();
 
@@ -118,7 +118,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return Path.Combine(GetApplicationOutputFolderPath(_appName), _framework, GetApplicationAssemblyFileName());
         }
 
-        private (string Executor, string Arguments) BuildTestCommandLine()
+        private (string Executor, string Arguments) BuildTestCommandLine(bool catchsegv = true)
         {
             var applicationPath = GetApplicationPath();
 

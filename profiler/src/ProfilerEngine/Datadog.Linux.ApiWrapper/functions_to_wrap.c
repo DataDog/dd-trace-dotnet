@@ -69,18 +69,6 @@ void initLibrary(void) {
 
     if (crashHandler != NULL && crashHandler[0] != '\0')
     {
-        char* passthrough = getenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH");
-
-        if (passthrough != NULL && passthrough[0] != '\0')
-        {
-            // If passthrough is already set, ignore everything else.
-            // This handles the case when, for example, the user calls dotnet run
-            //  - dotnet run sets DOTNET_DbgEnableMiniDump=1
-            //  - dotnet then launches the target app
-            //  - the target app thinks DOTNET_DbgEnableMiniDump has been set by the user and enables passthrough
-            return;
-        }
-
         char* enableMiniDump = getenv("DOTNET_DbgEnableMiniDump");
 
         if (enableMiniDump == NULL)
@@ -90,10 +78,23 @@ void initLibrary(void) {
 
         if (enableMiniDump != NULL && enableMiniDump[0] == '1')
         {
-            setenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", "1", 1);
+            // If DOTNET_DbgEnableMiniDump is set, the crash handler should call createdump when done
+            char* passthrough = getenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH");
+
+            if (passthrough == NULL || passthrough[0] == '\0')
+            {
+                // If passthrough is already set, don't override it
+                // This handles the case when, for example, the user calls dotnet run
+                //  - dotnet run sets DOTNET_DbgEnableMiniDump=1
+                //  - dotnet then launches the target app
+                //  - the target app thinks DOTNET_DbgEnableMiniDump has been set by the user and enables passthrough
+                setenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", "1", 1);
+            }
         }
         else
         {
+            // If DOTNET_DbgEnableMiniDump is not set, we set it so that the crash handler is called,
+            // but we instruct it to not call createdump afterwards
             setenv("COMPlus_DbgEnableMiniDump", "1", 1);
             setenv("DOTNET_DbgEnableMiniDump", "1", 1);
             setenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", "0", 1);

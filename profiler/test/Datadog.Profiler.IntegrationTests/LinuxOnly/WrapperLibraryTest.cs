@@ -86,32 +86,15 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 7");
 
-            var crashHandler = "/bin/echo";
+            RegisterCrashHandler(runner);
 
-            if (!File.Exists(crashHandler))
-            {
-                _output.WriteLine($"Crash handler {crashHandler} does not exist.");
-                throw new FileNotFoundException($"Crash handler {crashHandler} does not exist.");
-            }
-
-            runner.Environment.SetVariable("DD_TRACE_CRASH_HANDLER", "/bin/echo");
-            runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
-            runner.Environment.SetVariable("COMPlus_DbgMiniDumpType", "4");
-
-            var env = Environment.GetEnvironmentVariables();
-
-            foreach (string key in env.Keys)
-            {
-                _output.WriteLine($"{key}={env[key]}");
-            }
-
-            using var processHelper = runner.LaunchProcess();
+            using var processHelper = runner.LaunchProcess(catchsegv: false);
 
             processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
             processHelper.Drain();
             processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
-            processHelper.StandardOutput.Should().MatchRegex(@"createdump --full \d+")
-                .And.NotContain("Writing full dump");
+            processHelper.StandardOutput.Should().MatchRegex(@"createdump [\w\.\/]+createdump \d+")
+                .And.NotContain("Writing minidump");
         }
 
         [TestAppFact("Samples.ExceptionGenerator")]
@@ -122,15 +105,27 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             // Don't set DD_TRACE_CRASH_HANDLER. In that case, the call to createdump shouldn't be redirected
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpName ", "/dev/null");
-            runner.Environment.SetVariable("COMPlus_DbgMiniDumpType", "4");
 
-            using var processHelper = runner.LaunchProcess();
+            using var processHelper = runner.LaunchProcess(catchsegv: false);
 
             processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
             processHelper.Drain();
             processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
-            processHelper.StandardOutput.Should().NotMatchRegex(@"createdump --full \d+")
-                .And.Contain("Writing full dump");
+            processHelper.StandardOutput.Should().NotMatchRegex(@"createdump [\w\.\/]+createdump \d+")
+                .And.Contain("Writing minidump");
+        }
+
+        private void RegisterCrashHandler(TestApplicationRunner runner)
+        {
+            var crashHandler = "/bin/echo";
+
+            if (!File.Exists(crashHandler))
+            {
+                _output.WriteLine($"Crash handler {crashHandler} does not exist.");
+                throw new FileNotFoundException($"Crash handler {crashHandler} does not exist.");
+            }
+
+            runner.Environment.SetVariable("DD_TRACE_CRASH_HANDLER", crashHandler);
         }
     }
 }
