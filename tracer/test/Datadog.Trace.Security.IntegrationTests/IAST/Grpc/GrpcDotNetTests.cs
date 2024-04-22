@@ -17,7 +17,7 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST.GrpcDotNet;
 public class GrpcDotNetTests : TestHelper
 {
     public GrpcDotNetTests(ITestOutputHelper output)
-        : base("Security.GrpcDotNet", samplePathOverrides: "test/test-applications/security", output)
+        : base("GrpcDotNet", output)
     {
         SetServiceVersion("1.0.0");
         SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
@@ -26,6 +26,8 @@ public class GrpcDotNetTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Iast.TelemetryVerbosity, "Off");
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "200");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
+
+        SetEnvironmentVariable("IAST_GRPC_SOURCE_TEST", "1");
     }
 
     [SkippableFact]
