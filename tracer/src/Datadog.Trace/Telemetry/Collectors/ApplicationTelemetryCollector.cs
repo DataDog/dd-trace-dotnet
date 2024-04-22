@@ -1,4 +1,4 @@
-﻿// <copyright file="ApplicationTelemetryCollector.cs" company="Datadog">
+// <copyright file="ApplicationTelemetryCollector.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,6 +20,13 @@ internal class ApplicationTelemetryCollector
         ImmutableTracerSettings tracerSettings,
         string defaultServiceName)
     {
+        // Try to retrieve config based Git Info
+        GitMetadata? gitMetadata = null;
+        if (tracerSettings.GitMetadataEnabled && !string.IsNullOrEmpty(tracerSettings.GitCommitSha) && !string.IsNullOrEmpty(tracerSettings.GitRepositoryUrl))
+        {
+            gitMetadata = new GitMetadata(tracerSettings.GitCommitSha!, tracerSettings.GitRepositoryUrl!);
+        }
+
         var frameworkDescription = FrameworkDescription.Instance;
         var application = new ApplicationTelemetryData(
             serviceName: defaultServiceName,
@@ -29,7 +36,9 @@ internal class ApplicationTelemetryCollector
             languageName: TracerConstants.Language,
             languageVersion: frameworkDescription.ProductVersion,
             runtimeName: frameworkDescription.Name,
-            runtimeVersion: frameworkDescription.ProductVersion);
+            runtimeVersion: frameworkDescription.ProductVersion,
+            commitSha: gitMetadata?.CommitSha,
+            repositoryUrl: gitMetadata?.RepositoryUrl);
 
         Interlocked.Exchange(ref _applicationData, application);
 
@@ -54,6 +63,28 @@ internal class ApplicationTelemetryCollector
             KernelRelease = host.KernelRelease,
             KernelVersion = host.KernelVersion
         };
+    }
+
+    public void RecordGitMetadata(GitMetadata gitMetadata)
+    {
+        if (_applicationData is null || gitMetadata.IsEmpty)
+        {
+            return;
+        }
+
+        var application = new ApplicationTelemetryData(
+            serviceName: _applicationData.ServiceName,
+            env: _applicationData.Env,
+            serviceVersion: _applicationData.ServiceVersion,
+            tracerVersion: _applicationData.TracerVersion,
+            languageName: _applicationData.LanguageName,
+            languageVersion: _applicationData.LanguageVersion,
+            runtimeName: _applicationData.RuntimeName,
+            runtimeVersion: _applicationData.RuntimeVersion,
+            commitSha: gitMetadata.CommitSha,
+            repositoryUrl: gitMetadata.RepositoryUrl);
+
+        Interlocked.Exchange(ref _applicationData, application);
     }
 
     /// <summary>
