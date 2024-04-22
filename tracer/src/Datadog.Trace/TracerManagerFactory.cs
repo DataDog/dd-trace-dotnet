@@ -129,7 +129,6 @@ namespace Datadog.Trace
             }
 
             telemetry ??= CreateTelemetryController(settings, discoveryService);
-            telemetry.RecordTracerSettings(settings, defaultServiceName);
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager, telemetry);
             logSubmissionManager = DirectLogSubmissionManager.Create(
@@ -142,6 +141,7 @@ namespace Datadog.Trace
                 settings.ServiceVersionInternal,
                 gitMetadataTagsProvider);
 
+            telemetry.RecordTracerSettings(settings, defaultServiceName);
             TelemetryFactory.Metrics.SetWafVersion(Security.Instance.DdlibWafVersion);
             ErrorData? initError = !string.IsNullOrEmpty(Security.Instance.InitializationError)
                                        ? new ErrorData(TelemetryErrorCode.AppsecConfigurationError, Security.Instance.InitializationError)
