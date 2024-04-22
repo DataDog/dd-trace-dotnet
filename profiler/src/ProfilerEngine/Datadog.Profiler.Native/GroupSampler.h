@@ -33,6 +33,11 @@ public:
     {
     }
 
+    ~GroupSampler<TGroup>()
+    {
+        _sampler.Stop();
+    }
+
 public:
     struct GroupInfo
     {

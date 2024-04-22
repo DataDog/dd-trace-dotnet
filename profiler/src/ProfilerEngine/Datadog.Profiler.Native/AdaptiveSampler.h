@@ -1,7 +1,9 @@
 #pragma once
+
 #include <atomic>
 #include <chrono>
 #include <random>
+#include <mutex>
 
 #include "Timer.h"
 
@@ -44,6 +46,8 @@ public:
     // For tests
     State GetInternalState();
 
+    void Stop();
+
 private:
     double _emaAlpha;
     int32_t _samplesPerWindow;
@@ -63,6 +67,7 @@ private:
     Counts _countsSlots[2];
 
     Timer _timer;
+    std::mutex _callbackMutex;
     std::function<void()> _rollWindowCallback;
 
     std::mutex _rngMutex;
