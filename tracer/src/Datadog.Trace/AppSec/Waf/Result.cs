@@ -28,11 +28,13 @@ namespace Datadog.Trace.AppSec.Waf
                 if (Actions.TryGetValue(BlockingAction.BlockRequestType, out var value))
                 {
                     BlockInfo = value as Dictionary<string, object?>;
+                    ShouldBlock = true;
                 }
 
                 if (Actions.TryGetValue(BlockingAction.RedirectRequestType, out value))
                 {
                     RedirectInfo = value as Dictionary<string, object?>;
+                    ShouldBlock = true;
                 }
             }
 
@@ -61,7 +63,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindings { get; }
 
-        public bool ShouldBlock => BlockInfo is not null || RedirectInfo is not null;
+        public bool ShouldBlock { get; }
 
         public Dictionary<string, object?>? BlockInfo { get; }
 

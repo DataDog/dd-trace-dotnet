@@ -62,9 +62,6 @@ internal record ConfigurationStatus
 
     internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
-    /// <summary>
-    /// Gets or sets actions to take according to a waf result, these arent sent to the waf
-    /// </summary>
     internal IDictionary<string, Action> Actions { get; set; } = new Dictionary<string, Action>();
 
     internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
