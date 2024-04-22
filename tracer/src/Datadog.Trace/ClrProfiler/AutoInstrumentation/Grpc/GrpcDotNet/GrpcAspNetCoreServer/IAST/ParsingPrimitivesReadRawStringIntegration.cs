@@ -23,9 +23,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
     MethodName = "ReadRawString",
     ReturnTypeName = ClrNames.String,
     ParameterTypeNames = ["System.ReadOnlySpan`1[System.Byte]&", "Google.Protobuf.ParserInternalState&", ClrNames.Int32],
-    MinimumVersion = "3.18.1",
+    MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
-    IntegrationName = nameof(Grpc))]
+    IntegrationName = nameof(Grpc),
+    InstrumentationCategory = InstrumentationCategory.Iast)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ParsingPrimitivesReadRawStringIntegration
