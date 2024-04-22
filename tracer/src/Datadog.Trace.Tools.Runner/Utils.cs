@@ -42,11 +42,11 @@ namespace Datadog.Trace.Tools.Runner
             return DirectoryExists("Home", Path.Combine(runnerFolder, "..", "..", "..", "home"), Path.Combine(runnerFolder, "home"));
         }
 
-        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options, bool reducePathLength, CIVisibilityOptions ciVisibilityOptions)
+        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options, CIVisibilityOptions ciVisibilityOptions)
         {
             var tracerHomeFolder = options.TracerHome.GetValue(context);
 
-            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, tracerHomeFolder, reducePathLength, ciVisibilityOptions);
+            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, tracerHomeFolder, ciVisibilityOptions);
 
             var environment = options.Environment.GetValue(context);
 
@@ -79,9 +79,9 @@ namespace Datadog.Trace.Tools.Runner
             return envVars;
         }
 
-        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, LegacySettings options, bool reducePathLength, CIVisibilityOptions ciVisibilityOptions)
+        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, LegacySettings options, CIVisibilityOptions ciVisibilityOptions)
         {
-            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHomeFolderOption.GetValue(context), reducePathLength, ciVisibilityOptions);
+            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHomeFolderOption.GetValue(context), ciVisibilityOptions);
 
             var environment = options.EnvironmentOption.GetValue(context);
 
@@ -426,7 +426,7 @@ namespace Datadog.Trace.Tools.Runner
             return false;
         }
 
-        private static Dictionary<string, string> GetBaseProfilerEnvironmentVariables(string runnerFolder, Platform platform, string tracerHomeFolder, bool reducePathLength, CIVisibilityOptions ciVisibilityOptions = null)
+        private static Dictionary<string, string> GetBaseProfilerEnvironmentVariables(string runnerFolder, Platform platform, string tracerHomeFolder, CIVisibilityOptions ciVisibilityOptions = null)
         {
             string tracerHome = null;
             if (!string.IsNullOrEmpty(tracerHomeFolder))
@@ -446,7 +446,7 @@ namespace Datadog.Trace.Tools.Runner
                 return null;
             }
 
-            if (reducePathLength)
+            if (ciVisibilityOptions?.ReducePathLength == true)
             {
                 // Due to:
                 // https://developercommunity.visualstudio.com/t/vsotasksetvariable-contains-logging-command-keywor/1249340#T-N1253996
@@ -889,9 +889,9 @@ namespace Datadog.Trace.Tools.Runner
             }
         }
 
-        public record CIVisibilityOptions(bool EnableGacInstallation, bool EnableVsTestConsoleConfigModification)
+        public record CIVisibilityOptions(bool EnableGacInstallation, bool EnableVsTestConsoleConfigModification, bool ReducePathLength)
         {
-            public static CIVisibilityOptions None { get; } = new(false, false);
+            public static CIVisibilityOptions None { get; } = new(false, false, false);
         }
     }
 }

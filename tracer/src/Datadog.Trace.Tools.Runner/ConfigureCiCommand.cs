@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using Datadog.Trace.Ci;
+using System.Threading.Tasks;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
@@ -22,21 +22,21 @@ namespace Datadog.Trace.Tools.Runner
             };
 
         private readonly ApplicationContext _applicationContext;
+        private readonly CommonTracerSettings _commonTracerSettings;
         private readonly Argument<string> _nameArgument = new("ci-name") { Arity = ArgumentArity.ZeroOrOne };
-        private readonly CommonTracerSettings _tracerSettings;
 
         public ConfigureCiCommand(ApplicationContext applicationContext)
             : base("configure", "Set the environment variables for the CI")
         {
             _applicationContext = applicationContext;
-
-            _tracerSettings = new(this);
             AddArgument(_nameArgument);
+
+            _commonTracerSettings = new(this);
 
             AddExample("dd-trace ci configure azp");
             AddExample("dd-trace ci configure jenkins");
 
-            this.SetHandler(Execute);
+            this.SetHandler(ExecuteAsync);
         }
 
         private static bool TryExtractCiName(string name, out CIName? ciName)
@@ -58,27 +58,16 @@ namespace Datadog.Trace.Tools.Runner
             return false;
         }
 
-        private void Execute(InvocationContext context)
+        private async Task ExecuteAsync(InvocationContext context)
         {
-            var profilerEnvironmentVariables = Utils.GetProfilerEnvironmentVariables(
-                context,
-                _applicationContext.RunnerFolder,
-                _applicationContext.Platform,
-                _tracerSettings,
-                reducePathLength: true,
-                ciVisibilityOptions: new(CIVisibility.Settings.InstallDatadogTraceInGac, true));
+            var name = _nameArgument.GetValue(context);
 
-            if (profilerEnvironmentVariables == null)
+            // Initialize and configure CI Visibility for this command
+            var initResults = await CiUtils.InitializeCiCommandsAsync(_applicationContext, context, _commonTracerSettings, null, string.Empty, [], true).ConfigureAwait(false);
+            if (!initResults.Success)
             {
-                context.ExitCode = 1;
                 return;
             }
-
-            // Enable CI Visibility mode
-            profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
-            profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath] = AppContext.BaseDirectory;
-
-            var name = _nameArgument.GetValue(context);
 
             if (!TryExtractCiName(name, out var ciName))
             {
@@ -88,7 +77,7 @@ namespace Datadog.Trace.Tools.Runner
 
             AnsiConsole.WriteLine("Setting up the environment variables.");
 
-            if (!CIConfiguration.SetupCIEnvironmentVariables(profilerEnvironmentVariables, ciName))
+            if (!CIConfiguration.SetupCIEnvironmentVariables(initResults.ProfilerEnvironmentVariables, ciName))
             {
                 context.ExitCode = 1;
                 return;
