@@ -54,6 +54,28 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Datadog.Trace.AppSec.Rcm.Models.Asm.Action>() }, AsmProduct, nameof(TestBlockingAction)) });
         }
 
+        [SkippableTheory]
+        [InlineData("test")]
+        [InlineData("bad_password")]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestBlockByAuth(string password)
+        {
+            var url = "/Account/Index";
+            await TryStartApp();
+            var agent = Fixture.Agent;
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(password);
+            await agent.SetupRcmAndWait(Output, new[]
+            {
+                ((object)new Payload { Actions = new[] { new Datadog.Trace.AppSec.Rcm.Models.Asm.Action { Id = "block_by_auth", Type = "block_by_auth" } } }, AsmProduct, nameof(TestBlockingAction) + Guid.NewGuid())
+            });
+
+            await TestAppSecRequestWithVerifyAsync(agent, url, $"Input.UserName=TestUser&Input.Password={password}", 1, 1, settings, contentType: "application/x-www-form-urlencoded", methodNameOverride: nameof(TestBlockByAuth));
+
+            // need to reset if the process is going to be reused
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Datadog.Trace.AppSec.Rcm.Models.Asm.Action>() }, AsmProduct, nameof(TestBlockingAction)) });
+        }
+
         protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmActionsConfiguration);
     }
 }

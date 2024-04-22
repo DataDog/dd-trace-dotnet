@@ -28,4 +28,9 @@ public interface ISignInResult
     /// Gets a value indicating whether the user attempting to sign-in is not allowed to sign-in.
     /// </summary>
     public bool IsNotAllowed { get; }
+
+    /// <summary>
+    /// Gets a SignInResult that represents a failed sign-in.
+    /// </summary>
+    public ISignInResult Failed { get; }
 }

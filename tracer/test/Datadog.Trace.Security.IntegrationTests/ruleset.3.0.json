@@ -38,6 +38,33 @@
       ]
     },
     {
+      "id": "block_auth_malicious",
+      "name": "Hello",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.uri.raw"
+              }
+            ],
+            "regex": "Account"
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": [
+        "lowercase"
+      ],
+      "on_match": [
+        "block_by_auth"
+      ]
+    },
+    {
       "id": "crs-913-110",
       "name": "Acunetix",
       "tags": {

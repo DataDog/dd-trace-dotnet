@@ -16,6 +16,8 @@ internal abstract class HttpTransportBase
 
     internal abstract bool IsBlocked { get; }
 
+    internal abstract bool IsBlockedByAuthentication { get; }
+
     internal abstract int StatusCode { get; }
 
     internal abstract IDictionary<string, object>? RouteData { get; }
@@ -36,4 +38,6 @@ internal abstract class HttpTransportBase
     internal abstract IHeadersCollection GetResponseHeaders();
 
     internal abstract void MarkBlocked();
+
+    internal abstract void MarkBlockedByAuthentication();
 }
