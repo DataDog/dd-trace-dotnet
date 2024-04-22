@@ -69,7 +69,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     test.Close(Ci.TestStatus.Fail);
                     break;
                 default:
-                {
                     if (!string.IsNullOrEmpty(resultMessage))
                     {
                         test.SetTag(TestTags.Message, resultMessage);
@@ -77,7 +76,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
                     test.Close(Ci.TestStatus.Pass);
                     break;
-                }
             }
         }
 
@@ -198,17 +196,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             resultMessage = result.Message ?? string.Empty;
             while (true)
             {
+                // Formatted result messages in NUnit contains the exception type and the type, but also can contain the origin so we can end up having something like:
+                // SetUpException: System.Exception: Exception of type 'System.Exception' was thrown.
+                // The goal of this algorithm is to extract the exception type and the message from the formatted message.
                 var resultSplittedMessage = resultMessage.Split(':');
-                if (resultSplittedMessage.Length < 2 ||
-                    resultSplittedMessage[0]?.Trim() is not { Length: > 0 } exType ||
-                    exType.Contains(" "))
+                var tmpExType = resultSplittedMessage[0].Trim();
+
+                if (resultSplittedMessage.Length < 2 || string.IsNullOrWhiteSpace(tmpExType))
                 {
                     Common.Log.Debug("Exception type: {ExceptionType}, Message: {ResultMessage}", exceptionType, resultMessage);
                     break;
                 }
 
                 resultMessage = string.Join(":", resultSplittedMessage.Skip(1)).Trim();
-                exceptionType = exType;
+                exceptionType = tmpExType;
             }
         }
 
