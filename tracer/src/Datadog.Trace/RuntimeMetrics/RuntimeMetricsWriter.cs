@@ -48,6 +48,9 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();
 
+        // The time when the runtime metrics were last pushed
+        private DateTime _lastUpdate;
+
         private TimeSpan _previousUserCpu;
         private TimeSpan _previousSystemCpu;
 
@@ -60,7 +63,7 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             _delay = delay;
             _statsd = statsd;
-            _timer = new Timer(_ => PushEvents(), null, delay, delay);
+            _lastUpdate = DateTime.UtcNow;
 
             try
             {
@@ -109,6 +112,8 @@ namespace Datadog.Trace.RuntimeMetrics
             {
                 Log.Warning(ex, "Unable to initialize runtime listener, some runtime metrics will be missing");
             }
+
+            _timer = new Timer(_ => PushEvents(), null, delay, Timeout.InfiniteTimeSpan);
         }
 
         /// <summary>
@@ -126,8 +131,13 @@ namespace Datadog.Trace.RuntimeMetrics
 
         internal void PushEvents()
         {
+            var now = DateTime.UtcNow;
+
             try
             {
+                var elapsedSinceLastUpdate = now - _lastUpdate;
+                _lastUpdate = now;
+
                 _listener?.Refresh();
 
                 if (_enableProcessMetrics)
@@ -142,7 +152,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
                     // Note: the behavior of Environment.ProcessorCount has changed a lot accross version: https://github.com/dotnet/runtime/issues/622
                     // What we want is the number of cores attributed to the container, which is the behavior in 3.1.2+ (and, I believe, in 2.x)
-                    var maximumCpu = Environment.ProcessorCount * _delay.TotalMilliseconds;
+                    var maximumCpu = Environment.ProcessorCount * elapsedSinceLastUpdate.TotalMilliseconds;
                     var totalCpu = userCpu + systemCpu;
 
                     _statsd.Gauge(MetricsNames.ThreadsCount, threadCount);
@@ -158,8 +168,8 @@ namespace Datadog.Trace.RuntimeMetrics
 #endif
 
                     // Get CPU time in milliseconds per second
-                    _statsd.Gauge(MetricsNames.CpuUserTime, userCpu.TotalMilliseconds / _delay.TotalSeconds);
-                    _statsd.Gauge(MetricsNames.CpuSystemTime, systemCpu.TotalMilliseconds / _delay.TotalSeconds);
+                    _statsd.Gauge(MetricsNames.CpuUserTime, userCpu.TotalMilliseconds / elapsedSinceLastUpdate.TotalSeconds);
+                    _statsd.Gauge(MetricsNames.CpuSystemTime, systemCpu.TotalMilliseconds / elapsedSinceLastUpdate.TotalSeconds);
 
                     _statsd.Gauge(MetricsNames.CpuPercentage, Math.Round(totalCpu.TotalMilliseconds * 100 / maximumCpu, 1, MidpointRounding.AwayFromZero));
 
@@ -187,6 +197,25 @@ namespace Datadog.Trace.RuntimeMetrics
             catch (Exception ex)
             {
                 Log.Warning(ex, "Error while updating runtime metrics");
+            }
+            finally
+            {
+                var callbackExecutionDuration = DateTime.UtcNow - now;
+
+                var newDelay = _delay - callbackExecutionDuration;
+
+                if (newDelay < TimeSpan.Zero)
+                {
+                    newDelay = _delay;
+                }
+
+                try
+                {
+                    _timer.Change(newDelay, Timeout.InfiniteTimeSpan);
+                }
+                catch (ObjectDisposedException)
+                {
+                }
             }
         }
 
