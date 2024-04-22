@@ -49,7 +49,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();
 
         // The time when the runtime metrics were last pushed
-        private DateTime? _lastUpdate;
+        private DateTime _lastUpdate;
 
         private TimeSpan _previousUserCpu;
         private TimeSpan _previousSystemCpu;
@@ -63,6 +63,7 @@ namespace Datadog.Trace.RuntimeMetrics
         {
             _delay = delay;
             _statsd = statsd;
+            _lastUpdate = DateTime.UtcNow;
 
             try
             {
@@ -134,7 +135,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             try
             {
-                var elapsedSinceLastUpdate = _lastUpdate == null ? _delay : now - _lastUpdate.Value;
+                var elapsedSinceLastUpdate = now - _lastUpdate;
                 _lastUpdate = now;
 
                 _listener?.Refresh();
@@ -199,9 +200,9 @@ namespace Datadog.Trace.RuntimeMetrics
             }
             finally
             {
-                var callbackExecutionTime = DateTime.UtcNow - now;
+                var callbackExecutionDuration = DateTime.UtcNow - now;
 
-                var newDelay = _delay - callbackExecutionTime;
+                var newDelay = _delay - callbackExecutionDuration;
 
                 if (newDelay < TimeSpan.Zero)
                 {
