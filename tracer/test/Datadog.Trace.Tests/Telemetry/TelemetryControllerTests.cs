@@ -81,6 +81,39 @@ public class TelemetryControllerTests
     }
 
     [Fact]
+    public async Task TelemetryControllerShouldUpdateGitMetadataWithTelemetry()
+    {
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+
+        var controller = new TelemetryController(
+            new ConfigurationTelemetry(),
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            _flushInterval);
+
+        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.Start();
+
+        var data = await WaitForRequestStarted(transport, _timeout);
+        data.FirstOrDefault().Application.CommitSha.Should().BeNullOrEmpty();
+        data.FirstOrDefault().Application.RepositoryUrl.Should().BeNullOrEmpty();
+
+        var sha = "testCommitSha";
+        var repo = "testRepositoryUrl";
+        controller.RecordGitMetadata(new GitMetadata(sha, repo));
+
+        transport.Clear();
+        data = await WaitFor(transport, _timeout, "app-heartbeat");
+        data.FirstOrDefault().Application.CommitSha.Should().Be(sha);
+        data.FirstOrDefault().Application.RepositoryUrl.Should().Be(repo);
+
+        await controller.DisposeAsync();
+    }
+
+    [Fact]
     public async Task TelemetryControllerRecordsConfigurationFromTracerSettings()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
@@ -415,6 +448,11 @@ public class TelemetryControllerTests
         }
 
         public string GetTransportInfo() => nameof(TestTelemetryTransport);
+
+        public void Clear()
+        {
+            _data.Clear();
+        }
     }
 
     internal class SlowTelemetryTransport : ITelemetryTransport
