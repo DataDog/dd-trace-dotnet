@@ -750,7 +750,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/ITestMethod.c
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/ITestMethodInfo.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/ITestMethodOptions.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/ITestMethodRunner.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/ITestResult.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/ItrSkipTestMethodExecutor.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/MsTestIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestAssemblyInfoExecuteAssemblyCleanupIntegration.cs
@@ -767,7 +766,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/TestPropertyA
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestOutcome.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestResultOutcome.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestResultStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestRunnerIsTestMethodRunnableIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestRunnerRunCleanupIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestRunnerRunSingleTestIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/FailureSite.cs
@@ -777,13 +775,8 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/IPropertyBag.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/IResultState.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/ITest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/ITestExecutionContext.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/ITestResult.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/ITestSuite.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/IWorkItem.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/NUnitCompositeWorkItemPerformOneTimeSetUpIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/NUnitCompositeWorkItemPerformOneTimeTearDownIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/NUnitCompositeWorkItemSkipChildrenIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/NUnitTestCommandExecuteIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/NUnitWorkItemPerformWorkIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/NUnitWorkItemWorkItemCompleteIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/RunState.cs

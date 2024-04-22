@@ -37,6 +37,7 @@ namespace Datadog.Trace.Sampling
         /// <param name="operationNameGlob">The glob pattern for the <see cref="Span.OperationName"/>.</param>
         /// <param name="resourceNameGlob">The glob pattern for the <see cref="Span.ResourceName"/>.</param>
         /// <param name="tagGlobs">The glob pattern for the <see cref="Span.Tags"/>.</param>
+        /// <param name="timeout">The timeout to use for the regexes</param>
         /// <param name="samplingRate">The proportion of spans that are kept. <c>1.0</c> indicates keep all where <c>0.0</c> would be drop all.</param>
         /// <param name="maxPerSecond">The maximum number of spans allowed to be kept per second - <see langword="null"/> indicates that there is no limit</param>
         public SpanSamplingRule(
@@ -44,6 +45,7 @@ namespace Datadog.Trace.Sampling
             string operationNameGlob,
             string resourceNameGlob,
             ICollection<KeyValuePair<string, string>> tagGlobs,
+            TimeSpan timeout,
             float samplingRate = 1.0f,
             float? maxPerSecond = null)
         {
@@ -63,10 +65,10 @@ namespace Datadog.Trace.Sampling
             // null/absent for MaxPerSecond indicates unlimited, which is a negative value in the limiter
             _limiter = MaxPerSecond is null ? new SpanRateLimiter(-1) : new SpanRateLimiter((int?)MaxPerSecond);
 
-            _serviceNameRegex = RegexBuilder.Build(serviceNameGlob, SamplingRulesFormat.Glob);
-            _operationNameRegex = RegexBuilder.Build(operationNameGlob, SamplingRulesFormat.Glob);
-            _resourceNameRegex = RegexBuilder.Build(resourceNameGlob, SamplingRulesFormat.Glob);
-            _tagRegexes = RegexBuilder.Build(tagGlobs, SamplingRulesFormat.Glob);
+            _serviceNameRegex = RegexBuilder.Build(serviceNameGlob, SamplingRulesFormat.Glob, timeout);
+            _operationNameRegex = RegexBuilder.Build(operationNameGlob, SamplingRulesFormat.Glob, timeout);
+            _resourceNameRegex = RegexBuilder.Build(resourceNameGlob, SamplingRulesFormat.Glob, timeout);
+            _tagRegexes = RegexBuilder.Build(tagGlobs, SamplingRulesFormat.Glob, timeout);
 
             if (_serviceNameRegex is null &&
                 _operationNameRegex is null &&
@@ -88,8 +90,9 @@ namespace Datadog.Trace.Sampling
         ///     Creates <see cref="SpanSamplingRule"/>s from the supplied JSON <paramref name="configuration"/>.
         /// </summary>
         /// <param name="configuration">The JSON-serialized configuration.</param>
+        /// <param name="timeout">The timeout to use for regexes</param>
         /// <returns><see cref="IEnumerable{T}"/> of <see cref="SpanSamplingRule"/>.</returns>
-        public static IEnumerable<SpanSamplingRule> BuildFromConfigurationString(string configuration)
+        public static IEnumerable<SpanSamplingRule> BuildFromConfigurationString(string configuration, TimeSpan timeout)
         {
             try
             {
@@ -106,6 +109,7 @@ namespace Datadog.Trace.Sampling
                                 rule.OperationNameGlob,
                                 rule.ResourceNameGlob,
                                 rule.TagGlobs,
+                                timeout,
                                 rule.SampleRate,
                                 rule.MaxPerSecond));
                     }

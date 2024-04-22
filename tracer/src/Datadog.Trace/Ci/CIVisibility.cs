@@ -64,6 +64,10 @@ namespace Datadog.Trace.Ci
         // Unlocked tracer manager is used in tests so tracer instance can be changed with a new configuration.
         internal static bool UseLockedTracerManager { get; set; } = true;
 
+        internal static IntelligentTestRunnerClient.EarlyFlakeDetectionSettingsResponse EarlyFlakeDetectionSettings { get; private set; }
+
+        internal static IntelligentTestRunnerClient.EarlyFlakeDetectionResponse? EarlyFlakeDetectionResponse { get; private set; }
+
         public static void Initialize()
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
@@ -322,6 +326,27 @@ namespace Datadog.Trace.Ci
 
                 return Array.Empty<SkippableTest>();
             }
+        }
+
+        internal static bool IsAnEarlyFlakeDetectionTest(string moduleName, string testSuite, string testName)
+        {
+            if (EarlyFlakeDetectionResponse is { Tests: { } efdTests } &&
+                efdTests.TryGetValue(moduleName, out var efdResponseSuites) &&
+                efdResponseSuites?.TryGetValue(testSuite, out var efdResponseTests) == true &&
+                efdResponseTests is not null)
+            {
+                foreach (var test in efdResponseTests)
+                {
+                    if (test == testName)
+                    {
+                        Log.Debug("Test is included in the early flake detection response. [ModuleName: {ModuleName}, TestSuite: {TestSuite}, TestName: {TestName}]", moduleName, testSuite, testName);
+                        return true;
+                    }
+                }
+            }
+
+            Log.Debug("Test is not in the early flake detection response. [ModuleName: {ModuleName}, TestSuite: {TestSuite}, TestName: {TestName}]", moduleName, testSuite, testName);
+            return false;
         }
 
         internal static bool HasSkippableTests() => _skippableTestsBySuiteAndName?.Count > 0;
@@ -593,7 +618,7 @@ namespace Datadog.Trace.Ci
 
                 // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
                 // We query the settings api for those
-                if (settings.CodeCoverageEnabled == null || settings.TestsSkippingEnabled == null)
+                if (settings.CodeCoverageEnabled == null || settings.TestsSkippingEnabled == null || settings.EarlyFlakeDetectionEnabled != false)
                 {
                     var itrSettings = await lazyItrClient.Value.GetSettingsAsync().ConfigureAwait(false);
 
@@ -618,13 +643,28 @@ namespace Datadog.Trace.Ci
                         Log.Information("ITR: Tests Skipping has been changed to {Value} by settings api.", itrSettings.TestsSkipping.Value);
                         settings.SetTestsSkippingEnabled(itrSettings.TestsSkipping.Value);
                     }
+
+                    if (settings.EarlyFlakeDetectionEnabled == true || itrSettings.EarlyFlakeDetection.Enabled == true)
+                    {
+                        Log.Information("ITR: Early flake detection settings has been enabled by the settings api.");
+                        EarlyFlakeDetectionSettings = itrSettings.EarlyFlakeDetection;
+                        settings.SetEarlyFlakeDetectionEnabled(true);
+                        EarlyFlakeDetectionResponse = await lazyItrClient.Value.GetEarlyFlakeDetectionTestsAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        settings.SetEarlyFlakeDetectionEnabled(false);
+                    }
                 }
 
                 // Log code coverage status
                 Log.Information("{V}", settings.CodeCoverageEnabled == true ? "ITR: Tests code coverage is enabled." : "ITR: Tests code coverage is disabled.");
 
+                // Log early flake detection status
+                Log.Information("{V}", settings.EarlyFlakeDetectionEnabled == true ? "ITR: Early flake detection is enabled." : "ITR: Early flake detection is disabled.");
+
                 // For ITR we need the git metadata upload before consulting the skippable tests.
-                // If ITR is disable we just need to make sure the git upload task has completed before leaving this method.
+                // If ITR is disabled we just need to make sure the git upload task has completed before leaving this method.
                 if (uploadRepositoryChangesTask is not null)
                 {
                     await uploadRepositoryChangesTask.ConfigureAwait(false);

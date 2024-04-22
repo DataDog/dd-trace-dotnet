@@ -16,6 +16,8 @@ namespace Datadog.Trace.Tests.Sampling
     [Collection(nameof(Sampling))]
     public class SpanSamplerTests
     {
+        private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
+
         [Fact]
         public void Constructor_ShouldThrow_WhenNullRulesGiven()
         {
@@ -31,6 +33,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "operationName",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 1.0f,
                 maxPerSecond: 500.0f);
 
@@ -39,6 +42,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "operationName2",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 1.0f,
                 maxPerSecond: 500.0f);
 
@@ -61,6 +65,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "operationName",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 0.0f);
 
             var rules = new List<SpanSamplingRule> { rule };
@@ -86,6 +91,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "operation-name",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 1.0f,
                 maxPerSecond: 500.0f);
 
@@ -94,6 +100,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "operation-name",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 1.0f,
                 maxPerSecond: 600.0f); // note different max per second here
 
@@ -120,6 +127,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "nomatch",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 1.0f,
                 maxPerSecond: 500.0f);
 
@@ -128,6 +136,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "operation-name",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 1.0f,
                 maxPerSecond: 600.0f); // note different max per second here
 
@@ -150,6 +159,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "*",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 0.0f); // sample_rate is set to drop all
 
             var rule2 = new SpanSamplingRule(
@@ -157,6 +167,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "*",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 1.0f);
 
             var rules = new List<SpanSamplingRule> { rule1, rule2 };
@@ -191,6 +202,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "o?erat?o?",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 maxPerSecond: 1000.0f);
 
             var sampler = new SpanSampler(new List<SpanSamplingRule> { rule });
@@ -211,6 +223,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "o?erat?o?",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 maxPerSecond: 1000.0f);
 
             var sampler = new SpanSampler(new List<SpanSamplingRule> { rule });
@@ -234,6 +247,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "operation-name",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 0.99f);
 
             var rules = new List<SpanSamplingRule> { rule1 };
@@ -259,6 +273,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "operation-name",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 0.99f,
                 maxPerSecond: 500.0f);
 
@@ -281,13 +296,15 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "*",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 0.0f); // this rule comes before allow all, so it has priority
 
             var allowAllRule = new SpanSamplingRule(
                 serviceNameGlob: "*",
                 operationNameGlob: "*",
                 resourceNameGlob: null,
-                tagGlobs: null);
+                tagGlobs: null,
+                timeout: Timeout);
 
             var rules = new List<SpanSamplingRule> { allowNoneRule, allowAllRule };
             var sampler = new SpanSampler(rules);
@@ -302,7 +319,8 @@ namespace Datadog.Trace.Tests.Sampling
                 serviceNameGlob: "*",
                 operationNameGlob: "*",
                 resourceNameGlob: null,
-                tagGlobs: null);
+                tagGlobs: null,
+                timeout: Timeout);
 
             var rules = new List<SpanSamplingRule> { allowAllRule };
             var sampler = new SpanSampler(rules);
@@ -318,6 +336,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "*",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 0.0f);
 
             var rules = new List<SpanSamplingRule> { allowNoneRule };
@@ -334,6 +353,7 @@ namespace Datadog.Trace.Tests.Sampling
                 operationNameGlob: "operation?name",
                 resourceNameGlob: null,
                 tagGlobs: null,
+                timeout: Timeout,
                 samplingRate: 0.5f);
 
             var rules = new List<SpanSamplingRule> { allowHalfRule };

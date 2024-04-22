@@ -345,7 +345,7 @@ namespace Datadog.Trace.RuntimeMetrics
             /// <summary>
             /// # of times in AwareLock::EnterEpilogue()
             /// </summary>
-            public readonly int Contention;
+            public readonly uint Contention;
 
             public readonly TRICOUNT QueueLength;
 
@@ -371,22 +371,22 @@ namespace Datadog.Trace.RuntimeMetrics
             /// <summary>
             /// Number of Exceptions thrown
             /// </summary>
-            public readonly int Thrown;
+            public readonly uint Thrown;
 
             /// <summary>
             /// Number of Filters executed
             /// </summary>
-            public readonly int FiltersExecuted;
+            public readonly uint FiltersExecuted;
 
             /// <summary>
             /// Number of Finallys executed
             /// </summary>
-            public readonly int FinallysExecuted;
+            public readonly uint FinallysExecuted;
 
             /// <summary>
             /// Delta from throw to catch site on stack
             /// </summary>
-            public readonly int ThrowToCatchStackDepth;
+            public readonly uint ThrowToCatchStackDepth;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -407,27 +407,27 @@ namespace Datadog.Trace.RuntimeMetrics
             /// <summary>
             /// % time loading
             /// </summary>
-            public readonly long TimeLoading;
+            public readonly ulong TimeLoading;
 
             /// <summary>
             /// Avg search length for assemblies
             /// </summary>
-            public readonly int AsmSearchLength;
+            public readonly uint AsmSearchLength;
 
             /// <summary>
             /// Classes Failed to load
             /// </summary>
-            public readonly int LoadFailures;
+            public readonly uint LoadFailures;
 
             /// <summary>
             /// Total size of heap used by the loader
             /// </summary>
-            public readonly nint LoaderHeapSize;
+            public readonly nuint LoaderHeapSize;
 
             /// <summary>
             /// Rate at which app domains are unloaded
             /// </summary>
-            public readonly int AppDomainsUnloaded;
+            public readonly uint AppDomainsUnloaded;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -436,27 +436,27 @@ namespace Datadog.Trace.RuntimeMetrics
             /// <summary>
             /// Number of CCWs
             /// </summary>
-            public readonly int CCW;
+            public readonly uint CCW;
 
             /// <summary>
             /// Number of stubs
             /// </summary>
-            public readonly int Stubs;
+            public readonly uint Stubs;
 
             /// <summary>
             /// # of time marshalling args and return values
             /// </summary>
-            public readonly int Marshalling;
+            public readonly uint Marshalling;
 
             /// <summary>
             /// Number of tlbs we import
             /// </summary>
-            public readonly int TLBImports;
+            public readonly uint TLBImports;
 
             /// <summary>
             /// Number of tlbs we export
             /// </summary>
-            public readonly int TLBExports;
+            public readonly uint TLBExports;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -465,32 +465,32 @@ namespace Datadog.Trace.RuntimeMetrics
             /// <summary>
             /// # of remote calls
             /// </summary>
-            public readonly int RemoteCalls;
+            public readonly uint RemoteCalls;
 
             /// <summary>
             /// Number of current channels
             /// </summary>
-            public readonly int Channels;
+            public readonly uint Channels;
 
             /// <summary>
             /// Number of context proxies
             /// </summary>
-            public readonly int Proxies;
+            public readonly uint Proxies;
 
             /// <summary>
             /// # of Context-bound classes
             /// </summary>
-            public readonly int Classes;
+            public readonly uint Classes;
 
             /// <summary>
             /// # of context bound objects allocated
             /// </summary>
-            public readonly int ObjAlloc;
+            public readonly uint ObjAlloc;
 
             /// <summary>
             /// The current number of contexts
             /// </summary>
-            public readonly int Contexts;
+            public readonly uint Contexts;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -499,32 +499,32 @@ namespace Datadog.Trace.RuntimeMetrics
             /// <summary>
             /// Count of collects gen 0
             /// </summary>
-            public readonly nint GenCollections0;
+            public readonly nuint GenCollections0;
 
             /// <summary>
             /// Count of collects gen 1
             /// </summary>
-            public readonly nint GenCollections1;
+            public readonly nuint GenCollections1;
 
             /// <summary>
             /// Count of collects gen 2
             /// </summary>
-            public readonly nint GenCollections2;
+            public readonly nuint GenCollections2;
 
             /// <summary>
             /// Count of promoted memory from gen 0
             /// </summary>
-            public readonly nint PromotedMem0;
+            public readonly nuint PromotedMem0;
 
             /// <summary>
             /// Count of promoted memory from gen 1
             /// </summary>
-            public readonly nint PromotedMem1;
+            public readonly nuint PromotedMem1;
 
             /// <summary>
             /// Count of memory promoted due to finalization
             /// </summary>
-            public readonly nint PromotedFinalizationMem;
+            public readonly nuint PromotedFinalizationMem;
 
             /// <summary>
             /// Process ID
@@ -534,77 +534,77 @@ namespace Datadog.Trace.RuntimeMetrics
             /// <summary>
             /// Size of heaps gen 0
             /// </summary>
-            public readonly nint GenHeapSize0;
+            public readonly nuint GenHeapSize0;
 
             /// <summary>
             /// Size of heaps gen 1
             /// </summary>
-            public readonly nint GenHeapSize1;
+            public readonly nuint GenHeapSize1;
 
             /// <summary>
             /// Size of heaps gen 2
             /// </summary>
-            public readonly nint GenHeapSize2;
+            public readonly nuint GenHeapSize2;
 
             /// <summary>
             /// Total number of committed bytes
             /// </summary>
-            public readonly nint TotalCommittedBytes;
+            public readonly nuint TotalCommittedBytes;
 
             /// <summary>
             /// Bytes reserved via VirtualAlloc
             /// </summary>
-            public readonly nint TotalReservedBytes;
+            public readonly nuint TotalReservedBytes;
 
             /// <summary>
             /// Size of Large Object Heap
             /// </summary>
-            public readonly nint LargeObjSize;
+            public readonly nuint LargeObjSize;
 
             /// <summary>
             /// Count of instances surviving from finalizing
             /// </summary>
-            public readonly nint SurviveFinalize;
+            public readonly nuint SurviveFinalize;
 
             /// <summary>
             /// Count of GC handles
             /// </summary>
-            public readonly nint Handles;
+            public readonly nuint Handles;
 
             /// <summary>
             /// Bytes allocated
             /// </summary>
-            public readonly nint Alloc;
+            public readonly nuint Alloc;
 
             /// <summary>
             /// Bytes allocated for Large Objects
             /// </summary>
-            public readonly nint LargeAlloc;
+            public readonly nuint LargeAlloc;
 
             /// <summary>
             /// Number of explicit GCs
             /// </summary>
-            public readonly nint InducedGCs;
+            public readonly nuint InducedGCs;
 
             /// <summary>
             /// Time in GC
             /// </summary>
-            public readonly int TimeInGC;
+            public readonly uint TimeInGC;
 
             /// <summary>
             /// Must follow time in GC counter
             /// </summary>
-            public readonly int TimeInGCBase;
+            public readonly uint TimeInGCBase;
 
             /// <summary>
             /// # of Pinned Objects
             /// </summary>
-            public readonly nint PinnedObj;
+            public readonly nuint PinnedObj;
 
             /// <summary>
             /// # of sink blocks
             /// </summary>
-            public readonly nint SinkBlocks;
+            public readonly nuint SinkBlocks;
         }
     }
 }

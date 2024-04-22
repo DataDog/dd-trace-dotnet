@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryController.cs" company="Datadog">
+// <copyright file="TelemetryController.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -92,6 +92,14 @@ internal class TelemetryController : ITelemetryController
         _application.RecordTracerSettings(settings, defaultServiceName);
         _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
         _queue.Enqueue(new WorkItem(WorkItem.ItemType.EnableSending, null));
+    }
+
+    public void RecordGitMetadata(GitMetadata gitMetadata)
+    {
+        _application.RecordGitMetadata(gitMetadata);
+
+        _configuration.Record(gitMetadata.RepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
+        _configuration.Record(gitMetadata.CommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
     }
 
     public void Start()

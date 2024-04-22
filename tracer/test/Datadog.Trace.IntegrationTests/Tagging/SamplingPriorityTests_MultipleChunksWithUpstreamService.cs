@@ -20,14 +20,15 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
 
     private readonly MockApi _testApi;
     private readonly Tracer _tracer;
+    private AgentWriter _agentWriter;
 
     public SamplingPriorityTests_MultipleChunksWithUpstreamService()
     {
         _testApi = new MockApi();
 
         var settings = new TracerSettings();
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        _agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        _tracer = new Tracer(settings, _agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Fact]

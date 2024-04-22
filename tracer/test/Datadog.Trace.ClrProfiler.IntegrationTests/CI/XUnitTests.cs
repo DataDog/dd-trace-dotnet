@@ -81,6 +81,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             targetSpan.Tags.Remove(Tags.GitCommitSha);
                             targetSpan.Tags.Remove(Tags.GitRepositoryUrl);
 
+                            // Remove EFD tags
+                            targetSpan.Tags.Remove(EarlyFlakeDetectionTags.TestIsNew);
+                            targetSpan.Tags.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+
                             // check the name
                             Assert.Equal("xunit.test", targetSpan.Name);
 

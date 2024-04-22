@@ -33,15 +33,16 @@ namespace Datadog.Trace.Sampling
             string serviceNamePattern,
             string operationNamePattern,
             string resourceNamePattern,
-            ICollection<KeyValuePair<string, string>> tagPatterns)
+            ICollection<KeyValuePair<string, string>> tagPatterns,
+            TimeSpan timeout)
         {
             _samplingRate = rate;
             RuleName = ruleName;
 
-            _serviceNameRegex = RegexBuilder.Build(serviceNamePattern, patternFormat);
-            _operationNameRegex = RegexBuilder.Build(operationNamePattern, patternFormat);
-            _resourceNameRegex = RegexBuilder.Build(resourceNamePattern, patternFormat);
-            _tagRegexes = RegexBuilder.Build(tagPatterns, patternFormat);
+            _serviceNameRegex = RegexBuilder.Build(serviceNamePattern, patternFormat, timeout);
+            _operationNameRegex = RegexBuilder.Build(operationNamePattern, patternFormat, timeout);
+            _resourceNameRegex = RegexBuilder.Build(resourceNamePattern, patternFormat, timeout);
+            _tagRegexes = RegexBuilder.Build(tagPatterns, patternFormat, timeout);
 
             if (_serviceNameRegex is null &&
                 _operationNameRegex is null &&
@@ -63,7 +64,7 @@ namespace Datadog.Trace.Sampling
         /// </summary>
         public int Priority { get; protected set; } = 1;
 
-        public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, string patternFormat)
+        public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, string patternFormat, TimeSpan timeout)
         {
             try
             {
@@ -85,7 +86,8 @@ namespace Datadog.Trace.Sampling
                                 r.Service,
                                 r.OperationName,
                                 r.Resource,
-                                r.Tags));
+                                r.Tags,
+                                timeout));
                     }
 
                     return samplingRules;

@@ -44,7 +44,11 @@ namespace Datadog.Trace.TestHelpers
             TransportType = transport;
         }
 
-        public event EventHandler<EventArgs<HttpListenerContext>> RequestReceived;
+        /// <summary>
+        /// Allow intercepting the traces. Note, if you subscribe to this event,
+        /// you should also set <see cref="ShouldDeserializeTraces"/> to <c>false</c>
+        /// </summary>
+        public event EventHandler<EventArgs<MockHttpRequest>> RequestReceived;
 
         public event EventHandler<EventArgs<IList<IList<MockSpan>>>> RequestDeserialized;
 
@@ -457,11 +461,6 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        protected virtual void OnRequestReceived(HttpListenerContext context)
-        {
-            RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(context));
-        }
-
         protected virtual void OnRequestDeserialized(IList<IList<MockSpan>> traces)
         {
             RequestDeserialized?.Invoke(this, new EventArgs<IList<IList<MockSpan>>>(traces));
@@ -477,7 +476,12 @@ namespace Datadog.Trace.TestHelpers
             MetricsReceived?.Invoke(this, new EventArgs<string>(stats));
         }
 
-        private protected MockTracerResponse HandleHttpRequest(MockHttpParser.MockHttpRequest request)
+        private protected void OnRequestReceived(MockHttpRequest request)
+        {
+            RequestReceived?.Invoke(this, new EventArgs<MockHttpRequest>(request));
+        }
+
+        private protected MockTracerResponse HandleHttpRequest(MockHttpRequest request)
         {
             string response = null;
             var responseType = MockTracerResponseType.Unknown;
@@ -542,13 +546,13 @@ namespace Datadog.Trace.TestHelpers
                        : new MockTracerResponse(response ?? "{}");
         }
 
-        private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialTraces(MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
 
                     var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(body);
                     OnRequestDeserialized(spans);
@@ -562,7 +566,10 @@ namespace Datadog.Trace.TestHelpers
                         var headerCollection = new NameValueCollection();
                         foreach (var header in request.Headers)
                         {
-                            headerCollection.Add(header.Name, header.Value);
+                            foreach (var value in header.Value)
+                            {
+                                headerCollection.Add(header.Key, value);
+                            }
                         }
 
                         TraceRequestHeaders = TraceRequestHeaders.Add(headerCollection);
@@ -584,7 +591,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialTelemetryData(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialTelemetryData(MockHttpRequest request)
         {
             if (request.ContentLength >= 1)
             {
@@ -593,7 +600,7 @@ namespace Datadog.Trace.TestHelpers
                     var apiVersion = request.Headers.GetValue(TelemetryConstants.ApiVersionHeader);
                     var requestType = request.Headers.GetValue(TelemetryConstants.RequestTypeHeader);
 
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
                     using var stream = new MemoryStream(body);
 
                     var telemetry = MockTelemetryAgent.DeserializeResponse(stream, apiVersion, requestType);
@@ -604,7 +611,10 @@ namespace Datadog.Trace.TestHelpers
                         var headerCollection = new NameValueCollection();
                         foreach (var header in request.Headers)
                         {
-                            headerCollection.Add(header.Name, header.Value);
+                            foreach (var value in header.Value)
+                            {
+                                headerCollection.Add(header.Key, value);
+                            }
                         }
 
                         TelemetryRequestHeaders = TelemetryRequestHeaders.Add(headerCollection);
@@ -626,13 +636,13 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialDebuggerData(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialDebuggerData(MockHttpRequest request)
         {
             if (request.ContentLength >= 1)
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
                     using var stream = new MemoryStream(body);
                     using var streamReader = new StreamReader(stream);
                     var batch = streamReader.ReadToEnd();
@@ -666,13 +676,13 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialDiagnosticsData(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialDiagnosticsData(MockHttpRequest request)
         {
             if (request.ContentLength >= 1)
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
                     using var stream = new MemoryStream(body);
                     using var streamReader = new StreamReader(stream);
                     var batch = streamReader.ReadToEnd();
@@ -717,13 +727,13 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialStatsData(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialStatsData(MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
 
                     var statsPayload = MessagePackSerializer.Deserialize<MockClientStatsPayload>(body);
                     OnStatsDeserialized(statsPayload);
@@ -749,13 +759,13 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialRemoteConfig(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialRemoteConfig(MockHttpRequest request)
         {
             if (request.ContentLength >= 1)
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
                     var rc = Encoding.UTF8.GetString(body);
                     RemoteConfigRequests.Enqueue(rc);
                 }
@@ -775,28 +785,22 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandlePotentialDataStreams(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialDataStreams(MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
-                    if (request.Headers.GetValue("Content-Encoding") == "gzip")
-                    {
-                        using var compressed = new MemoryStream(body);
-                        using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
-                        using var decompressed = new MemoryStream();
-                        gzip.CopyTo(decompressed);
-                        gzip.Flush();
-                        body = decompressed.GetBuffer();
-                    }
+                    var body = request.ReadStreamBody();
 
                     var dataStreamsPayload = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(body);
                     var headerCollection = new NameValueCollection();
                     foreach (var header in request.Headers)
                     {
-                        headerCollection.Add(header.Name, header.Value);
+                        foreach (var value in header.Value)
+                        {
+                            headerCollection.Add(header.Key, value);
+                        }
                     }
 
                     lock (this)
@@ -821,29 +825,20 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private MockTracerResponse HandleEvpProxyPayload(MockHttpParser.MockHttpRequest request)
+        private MockTracerResponse HandleEvpProxyPayload(MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
                 try
                 {
-                    var body = ReadStreamBody(request);
+                    var body = request.ReadStreamBody();
                     var headerCollection = new NameValueCollection();
                     foreach (var header in request.Headers)
                     {
-                        headerCollection.Add(header.Name, header.Value);
-                    }
-
-                    if (headerCollection["Content-Encoding"] == "gzip")
-                    {
-                        var bodyMs = new MemoryStream(body);
-                        var uncompressedStream = new MemoryStream();
-                        using (var gzipStream = new GZipStream(bodyMs, CompressionMode.Decompress))
+                        foreach (var value in header.Value)
                         {
-                            gzipStream.CopyTo(uncompressedStream);
+                            headerCollection.Add(header.Key, value);
                         }
-
-                        body = uncompressedStream.ToArray();
                     }
 
                     var bodyAsJson = headerCollection["Content-Type"] switch
@@ -875,7 +870,7 @@ namespace Datadog.Trace.TestHelpers
             return null;
         }
 
-        private void HandleTracerFlarePayload(MockHttpParser.MockHttpRequest request)
+        private void HandleTracerFlarePayload(MockHttpRequest request)
         {
             // we don't send content length header in the request, so just deserialize into bytes
             if (ShouldDeserializeTraces)
@@ -885,7 +880,10 @@ namespace Datadog.Trace.TestHelpers
                     var headerCollection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                     foreach (var header in request.Headers)
                     {
-                        headerCollection.Add(header.Name, header.Value);
+                        foreach (var value in header.Value)
+                        {
+                            headerCollection.Add(header.Key, value);
+                        }
                     }
 
                     var contentTypeHeader = headerCollection["Content-Type"];
@@ -906,7 +904,7 @@ namespace Datadog.Trace.TestHelpers
 
                     var encoding = contentType.CharSet ?? "utf-8";
 
-                    var formData = MultipartFormDataParser.Parse(request.Body.Stream, boundary.Value, Encoding.GetEncoding(encoding));
+                    var formData = MultipartFormDataParser.Parse(request.Body, boundary.Value, Encoding.GetEncoding(encoding));
                     TracerFlareRequests = TracerFlareRequests.Add((headerCollection, formData));
                 }
                 catch (Exception ex)
@@ -994,36 +992,6 @@ namespace Datadog.Trace.TestHelpers
 
             var responseBytes = Encoding.UTF8.GetBytes(sb.ToString());
             return responseBytes;
-        }
-
-        private byte[] ReadStreamBody(MockHttpParser.MockHttpRequest request)
-        {
-            if (request.ContentLength is null)
-            {
-                return Array.Empty<byte>();
-            }
-
-            var i = 0;
-            var body = new byte[request.ContentLength.Value];
-
-            while (i < request.ContentLength)
-            {
-                var read = request.Body.Stream.Read(body, i, body.Length - i);
-
-                i += read;
-
-                if (read == 0 || read == body.Length)
-                {
-                    break;
-                }
-            }
-
-            if (i < request.ContentLength)
-            {
-                throw new Exception($"Less bytes were sent than we counted. {i} read versus {request.ContentLength} expected.");
-            }
-
-            return body;
         }
 
         public class EvpProxyPayload
@@ -1185,14 +1153,16 @@ namespace Datadog.Trace.TestHelpers
                         var ctx = _listener.GetContext();
                         try
                         {
-                            OnRequestReceived(ctx);
-
                             if (Version != null)
                             {
                                 ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                             }
 
-                            var mockTracerResponse = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
+                            var request = MockHttpRequest.Create(ctx.Request);
+
+                            OnRequestReceived(request);
+
+                            var mockTracerResponse = HandleHttpRequest(request);
 
                             if (!mockTracerResponse.SendResponse)
                             {
@@ -1341,6 +1311,7 @@ namespace Datadog.Trace.TestHelpers
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
                 var request = await MockHttpParser.ReadRequest(namedPipeServerStream);
+                OnRequestReceived(request);
                 var mockTracerResponse = HandleHttpRequest(request);
 
                 if (mockTracerResponse.SendResponse)
@@ -1578,6 +1549,7 @@ namespace Datadog.Trace.TestHelpers
                         using var stream = new NetworkStream(handler);
 
                         var request = await MockHttpParser.ReadRequest(stream);
+                        OnRequestReceived(request);
                         var mockTracerResponse = HandleHttpRequest(request);
 
                         if (mockTracerResponse.SendResponse)

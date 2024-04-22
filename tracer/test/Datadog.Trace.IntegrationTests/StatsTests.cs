@@ -336,10 +336,10 @@ namespace Datadog.Trace.IntegrationTests
             agent.RequestReceived += (sender, args) =>
             {
                 var context = args.Value;
-                if (context.Request.RawUrl.EndsWith("/traces"))
+                if (context.PathAndQuery.EndsWith("/traces"))
                 {
-                    droppedP0TracesHeaderValues.Add(context.Request.Headers.Get("Datadog-Client-Dropped-P0-Traces"));
-                    droppedP0SpansHeaderValues.Add(context.Request.Headers.Get("Datadog-Client-Dropped-P0-Spans"));
+                    droppedP0TracesHeaderValues.Add(context.Headers.TryGetValue("Datadog-Client-Dropped-P0-Traces", out var droppedP0Traces) ? droppedP0Traces : null);
+                    droppedP0SpansHeaderValues.Add(context.Headers.TryGetValue("Datadog-Client-Dropped-P0-Spans", out var droppedP0Spans) ? droppedP0Spans : null);
                 }
             };
 
