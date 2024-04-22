@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
@@ -51,7 +52,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var args = _runSettings.Command.GetValue(context);
             var program = args[0];
-            var arguments = args.Length > 1 ? Utils.GetArgumentsAsString(args.Skip(1)) : string.Empty;
+            var lstArguments = new List<string>(args.Length > 1 ? args.Skip(1) : []);
 
             // Get profiler environment variables
             if (!RunHelper.TryGetEnvironmentVariables(_applicationContext, context, _runSettings, new Utils.CIVisibilityOptions(ciVisibilitySettings.InstallDatadogTraceInGac, true), out var profilerEnvironmentVariables))
@@ -257,35 +258,58 @@ namespace Datadog.Trace.Tools.Runner
                     // Add the Datadog coverage collector
                     var collectorAdded = false;
                     var baseDirectory = AppContext.BaseDirectory;
-                    var doubleDashIndex = arguments.IndexOf("--", StringComparison.Ordinal);
-                    string argumentValue = null;
+
+                    var doubleDashIndex = -1;
+                    for (var i = 0; i < lstArguments.Count; i++)
+                    {
+                        if (lstArguments[i] == "--")
+                        {
+                            doubleDashIndex = i;
+                            break;
+                        }
+                    }
+
                     if (isDotnetTestCommand)
                     {
-                        argumentValue = "--test-adapter-path \"" + baseDirectory + "\" --collect DatadogCoverage";
+                        if (doubleDashIndex == -1)
+                        {
+                            lstArguments.Add("--test-adapter-path");
+                            lstArguments.Add(baseDirectory);
+                            lstArguments.Add("--collect");
+                            lstArguments.Add("DatadogCoverage");
+                        }
+                        else
+                        {
+                            lstArguments.Insert(doubleDashIndex, "--test-adapter-path");
+                            lstArguments.Insert(doubleDashIndex + 1, baseDirectory);
+                            lstArguments.Insert(doubleDashIndex + 2, "--collect");
+                            lstArguments.Insert(doubleDashIndex + 3, "DatadogCoverage");
+                        }
+
+                        Log.Debug("DatadogCoverage data collector added as a command argument");
+                        collectorAdded = true;
                     }
                     else if (isVsTestConsoleCommand || isDotnetVsTestCommand)
                     {
-                        argumentValue = "/TestAdapterPath:" + baseDirectory + " /Collect:DatadogCoverage";
+                        if (doubleDashIndex == -1)
+                        {
+                            lstArguments.Add("/TestAdapterPath:");
+                            lstArguments.Add(baseDirectory);
+                            lstArguments.Add("/Collect:DatadogCoverage");
+                        }
+                        else
+                        {
+                            lstArguments.Insert(doubleDashIndex, "/TestAdapterPath:");
+                            lstArguments.Insert(doubleDashIndex + 1, baseDirectory);
+                            lstArguments.Insert(doubleDashIndex + 2, "/Collect:DatadogCoverage");
+                        }
+
+                        Log.Debug("DatadogCoverage data collector added as a command argument");
+                        collectorAdded = true;
                     }
                     else
                     {
                         Log.Warning("RunCiCommand: Code coverage is enabled but the command is not a 'dotnet test' nor 'dotnet vstest' nor 'vstest.console' command. Code coverage will not be collected.");
-                    }
-
-                    if (argumentValue != null)
-                    {
-                        Log.Debug("DatadogCoverage data collector added as a command argument");
-                        if (doubleDashIndex == -1)
-                        {
-                            arguments += argumentValue;
-                        }
-                        else
-                        {
-                            arguments = arguments.Substring(0, doubleDashIndex) + argumentValue + " " + arguments.Substring(doubleDashIndex);
-                        }
-
-                        arguments = arguments.Trim();
-                        collectorAdded = true;
                     }
 
                     // Sets the code coverage path to store the json files for each module in case we are not skipping test (global coverage is reliable).
@@ -320,6 +344,7 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             // Final command to execute
+            var arguments = Utils.GetArgumentsAsString(lstArguments);
             var command = $"{program} {arguments}".Trim();
 
             // Run child process
@@ -341,9 +366,12 @@ namespace Datadog.Trace.Tools.Runner
 
             Log.Debug("RunCiCommand: Launching: {Value}", command);
             var processInfo = Utils.GetProcessStartInfo(program, Environment.CurrentDirectory, profilerEnvironmentVariables);
-            if (!string.IsNullOrEmpty(arguments))
+            if (lstArguments.Count > 0)
             {
-                processInfo.Arguments = arguments;
+                foreach (var arg in lstArguments)
+                {
+                    processInfo.ArgumentList.Add(arg);
+                }
             }
 
             var exitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
