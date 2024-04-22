@@ -166,6 +166,7 @@ package:
       allow_failure: false
   script:
     - ../.gitlab/build-deb-rpm.sh
+    - find . -iregex '.*\.\(deb\|rpm\)' -printf '%f\0' | xargs -0 dd-pkg lint
   variables:
     ARCH: amd64
 
@@ -179,6 +180,7 @@ package-arm:
       allow_failure: false
   script:
     - ../.gitlab/build-deb-rpm.sh
+    - find . -iregex '.*\.\(deb\|rpm\)' -printf '%f\0' | xargs -0 dd-pkg lint
   variables:
     ARCH: arm64
 
