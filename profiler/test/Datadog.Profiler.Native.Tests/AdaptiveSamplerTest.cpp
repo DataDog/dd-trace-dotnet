@@ -103,3 +103,18 @@ TEST(AdaptiveSamplerTest, TestRollWindow)
     ASSERT_DOUBLE_EQ(3.0, state.TotalAverage);
     ASSERT_DOUBLE_EQ(2.0/3.0, state.Probability);
 }
+
+TEST(AdaptiveSamplerTest, TestStop)
+{
+    bool callbackCalled = false;
+    AdaptiveSampler sampler(std::chrono::milliseconds::zero(), 2, 1, 1, [&callbackCalled]() { callbackCalled = true; });
+
+    sampler.RollWindow();
+
+    ASSERT_TRUE(callbackCalled);
+
+    callbackCalled = false;
+    sampler.Stop();
+
+    ASSERT_FALSE(callbackCalled);
+}
