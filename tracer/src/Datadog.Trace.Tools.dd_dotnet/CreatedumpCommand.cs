@@ -285,13 +285,7 @@ internal class CreatedumpCommand : Command
             // The stacks aren't suspicious, but maybe the exception is
             var exceptionType = exception.Type.Name ?? string.Empty;
 
-            var suspiciousExceptionTypes = new[]
-            {
-                "System.InvalidProgramException",
-                "System.Security.VerificationException",
-                "System.MissingMethodException",
-                "System.BadImageFormatException"
-            };
+            var suspiciousExceptionTypes = new[] { "System.InvalidProgramException", "System.Security.VerificationException", "System.MissingMethodException", "System.BadImageFormatException" };
 
             if (exceptionType.StartsWith("Datadog") || suspiciousExceptionTypes.Contains(exceptionType))
             {
@@ -315,7 +309,30 @@ internal class CreatedumpCommand : Command
 
         try
         {
-            crashReport.Send();
+            var outputFile = Environment.GetEnvironmentVariable("DD_TRACE_CRASH_OUTPUT");
+
+            if (!string.IsNullOrEmpty(outputFile))
+            {
+                var path = IntPtr.Zero;
+
+                try
+                {
+                    AnsiConsole.WriteLine($"Writing crash report to {outputFile}...");
+                    path = Marshal.StringToHGlobalAnsi(outputFile);
+                    crashReport.WriteToFile(path);
+                }
+                finally
+                {
+                    if (path != IntPtr.Zero)
+                    {
+                        Marshal.FreeHGlobal(path);
+                    }
+                }
+            }
+            else
+            {
+                crashReport.Send();
+            }
         }
         catch (Win32Exception ex)
         {
@@ -472,12 +489,7 @@ internal class CreatedumpCommand : Command
             }
         }
 
-        var tags = new (string Key, string Value)[]
-        {
-            ("language", "dotnet"),
-            ("runtime_version", $"{flavor} {version}"),
-            ("library_version", TracerConstants.AssemblyVersion)
-        };
+        var tags = new (string Key, string Value)[] { ("language", "dotnet"), ("runtime_version", $"{flavor} {version}"), ("library_version", TracerConstants.AssemblyVersion) };
 
         var bag = new List<IntPtr>();
 

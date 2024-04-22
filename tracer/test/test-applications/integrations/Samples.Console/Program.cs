@@ -39,11 +39,23 @@ namespace Samples.Console_
                 {
                     Console.WriteLine("Ready");
                     Console.WriteLine($"Echo: {Console.ReadLine()}");
+                    return;
                 }
 
                 if (string.Equals(args[0], "wait", StringComparison.OrdinalIgnoreCase))
                 {
                     Thread.Sleep(Timeout.Infinite);
+                    return;
+                }
+
+                if (string.Equals(args[0], "crash", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Expected");
+                }
+
+                if (string.Equals(args[0], "crash-datadog", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BadImageFormatException("Expected");
                 }
             }
         }

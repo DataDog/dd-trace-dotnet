@@ -23,7 +23,12 @@ public abstract class ConsoleTestHelper : ToolTestHelper
 
     protected Task<ProcessHelper> StartConsole(bool enableProfiler, params (string Key, string Value)[] environmentVariables)
     {
-        return StartConsole(EnvironmentHelper, enableProfiler, environmentVariables);
+        return StartConsole(EnvironmentHelper, enableProfiler, "wait", environmentVariables);
+    }
+
+    protected Task<ProcessHelper> StartConsoleWithArgs(string args, params (string Key, string Value)[] environmentVariables)
+    {
+        return StartConsole(EnvironmentHelper, false, args, environmentVariables);
     }
 
     protected (string Executable, string Args) PrepareSampleApp(EnvironmentHelper environmentHelper)
@@ -44,18 +49,13 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         return (executable, args);
     }
 
-    protected async Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+    protected async Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, string args, params (string Key, string Value)[] environmentVariables)
     {
-        var (executable, args) = PrepareSampleApp(environmentHelper);
+        var (executable, baseArgs) = PrepareSampleApp(environmentHelper);
 
-        args += " wait";
+        args = $"{baseArgs} {args}";
 
-        var processStart = new ProcessStartInfo(executable, args)
-        {
-            UseShellExecute = false,
-            RedirectStandardError = true,
-            RedirectStandardOutput = true
-        };
+        var processStart = new ProcessStartInfo(executable, args) { UseShellExecute = false, RedirectStandardError = true, RedirectStandardOutput = true };
 
         MockTracerAgent? agent = null;
 
