@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Logging;
 
 #nullable enable
 
@@ -15,6 +17,8 @@ namespace Datadog.Trace.Iast.Aspects.AspNetCore.StaticFiles;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class DirectoryBrowserExtensionsAspect
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DirectoryBrowserExtensionsAspect>();
+
     /// <summary>
     /// UseDirectoryBrowser aspects
     /// </summary>
@@ -25,7 +29,15 @@ public class DirectoryBrowserExtensionsAspect
     [AspectMethodInsertBefore("Microsoft.AspNetCore.Builder.DirectoryBrowserExtensions::UseDirectoryBrowser(Microsoft.AspNetCore.Builder.IApplicationBuilder,System.String)")]
     public static object UseDirectoryBrowser(object obj)
     {
-        IastModule.OnDirectoryListingLeak();
+        try
+        {
+            IastModule.OnDirectoryListingLeak();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to report Directory Listing Leak vulnerability");
+        }
+
         return obj;
     }
 }
