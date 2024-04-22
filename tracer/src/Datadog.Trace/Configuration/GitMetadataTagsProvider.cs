@@ -79,7 +79,6 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
             {
                 // we have everything
                 gitMetadata = _cachedGitTags = new GitMetadata(gitCommitSha, gitRespositoryUrl);
-                _telemetry.RecordGitMetadata(gitMetadata, false);
                 // For now, we do not need to call the profiler here. The profiler is able to get those information from the environment.
                 return true;
             }
@@ -95,7 +94,7 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
                 _cachedGitTags = gitMetadata;
                 // These tags could be GitMetadata.Empty but record it anyway, as it gives us an indication
                 // that we failed to extract the information
-                _telemetry.RecordGitMetadata(gitMetadata, true);
+                _telemetry.RecordGitMetadata(gitMetadata);
                 PropagateGitMetadataToTheProfiler(gitMetadata);
                 return true;
             }

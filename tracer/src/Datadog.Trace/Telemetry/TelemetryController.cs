@@ -94,15 +94,12 @@ internal class TelemetryController : ITelemetryController
         _queue.Enqueue(new WorkItem(WorkItem.ItemType.EnableSending, null));
     }
 
-    public void RecordGitMetadata(GitMetadata gitMetadata, bool fromAssembly)
+    public void RecordGitMetadata(GitMetadata gitMetadata)
     {
-        _application?.RecordGitMetadata(gitMetadata);
+        _application.RecordGitMetadata(gitMetadata);
 
-        if (fromAssembly)
-        {
-            _configuration.Record(gitMetadata.RepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
-            _configuration.Record(gitMetadata.CommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
-        }
+        _configuration.Record(gitMetadata.RepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
+        _configuration.Record(gitMetadata.CommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
     }
 
     public void Start()

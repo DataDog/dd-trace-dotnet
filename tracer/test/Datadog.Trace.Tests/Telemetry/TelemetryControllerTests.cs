@@ -70,7 +70,7 @@ public class TelemetryControllerTests
 
         var sha = "testCommitSha";
         var repo = "testRepositoryUrl";
-        controller.RecordGitMetadata(new GitMetadata(sha, repo), true);
+        controller.RecordGitMetadata(new GitMetadata(sha, repo));
         controller.Start();
 
         var data = await WaitForRequestStarted(transport, _timeout);

@@ -63,6 +63,6 @@ namespace Datadog.Trace.Telemetry
         /// <summary>
         /// Updates Git metadata for telemetry
         /// </summary>
-        void RecordGitMetadata(GitMetadata gitMetadata, bool fromAssmbly);
+        void RecordGitMetadata(GitMetadata gitMetadata);
     }
 }
