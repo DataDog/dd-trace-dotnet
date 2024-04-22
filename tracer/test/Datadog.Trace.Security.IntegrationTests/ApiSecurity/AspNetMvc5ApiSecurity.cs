@@ -50,7 +50,7 @@ public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixtu
         EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.Rules, "ApiSecurity\\ruleset-with-block.json");
         if (enableApiSecurity)
         {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled, "true");
+            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityEnabled, "true");
         }
 
         AddCookies(new Dictionary<string, string> { { "cookie-key", "cookie-value" } });

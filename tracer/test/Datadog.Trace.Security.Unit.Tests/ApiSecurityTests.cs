@@ -35,7 +35,7 @@ public class ApiSecurityTests
         var apiSec = new ApiSecurity(
             new SecuritySettings(
                 new CustomSettingsForTests(
-                    new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled, enable } }),
+                    new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, enable } }),
                 new NullConfigurationTelemetry()));
         var dic = new Dictionary<string, object>();
         var tc = new TraceContext(Mock.Of<IDatadogTracer>(), new TraceTagCollection());
@@ -64,7 +64,7 @@ public class ApiSecurityTests
     public void ApiSecurityTestMaxRoutes()
     {
         var maxRouteSize = 50;
-        var apiSec = new ApiSecurity(new SecuritySettings(new CustomSettingsForTests(new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled, true } }), new NullConfigurationTelemetry()), maxRouteSize);
+        var apiSec = new ApiSecurity(new SecuritySettings(new CustomSettingsForTests(new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, true } }), new NullConfigurationTelemetry()), maxRouteSize);
         var queue = new Queue<int>(maxRouteSize);
         for (var i = 0; i < maxRouteSize + 1; i++)
         {
@@ -104,7 +104,7 @@ public class ApiSecurityTests
         var apiSec = new ApiSecurity(
             new SecuritySettings(
                 new CustomSettingsForTests(
-                    new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled, true }, { Configuration.ConfigurationKeys.AppSec.ApiSecuritySampleDelay, 120 } }),
+                    new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, true }, { Configuration.ConfigurationKeys.AppSec.ApiSecuritySampleDelay, 120 } }),
                 new NullConfigurationTelemetry()));
         var dic = new Dictionary<string, object> { { "controller", "test" }, { "action", "test" } };
         var tc = new TraceContext(Mock.Of<IDatadogTracer>(), new TraceTagCollection());

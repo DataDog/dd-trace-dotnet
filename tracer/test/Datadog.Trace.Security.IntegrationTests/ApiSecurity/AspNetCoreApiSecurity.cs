@@ -37,7 +37,7 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
         if (enableApiSecurity)
         {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled, "true");
+            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityEnabled, "true");
         }
     }
 
