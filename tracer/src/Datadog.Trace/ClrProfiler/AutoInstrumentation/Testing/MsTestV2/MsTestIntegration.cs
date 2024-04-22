@@ -108,39 +108,7 @@ internal static class MsTestIntegration
         }
 
         // Early flake detection flags
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true)
-        {
-            var isTestNew = !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
-            if (isTestNew)
-            {
-                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
-                if (isRetry)
-                {
-                    test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
-                }
-                else
-                {
-                    var newTestCases = Interlocked.Increment(ref _newTestCases);
-                    var totalTestCases = Interlocked.Read(ref _totalTestCases);
-                    if (totalTestCases > 0 && CIVisibility.EarlyFlakeDetectionSettings.FaultySessionThreshold is { } faultySessionThreshold and > 0 and < 100)
-                    {
-                        if (((double)newTestCases * 100 / (double)totalTestCases) > faultySessionThreshold)
-                        {
-                            /* Spec:
-                             * If the number of new tests goes above a threshold:
-                             *      We will stop the feature altogether: no more tests will be considered new and no retries will be done.
-                             */
-
-                            // We need to stop the EFD feature off and set the session as a faulty.
-                            // But session object is not available from the test host
-                            // TODO: Implement in another PR an IPC mechanism to communicate with the parent process with the test session instance
-                            test.SetTag(EarlyFlakeDetectionTags.TestIsNew, (string)null);
-                            Common.Log.Warning<long, long, int>("EFD: The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", newTestCases, totalTestCases, faultySessionThreshold);
-                        }
-                    }
-                }
-            }
-        }
+        Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref _totalTestCases);
 
         // Set test method
         test.SetTestMethodInfo(testMethod);

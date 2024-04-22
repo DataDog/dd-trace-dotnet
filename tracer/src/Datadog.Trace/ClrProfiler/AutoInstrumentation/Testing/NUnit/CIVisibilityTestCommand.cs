@@ -33,37 +33,11 @@ internal class CIVisibilityTestCommand
             isTestNew)
         {
             // Get retries number
-            int remainingRetries;
-            var slowRetriesSettings = CIVisibility.EarlyFlakeDetectionSettings.SlowTestRetries;
-            if (slowRetriesSettings.FiveSeconds.HasValue && duration.TotalSeconds < 5)
-            {
-                remainingRetries = slowRetriesSettings.FiveSeconds.Value;
-                Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 seconds.", remainingRetries);
-            }
-            else if (slowRetriesSettings.TenSeconds.HasValue && duration.TotalSeconds < 10)
-            {
-                remainingRetries = slowRetriesSettings.TenSeconds.Value;
-                Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 10 seconds.", remainingRetries);
-            }
-            else if (slowRetriesSettings.ThirtySeconds.HasValue && duration.TotalSeconds < 30)
-            {
-                remainingRetries = slowRetriesSettings.ThirtySeconds.Value;
-                Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 30 seconds.", remainingRetries);
-            }
-            else if (slowRetriesSettings.FiveMinutes.HasValue && duration.TotalMinutes < 5)
-            {
-                remainingRetries = slowRetriesSettings.FiveMinutes.Value;
-                Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 minutes.", remainingRetries);
-            }
-            else
-            {
-                remainingRetries = 1;
-                Common.Log.Information("EFD: Number of executions has been set to 1. Current test duration is {Value}", duration);
-            }
+            var remainingRetries = Common.GetNumberOfExecutionsForDuration(duration) - 1;
 
             // Retries
             var retryNumber = 0;
-            var totalRetries = --remainingRetries;
+            var totalRetries = remainingRetries;
             while (remainingRetries-- > 0)
             {
                 retryNumber++;

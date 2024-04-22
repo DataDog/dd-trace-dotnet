@@ -128,33 +128,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                 {
                     // Let's make decisions based on the first execution regarding slow tests
                     var duration = TraceClock.Instance.UtcNow - testRunnerState.StartTime;
-                    var slowRetriesSettings = CIVisibility.EarlyFlakeDetectionSettings.SlowTestRetries;
-                    if (slowRetriesSettings.FiveSeconds.HasValue && duration.TotalSeconds < 5)
-                    {
-                        messageBus.TotalExecutions = slowRetriesSettings.FiveSeconds.Value;
-                        Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 seconds.", messageBus.TotalExecutions);
-                    }
-                    else if (slowRetriesSettings.TenSeconds.HasValue && duration.TotalSeconds < 10)
-                    {
-                        messageBus.TotalExecutions = slowRetriesSettings.TenSeconds.Value;
-                        Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 10 seconds.", messageBus.TotalExecutions);
-                    }
-                    else if (slowRetriesSettings.ThirtySeconds.HasValue && duration.TotalSeconds < 30)
-                    {
-                        messageBus.TotalExecutions = slowRetriesSettings.ThirtySeconds.Value;
-                        Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 30 seconds.", messageBus.TotalExecutions);
-                    }
-                    else if (slowRetriesSettings.FiveMinutes.HasValue && duration.TotalMinutes < 5)
-                    {
-                        messageBus.TotalExecutions = slowRetriesSettings.FiveMinutes.Value;
-                        Common.Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 minutes.", messageBus.TotalExecutions);
-                    }
-                    else
-                    {
-                        messageBus.TotalExecutions = 1;
-                        Common.Log.Information("EFD: Number of executions has been set to 1. Current test duration is {Value}", duration);
-                    }
-
+                    messageBus.TotalExecutions = Common.GetNumberOfExecutionsForDuration(duration);
                     messageBus.ExecutionNumber = messageBus.TotalExecutions - 1;
                 }
 

@@ -112,25 +112,7 @@ internal static class XUnitIntegration
                     }
                 }
 
-                var newTestCases = Interlocked.Read(ref _newTestCases);
-                var totalTestCases = Interlocked.Read(ref _totalTestCases);
-                if (totalTestCases > 0 && newTestCases > 0 && CIVisibility.EarlyFlakeDetectionSettings.FaultySessionThreshold is { } faultySessionThreshold and > 0 and < 100)
-                {
-                    if (((double)newTestCases * 100 / (double)totalTestCases) > faultySessionThreshold)
-                    {
-                        /* Spec:
-                         * If the number of new tests goes above a threshold:
-                         *      We will stop the feature altogether: no more tests will be considered new and no retries will be done.
-                         */
-
-                        // We need to stop the EFD feature off and set the session as a faulty.
-                        // But session object is not available from the test host
-                        // TODO: Implement in another PR an IPC mechanism to communicate with the parent process with the test session instance
-                        test.SetTag(EarlyFlakeDetectionTags.TestIsNew, (string?)null);
-                        retryMessageBus.AbortByThreshold = true;
-                        Common.Log.Warning<long, long, int>("EFD: The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", newTestCases, totalTestCases, faultySessionThreshold);
-                    }
-                }
+                Common.CheckFaultyThreshold(test, Interlocked.Read(ref _newTestCases), Interlocked.Read(ref _totalTestCases));
             }
         }
 
