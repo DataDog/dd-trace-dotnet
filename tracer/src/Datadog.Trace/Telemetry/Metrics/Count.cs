@@ -7,6 +7,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.SourceGenerators;
+using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 using NS = Datadog.Trace.Telemetry.MetricNamespaceConstants;
 
 namespace Datadog.Trace.Telemetry.Metrics;
@@ -182,8 +183,26 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<MetricTags.TruncationReason>("waf.input_truncated", isCommon: true, NS.ASM)] InputTruncated,
 
-#endregion
-#region Iast Namespace
+    #endregion
+    #region Rasp Namespace
+
+    /// <summary>
+    /// Counts the number of times a rule type is evaluated.
+    /// </summary>
+    [TelemetryMetric<RaspRuleType>("rasp.rule.eval", isCommon: true, NS.ASM)] RaspRuleEval,
+
+    /// <summary>
+    /// Counts the number of times a rule type has a match. Note that this can be inferred through the events sent to the backend.
+    /// </summary>
+    [TelemetryMetric<RaspRuleType>("rasp.rule.match", isCommon: true, NS.ASM)] RaspRuleMatch,
+
+    /// <summary>
+    /// Counts the number of times a timeout was hit when evaluating a specific rule type.
+    /// </summary>
+    [TelemetryMetric<RaspRuleType>("rasp.timeout", isCommon: true, NS.ASM)] RaspTimeout,
+
+    #endregion
+    #region Iast Namespace
 
     /// <summary>
     /// Counts the number of source methods that have been called
