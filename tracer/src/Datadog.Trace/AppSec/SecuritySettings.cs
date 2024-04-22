@@ -85,7 +85,7 @@ namespace Datadog.Trace.AppSec
                                                || val.Equals(UserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase))
                                          .ToLowerInvariant();
 
-            ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEnabled)
+            ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEnabled, "DD_EXPERIMENTAL_API_SECURITY_ENABLED")
                                        .AsBool(false);
 
             ApiSecuritySampleDelay = config.WithKeys(ConfigurationKeys.AppSec.ApiSecuritySampleDelay)
