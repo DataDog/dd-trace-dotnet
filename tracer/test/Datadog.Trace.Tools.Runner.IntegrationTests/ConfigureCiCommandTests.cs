@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             {
                 Environment.SetEnvironmentVariable(key, value);
 
-                using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+                using var agent = MockTracerAgent.Create(_output, TcpPortProvider.GetOpenPort());
                 var agentUrl = $"http://localhost:{agent.Port}";
 
                 var commandLine = $"ci configure --tracer-home tracerHome --agent-url {agentUrl}";
