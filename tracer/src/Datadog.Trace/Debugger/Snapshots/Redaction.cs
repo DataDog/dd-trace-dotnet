@@ -96,6 +96,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             "clientid",
             "clientsecret",
             "config",
+            "connectionstring",
             "connectsid",
             "cookie",
             "credentials",
