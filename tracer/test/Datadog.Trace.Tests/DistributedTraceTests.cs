@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 
@@ -11,9 +12,9 @@ namespace Datadog.Trace.Tests
     public class DistributedTraceTests
     {
         [Fact]
-        public void ManuallyDistributedTrace_CarriesExpectedValues()
+        public async Task ManuallyDistributedTrace_CarriesExpectedValues()
         {
-            var tracer = TracerHelper.Create();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
 
             ulong traceId;
             ulong parentSpanId;
@@ -33,7 +34,7 @@ namespace Datadog.Trace.Tests
             }
 
             var distributedTraceContext = new SpanContext(traceId, parentSpanId);
-            var secondTracer = TracerHelper.Create();
+            await using var secondTracer = TracerHelper.CreateWithFakeAgent();
             var spanCreationSettings = new SpanCreationSettings() { Parent = distributedTraceContext };
 
             using (var scope = secondTracer.StartActive("manual.trace", spanCreationSettings))

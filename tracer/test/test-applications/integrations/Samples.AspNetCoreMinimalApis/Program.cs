@@ -48,6 +48,6 @@ void AddCorrelationIdentifierToResponse(HttpContext context)
 
     if (context.Request.Headers.ContainsKey(CorrelationIdentifierHeaderName))
     {
-        context.Response.Headers.Add(CorrelationIdentifierHeaderName, context.Request.Headers[CorrelationIdentifierHeaderName]);
+        context.Response.Headers[CorrelationIdentifierHeaderName] = context.Request.Headers[CorrelationIdentifierHeaderName];
     }
 }

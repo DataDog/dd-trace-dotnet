@@ -1,4 +1,4 @@
-﻿// <copyright file="ApplicationTelemetryData.cs" company="Datadog">
+// <copyright file="ApplicationTelemetryData.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ namespace Datadog.Trace.Telemetry;
 
 internal class ApplicationTelemetryData
 {
-    public ApplicationTelemetryData(string serviceName, string env, string serviceVersion, string tracerVersion, string languageName, string languageVersion, string runtimeName, string runtimeVersion)
+    public ApplicationTelemetryData(string serviceName, string env, string serviceVersion, string tracerVersion, string languageName, string languageVersion, string runtimeName, string runtimeVersion, string? commitSha, string? repositoryUrl)
     {
         ServiceName = serviceName;
         Env = env;
@@ -19,6 +19,8 @@ internal class ApplicationTelemetryData
         LanguageVersion = languageVersion;
         RuntimeName = runtimeName;
         RuntimeVersion = runtimeVersion;
+        CommitSha = commitSha;
+        RepositoryUrl = repositoryUrl;
     }
 
     public string ServiceName { get; set; }
@@ -38,4 +40,8 @@ internal class ApplicationTelemetryData
     public string RuntimeVersion { get; set; }
 
     public string? RuntimePatches { get; set; }
+
+    public string? CommitSha { get; set; }
+
+    public string? RepositoryUrl { get; set; }
 }

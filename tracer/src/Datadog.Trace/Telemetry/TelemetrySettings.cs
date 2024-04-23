@@ -221,7 +221,7 @@ namespace Datadog.Trace.Telemetry
                 public CloudSettings(
                     string provider,
                     string resourceType,
-                    string resourceIdentifier)
+                    string? resourceIdentifier)
                 {
                     Provider = provider;
                     ResourceType = resourceType;
@@ -232,7 +232,7 @@ namespace Datadog.Trace.Telemetry
 
                 public string ResourceType { get; }
 
-                public string ResourceIdentifier { get; }
+                public string? ResourceIdentifier { get; }
             }
         }
     }

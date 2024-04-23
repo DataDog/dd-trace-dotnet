@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "CallstackProvider.h"
 #include "GarbageCollection.h"
 #include "IConfiguration.h"
 #include "LiveObjectsProvider.h"
@@ -47,7 +48,9 @@ LiveObjectsProvider::LiveObjectsProvider(
         pRuntimeIdStore,
         pConfiguration,
         nullptr,
-        metricsRegistry);
+        metricsRegistry,
+        CallstackProvider(shared::pmr::null_memory_resource()), // safe to pass the null memory resource for the provider. This provider does not collect callstack
+        shared::pmr::null_memory_resource()); // safe to pass null memory resource for the provider. This provider is only used to transform RawSamples
 }
 
 const char* LiveObjectsProvider::GetName()

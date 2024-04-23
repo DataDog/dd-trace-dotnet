@@ -2,7 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
+#nullable enable
 #if NETFRAMEWORK
 
 using System;
@@ -19,7 +19,7 @@ namespace Datadog.Trace.AspNet
 
         internal static void PushScope(HttpContext context, string key, Scope item)
         {
-            if (context == null)
+            if (context is null)
             {
                 return;
             }
@@ -43,11 +43,11 @@ namespace Datadog.Trace.AspNet
             }
         }
 
-        internal static Scope TryPopScope(HttpContext context, string key) => ExtractScope(context, key, Pop);
+        internal static Scope? TryPopScope(HttpContext context, string key) => ExtractScope(context, key, Pop);
 
-        internal static Scope TryPeekScope(HttpContext context, string key) => ExtractScope(context, key, Peek);
+        internal static Scope? TryPeekScope(HttpContext context, string key) => ExtractScope(context, key, Peek);
 
-        private static Scope ExtractScope(HttpContext context, string key, Func<Stack<Scope>, Scope> getter)
+        private static Scope? ExtractScope(HttpContext context, string key, Func<Stack<Scope>, Scope> getter)
         {
             var item = context?.Items[key];
             if (item is Scope storedScope)

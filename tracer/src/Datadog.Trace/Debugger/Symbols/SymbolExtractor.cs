@@ -463,7 +463,21 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
                 catch (Exception e)
                 {
-                    Log.Warning(e, "Symbol extractor fail to get information for method {Method}", methodScope.Name ?? "Unknown");
+                    var name = GetMethodName(methodScope.Name, methodDefHandle);
+                    Log.Warning(e, "Symbol extractor fail to get information for method {Method}", name);
+                }
+            }
+
+            string GetMethodName(string? name, MethodDefinitionHandle handle)
+            {
+                try
+                {
+                    return name ??
+                           MetadataReader.GetString(MetadataReader.GetMethodDefinition(handle).Name);
+                }
+                catch
+                {
+                    return "Unknown";
                 }
             }
         }
@@ -688,13 +702,22 @@ namespace Datadog.Trace.Debugger.Symbols
                 {
                     Name = MetadataReader.GetString(parameterDef.Name),
                     SymbolType = SymbolType.Arg,
-                    Line = UnknownFieldAndArgLine
+                    Line = UnknownFieldAndArgLine,
+                    Type = "Unknown"
                 };
                 index++;
             }
 
             var methodSig = method.DecodeSignature(new TypeProvider(false), 0);
-            for (int i = 0; i < argsSymbol.Length; i++)
+            var paramTypesMatchArgSymbols =
+                (!hasThis && methodSig.ParameterTypes.Length == argsSymbol.Length) ||
+                (hasThis && methodSig.ParameterTypes.Length == argsSymbol.Length + 1);
+            if (!paramTypesMatchArgSymbols)
+            {
+                return argsSymbol;
+            }
+
+            for (int i = hasThis ? 1 : 0; i < argsSymbol.Length; i++)
             {
                 argsSymbol[i].Type = methodSig.ParameterTypes[i];
             }

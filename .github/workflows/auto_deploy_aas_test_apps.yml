@@ -47,4 +47,4 @@ jobs:
         name: 'Trigger AAS deploy'
         if: env.stop != 'true'
         with:
-          aas_github_token: ${{ secrets.GH_TOKEN_PIERO }}
+          aas_github_token: ${{ secrets.GH_EXTERNAL_TOKEN }}

@@ -119,6 +119,7 @@ namespace Datadog.Trace.Tools.Runner
             // Initialize flags to enable code coverage and test skipping
             var codeCoverageEnabled = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
             var testSkippingEnabled = ciVisibilitySettings.TestsSkippingEnabled == true;
+            var earlyFlakeDetectionEnabled = ciVisibilitySettings.EarlyFlakeDetectionEnabled == true;
 
             var createTestSession = false;
             string codeCoveragePath = null;
@@ -173,7 +174,7 @@ namespace Datadog.Trace.Tools.Runner
 
                 // If we still don't know if we have to enable code coverage or test skipping, then let's request the configuration API
                 if (ciVisibilitySettings.IntelligentTestRunnerEnabled
-                 && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
+                 && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null || ciVisibilitySettings.EarlyFlakeDetectionEnabled == null))
                 {
                     try
                     {
@@ -192,8 +193,9 @@ namespace Datadog.Trace.Tools.Runner
                             itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
                         }
 
-                        codeCoverageEnabled = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
+                        codeCoverageEnabled = codeCoverageEnabled || itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
                         testSkippingEnabled = itrSettings.TestsSkipping == true;
+                        earlyFlakeDetectionEnabled = earlyFlakeDetectionEnabled || itrSettings.EarlyFlakeDetection.Enabled == true;
                     }
                     catch (Exception ex)
                     {
@@ -204,8 +206,11 @@ namespace Datadog.Trace.Tools.Runner
 
             Log.Debug("RunCiCommand: CodeCoverageEnabled = {Value}", codeCoverageEnabled);
             Log.Debug("RunCiCommand: TestSkippingEnabled = {Value}", testSkippingEnabled);
+            Log.Debug("RunCiCommand: EarlyFlakeDetectionEnabled = {Value}", earlyFlakeDetectionEnabled);
             ciVisibilitySettings.SetCodeCoverageEnabled(codeCoverageEnabled);
+            ciVisibilitySettings.SetEarlyFlakeDetectionEnabled(earlyFlakeDetectionEnabled);
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
+            profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled] = earlyFlakeDetectionEnabled ? "1" : "0";
 
             if (!testSkippingEnabled)
             {
@@ -218,56 +223,77 @@ namespace Datadog.Trace.Tools.Runner
             // Let's set the code coverage datacollector if the code coverage is enabled
             if (codeCoverageEnabled)
             {
-                // Check if we are running dotnet process
-                if (string.Equals(program, "dotnet", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(program, "VSTest.Console", StringComparison.OrdinalIgnoreCase))
-                {
-                    var isTestCommand = false;
-                    var isVsTestCommand = string.Equals(program, "VSTest.Console", StringComparison.OrdinalIgnoreCase);
-                    foreach (var arg in args.Skip(1))
-                    {
-                        isTestCommand |= string.Equals(arg, "test", StringComparison.OrdinalIgnoreCase);
-                        isVsTestCommand |= string.Equals(arg, "vstest", StringComparison.OrdinalIgnoreCase);
+                var isDotnetCommand = string.Equals(program, "dotnet", StringComparison.OrdinalIgnoreCase) ||
+                                      string.Equals(program, "dotnet.exe", StringComparison.OrdinalIgnoreCase);
+                var isVsTestCommand = string.Equals(program, "VSTest.Console", StringComparison.OrdinalIgnoreCase) ||
+                                      string.Equals(program, "VSTest.Console.exe", StringComparison.OrdinalIgnoreCase);
 
-                        if (isTestCommand || isVsTestCommand)
+                // Check if we are running dotnet process
+                if (isDotnetCommand || isVsTestCommand)
+                {
+                    // Try to find the test command type: `dotnet test` or `dotnet vstest`
+                    var isDotnetTestCommand = false;
+                    if (!isVsTestCommand)
+                    {
+                        foreach (var arg in args.Skip(1))
                         {
-                            break;
+                            isDotnetTestCommand |= string.Equals(arg, "test", StringComparison.OrdinalIgnoreCase);
+                            isVsTestCommand |= string.Equals(arg, "vstest", StringComparison.OrdinalIgnoreCase);
+
+                            if (isDotnetTestCommand || isVsTestCommand)
+                            {
+                                break;
+                            }
                         }
                     }
 
                     // Add the Datadog coverage collector
+                    var collectorAdded = false;
                     var baseDirectory = AppContext.BaseDirectory;
-                    if (isTestCommand)
+                    if (isDotnetTestCommand)
                     {
                         arguments += " --collect DatadogCoverage --test-adapter-path \"" + baseDirectory + "\"";
+                        collectorAdded = true;
                     }
                     else if (isVsTestCommand)
                     {
                         arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
+                        collectorAdded = true;
+                    }
+                    else
+                    {
+                        Log.Warning("RunCiCommand: Code coverage is enabled but the command is not a 'dotnet test' nor 'dotnet vstest' nor 'vstest.console' command. Code coverage will not be collected.");
                     }
 
-                    // Sets the code coverage path to store the json files for each module.
-                    var outputFolders = new[] { Environment.CurrentDirectory, Path.GetTempPath(), };
-                    foreach (var folder in outputFolders)
+                    // Sets the code coverage path to store the json files for each module in case we are not skipping test (global coverage is reliable).
+                    if (collectorAdded && !testSkippingEnabled)
                     {
-                        var outputPath = Path.Combine(folder, $"datadog-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}");
-                        if (!Directory.Exists(outputPath))
+                        var outputFolders = new[] { Environment.CurrentDirectory, Path.GetTempPath(), };
+                        foreach (var folder in outputFolders)
                         {
-                            try
+                            var outputPath = Path.Combine(folder, $"datadog-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}");
+                            if (!Directory.Exists(outputPath))
                             {
-                                Directory.CreateDirectory(outputPath);
-                                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath] = outputPath;
-                                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, outputPath);
-                                codeCoveragePath = outputPath;
-                                break;
-                            }
-                            catch (Exception ex)
-                            {
-                                Utils.WriteError("Error creating folder for the global code coverage files:");
-                                AnsiConsole.WriteException(ex);
+                                try
+                                {
+                                    Directory.CreateDirectory(outputPath);
+                                    profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath] = outputPath;
+                                    EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, outputPath);
+                                    codeCoveragePath = outputPath;
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Utils.WriteError("Error creating folder for the global code coverage files:");
+                                    AnsiConsole.WriteException(ex);
+                                }
                             }
                         }
                     }
+                }
+                else
+                {
+                    Log.Warning("RunCiCommand: Code coverage is enabled but the command is not a 'dotnet' nor 'vstest.console' command. Code coverage will not be collected.");
                 }
             }
 
@@ -281,6 +307,10 @@ namespace Datadog.Trace.Tools.Runner
                 session = TestSession.InternalGetOrCreate(command, null, null, null, true);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, codeCoverageEnabled ? "true" : "false");
+                if (earlyFlakeDetectionEnabled)
+                {
+                    session.SetTag(EarlyFlakeDetectionTags.Enabled, "true");
+                }
 
                 // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
                 // In that case we tell the backend no tests are going to be skipped.

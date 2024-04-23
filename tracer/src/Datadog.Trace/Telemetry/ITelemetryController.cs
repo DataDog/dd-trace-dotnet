@@ -59,5 +59,10 @@ namespace Datadog.Trace.Telemetry
         /// Dumps the current telemetry state to the provided filename.
         /// </summary>
         Task DumpTelemetry(string filePath);
+
+        /// <summary>
+        /// Updates Git metadata for telemetry
+        /// </summary>
+        void RecordGitMetadata(GitMetadata gitMetadata);
     }
 }

@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
     /// to compensate for too rapid changes in the incoming events rate and maintain the target average
     /// number of samples per window.
     /// </summary>
-    internal class AdaptiveSampler
+    internal class AdaptiveSampler : IAdaptiveSampler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AdaptiveSampler>();
 
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
         }
 
-        internal bool Sample()
+        public bool Sample()
         {
             _countsRef.AddTest();
 
@@ -116,20 +116,20 @@ namespace Datadog.Trace.Debugger.RateLimiting
             return false;
         }
 
-        internal bool Keep()
+        public bool Keep()
         {
             _countsRef.AddTest();
             _countsRef.AddSample();
             return true;
         }
 
-        internal bool Drop()
+        public bool Drop()
         {
             _countsRef.AddTest();
             return false;
         }
 
-        internal double NextDouble()
+        public double NextDouble()
         {
             return ThreadSafeRandom.Shared.NextDouble();
         }

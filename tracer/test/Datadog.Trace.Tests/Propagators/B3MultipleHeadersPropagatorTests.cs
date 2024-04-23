@@ -167,6 +167,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = rawSpanId,
                            Origin = null,
                            SamplingPriority = samplingPriority,
+                           IsRemote = true,
                        });
         }
 
@@ -211,6 +212,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = rawSpanId,
                            Origin = null,
                            SamplingPriority = samplingPriority,
+                           IsRemote = true,
                        });
         }
 

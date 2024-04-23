@@ -40,5 +40,17 @@ namespace Datadog.Trace.Tests.Debugger
         {
             Assert.Equal(shouldYield, Redaction.IsRedactedKeyword(keyword));
         }
+
+        [Theory]
+        [InlineData("x-api-key", true)]
+        [InlineData("x_api_key", true)]
+        [InlineData("xapikey", true)]
+        [InlineData("XApiKey", true)]
+        [InlineData("X_Api-Key", true)]
+        [InlineData("x_key", false)]
+        public void ShouldRedactKeywordsTest(string keyword, bool shouldRedacted)
+        {
+            Assert.Equal(shouldRedacted, Redaction.ShouldRedact(keyword, typeof(string), out _));
+        }
     }
 }

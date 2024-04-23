@@ -31,7 +31,8 @@ internal class PushStreamContent : IHttpContent
         _onStreamAvailable = onStreamAvailable;
     }
 
-    public long? Length => 0;
+    // We don't know the length, so don't send a content-length header
+    public long? Length => null;
 
     public async Task CopyToAsync(Stream destination)
     {

@@ -110,17 +110,22 @@ namespace CallTargetNativeTest
             
             // call target bubble up exception
             definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowBubbleUpOnBegin).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowBubbleUpOnBegin.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
-            
             definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnBegin).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnBegin.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
-            
             definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowBubbleUpOnEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowBubbleUpOnEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
-            
             definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
-            
             definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegrationAsync).FullName));
-            
             definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegrationAsync).FullName));
-            
+
+            // Add Ref Struct integrations
+            definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "VoidReadOnlySpanMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructOneParametersVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "VoidSpanMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructOneParametersVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "VoidReadOnlyRefStructMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructOneParametersVoidIntegration).FullName));
+
+            definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "Void2ReadOnlySpanMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructTwoParametersVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "Void2SpanMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructTwoParametersVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "Void2ReadOnlyRefStructMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructTwoParametersVoidIntegration).FullName));
+
+            definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "VoidMixedMethod", new[] { "_", "_", "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructFourParametersVoidIntegration).FullName));
             
             definitionsId = Guid.NewGuid().ToString("N");
             definitions = definitionsList.ToArray();
@@ -261,6 +266,11 @@ namespace CallTargetNativeTest
                         GenericParentWithOutArguments();
                         break;
                     }
+                case "withrefstruct":
+                    {
+                        WithRefStructArguments();
+                        break;
+                    }
                 case "abstract":
                     {
                         AbstractMethod();
@@ -384,10 +394,12 @@ namespace CallTargetNativeTest
                         CallTargetBubbleUpExceptions();
                         //.
                         CallSite();
+                        // .
+                        WithRefStructArguments();
                         break;
                     }
                 default:
-                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/abstract/interface/remove/all as an argument.");
+                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/withrefstruct/abstract/interface/remove/all as an argument.");
                     return;
             }
 

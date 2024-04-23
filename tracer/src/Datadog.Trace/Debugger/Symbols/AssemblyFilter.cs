@@ -6,34 +6,34 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
     internal class AssemblyFilter
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AssemblyFilter));
+
         internal static bool ShouldSkipAssembly(Assembly assembly, HashSet<string>? includeList = null)
         {
             var assemblyName = assembly.GetName().Name;
-            return assembly.IsDynamic ||
+            return string.IsNullOrWhiteSpace(assemblyName) ||
+                   assembly.IsDynamic ||
                    assembly.ManifestModule.IsResource() ||
                    string.IsNullOrWhiteSpace(assembly.Location) ||
-                   string.IsNullOrWhiteSpace(assemblyName) ||
-                   IsThirdPartyCode(assemblyName) ||
                    IsDatadogAssembly(assemblyName) ||
+                   IsThirdPartyCode(assemblyName) ||
                    (includeList != null && !IsInIncludeList(assemblyName, includeList));
         }
 
         private static bool IsThirdPartyCode(string assemblyName)
         {
-            // This implementation is just a stub - we will need to replace it
-            // with a proper implementation in the future.
-            string[] thirdPartyStartsWith = { "Microsoft", "System", "netstandard" };
-            return thirdPartyStartsWith.Any(t => assemblyName?.StartsWith(t, StringComparison.OrdinalIgnoreCase) == true);
+            return ThirdPartyModules.Contains(GetAssemblyNameWithoutExtension(assemblyName));
         }
 
-        private static bool IsDatadogAssembly(string assemblyName)
+        internal static bool IsDatadogAssembly(string? assemblyName)
         {
             return assemblyName?.StartsWith("datadog.", StringComparison.OrdinalIgnoreCase) == true;
         }
@@ -41,6 +41,42 @@ namespace Datadog.Trace.Debugger.Symbols
         private static bool IsInIncludeList(string assemblyName, HashSet<string>? includeList)
         {
             return includeList?.Contains(assemblyName) == true;
+        }
+
+        private static string? GetAssemblyNameWithoutExtension(string assemblyName)
+        {
+            if (string.IsNullOrEmpty(assemblyName))
+            {
+                return assemblyName;
+            }
+
+            try
+            {
+                var lastPeriod = assemblyName.LastIndexOf('.');
+                if (lastPeriod == -1)
+                {
+                    return assemblyName;
+                }
+
+                if (lastPeriod == assemblyName.Length - 1)
+                {
+                    return assemblyName.Substring(0, assemblyName.Length - 1);
+                }
+
+                var ext = assemblyName.Remove(0, lastPeriod + 1).ToLower();
+
+                if (ext is "dll" or "exe" or "so")
+                {
+                    return assemblyName.Substring(0, assemblyName.Length - ext.Length);
+                }
+
+                return assemblyName;
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Failed to get the name of {AssemblyName} without extension", assemblyName);
+                return null;
+            }
         }
     }
 }

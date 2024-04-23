@@ -11,6 +11,8 @@
 #include "CounterMetric.h"
 #include "MeanMaxMetric.h"
 
+#include "shared/src/native-src/dd_memory_resource.hpp"
+
 class SampleValueTypeProvider;
 
 class GarbageCollectionProvider
@@ -25,7 +27,8 @@ public:
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        shared::pmr::memory_resource* memoryResource);
 
     // Inherited via IGarbageCollectionsListener
     void OnGarbageCollectionStart(

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 
@@ -14,7 +16,13 @@ internal abstract class HttpTransportBase
 
     internal abstract bool IsBlocked { get; }
 
-    internal abstract IContext GetAdditiveContext();
+    internal abstract int StatusCode { get; }
+
+    internal abstract IDictionary<string, object>? RouteData { get; }
+
+    internal abstract bool ReportedExternalWafsRequestHeaders { get; set; }
+
+    internal abstract IContext? GetAdditiveContext();
 
     /// <summary>
     /// Disposes the WAF's context stored in HttpContext.Items[]. If it doesn't exist, nothing happens, no crash

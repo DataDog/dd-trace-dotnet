@@ -24,6 +24,48 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
     /// <summary>
+    /// A Startup file for testing RazorPages (without endpoint-routing enabled)
+    /// </summary>
+    public class RazorPagesStartup
+    {
+        public RazorPagesStartup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+#if NETCOREAPP2_1
+            services.AddMvc();
+#else
+            services.AddRazorPages(c => c.RootDirectory = "/AspNetCoreRazorPages");
+#endif
+        }
+
+        public void Configure(IApplicationBuilder builder)
+        {
+            builder.UseMultipleErrorHandlerPipelines(app =>
+            {
+#if NETCOREAPP2_1
+                app.UseMvc();
+#else
+                app.UseRouting();
+
+                app.UseAuthorization();
+
+                app.UseEndpoints(endpoints =>
+                {
+                    endpoints.MapRazorPages();
+                });
+#endif
+            });
+        }
+    }
+
+    /// <summary>
     /// A Startup file for testing MVC (without endpoint-routing enabled)
     /// </summary>
     public class MvcStartup

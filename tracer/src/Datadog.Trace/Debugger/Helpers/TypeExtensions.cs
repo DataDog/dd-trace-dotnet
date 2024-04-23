@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.Debugger.Helpers
 {
@@ -56,6 +57,11 @@ namespace Datadog.Trace.Debugger.Helpers
                 || type.IsEnum
                 || type.Equals(typeof(string))
                 || type.Equals(typeof(decimal));
+        }
+
+        internal static bool IsDefaultValue<T>(ref T value)
+        {
+            return EqualityComparer<T>.Default.Equals(value, default);
         }
     }
 }

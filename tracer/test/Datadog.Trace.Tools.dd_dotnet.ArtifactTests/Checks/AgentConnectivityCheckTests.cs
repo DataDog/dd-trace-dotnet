@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
         {
             using var agent = MockTracerAgent.Create(Output, TcpPortProvider.GetOpenPort());
 
-            agent.RequestReceived += (_, e) => e.Value.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            agent.CustomResponses[MockTracerResponseType.Traces] = new MockTracerResponse() { StatusCode = (int)HttpStatusCode.InternalServerError };
 
             var (standardOutput, errorOutput, exitCode) = await RunTool($"check agent http://localhost:{agent.Port}/");
 

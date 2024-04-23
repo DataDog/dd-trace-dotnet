@@ -5,7 +5,6 @@
 
 #nullable enable
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -24,14 +23,19 @@ namespace Datadog.Trace.AppSec.Waf
                 Data = returnStruct.Events.DecodeObjectArray();
             }
 
-            if (Actions is not null && Actions.Count > 0)
+            if (Actions is { Count: > 0 })
             {
-                Actions.TryGetValue(BlockingAction.BlockRequestType, out var value);
-                BlockInfo = value as Dictionary<string, object?>;
-                Actions.TryGetValue(BlockingAction.GenerateStackType, out value);
-                SendStackInfo = value as Dictionary<string, object?>;
-                Actions.TryGetValue(BlockingAction.RedirectRequestType, out value);
-                RedirectInfo = value as Dictionary<string, object?>;
+                if (Actions.TryGetValue(BlockingAction.BlockRequestType, out var value))
+                {
+                    BlockInfo = value as Dictionary<string, object?>;
+                    ShouldBlock = true;
+                }
+
+                if (Actions.TryGetValue(BlockingAction.RedirectRequestType, out value))
+                {
+                    RedirectInfo = value as Dictionary<string, object?>;
+                    ShouldBlock = true;
+                }
             }
 
             AggregatedTotalRuntime = aggregatedTotalRuntime;
@@ -58,6 +62,8 @@ namespace Datadog.Trace.AppSec.Waf
         /// Gets the total runtime in microseconds with parameter passing to the waf
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindings { get; }
+
+        public bool ShouldBlock { get; }
 
         public Dictionary<string, object?>? BlockInfo { get; }
 

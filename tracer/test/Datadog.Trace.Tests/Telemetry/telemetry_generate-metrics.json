@@ -12,7 +12,9 @@
     "service_version": "1.2.3",
     "language_version": "14.16.1",
     "runtime_name": "dotnet",
-    "runtime_version": "7.0.3"
+    "runtime_version": "7.0.3",
+    "commit_sha": "testCommitSha",
+    "repository_url": "testRepositoryUrl"
   },
   "host": {
     "hostname": "i-09ecf74c319c49be8",

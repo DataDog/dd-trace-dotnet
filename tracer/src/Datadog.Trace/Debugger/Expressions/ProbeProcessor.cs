@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
@@ -16,7 +17,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Expressions
 {
-    internal class ProbeProcessor
+    internal class ProbeProcessor : IProbeProcessor
     {
         private const string DynamicPrefix = "_dd.di.";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
@@ -67,6 +68,19 @@ namespace Datadog.Trace.Debugger.Expressions
 
             SetExpressions(probe);
 
+            var capture = (probe as LogProbe)?.Capture;
+            var maxInfo = capture != null
+                ? new CaptureLimitInfo(
+                    MaxReferenceDepth: capture.Value.MaxReferenceDepth <= 0 ? DebuggerSettings.DefaultMaxDepthToSerialize : capture.Value.MaxReferenceDepth,
+                    MaxCollectionSize: capture.Value.MaxCollectionSize <= 0 ? DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy : capture.Value.MaxCollectionSize,
+                    MaxFieldCount: capture.Value.MaxFieldCount <= 0 ? DebuggerSettings.DefaultMaxNumberOfFieldsToCopy : capture.Value.MaxFieldCount,
+                    MaxLength: capture.Value.MaxLength <= 0 ? DebuggerSettings.DefaultMaxStringLength : capture.Value.MaxLength)
+                : new CaptureLimitInfo(
+                    MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                    MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                    MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
+                    MaxLength: DebuggerSettings.DefaultMaxStringLength);
+
             ProbeInfo = new ProbeInfo(
                 probe.Id,
                 probe.Version ?? 0,
@@ -77,7 +91,8 @@ namespace Datadog.Trace.Debugger.Expressions
                 (probe as MetricProbe)?.MetricName,
                 HasCondition(),
                 probe.Tags,
-                (probe as SpanDecorationProbe)?.TargetSpan);
+                (probe as SpanDecorationProbe)?.TargetSpan,
+                maxInfo);
         }
 
         [DebuggerStepThrough]
@@ -88,25 +103,53 @@ namespace Datadog.Trace.Debugger.Expressions
             return segment == null ? null : new DebuggerExpression(segment.Dsl, segment.Json?.ToString(), segment.Str);
         }
 
-        internal ProbeProcessor UpdateProbeProcessor(ProbeDefinition probe)
+        public void LogException(Exception ex, IDebuggerSnapshotCreator snapshotCreator)
+        {
+        }
+
+        public IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe)
         {
             InitializeProbeProcessor(probe);
             return this;
         }
 
+        public IDebuggerSnapshotCreator CreateSnapshotCreator()
+        {
+            return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags, ProbeInfo.CaptureLimitInfo);
+        }
+
         private void SetExpressions(ProbeDefinition probe)
         {
             // ReSharper disable once PossibleInvalidOperationException
-            _templates = (probe as LogProbe)?.Segments?.Where(seg => seg != null).Select(seg => ToDebuggerExpression(seg).Value).ToArray();
-            _condition = ToDebuggerExpression((probe as LogProbe)?.When);
-            _metric = ToDebuggerExpression((probe as MetricProbe)?.Value);
-            _spanDecorations = (probe as SpanDecorationProbe)?.Decorations?.Where(dec => dec != null).Select(dec =>
+            switch (probe)
             {
-                return new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>(
-                    ToDebuggerExpression(dec.When),
-                    dec.Tags.Select(tag => new KeyValuePair<string, DebuggerExpression[]>(
-                                        tag.Name, tag.Value.Segments?.Where(seg => seg != null).Select(seg => ToDebuggerExpression(seg).Value).ToArray())).ToArray());
-            }).ToArray();
+                case LogProbe logProbe:
+                    _templates = logProbe.Segments?.Select(seg => ToDebuggerExpression(seg).Value).ToArray();
+                    _condition = ToDebuggerExpression(logProbe.When);
+                    break;
+                case MetricProbe metricProbe:
+                    _metric = ToDebuggerExpression(metricProbe.Value);
+                    break;
+                case SpanDecorationProbe spanDecorationProbe:
+                    _spanDecorations = spanDecorationProbe.
+                        Decorations
+                      ?.Where(dec => dec != null)
+                       .Select(
+                            dec =>
+                            {
+                                var whenExpression = ToDebuggerExpression(dec.When);
+                                var keyValuePairs = dec.Tags?.Select(
+                                                            tag => new KeyValuePair<string, DebuggerExpression[]>(
+                                                                tag.Name,
+                                                                tag.Value?.Segments?.Select(seg => ToDebuggerExpression(seg).Value).ToArray()))
+                                                       .ToArray();
+
+                                return new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>(whenExpression, keyValuePairs);
+                            })
+                       .ToArray();
+
+                    break;
+            }
         }
 
         private ProbeExpressionEvaluator GetOrCreateEvaluator()
@@ -115,11 +158,23 @@ namespace Datadog.Trace.Debugger.Expressions
             return _evaluator;
         }
 
-        internal bool Process<TCapture>(ref CaptureInfo<TCapture> info, DebuggerSnapshotCreator snapshotCreator)
+        public bool ShouldProcess(in ProbeData probeData)
         {
+            return HasCondition() || probeData.Sampler.Sample();
+        }
+
+        public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
+        {
+            var snapshotCreator = (DebuggerSnapshotCreator)inSnapshotCreator;
+
             ExpressionEvaluationResult evaluationResult = default;
             try
             {
+                if (info.MethodState is not (MethodState.BeginLine or MethodState.BeginLineAsync or MethodState.EntryStart or MethodState.EntryAsync))
+                {
+                    snapshotCreator.StopSampling();
+                }
+
                 switch (info.MethodState)
                 {
                     case MethodState.BeginLine:
@@ -131,7 +186,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         {
                             AddAsyncMethodArguments(snapshotCreator, ref info);
                             snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                            evaluationResult = Evaluate(snapshotCreator, out var shouldStopCapture);
+                            evaluationResult = Evaluate(snapshotCreator, out var shouldStopCapture, probeData.Sampler);
                             if (shouldStopCapture)
                             {
                                 snapshotCreator.Stop();
@@ -197,7 +252,7 @@ namespace Datadog.Trace.Debugger.Expressions
                                         }
 
                                         snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                                        evaluationResult = Evaluate(snapshotCreator, out var shouldStopCapture);
+                                        evaluationResult = Evaluate(snapshotCreator, out var shouldStopCapture, probeData.Sampler);
                                         if (shouldStopCapture)
                                         {
                                             snapshotCreator.Stop();
@@ -237,16 +292,20 @@ namespace Datadog.Trace.Debugger.Expressions
                             $"{info.MethodState} is not valid value here");
                 }
 
-                return ProcessCapture(ref info, ref snapshotCreator, ref evaluationResult);
+                return ProcessCapture(ref info, snapshotCreator, ref evaluationResult);
             }
             catch (Exception e)
             {
                 Log.Error(e, "Failed to process probe. Probe Id: {ProbeId}", ProbeInfo.ProbeId);
                 return false;
             }
+            finally
+            {
+                snapshotCreator.StartSampling();
+            }
         }
 
-        private ExpressionEvaluationResult Evaluate(DebuggerSnapshotCreator snapshotCreator, out bool shouldStopCapture)
+        private ExpressionEvaluationResult Evaluate(DebuggerSnapshotCreator snapshotCreator, out bool shouldStopCapture, IAdaptiveSampler sampler)
         {
             ExpressionEvaluationResult evaluationResult = default;
             shouldStopCapture = false;
@@ -287,7 +346,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.Metric.HasValue)
             {
-                LiveDebugger.Instance.SendMetrics(ProbeInfo.MetricKind.Value, ProbeInfo.MetricName, evaluationResult.Metric.Value, ProbeInfo.ProbeId);
+                LiveDebugger.Instance.SendMetrics(ProbeInfo, ProbeInfo.MetricKind.Value, ProbeInfo.MetricName, evaluationResult.Metric.Value, ProbeInfo.ProbeId);
                 // snapshot creator is created for all probes in the method invokers,
                 // if it is a metric probe, once we sent the value, we can stop the invokers and dispose the snapshot creator
                 snapshotCreator.Dispose();
@@ -301,7 +360,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.Condition != null && // meaning not metric, span probe or span decoration
                 (evaluationResult.Condition is false ||
-                !ProbeRateLimiter.Instance.Sample(ProbeInfo.ProbeId)))
+                !sampler.Sample()))
             {
                 // if the expression evaluated to false, or there is a rate limit, stop capture
                 shouldStopCapture = true;
@@ -317,6 +376,8 @@ namespace Datadog.Trace.Debugger.Expressions
             {
                 return;
             }
+
+            var attachedTags = false;
 
             for (int i = 0; i < evaluationResult.Decorations.Length; i++)
             {
@@ -337,6 +398,8 @@ namespace Datadog.Trace.Debugger.Expressions
                             Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, null);
                         }
 
+                        attachedTags = true;
+
                         break;
                     case TargetSpan.Active:
                         Tracer.Instance.ScopeManager.Active.Span.SetTag(decoration.TagName, decoration.Value);
@@ -349,6 +412,8 @@ namespace Datadog.Trace.Debugger.Expressions
                         {
                             Tracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, null);
                         }
+
+                        attachedTags = true;
 
                         break;
                     default:
@@ -363,9 +428,14 @@ namespace Datadog.Trace.Debugger.Expressions
                 snapshotCreator.Dispose();
                 shouldStopCapture = true;
             }
+
+            if (attachedTags)
+            {
+                LiveDebugger.Instance.SetProbeStatusToEmitting(ProbeInfo);
+            }
         }
 
-        private void AddAsyncMethodArguments<T>(DebuggerSnapshotCreator snapshotCreator, ref CaptureInfo<T> captureInfo)
+        internal static void AddAsyncMethodArguments<T>(DebuggerSnapshotCreator snapshotCreator, ref CaptureInfo<T> captureInfo)
         {
             var asyncCaptureInfo = captureInfo.AsyncCaptureInfo;
             for (int i = 0; i < asyncCaptureInfo.HoistedArguments.Length; i++)
@@ -381,7 +451,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        private void AddAsyncMethodLocals<T>(DebuggerSnapshotCreator snapshotCreator, ref CaptureInfo<T> captureInfo)
+        internal static void AddAsyncMethodLocals<T>(DebuggerSnapshotCreator snapshotCreator, ref CaptureInfo<T> captureInfo)
         {
             var asyncCaptureInfo = captureInfo.AsyncCaptureInfo;
             for (int i = 0; i < asyncCaptureInfo.HoistedLocals.Length; i++)
@@ -397,7 +467,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        private bool ProcessCapture<TCapture>(ref CaptureInfo<TCapture> info, ref DebuggerSnapshotCreator snapshotCreator, ref ExpressionEvaluationResult evaluationResult)
+        private bool ProcessCapture<TCapture>(ref CaptureInfo<TCapture> info, DebuggerSnapshotCreator snapshotCreator, ref ExpressionEvaluationResult evaluationResult)
         {
             switch (ProbeInfo.ProbeLocation)
             {
@@ -430,7 +500,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (!ProbeInfo.IsFullSnapshot)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                        LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
+                        LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
                         break;
                     }
 
@@ -449,7 +519,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (!ProbeInfo.IsFullSnapshot)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                        LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
+                        LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
                         break;
                     }
 
@@ -476,7 +546,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         }
 
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                        LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
+                        LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
                         snapshotCreator.Stop();
                         break;
                     }
@@ -515,7 +585,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     }
 
                     var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
-                    LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
+                    LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
                     snapshotCreator.Stop();
                     break;
 

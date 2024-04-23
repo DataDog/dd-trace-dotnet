@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.Json;
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
 
 public class JsonDocumentTests : InstrumentationTestsBase
 {

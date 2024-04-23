@@ -6,6 +6,8 @@
 #include "CollectorBase.h"
 #include "RawWallTimeSample.h"
 
+#include "shared/src/native-src/dd_memory_resource.hpp"
+
 // forward declarations
 class IConfiguration;
 class IFrameStore;
@@ -27,7 +29,8 @@ public:
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration
+        IConfiguration* pConfiguration,
+        shared::pmr::memory_resource* memoryResource
         );
 
 private:

@@ -44,10 +44,10 @@ private:
     mdMemberRef GetCallTargetReturnValueDefaultMemberRef(mdTypeSpec callTargetReturnTypeSpec);
     mdMethodSpec GetCallTargetDefaultValueMethodSpec(const TypeSignature* methodArgument);
 
-    HRESULT ModifyLocalSig(ILRewriter* reWriter, TypeSignature* methodReturnValue, ULONG* callTargetStateIndex,
-                           ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
-                           mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken, std::vector<ULONG>& additionalLocalIndices, bool
-                           isAsyncMethod = false);
+    HRESULT ModifyLocalSig(ILRewriter* reWriter, TypeSignature* methodReturnValue, std::vector<TypeSignature>* methodTypeArguments,
+                           ULONG* callTargetStateIndex, ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
+                           mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken,
+                           std::vector<ULONG>& additionalLocalIndices, bool isAsyncMethod = false);
 
 protected:
     // CallTarget tokens
@@ -59,6 +59,7 @@ protected:
     mdTypeRef callTargetStateTypeRef = mdTypeRefNil;
     mdTypeRef callTargetReturnVoidTypeRef = mdTypeRefNil;
     mdTypeRef callTargetReturnTypeRef = mdTypeRefNil;
+    mdTypeRef callTargetRefStructTypeRef = mdTypeRefNil;
     mdTypeRef exTypeRef = mdTypeRefNil;
     mdTypeRef runtimeTypeHandleRef = mdTypeRefNil;
     mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
@@ -71,7 +72,10 @@ protected:
     virtual const shared::WSTRING& GetCallTargetStateType() = 0;
     virtual const shared::WSTRING& GetCallTargetReturnType() = 0;
     virtual const shared::WSTRING& GetCallTargetReturnGenericType() = 0;
-    virtual void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
+    virtual const shared::WSTRING& GetCallTargetRefStructType() = 0;
+
+    virtual void AddAdditionalLocals(TypeSignature* methodReturnValue, std::vector<TypeSignature>* methodTypeArguments,
+                                     COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
                                      ULONG& signatureSize, bool isAsyncMethod);
 
     CallTargetTokens(ModuleMetadata* moduleMetadataPtr, bool enableByRefInstrumentation,
@@ -80,7 +84,7 @@ protected:
 public:
     HRESULT EnsureCorLibTokens();
 
-    virtual int GetAdditionalLocalsCount();
+    virtual int GetAdditionalLocalsCount(const std::vector<TypeSignature>& methodTypeArguments);
     mdTypeRef GetObjectTypeRef();
     mdTypeRef GetExceptionTypeRef();
     mdTypeRef GetRuntimeTypeHandleTypeRef();
@@ -88,9 +92,8 @@ public:
     mdAssemblyRef GetCorLibAssemblyRef();
     mdToken GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType);
 
-    HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, TypeSignature* methodReturnType,
-                                        ULONG* callTargetStateIndex, ULONG* exceptionIndex,
-                                        ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
+    HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, TypeSignature* methodReturnType, std::vector<TypeSignature>* methodTypeArguments,
+                                        ULONG* callTargetStateIndex, ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                         mdToken* callTargetStateToken, mdToken* exceptionToken,
                                         mdToken* callTargetReturnToken, ILInstr** firstInstruction, std::vector<ULONG>& additionalLocalIndices, bool
                                         isAsyncMethod = false);

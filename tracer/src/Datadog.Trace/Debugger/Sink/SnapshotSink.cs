@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System.Collections.Generic;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Util;
@@ -17,7 +18,7 @@ namespace Datadog.Trace.Debugger.Sink
         private readonly int _batchSize;
         private readonly SnapshotSlicer _snapshotSlicer;
 
-        private SnapshotSink(int batchSize, SnapshotSlicer snapshotSlicer)
+        internal SnapshotSink(int batchSize, SnapshotSlicer snapshotSlicer)
         {
             _snapshotSlicer = snapshotSlicer;
             _batchSize = batchSize;

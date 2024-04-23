@@ -135,6 +135,8 @@
 	<div><a href="/Iast/ReflectedXssEscaped/?param=Normal Texxt">GET /Iast/ReflectedXssEscaped with normal text</a></div>
     
     <div><a href="/Iast/JsonParseTainting?json=%7B%22key%22%3A%20%22value%22%7D">GET /Iast/JsonParseTainting [Vuln CommandExecution]</a></div>
+    
+    <div><a href="/Iast/NHibernateQuery?username=test">GET /Iast/NHibernateQuery [SQL Injection on NHibernate]</a></div>
 
     <div>
         @Html.Raw(Context.Request.Query["q"])

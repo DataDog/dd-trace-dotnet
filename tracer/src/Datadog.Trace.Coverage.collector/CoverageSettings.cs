@@ -15,7 +15,7 @@ namespace Datadog.Trace.Coverage.Collector;
 /// </summary>
 internal class CoverageSettings
 {
-    public CoverageSettings(XmlElement? configurationElement, string tracerHome, CIVisibilitySettings? ciVisibilitySettings = null)
+    public CoverageSettings(XmlElement? configurationElement, string? tracerHome, CIVisibilitySettings? ciVisibilitySettings = null)
     {
         TracerHome = tracerHome;
         CIVisibility = ciVisibilitySettings ?? CIVisibilitySettings.FromDefaultSources();
@@ -65,7 +65,7 @@ internal class CoverageSettings
     /// <summary>
     /// Gets the tracer home path
     /// </summary>
-    public string TracerHome { get; }
+    public string? TracerHome { get; }
 
     /// <summary>
     /// Gets the CI Visibility settings

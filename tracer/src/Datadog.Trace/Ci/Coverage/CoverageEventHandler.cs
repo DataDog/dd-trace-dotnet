@@ -65,6 +65,7 @@ internal abstract class CoverageEventHandler
                 TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageFinished(telemetryTestingFramework, MetricTags.CIVisibilityCoverageLibrary.Custom);
             }
 
+            OnClearContext(context);
             return sessionEndData;
         }
 
@@ -83,4 +84,10 @@ internal abstract class CoverageEventHandler
     /// <param name="context">Coverage context container</param>
     /// <returns>Instance of the final coverage report</returns>
     protected abstract object? OnSessionFinished(CoverageContextContainer context);
+
+    /// <summary>
+    /// Method called when the context is cleared
+    /// </summary>
+    /// <param name="context">Context to be cleared</param>
+    protected abstract void OnClearContext(CoverageContextContainer context);
 }

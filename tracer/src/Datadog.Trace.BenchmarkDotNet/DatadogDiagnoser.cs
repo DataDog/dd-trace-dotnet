@@ -127,7 +127,7 @@ public class DatadogDiagnoser : IDiagnoser
     /// <inheritdoc />
     public IEnumerable<ValidationError> Validate(ValidationParameters validationParameters) => Array.Empty<ValidationError>();
 
-    private static IEnumerable<string> GetHomeFolderPaths(DiagnoserActionParameters parameters)
+    private static IEnumerable<string?> GetHomeFolderPaths(DiagnoserActionParameters parameters)
     {
         // try to locate it from the environment variable
         yield return EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");

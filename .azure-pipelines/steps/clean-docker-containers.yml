@@ -1,0 +1,16 @@
+steps:
+- bash: |
+    ids=$(docker ps -q -a)
+    if [ ! -z "$ids" ]; then
+      docker rm -f $ids
+    fi
+  displayName: Clean docker
+  condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
+
+- powershell: |
+    $ids = $(docker ps -q -a)
+    if ($ids) {
+      docker rm -f $ids
+    }
+  displayName: Clean Windows docker
+  condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))

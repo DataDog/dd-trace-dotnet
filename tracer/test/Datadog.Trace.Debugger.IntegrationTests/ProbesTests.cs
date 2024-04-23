@@ -63,7 +63,7 @@ public class ProbesTests : TestHelper
     };
 
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
-    private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack" };
+    private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack", "m_task" };
 
     public ProbesTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
@@ -404,7 +404,7 @@ public class ProbesTests : TestHelper
         await RunMethodProbeTests(testDescription, false);
     }
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NET6_0_OR_GREATER
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "False")]
@@ -861,7 +861,7 @@ public class ProbesTests : TestHelper
                                 break;
 
                             case "message":
-                                if (!value.Contains("Installed probe ") && !value.Contains("Error installing probe ") &&
+                                if (!value.Contains("Installed probe ") && !value.Contains("Error installing probe ") && !value.Contains("Emitted probe ") &&
                                     !IsParentName(item, parentName: "throwable") &&
                                     !IsParentName(item, parentName: "exception"))
                                 {

@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
@@ -64,12 +65,12 @@ internal readonly partial struct SecurityCoordinator
     {
         if (result is not null)
         {
-            if (result!.BlockInfo is not null)
+            if (result.ShouldBlock)
             {
-                throw new BlockException(result, result!.BlockInfo);
+                throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo!);
             }
 
-            TryReport(result, result.BlockInfo is not null);
+            TryReport(result, result.ShouldBlock);
         }
     }
 
@@ -154,6 +155,16 @@ internal readonly partial struct SecurityCoordinator
         public HttpTransport(HttpContext context) => _context = context;
 
         internal override bool IsBlocked => _context.Items[BlockingAction.BlockDefaultActionName] is true;
+
+        internal override int StatusCode => _context.Response.StatusCode;
+
+        internal override IDictionary<string, object>? RouteData => _context.GetRouteData()?.Values;
+
+        internal override bool ReportedExternalWafsRequestHeaders
+        {
+            get => _context.Items["ReportedExternalWafsRequestHeaders"] is true;
+            set => _context.Items["ReportedExternalWafsRequestHeaders"] = value;
+        }
 
         internal override void MarkBlocked() => _context.Items[BlockingAction.BlockDefaultActionName] = true;
 

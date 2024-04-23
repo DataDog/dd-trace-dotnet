@@ -37,20 +37,29 @@ namespace Datadog.Trace.Propagators
         //                  ^   ^
         private const char TraceStateDatadogKeyValueSeparator = ':';
 
-        // they key used for the sampling priority in the key/value pairs embedded inside the "dd" value
+        // the key used for the sampling priority in the key/value pairs embedded inside the "dd" value
         // "key1=value1,dd=s:1;o:rum,key2=value2"
         //                 ^
         private const string TraceStateSamplingPriorityKey = "s";
 
-        // they key used for the origin in the key/value pairs embedded inside the "dd" value
+        // the key used for the origin in the key/value pairs embedded inside the "dd" value
         // "key1=value1,dd=s:1;o:rum,key2=value2"
         //                     ^
         private const string TraceStateOriginKey = "o";
+
+        // the key used for the last seen parent Datadog span ID in the key/value pairs embedded inside the "dd" value
+        // "key1=value1,dd=s:1;o:rum;p:0123456789abcdef,key2=value2"
+        //                           ^
+        private const string TraceStateLastParentKey = "p";
 
         // character bounds validation
         private const char LowerBound = '\u0020'; // decimal: 32, ' ' (space)
         private const char UpperBound = '\u007e'; // decimal: 126, '~' (tilde)
         private const char OutOfBoundsReplacement = '_';
+
+        // zero value (16 zeroes) for when there isn't a last parent (`p`)
+        // this value indicates that the backend can make this span as the root span if necessary of a trace
+        private const string ZeroLastParent = "0000000000000000";
 
         private static readonly KeyValuePair<char, char>[] InjectOriginReplacements =
         {
@@ -156,6 +165,10 @@ namespace Datadog.Trace.Propagators
                     var replacedOrigin = ReplaceCharacters(origin!, LowerBound, UpperBound, OutOfBoundsReplacement, InjectOriginReplacements);
                     sb.Append("o:").Append(replacedOrigin).Append(TraceStateDatadogPairsSeparator);
                 }
+
+                // last parent ("p:<value>")
+                var lastParent = HexString.ToHexString(context.SpanId, lowerCase: true);
+                sb.Append("p:").Append(lastParent).Append(TraceStateDatadogPairsSeparator);
 
                 // propagated tags ("t.<key>:<value>")
                 var propagatedTags = context.PrepareTagsForPropagation();
@@ -316,7 +329,7 @@ namespace Datadog.Trace.Propagators
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
             if (string.IsNullOrWhiteSpace(header))
             {
-                return default;
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null);
             }
 
             SplitTraceStateValues(header, out var ddValues, out var additionalValues);
@@ -325,11 +338,13 @@ namespace Datadog.Trace.Propagators
             {
                 // "dd" section not found or it is too short
                 // shortest valid length is 6 as in "dd=a:b"
-                return new W3CTraceState(null, null, null, additionalValues);
+                // note for this case the p will be viewed as 0 if added as a span tag
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues);
             }
 
             int? samplingPriority = null;
             string? origin = null;
+            string? lastParent = null;
             var propagatedTagsBuilder = StringBuilderCache.Acquire(50);
 
             try
@@ -385,6 +400,10 @@ namespace Datadog.Trace.Propagators
                     {
                         origin = value.ToString();
                     }
+                    else if (name.Equals(TraceStateLastParentKey, StringComparison.Ordinal))
+                    {
+                        lastParent = value.ToString();
+                    }
                     else if (name.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
                     {
                         value = ReplaceCharacters(value, LowerBound, UpperBound, OutOfBoundsReplacement, ExtractPropagatedTagValueReplacements);
@@ -407,6 +426,10 @@ namespace Datadog.Trace.Propagators
                     else if (name == TraceStateOriginKey)
                     {
                         origin = value;
+                    }
+                    else if (name == TraceStateLastParentKey)
+                    {
+                        lastParent = value;
                     }
                     else if (name.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
                     {
@@ -442,7 +465,9 @@ namespace Datadog.Trace.Propagators
                     propagatedTags = null;
                 }
 
-                return new W3CTraceState(samplingPriority, origin, propagatedTags, additionalValues);
+                lastParent ??= ZeroLastParent;
+
+                return new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
             }
             finally
             {
@@ -633,10 +658,12 @@ namespace Datadog.Trace.Propagators
                 serviceName: null,
                 origin: traceState.Origin,
                 rawTraceId: traceParent.RawTraceId,
-                rawSpanId: traceParent.RawParentId);
+                rawSpanId: traceParent.RawParentId,
+                isRemote: true);
 
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
+            spanContext.LastParentId = traceState.LastParent;
             return true;
         }
 

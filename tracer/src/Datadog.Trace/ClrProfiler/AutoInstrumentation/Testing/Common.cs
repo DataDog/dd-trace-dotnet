@@ -7,6 +7,7 @@ using System;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -114,6 +115,80 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             }
 
             return false;
+        }
+
+        internal static int GetNumberOfExecutionsForDuration(TimeSpan duration)
+        {
+            int numberOfExecutions;
+            var slowRetriesSettings = CIVisibility.EarlyFlakeDetectionSettings.SlowTestRetries;
+            if (slowRetriesSettings.FiveSeconds.HasValue && duration.TotalSeconds < 5)
+            {
+                numberOfExecutions = slowRetriesSettings.FiveSeconds.Value;
+                Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 seconds.", numberOfExecutions);
+            }
+            else if (slowRetriesSettings.TenSeconds.HasValue && duration.TotalSeconds < 10)
+            {
+                numberOfExecutions = slowRetriesSettings.TenSeconds.Value;
+                Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 10 seconds.", numberOfExecutions);
+            }
+            else if (slowRetriesSettings.ThirtySeconds.HasValue && duration.TotalSeconds < 30)
+            {
+                numberOfExecutions = slowRetriesSettings.ThirtySeconds.Value;
+                Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 30 seconds.", numberOfExecutions);
+            }
+            else if (slowRetriesSettings.FiveMinutes.HasValue && duration.TotalMinutes < 5)
+            {
+                numberOfExecutions = slowRetriesSettings.FiveMinutes.Value;
+                Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 minutes.", numberOfExecutions);
+            }
+            else
+            {
+                numberOfExecutions = 1;
+                Log.Information("EFD: Number of executions has been set to 1 (No retries). Current test duration is {Value}", duration);
+            }
+
+            return numberOfExecutions;
+        }
+
+        internal static void SetEarlyFlakeDetectionTestTagsAndAbortReason(Test test, bool isRetry, ref long newTestCases, ref long totalTestCases)
+        {
+            // Early flake detection flags
+            if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true)
+            {
+                var isTestNew = !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
+                if (isTestNew)
+                {
+                    test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
+                    if (isRetry)
+                    {
+                        test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                    }
+                    else
+                    {
+                        CheckFaultyThreshold(test, Interlocked.Increment(ref newTestCases), Interlocked.Read(ref totalTestCases));
+                    }
+                }
+            }
+        }
+
+        internal static void CheckFaultyThreshold(Test test, long nTestCases, long tTestCases)
+        {
+            if (tTestCases > 0 && CIVisibility.EarlyFlakeDetectionSettings.FaultySessionThreshold is { } faultySessionThreshold and > 0 and < 100)
+            {
+                if (((double)nTestCases * 100 / (double)tTestCases) > faultySessionThreshold)
+                {
+                    /* Spec:
+                     * If the number of new tests goes above a threshold:
+                     *      We will stop the feature altogether: no more tests will be considered new and no retries will be done.
+                     */
+
+                    // We need to stop the EFD feature off and set the session as a faulty.
+                    // But session object is not available from the test host
+                    // TODO: Implement in another PR an IPC mechanism to communicate with the parent process with the test session instance
+                    test.SetTag(EarlyFlakeDetectionTags.TestIsNew, (string)null);
+                    Log.Warning<long, long, int>("EFD: The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", nTestCases, tTestCases, faultySessionThreshold);
+                }
+            }
         }
     }
 }

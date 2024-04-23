@@ -294,6 +294,11 @@ namespace Datadog.Trace
         internal const string MessagingDestinationName = "messaging.destination.name";
 
         /// <summary>
+        /// The message destination name, using legacy naming.
+        /// </summary>
+        internal const string LegacyMessageBusDestination = "message_bus.destination";
+
+        /// <summary>
         /// The messaging operation.
         /// </summary>
         internal const string MessagingOperation = "messaging.operation";

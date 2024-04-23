@@ -12,7 +12,7 @@ internal static partial class CountCIVisibilityExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> metric.
     /// </summary>
-    public const int Length = 27;
+    public const int Length = 29;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -49,6 +49,8 @@ internal static partial class CountCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRForcedRun => "itr_forced_run",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageIsEmpty => "code_coverage.is_empty",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageErrors => "code_coverage.errors",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequest => "early_flake_detection.request",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequestErrors => "early_flake_detection.request_errors",
             _ => null!,
         };
 
@@ -98,6 +100,8 @@ internal static partial class CountCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRForcedRun => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageIsEmpty => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageErrors => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequest => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequestErrors => "civisibility",
             _ => null,
         };
 }

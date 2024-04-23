@@ -13,13 +13,8 @@ namespace Datadog.Trace.Ci.Coverage.Models.Global;
 
 internal sealed class GlobalCoverageInfo : CoverageInfo
 {
-    public GlobalCoverageInfo()
-    {
-        Components = new List<ComponentCoverageInfo>();
-    }
-
     [JsonProperty("components")]
-    public List<ComponentCoverageInfo> Components { get; }
+    public List<ComponentCoverageInfo> Components { get; } = new();
 
     public static GlobalCoverageInfo? operator +(GlobalCoverageInfo? a, GlobalCoverageInfo? b)
     {

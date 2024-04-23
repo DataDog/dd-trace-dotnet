@@ -71,8 +71,6 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public event EventHandler<EventArgs<HttpListenerContext>> RequestReceived;
-
         /// <summary>
         /// Gets or sets a value indicating whether to skip serialization of traces.
         /// </summary>
@@ -152,15 +150,8 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        protected virtual void OnRequestReceived(HttpListenerContext context)
-        {
-            RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(context));
-        }
-
         protected virtual void HandleHttpRequest(HttpListenerContext ctx)
         {
-            OnRequestReceived(ctx);
-
             var apiVersion = ctx.Request.Headers[TelemetryConstants.ApiVersionHeader];
             var requestType = ctx.Request.Headers[TelemetryConstants.RequestTypeHeader];
 

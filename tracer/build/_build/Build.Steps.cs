@@ -1252,6 +1252,7 @@ partial class Build
                         .SetProperty("TargetFramework", Framework.ToString())
                         .SetProperty("BuildInParallel", "true")
                         .SetProperty("CheckEolTargetFramework", "false")
+                        .SetProperty("SampleName", SampleName ?? string.Empty)
                         .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
                         .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                         .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
@@ -1692,7 +1693,6 @@ partial class Build
                     // filter out or to integration tests that have docker dependencies
                     (null, _) => true,
                     (_, null) => true,
-                    (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
                     (false, { } p) => p.RequiresDockerDependency() == DockerDependencyType.None,
                     (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
@@ -1702,7 +1702,6 @@ partial class Build
                                   {
                                       var name when projectsToSkip.Contains(name) => false,
                                       var name when multiPackageProjects.Contains(name) => false,
-                                      "Samples.AspNetCoreRazorPages" => true,
                                       _ when !string.IsNullOrWhiteSpace(SampleName) => x.project?.Name?.Contains(SampleName, StringComparison.OrdinalIgnoreCase) ?? false,
                                       _ => x.project.TryGetTargetFrameworks().Contains(Framework),
                                   })
@@ -2391,6 +2390,7 @@ partial class Build
                // This one is annoying but we _think_ due to a dodgy named pipes implementation, so ignoring for now
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
+               new(@".*Error detecting and reconfiguring git repository for shallow clone. System.IO.FileLoadException.*", RegexOptions.Compiled),
            };
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error);
@@ -2424,6 +2424,8 @@ partial class Build
            knownPatterns.Add(new(@".*Profiler call failed with result Unspecified-Failure \(80131351\): pInfo..GetModuleInfo\(moduleId, nullptr, 0, nullptr, nullptr, .assemblyId\)", RegexOptions.Compiled));
            // avoid any issue with CLR events that are not supported before 5.1 or .NET Framework
            knownPatterns.Add(new(@".*Event-based profilers \(Allocation, LockContention\) are not supported for", RegexOptions.Compiled));
+           // There's a race in the profiler where unwinding when the thread is running
+           knownPatterns.Add(new(@".*Failed to walk \d+ stacks for sampled exception:\s+CORPROF_E_STACKSNAPSHOT_UNSAFE", RegexOptions.Compiled));
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });

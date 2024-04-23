@@ -68,8 +68,6 @@ public class MockLambdaExtension : IDisposable
         }
     }
 
-    public event EventHandler<EventArgs<HttpListenerContext>>? RequestReceived;
-
     /// <summary>
     /// Gets a value indicating whether the extension should return a TraceId and Sampling priority when
     /// it receives a StartInvocation
@@ -92,15 +90,8 @@ public class MockLambdaExtension : IDisposable
         _listener?.Close();
     }
 
-    protected virtual void OnRequestReceived(HttpListenerContext context)
-    {
-        RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(context));
-    }
-
     protected virtual void HandleHttpRequest(HttpListenerContext ctx)
     {
-        OnRequestReceived(ctx);
-
         if (ctx.Request.Url?.PathAndQuery.StartsWith("/lambda/start-invocation") ?? false)
         {
             var headers = new NameValueCollection(ctx.Request.Headers);

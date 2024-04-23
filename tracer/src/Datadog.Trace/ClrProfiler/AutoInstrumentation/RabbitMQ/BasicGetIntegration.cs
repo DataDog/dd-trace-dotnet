@@ -2,7 +2,6 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
 #nullable enable
 
 using System;
@@ -61,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult basicGetResult, Exception exception, in CallTargetState state)
             where TResult : IBasicGetResult, IDuckType
         {
-            string? queue = (string)state.State;
+            string? queue = (string?)state.State;
             DateTimeOffset? startTime = state.StartTime;
 
             SpanContext? propagatedContext = null;
@@ -92,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             {
                 if (scope != null)
                 {
-                    string queueDisplayName = string.IsNullOrEmpty(queue) || !queue.StartsWith("amq.gen-") ? queue : "<generated>";
+                    string? queueDisplayName = string.IsNullOrEmpty(queue) || !queue!.StartsWith("amq.gen-") ? queue : "<generated>";
                     scope.Span.ResourceName = $"{Command} {queueDisplayName}";
 
                     if (tags != null && messageSize != null)

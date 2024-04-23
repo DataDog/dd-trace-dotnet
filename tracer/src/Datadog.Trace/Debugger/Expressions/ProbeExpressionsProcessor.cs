@@ -9,6 +9,7 @@ using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Expressions
 {
@@ -22,7 +23,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private static ProbeExpressionsProcessor _instance;
 
-        private readonly ConcurrentDictionary<string, ProbeProcessor> _processors = new();
+        private readonly ConcurrentDictionary<string, IProbeProcessor> _processors = new();
 
         internal static ProbeExpressionsProcessor Instance
         {
@@ -47,6 +48,20 @@ namespace Datadog.Trace.Debugger.Expressions
             catch (Exception e)
             {
                 Log.Error(e, "Failed to create probe processor for probe: {Id}", probe.Id);
+                Log.Debug("Probe definition is {Probe}", JsonConvert.SerializeObject(probe));
+            }
+        }
+
+        internal bool TryAddProbeProcessor(string probeId, IProbeProcessor probeProcessor)
+        {
+            try
+            {
+                return _processors.TryAdd(probeId, probeProcessor);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Failed to create probe processor for probe: {Id}", probeId);
+                return false;
             }
         }
 
@@ -55,7 +70,7 @@ namespace Datadog.Trace.Debugger.Expressions
             _processors.TryRemove(probeId, out _);
         }
 
-        internal ProbeProcessor Get(string probeId)
+        internal IProbeProcessor Get(string probeId)
         {
             _processors.TryGetValue(probeId, out var probeProcessor);
             return probeProcessor;

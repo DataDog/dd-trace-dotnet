@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #if NET6_0_OR_GREATER
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 using Datadog.Trace.TestHelpers;
 
@@ -16,9 +17,9 @@ namespace Datadog.Trace.Tests
     public class LambdaRequestBuilderTests
     {
         [Fact]
-        public void TestGetEndInvocationRequestWithError()
+        public async Task TestGetEndInvocationRequestWithError()
         {
-            var tracer = TracerHelper.Create();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, true);
@@ -30,9 +31,9 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void TestGetEndInvocationRequestWithoutError()
+        public async Task TestGetEndInvocationRequestWithoutError()
         {
-            var tracer = TracerHelper.Create();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, false);
@@ -44,9 +45,9 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void TestGetEndInvocationRequestWithScope()
+        public async Task TestGetEndInvocationRequestWithScope()
         {
-            var tracer = TracerHelper.Create();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, false);
@@ -70,9 +71,9 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void TestGetEndInvocationRequestWithErrorTags()
+        public async Task TestGetEndInvocationRequestWithErrorTags()
         {
-            var tracer = TracerHelper.Create();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
             scope.Span.SetTag("error.msg", "Exception");
             scope.Span.SetTag("error.type", "Exception");
@@ -90,9 +91,9 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void TestGetEndInvocationRequestWithoutErrorTags()
+        public async Task TestGetEndInvocationRequestWithoutErrorTags()
         {
-            var tracer = TracerHelper.Create();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, true);

@@ -16,8 +16,11 @@ namespace Datadog.Trace.HttpOverStreams
 
         public Task WriteLeadingHeaders(HttpRequest request, TextWriter writer)
         {
-            var leadingHeaders =
-                $"{request.Verb} {request.Path} HTTP/1.1{DatadogHttpValues.CrLf}Host: {request.Host}{DatadogHttpValues.CrLf}Accept-Encoding: identity{DatadogHttpValues.CrLf}Content-Length: {request.Content?.Length ?? 0}{DatadogHttpValues.CrLf}{MetadataHeaders}";
+            var contentLengthHeader = request.Content?.Length is { } contentLength
+                                    ? $"Content-Length: {contentLength}{DatadogHttpValues.CrLf}"
+                                    : string.Empty;
+
+            var leadingHeaders = $"{request.Verb} {request.Path} HTTP/1.1{DatadogHttpValues.CrLf}Host: {request.Host}{DatadogHttpValues.CrLf}Accept-Encoding: identity{DatadogHttpValues.CrLf}{contentLengthHeader}{MetadataHeaders}";
             return writer.WriteAsync(leadingHeaders);
         }
 
