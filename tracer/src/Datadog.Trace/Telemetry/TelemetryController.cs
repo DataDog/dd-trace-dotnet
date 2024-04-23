@@ -1,4 +1,4 @@
-// <copyright file="TelemetryController.cs" company="Datadog">
+﻿// <copyright file="TelemetryController.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,6 +20,7 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Telemetry;
 
@@ -98,8 +99,8 @@ internal class TelemetryController : ITelemetryController
     {
         _application.RecordGitMetadata(gitMetadata);
 
-        _configuration.Record(gitMetadata.RepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
-        _configuration.Record(gitMetadata.CommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
+        _configuration.Record(ConfigurationKeys.GitRepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
+        _configuration.Record(ConfigurationKeys.GitCommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
     }
 
     public void Start()
