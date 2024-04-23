@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if NETCOREAPP3_0_OR_GREATER
+
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -49,3 +51,4 @@ public class GrpcDotNetTests : TestHelper
                           .DisableRequireUniquePrefix();
     }
 }
+#endif
