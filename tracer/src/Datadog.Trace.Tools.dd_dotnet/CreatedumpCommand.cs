@@ -267,7 +267,7 @@ internal class CreatedumpCommand : Command
             }
         }
 
-        bool isSuspicious = false;
+        bool isSuspicious;
 
         try
         {
