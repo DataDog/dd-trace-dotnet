@@ -46,112 +46,12 @@
           }
         ]
       }
-    },
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": -967158725,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.GrpcDotNet.Services.GreeterService+<StreamingBothWays>d__7",
-        "method": "MoveNext",
-        "line": XXX
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingBothWays: "
-          },
-          {
-            "value": "GreeterClient1",
-            "source": 1
-          }
-        ]
-      }
-    },
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": -967158725,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.GrpcDotNet.Services.GreeterService+<StreamingBothWays>d__7",
-        "method": "MoveNext",
-        "line": XXX
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingBothWays: "
-          },
-          {
-            "value": "GreeterClient2",
-            "source": 2
-          }
-        ]
-      }
-    },
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": -967158725,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.GrpcDotNet.Services.GreeterService+<StreamingBothWays>d__7",
-        "method": "MoveNext",
-        "line": XXX
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingBothWays: "
-          },
-          {
-            "value": "GreeterClient3",
-            "source": 3
-          }
-        ]
-      }
-    },
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": -967158725,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.GrpcDotNet.Services.GreeterService+<StreamingBothWays>d__7",
-        "method": "MoveNext",
-        "line": XXX
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingBothWays: "
-          },
-          {
-            "value": "GreeterClient4",
-            "source": 4
-          }
-        ]
-      }
     }
   ],
   "sources": [
     {
       "origin": "grpc.request.body",
       "value": "GreeterClient0"
-    },
-    {
-      "origin": "grpc.request.body",
-      "value": "GreeterClient1"
-    },
-    {
-      "origin": "grpc.request.body",
-      "value": "GreeterClient2"
-    },
-    {
-      "origin": "grpc.request.body",
-      "value": "GreeterClient3"
-    },
-    {
-      "origin": "grpc.request.body",
-      "value": "GreeterClient4"
     }
   ]
 }
@@ -210,112 +110,12 @@
           }
         ]
       }
-    },
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": 2127253400,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.GrpcDotNet.Services.GreeterService+<StreamingFromClient>d__6",
-        "method": "MoveNext",
-        "line": XXX
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingFromClient: "
-          },
-          {
-            "value": "GreeterClient1",
-            "source": 1
-          }
-        ]
-      }
-    },
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": 2127253400,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.GrpcDotNet.Services.GreeterService+<StreamingFromClient>d__6",
-        "method": "MoveNext",
-        "line": XXX
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingFromClient: "
-          },
-          {
-            "value": "GreeterClient2",
-            "source": 2
-          }
-        ]
-      }
-    },
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": 2127253400,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.GrpcDotNet.Services.GreeterService+<StreamingFromClient>d__6",
-        "method": "MoveNext",
-        "line": XXX
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingFromClient: "
-          },
-          {
-            "value": "GreeterClient3",
-            "source": 3
-          }
-        ]
-      }
-    },
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": 2127253400,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.GrpcDotNet.Services.GreeterService+<StreamingFromClient>d__6",
-        "method": "MoveNext",
-        "line": XXX
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingFromClient: "
-          },
-          {
-            "value": "GreeterClient4",
-            "source": 4
-          }
-        ]
-      }
     }
   ],
   "sources": [
     {
       "origin": "grpc.request.body",
       "value": "GreeterClient0"
-    },
-    {
-      "origin": "grpc.request.body",
-      "value": "GreeterClient1"
-    },
-    {
-      "origin": "grpc.request.body",
-      "value": "GreeterClient2"
-    },
-    {
-      "origin": "grpc.request.body",
-      "value": "GreeterClient3"
-    },
-    {
-      "origin": "grpc.request.body",
-      "value": "GreeterClient4"
     }
   ]
 }
@@ -354,90 +154,6 @@
       _dd.iast.json:
 {
   "vulnerabilities": [
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": 1601853376,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.GrpcDotNet.Services.GreeterService+<StreamingFromServer>d__5",
-        "method": "MoveNext",
-        "line": XXX
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingFromServer: "
-          },
-          {
-            "value": "GreeterClient",
-            "source": 0
-          }
-        ]
-      }
-    },
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": 1601853376,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.GrpcDotNet.Services.GreeterService+<StreamingFromServer>d__5",
-        "method": "MoveNext",
-        "line": XXX
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingFromServer: "
-          },
-          {
-            "value": "GreeterClient",
-            "source": 0
-          }
-        ]
-      }
-    },
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": 1601853376,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.GrpcDotNet.Services.GreeterService+<StreamingFromServer>d__5",
-        "method": "MoveNext",
-        "line": XXX
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingFromServer: "
-          },
-          {
-            "value": "GreeterClient",
-            "source": 0
-          }
-        ]
-      }
-    },
-    {
-      "type": "COMMAND_INJECTION",
-      "hash": 1601853376,
-      "location": {
-        "spanId": XXX,
-        "path": "Samples.GrpcDotNet.Services.GreeterService+<StreamingFromServer>d__5",
-        "method": "MoveNext",
-        "line": XXX
-      },
-      "evidence": {
-        "valueParts": [
-          {
-            "value": "StreamingFromServer: "
-          },
-          {
-            "value": "GreeterClient",
-            "source": 0
-          }
-        ]
-      }
-    },
     {
       "type": "COMMAND_INJECTION",
       "hash": 1601853376,
