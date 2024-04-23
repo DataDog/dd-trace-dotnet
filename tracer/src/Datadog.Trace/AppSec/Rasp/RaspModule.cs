@@ -17,10 +17,6 @@ namespace Datadog.Trace.AppSec.Rasp;
 internal static class RaspModule
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
-    private static Dictionary<string, RaspRuleType> _addressRuleType = new()
-    {
-        { AddressesConstants.FileAccess, RaspRuleType.Lfi }
-    };
 
     internal static void OnLfi(string file)
     {
