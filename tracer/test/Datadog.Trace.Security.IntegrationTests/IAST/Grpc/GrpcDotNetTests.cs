@@ -5,7 +5,9 @@
 
 #if NETCOREAPP3_0_OR_GREATER
 
+using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -37,6 +39,9 @@ public class GrpcDotNetTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task SubmitsTraces()
     {
+        GuardAlpine();
+        GuardLinux();
+
         const int expectedSpanCount = 24;
         const string filename = "Iast.GrpcDotNetTests.BodyPropagation.SubmitsTraces";
         using var agent = EnvironmentHelper.GetMockAgent();
@@ -49,6 +54,22 @@ public class GrpcDotNetTests : TestHelper
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
+    }
+
+    private static void GuardAlpine()
+    {
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")))
+        {
+            throw new SkipException("GRPC.Tools does not support Alpine");
+        }
+    }
+
+    private static void GuardLinux()
+    {
+        if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+        {
+            throw new SkipException("Can't run https tests on Linux");
+        }
     }
 }
 #endif
