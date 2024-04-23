@@ -40,7 +40,7 @@ ProfilerSignalManager* ProfilerSignalManager::Get(int signal)
         throw std::invalid_argument(std::string("Signal argument is invalid ") + "(" + std::to_string(signal) + "). Value must be: 1 <= signal <= 31");
     }
 
-    auto* manager = &signalManagers[signal];
+    auto* manager = &signalManagers[signal - 1]; // 0-based array
     manager->SetSignal(signal);
 
     return manager;
@@ -71,6 +71,24 @@ bool ProfilerSignalManager::RegisterHandler(HandlerFn_t handler)
     }
 
     return _isHandlerInPlace;
+}
+
+bool ProfilerSignalManager::UnRegisterHandler()
+{
+    if (!IsProfilerSignalHandlerInstalled())
+    {
+        return false;
+    }
+
+    int32_t result = sigaction(_signalToSend, &_previousAction, nullptr);
+    if (result != 0)
+    {
+        Log::Error("ProfilerSignalManager::UnRegisterHandler: Failed to un-register signal handler for ", _signalToSend, " signals. Reason: ",
+                   strerror(errno), ".");
+        return false;
+    }
+
+    return true;
 }
 
 void ProfilerSignalManager::SetSignal(int32_t signal)

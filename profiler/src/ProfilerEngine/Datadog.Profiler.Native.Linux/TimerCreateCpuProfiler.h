@@ -44,7 +44,7 @@ private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
     static TimerCreateCpuProfiler* Instance;
 
-    bool Collect(pid_t callerProcess, void* ucontext);
+    bool Collect(void* ucontext);
 
     enum class ServiceState
     {
@@ -57,7 +57,6 @@ private:
     IManagedThreadList* _pManagedThreadsList;
     CpuTimeProvider* _pProvider;
     CallstackProvider _callstackProvider;
-    pid_t _processId;
     std::atomic<ServiceState> _serviceState;
     std::chrono::milliseconds _samplingInterval;
 };
