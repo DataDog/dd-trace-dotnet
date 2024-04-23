@@ -284,6 +284,7 @@ namespace Datadog.Trace.Tools.Runner
             }
             catch (System.ComponentModel.Win32Exception)
             {
+                // The file could not be found, let's try to find it using the where command and retry
                 if (!File.Exists(startInfo.FileName))
                 {
                     var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", startInfo.FileName));

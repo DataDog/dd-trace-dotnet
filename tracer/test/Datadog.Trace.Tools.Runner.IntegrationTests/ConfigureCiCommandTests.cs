@@ -36,8 +36,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             var commandLine = $"ci configure azp --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
 
-            EnvironmentHelpers.SetEnvironmentVariable("DD_STDOUT_LOG", "true");
-            DatadogLogging.SetLogLevel(LogEventLevel.Debug);
             using var console = ConsoleHelper.Redirect();
 
             var result = Program.Main(commandLine.Split(' '));
@@ -62,8 +60,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
             environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", Path.GetFullPath("TestTracerHome"));
             environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", agentUrl);
-            EnvironmentHelpers.SetEnvironmentVariable("DD_STDOUT_LOG", null);
-            DatadogLogging.Reset();
         }
 
         [SkippableTheory]
