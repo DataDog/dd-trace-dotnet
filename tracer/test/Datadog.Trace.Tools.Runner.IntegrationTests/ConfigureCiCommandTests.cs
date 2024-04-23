@@ -13,17 +13,25 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
     [Collection(nameof(ConsoleTestsCollection))]
     public class ConfigureCiCommandTests
     {
+        private readonly ITestOutputHelper _output;
+
+        public ConfigureCiCommandTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public void ConfigureCi()
         {
-            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(_output, TcpPortProvider.GetOpenPort());
             var agentUrl = $"http://localhost:{agent.Port}";
 
             var commandLine = $"ci configure azp --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";

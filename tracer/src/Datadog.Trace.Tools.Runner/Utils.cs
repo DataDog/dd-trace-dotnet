@@ -360,7 +360,7 @@ namespace Datadog.Trace.Tools.Runner
             var discoveryService = DiscoveryService.Create(
                 settings.ExporterInternal,
                 tcpTimeout: TimeSpan.FromSeconds(5),
-                initialRetryDelayMs: 10,
+                initialRetryDelayMs: 200,
                 maxRetryDelayMs: 1000,
                 recheckIntervalMs: int.MaxValue);
 

@@ -13,12 +13,20 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
     [Collection(nameof(ConsoleTestsCollection))]
     public class LegacyCommandLineArgumentsTests
     {
+        private readonly ITestOutputHelper _output;
+
+        public LegacyCommandLineArgumentsTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public void InvalidArgument()
@@ -56,7 +64,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             // CI visibility mode checks if there's a running agent
-            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(_output, TcpPortProvider.GetOpenPort());
 
             var agentUrl = $"http://localhost:{agent.Port}";
 
