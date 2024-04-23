@@ -136,10 +136,7 @@ namespace Datadog.Trace.Sampling
             return "LocalSamplingRule";
         }
 
-        // The [Serializable] attribute is not here because we use the BinaryFormatter.
-        // It is here to silence certain compiler warnings about the
-        // class not being instantiated or property setters not used.
-        [Serializable]
+        // ReSharper disable once ClassNeverInstantiated.Local
         private class CustomRuleConfig
         {
             [JsonRequired]
