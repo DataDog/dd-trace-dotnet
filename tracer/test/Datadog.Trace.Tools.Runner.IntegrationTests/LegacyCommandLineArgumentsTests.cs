@@ -7,7 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
 using Xunit;
 
@@ -36,6 +39,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [InlineData(false)]
         public void Run(bool withArguments)
         {
+            EnvironmentHelpers.SetEnvironmentVariable("DD_STDOUT_LOG", "true");
+            DatadogLogging.SetLogLevel(LogEventLevel.Debug);
+
             string command = null;
             string arguments = null;
             Dictionary<string, string> environmentVariables = null;
@@ -94,6 +100,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().Contain("DD_CIVISIBILITY_ENABLED", "1");
             environmentVariables.Should().Contain("VAR1", "A");
             environmentVariables.Should().Contain("VAR2", "B");
+
+            EnvironmentHelpers.SetEnvironmentVariable("DD_STDOUT_LOG", null);
+            DatadogLogging.Reset();
         }
 
         [SkippableTheory]

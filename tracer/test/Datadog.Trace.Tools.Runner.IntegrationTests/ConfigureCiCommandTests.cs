@@ -7,7 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
 using Xunit;
 
@@ -25,6 +28,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             var commandLine = $"ci configure azp --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
 
+            EnvironmentHelpers.SetEnvironmentVariable("DD_STDOUT_LOG", "true");
+            DatadogLogging.SetLogLevel(LogEventLevel.Debug);
             using var console = ConsoleHelper.Redirect();
 
             var result = Program.Main(commandLine.Split(' '));
@@ -49,6 +54,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
             environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", Path.GetFullPath("TestTracerHome"));
             environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", agentUrl);
+            EnvironmentHelpers.SetEnvironmentVariable("DD_STDOUT_LOG", null);
+            DatadogLogging.Reset();
         }
 
         [SkippableTheory]

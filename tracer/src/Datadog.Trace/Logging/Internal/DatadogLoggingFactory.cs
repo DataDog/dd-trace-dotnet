@@ -11,6 +11,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.Internal;
 using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.RuntimeMetrics;
@@ -18,6 +19,8 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Vendors.Serilog.Formatting.Display;
 
 namespace Datadog.Trace.Logging;
 
@@ -113,6 +116,13 @@ internal static class DatadogLoggingFactory
                     fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
                     shared: true);
         }
+
+        loggerConfiguration.WriteTo.Sink(
+            new ConsoleSink(
+                new MessageTemplateTextFormatter(
+                    "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception} {Properties}{NewLine}",
+                    null)),
+            LogEventLevel.Debug);
 
         try
         {
@@ -275,5 +285,23 @@ internal static class DatadogLoggingFactory
 
         // If telemetry is disabled
         return null;
+    }
+
+    private class ConsoleSink : ILogEventSink
+    {
+        private Vendors.Serilog.Formatting.ITextFormatter _formatter;
+
+        public ConsoleSink(Vendors.Serilog.Formatting.ITextFormatter formatter)
+        {
+            _formatter = formatter;
+        }
+
+        public void Emit(LogEvent logEvent)
+        {
+            if (EnvironmentHelpers.GetEnvironmentVariable("DD_STDOUT_LOG") is { } stdOutLog && stdOutLog.ToBoolean() == true)
+            {
+                _formatter.Format(logEvent, Console.Out);
+            }
+        }
     }
 }
