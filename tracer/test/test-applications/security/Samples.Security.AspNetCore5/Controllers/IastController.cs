@@ -5,6 +5,7 @@ using System.Data.SQLite;
 using System.Diagnostics;
 using System.DirectoryServices;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -433,7 +434,11 @@ namespace Samples.Security.AspNetCore5.Controllers
                     return BadRequest($"No file was provided");
                 }
             }
-            catch
+            catch (FileNotFoundException)
+            {
+                return Content("The provided file " + file + " could not be opened");
+            }
+            catch (DirectoryNotFoundException)
             {
                 return Content("The provided file " + file + " could not be opened");
             }

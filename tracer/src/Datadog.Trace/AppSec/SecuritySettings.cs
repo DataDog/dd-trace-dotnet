@@ -103,13 +103,13 @@ namespace Datadog.Trace.AppSec
                                       .AsBool(true);
 
             MaxStackTraces = config
-                            .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
-                            .AsInt32(defaultValue: 2, validator: val => val >= 0)
-                            .Value;
+                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
+                                  .AsInt32(defaultValue: 2, validator: val => val >= 1)
+                                  .Value;
 
             MaxStackTraceDepth = config
                                   .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
-                                  .AsInt32(defaultValue: 32, validator: val => val >= 0)
+                                  .AsInt32(defaultValue: 32, validator: val => val >= 1)
                                   .Value;
 
             WafDebugEnabled = config
