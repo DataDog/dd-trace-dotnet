@@ -24,6 +24,9 @@ public class CreatedumpTests : ConsoleTestHelper
     public CreatedumpTests(ITestOutputHelper output)
         : base(output)
     {
+        // Those environment variables can be set by Nuke, and will impact the outcome of the tests
+        EnvironmentHelper.CustomEnvironmentVariables["COMPlus_DbgMiniDumpType"] = string.Empty;
+        EnvironmentHelper.CustomEnvironmentVariables["COMPlus_DbgEnableMiniDump"] = string.Empty;
     }
 
     private static (string Key, string Value) LdPreloadConfig => ("LD_PRELOAD", Utils.GetApiWrapperPath());
