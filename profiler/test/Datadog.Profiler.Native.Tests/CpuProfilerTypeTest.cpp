@@ -36,7 +36,7 @@ TEST(CpuProfilerTypeTest, CheckManualCpuTimeCaseInsensitive)
 
 #ifdef LINUX
 
-TEST(CpuProfilerTypeTest, CheckTimeCreate)
+TEST(CpuProfilerTypeTest, CheckTimerCreate)
 {
     CpuProfilerType result;
     ASSERT_TRUE(convert_to(WStr("TimerCreate"), result));

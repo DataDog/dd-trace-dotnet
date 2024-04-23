@@ -28,7 +28,6 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
     _callstackProvider{std::move(callstackProvider)},
-    _processId{OpSysTools::GetProcId()},
     _serviceState{ServiceState::Initialized},
     _samplingInterval{pConfiguration->GetCpuProfilingInterval()}
 {
@@ -94,6 +93,7 @@ void TimerCreateCpuProfiler::UnregisterThread(std::shared_ptr<ManagedThreadInfo>
 {
     if (_serviceState != ServiceState::Started)
     {
+        Log::Debug("timer_create-based cpu profiler is not started. Cannot unregister thread.");
         return;
     }
 
@@ -112,7 +112,7 @@ bool TimerCreateCpuProfiler::Start()
 {
     if (_serviceState.exchange(ServiceState::Started) == ServiceState::Started)
     {
-        // Log to say that it's already stated
+        Log::Debug("timer_create-based Cpu profiler has already been started.");
         return true;
     }
 
@@ -148,30 +148,27 @@ bool TimerCreateCpuProfiler::Stop()
     auto old = _serviceState.exchange(ServiceState::Stopped);
     if (old == ServiceState::Initialized)
     {
-        // TODO Log must be started first
+        Log::Debug("Cannot call Stop on the timer_create-based Cpu profiler since it was not started yet.");
         return false;
     }
 
     if (old == ServiceState::Stopped)
     {
-        // Maybe a race. Log to say that it's already stopped
+        Log::Debug("timer_create-based Cpu profiler was already stopped.");
         return true;
     }
 
-    // TODO
-    //_signalManager->UnRegisterHandler(SIGPROF);
+    _pSignalManager->UnRegisterHandler();
 
-    // for now it's ok not necessary to go through threads and delete the timer
-    // If Stop is called, the process is going down.
     return true;
 }
 
 bool TimerCreateCpuProfiler::CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext)
 {
-    return Instance->Collect(info->si_pid, ucontext);
+    return Instance->Collect(ucontext);
 }
 
-bool TimerCreateCpuProfiler::Collect(pid_t callerProcess, void* ctx)
+bool TimerCreateCpuProfiler::Collect(void* ctx)
 {
     if (_serviceState == ServiceState::Stopped)
     {

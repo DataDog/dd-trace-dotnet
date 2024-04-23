@@ -81,7 +81,7 @@ bool SigProfCustomHandler(int signal, siginfo_t* info, void* context)
     return true;
 }
 
-TEST_F(ProfilerSignalManagerFixture, CheckTwoDifferentSignalInstallation)
+TEST_F(ProfilerSignalManagerFixture, CheckTwoDifferentSignalsInstallation)
 {
     auto* sigusr1SignalManager = ProfilerSignalManager::Get(SIGUSR1);
     auto* sigprofSignalManager = ProfilerSignalManager::Get(SIGPROF);
@@ -101,7 +101,6 @@ TEST_F(ProfilerSignalManagerFixture, CheckTwoDifferentSignalInstallation)
     ASSERT_TRUE(SigProfHandlerCalled);
 }
 
-
 TEST_F(ProfilerSignalManagerFixture, CheckThrowIfSignalAbove31)
 {
     ASSERT_NO_THROW(ProfilerSignalManager::Get(SIGUSR1));
@@ -112,6 +111,17 @@ TEST_F(ProfilerSignalManagerFixture, CheckThrowIfSignalAbove31)
     ASSERT_THROW(ProfilerSignalManager::Get(32), std::invalid_argument);
     ASSERT_THROW(ProfilerSignalManager::Get(33), std::invalid_argument);
     ASSERT_THROW(ProfilerSignalManager::Get(100), std::invalid_argument);
+}
+
+TEST_F(ProfilerSignalManagerFixture, CheckSignalDeRegistration)
+{
+    ProfilerSignalManager* manager = nullptr;
+    ASSERT_NO_THROW(manager = ProfilerSignalManager::Get(SIGPROF));
+
+    ASSERT_TRUE(manager->UnRegisterHandler());
+
+    // Make sure we do not un register more than once
+    ASSERT_FALSE(manager->UnRegisterHandler());
 }
 
 #endif
