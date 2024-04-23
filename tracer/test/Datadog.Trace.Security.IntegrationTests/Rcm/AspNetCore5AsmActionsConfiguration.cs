@@ -9,52 +9,57 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
+using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
-namespace Datadog.Trace.Security.IntegrationTests.Rcm
+namespace Datadog.Trace.Security.IntegrationTests.Rcm;
+
+/// <summary>
+/// Product rcm named ASM, actions object being tested cf https://docs.google.com/document/d/1a_-isT9v_LiiGshzQZtzPzCK_CxMtMIil_2fOq9Z1RE
+/// </summary>
+public class AspNetCore5AsmActionsConfiguration : RcmBase
 {
-    /// <summary>
-    /// Product rcm named ASM, actions object being tested cf https://docs.google.com/document/d/1a_-isT9v_LiiGshzQZtzPzCK_CxMtMIil_2fOq9Z1RE
-    /// </summary>
-    public class AspNetCore5AsmActionsConfiguration : RcmBase
+    private const string AsmProduct = "ASM";
+
+    public AspNetCore5AsmActionsConfiguration(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmActionsConfiguration))
     {
-        private const string AsmProduct = "ASM";
-
-        public AspNetCore5AsmActionsConfiguration(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmActionsConfiguration))
-        {
-            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
-        }
-
-        [SkippableTheory]
-        [InlineData("block_request", 200)]
-        [InlineData("redirect_request", 302)]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestBlockingAction(string type, int statusCode)
-        {
-            var url = $"/Health/?arg=dummy_rule";
-            await TryStartApp();
-            var agent = Fixture.Agent;
-            var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode);
-
-            var spans1 = await SendRequestsAsync(agent, url);
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Datadog.Trace.AppSec.Rcm.Models.Asm.Action { Id = "block", Type = type, Parameters = new Parameter { StatusCode = statusCode, Type = "html", Location = "/redirect" } } } }, AsmProduct, nameof(TestBlockingAction)) });
-
-            var spans2 = await SendRequestsAsync(agent, url);
-            var spans = new List<MockSpan>();
-            spans.AddRange(spans1);
-            spans.AddRange(spans2);
-            await VerifySpans(spans.ToImmutableList(), settings);
-            // need to reset if the process is going to be reused
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Datadog.Trace.AppSec.Rcm.Models.Asm.Action>() }, AsmProduct, nameof(TestBlockingAction)) });
-        }
-
-        protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmActionsConfiguration);
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
     }
+
+    [SkippableTheory]
+    [InlineData(BlockingAction.BlockRequestType, 200, "dummy_rule", "block")]
+    [InlineData(BlockingAction.RedirectRequestType, 302, "dummy_rule", "block")]
+    [InlineData(BlockingAction.BlockRequestType, 200, "dummy_custom_action", "customblock")]
+    [InlineData(BlockingAction.RedirectRequestType, 302, "dummy_custom_action", "customblock")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestBlockingAction(string type, int statusCode, string argument, string actionName)
+    {
+        var url = $"/Health/?arg={argument}";
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode, argument, actionName);
+
+        // Restore the default values
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Action { Id = actionName, Type = BlockingAction.BlockRequestType, Parameters = new Parameter { StatusCode = 404, Type = "auto" } } } }, AsmProduct, nameof(TestBlockingAction)) });
+        var spans1 = await SendRequestsAsync(agent, url);
+
+        // New values
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Action { Id = actionName, Type = type, Parameters = new Parameter { StatusCode = statusCode, Type = "html", Location = "/redirect" } } } }, AsmProduct, nameof(TestBlockingAction)) });
+
+        var spans2 = await SendRequestsAsync(agent, url);
+        var spans = new List<MockSpan>();
+        spans.AddRange(spans1);
+        spans.AddRange(spans2);
+        await VerifySpans(spans.ToImmutableList(), settings);
+    }
+
+    protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmActionsConfiguration);
 }
 #endif
