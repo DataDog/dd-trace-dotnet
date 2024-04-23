@@ -278,10 +278,9 @@ internal readonly partial struct SecurityCoordinator
         if (result is not null)
         {
             var reporting = MakeReportingFunction(result);
-            // here we assume if we haven't blocked we'll have collected the correct status elsewhere
-            reporting(null, result.BlockInfo is not null || result.RedirectInfo is not null);
+            reporting(null, result.ShouldBlock);
 
-            if (result.BlockInfo is not null || result.RedirectInfo is not null)
+            if (result.ShouldBlock)
             {
                 ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
             }

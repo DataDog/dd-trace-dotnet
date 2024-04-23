@@ -45,7 +45,7 @@ internal static class RaspModule
 
     private static IResult? RunWaf(Dictionary<string, object> arguments, Span rootSpan)
     {
-        var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, Tracer.Instance.InternalActiveScope.Root.Span);
+        var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
         var result = securityCoordinator.RunWaf(arguments, logException: (log, ex) => log.Error(ex, "Error in RASP."), runWithEphemeral: true);
 
         securityCoordinator.CheckAndBlockRasp(result);
