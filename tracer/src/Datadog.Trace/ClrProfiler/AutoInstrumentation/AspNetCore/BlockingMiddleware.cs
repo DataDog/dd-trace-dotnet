@@ -90,7 +90,7 @@ internal class BlockingMiddleware
                 var result = securityCoordinator.Scan(_endPipeline);
                 if (result is not null)
                 {
-                    if (result.BlockInfo is not null || result.RedirectInfo is not null)
+                    if (result.ShouldBlock)
                     {
                         var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), result.BlockInfo, result.RedirectInfo);
                         await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
