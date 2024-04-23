@@ -351,8 +351,8 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             var configurationSource = new CompositeConfigurationSourceInternal();
-            configurationSource.AddInternal(GlobalConfigurationSource.Instance);
             configurationSource.AddInternal(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
+            configurationSource.AddInternal(GlobalConfigurationSource.Instance);
 
             var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry());
             var settings = new ImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);
