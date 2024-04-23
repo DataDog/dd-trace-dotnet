@@ -49,6 +49,7 @@ internal static class ReturnedHeadersAnalyzer
     // Sec-WebSocket-Location, Sec-WebSocket-Accept, Upgrade, Connection: Usually the framework gets info from request
     // access-control-allow-*: when the source of the tainted range is the request header origin or access-control-request-headers
     // set-cookie: We should ignore set-cookie header if the source of all the tainted ranges are cookies
+    // "vary: origin"
     // We should exclude the injection when the tainted string only has one range which comes from a request header with the same name that the header that we are checking in the response.
     // Headers could store sensitive information, we should redact whole <header_value> if:
     // <header_name> matches with a RegExp
@@ -107,6 +108,12 @@ internal static class ReturnedHeadersAnalyzer
     private static bool IsHeaderInjectionVulnerable(string headerKey, string headerValue, IastRequestContext iastrequestContext)
     {
         if (string.IsNullOrWhiteSpace(headerValue))
+        {
+            return false;
+        }
+
+        // Exception for Vary
+        if (headerKey.Equals("vary", StringComparison.OrdinalIgnoreCase) && headerValue.Equals("origin", StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
