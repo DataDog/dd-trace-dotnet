@@ -357,6 +357,7 @@ namespace Datadog.Trace.Tools.Runner
             var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry());
             var settings = new ImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);
 
+            Log.Debug("Creating DiscoveryService for: {AgentUriInternal}", settings.ExporterInternal.AgentUriInternal);
             var discoveryService = DiscoveryService.Create(
                 settings.ExporterInternal,
                 tcpTimeout: TimeSpan.FromSeconds(5),

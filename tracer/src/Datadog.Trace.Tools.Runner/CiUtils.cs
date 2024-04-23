@@ -86,7 +86,7 @@ internal static class CiUtils
         }
         else
         {
-            Log.Debug("RunCiCommand: Agent-based mode has been enabled. Checking agent connection.");
+            Log.Debug("RunCiCommand: Agent-based mode has been enabled. Checking agent connection to {AgentUrl}.", agentUrl);
             (agentConfiguration, discoveryService) = await Utils.CheckAgentConnectionAsync(agentUrl).ConfigureAwait(false);
             if (agentConfiguration is null)
             {
