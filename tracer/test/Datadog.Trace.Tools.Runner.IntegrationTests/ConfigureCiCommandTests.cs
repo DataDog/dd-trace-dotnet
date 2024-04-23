@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -19,7 +20,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void ConfigureCi()
         {
-            var commandLine = "ci configure azp --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url TestAgentUrl";
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+            var agentUrl = $"http://localhost:{agent.Port}";
+
+            var commandLine = $"ci configure azp --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
 
             using var console = ConsoleHelper.Redirect();
 
@@ -44,7 +48,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().Contain("DD_SERVICE", "TestService");
             environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
             environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", Path.GetFullPath("TestTracerHome"));
-            environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", "TestAgentUrl");
+            environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", agentUrl);
         }
 
         [SkippableTheory]
@@ -65,7 +69,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             {
                 Environment.SetEnvironmentVariable(key, value);
 
-                var commandLine = "ci configure --tracer-home tracerHome";
+                using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+                var agentUrl = $"http://localhost:{agent.Port}";
+
+                var commandLine = $"ci configure --tracer-home tracerHome --agent-url {agentUrl}";
 
                 using var console = ConsoleHelper.Redirect();
 
