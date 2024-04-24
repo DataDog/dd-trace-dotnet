@@ -14,7 +14,7 @@ namespace Datadog.Trace.AppSec.Waf
         public Result(DdwafResultStruct returnStruct, WafReturnCode returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
             ReturnCode = returnCode;
-            Actions = returnStruct.Actions.DecodeStringArray();
+            Actions = returnStruct.Actions.DecodeMap();
             ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
             Derivatives = returnStruct.Derivatives.DecodeMap();
             ShouldReportSchema = Derivatives is { Count: > 0 };
@@ -23,7 +23,21 @@ namespace Datadog.Trace.AppSec.Waf
                 Data = returnStruct.Events.DecodeObjectArray();
             }
 
-            ShouldBlock = Actions.Contains("block");
+            if (Actions is { Count: > 0 })
+            {
+                if (Actions.TryGetValue(BlockingAction.BlockRequestType, out var value))
+                {
+                    BlockInfo = value as Dictionary<string, object?>;
+                    ShouldBlock = true;
+                }
+
+                if (Actions.TryGetValue(BlockingAction.RedirectRequestType, out value))
+                {
+                    RedirectInfo = value as Dictionary<string, object?>;
+                    ShouldBlock = true;
+                }
+            }
+
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
             Timeout = returnStruct.Timeout;
@@ -35,7 +49,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IReadOnlyCollection<object>? Data { get; }
 
-        public List<string> Actions { get; }
+        public Dictionary<string, object?>? Actions { get; }
 
         public Dictionary<string, object?> Derivatives { get; }
 
@@ -50,6 +64,10 @@ namespace Datadog.Trace.AppSec.Waf
         public ulong AggregatedTotalRuntimeWithBindings { get; }
 
         public bool ShouldBlock { get; }
+
+        public Dictionary<string, object?>? BlockInfo { get; }
+
+        public Dictionary<string, object?>? RedirectInfo { get; }
 
         public bool ShouldReportSecurityResult { get; }
 

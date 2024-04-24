@@ -112,8 +112,8 @@ internal class TracerFlareManager : ITracerFlareManager
         if (removedConfigByProduct?.TryGetValue(RcmProducts.TracerFlareInitiated, out var removedConfig) == true
          && removedConfig.Count > 0)
         {
-            var handled = HandleTracerFlareResolved(removedConfig);
-            results = results is null ? handled : [..results, ..handled];
+            // We don't need to acknowledge config deletions
+            HandleTracerFlareResolved(removedConfig);
         }
 
         return results ?? [];
@@ -175,7 +175,7 @@ internal class TracerFlareManager : ITracerFlareManager
         }
     }
 
-    private ApplyDetails[] HandleTracerFlareResolved(List<RemoteConfigurationPath> config)
+    private void HandleTracerFlareResolved(List<RemoteConfigurationPath> config)
     {
         try
         {
@@ -198,28 +198,10 @@ internal class TracerFlareManager : ITracerFlareManager
 
                 Log.Information(TracerFlareCompleteLog);
             }
-
-            // TODO: I don't know if we need to "accept" removed config?
-            var result = new ApplyDetails[config.Count];
-            for (var i = 0; i < config.Count; i++)
-            {
-                result[i] = ApplyDetails.FromOk(config[i].Path);
-            }
-
-            return result;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error handling tracer flare complete");
-
-            // TODO: I don't know if we need to "accept" removed config?
-            var result = new ApplyDetails[config.Count];
-            for (var i = 0; i < config.Count; i++)
-            {
-                result[i] = ApplyDetails.FromError(config[i].Path, ex.ToString());
-            }
-
-            return result;
         }
     }
 

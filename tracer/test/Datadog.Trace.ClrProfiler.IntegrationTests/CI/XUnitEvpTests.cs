@@ -43,6 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             foreach (var version in PackageVersions.XUnit)
             {
+                // EVP version to remove, expects gzip
                 yield return version.Concat("evp_proxy/v2", true);
                 yield return version.Concat("evp_proxy/v4", false);
             }
@@ -52,19 +53,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             foreach (var row in GetData())
             {
-                // settings json, efd tests json, expected spans
+                // settings json, efd tests json, expected spans, friendlyName
 
                 // EFD for all tests
                 yield return row.Concat(
                     """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":5,"30s":3,"5m":2,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}}""",
                     """{"data":{"id":"lNemDTwOV8U","type":"ci_app_libraries_tests","attributes":{"tests":{}}}}""",
-                    124);
+                    124,
+                    "all_efd");
 
                 // EFD with 1 test to bypass (TraitPassTest)
                 yield return row.Concat(
                     """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":5,"30s":3,"5m":2,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}}""",
                     """{"data":{"id":"lNemDTwOV8U","type":"ci_app_libraries_tests","attributes":{"tests":{"Samples.XUnitTests":{"Samples.XUnitTests.TestSuite":["TraitPassTest"]}}}}}""",
-                    115);
+                    115,
+                    "efd_with_test_bypass");
             }
         }
 
@@ -153,7 +156,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings("all", null, null);
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
+                        settings.UseTextForParameters("packageVersion=all");
                         settings.DisableRequireUniquePrefix();
                         await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
 
@@ -362,7 +366,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
         [Trait("Category", "EarlyFlakeDetection")]
-        public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans)
+        public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
         {
             var tests = new List<MockCIVisibilityTest>();
             var testSuites = new List<MockCIVisibilityTestSuite>();
@@ -447,7 +451,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                 using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
 
-                var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings("all", null, null, null, null, expectedSpans);
+                var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
+                settings.UseTextForParameters(friendlyName);
                 settings.DisableRequireUniquePrefix();
                 await Verifier.Verify(
                     tests

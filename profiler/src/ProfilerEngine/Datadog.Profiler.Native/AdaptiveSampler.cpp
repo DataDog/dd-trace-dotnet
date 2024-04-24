@@ -180,6 +180,7 @@ void AdaptiveSampler::RollWindow()
 
     counts.Reset();
 
+    std::unique_lock l(_callbackMutex);
     if (_rollWindowCallback != nullptr)
     {
         _rollWindowCallback();
@@ -196,4 +197,21 @@ AdaptiveSampler::State AdaptiveSampler::GetInternalState()
         _samplesBudget,
         _probability,
         _totalCountRunningAverage};
+}
+
+/// <summary>
+/// The purpose of this function is to fix a race when the profiler is getting shutdown:
+/// the _rollWindowCallback callback calls the OnRollWindow function in GroupSample and accesses
+/// to GroupSample fields.
+/// At profiler shutdown, the desctructor of GroupSample is called before its parent (GenericSample), so
+/// destructors of all its fields are called. At the same time, the timer can kick in and execute the _rollWindowCallback.
+/// This is dangerous because we are accessing objects that can be in an unknown state.
+///
+/// To prevent that, the destructor of GroupSampler calls Stop. If we are currently executing the callback, the destruction will be block
+/// for a little time. If not executing the callback, it will be replaced by nullptr and if the timer kick in, nothing will happen.
+/// </summary>
+void AdaptiveSampler::Stop()
+{
+    std::unique_lock l(_callbackMutex);
+    _rollWindowCallback = nullptr;
 }

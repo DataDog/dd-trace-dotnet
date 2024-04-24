@@ -1,4 +1,4 @@
-// <copyright file="TelemetryControllerTests.cs" company="Datadog">
+﻿// <copyright file="TelemetryControllerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -73,11 +73,33 @@ public class TelemetryControllerTests
         controller.RecordGitMetadata(new GitMetadata(sha, repo));
         controller.Start();
 
+        await controller.DisposeAsync();
+
         var data = await WaitForRequestStarted(transport, _timeout);
         data.FirstOrDefault().Application.CommitSha.Should().Be(sha);
         data.FirstOrDefault().Application.RepositoryUrl.Should().Be(repo);
 
-        await controller.DisposeAsync();
+        var config = data
+                    .Select(x => x.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted))
+                    .FirstOrDefault(x => x != null);
+
+        config
+          ?.Configuration
+           .Where(x => x.Name == "DD_GIT_REPOSITORY_URL")
+           .OrderByDescending(x => x.SeqId)
+           .Select(x => x.Value!.ToString())
+           .FirstOrDefault()
+           .Should()
+           .Be(repo);
+
+        config
+          ?.Configuration
+           .Where(x => x.Name == "DD_GIT_COMMIT_SHA")
+           .OrderByDescending(x => x.SeqId)
+           .Select(x => x.Value!.ToString())
+           .FirstOrDefault()
+           .Should()
+           .Be(sha);
     }
 
     [Fact]
