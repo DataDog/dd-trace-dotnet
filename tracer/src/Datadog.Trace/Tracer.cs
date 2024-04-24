@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -41,7 +42,7 @@ namespace Datadog.Trace
         private static readonly object GlobalInstanceLock = new();
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
-        
+
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.
         /// This is used in the heartbeat metrics to estimate the number of
@@ -478,24 +479,26 @@ namespace Datadog.Trace
             return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
         }
 
-        /// <remarks>
+        /// <summary>
+        /// Remarks
         /// When calling this method from an integration, ensure you call
-        /// <c>Tracer.Instance.TracerManager.Telemetry.IntegrationGenerateSpan</c> so that the integration is recorded,
+        /// Tracer.Instance.TracerManager.Telemetry.IntegrationGenerateSpan so that the integration is recorded,
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
-        /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directory instead.
-        /// </remarks>
+        /// automatic integration, call TelemetryFactory.Metrics.RecordCountSpanCreated() directory instead.
+        /// </summary>
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)
         {
             var span = StartSpan(operationName, tags, parent, serviceName, startTime);
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        /// <remarks>
+        /// <summary>
+        /// Remarks
         /// When calling this method from an integration, and _not_ discarding the span, ensure you call
-        /// <c>Tracer.Instance.TracerManager.Telemetry.IntegrationGenerateSpan</c> so that the integration is recorded,
+        /// Tracer.Instance.TracerManager.Telemetry.IntegrationGenerateSpan so that the integration is recorded,
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
-        /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directly instead.
-        /// </remarks>
+        /// automatic integration, call TelemetryFactory.Metrics.RecordCountSpanCreated() directly instead.
+        /// </summary>
         internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
@@ -513,7 +516,7 @@ namespace Datadog.Trace
             {
                 Log.Warning(e, "SpanOriginResolution - failed to resolve span origin");
             }
-            
+
             // Apply any global tags
             if (Settings.GlobalTagsInternal.Count > 0)
             {
@@ -544,16 +547,78 @@ namespace Datadog.Trace
             return TracerManager.AgentWriter.FlushTracesAsync();
         }
 
+        // This method attempts to find the local span origin method by examining the stack trace.
+        // It differentiates between user code and non-user code based on predefined criteria.
+        // Note: This method may not accurately identify the user method for async methods with compiler-generated names or virtual methods.
+        private static bool LocalSpanOriginMethod(out MethodBase nonUserMethod, out MethodBase userMethod)
+        {
+            var stackFrames = new System.Diagnostics.StackTrace();
+
+            var encounteredUserCode = false;
+            System.Reflection.MethodBase firstNonUserCodeMethod = null;
+            System.Reflection.MethodBase firstUserCodeMethod = null;
+
+            foreach (var frame in stackFrames.GetFrames()!)
+            {
+                var method = frame.GetMethod();
+                if (method?.DeclaringType == null)
+                {
+                    continue;
+                }
+
+                Log.Information("SpanOriginResolution - frame {0}", $"{method.DeclaringType?.FullName} {method.Name}- file {frame.GetFileName()} line {frame.GetFileLineNumber()}");
+
+                static bool IsUserCode(string methodFullName, MethodBase method)
+                {
+                    // Check for compiler-generated methods and other non-user code patterns
+                    if (method.GetCustomAttributes(typeof(CompilerGeneratedAttribute), inherit: true).Any() ||
+                        methodFullName.StartsWith("System.") ||
+                        methodFullName.StartsWith("Microsoft.") ||
+                        methodFullName.StartsWith("Datadog.Trace.") ||
+                        methodFullName.StartsWith("Serilog.") ||
+                        methodFullName.StartsWith("NHibernate.") ||
+                        methodFullName.StartsWith("Swashbuckle.") ||
+                        methodFullName.StartsWith("MySql.Data."))
+                    {
+                        return false;
+                    }
+
+                    // Additional checks can be added here if necessary
+
+                    return true;
+                }
+
+                if (IsUserCode(method.DeclaringType.FullName, method))
+                {
+                    encounteredUserCode = true;
+                    firstUserCodeMethod = method;
+                    break;
+                }
+
+                if (!encounteredUserCode)
+                {
+                    firstNonUserCodeMethod = method;
+                }
+            }
+
+            if (firstNonUserCodeMethod == null || firstUserCodeMethod == null)
+            {
+                // TODO LOG
+                nonUserMethod = null;
+                userMethod = null;
+                return true;
+            }
+
+            nonUserMethod = firstNonUserCodeMethod;
+            userMethod = firstUserCodeMethod;
+            return false;
+        }
+
+        // This method resolves the origin of a span by finding the associated sequence point in the method instructions.
+        // If the matching call instruction is not found, it falls back to the first sequence point with a non-zero start line.
+        // This fallback is a temporary measure and may not accurately represent the true span origin in complex scenarios such as async methods.
         private static void SpanOriginResolution(Span span)
         {
-            // Deal with pending snapshot
-            // if (!string.IsNullOrEmpty(ProbeProcessor.NextSnapshot.Value))
-            // {
-            //     var nextSnapshotToBeUploaded = ProbeProcessor.NextSnapshot.Value;
-            //
-            //     nextSnapshotToBeUploaded = nextSnapshotToBeUploaded.Replace("TO_BE_ADDED_SPAN_ID", span.SpanId.ToString())
-            //                                                        .Replace("TO_BE_ADDED_TRACE_ID", span.TraceId.ToString());
-
             Log.Information("SpanOriginResolution - started for span {0} {1}", span.OperationName, span.ResourceName);
             if (LocalSpanOriginMethod(out var nonUserMethod, out var userMethod))
             {
@@ -586,29 +651,35 @@ namespace Datadog.Trace
                                (instruction.Operand as IMethod != null &&
                                 (instruction.Operand as IMethod)!.Name == nonUserMethodFullName));
 
-
             Instruction matchingCall = callsToInstrument.FirstOrDefault(); // this doesn't work in all cases, doesn't work for async methods with weird compiler generated names, doesn't take into account virtual methods, etc.
             if (matchingCall == null)
             {
-                Log.Warning("SpanOriginResolution - No calls to {0} found in {1}. Taking first sequence point instead, this is buggy and wrong", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
-                matchingCall = userMdMethod.Body.Instructions.FirstOrDefault(i => i?.SequencePoint?.StartLine != 0);
-                if (matchingCall == null)
+                Log.Warning("SpanOriginResolution - No calls to {0} found in {1}. Attempting to find the closest sequence point before span creation.", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
+                var sequencePoints = userMdMethod.Body.Instructions
+                    .Select(i => i.SequencePoint)
+                    .Where(sp => sp != null && sp.StartLine != 0)
+                    .OrderByDescending(sp => sp.Offset)
+                    .ToList();
+
+                var closestSequencePoint = sequencePoints.FirstOrDefault();
+                if (closestSequencePoint == null)
                 {
                     Log.Warning("SpanOriginResolution - no sequence points found in {0}", userMdMethod);
                     return;
                 }
+                matchingCall = userMdMethod.Body.Instructions.First(i => i.SequencePoint == closestSequencePoint);
             }
 
             uint offsetOfSpanOrigin = matchingCall.Offset;
             var instructions = TimeTravelInitiator.FindMethod((MethodInfo)userMethod).Body.Instructions;
             var sequencePoint = instructions.Reverse().First(instruction => instruction.SequencePoint != null &&
-                                                                            instruction.Offset <= offsetOfSpanOrigin).SequencePoint;            
+                                                                            instruction.Offset <= offsetOfSpanOrigin).SequencePoint;
 
             span.Tags.SetTag("_dd.exit_location.file", sequencePoint.Document.Url);
             span.Tags.SetTag("_dd.exit_location.line", sequencePoint.StartLine.ToString());
             span.Tags.SetTag("_dd.exit_location.snapshot_id", DebuggerSnapshotCreator.LastSnapshotId.ToString());
             Log.Information("SpanOriginResolution - success - {0} {1} {2}", sequencePoint.Document.Url, sequencePoint.StartLine, DebuggerSnapshotCreator.LastSnapshotId);
-            
+
             FakeProbeCreator.CreateAndInstallLineProbe("SpanExit", new NativeLineProbeDefinition(
                 $"{userMethod.DeclaringType?.FullName}_{userMethod.Name}",
                 userMethod.Module.ModuleVersionId,
@@ -617,65 +688,6 @@ namespace Datadog.Trace
                 sequencePoint.StartLine,
                 sequencePoint.Document.Url));
 
-        }
-
-        private static bool LocalSpanOriginMethod(out MethodBase nonUserMethod, out MethodBase userMethod)
-        {
-            var stackFrames = new System.Diagnostics.StackTrace();
-
-            var encounteredUserCode = false;
-            System.Reflection.MethodBase firstNonUserCodeMethod = null;
-            System.Reflection.MethodBase firstUserCodeMethod = null;
-
-            foreach (var frame in stackFrames.GetFrames()!)
-            {
-                var method = frame.GetMethod();
-                if (method?.DeclaringType == null)
-                {
-                    continue;
-                }
-
-                Log.Information("SpanOriginResolution - frame {0}", $"{method.DeclaringType?.FullName} {method.Name}- file {frame.GetFileName()} line {frame.GetFileLineNumber()}");
-
-                static bool IsUserCode(string methodFullName) // Not Comprehensive Enough
-                {
-                    if (methodFullName.StartsWith("Microsoft") && !methodFullName.Contains("eShop"))
-                    {
-                        return false;
-                    }
-
-                    return !(methodFullName.StartsWith("System") ||
-                             methodFullName.StartsWith("Datadog.Trace") ||
-                             methodFullName.StartsWith("Serilog") ||
-                             methodFullName.StartsWith("NHibernate") ||
-                             methodFullName.StartsWith("Swashbuckle") ||
-                             methodFullName.StartsWith("MySql.Data"));
-                }
-
-                if (IsUserCode(method.DeclaringType.FullName))
-                {
-                    encounteredUserCode = true;
-                    firstUserCodeMethod = method;
-                    break;
-                }
-
-                if (!encounteredUserCode)
-                {
-                    firstNonUserCodeMethod = method;
-                }
-            }
-
-            if (firstNonUserCodeMethod == null || firstUserCodeMethod == null)
-            {
-                // TODO LOG
-                nonUserMethod = null;
-                userMethod = null;
-                return true;
-            }
-
-            nonUserMethod = firstNonUserCodeMethod;
-            userMethod = firstUserCodeMethod;
-            return false;
         }
     }
 }
