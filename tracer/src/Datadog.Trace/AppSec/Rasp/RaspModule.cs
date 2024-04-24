@@ -40,13 +40,13 @@ internal static class RaspModule
         }
 
         var arguments = new Dictionary<string, object> { [address] = valueToCheck };
-        RunWaf(arguments, rootSpan);
+        RunWaf(arguments, rootSpan, address, valueToCheck);
     }
 
-    private static IResult? RunWaf(Dictionary<string, object> arguments, Span rootSpan)
+    private static IResult? RunWaf(Dictionary<string, object> arguments, Span rootSpan, string address, string value)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
-        var result = securityCoordinator.RunWaf(arguments, logException: (log, ex) => log.Error(ex, "Error in RASP."), runWithEphemeral: true);
+        var result = securityCoordinator.RunWaf(arguments, logException: (log, ex) => log.Error(ex, "Error in RASP Key:{Key} Value:{Value}.", address, value), runWithEphemeral: true);
 
         securityCoordinator.CheckAndBlockRasp(result);
 
