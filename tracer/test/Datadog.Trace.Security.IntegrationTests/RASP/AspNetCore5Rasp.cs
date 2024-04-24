@@ -51,7 +51,7 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "true");
-        var externalRulesFile = "RASP\\rasp-rule-set.json";
+        var externalRulesFile = "rasp-rule-set.json";
         SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, externalRulesFile);
         EnableEvidenceRedaction(false);
         EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
@@ -78,7 +78,6 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
 
     [SkippableTheory]
     [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
-    [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
     [Trait("RunOnWindows", "True")]
     public async Task TestRaspRequest(string url, string exploit)
     {

@@ -50,7 +50,7 @@ public abstract class AspNetCore2Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "true");
-        var externalRulesFile = "RASP\\rasp-rule-set.json";
+        var externalRulesFile = "rasp-rule-set.json";
         SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, externalRulesFile);
         EnableEvidenceRedaction(false);
         EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
