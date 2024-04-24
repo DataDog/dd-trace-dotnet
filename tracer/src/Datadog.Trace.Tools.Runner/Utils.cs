@@ -282,7 +282,7 @@ namespace Datadog.Trace.Tools.Runner
                     }
                 }
             }
-            catch (System.ComponentModel.Win32Exception)
+            catch (System.ComponentModel.Win32Exception win32Exception)
             {
                 // https://github.com/dotnet/runtime/blob/d099f075e45d2aa6007a22b71b45a08758559f80/src/libraries/System.Diagnostics.Process/src/System/Diagnostics/Process.cs#L1750-L1755
                 // The file could not be found, let's try to find it using the where command and retry
@@ -297,6 +297,8 @@ namespace Datadog.Trace.Tools.Runner
                         return RunProcess(startInfo, cancellationToken);
                     }
                 }
+
+                AnsiConsole.WriteException(win32Exception);
             }
             catch (Exception ex)
             {
