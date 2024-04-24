@@ -165,7 +165,7 @@ namespace Datadog.Trace.Propagators
 
                     if (localSpanContext is not null && spanContext is not null)
                     {
-                        if (localSpanContext.RawTraceId == spanContext.RawTraceId)
+                        if (localSpanContext.RawTraceId == spanContext.RawTraceId || localSpanContext.TraceId64 == spanContext.TraceId64)
                         {
                             localSpanContext.AdditionalW3CTraceState += spanContext.AdditionalW3CTraceState;
 

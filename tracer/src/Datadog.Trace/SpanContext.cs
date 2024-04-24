@@ -160,6 +160,8 @@ namespace Datadog.Trace
                           ? RandomIdGenerator.Shared.NextTraceId(useAllBits: false)
                           : traceId;
 
+            TraceId64 = TraceId128.Lower;
+
             ServiceNameInternal = serviceName;
 
             // Because we have a ctor as part of the public api without accepting the origin tag,
@@ -182,6 +184,11 @@ namespace Datadog.Trace
         /// Gets the 128-bit trace id.
         /// </summary>
         internal TraceId TraceId128 { get; }
+
+        /// <summary>
+        /// Gets the 128-bit trace id.
+        /// </summary>
+        internal ulong TraceId64 { get; }
 
         /// <summary>
         /// Gets the 64-bit trace id, or the lower 64 bits of a 128-bit trace id.

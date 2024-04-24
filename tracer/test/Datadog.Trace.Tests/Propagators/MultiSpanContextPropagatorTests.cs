@@ -527,6 +527,61 @@ namespace Datadog.Trace.Tests.Propagators
             headersForInjection.Verify(h => h.Set("b3", expectedTraceParent), Times.Once());
         }
 
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void W3C_ParentExtracted_WithSameTraceIdAndParentId(bool extractFirst, bool w3CHeaderFirst)
+        {
+            // headers1 equivalent from system-tests
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-11111111111111110000000000000001-000000003ade68b1-01" });
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { $"dd=s:2;o:rum;p:0123456789abcdef,foo=1" });
+            headers.Setup(h => h.GetValues("x-datadog-trace-id"))
+                   .Returns(new[] { "1" });
+            headers.Setup(h => h.GetValues("x-datadog-parent-id"))
+                   .Returns(new[] { "987654321" });
+            headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
+                   .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-origin"))
+                   .Returns(new[] { "rum" });
+
+            var result = GetPropagatorToTest(extractFirst, w3CHeaderFirst).Extract(headers.Object);
+
+            TraceTagCollection propagatedTags = new(
+                new List<KeyValuePair<string, string>>
+                {
+                },
+                null);
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId128 = w3CHeaderFirst ? new TraceId(0x1111111111111111, 1) : new TraceId(0x0000000000000000, 1),
+                           TraceId = 1,
+                           SpanId = 987654321,
+                           RawTraceId = w3CHeaderFirst ? "11111111111111110000000000000001" : "00000000000000000000000000000001",
+                           RawSpanId = "000000003ade68b1",
+                           SamplingPriority = SamplingPriorityValues.UserKeep,
+                           PropagatedTags = propagatedTags,
+                           Origin = "rum",
+                           AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
+                           Parent = null,
+                           ParentId = null,
+                           IsRemote = true,
+                           // since Trace ID and Span ID for the headers match this will be extracted
+                           // only when extract first and Datadog,tracecontext is defined will this not be extracted
+                           LastParentId = (extractFirst && !w3CHeaderFirst) ? null : "0123456789abcdef",
+                       });
+        }
+
         // Tests for making sure the behaviour of either copying the valid tracecontext or not is accurate
         [Theory]
         [InlineData(false, false)]
