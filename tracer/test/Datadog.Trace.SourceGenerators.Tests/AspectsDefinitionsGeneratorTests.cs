@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] GetAspects() => new string[] {
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[],4,[])] MyTests.TestAspectClass",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
         };
@@ -140,7 +140,7 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] GetAspects() => new string[] {
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[],4,[])] MyTests.TestAspectClass",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
         };
@@ -211,16 +211,16 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] GetAspects() => new string[] {
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass1",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[],4,[])] MyTests.TestAspectClass1",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Sink,[WeakCipher,WeakHash])] MyTests.TestAspectClass2",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Sink,[WeakCipher,WeakHash],4,[])] MyTests.TestAspectClass2",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
         };
 
         public static string[] GetRaspAspects() => new string[] {
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Sink,[WeakCipher,WeakHash])] MyTests.TestAspectClass2",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Sink,[WeakCipher,WeakHash],4,[])] MyTests.TestAspectClass2",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)",
         };
@@ -277,14 +277,14 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] GetAspects() => new string[] {
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiteral_0,StringLiteral_1],Sink,[WeakCipher])] MyTests.TestAspectClass2",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiteral_0,StringLiteral_1],Sink,[WeakCipher],4,[])] MyTests.TestAspectClass2",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::.ctor(System.String)\",\"System.Text.StringBuilder\",[0],[False],[StringLiterals_Any],Default,[])] Init(System.String)",
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiterals_Any,StringLiterals],Source,[WeakCipher,WeakHash])] MyTests.TestAspectClass1",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiterals_Any,StringLiterals],Source,[WeakCipher,WeakHash],4,[])] MyTests.TestAspectClass1",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)",
         };
 
         public static string[] GetRaspAspects() => new string[] {
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiteral_0,StringLiteral_1],Sink,[WeakCipher])] MyTests.TestAspectClass2",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringLiteral_0,StringLiteral_1],Sink,[WeakCipher],4,[])] MyTests.TestAspectClass2",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::.ctor(System.String)\",\"System.Text.StringBuilder\",[0],[False],[StringLiterals_Any],Default,[])] Init(System.String)",
         };
     }
@@ -331,7 +331,57 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] GetAspects() => new string[] {
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],Propagation,[])] MyTests.TestAspectClass1",
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],Propagation,[],4,[])] MyTests.TestAspectClass1",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String[])\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String[])",
+        };
+
+        public static string[] GetRaspAspects() => new string[] {
+        };
+    }
+}
+
+"""";
+
+            var (diagnostics, output) = TestHelpers.GetGeneratedOutput<AspectsDefinitionsGenerator>(
+                SourceHelper.AspectAttributes,
+                input);
+            Assert.Equal(expected, output);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public void CanGenerateAspectsDefinitionWithSiteFilter()
+        {
+            const string input = """
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Iast;
+using Datadog.Trace.Iast.Dataflow;
+
+namespace MyTests;
+
+[AspectClass("mscorlib,netstandard,System.Private.CoreLib", "mscorlib,netstandard,System.Private.CoreLib|System.Test.StringBuilder.ctor()")]
+public class TestAspectClass1
+{ 
+    [AspectMethodReplace("System.String::Concat(System.String,System.String[])", AspectFilter.StringLiterals_Any)]
+    public static string Concat(string target, string[] param1)
+    {
+        return string.Concat(target, param1);
+    }
+}
+""";
+
+            const string expected = Constants.FileHeader + """"
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Datadog.Trace.ClrProfiler
+{
+    internal static partial class AspectDefinitions
+    {
+        public static string[] GetAspects() => new string[] {
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],Propagation,[],4,[\"mscorlib,netstandard,System.Private.CoreLib|System.Test.StringBuilder.ctor()\"])] MyTests.TestAspectClass1",
 "  [AspectMethodReplace(\"System.String::Concat(System.String,System.String[])\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String[])",
         };
 
@@ -509,7 +559,7 @@ internal sealed class AspectClassAttribute : Attribute
     {
     }
 
-    public AspectClassAttribute(string defaultAssembly)
+    public AspectClassAttribute(string defaultAssembly, params string[] siteFilters)
         : this(defaultAssembly, new AspectFilter[0], AspectType.Propagation)
     {
     }

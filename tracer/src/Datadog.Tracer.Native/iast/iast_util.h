@@ -142,6 +142,7 @@ namespace iast
     std::vector<std::string> SplitParams(const std::string& subject);
     std::vector<WSTRING> SplitParams(const WSTRING& subject);
     void SplitType(const WSTRING& subjectW, WSTRING* assembliesW, WSTRING* typeW, WSTRING* methodW = nullptr, WSTRING* paramsW = nullptr);
+    void SplitMethod(const WSTRING& subjectW, WSTRING* assembliesW, WSTRING* methodW);
 
     WSTRING Trim(const WSTRING& str, const WSTRING& c = WStr(" \t\r\n"));
     WSTRING TrimStart(const WSTRING& str, const WSTRING& c = WStr(" \t\r\n"));

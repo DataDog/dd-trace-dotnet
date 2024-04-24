@@ -13,7 +13,7 @@ namespace iast
 		/*
 		* How far are we going to search for `CALL target` in the next IL instructions and it is 3 because there are target methods accept 2 arguments as max plus the CALL instruction.
 		*
-		*   System.String Hdiv.AST.Aspects.StringAspect::ToLower_Track(System.String,System.Int32) Original: [0x0A0000F7] System.String System.String::ToLower()
+		*   StringAspect::ToLower_Track(System.String,System.Int32) Original: [0x0A0000F7] System.String System.String::ToLower()
 		*	ldstr 0x700049CA
 		*	ldc.i4.3 
 		*	callvirt [0x0A000117] System.Boolean System.String::StartsWith(System.String,System.StringComparison)

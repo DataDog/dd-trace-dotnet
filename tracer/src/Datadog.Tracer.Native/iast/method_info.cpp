@@ -87,11 +87,11 @@ namespace iast
     {
         return _module;
     }
-    WSTRING MemberRefInfo::GetName()
+    WSTRING& MemberRefInfo::GetName()
     {
         return _name;
     }
-    WSTRING MemberRefInfo::GetMemberName()
+    WSTRING& MemberRefInfo::GetMemberName()
     {
         if (_memberName.size() == 0)
         {
@@ -108,7 +108,7 @@ namespace iast
         return _memberName;
     }
 
-    WSTRING MemberRefInfo::GetFullName()
+    WSTRING& MemberRefInfo::GetFullName()
     {
         if (_fullName.size() == 0)
         {
@@ -122,7 +122,10 @@ namespace iast
             {
                 _fullName = fullName;
             }
-            return fullName;
+            if(_fullName.size() == 0)
+            {
+                return _name;
+            }
         }
         return _fullName;
     }

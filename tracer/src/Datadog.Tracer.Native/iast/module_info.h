@@ -111,6 +111,7 @@ namespace iast
         bool IsValid();
         bool IsExcluded();
         virtual bool IsCoreLib();
+        WSTRING& GetName();
         WSTRING GetModuleFullName();
         mdToken DefineMemberRef(const WSTRING& moduleName, const WSTRING& typeName, const WSTRING& methodName, const WSTRING& methodParams);
 

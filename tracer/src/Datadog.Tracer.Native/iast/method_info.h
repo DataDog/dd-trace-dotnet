@@ -56,9 +56,9 @@ namespace iast
         mdTypeDef GetTypeDef();
 
         ModuleInfo* GetModuleInfo();
-        WSTRING GetName();
-        WSTRING GetMemberName();
-        WSTRING GetFullName();
+        WSTRING& GetName();
+        WSTRING& GetMemberName();
+        WSTRING& GetFullName();
         WSTRING GetFullNameWithReturnType();
         WSTRING GetTypeName();
         virtual SignatureInfo* GetSignature();

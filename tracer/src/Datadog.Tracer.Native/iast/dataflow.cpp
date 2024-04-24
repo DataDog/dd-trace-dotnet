@@ -122,6 +122,10 @@ ModuleAspects::ModuleAspects(Dataflow* dataflow, ModuleInfo* module)
     // Determine aspects which apply to this module
     for (auto a : dataflow->_aspects)
     {
+        if (a->_aspectClass->IsSiteFiltered())
+        {
+            continue;
+        }
         auto aspectReference = a->GetAspectReference(this);
         if (aspectReference)
         {
@@ -133,6 +137,14 @@ ModuleAspects::~ModuleAspects()
 {
     DEL_MAP_VALUES(_filters);
     DEL_VEC_VALUES(_aspects);
+    for (auto item : _methodSiteAspects)
+    {
+        if (item.second)
+        {
+            DEL_VEC_VALUES((*item.second));
+        }
+    }
+    DEL_MAP_VALUES(_methodSiteAspects);
 }
 AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 {
@@ -148,6 +160,44 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
     auto res = GetAspectFilter(filterValue, this);
     _filters[filterValue] = res;
     return res;
+}
+
+std::vector<DataflowAspectReference*> ModuleAspects::GetAspects(MethodInfo* method, std::vector<DataflowAspectClass*>* methodCallSiteAspects)
+{
+    if (!methodCallSiteAspects)
+    {
+        return _aspects;
+    }
+    mdToken methodId = method->GetMemberId();
+    std::vector<DataflowAspectReference*>* methodSites = Get<mdToken, std::vector<DataflowAspectReference*>>(_methodSiteAspects, methodId);
+    if (!methodSites)
+    {
+        methodSites = new std::vector<DataflowAspectReference*>();
+        _methodSiteAspects[methodId] = methodSites;
+        for (auto aspectClass : *methodCallSiteAspects)
+        {
+            for (auto aspect : aspectClass->_aspects)
+            {
+                auto aspectReference = aspect->GetAspectReference(this);
+                if (aspectReference)
+                {
+                    methodSites->push_back(aspectReference);
+                }
+            }
+        }
+    }
+    return *methodSites;
+}
+
+//--------------------
+
+ModuleSiteFilteredAspects::ModuleSiteFilteredAspects(const WSTRING& moduleName)
+{
+    this->_moduleName = moduleName;
+}
+ModuleSiteFilteredAspects::~ModuleSiteFilteredAspects()
+{
+    DEL_MAP_VALUES(_siteFilteredAspectClasses);
 }
 
 //--------------------
@@ -183,45 +233,42 @@ HRESULT Dataflow::Init()
     HRESULT hr = S_OK;
     try
     {
-        //_initThread = new std::thread([this]() {
-            // Init config
-            // Domain filters
-            for (int x = 0; _fixedAppDomainIncludeFilters[x] != LastEntry; x++)
-            {
-                _domainIncludeFilters.push_back(_fixedAppDomainIncludeFilters[x]);
-            }
-            for (int x = 0; _fixedAppDomainExcludeFilters[x] != LastEntry; x++)
-            {
-                _domainExcludeFilters.push_back(_fixedAppDomainExcludeFilters[x]);
-            }
+        // Init config
+        // Domain filters
+        for (int x = 0; _fixedAppDomainIncludeFilters[x] != LastEntry; x++)
+        {
+            _domainIncludeFilters.push_back(_fixedAppDomainIncludeFilters[x]);
+        }
+        for (int x = 0; _fixedAppDomainExcludeFilters[x] != LastEntry; x++)
+        {
+            _domainExcludeFilters.push_back(_fixedAppDomainExcludeFilters[x]);
+        }
 
-            // Assembly filters
-            for (int x = 0; _fixedAssemblyIncludeFilters[x] != LastEntry; x++)
-            {
-                _assemblyIncludeFilters.push_back(_fixedAssemblyIncludeFilters[x]);
-            }
-            for (int x = 0; _fixedAssemblyExcludeFilters[x] != LastEntry; x++)
-            {
-                _assemblyExcludeFilters.push_back(_fixedAssemblyExcludeFilters[x]);
-            }
+        // Assembly filters
+        for (int x = 0; _fixedAssemblyIncludeFilters[x] != LastEntry; x++)
+        {
+            _assemblyIncludeFilters.push_back(_fixedAssemblyIncludeFilters[x]);
+        }
+        for (int x = 0; _fixedAssemblyExcludeFilters[x] != LastEntry; x++)
+        {
+            _assemblyExcludeFilters.push_back(_fixedAssemblyExcludeFilters[x]);
+        }
 
-            // Method filters
-            for (int x = 0; _fixedMethodIncludeFilters[x] != LastEntry; x++)
-            {
-                _methodIncludeFilters.push_back(_fixedMethodIncludeFilters[x]);
-            }
-            for (int x = 0; _fixedMethodExcludeFilters[x] != LastEntry; x++)
-            {
-                _methodExcludeFilters.push_back(_fixedMethodExcludeFilters[x]);
-            }
+        // Method filters
+        for (int x = 0; _fixedMethodIncludeFilters[x] != LastEntry; x++)
+        {
+            _methodIncludeFilters.push_back(_fixedMethodIncludeFilters[x]);
+        }
+        for (int x = 0; _fixedMethodExcludeFilters[x] != LastEntry; x++)
+        {
+            _methodExcludeFilters.push_back(_fixedMethodExcludeFilters[x]);
+        }
 
-            // Method attribute filters
-            for (int x = 0; _fixedMethodAttributeExcludeFilters[x] != LastEntry; x++)
-            {
-                _methodAttributeExcludeFilters.push_back(_fixedMethodAttributeExcludeFilters[x]);
-            }
-
-        //});
+        // Method attribute filters
+        for (int x = 0; _fixedMethodAttributeExcludeFilters[x] != LastEntry; x++)
+        {
+            _methodAttributeExcludeFilters.push_back(_fixedMethodAttributeExcludeFilters[x]);
+        }
     }
     catch (std::exception& err)
     {
@@ -287,11 +334,32 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength)
             else
             {
                 _aspectClasses.push_back(aspectClass);
+
+                if (aspectClass->_callSiteFilters.size() > 0)
+                {
+                    auto subjects = SplitParams(TrimEnd(TrimStart(aspectClass->_callSiteFilters, WStr("[")), WStr("]")));
+
+                    for (auto subject : subjects)
+                    {
+                        WSTRING assemblies, site;
+                        SplitMethod(subject, &assemblies, &site);
+                        for (auto assembly : Split(assemblies, WStr(",")))
+                        {
+                            auto moduleSites = Get<WSTRING, ModuleSiteFilteredAspects>(_siteFilteredAspectClasses, assembly, [assembly]() { return new iast::ModuleSiteFilteredAspects(assembly); });
+                            auto methodSites = Get<WSTRING, std::vector<DataflowAspectClass*>>(moduleSites->_siteFilteredAspectClasses, site,[] { return new std::vector<DataflowAspectClass*>(); });
+                            methodSites->push_back(aspectClass);
+                        }
+                    }
+                }
             }
             continue;
         }
         if (BeginsWith(line, WStr("  [Aspect")) && aspectClass != nullptr)
         {
+            if (!aspectClass->IsValid())
+            {
+                continue;
+            }
             auto aspect = new DataflowAspect(aspectClass, line);
             if (!aspect->IsValid())
             {
@@ -301,6 +369,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength)
             else
             {
                 _aspects.push_back(aspect);
+                aspectClass->_aspects.push_back(aspect);
             }
         }
     }
@@ -589,30 +658,58 @@ bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 }
 MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, bool isRejit)
 {
-    MethodInfo* method = nullptr;
-    if (!_loaded) { return method; }
+    if (!_loaded) { return nullptr; }
 
-    auto module = GetModuleInfo(moduleId);
-    if (module && !module->IsExcluded())
+    ModuleInfo* module;
+    MethodInfo* method = nullptr;
+    std::vector<DataflowAspectClass*>* methodCallSiteAspects = nullptr;
+
+    if (!IsMethodExcluded(moduleId, methodId, &module, &method, &methodCallSiteAspects))
     {
-        method = module->GetMethodInfo(methodId);
-        if (method && !method->IsExcluded())
+        if (isRejit || !method->IsProcessed())
         {
-            auto type = method->GetTypeInfo();
-            if (isRejit || !method->IsProcessed())
+            method->SetProcessed();
+            if (_traceJitMethods)
             {
-                method->SetProcessed();
-                if (_traceJitMethods)
-                {
-                    trace::Logger::Debug("JITProcessMethod       -> Processing ", method->GetFullName());
-                }
-                RewriteMethod(method, nullptr);
-                return method;
+                trace::Logger::Debug("JITProcessMethod       -> Processing ", method->GetFullName());
             }
+            RewriteMethod(method, nullptr, methodCallSiteAspects);
         }
     }
+
     return method;
 }
+
+bool Dataflow::IsMethodExcluded(ModuleID moduleId, mdToken methodId, ModuleInfo** module, MethodInfo** method, std::vector<DataflowAspectClass*>** methodCallSiteAspects)
+{
+    *module = GetModuleInfo(moduleId);
+    if (!*module) { return true; }
+
+    // Check if module has methods with callsite filters
+    auto moduleSites = Get(_siteFilteredAspectClasses, (*module)->GetName());
+    if (moduleSites)
+    {
+        // Check if method has callsite filters
+        *method = (*module)->GetMethodInfo(methodId);
+        if (!*method) { return true; }
+
+        *methodCallSiteAspects = moduleSites->GetSiteFilteredAspects((*method)->GetFullName());
+        if (*methodCallSiteAspects)
+        {
+            return false;
+        }
+    }
+
+    if ((*module)->IsExcluded()) { return true; }
+    if (!*method) { *method = (*module)->GetMethodInfo(methodId); }
+    if (!*method || (*method)->IsExcluded())
+    {
+        return true;
+    }
+
+    return false;
+}
+
 
 bool IsCandidate(unsigned opcode)
 {
@@ -624,7 +721,7 @@ HRESULT SetILFunctionBody(MethodInfo* method, ICorProfilerFunctionControl* pFunc
 {
     return method->SetMethodIL(size, pBody, pFunctionControl);
 }
-HRESULT Dataflow::RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl* pFunctionControl)
+HRESULT Dataflow::RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl* pFunctionControl, std::vector<DataflowAspectClass*>* methodCallSiteAspects)
 {
     HRESULT hr = S_OK;
     try
@@ -639,9 +736,8 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl*
 
         MethodAnalyzers::ProcessMethod(method);
 
-        auto module = method->GetModuleInfo();
-        auto moduleAspectRefs = GetAspects(module);
-        if (moduleAspectRefs.size() > 0)
+        auto aspectRefs = GetAspects(method, methodCallSiteAspects);
+        if (aspectRefs.size() > 0)
         {
             ILRewriter* rewriter;
             hr = method->GetILRewriter(&rewriter);
@@ -654,7 +750,7 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl*
                     if (IsCandidate(pInstr->m_opcode))
                     {
                         // Instrument instruction
-                        auto result = InstrumentInstruction(rewriter, pInstr, moduleAspectRefs);
+                        auto result = InstrumentInstruction(rewriter, pInstr, aspectRefs);
                         pInstr = result.instruction;
                         written |= result.written;
                     }
@@ -670,16 +766,23 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl*
     return hr;
 }
 
-std::vector<DataflowAspectReference*> Dataflow::GetAspects(ModuleInfo* module)
+ModuleAspects* Dataflow::GetModuleAspects(ModuleInfo* module)
 {
     auto value = _moduleAspects.find(module->_id);
     if (value != _moduleAspects.end())
     {
-        return value->second->_aspects;
+        return value->second;
     }
     auto res = new ModuleAspects(this, module);
     _moduleAspects[module->_id] = res;
-    return res->_aspects;
+    return res;
+
+}
+
+std::vector<DataflowAspectReference*> Dataflow::GetAspects(MethodInfo* method, std::vector<DataflowAspectClass*>* methodCallSiteAspects)
+{
+    auto moduleAspects = GetModuleAspects(method->GetModuleInfo());
+    return moduleAspects->GetAspects(method, methodCallSiteAspects);
 }
 
 InstrumentResult Dataflow::InstrumentInstruction(ILRewriter* rewriter, ILInstr* instruction,

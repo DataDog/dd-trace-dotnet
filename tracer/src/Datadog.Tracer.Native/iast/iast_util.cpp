@@ -494,6 +494,17 @@ static thread_local std::unordered_map<void *, bool> locked;
         }
     }
 
+    void SplitMethod(const WSTRING& subjectW, WSTRING* assembliesW, WSTRING* methodW)
+    {
+        auto typeIndex = IndexOf(subjectW, WStr("|"));
+        if (typeIndex != WSTRING::npos)
+        {
+            *assembliesW = Trim(subjectW.substr(0, typeIndex));
+            *methodW = Trim(subjectW.substr(typeIndex + 1));
+        }
+    }
+
+
     inline int _IndexOf(const WCHAR c, const WSTRING& pC)
     {
         for (unsigned int x = 0; x < pC.length(); x++)

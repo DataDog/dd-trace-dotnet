@@ -68,6 +68,11 @@ bool ModuleInfo::IsCoreLib()
     return false;
 }
 
+WSTRING& ModuleInfo::GetName()
+{
+    return _name;
+}
+
 WSTRING ModuleInfo::GetModuleFullName()
 {
     std::stringstream res;
@@ -470,7 +475,7 @@ WSTRING ModuleInfo::GetTypeName(mdTypeDef typeDef)
             break;
         }
         std::stringstream tmp;
-        tmp << shared::ToString(typeName) << "." << shared::ToString(res);
+        tmp << shared::ToString(typeName) << "+" << shared::ToString(res);
         res = ToWSTRING(tmp.str());
         typeDef = enclosingClassTypeDef;
     }
