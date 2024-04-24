@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if !NETFRAMEWORK
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,7 +31,20 @@ public class CreatedumpTests : ConsoleTestHelper
         EnvironmentHelper.CustomEnvironmentVariables["COMPlus_DbgEnableMiniDump"] = string.Empty;
     }
 
-    private static (string Key, string Value) LdPreloadConfig => ("LD_PRELOAD", Utils.GetApiWrapperPath());
+    private static (string Key, string Value) LdPreloadConfig
+    {
+        get
+        {
+            var path = Utils.GetApiWrapperPath();
+
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException($"LD wrapper not found at path {path}");
+            }
+
+            return ("LD_PRELOAD", path);
+        }
+    }
 
     private static (string Key, string Value)[] CreatedumpConfig => [("COMPlus_DbgEnableMiniDump", "1"), ("COMPlus_DbgMiniDumpName", "/dev/null")];
 
@@ -159,9 +174,16 @@ public class CreatedumpTests : ConsoleTestHelper
 
     private static (string Key, string Value)[] CrashReportConfig(TemporaryFile reportFile)
     {
+        var ddDotnetPath = Utils.GetDdDotnetPath();
+
+        if (!File.Exists(ddDotnetPath))
+        {
+            throw new FileNotFoundException($"dd-dotnet not found at path {ddDotnetPath}");
+        }
+
         return
         [
-            ("DD_TRACE_CRASH_HANDLER", Utils.GetDdDotnetPath()),
+            ("DD_TRACE_CRASH_HANDLER", ddDotnetPath),
             ("DD_TRACE_CRASH_OUTPUT", reportFile.Url)
         ];
     }
@@ -186,3 +208,5 @@ public class CreatedumpTests : ConsoleTestHelper
         }
     }
 }
+
+#endif
