@@ -11,14 +11,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using static Datadog.Trace.HttpOverStreams.DatadogHttpValues;
 
 namespace Datadog.Trace.Agent.Transports
 {
     internal class ApiWebRequest : IApiRequest, IMultipartApiRequest
     {
-        private const string Boundary = "faa0a896-8bc8-48f3-b46d-016f2b15a884";
-        private const string BoundarySeparator = "\r\n--" + Boundary + "\r\n";
-        private const string BoundaryTrailer = "\r\n--" + Boundary + "--\r\n";
+        private const string BoundarySeparator = $"{CrLf}--{Boundary}{CrLf}";
+        private const string BoundaryTrailer = $"{CrLf}--{Boundary}--{CrLf}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
         private readonly HttpWebRequest _request;
@@ -115,38 +115,15 @@ namespace Datadog.Trace.Agent.Transports
                 var itemsWritten = 0;
                 foreach (var item in multipartItems)
                 {
-                    byte[] headerBytes = null;
-
-                    // Check name is not null (required)
-                    if (item.Name is null)
+                    if (!item.IsValid(Log))
                     {
-                        Log.Warning("Error encoding multipart form item name is null. Ignoring item");
                         continue;
                     }
 
-                    // Ignore the item if the name contains ' or "
-                    if (item.Name.IndexOf("\"", StringComparison.Ordinal) != -1 || item.Name.IndexOf("'", StringComparison.Ordinal) != -1)
-                    {
-                        Log.Warning("Error encoding multipart form item name: {Name}. Ignoring item.", item.Name);
-                        continue;
-                    }
-
-                    // Do the same checks for FileName if not null
-                    if (item.FileName is not null)
-                    {
-                        // Ignore the item if the name contains ' or "
-                        if (item.FileName.IndexOf("\"", StringComparison.Ordinal) != -1 || item.FileName.IndexOf("'", StringComparison.Ordinal) != -1)
-                        {
-                            Log.Warning("Error encoding multipart form item filename: {FileName}. Ignoring item.", item.FileName);
-                            continue;
-                        }
-
-                        headerBytes = Encoding.ASCII.GetBytes(
-                            $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"; filename=\"{item.FileName}\"\r\n\r\n");
-                    }
-
-                    headerBytes ??= Encoding.ASCII.GetBytes(
-                        $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"\r\n\r\n");
+                    var headerBytes = Encoding.ASCII.GetBytes(
+                        item.FileName is not null
+                            ? $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"; filename=\"{item.FileName}\"\r\n\r\n"
+                            : $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"\r\n\r\n");
 
                     if (itemsWritten == 0)
                     {
@@ -173,10 +150,12 @@ namespace Datadog.Trace.Agent.Transports
                     itemsWritten++;
                 }
 
-                if (itemsWritten > 0)
+                if (itemsWritten == 0)
                 {
-                    await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
+                    await requestStream.WriteAsync(boundaryBytes, 2, boundaryBytes.Length - 2).ConfigureAwait(false);
                 }
+
+                await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
             }
         }
 
