@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
+#if !NETFRAMEWORK && !NETCOREAPP2_1
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -15,7 +15,6 @@ using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.TestHost;
