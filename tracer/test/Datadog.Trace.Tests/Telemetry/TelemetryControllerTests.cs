@@ -66,14 +66,11 @@ public class TelemetryControllerTests
             transportManager,
             _flushInterval);
 
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
-
         var sha = "testCommitSha";
         var repo = "testRepositoryUrl";
         controller.RecordGitMetadata(new GitMetadata(sha, repo));
+        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
         controller.Start();
-
-        await controller.DisposeAsync();
 
         var data = await WaitForRequestStarted(transport, _timeout);
         data.FirstOrDefault().Application.CommitSha.Should().Be(sha);
@@ -100,6 +97,8 @@ public class TelemetryControllerTests
            .FirstOrDefault()
            .Should()
            .Be(sha);
+
+        await controller.DisposeAsync();
     }
 
     [Fact]
