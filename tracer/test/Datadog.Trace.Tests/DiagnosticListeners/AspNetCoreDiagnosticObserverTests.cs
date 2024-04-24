@@ -66,9 +66,10 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, null);
 
-            var context = new HostingApplication.Context { HttpContext = GetHttpContext() };
+            var httpContext = GetHttpContext();
+            var context = new DefaultHttpContext().Features; // Use the Features collection to simulate the context
 
-            observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Start", context));
+            observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Start", new { HttpContext = httpContext }));
 
             var scope = tracer.ActiveScope;
 
@@ -87,7 +88,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             Assert.Equal("http://localhost/home/1/action", span.GetTag(Tags.HttpUrl));
 
             // Resource isn't populated until request end
-            observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop", context));
+            observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop", new { HttpContext = httpContext }));
             Assert.Equal("GET /home/?/action", span.ResourceName);
         }
 
