@@ -675,14 +675,20 @@ namespace Datadog.Trace
                 span.Tags.SetTag("_dd.exit_location.snapshot_id", DebuggerSnapshotCreator.LastSnapshotId.ToString());
                 Log.Information("SpanOriginResolution - success - {0} {1} {2}", firstSequencePoint.Document.Url, firstSequencePoint.StartLine, DebuggerSnapshotCreator.LastSnapshotId);
 
-                FakeProbeCreator.CreateAndInstallLineProbe("SpanExit", new NativeLineProbeDefinition(
-                    $"{userMethod.DeclaringType?.FullName}_{userMethod.Name}",
-                    userMethod.Module.ModuleVersionId,
-                    userMethod.MetadataToken,
-                    (int)matchingCall.Offset,
-                    firstSequencePoint.StartLine,
-                    firstSequencePoint.Document.Url));
-
+                if (matchingCall != null)
+                {
+                    FakeProbeCreator.CreateAndInstallLineProbe("SpanExit", new NativeLineProbeDefinition(
+                        $"{userMethod.DeclaringType?.FullName}_{userMethod.Name}",
+                        userMethod.Module.ModuleVersionId,
+                        userMethod.MetadataToken,
+                        (int)matchingCall.Offset,
+                        firstSequencePoint.StartLine,
+                        firstSequencePoint.Document.Url));
+                }
+                else
+                {
+                    Log.Warning("SpanOriginResolution - matchingCall is null, cannot create line probe");
+                }
             }
         }
     }
