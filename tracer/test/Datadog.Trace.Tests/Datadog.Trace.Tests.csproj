@@ -25,6 +25,9 @@
     <PackageReference Include="System.Reactive.Core" Version="3.1.1" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.113.7" />
+    <PackageReference Include="Confluent.Kafka" Version="1.8.2" />
+    <PackageReference Include="StackExchange.Redis" Version="2.2.88" />
+    <PackageReference Include="Dapper" Version="2.0.90" /> <!-- Dapper is used for simplified database interaction -->
 
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\..\src\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
@@ -42,9 +45,9 @@
 
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
-    <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="3.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>
