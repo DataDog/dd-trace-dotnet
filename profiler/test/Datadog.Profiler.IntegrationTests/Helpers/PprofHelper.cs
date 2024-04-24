@@ -42,10 +42,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return new StackTrace(
                 sample.LocationId
                     .Select(id => profile.Location.First(l => l.Id == id))
-                    .Select(l => l.Line[0].FunctionId)
-                    .Select(l => profile.Function.First(f => f.Id == l))
-                    .Select(f => (Frame: profile.StringTable[(int)f.Name], Filename: profile.StringTable[(int)f.Filename], Startline: f.StartLine))
-                    .Select(f => new StackFrame(f.Frame, f.Filename, f.Startline)));
+                    .Select(l => (l.Line[0].FunctionId, Line: l.Line[0].Line_))
+                    .Select(l => (Function: profile.Function.First(f => f.Id == l.FunctionId), l.Line))
+                    .Select(f => (Frame: profile.StringTable[(int)f.Function.Name], Filename: profile.StringTable[(int)f.Function.Filename], Startline: f.Function.StartLine, f.Line))
+                    .Select(f => new StackFrame(f.Frame, f.Filename, f.Startline, f.Line)));
         }
 
         internal struct Label
