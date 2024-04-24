@@ -84,13 +84,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private string GetApplicationAssemblyFileName()
         {
-            var extension = "exe";
-            if (!EnvironmentHelper.IsRunningOnWindows())
+            var extension = string.Empty;
+            if (EnvironmentHelper.IsRunningOnWindows())
             {
-                extension = "dll";
+                extension = ".exe";
             }
 
-            return $"{_appAssembly}.{extension}";
+            return $"{_appAssembly}{extension}";
         }
 
         private string GetApplicationPath()
@@ -114,21 +114,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             if (!string.IsNullOrEmpty(_commandLine))
             {
                 arguments += $" {_commandLine}";
-            }
-
-            if (!EnvironmentHelper.IsRunningOnWindows())
-            {
-                if (EnvironmentHelper.IsAlpine)
-                {
-                    return ("dotnet", $"{applicationPath} {arguments}");
-                }
-
-                // By default catchsegv/libsegfault.so reports only SIGSEGV signal.
-                // This environment variable allows us to catch and report signals that may crash the application.
-                Environment.CustomEnvironmentVariables.Add("SEGFAULT_SIGNALS", "all");
-
-                // catchsegv is a tool that catches the segmentation fault and displays useful information: callstack, registers...
-                return ("catchsegv", $"dotnet {applicationPath} {arguments}");
             }
 
             return (applicationPath, arguments);

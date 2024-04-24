@@ -100,48 +100,15 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 return;
             }
 
-            var pid = process.Id;
-            if (!EnvironmentHelper.IsAlpine)
-            {
-                // on Non-Alpine, the `dotnet` binary is launch by `catchsegv`
-                // we need to get the child process (`dotnet`) spawned by `catchsegv`
-                output.WriteLine($"== Get childrens of process {process.Id}");
-                Microsoft.Extensions.Internal.ProcessExtensions.RunProcessAndWaitForExit(
-                   "pgrep",
-                   $"-P {process.Id}",
-                   TimeSpan.FromSeconds(2),
-                   out var childrens);
-
-                output.WriteLine($"== children list: {childrens}");
-
-                if (int.TryParse(childrens, out var parsedPid))
-                {
-                    pid = parsedPid;
-                }
-                else
-                {
-                    output.WriteLine($"^^^^^^^^^^^^^^^^^^^^^^^^^ process {process.Id} may not have childrens or we were unable to parse the list of its childrens: {childrens}");
-                }
-            }
-
             Microsoft.Extensions.Internal.ProcessExtensions.RunProcessAndWaitForExit(
                 "gdb",
                 $"-p {process.Id} -batch -ex \"thread apply all bt\" -ex \"detach\" -ex \"quit\"",
                 TimeSpan.FromMinutes(1),
-                out var stdout1);
-
-            output.WriteLine("================ Debug");
-            output.WriteLine(stdout1);
-            File.WriteAllText($"{outputFolder}/parallel_stacks_{process.Id}", stdout1);
-
-            Microsoft.Extensions.Internal.ProcessExtensions.RunProcessAndWaitForExit(
-                "gdb",
-                $"-p {pid} -batch -ex \"thread apply all bt\" -ex \"detach\" -ex \"quit\"",
-                TimeSpan.FromMinutes(1),
                 out var stdout);
 
-            File.WriteAllText($"{outputFolder}/parallel_stacks_{pid}", stdout);
-            output.WriteLine("================ Debug end");
+            output.WriteLine("================ Debug");
+            output.WriteLine(stdout);
+            File.WriteAllText($"{outputFolder}/parallel_stacks_{process.Id}", stdout);
         }
     }
 }
