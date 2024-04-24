@@ -1,13 +1,10 @@
-﻿// <copyright file="AspNetCoreHttpRequestHandlerTests.cs" company="Datadog">
-// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+﻿// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
-// </copyright>
 
 #if !NETFRAMEWORK
 using Datadog.Trace.PlatformHelpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Internal;
 using Xunit;
 
 namespace Datadog.Trace.Tests.PlatformHelpers
@@ -32,13 +29,11 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             var feature = new AspNetCoreHttpRequestHandler.RequestTrackingFeature(new PathString(OriginalPath), null);
 
-            var request = new DefaultHttpRequest(new DefaultHttpContext())
-            {
-                PathBase = new PathString(pathBase),
-                Path = new PathString(path),
-            };
+            var context = new DefaultHttpContext();
+            context.Request.PathBase = new PathString(pathBase);
+            context.Request.Path = new PathString(path);
 
-            feature.MatchesOriginalPath(request).Should().BeTrue();
+            feature.MatchesOriginalPath(context.Request).Should().BeTrue();
         }
 
         [Theory]
@@ -56,13 +51,11 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             var feature = new AspNetCoreHttpRequestHandler.RequestTrackingFeature(new PathString(OriginalPath), null);
 
-            var request = new DefaultHttpRequest(new DefaultHttpContext())
-            {
-                PathBase = new PathString(pathBase),
-                Path = new PathString(path),
-            };
+            var context = new DefaultHttpContext();
+            context.Request.PathBase = new PathString(pathBase);
+            context.Request.Path = new PathString(path);
 
-            feature.MatchesOriginalPath(request).Should().BeFalse();
+            feature.MatchesOriginalPath(context.Request).Should().BeFalse();
         }
     }
 }

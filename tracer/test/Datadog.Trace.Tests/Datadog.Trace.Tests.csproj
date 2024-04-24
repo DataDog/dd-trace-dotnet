@@ -28,6 +28,8 @@
     <PackageReference Include="Confluent.Kafka" Version="1.8.2" />
     <PackageReference Include="StackExchange.Redis" Version="2.2.88" />
     <PackageReference Include="Dapper" Version="2.0.90" /> <!-- Dapper is used for simplified database interaction -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" Condition=" !$(TargetFramework.StartsWith('netcoreapp2.1')) " />
+    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="5.0.0" Condition=" !$(TargetFramework.StartsWith('netcoreapp2.1')) " />
 
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\..\src\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
@@ -52,8 +54,6 @@
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="6.0.0" Condition=" $(TargetFramework) == 'net6.0' " />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.0" Condition=" $(TargetFramework) == 'net7.0' " />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.0" Condition=" $(TargetFramework) == 'net8.0' " />
-    <!-- Add Microsoft.AspNetCore.App for netcoreapp2.1 target framework -->
-    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.0" Condition=" $(TargetFramework) == 'netcoreapp2.1' " />
   </ItemGroup>
 
   <ItemGroup>
