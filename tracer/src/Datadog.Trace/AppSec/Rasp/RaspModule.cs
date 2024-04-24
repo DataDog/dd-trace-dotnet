@@ -40,7 +40,7 @@ internal static class RaspModule
         }
 
         var arguments = new Dictionary<string, object> { [address] = valueToCheck };
-        var result = RunWaf(arguments, rootSpan);
+        RunWaf(arguments, rootSpan);
     }
 
     private static IResult? RunWaf(Dictionary<string, object> arguments, Span rootSpan)
