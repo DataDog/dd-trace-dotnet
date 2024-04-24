@@ -18,7 +18,8 @@ namespace Datadog.Trace.Tools.Runner
             = new Dictionary<string, CIName>(StringComparer.OrdinalIgnoreCase)
             {
                 ["azp"] = CIName.AzurePipelines,
-                ["jenkins"] = CIName.Jenkins
+                ["jenkins"] = CIName.Jenkins,
+                ["github"] = CIName.GithubActions,
             };
 
         private readonly ApplicationContext _applicationContext;
@@ -35,6 +36,7 @@ namespace Datadog.Trace.Tools.Runner
 
             AddExample("dd-trace ci configure azp");
             AddExample("dd-trace ci configure jenkins");
+            AddExample("dd-trace ci configure github");
 
             this.SetHandler(ExecuteAsync);
         }
