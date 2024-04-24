@@ -753,20 +753,17 @@ namespace Datadog.Trace.Tests
         public void SpanOriginResolution_SetsSpanTagsCorrectly()
         {
             // Arrange
-            var mockSpan = new Mock<ISpan>();
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             var tracer = new Tracer(new TracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), Mock.Of<IScopeManager>(), Mock.Of<IDogStatsd>());
-            var expectedFile = "ExpectedFile.cs";
-            var expectedLine = 123;
-            mockSpan.Setup(s => s.SetTag(It.IsAny<string>(), It.IsAny<string>())).Returns(mockSpan.Object);
 
             // Act
             // Assuming SpanOriginResolution is a method to be tested and it sets the tags based on the origin
             // This is a placeholder for the actual SpanOriginResolution invocation
-            tracer.SpanOriginResolution(mockSpan.Object, expectedFile, expectedLine);
+            Tracer.SpanOriginResolution(span);
 
             // Assert
-            mockSpan.Verify(s => s.SetTag("_dd.origin.file", expectedFile), Times.Once);
-            mockSpan.Verify(s => s.SetTag("_dd.origin.line", expectedLine.ToString()), Times.Once);
+            Assert.Equal("ExpectedFile.cs", span.GetTag("_dd.origin.file"));
+            Assert.Equal("123", span.GetTag("_dd.origin.line"));
         }
     }
 }

@@ -617,7 +617,7 @@ namespace Datadog.Trace
         // This method resolves the origin of a span by finding the associated sequence point in the method instructions.
         // If the matching call instruction is not found, it falls back to the first sequence point with a non-zero start line.
         // This fallback is a temporary measure and may not accurately represent the true span origin in complex scenarios such as async methods.
-        private static void SpanOriginResolution(Span span)
+        public static void SpanOriginResolution(Span span)
         {
             Log.Information("SpanOriginResolution - started for span {0} {1}", span.OperationName, span.ResourceName);
             if (LocalSpanOriginMethod(out var nonUserMethod, out var userMethod))
@@ -655,39 +655,35 @@ namespace Datadog.Trace
             if (matchingCall == null)
             {
                 Log.Warning("SpanOriginResolution - No calls to {0} found in {1}. Attempting to find the closest sequence point before span creation.", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
+                // Find the sequence point closest to the start of the method
                 var sequencePoints = userMdMethod.Body.Instructions
                     .Select(i => i.SequencePoint)
                     .Where(sp => sp != null && sp.StartLine != 0)
-                    .OrderByDescending(sp => sp.Offset)
+                    .OrderBy(sp => sp.StartLine)
+                    .ThenBy(sp => sp.StartColumn)
                     .ToList();
 
-                var closestSequencePoint = sequencePoints.FirstOrDefault();
-                if (closestSequencePoint == null)
+                var firstSequencePoint = sequencePoints.FirstOrDefault();
+                if (firstSequencePoint == null)
                 {
                     Log.Warning("SpanOriginResolution - no sequence points found in {0}", userMdMethod);
                     return;
                 }
-                matchingCall = userMdMethod.Body.Instructions.First(i => i.SequencePoint == closestSequencePoint);
+
+                span.Tags.SetTag("_dd.exit_location.file", firstSequencePoint.Document.Url);
+                span.Tags.SetTag("_dd.exit_location.line", firstSequencePoint.StartLine.ToString());
+                span.Tags.SetTag("_dd.exit_location.snapshot_id", DebuggerSnapshotCreator.LastSnapshotId.ToString());
+                Log.Information("SpanOriginResolution - success - {0} {1} {2}", firstSequencePoint.Document.Url, firstSequencePoint.StartLine, DebuggerSnapshotCreator.LastSnapshotId);
+
+                FakeProbeCreator.CreateAndInstallLineProbe("SpanExit", new NativeLineProbeDefinition(
+                    $"{userMethod.DeclaringType?.FullName}_{userMethod.Name}",
+                    userMethod.Module.ModuleVersionId,
+                    userMethod.MetadataToken,
+                    (int)matchingCall.Offset,
+                    firstSequencePoint.StartLine,
+                    firstSequencePoint.Document.Url));
+
             }
-
-            uint offsetOfSpanOrigin = matchingCall.Offset;
-            var instructions = TimeTravelInitiator.FindMethod((MethodInfo)userMethod).Body.Instructions;
-            var sequencePoint = instructions.Reverse().First(instruction => instruction.SequencePoint != null &&
-                                                                            instruction.Offset <= offsetOfSpanOrigin).SequencePoint;
-
-            span.Tags.SetTag("_dd.exit_location.file", sequencePoint.Document.Url);
-            span.Tags.SetTag("_dd.exit_location.line", sequencePoint.StartLine.ToString());
-            span.Tags.SetTag("_dd.exit_location.snapshot_id", DebuggerSnapshotCreator.LastSnapshotId.ToString());
-            Log.Information("SpanOriginResolution - success - {0} {1} {2}", sequencePoint.Document.Url, sequencePoint.StartLine, DebuggerSnapshotCreator.LastSnapshotId);
-
-            FakeProbeCreator.CreateAndInstallLineProbe("SpanExit", new NativeLineProbeDefinition(
-                $"{userMethod.DeclaringType?.FullName}_{userMethod.Name}",
-                userMethod.Module.ModuleVersionId,
-                userMethod.MetadataToken,
-                (int)offsetOfSpanOrigin,
-                sequencePoint.StartLine,
-                sequencePoint.Document.Url));
-
         }
     }
 }

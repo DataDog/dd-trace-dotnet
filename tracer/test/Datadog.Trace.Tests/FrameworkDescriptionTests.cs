@@ -1,7 +1,5 @@
-﻿// <copyright file="FrameworkDescriptionTests.cs" company="Datadog">
-// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+﻿// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
-// </copyright>
 
 using System;
 using System.Runtime.InteropServices;
@@ -48,7 +46,7 @@ public class FrameworkDescriptionTests
 
         var expectedOs = EnvironmentHelper.IsAlpine()
                              ? "Alpine Linux v3.14"
-                             : "Debian GNU/Linux 10 (buster)";
+                             : "Ubuntu 22.04.3 LTS";
 
         var description = FrameworkDescription.Create();
         var arch = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x64";
