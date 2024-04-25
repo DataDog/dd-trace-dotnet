@@ -74,49 +74,30 @@ namespace Datadog.Trace
                     return;
                 }
 
-                bool automaticTraceEnabled = true;
-                if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty) is string stringValue)
+                if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
                 {
-                    automaticTraceEnabled = stringValue.ToBoolean() ?? true;
+                    Log.Warning("Requested to start the Trace Agent but the process path hasn't been supplied in environment.");
                 }
-                else if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.OpenTelemetry.TracesExporter, string.Empty) is string otelTraceExporter
-                    && string.Equals(otelTraceExporter, "none", StringComparison.OrdinalIgnoreCase))
+                else if (!Directory.Exists(TraceAgentMetadata.DirectoryPath))
                 {
-                    automaticTraceEnabled = false;
+                    Log.Warning("Directory for trace agent does not exist: {Directory}. The process won't be started.", TraceAgentMetadata.DirectoryPath);
                 }
-
-                var automaticProfilingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)?.ToBoolean() ?? false;
-
-                if (azureAppServiceSettings.CustomTracingEnabled || automaticTraceEnabled || automaticProfilingEnabled)
+                else
                 {
-                    if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
-                    {
-                        Log.Warning("Requested to start the Trace Agent but the process path hasn't been supplied in environment.");
-                    }
-                    else if (!Directory.Exists(TraceAgentMetadata.DirectoryPath))
-                    {
-                        Log.Warning("Directory for trace agent does not exist: {Directory}. The process won't be started.", TraceAgentMetadata.DirectoryPath);
-                    }
-                    else
-                    {
-                        Processes.Add(TraceAgentMetadata);
-                    }
+                    Processes.Add(TraceAgentMetadata);
                 }
 
-                if (azureAppServiceSettings.NeedsDogStatsD || automaticTraceEnabled)
+                if (string.IsNullOrWhiteSpace(DogStatsDMetadata.ProcessPath))
                 {
-                    if (string.IsNullOrWhiteSpace(DogStatsDMetadata.ProcessPath))
-                    {
-                        Log.Warning("Requested to start dogstatsd but the process path hasn't been supplied in environment.");
-                    }
-                    else if (!Directory.Exists(DogStatsDMetadata.DirectoryPath))
-                    {
-                        Log.Warning("Directory for dogstatsd does not exist: {Directory}. The process won't be started.", DogStatsDMetadata.DirectoryPath);
-                    }
-                    else
-                    {
-                        Processes.Add(DogStatsDMetadata);
-                    }
+                    Log.Warning("Requested to start dogstatsd but the process path hasn't been supplied in environment.");
+                }
+                else if (!Directory.Exists(DogStatsDMetadata.DirectoryPath))
+                {
+                    Log.Warning("Directory for dogstatsd does not exist: {Directory}. The process won't be started.", DogStatsDMetadata.DirectoryPath);
+                }
+                else
+                {
+                    Processes.Add(DogStatsDMetadata);
                 }
 
                 if (Processes.Count > 0)
@@ -145,16 +126,20 @@ namespace Datadog.Trace
 
             foreach (var metadata in Processes)
             {
-                if (!string.IsNullOrWhiteSpace(metadata.ProcessPath))
+                if (string.IsNullOrWhiteSpace(metadata.ProcessPath))
+                {
+                    Log.Debug("There is no path configured for {ProcessName}.", metadata.Name);
+                }
+                else if (!File.Exists(metadata.ProcessPath))
+                {
+                    Log.Warning("Request path for {Name} does not exist: {Path}. The process won't be started.", metadata.Name, metadata.ProcessPath);
+                }
+                else
                 {
                     if (!metadata.IsBeingManaged)
                     {
                         metadata.KeepAliveTask = StartProcessWithKeepAlive(metadata);
                     }
-                }
-                else
-                {
-                    Log.Debug("There is no path configured for {ProcessName}.", metadata.Name);
                 }
             }
         }

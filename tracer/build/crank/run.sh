@@ -51,6 +51,10 @@ if [ "$1" = "windows" ]; then
       echo "Running manual-only instrumentation throughput tests"
       crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile windows --json manual_only_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha 
       dd-trace --crank-import="manual_only_windows.json"
+      
+      echo "Running DD_TRACE_ENABLED=0 throughput tests"
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario ddtraceenabled_false --profile windows --json ddtraceenabled_false_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=ddtraceenabled_false --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha 
+      dd-trace --crank-import="ddtraceenabled_false_windows.json"
 
     fi
 
@@ -83,6 +87,10 @@ elif [ "$1" = "linux" ]; then
       echo "Running manual-only instrumentation throughput tests"
       crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile linux --json manual_only_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
       dd-trace --crank-import="manual_only_linux.json"
+      
+      echo "Running DD_TRACE_ENABLED=0 throughput tests"
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario ddtraceenabled_false --profile linux --json ddtraceenabled_false_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=ddtraceenabled_false --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha 
+      dd-trace --crank-import="ddtraceenabled_false_linux.json"
 
     fi
 
@@ -115,6 +123,10 @@ elif [ "$1" = "linux_arm64" ]; then
       echo "Running manual-only instrumentation throughput tests"
     crank --config Samples.AspNetCoreSimpleController.yml --scenario manual_only --profile linux_arm64 --json manual_only_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=manual_only --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="manual_only_linux_arm64.json"
+      
+      echo "Running DD_TRACE_ENABLED=0 throughput tests"
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario ddtraceenabled_false --profile linux_arm64 --json ddtraceenabled_false_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=ddtraceenabled_false --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha 
+      dd-trace --crank-import="ddtraceenabled_false_linux_arm64.json"
 
     fi
 
