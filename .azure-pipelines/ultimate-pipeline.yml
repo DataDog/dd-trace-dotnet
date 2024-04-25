@@ -3895,8 +3895,9 @@ stages:
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
 
 # Only run these on merges to master etc
+#eq(variables['Build.Reason'], 'IndividualCI'), 
 - stage: upload_container_images
-  condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables.isMainRepository, true), eq(variables.isMainOrReleaseBranch, true))
+  condition: and(succeeded(), eq(variables.isMainRepository, true), eq(variables.isMainOrReleaseBranch, true))
   dependsOn: [upload_to_azure]
   jobs:
     - job: upload
