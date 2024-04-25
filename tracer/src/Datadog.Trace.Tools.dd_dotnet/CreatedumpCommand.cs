@@ -97,9 +97,23 @@ internal class CreatedumpCommand : Command
 
         if (assemblyName != null && assemblyName.StartsWith("Datadog", StringComparison.OrdinalIgnoreCase))
         {
-            if (method.Type.Name == "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.BlockingMiddleware")
+            var typeName = method.Type.Name;
+
+            if (typeName != null)
             {
-                return false;
+                if (typeName == "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.BlockingMiddleware")
+                {
+                    return false;
+                }
+
+                // Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations.TaskContinuationGenerator`4.SyncCallbackHandler.<ContinuationAction>d__4.MoveNext()
+                if (typeName.Contains("TaskContinuationGenerator")
+                 && typeName.Contains("ContinuationAction")
+                 && method.Name == "MoveNext")
+                {
+                    // Very likely to be an async continuation
+                    return false;
+                }
             }
 
             return true;
@@ -150,7 +164,7 @@ internal class CreatedumpCommand : Command
         return true;
     }
 
-    private unsafe void Execute(InvocationContext context)
+    private void Execute(InvocationContext context)
     {
         var allArguments = _allArguments.GetValue(context);
 
@@ -305,7 +319,7 @@ internal class CreatedumpCommand : Command
             _ = SetSignal(crashReport, signal.Value);
         }
 
-        _ = SetMetadata(crashReport, _runtime);
+        _ = SetMetadata(crashReport, _runtime, exception);
 
         try
         {
@@ -450,7 +464,7 @@ internal class CreatedumpCommand : Command
         }
     }
 
-    private unsafe bool SetMetadata(ICrashReport crashReport, ClrRuntime runtime)
+    private unsafe bool SetMetadata(ICrashReport crashReport, ClrRuntime runtime, ClrException? exception)
     {
         var flavor = runtime.ClrInfo.Flavor switch
         {
@@ -490,6 +504,11 @@ internal class CreatedumpCommand : Command
         }
 
         var tags = new (string Key, string Value)[] { ("language", "dotnet"), ("runtime_version", $"{flavor} {version}"), ("library_version", TracerConstants.AssemblyVersion) };
+
+        if (exception != null)
+        {
+            tags = [..tags, ("exception", exception.ToString())];
+        }
 
         var bag = new List<IntPtr>();
 
