@@ -10,6 +10,7 @@ using System.Net;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using FluentAssertions.Collections;
 using FluentAssertions.Common;
@@ -27,9 +28,10 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
         }
 
         [TestAppFact("Samples.BuggyBits")]
+        [WithTracer]
         public void UseTracerServiceName(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true)
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output)
             {
                 // Set no service name through environment variables to force the tracer to use the value from the datadog.json file
                 ServiceName = null

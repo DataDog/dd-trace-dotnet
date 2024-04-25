@@ -19,12 +19,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private readonly string _framework;
         private readonly string _testOutputPath;
 
-        public EnvironmentHelper(string framework, bool enableTracer)
+        public EnvironmentHelper(string framework)
         {
             _framework = framework;
             _testOutputPath = BuildTestOutputPath(framework);
 
-            if (enableTracer)
+            if (TestContext.Current.WithTracer)
             {
                 EnableTracer();
             }

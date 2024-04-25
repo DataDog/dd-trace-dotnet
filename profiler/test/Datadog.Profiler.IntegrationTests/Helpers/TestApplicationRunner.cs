@@ -34,12 +34,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             string framework,
             string appAssembly,
             ITestOutputHelper output,
-            string commandLine = null,
-            bool enableTracer = false)
+            string commandLine = null)
         {
             _appName = appName;
             _framework = framework;
-            Environment = new EnvironmentHelper(framework, enableTracer);
+            Environment = new EnvironmentHelper(framework);
             _testBaseOutputDir = Environment.GetTestOutputPath();
             _appAssembly = appAssembly;
             _output = output;
