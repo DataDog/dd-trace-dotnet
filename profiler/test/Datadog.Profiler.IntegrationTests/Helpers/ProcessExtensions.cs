@@ -16,10 +16,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public static void TakeMemoryDump(this Process process, string outputFolderPath, ITestOutputHelper output)
         {
-            // this environment variable is set by Github Actions CI to `true` https://docs.github.com/en/actions/learn-github-actions/environment-variables
-            string ciEnvVar = Environment.GetEnvironmentVariable("CI");
-
-            if (!bool.TryParse(ciEnvVar, out var result) || !result)
+            if (!EnvironmentHelper.IsRunningInCi())
             {
                 output.WriteLine("^^^^^^^^^^^^^^^^^^^^^^ Currently not running in Github Actions CI. No memory dump will be taken.");
                 return;
