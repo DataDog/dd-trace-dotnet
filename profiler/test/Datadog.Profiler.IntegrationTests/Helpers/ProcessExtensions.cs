@@ -12,10 +12,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 {
     internal static class ProcessExtensions
     {
-        private static readonly int MemoryDumpDurationMs = 900_000;
+        private static readonly TimeSpan MemoryDumpDuration = TimeSpan.FromMinutes(15);
 
         public static void TakeMemoryDump(this Process process, string outputFolderPath, ITestOutputHelper output)
         {
+            if (EnvironmentHelper.IsRunningOnWindows())
+            {
+                // TODO it for windows
+                output.WriteLine("No memory dump will be taken on Windows (for now)");
+                return;
+            }
+
             if (!EnvironmentHelper.IsRunningInCi())
             {
                 output.WriteLine("^^^^^^^^^^^^^^^^^^^^^^ Currently not running in Github Actions CI. No memory dump will be taken.");
@@ -26,17 +33,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             using var processDump = new Process();
 
-            if (EnvironmentHelper.IsRunningOnWindows())
-            {
-                // In Github Actions CI, we downloaded, extracted procdump. We also add its folder to the PATH
-                processDump.StartInfo.FileName = Environment.Is64BitProcess ? "procdump64.exe" : "procdump.exe";
-                processDump.StartInfo.Arguments = $@"-ma {process.Id} -accepteula";
-            }
-            else
-            {
-                processDump.StartInfo.FileName = "dotnet-dump";
-                processDump.StartInfo.Arguments = $"collect --process-id {process.Id}";
-            }
+            var dotnetRuntimeFolder = Path.GetDirectoryName(typeof(object).Assembly.Location);
+            processDump.StartInfo.FileName = Path.Combine(dotnetRuntimeFolder!, "createdump");
+            processDump.StartInfo.Arguments = $"{process.Id}";
 
             processDump.StartInfo.UseShellExecute = false;
             processDump.StartInfo.CreateNoWindow = true;
@@ -48,7 +47,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             using var helper = new ProcessHelper(processDump);
 
-            bool ranToCompletion = processDump.WaitForExit(MemoryDumpDurationMs) && helper.Drain(MemoryDumpDurationMs / 2);
+            var ranToCompletion = processDump.WaitForExit(MemoryDumpDuration) && helper.Drain(MemoryDumpDuration.Milliseconds / 2);
             if (!ranToCompletion)
             {
                 output.WriteLine("   Failed to take a memory dump.");

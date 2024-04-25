@@ -9,9 +9,7 @@
  * Note: since .Net Core 3.1, Kill method on Process class has a boolean value to kill the entire process tree or not.
  */
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.Extensions.Internal
