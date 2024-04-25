@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.TestHost; // Added to use TestServer
 using Microsoft.AspNetCore.Hosting; // Added to use WebHostBuilder
 using Microsoft.AspNetCore.Builder; // Added to use IApplicationBuilder
 using Microsoft.Extensions.DependencyInjection; // Added to use IServiceCollection
+using Microsoft.AspNetCore.Http; // Added to access WriteAsync extension method
 
 namespace Datadog.Trace.Tests.HttpClientIntegration
 {
