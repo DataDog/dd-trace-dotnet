@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netcoreapp3.1;net5.0;net6.0;net7.0</TargetFrameworks>
     <!-- NuGet -->
     <Version>2.49.0</Version>
     <Title>Datadog APM</Title>
@@ -143,5 +143,11 @@
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);ENABLE_IL2CPP</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Datadog.Trace.TestHelpers</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 
 </Project>
