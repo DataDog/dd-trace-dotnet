@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace;
 using MessagePack.Formatters;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,7 +17,6 @@ public class MetaStructController : ControllerBase
     private static MethodInfo _tagsProperty = _spanType.GetProperty("Tags", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static readonly Type _tagsListType = Type.GetType("Datadog.Trace.Tagging.TagsList, Datadog.Trace");        
     private static MethodInfo _AddMetaStructMethod = _tagsListType.GetMethod("SetMetaStruct", BindingFlags.Public | BindingFlags.Instance);
-    private static MethodInfo _internalActiveScopeProperty = _tracerType.GetProperty("InternalActiveScope", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _rootProperty = _scopeType.GetProperty("Root", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _setTagMethod = _spanType.GetMethod("SetTag", BindingFlags.Instance | BindingFlags.NonPublic);
    
@@ -88,8 +86,7 @@ public class MetaStructController : ControllerBase
     [HttpGet("MetaStructTest")]
     public IActionResult MetaStructTest()
     {
-        var tracerInstance = Tracer.Instance;
-        var internalActiveScope = _internalActiveScopeProperty.Invoke(tracerInstance, null);
+        var internalActiveScope = Samples.SampleHelpers.GetActiveScope();
         var root = _rootProperty.Invoke(internalActiveScope, null);
         var rootSpan = _spanProperty.Invoke(root, null);
         var tags = _tagsProperty.Invoke(rootSpan, null);
@@ -108,8 +105,7 @@ public class MetaStructController : ControllerBase
     [HttpGet("VulnWithoutMetaStructTest")]
     public IActionResult VulnWithoutMetaStructTest()
     {
-        var tracerInstance = Tracer.Instance;
-        var internalActiveScope = _internalActiveScopeProperty.Invoke(tracerInstance, null);
+        var internalActiveScope = Samples.SampleHelpers.GetActiveScope();
         var root = _rootProperty.Invoke(internalActiveScope, null);
         var rootSpan = _spanProperty.Invoke(root, null);
         var tags = _tagsProperty.Invoke(rootSpan, null);
