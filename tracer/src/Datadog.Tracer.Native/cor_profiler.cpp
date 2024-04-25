@@ -204,23 +204,23 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         info10 = nullptr;
     }
 
-    // get ICorProfilerInfo for >= .NET Core 2.0
-    ICorProfilerInfo8* info8 = nullptr;
-    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo8), (void**) &info8);
+    // get ICorProfilerInfo for >= .NET Core 2.1
+    ICorProfilerInfo9* info9 = nullptr;
+    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo9), (void**) &info9);
     if (SUCCEEDED(hr))
     {
-        Logger::Debug("Interface ICorProfilerInfo8 found.");
+        Logger::Debug("Interface ICorProfilerInfo9 found.");
     }
     else
     {
-        info8 = nullptr;
+        info9 = nullptr;
     }
 
     runtime_information_ = GetRuntimeInformation(this->info_);
-    if (info8 == nullptr && runtime_information_.is_core())
+    if (info9 == nullptr && runtime_information_.is_core())
     {
         Logger::Warn(
-            "DATADOG TRACER DIAGNOSTICS - Profiler disabled: .NET Core 2.0 or greater runtime is required for .NET Core automatic instrumentation.");
+            "DATADOG TRACER DIAGNOSTICS - Profiler disabled: .NET Core 2.1 or greater runtime is required for .NET Core automatic instrumentation.");
         return E_FAIL;
     }
 
