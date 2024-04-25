@@ -67,7 +67,7 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args, lastTime);
     }
 
-    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, Action<IDatadogLogger, Exception>? logException = null, bool runWithEphemeral = false)
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false)
     {
         LogAddressIfDebugEnabled(args);
         IResult? result = null;
@@ -104,14 +104,13 @@ internal readonly partial struct SecurityCoordinator
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            if (logException is not null)
+            var stringBuilder = new StringBuilder();
+            foreach (var kvp in args)
             {
-                logException(Log, ex);
+                stringBuilder.Append($"Key: {kvp.Key} Value: {kvp.Value}, ");
             }
-            else
-            {
-                Log.Error(ex, "Call into the security module failed");
-            }
+
+            Log.Error(ex, "Call into the security module failed with arguments {Args}", stringBuilder.ToString());
         }
         finally
         {

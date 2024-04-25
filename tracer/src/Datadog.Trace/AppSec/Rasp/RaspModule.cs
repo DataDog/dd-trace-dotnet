@@ -40,13 +40,13 @@ internal static class RaspModule
         }
 
         var arguments = new Dictionary<string, object> { [address] = valueToCheck };
-        RunWaf(arguments, rootSpan, address, valueToCheck);
+        RunWaf(arguments, rootSpan);
     }
 
-    private static IResult? RunWaf(Dictionary<string, object> arguments, Span rootSpan, string address, string value)
+    private static IResult? RunWaf(Dictionary<string, object> arguments, Span rootSpan)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
-        var result = securityCoordinator.RunWaf(arguments, logException: (log, ex) => log.Error(ex, "Error in RASP Key:{Key} Value:{Value}.", address, value), runWithEphemeral: true);
+        var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
 
         // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
         // the blockings, so we report first and then block
