@@ -20,10 +20,6 @@
     <PackageReference Include="OpenTracing" Version="0.12.1" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' ">
-    <PackageReference Include="System.Net.Http" Version="4.3.4" />
-  </ItemGroup>
-
   <ItemGroup Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">
     <Reference Include="System.Net.Http" />
   </ItemGroup>
