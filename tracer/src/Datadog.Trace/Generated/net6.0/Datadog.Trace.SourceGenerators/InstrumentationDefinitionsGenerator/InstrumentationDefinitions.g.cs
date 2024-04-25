@@ -399,6 +399,9 @@ namespace Datadog.Trace.ClrProfiler
                 new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("RabbitMQ.Client"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("RabbitMQ.Client.Impl.ModelBase"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("BasicGet"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("RabbitMQ.Client.BasicGetResult", "System.String", "System.Boolean"), 3, 3, 6, 9, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicGetIntegration"), 0, 1),
                 new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("RabbitMQ.Client"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("RabbitMQ.Client.Impl.ModelBase"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("QueueBind"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "System.String", "System.String", "System.String", "System.Collections.Generic.IDictionary`2[System.String,System.Object]"), 5, 3, 6, 9, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueBindIntegration"), 0, 1),
 
+                // Selenium
+                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("WebDriver"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("OpenQA.Selenium.WebDriver"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Execute"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("OpenQA.Selenium.Response", "System.String", "System.Collections.Generic.Dictionary`2[System.String,System.Object]"), 3, 4, 0, 0, 4, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium.WebDriverExecuteIntegration"), 0, 1),
+
                 // Serilog
                 new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Serilog"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Serilog.Core.Logger"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Dispatch"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Serilog.Events.LogEvent"), 2, 2, 0, 0, 2, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"), 0, 1),
                 new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Serilog"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Serilog.Core.Pipeline.Logger"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Dispatch"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Serilog.Events.LogEvent"), 2, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"), 0, 1),
@@ -561,6 +564,7 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("StackExchange.Redis,", StringComparison.Ordinal)
             || assemblyName.StartsWith("StackExchange.Redis.StrongName,", StringComparison.Ordinal)
             || assemblyName.StartsWith("System,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("WebDriver,", StringComparison.Ordinal)
             || assemblyName.StartsWith("xunit.execution.desktop,", StringComparison.Ordinal)
             || assemblyName.StartsWith("xunit.execution.dotnet,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Yarp.ReverseProxy,", StringComparison.Ordinal);
@@ -836,6 +840,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicGetIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueBindIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.RabbitMQ,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium.WebDriverExecuteIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.Selenium,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.LoggerConfigurationInstrumentation"

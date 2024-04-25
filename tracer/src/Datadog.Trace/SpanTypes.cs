@@ -58,6 +58,11 @@ namespace Datadog.Trace
         public const string Test = "test";
 
         /// <summary>
+        /// The span type for a Browser test integration.
+        /// </summary>
+        public const string Browser = "browser";
+
+        /// <summary>
         /// The span type for a Test Suite integration.
         /// </summary>
         internal const string TestSuite = "test_suite_end";

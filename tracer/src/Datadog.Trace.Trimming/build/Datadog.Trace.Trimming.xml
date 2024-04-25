@@ -1050,6 +1050,7 @@
       <type fullname="System.Xml.XmlText" />
       <type fullname="System.Xml.XmlWhitespace" />
    </assembly>
+   <assembly fullname="WebDriver" />
    <assembly fullname="xunit.execution.desktop" />
    <assembly fullname="xunit.execution.dotnet" />
    <assembly fullname="Yarp.ReverseProxy" />

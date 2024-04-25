@@ -57,6 +57,9 @@ namespace Datadog.Trace.Ci.Configuration
 
             // Early flake detection
             EarlyFlakeDetectionEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled).AsBool();
+
+            // RUM flush milliseconds
+            RumFlushWaitMillis = config.WithKeys(ConfigurationKeys.CIVisibility.RumFlushWaitMillis).AsInt32(500);
         }
 
         /// <summary>
@@ -158,6 +161,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets a value indicating whether the Early flake detection feature is enabled.
         /// </summary>
         public bool? EarlyFlakeDetectionEnabled { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating the number of milliseconds to wait after flushing RUM data.
+        /// </summary>
+        public int RumFlushWaitMillis { get; }
 
         /// <summary>
         /// Gets the tracer settings
