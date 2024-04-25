@@ -26,8 +26,8 @@
   </ItemGroup>
 
   <!-- Ensure that the Configuration and Logging namespaces are available for netcoreapp3.1 and net7.0 -->
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' Or '$(TargetFramework)' == 'net7.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' Or '$(TargetFramework)' == 'net7.0' ">
     <DefineConstants>$(DefineConstants);DATADOG_CONFIGURATION;DATADOG_LOGGING</DefineConstants>
-  </ItemGroup>
+  </PropertyGroup>
 
 </Project>
