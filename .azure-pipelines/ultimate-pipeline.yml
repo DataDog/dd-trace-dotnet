@@ -739,7 +739,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    targetFramework: net8.0
+    targetFramework: net7.0
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -757,7 +757,7 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
-  
+
     - script: tracer\build.cmd BuildDdDotnet -framework=$(targetFramework)
       displayName: Build dd-dotnet
 
@@ -806,7 +806,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildDdDotnet --framework net8.0"
+        command: "Clean BuildDdDotnet --framework net7.0"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)/dd-dotnet
@@ -825,7 +825,7 @@ stages:
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     baseImage: debian
     artifactSuffix: linux-arm64
-    targetFramework: net8.0
+    targetFramework: net7.0
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -843,7 +843,7 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
-  
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -1604,7 +1604,7 @@ stages:
 - stage: static_analysis_tests_profiler
   condition: >
     and(
-      succeeded(), 
+      succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
@@ -1901,7 +1901,7 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) IntegrationTests
         docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
       env:
         baseImage: $(baseImage)
@@ -2020,7 +2020,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Amazon.Lambda.RuntimeSupport"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-        
+
     - script: |
         # Include the serverless dockerfile
         docker-compose -p ddtrace_$(Build.BuildNumber) \
@@ -2436,7 +2436,7 @@ stages:
   #address sanitizer tests
   condition: >
     and(
-      succeeded(), 
+      succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
@@ -2479,7 +2479,7 @@ stages:
         baseImage: debian
         command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-        
+
     - template: steps/run-in-docker.yml
       parameters:
         target: builder
@@ -2520,9 +2520,9 @@ stages:
 
 - stage: ubsan_profiler_tests
 #undefined behavior sanitizer tests
-  condition: > 
+  condition: >
     and(
-      succeeded(), 
+      succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
@@ -3832,7 +3832,7 @@ stages:
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
         mkdir -p tracer/bin/netcoreapp3.1
-        cp tracer/tracer-home-linux/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
+        cp tracer/tracer-home-linux/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll
         mkdir -p $(CrankDir)/results/logs
         cd $(CrankDir)
         chmod +x ./run.sh
@@ -3944,7 +3944,7 @@ stages:
       # bother trying to upload these in case of failure, which means we can retry the
       # stages without issue
       artifact: crank_linux_arm64_1
-    
+
     #### Throughput-AppSec Linux 64
 
   - job: AsmLinux64
@@ -3995,7 +3995,7 @@ stages:
 
 - stage: throughput_profiler
   condition: >
-    and(succeeded(), 
+    and(succeeded(),
         eq(variables.isMainRepository, true),
         or(
           eq(variables.isMainBranch, true),
@@ -4701,7 +4701,7 @@ stages:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
         vmImage: ubuntu-latest
-      
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -4718,7 +4718,7 @@ stages:
             mkdir -p tracer/build_data/snapshots
             mkdir -p tracer/build_data/logs
           displayName: create test data directories
-        
+
         # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
@@ -4736,7 +4736,7 @@ stages:
           parameters:
             target: 'chiseled-smoke-tests'
             snapshotPrefix: "smoke_test"
-        
+
         # Run the "dd-dotnet" installer smoke tests
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
@@ -5098,7 +5098,7 @@ stages:
             mkdir -p tracer/build_data/logs
           displayName: create test data directories
 
-        # Run the "normal" installer smoke tests 
+        # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
@@ -5182,7 +5182,7 @@ stages:
             mkdir -p tracer/build_data/logs
           displayName: create test data directories
 
-        # Run the "normal" installer smoke tests 
+        # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
@@ -5199,7 +5199,7 @@ stages:
           parameters:
             target: 'chiseled-smoke-tests'
             snapshotPrefix: "smoke_test"
-        
+
         # Run the "dd-dotnet" installer smoke tests
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
@@ -5619,7 +5619,7 @@ stages:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
         vmImage: windows-2022
-      
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -5756,7 +5756,7 @@ stages:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
         vmImage: ubuntu-latest
-      
+
       steps:
         - template: steps/clone-repo.yml
           parameters:
