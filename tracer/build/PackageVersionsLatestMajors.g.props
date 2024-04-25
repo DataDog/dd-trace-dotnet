@@ -116,7 +116,7 @@
     </PackageVersionSample>
     <PackageVersionSample Include="test\test-applications\integrations\Samples.AWS.SimpleNotificationService\Samples.AWS.SimpleNotificationService.csproj">
       <Properties>ApiVersion=3.7.301.2;RestoreRecursive=false;BuildProjectReferences=false</Properties>
-      <TargetFramework>net8.0</TargetFramework>
+      <TargetFramework>net7.0</TargetFramework>
       <RequiresDockerDependency>All</RequiresDockerDependency>
       <SampleName>Samples.AWS.SimpleNotificationService</SampleName>
     </PackageVersionSample>
