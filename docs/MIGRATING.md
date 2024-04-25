@@ -17,6 +17,7 @@ The .NET tracer v3.0.0 includes breaking changes that you must be aware of befor
 	- **Changes to default settings**. The default values of some settings have changed, and others have been removed. See below for more details.
 	- **Changes in behavior**. The semantic requirements and meaning of some settings have changed, as have some of the tags added to traces.  See below for more details.
 	- **The 32-bit MSI installer will no longer be available**. The 64-bit MSI installer already includes support for tracing 32-bit processes, so you should use this installer instead. 
+    - **The client library will still be injected when `DD_TRACE_ENABLED=0`**. In v2.x.x, setting `DD_TRACE_ENABLED=0` would prevent the client library from being injected into the application completely. In v3.0.0+, the client library will still be injected, but tracing will be disabled.
 - Deprecation notices
 	- **.NET Core 2.1 is marked EOL** in v3.0.0+ of the tracer. That means versions  2.1, 2.2 and 3.0 of .NET Core are now EOL. .NET Core 2.1 may still work with v3.0.0+, but is will no longer receive significant testing and you will receive limited support for issues arising with EOL versions.
 	- **Datadog.Trace.OpenTracing is now obsolete**. OpenTracing is considered deprecated, and so _Datadog.Trace.OpenTracing_ is considered deprecated. See the following details on future deprecation.
@@ -139,6 +140,19 @@ The 32-bit MSI installer should _only_ be used on 32-bit versions of Windows; th
 
 **What action should you take?**
 If you _are_ running a 32-bit version of Windows (for example, a 32-bit version of Windows 7), you will no longer be able to enable Datadog .NET automatic instrumentation via the MSI. Consider using one of the other automatic instrumentation approaches, such as [the Datadog.Trace.Bundle approach](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/dd_libraries/dotnet-framework/?tab=nuget#install-the-tracer).
+
+#### The client library will still be injected when `DD_TRACE_ENABLED=0`
+
+**What changed?**
+In version 2.x.x of the tracer, setting the environment variable `DD_TRACE_ENABLED` to `0` or `false` would prevent the client library being injected into your application. In version 3.0.0+, this is no longer the case: the client library will still be injected, but tracing will be disabled. 
+
+**Why did we change it?**
+The Datadog client library is no longer focused solely on APM tracing, but disabling the client library entirely could prevent these features from working correctly. There is already a mechanism to prevent instrumenting an application completely, so this additional switch also added confusion.
+
+**What action should you take?**
+If you are currently using `DD_TRACE_ENABLED=0` to avoid instrumenting an application, you should instead use `CORECLR_ENABLE_PROFILING=0` (for .NET and .NET Core applications) or `COR_ENABLE_PROFILING=0` (for .NET Framework applications). These variables are provided by the .NET runtime, and ensures the client library is not injected into your process.
+
+If you don't set `COR_ENABLE_PROFILING=0`/`CORECLR_ENABLE_PROFILING=1` and continue to set `DD_TRACE_ENABLED=0`, the client library will be injected but tracing will be disabled and you will not receive traces. 
 
 ### Deprecated APIs and platforms
 
