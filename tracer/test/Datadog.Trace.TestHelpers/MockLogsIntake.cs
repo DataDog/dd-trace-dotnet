@@ -13,8 +13,8 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 #pragma warning disable SA1402 // File may only contain a single class
 
