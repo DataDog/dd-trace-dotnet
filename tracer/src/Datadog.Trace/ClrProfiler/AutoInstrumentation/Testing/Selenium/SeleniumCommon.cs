@@ -22,6 +22,7 @@ internal static class SeleniumCommon
     internal const string CommandGet = "get";
     internal const string CommandClose = "close";
     internal const string CommandQuit = "quit";
+    private const string CookieName = "datadog-ci-visibility-test-execution-id";
     private const string RumStopSessionScript = """
                                                 if (window.DD_RUM && window.DD_RUM.stopSession) {
                                                    window.DD_RUM.stopSession();
@@ -68,7 +69,7 @@ internal static class SeleniumCommon
         if (_seleniumCookieType is not null)
         {
             var traceId = test.GetInternalSpan().Context.TraceId;
-            if (Activator.CreateInstance(_seleniumCookieType, "datadog-ci-visibility-test-execution-id", traceId.ToString()) is { } cookieInstance)
+            if (Activator.CreateInstance(_seleniumCookieType, CookieName, traceId.ToString()) is { } cookieInstance)
             {
                 Log.Debug("Inject: {Parameters}", JsonConvert.SerializeObject(parameters ?? new object()));
 
@@ -121,6 +122,9 @@ internal static class SeleniumCommon
                     Thread.Sleep(CIVisibility.Settings.RumFlushWaitMillis);
                 }
             }
+
+            // Delete injected RUM session cookie
+            instance.Manage().Cookies.DeleteCookieNamed(CookieName);
         }
         catch (Exception ex)
         {

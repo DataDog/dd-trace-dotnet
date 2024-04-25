@@ -17,4 +17,10 @@ internal interface IICookieJarProxy : IDuckType
     /// Calls method: System.Void OpenQA.Selenium.ICookieJar::AddCookie(OpenQA.Selenium.Cookie)
     /// </summary>
     void AddCookie(object cookie);
+
+    /// <summary>
+    /// Deletes the cookie with the specified name from the page.
+    /// </summary>
+    /// <param name="name">The name of the cookie to be deleted.</param>
+    void DeleteCookieNamed(string name);
 }
