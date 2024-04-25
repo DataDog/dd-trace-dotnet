@@ -25,8 +25,8 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using FluentAssertions;
 using HttpMultipartParser;
 using MessagePack; // use nuget MessagePack to deserialize
