@@ -14,6 +14,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium;
 internal interface IWebDriverProxy : IDuckType
 {
     /// <summary>
+    /// Gets the <see cref="SessionId"/> for the current session of this driver.
+    /// </summary>
+    object? SessionId { get; }
+
+    /// <summary>
     /// Calls method: System.Object OpenQA.Selenium.WebDriver::ExecuteScript(System.String,System.Object[])
     /// </summary>
     [Duck(ParameterTypeNames = new string[] { "System.String", "System.Object[]" })]

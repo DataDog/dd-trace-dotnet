@@ -121,6 +121,12 @@ internal static class SeleniumCommon
             return;
         }
 
+        if (instance.SessionId is null)
+        {
+            // The session is already closed (driver might be disposed)
+            return;
+        }
+
         Log.Debug("CloseAndFlush RUM session");
         try
         {
