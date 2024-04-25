@@ -31,7 +31,7 @@
     <PackageReference Include="IndieSystem.Text.RegularExpressions" Version="0.6" />
 
     <!-- https://www.nuget.org/packages/System.Collections.Immutable/1.0.0 -->
-    <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
 
     <!-- https://www.nuget.org/packages/System.Memory/1.0.0 -->
     <PackageReference Include="System.Memory" Version="4.5.5" />
