@@ -13,6 +13,7 @@ namespace Datadog.Trace.Telemetry.Collectors;
 
 internal class ApplicationTelemetryCollector
 {
+    private GitMetadata? _gitMetadata = null;
     private ApplicationTelemetryData? _applicationData = null;
     private HostTelemetryData? _hostData = null;
 
@@ -21,10 +22,12 @@ internal class ApplicationTelemetryCollector
         string defaultServiceName)
     {
         // Try to retrieve config based Git Info
-        GitMetadata? gitMetadata = null;
+        // If explicitly provided, these values take precedence
+        GitMetadata? gitMetadata = _gitMetadata;
         if (tracerSettings.GitMetadataEnabled && !string.IsNullOrEmpty(tracerSettings.GitCommitSha) && !string.IsNullOrEmpty(tracerSettings.GitRepositoryUrl))
         {
             gitMetadata = new GitMetadata(tracerSettings.GitCommitSha!, tracerSettings.GitRepositoryUrl!);
+            Interlocked.Exchange(ref _gitMetadata, gitMetadata);
         }
 
         var frameworkDescription = FrameworkDescription.Instance;
@@ -67,24 +70,40 @@ internal class ApplicationTelemetryCollector
 
     public void RecordGitMetadata(GitMetadata gitMetadata)
     {
-        if (_applicationData is null || gitMetadata.IsEmpty)
+        if (gitMetadata.IsEmpty)
         {
             return;
         }
 
-        var application = new ApplicationTelemetryData(
-            serviceName: _applicationData.ServiceName,
-            env: _applicationData.Env,
-            serviceVersion: _applicationData.ServiceVersion,
-            tracerVersion: _applicationData.TracerVersion,
-            languageName: _applicationData.LanguageName,
-            languageVersion: _applicationData.LanguageVersion,
-            runtimeName: _applicationData.RuntimeName,
-            runtimeVersion: _applicationData.RuntimeVersion,
-            commitSha: gitMetadata.CommitSha,
-            repositoryUrl: gitMetadata.RepositoryUrl);
+        Interlocked.Exchange(ref _gitMetadata, gitMetadata);
 
-        Interlocked.Exchange(ref _applicationData, application);
+        if (_applicationData is null)
+        {
+            return;
+        }
+
+        while (true)
+        {
+            var original = _applicationData;
+            var application = new ApplicationTelemetryData(
+                serviceName: original.ServiceName,
+                env: original.Env,
+                serviceVersion: original.ServiceVersion,
+                tracerVersion: original.TracerVersion,
+                languageName: original.LanguageName,
+                languageVersion: original.LanguageVersion,
+                runtimeName: original.RuntimeName,
+                runtimeVersion: original.RuntimeVersion,
+                commitSha: gitMetadata.CommitSha,
+                repositoryUrl: gitMetadata.RepositoryUrl);
+
+            var updated = Interlocked.Exchange(ref _applicationData, application);
+            if (updated == original)
+            {
+                // nothing changed in the background, so jump out
+                break;
+            }
+        }
     }
 
     /// <summary>

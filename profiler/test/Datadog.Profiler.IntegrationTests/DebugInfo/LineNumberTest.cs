@@ -71,14 +71,17 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
                 // forced line info
                 first.Filename.Should().EndWith("LineNumber.cs");
                 first.StartLine.Should().Equals(103);
+                first.Line.Should().Equals(103);
 
                 // "normal" line info
                 second.Filename.Should().EndWith("LineNumber.cs");
                 second.StartLine.Should().Equals(42);
+                second.Line.Should().Equals(42);
 
                 // hidden debug info
                 third.Filename.Should().BeEmpty();
                 third.StartLine.Should().Equals(0);
+                third.Line.Should().Equals(0);
             }
         }
 

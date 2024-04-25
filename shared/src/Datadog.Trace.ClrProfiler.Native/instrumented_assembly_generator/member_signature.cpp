@@ -104,6 +104,12 @@ HRESULT GetTypeName(const ComPtr<IMetaDataImport>& metadataImport, const mdToken
 shared::WSTRING MemberSignature::GetTypeSigName(PCCOR_SIGNATURE& pSig, const ComPtr<IMetaDataImport>& metadataImport)
 {
     shared::WSTRING tokenName;
+    if (*pSig == ELEMENT_TYPE_PTR || *pSig == ELEMENT_TYPE_PINNED)
+    {
+        tokenName += IntToHex(static_cast<int>(*pSig)) + WStr("?");
+        pSig++;
+    }
+
     if (*pSig == ELEMENT_TYPE_BYREF)
     {
         tokenName += IntToHex(static_cast<int>(*pSig)) + WStr("?");

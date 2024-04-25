@@ -11,6 +11,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -19,7 +20,6 @@ namespace Datadog.Trace.Agent.Transports
 {
     internal class HttpClientRequest : IApiRequest, IMultipartApiRequest
     {
-        private const string Boundary = "faa0a896-8bc8-48f3-b46d-016f2b15a884";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpClientRequest>();
 
         private readonly HttpClient _client;
@@ -132,9 +132,14 @@ namespace Datadog.Trace.Agent.Transports
 
             Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
 
-            using var formDataContent = new MultipartFormDataContent(boundary: Boundary);
+            using var formDataContent = new MultipartFormDataContent(boundary: DatadogHttpValues.Boundary);
             foreach (var item in items)
             {
+                if (!item.IsValid(Log))
+                {
+                    continue;
+                }
+
                 HttpContent content = null;
 
                 // Adds a form data item

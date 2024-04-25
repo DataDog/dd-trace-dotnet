@@ -44,6 +44,7 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
         location.mapping.filename = FfiHelper::StringToCharSlice(frame.ModuleName);
         location.function.filename = FfiHelper::StringToCharSlice(frame.Filename);
         location.function.start_line = frame.StartLine;
+        location.line = frame.StartLine; // For now we only have the start line of the function.
         location.function.name = FfiHelper::StringToCharSlice(frame.Frame);
         location.address = 0; // TODO check if we can get that information in the provider
 

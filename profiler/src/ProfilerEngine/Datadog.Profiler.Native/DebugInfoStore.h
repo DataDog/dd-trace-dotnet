@@ -44,12 +44,8 @@ private:
     {
         if (!info.IsValid || rid >= info.SymbolsDebugInfo.size())
         {
-            if (info.IsValid && rid >= info.SymbolsDebugInfo.size())
-            {
-                Log::Info("The debug info for the module `", moduleId, "` seems to be invalid: RID is out of the symbols array bounds.(RID: ",
-                          rid, "). We will mark it as invalid to avoid returning invalid information");
-                info.IsValid = false;
-            }
+            Log::Info("The debug info for the module `", moduleId, "` seems to be invalid (is valid? '", info.IsValid, "') or the RID is out of the symbols array bounds (RID: ",
+                      rid, "). Number of debug info: ", info.SymbolsDebugInfo.size());
             return SymbolDebugInfo{NoFileFound, NoStartLine};
         }
         return info.SymbolsDebugInfo[rid];
