@@ -48,7 +48,9 @@ internal static class RaspModule
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
         var result = securityCoordinator.RunWaf(arguments, logException: (log, ex) => log.Error(ex, "Error in RASP Key:{Key} Value:{Value}.", address, value), runWithEphemeral: true);
 
-        securityCoordinator.CheckAndBlockRasp(result);
+        // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
+        // the blockings, so we report first and then block
+        securityCoordinator.ReportAndBlock(result);
 
         return result;
     }

@@ -195,7 +195,7 @@ namespace Datadog.Trace.AspNet
                         args.Add(AddressesConstants.RequestBody, bodyArgs);
                     }
 
-                    securityCoordinator.CheckAndBlock(args);
+                    securityCoordinator.BlockAndReport(args);
                 }
 
                 var iastInstance = Iast.Iast.Instance;
@@ -267,7 +267,7 @@ namespace Datadog.Trace.AspNet
                                 }
                             }
 
-                            securityCoordinator.CheckAndBlock(args, true);
+                            securityCoordinator.BlockAndReport(args, true);
 
                             securityCoordinator.AddResponseHeadersToSpanAndCleanup();
                             securityContextCleaned = true;

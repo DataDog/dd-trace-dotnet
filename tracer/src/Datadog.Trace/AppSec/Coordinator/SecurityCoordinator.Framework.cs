@@ -256,7 +256,7 @@ internal readonly partial struct SecurityCoordinator
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
-    internal void CheckAndBlock(Dictionary<string, object> args, bool lastWafCall = false)
+    internal void BlockAndReport(Dictionary<string, object> args, bool lastWafCall = false)
     {
         var result = RunWaf(args, lastWafCall);
         if (result is not null)
@@ -273,7 +273,7 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal void CheckAndBlockRasp(IResult? result)
+    internal void ReportAndBlock(IResult? result)
     {
         if (result is not null)
         {

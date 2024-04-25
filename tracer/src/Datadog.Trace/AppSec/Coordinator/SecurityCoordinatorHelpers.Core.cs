@@ -28,7 +28,7 @@ internal static class SecurityCoordinatorHelpers
             {
                 var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
                 var result = securityCoordinator.Scan();
-                securityCoordinator.CheckAndBlock(result);
+                securityCoordinator.BlockAndReport(result);
             }
         }
     }
@@ -53,7 +53,7 @@ internal static class SecurityCoordinatorHelpers
                     };
 
                     var result = securityCoordinator.RunWaf(args, true);
-                    securityCoordinator.CheckAndBlock(result);
+                    securityCoordinator.BlockAndReport(result);
                 }
             }
         }
@@ -77,7 +77,7 @@ internal static class SecurityCoordinatorHelpers
                 var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
                 var result = securityCoordinator.RunWaf(args);
-                securityCoordinator.CheckAndBlock(result);
+                securityCoordinator.BlockAndReport(result);
             }
         }
     }
@@ -92,7 +92,7 @@ internal static class SecurityCoordinatorHelpers
                 var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.UserId, userId } };
                 var result = securityCoordinator.RunWaf(args);
-                securityCoordinator.CheckAndBlock(result);
+                securityCoordinator.BlockAndReport(result);
             }
         }
     }
@@ -122,7 +122,7 @@ internal static class SecurityCoordinatorHelpers
 
                 var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
                 var result = securityCoordinator.RunWaf(args);
-                securityCoordinator.CheckAndBlock(result);
+                securityCoordinator.BlockAndReport(result);
             }
         }
     }
@@ -139,7 +139,7 @@ internal static class SecurityCoordinatorHelpers
             {
                 var args = new Dictionary<string, object> { { response ? AddressesConstants.ResponseBody : AddressesConstants.RequestBody, keysAndValues } };
                 var result = securityCoordinator.RunWaf(args);
-                securityCoordinator.CheckAndBlock(result);
+                securityCoordinator.BlockAndReport(result);
                 return keysAndValues;
             }
         }

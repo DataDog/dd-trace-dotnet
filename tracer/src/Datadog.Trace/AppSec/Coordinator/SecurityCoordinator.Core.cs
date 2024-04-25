@@ -61,7 +61,7 @@ internal readonly partial struct SecurityCoordinator
         return headersDic;
     }
 
-    internal void CheckAndBlock(IResult? result)
+    internal void BlockAndReport(IResult? result)
     {
         if (result is not null)
         {
@@ -74,7 +74,7 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal void CheckAndBlockRasp(IResult? result)
+    internal void ReportAndBlock(IResult? result)
     {
         if (result is not null)
         {
