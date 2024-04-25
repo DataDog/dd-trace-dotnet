@@ -13,11 +13,6 @@ namespace Datadog.Trace.AppSec.Rasp;
 
 internal static class MetaStructHelper
 {
-    public static byte[] StackToByteArray(string? type, string language, string id, string? message, List<StackFrame> frames)
-    {
-        return ObjectToByteArray(StackToDictionary(type, language, id, message, frames));
-    }
-
     public static Dictionary<string, object> StackToDictionary(string? type, string language, string id, string? message, List<StackFrame> frames)
     {
         var dict = new Dictionary<string, object>(3);
