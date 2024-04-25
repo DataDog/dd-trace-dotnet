@@ -25,6 +25,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium;
     MinimumVersion = "4.0.0",
     MaximumVersion = "4.*.*",
     IntegrationName = SeleniumCommon.IntegrationName)]
+[InstrumentMethod(
+    AssemblyName = "WebDriver",
+    TypeName = "OpenQA.Selenium.WebDriver",
+    MethodName = "Execute",
+    ReturnTypeName = "OpenQA.Selenium.Response",
+    ParameterTypeNames = [ClrNames.String, "System.Collections.Generic.Dictionary`2[System.String,System.Object]"],
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    CallTargetIntegrationKind = CallTargetKind.Derived,
+    IntegrationName = SeleniumCommon.IntegrationName)]
+[InstrumentMethod(
+    AssemblyName = "WebDriver",
+    TypeName = "OpenQA.Selenium.Remote.RemoteWebDriver",
+    MethodName = "Execute",
+    ReturnTypeName = "OpenQA.Selenium.Remote.Response",
+    ParameterTypeNames = [ClrNames.String, "System.Collections.Generic.Dictionary`2[System.String,System.Object]"],
+    MinimumVersion = "3.0.0",
+    MaximumVersion = "3.*.*",
+    IntegrationName = SeleniumCommon.IntegrationName)]
+[InstrumentMethod(
+    AssemblyName = "WebDriver",
+    TypeName = "OpenQA.Selenium.Remote.RemoteWebDriver",
+    MethodName = "Execute",
+    ReturnTypeName = "OpenQA.Selenium.Remote.Response",
+    ParameterTypeNames = [ClrNames.String, "System.Collections.Generic.Dictionary`2[System.String,System.Object]"],
+    MinimumVersion = "3.0.0",
+    MaximumVersion = "3.*.*",
+    CallTargetIntegrationKind = CallTargetKind.Derived,
+    IntegrationName = SeleniumCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class WebDriverExecuteIntegration
@@ -43,10 +72,10 @@ public class WebDriverExecuteIntegration
                 SeleniumCommon.OnBeforePageLoad(instance, parameters);
                 break;
             case SeleniumCommon.CommandClose:
-                SeleniumCommon.OnPageClose(instance, parameters);
+                SeleniumCommon.OnPageClose(instance);
                 break;
             case SeleniumCommon.CommandQuit:
-                SeleniumCommon.OnQuit(instance, parameters);
+                SeleniumCommon.OnQuit(instance);
                 break;
         }
 

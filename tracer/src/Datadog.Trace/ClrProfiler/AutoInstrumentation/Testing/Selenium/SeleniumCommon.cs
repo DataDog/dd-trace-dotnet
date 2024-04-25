@@ -38,20 +38,20 @@ internal static class SeleniumCommon
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static void OnBeforePageLoad<TTarget>(TTarget instance, Dictionary<string, object>? parameters)
-        where TTarget : IWebDriverProxy => PreClose(instance, parameters);
+        where TTarget : IWebDriverProxy => PreClose(instance);
 
-    internal static void OnPageClose<TTarget>(TTarget instance, Dictionary<string, object>? parameters)
-        where TTarget : IWebDriverProxy => PreClose(instance, parameters);
+    internal static void OnPageClose<TTarget>(TTarget instance)
+        where TTarget : IWebDriverProxy => PreClose(instance);
 
-    internal static void OnQuit<TTarget>(TTarget instance, Dictionary<string, object>? parameters)
-        where TTarget : IWebDriverProxy => PreClose(instance, parameters);
+    internal static void OnQuit<TTarget>(TTarget instance)
+        where TTarget : IWebDriverProxy => PreClose(instance);
 
-    private static void PreClose<TTarget>(TTarget instance, Dictionary<string, object>? parameters)
+    private static void PreClose<TTarget>(TTarget instance)
         where TTarget : IWebDriverProxy
     {
         if (Interlocked.Read(ref _openPageCount) > 0)
         {
-            CloseAndFlush(instance, parameters);
+            CloseAndFlush(instance);
             Interlocked.Decrement(ref _openPageCount);
         }
     }
@@ -59,34 +59,40 @@ internal static class SeleniumCommon
     internal static void OnAfterPageLoad<TTarget>(TTarget instance, Dictionary<string, object>? parameters)
         where TTarget : IWebDriverProxy
     {
+        if (Test.Current is not { } test)
+        {
+            return;
+        }
+
         _seleniumCookieType ??= instance.Type.Assembly.GetType("OpenQA.Selenium.Cookie");
         if (_seleniumCookieType is not null)
         {
-            var traceId = Test.Current?.GetInternalSpan().Context.TraceId ?? Tracer.Instance.ActiveScope?.Span?.Context.TraceId;
-            if (traceId.HasValue && Activator.CreateInstance(_seleniumCookieType, "datadog-ci-visibility-test-execution-id", traceId.Value.ToString()) is { } cookieInstance)
+            var traceId = test.GetInternalSpan().Context.TraceId;
+            if (Activator.CreateInstance(_seleniumCookieType, "datadog-ci-visibility-test-execution-id", traceId.ToString()) is { } cookieInstance)
             {
                 Log.Debug("Inject: {Parameters}", JsonConvert.SerializeObject(parameters ?? new object()));
+
+                // Inject cookie for RUM session
                 instance.Manage().Cookies.AddCookie(cookieInstance);
                 Interlocked.Increment(ref _openPageCount);
-                if (Test.Current is { } test)
-                {
-                    test.GetInternalSpan().Type = SpanTypes.Browser;
-                    test.SetTag("test.browser.driver", "selenium");
-                    test.SetTag("test.browser.driver_version", instance.Type.Assembly.GetName().Version?.ToString() ?? "unknown");
 
-                    var browserName = instance.Instance?.GetType().Name switch
-                    {
-                        "ChromeDriver" => "Chrome",
-                        "ChromiumDriver" => "Chromium",
-                        "EdgeDriver" => "Edge",
-                        "FirefoxDriver" => "Firefox",
-                        "InternetExplorerDriver" => "Internet Explorer",
-                        "SafariDriver" => "Safari",
-                        _ => "Unknown"
-                    };
-                    test.SetTag("test.browser.name", browserName);
-                    test.SetTag("test.browser.version", string.Empty);
-                }
+                // Tag the current test with browser information
+                test.GetInternalSpan().Type = SpanTypes.Browser;
+                test.SetTag("test.browser.driver", "selenium");
+                test.SetTag("test.browser.driver_version", instance.Type.Assembly.GetName().Version?.ToString() ?? "unknown");
+
+                var browserName = instance.Instance?.GetType().Name switch
+                {
+                    "ChromeDriver" => "Chrome",
+                    "ChromiumDriver" => "Chromium",
+                    "EdgeDriver" => "Edge",
+                    "FirefoxDriver" => "Firefox",
+                    "InternetExplorerDriver" => "Internet Explorer",
+                    "SafariDriver" => "Safari",
+                    _ => "Unknown"
+                };
+                test.SetTag("test.browser.name", browserName);
+                test.SetTag("test.browser.version", string.Empty);
             }
         }
         else
@@ -95,19 +101,20 @@ internal static class SeleniumCommon
         }
     }
 
-    private static void CloseAndFlush<TTarget>(TTarget instance, Dictionary<string, object>? parameters)
+    private static void CloseAndFlush<TTarget>(TTarget instance)
         where TTarget : IWebDriverProxy
     {
-        Log.Debug("CloseAndFlush");
+        if (Test.Current is not { } test)
+        {
+            return;
+        }
+
+        Log.Debug("CloseAndFlush RUM session");
         try
         {
             if (instance.ExecuteScript(RumStopSessionScript, null) is bool isRumFlushed)
             {
-                if (Test.Current is { } test)
-                {
-                    test.SetTag("test.is_rum_active", isRumFlushed ? "true" : "false");
-                }
-
+                test.SetTag("test.is_rum_active", isRumFlushed ? "true" : "false");
                 if (isRumFlushed)
                 {
                     Log.Information<int>("RUM flush script has been called, waiting for {RumFlushWaitMillis}ms.", CIVisibility.Settings.RumFlushWaitMillis);
@@ -117,11 +124,7 @@ internal static class SeleniumCommon
         }
         catch (Exception ex)
         {
-            if (Test.Current is { } test)
-            {
-                test.SetErrorInfo(ex);
-            }
-
+            test.SetErrorInfo(ex);
             Log.Error(ex, "Error running RUM flushing script.");
         }
     }
