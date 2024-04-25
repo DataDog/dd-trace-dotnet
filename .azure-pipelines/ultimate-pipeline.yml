@@ -108,8 +108,8 @@ variables:
   ddApiKey: $(DD_API_KEY)
   slackWebhookUrl: $(SLACK_WEBHOOK_URL)
   isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
-  isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main', 'refs/head/robertomonteromiguel/build_deb_rpm_packages')]
-  isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main', 'refs/head/robertomonteromiguel/build_deb_rpm_packages'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
+  isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main', 'refs/remotes/origin/robertomonteromiguel/build_deb_rpm_packages')]
+  isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main', 'refs/remotes/origin/robertomonteromiguel/build_deb_rpm_packages'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
   # Only run code coverage when requested
   # Coverlet relies on IL rewriting, which currently breaks tests which explictly check the IL
