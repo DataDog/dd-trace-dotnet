@@ -98,7 +98,7 @@ variables:
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this
   dotnetCoreSdkLatestVersionShort: 8.0.100
-  nativeBuildDotnetSdkVersion: 7.0.306
+  nativeBuildDotnetSdkVersion: 7.0.408
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -1714,8 +1714,6 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
-      parameters:
-        includeX86: true
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
@@ -2601,8 +2599,6 @@ stages:
             publishTargetFramework: net5.0
           net6_0:
             publishTargetFramework: net6.0
-          net8_0:
-            publishTargetFramework: net8.0
       workspace:
         clean: all
       pool:
