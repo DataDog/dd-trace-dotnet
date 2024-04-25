@@ -52,7 +52,7 @@ internal static class SeleniumCommon
     {
         if (Interlocked.Read(ref _openPageCount) > 0)
         {
-            CloseAndFlush(instance);
+            CloseAndFlush(instance, Test.Current);
             Interlocked.Decrement(ref _openPageCount);
         }
     }
@@ -94,6 +94,10 @@ internal static class SeleniumCommon
                 };
                 test.SetTag("test.browser.name", browserName);
                 test.SetTag("test.browser.version", string.Empty);
+
+                // Add an action when the test close to flush the RUM data
+                // in case the test never calls to driver.Close() or driver.Quit()
+                test.AddOnCloseAction(t => CloseAndFlush(instance, t));
             }
         }
         else
@@ -102,11 +106,18 @@ internal static class SeleniumCommon
         }
     }
 
-    private static void CloseAndFlush<TTarget>(TTarget instance)
+    private static void CloseAndFlush<TTarget>(TTarget instance, Test? test)
         where TTarget : IWebDriverProxy
     {
-        if (Test.Current is not { } test)
+        if (test is null)
         {
+            // Test is not available
+            return;
+        }
+
+        if (test.GetInternalSpan().GetTag("test.is_rum_active") is not null)
+        {
+            // Already closed don't need to close
             return;
         }
 

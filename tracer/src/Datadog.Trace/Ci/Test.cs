@@ -27,6 +27,7 @@ public sealed class Test
     private static readonly AsyncLocal<Test?> CurrentTest = new();
     private readonly Scope _scope;
     private int _finished;
+    private List<Action<Test>>? _onCloseActions;
 
     internal Test(TestSuite suite, string name, DateTimeOffset? startDate)
         : this(suite, name, startDate, default, 0)
@@ -400,6 +401,17 @@ public sealed class Test
             TelemetryFactory.Metrics.RecordCountCIVisibilityITRForcedRun(MetricTags.CIVisibilityTestingEventType.Test);
         }
 
+        // Call close actions
+        if (_onCloseActions is not null)
+        {
+            foreach (var action in _onCloseActions)
+            {
+                action(this);
+            }
+
+            _onCloseActions.Clear();
+        }
+
         // Finish
         scope.Span.Finish(duration.Value);
         scope.Dispose();
@@ -436,5 +448,11 @@ public sealed class Test
     internal void SetName(string name)
     {
         ((TestSpanTags)_scope.Span.Tags).Name = name;
+    }
+
+    internal void AddOnCloseAction(Action<Test> action)
+    {
+        _onCloseActions ??= [];
+        _onCloseActions.Add(action);
     }
 }
