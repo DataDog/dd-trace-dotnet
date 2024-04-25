@@ -109,6 +109,7 @@ public class CompareThroughput
         CrankScenario.AutomaticInstrumentation => "Automatic",
         CrankScenario.ManualInstrumentation => "Manual",
         CrankScenario.ManualAndAutomaticInstrumentation => "Manual + Automatic",
+        CrankScenario.DdTraceEnabledFalse => "DD_TRACE_ENABLED=0",
         CrankScenario.TraceStats => "Trace stats",
         CrankScenario.NoAttack => "No attack",
         CrankScenario.AttackNoBlocking => "Attack",
@@ -129,6 +130,7 @@ public class CompareThroughput
                 ("trace_stats_linux.json", CrankScenario.TraceStats),
                 ("manual_only_linux.json", CrankScenario.ManualInstrumentation),
                 ("manual_and_automatic_linux.json", CrankScenario.ManualAndAutomaticInstrumentation),
+                ("ddtraceenabled_false_linux.json", CrankScenario.DdTraceEnabledFalse),
             }
         ),
         ("crank_linux_arm64_1", CrankTestSuite.LinuxArm64, new[]
@@ -138,6 +140,7 @@ public class CompareThroughput
                 ("trace_stats_linux_arm64.json", CrankScenario.TraceStats),
                 ("manual_only_linux_arm64.json", CrankScenario.ManualInstrumentation),
                 ("manual_and_automatic_linux_arm64.json", CrankScenario.ManualAndAutomaticInstrumentation),
+                ("ddtraceenabled_false_linux_arm64.json", CrankScenario.DdTraceEnabledFalse),
             }
         ),
         ("crank_windows_x64_1", CrankTestSuite.WindowsX64, new[]
@@ -147,6 +150,7 @@ public class CompareThroughput
                 ("trace_stats_windows.json", CrankScenario.TraceStats),
                 ("manual_only_windows.json", CrankScenario.ManualInstrumentation),
                 ("manual_and_automatic_windows.json", CrankScenario.ManualAndAutomaticInstrumentation),
+                ("ddtraceenabled_false_windows.json", CrankScenario.DdTraceEnabledFalse),
             }
         ),
         ("crank_linux_x64_asm_1", CrankTestSuite.ASMLinuxX64, new[]
@@ -203,6 +207,7 @@ public class CompareThroughput
         TraceStats,
         ManualInstrumentation,
         ManualAndAutomaticInstrumentation,
+        DdTraceEnabledFalse,
         NoAttack,
         AttackNoBlocking,
         AttackBlocking,
