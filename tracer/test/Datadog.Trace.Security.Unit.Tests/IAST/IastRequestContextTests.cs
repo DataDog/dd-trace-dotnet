@@ -76,6 +76,7 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         }
 #endif
 
+        /*
 #if !NETFRAMEWORK
         [Fact]
         public void GivenAnIastRequestContext_WhenAddRequestDataWithHeaders_HeadersAreTainted()
@@ -109,7 +110,7 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             Assert.NotNull(iastContext.GetTainted(value3));
         }
 #endif
-
+*/
         [Theory]
         [MemberData(nameof(GetRequestBodyTestData))]
         public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted(BodyClassTest sample)

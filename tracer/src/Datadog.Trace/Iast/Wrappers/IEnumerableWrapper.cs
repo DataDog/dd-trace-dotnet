@@ -5,7 +5,7 @@
 
 // #nullable enable
 
-#if NETCOREAPP
+#if !NETFRAMEWORK
 
 #pragma warning disable SA1400
 #pragma warning disable SA1401

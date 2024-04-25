@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
 using Datadog.Trace.Configuration;
@@ -41,7 +40,6 @@ internal static class ReturnedHeadersAnalyzer
         AnalyzeXContentTypeOptionsVulnerability(responseHeaders, integrationId, serviceName, responseCode);
         AnalyzeStrictTransportSecurity(responseHeaders, integrationId, serviceName, responseCode, protocol);
         AnalyzeUnvalidatedRedirect(responseHeaders, integrationId);
-        AnalyzeHeaderInjectionVulnerability(responseHeaders, integrationId);
     }
 
     // In header injections, we should exclude some headers to prevent false positives:
@@ -56,7 +54,6 @@ internal static class ReturnedHeadersAnalyzer
     // <header_value> matches with  a RegExp
     // We should redact the sensitive information from the evidence when:
     // Tainted range is considered sensitive value
-
 #if NETFRAMEWORK
     private static void AnalyzeHeaderInjectionVulnerability(NameValueCollection responseHeaders, IntegrationId integrationId)
 #else

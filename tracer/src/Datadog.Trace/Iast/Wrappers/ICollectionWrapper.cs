@@ -5,7 +5,7 @@
 
 // #nullable enable
 
-#if NETCOREAPP
+#if !NETFRAMEWORK
 
 #pragma warning disable SA1400
 #pragma warning disable SA1401
@@ -18,8 +18,6 @@ namespace Datadog.Trace.Iast.Wrappers;
 
 internal class ICollectionWrapper<T> : IEnumerableWrapper<T>, ICollection<T>
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ICollectionWrapper<T>>();
-
     private readonly Func<ICollection<T>> _target;
 
     internal ICollectionWrapper(Func<ICollection<T>> target = null, Action<T> taint = null)
