@@ -399,10 +399,10 @@ namespace Datadog.Trace.Tests
         [Theory]
         [InlineData(null)]
         [InlineData("test")]
-        public void SetEnv(string env)
+        public async Task SetEnv(string env)
         {
             var settings = new TracerSettings { Environment = env };
-            var tracer = TracerHelper.Create(settings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
 
             scope.Span.GetTag(Tags.Env).Should().Be(env);
@@ -412,10 +412,10 @@ namespace Datadog.Trace.Tests
         [Theory]
         [InlineData(null)]
         [InlineData("1.2.3")]
-        public void SetVersion(string version)
+        public async Task SetVersion(string version)
         {
             var settings = new TracerSettings { ServiceVersion = version };
-            var tracer = TracerHelper.Create(settings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
 
             scope.Span.GetTag(Tags.Version).Should().Be(version);
@@ -430,14 +430,14 @@ namespace Datadog.Trace.Tests
         [InlineData(null, "spanService", "spanService")]
         // if more than one is set, follow precedence: span > tracer  > default
         [InlineData("tracerService", "spanService", "spanService")]
-        public void SetServiceName(string tracerServiceName, string spanServiceName, string expectedServiceName)
+        public async Task SetServiceName(string tracerServiceName, string spanServiceName, string expectedServiceName)
         {
             var settings = new TracerSettings()
             {
                 ServiceName = tracerServiceName,
             };
 
-            var tracer = TracerHelper.Create(settings);
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             ISpan span = tracer.StartSpan("operationName", serviceName: spanServiceName);
 
             if (expectedServiceName == null)

@@ -124,8 +124,8 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         private void Execute(string address, object value, string flow = null, string rule = null, string schemaExtraction = null)
         {
-            ExecuteInternal(address, value, flow, rule, schemaExtraction, true);
             ExecuteInternal(address, value, flow, rule, schemaExtraction, false);
+            ExecuteInternal(address, value, flow, rule, schemaExtraction, true);
         }
 
         private void ExecuteInternal(string address, object value, string flow, string rule, string schemaExtraction, bool newEncoder)
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, setupWafSchemaExtraction: extractSchema, useUnsafeEncoder: newEncoder);
+            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, useUnsafeEncoder: newEncoder);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();

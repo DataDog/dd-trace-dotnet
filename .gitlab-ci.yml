@@ -4,15 +4,13 @@ stages:
   - package
   - publish
   - deploy
+  - benchmarks
 
 include:
   - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
 
 variables:
   GIT_PROFILER_REF: master
-  DEPLOY_TO_DEBUGGER_BACKEND:
-    value: "false"
-    description: "Set to true to deploy to debugger backend demo application"
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
 
@@ -31,7 +29,7 @@ build:
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts) { remove-item -recurse -force artifacts }
-    - docker run --rm -m 8192M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e ENABLE_MULTIPROCESSOR_COMPILATION=false -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true -e NUGET_CERT_REVOCATION_MODE=offline datadog/dd-trace-dotnet-docker-build:latest
+    - docker run --rm -m 8192M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e ENABLE_MULTIPROCESSOR_COMPILATION=false -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true -e NUGET_CERT_REVOCATION_MODE=offline registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:latest
     - mkdir artifacts
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts
     - remove-item -recurse -force build-out\${CI_JOB_ID}
@@ -125,7 +123,8 @@ deploy_latest_tag_to_docker_registries:
   rules:
     - if: '$POPULATE_CACHE'
       when: never
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+    # Don't deploy latest tag if prerelease
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
     - when: manual
       allow_failure: true
@@ -143,7 +142,8 @@ deploy_latest_musl_tag_to_docker_registries:
   rules:
     - if: '$POPULATE_CACHE'
       when: never
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      # Don't deploy latest tag if prerelease
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
     - when: manual
       allow_failure: true
@@ -155,20 +155,6 @@ deploy_latest_musl_tag_to_docker_registries:
     IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA-musl
     IMG_DESTINATIONS: dd-lib-dotnet-init:latest-musl
     IMG_SIGNING: "false"
-
-deploy_to_debugger_backend:
-  stage: deploy
-  rules:
-    - if: '$DEPLOY_TO_DEBUGGER_BACKEND == "true"'
-  trigger:
-    project: DataDog/debugger-demos
-    branch: main
-  variables:
-    UPSTREAM_PACKAGE_JOB: build
-    UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
-    UPSTREAM_BRANCH: $CI_COMMIT_BRANCH
-    UPSTREAM_TAG: $DEPLOY_TAG
-
 
 package:
   extends: .package
@@ -196,7 +182,53 @@ package-arm:
   variables:
     ARCH: arm64
 
+package-oci:
+  stage: package
+  extends: .package-oci
+  rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: on_success
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: manual
+      allow_failure: false
+  script:
+    - ../.gitlab/build-oci.sh
+  parallel:
+    matrix:
+      - ARCH:
+        - arm64
+        - amd64
+
 .release-package:
   stage: deploy
   variables:
     PRODUCT_NAME: auto_inject-dotnet
+
+benchmark-serverless:
+  stage: benchmarks
+  image: registry.ddbuild.io/ci/serverless-tools:1
+  tags: ["arch:amd64"]
+  when: on_success
+  needs:
+    - benchmark-serverless-trigger
+  script:
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/serverless-tools.git ./serverless-tools && cd ./serverless-tools
+    - ./ci/check_trigger_status.sh
+
+benchmark-serverless-trigger:
+  stage: benchmarks
+  needs: []
+  trigger:
+    project: DataDog/serverless-tools
+    strategy: depend
+  allow_failure: true
+  variables:
+    UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
+    UPSTREAM_PROJECT_URL: $CI_PROJECT_URL
+    UPSTREAM_COMMIT_BRANCH: $CI_COMMIT_BRANCH
+    UPSTREAM_COMMIT_AUTHOR: $CI_COMMIT_AUTHOR
+    UPSTREAM_COMMIT_TITLE: $CI_COMMIT_TITLE
+    UPSTREAM_COMMIT_TAG: $CI_COMMIT_TAG
+    UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
+    UPSTREAM_GITLAB_USER_LOGIN: $GITLAB_USER_LOGIN
+    UPSTREAM_GITLAB_USER_EMAIL: $GITLAB_USER_EMAIL

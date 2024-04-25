@@ -32,6 +32,7 @@ namespace Datadog.Trace
             Keys.RawSpanId,
             Keys.PropagatedTags,
             Keys.AdditionalW3CTraceState,
+            Keys.LastParentId,
 
             // For mismatch version support we need to keep supporting old keys.
             HttpHeaderNames.TraceId,
@@ -82,12 +83,14 @@ namespace Datadog.Trace
         /// <param name="samplingPriority">The propagated sampling priority.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
         /// <param name="origin">The propagated origin of the trace.</param>
-        internal SpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin)
+        /// <param name="isRemote">Whether this <see cref="SpanContext"/> was from a distributed context.</param>
+        internal SpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, bool isRemote = false)
             : this(traceId, serviceName)
         {
             SpanId = spanId;
             SamplingPriority = samplingPriority;
             Origin = origin;
+            IsRemote = isRemote;
         }
 
         /// <summary>
@@ -102,7 +105,8 @@ namespace Datadog.Trace
         /// <param name="origin">The propagated origin of the trace.</param>
         /// <param name="rawTraceId">The raw propagated trace id</param>
         /// <param name="rawSpanId">The raw propagated span id</param>
-        internal SpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId)
+        /// <param name="isRemote">Whether this <see cref="SpanContext"/> was from a distributed context.</param>
+        internal SpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId, bool isRemote = false)
             : this(traceId, serviceName)
         {
             SpanId = spanId;
@@ -110,6 +114,7 @@ namespace Datadog.Trace
             Origin = origin;
             _rawTraceId = rawTraceId;
             _rawSpanId = rawSpanId;
+            IsRemote = isRemote;
         }
 
         /// <summary>
@@ -123,7 +128,8 @@ namespace Datadog.Trace
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="rawTraceId">Raw trace id value</param>
         /// <param name="rawSpanId">Raw span id value</param>
-        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
+        /// <param name="isRemote">Whether this <see cref="SpanContext"/> was from a distributed context.</param>
+        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool isRemote = false)
             : this(GetTraceId(parent, traceId), serviceName)
         {
             // if 128-bit trace ids are enabled, also use full uint64 for span id,
@@ -145,6 +151,7 @@ namespace Datadog.Trace
             }
 
             _rawSpanId = rawSpanId;
+            IsRemote = isRemote;
         }
 
         private SpanContext(TraceId traceId, string serviceName)
@@ -255,7 +262,18 @@ namespace Datadog.Trace
         /// </summary>
         internal string AdditionalW3CTraceState { get; set; }
 
+        /// <summary>
+        /// Gets or sets the last span ID of the most recently seen Datadog span that will be propagated downstream
+        /// to allow for the re-parenting of spans in cases where spans in distributed traces have missing spans.
+        /// </summary>
+        internal string LastParentId { get; set; }
+
         internal PathwayContext? PathwayContext { get; private set; }
+
+        /// <summary>
+        ///  Gets a value indicating whether this <see cref="SpanContext"/> was propagated from a remote parent.
+        /// </summary>
+        internal bool IsRemote { get; }
 
         /// <inheritdoc/>
         int IReadOnlyCollection<KeyValuePair<string, string>>.Count => KeyNames.Length;
@@ -372,6 +390,10 @@ namespace Datadog.Trace
                     value = TraceContext?.AdditionalW3CTraceState ?? AdditionalW3CTraceState;
                     return true;
 
+                case Keys.LastParentId:
+                    value = LastParentId;
+                    return true;
+
                 default:
                     value = null;
                     return false;
@@ -470,6 +492,7 @@ namespace Datadog.Trace
             public const string RawSpanId = $"{Prefix}RawSpanId";
             public const string PropagatedTags = $"{Prefix}PropagatedTags";
             public const string AdditionalW3CTraceState = $"{Prefix}AdditionalW3CTraceState";
+            public const string LastParentId = $"{Prefix}LastParentId";
         }
     }
 }

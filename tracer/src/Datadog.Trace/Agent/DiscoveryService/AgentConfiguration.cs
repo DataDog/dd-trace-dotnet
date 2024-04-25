@@ -19,10 +19,12 @@ internal record AgentConfiguration
         string? eventPlatformProxyEndpoint,
         string? telemetryProxyEndpoint,
         string? tracerFlareEndpoint,
-        bool clientDropP0)
+        bool clientDropP0,
+        string? diagnosticsEndpoint)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
+        DiagnosticsEndpoint = diagnosticsEndpoint;
         SymbolDbEndpoint = symbolDbEndpoint;
         AgentVersion = agentVersion;
         StatsEndpoint = statsEndpoint;
@@ -36,6 +38,8 @@ internal record AgentConfiguration
     public string? ConfigurationEndpoint { get; }
 
     public string? DebuggerEndpoint { get; }
+
+    public string? DiagnosticsEndpoint { get; }
 
     public string? SymbolDbEndpoint { get; }
 

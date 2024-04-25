@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
@@ -71,10 +73,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             return CallTargetState.GetDefault();
         }
 
-        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
+        internal static TResponse? OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse? response, Exception? exception, in CallTargetState state)
         {
             var security = Security.Instance;
-            if (security.Enabled)
+            // response can be null if action returns null
+            if (security.Enabled && response is not null)
             {
                 if (response.TryDuckCast<IJsonResultWebApi>(out var actionResult))
                 {
@@ -83,11 +86,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         var context = HttpContext.Current;
                         var scope = SharedItems.TryPeekScope(context, AspNetWebApi2Integration.HttpContextKey);
-                        var securityTransport = new SecurityCoordinator(security, context, scope.Span);
-                        if (!securityTransport.IsBlocked)
+                        if (scope is not null)
                         {
-                            var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, ObjectExtractor.Extract(responseObject) } };
-                            securityTransport.CheckAndBlock(inputData);
+                            var securityTransport = new SecurityCoordinator(security, context, scope.Span);
+                            if (!securityTransport.IsBlocked)
+                            {
+                                var extractedObj = ObjectExtractor.Extract(responseObject);
+                                if (extractedObj is not null)
+                                {
+                                    var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, extractedObj } };
+                                    securityTransport.CheckAndBlock(inputData);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Log.Debug("Scope was null in ReflectedHttpActionDescriptor_ExecuteAsync_Integration.OnAsyncMethodEnd, cannot check security");
                         }
                     }
                 }

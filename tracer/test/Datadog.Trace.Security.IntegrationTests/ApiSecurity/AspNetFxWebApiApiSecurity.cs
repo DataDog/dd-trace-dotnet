@@ -38,8 +38,7 @@ public abstract class AspNetFxWebApiApiSecurity : AspNetBase, IClassFixture<IisF
 
         if (enableApiSecurity)
         {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled, "true");
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityRequestSampleRate, "1");
+            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityEnabled, "true");
         }
 
         _iisFixture = iisFixture;

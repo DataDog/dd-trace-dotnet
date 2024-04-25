@@ -128,7 +128,9 @@ namespace Datadog.Trace
                 runtimeMetrics = null;
             }
 
-            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager);
+            telemetry ??= CreateTelemetryController(settings, discoveryService);
+
+            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager, telemetry);
             logSubmissionManager = DirectLogSubmissionManager.Create(
                 logSubmissionManager,
                 settings,
@@ -139,9 +141,7 @@ namespace Datadog.Trace
                 settings.ServiceVersionInternal,
                 gitMetadataTagsProvider);
 
-            telemetry ??= CreateTelemetryController(settings, discoveryService);
             telemetry.RecordTracerSettings(settings, defaultServiceName);
-
             TelemetryFactory.Metrics.SetWafVersion(Security.Instance.DdlibWafVersion);
             ErrorData? initError = !string.IsNullOrEmpty(Security.Instance.InitializationError)
                                        ? new ErrorData(TelemetryErrorCode.AppsecConfigurationError, Security.Instance.InitializationError)
@@ -220,9 +220,9 @@ namespace Datadog.Trace
             return TelemetryFactory.Instance.CreateTelemetryController(settings, discoveryService);
         }
 
-        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
+        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager, ITelemetryController telemetry)
         {
-            return new GitMetadataTagsProvider(settings, scopeManager, TelemetryFactory.Config);
+            return new GitMetadataTagsProvider(settings, scopeManager, telemetry);
         }
 
         protected virtual bool ShouldEnableRemoteConfiguration(ImmutableTracerSettings settings)
@@ -258,7 +258,7 @@ namespace Datadog.Trace
 
             if (patternFormatIsValid && !string.IsNullOrWhiteSpace(samplingRules))
             {
-                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(samplingRules, samplingRulesFormat))
+                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(samplingRules, samplingRulesFormat, RegexBuilder.DefaultTimeout))
                 {
                     sampler.RegisterRule(rule);
                 }
@@ -288,7 +288,7 @@ namespace Datadog.Trace
                 return new SpanSampler(Enumerable.Empty<ISpanSamplingRule>());
             }
 
-            return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules));
+            return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));
         }
 
         protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)

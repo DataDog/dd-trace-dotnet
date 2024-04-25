@@ -40,4 +40,9 @@ internal struct TestInvokerStruct
     /// Exception aggregator
     /// </summary>
     public IExceptionAggregator? Aggregator;
+
+    /// <summary>
+    /// Message Bus
+    /// </summary>
+    public object MessageBus;
 }

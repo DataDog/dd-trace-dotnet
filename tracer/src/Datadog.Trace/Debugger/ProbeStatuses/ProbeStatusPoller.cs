@@ -9,8 +9,8 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Debugger.ProbeStatuses
 {
@@ -18,7 +18,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeStatusPoller));
 
-        private readonly ProbeStatusSink _probeStatusSink;
+        private readonly DiagnosticsSink _diagnosticsSink;
         private readonly TimeSpan _shortPeriod = TimeSpan.FromSeconds(10);
         private readonly TimeSpan _longPeriod = TimeSpan.FromMinutes(60);
         private readonly HashSet<FetchProbeStatus> _probes = new();
@@ -27,14 +27,14 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         private bool _isPolling;
         private bool _isRecentlyForcedSchedule;
 
-        private ProbeStatusPoller(ProbeStatusSink probeStatusSink)
+        private ProbeStatusPoller(DiagnosticsSink diagnosticsSink)
         {
-            _probeStatusSink = probeStatusSink;
+            _diagnosticsSink = diagnosticsSink;
         }
 
-        internal static ProbeStatusPoller Create(ProbeStatusSink probeStatusSink, DebuggerSettings settings)
+        internal static ProbeStatusPoller Create(DiagnosticsSink diagnosticsSink, DebuggerSettings settings)
         {
-            return new ProbeStatusPoller(probeStatusSink);
+            return new ProbeStatusPoller(diagnosticsSink);
         }
 
         private void PollerCallback(object state)
@@ -133,7 +133,10 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             foreach (var probeStatus in probeStatuses)
             {
                 var probeVersion = _probes.SingleOrDefault(p => p.ProbeId == probeStatus.ProbeId)?.ProbeVersion ?? 0;
-                _probeStatusSink.AddProbeStatus(probeStatus.ProbeId, probeStatus.Status, probeVersion, errorMessage: probeStatus.ErrorMessage);
+                // Normalize `INSTRUMENTED` status to `INSTALLED`. The `INSTRUMENTED` status is not recognized by the backend,
+                // it was added to satisfy Exception Debugging to better distinguish between RequestReJIT (INSTALLED) and actual instrumentation (INSTRUMENTED).
+                var status = probeStatus.Status == Status.INSTRUMENTED ? Status.INSTALLED : probeStatus.Status;
+                _diagnosticsSink.AddProbeStatus(probeStatus.ProbeId, status, probeVersion, errorMessage: probeStatus.ErrorMessage);
             }
         }
 
@@ -161,11 +164,11 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             lock (_locker)
             {
                 _probes.UnionWith(newProbes);
-                ScheduleNextPollInOneSeconds();
+                ScheduleNextPollInOneSecond();
             }
         }
 
-        private void ScheduleNextPollInOneSeconds()
+        private void ScheduleNextPollInOneSecond()
         {
             lock (_locker)
             {
@@ -185,7 +188,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
                 foreach (var rmProbe in removedProbes)
                 {
-                    _probeStatusSink.Remove(rmProbe);
+                    _diagnosticsSink.Remove(rmProbe);
                 }
             }
         }
@@ -199,12 +202,24 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             }
         }
 
-        public string[] GetFetchedProbes(string[] candidateProbeIds)
+        public void UpdateProbe(string probeId, FetchProbeStatus newProbeStatus)
+        {
+            UpdateProbes(new[] { probeId }, new[] { newProbeStatus });
+        }
+
+        /// <summary>
+        /// Returns a subset of probeIds from <paramref name="candidateProbeIds" /> that have native representation (e.g either requested rejit or rejitted).
+        /// Note that <see cref="Status.EMITTING"/> is taken into account, since EMITTING probes are those that not only have native representation,
+        /// but their instrumentation is actively executing.
+        /// </summary>
+        /// <param name="candidateProbeIds">The set of probes that needs to be checked</param>
+        /// <returns>An array of ProbeIds that have native representation.</returns>
+        public string[] GetBoundedProbes(string[] candidateProbeIds)
         {
             lock (_locker)
             {
                 return _probes
-                      .Where(p => p.ShouldFetch() && candidateProbeIds
+                      .Where(p => (p.ShouldFetch() || p.ProbeStatus.Status == Status.EMITTING) && candidateProbeIds
                                 .Contains(p.ProbeId))
                       .Select(p => p.ProbeId)
                       .ToArray();

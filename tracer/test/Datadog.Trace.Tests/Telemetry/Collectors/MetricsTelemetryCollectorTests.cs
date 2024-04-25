@@ -108,7 +108,7 @@ public class MetricsTelemetryCollectorTests
         // These aren't applicable in non-ci visibility
         collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 123);
         collector.RecordCountCIVisibilityEventCreated(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
-        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
+        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Test);
 
         collector.AggregateMetrics();
 
@@ -348,7 +348,7 @@ public class MetricsTelemetryCollectorTests
         // these ones are
         collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 123);
         collector.RecordCountCIVisibilityEventCreated(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
-        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
+        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Test);
 
         collector.AggregateMetrics();
 

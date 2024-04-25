@@ -431,8 +431,14 @@
     <ClInclude Include="FrameworkThreadInfo.h">
       <Filter>Threads</Filter>
     </ClInclude>
-    <ClInclude Include="SampleEnumerator.h">
-      <Filter>Utils</Filter>
+    <ClInclude Include="RawSamples.hpp" />
+    <ClInclude Include="SamplesEnumerator.h" />
+    <ClInclude Include="LinkedList.hpp" />
+    <ClInclude Include="Callstack.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="CallstackPool.h">
+      <Filter>Profiler-Driver</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -648,6 +654,12 @@
     </ClCompile>
     <ClCompile Include="FrameworkThreadInfo.cpp">
       <Filter>Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="Callstack.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="CallstackPool.cpp">
+      <Filter>Profiler-Driver</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -642,8 +642,6 @@
         "is_unsupported_ci",
         "is_benchmark",
         "is_new",
-        "is_rum",
-        "browser_driver",
         "early_flake_detection_abort_reason"
       ],
       "metric_type": "count",

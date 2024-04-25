@@ -21,7 +21,6 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
-    [Collection(nameof(SecuritySequentialTests))]
     public class WafMemoryTests : WafLibraryRequiredTest
     {
         public const int OverheadMargin = 40_000_000; // 40Mb margin

@@ -296,12 +296,18 @@ const WSTRING& DebuggerTokens::GetCallTargetReturnGenericType()
     return managed_profiler_debugger_returntype_generics;
 }
 
-int DebuggerTokens::GetAdditionalLocalsCount()
+const WSTRING& DebuggerTokens::GetCallTargetRefStructType()
+{
+    return EmptyWStr;
+}
+
+int DebuggerTokens::GetAdditionalLocalsCount(const std::vector<TypeSignature>& methodTypeArguments)
 {
     return 3;
 }
 
-void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
+void DebuggerTokens::AddAdditionalLocals(TypeSignature* methodReturnValue, std::vector<TypeSignature>* methodTypeArguments,
+                                         COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
                                          ULONG& signatureSize, bool isAsyncMethod)
 {
     // Gets the calltarget state of line probe type buffer and size

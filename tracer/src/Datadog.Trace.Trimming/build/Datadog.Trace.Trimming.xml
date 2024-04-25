@@ -70,6 +70,7 @@
       <type fullname="Microsoft.AspNetCore.Routing.IRoutingFeature" />
       <type fullname="Microsoft.AspNetCore.Routing.RouteData" />
       <type fullname="Microsoft.AspNetCore.Routing.RouteValueDictionary" />
+      <type fullname="Microsoft.AspNetCore.Routing.RoutingHttpContextExtensions" />
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Server.IIS" />
    <assembly fullname="Microsoft.AspNetCore.Server.Kestrel.Core" />
@@ -96,6 +97,9 @@
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.Common" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
+   <assembly fullname="Microsoft.Win32.Primitives">
+      <type fullname="System.ComponentModel.Win32Exception" />
+   </assembly>
    <assembly fullname="MongoDB.Driver.Core" />
    <assembly fullname="MySql.Data" />
    <assembly fullname="MySqlConnector" />
@@ -154,6 +158,7 @@
    </assembly>
    <assembly fullname="System.Collections.Specialized">
       <type fullname="System.Collections.Specialized.NameValueCollection" />
+      <type fullname="System.Collections.Specialized.OrderedDictionary" />
    </assembly>
    <assembly fullname="System.ComponentModel.Primitives">
       <type fullname="System.ComponentModel.BrowsableAttribute" />
@@ -583,6 +588,7 @@
       <type fullname="System.IntPtr" />
       <type fullname="System.InvalidCastException" />
       <type fullname="System.InvalidOperationException" />
+      <type fullname="System.InvalidProgramException" />
       <type fullname="System.IO.BinaryReader" />
       <type fullname="System.IO.BinaryWriter" />
       <type fullname="System.IO.Directory" />
@@ -702,6 +708,7 @@
       <type fullname="System.Runtime.CompilerServices.CompilationRelaxationsAttribute" />
       <type fullname="System.Runtime.CompilerServices.CompilerGeneratedAttribute" />
       <type fullname="System.Runtime.CompilerServices.ConditionalWeakTable`2" />
+      <type fullname="System.Runtime.CompilerServices.ConditionalWeakTable`2/CreateValueCallback" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredTaskAwaitable" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredTaskAwaitable/ConfiguredTaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1" />
@@ -712,6 +719,7 @@
       <type fullname="System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1/ConfiguredValueTaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.DefaultInterpolatedStringHandler" />
       <type fullname="System.Runtime.CompilerServices.ExtensionAttribute" />
+      <type fullname="System.Runtime.CompilerServices.FixedBufferAttribute" />
       <type fullname="System.Runtime.CompilerServices.FormattableStringFactory" />
       <type fullname="System.Runtime.CompilerServices.IAsyncStateMachine" />
       <type fullname="System.Runtime.CompilerServices.ICriticalNotifyCompletion" />
@@ -732,6 +740,7 @@
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter`1" />
       <type fullname="System.Runtime.CompilerServices.TupleElementNamesAttribute" />
+      <type fullname="System.Runtime.CompilerServices.UnsafeValueTypeAttribute" />
       <type fullname="System.Runtime.CompilerServices.YieldAwaitable" />
       <type fullname="System.Runtime.CompilerServices.YieldAwaitable/YieldAwaiter" />
       <type fullname="System.Runtime.ConstrainedExecution.CriticalFinalizerObject" />
@@ -808,6 +817,7 @@
       <type fullname="System.TypeCode" />
       <type fullname="System.TypedReference" />
       <type fullname="System.TypeInitializationException" />
+      <type fullname="System.TypeLoadException" />
       <type fullname="System.UInt16" />
       <type fullname="System.UInt32" />
       <type fullname="System.UInt64" />
@@ -834,6 +844,7 @@
       <type fullname="System.Version" />
       <type fullname="System.Void" />
       <type fullname="System.WeakReference" />
+      <type fullname="System.WeakReference`1" />
    </assembly>
    <assembly fullname="System.Runtime.CompilerServices.Unsafe">
       <type fullname="System.Runtime.CompilerServices.Unsafe" />
@@ -894,6 +905,16 @@
       <type fullname="System.Runtime.InteropServices.Architecture" />
       <type fullname="System.Runtime.InteropServices.OSPlatform" />
       <type fullname="System.Runtime.InteropServices.RuntimeInformation" />
+   </assembly>
+   <assembly fullname="System.Runtime.Intrinsics">
+      <type fullname="System.Runtime.Intrinsics.Arm.AdvSimd" />
+      <type fullname="System.Runtime.Intrinsics.Vector128" />
+      <type fullname="System.Runtime.Intrinsics.Vector128`1" />
+      <type fullname="System.Runtime.Intrinsics.Vector256" />
+      <type fullname="System.Runtime.Intrinsics.Vector256`1" />
+      <type fullname="System.Runtime.Intrinsics.X86.Avx" />
+      <type fullname="System.Runtime.Intrinsics.X86.Avx2" />
+      <type fullname="System.Runtime.Intrinsics.X86.Sse2" />
    </assembly>
    <assembly fullname="System.Runtime.Loader">
       <type fullname="System.Runtime.Loader.AssemblyLoadContext" />

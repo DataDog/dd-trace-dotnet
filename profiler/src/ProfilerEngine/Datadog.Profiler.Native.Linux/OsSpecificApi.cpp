@@ -35,6 +35,8 @@
 #include "StackFramesCollectorBase.h"
 #include "shared/src/native-src/loader.h"
 
+class CallstackProvider;
+
 namespace OsSpecificApi {
 
 using namespace std::chrono_literals;
@@ -55,9 +57,12 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
 }
 
 
-std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
+std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
+    ICorProfilerInfo4* pCorProfilerInfo,
+    IConfiguration const* const pConfiguration,
+    CallstackProvider* callstackProvider)
 {
-    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration);
+    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration, callstackProvider);
 }
 
 // https://linux.die.net/man/5/proc

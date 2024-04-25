@@ -47,7 +47,7 @@ public class AspNetCore5AsmActionsConfiguration : RcmBase
         var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode, argument, actionName);
 
         // Restore the default values
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Action { Id = actionName, Type = "block_request", Parameters = new Parameter { StatusCode = 403, Type = "auto" } } } }, AsmProduct, nameof(TestBlockingAction)) });
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Action { Id = actionName, Type = BlockingAction.BlockRequestType, Parameters = new Parameter { StatusCode = 404, Type = "auto" } } } }, AsmProduct, nameof(TestBlockingAction)) });
         var spans1 = await SendRequestsAsync(agent, url);
 
         // New values

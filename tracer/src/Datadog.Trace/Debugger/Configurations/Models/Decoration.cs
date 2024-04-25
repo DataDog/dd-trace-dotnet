@@ -5,27 +5,28 @@
 
 #pragma warning disable SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
 
+#nullable enable
 namespace Datadog.Trace.Debugger.Configurations.Models;
 
 internal record Decoration
 {
-    public SnapshotSegment When { get; set; }
+    public SnapshotSegment? When { get; set; }
 
-    public Tags[] Tags { get; set; }
+    public Tags[]? Tags { get; set; }
 }
 
 internal record Tags
 {
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
-    public TagValue Value { get; set; }
+    public TagValue? Value { get; set; }
 }
 
 internal record TagValue
 {
-    public string Template { get; set; }
+    public string? Template { get; set; }
 
-    public SnapshotSegment[] Segments { get; set; }
+    public SnapshotSegment[]? Segments { get; set; }
 }
 
 #pragma warning restore SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially

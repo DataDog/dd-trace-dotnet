@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         private const string TestSuiteName = "Samples.MSTestTests.TestSuite";
         private const string TestBundleName = "Samples.MSTestTests";
+        private const string ClassInitializationExceptionTestSuiteName = "Samples.MSTestTests.ClassInitializeExceptionTestSuite";
 
         public MsTestV2EvpTests(ITestOutputHelper output)
             : base("MSTestTests", output)
@@ -46,6 +47,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
+        public static IEnumerable<object[]> GetDataForEarlyFlakeDetection()
+        {
+            foreach (var row in GetData())
+            {
+                // settings json, efd tests json, expected spans
+
+                // EFD for all tests
+                yield return row.Concat(
+                    """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":5,"30s":3,"5m":2,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}}""",
+                    """{"data":{"id":"lNemDTwOV8U","type":"ci_app_libraries_tests","attributes":{"tests":{}}}}""",
+                    146,
+                    148);
+
+                // EFD with 1 test to bypass (TraitPassTest)
+                yield return row.Concat(
+                    """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":5,"30s":3,"5m":2,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}}""",
+                    """{"data":{"id":"lNemDTwOV8U","type":"ci_app_libraries_tests","attributes":{"tests":{"Samples.MSTestTests":{"Samples.MSTestTests.TestSuite":["TraitPassTest"]}}}}}""",
+                    137,
+                    139);
+            }
+        }
+
         [SkippableTheory]
         [MemberData(nameof(GetData))]
         [Trait("Category", "EndToEnd")]
@@ -56,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var tests = new List<MockCIVisibilityTest>();
             var testSuites = new List<MockCIVisibilityTestSuite>();
             var testModules = new List<MockCIVisibilityTestModule>();
-            var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 15 : 17;
+            var expectedTestCount = version.CompareTo(new Version("2.2.3")) <= 0 ? 20 : 22;
 
             var sessionId = RandomIdGenerator.Shared.NextSpanId();
             var sessionCommand = "test command";
@@ -86,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     {
                         if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
                         {
-                            e.Value.Response = new MockTracerResponse("{\"data\":{\"id\":\"b5a855bffe6c0b2ae5d150fb6ad674363464c816\",\"type\":\"ci_app_tracers_test_service_settings\",\"attributes\":{\"code_coverage\":false,\"efd_enabled\":false,\"flaky_test_retries_enabled\":false,\"itr_enabled\":true,\"require_git\":false,\"tests_skipping\":true}}} ", 200);
+                            e.Value.Response = new MockTracerResponse("""{"data":{"id":"b5a855bffe6c0b2ae5d150fb6ad674363464c816","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"efd_enabled":false,"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}} """, 200);
                             return;
                         }
 
@@ -127,24 +150,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == 15 ? "pre_2_2_5" : "post_2_2_5", null, null);
+                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == 20 ? "pre_2_2_4" : "post_2_2_4", null, null);
                         settings.DisableRequireUniquePrefix();
-                        await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
+                        await Verifier.Verify(
+                            tests
+                               .OrderBy(s => s.Resource)
+                               .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Name))
+                               .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)),
+                            settings);
 
                         // Check the tests, suites and modules count
                         Assert.Equal(expectedTestCount, tests.Count);
-                        Assert.Single(testSuites);
+                        testSuites.Should().HaveCountLessThanOrEqualTo(2);
                         Assert.Single(testModules);
 
                         var testSuite = testSuites[0];
                         var testModule = testModules[0];
 
                         // Check Suite
-                        Assert.True(tests.All(t => t.TestSuiteId == testSuite.TestSuiteId));
+                        testSuites.Select(ts => ts.TestSuiteId)
+                                  .Intersect(tests.Select(t => t.TestSuiteId))
+                                  .Should()
+                                  .HaveCountLessThanOrEqualTo(2);
                         Assert.True(testSuite.TestModuleId == testModule.TestModuleId);
 
                         // ITR tags inside the test suite
-                        testSuite.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
+                        testSuites.SelectMany(s => s.Metrics)
+                                  .Should()
+                                  .ContainEquivalentOf(new KeyValuePair<string, double>(IntelligentTestRunnerTags.SkippingCount, 1));
 
                         // Check Module
                         Assert.True(tests.All(t => t.TestModuleId == testSuite.TestModuleId));
@@ -164,6 +197,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // Remove decision maker tag (not used by the backend for civisibility)
                             targetTest.Meta.Remove(Tags.Propagated.DecisionMaker);
 
+                            // Remove EFD tags
+                            targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
+                            targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+
                             // check the name
                             Assert.Equal("mstestv2.test", targetTest.Name);
 
@@ -181,7 +218,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetTest, TestTags.Module, TestBundleName);
 
                             // check the suite name
-                            AssertTargetSpanEqual(targetTest, TestTags.Suite, TestSuiteName);
+                            AssertTargetSpanAnyOf(targetTest, TestTags.Suite, TestSuiteName, ClassInitializationExceptionTestSuiteName);
 
                             // check the test type
                             AssertTargetSpanEqual(targetTest, TestTags.Type, TestTags.TypeTest);
@@ -296,6 +333,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                     AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
                                     CheckSimpleTestSpan(targetTest);
                                     break;
+
+                                case "ClassInitializeExceptionTestMethod":
+                                    AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusFail);
+                                    targetTest.Error.Should().Be(1);
+                                    AssertTargetSpanEqual(targetTest, Tags.ErrorType, "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestFailedException");
+                                    AssertTargetSpanContains(targetTest, Tags.ErrorStack, "System.Exception: Class initialize exception");
+                                    AssertTargetSpanContains(targetTest, Tags.ErrorMsg, "Class initialize exception.");
+                                    break;
+
+                                case "My Custom: CustomTestMethodAttributeTest":
+                                case "My Custom 2: CustomRenameTestMethodAttributeTest":
+                                case "My Custom 3|1: CustomMultipleResultsTestMethodAttributeTest":
+                                case "My Custom 3|2: CustomMultipleResultsTestMethodAttributeTest":
+                                    AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusPass);
+                                    break;
                             }
 
                             // check remaining tag (only the name)
@@ -303,6 +355,117 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                     }
                 }
+            }
+            catch
+            {
+                WriteSpans(tests);
+                throw;
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetDataForEarlyFlakeDetection))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "TestIntegrations")]
+        [Trait("Category", "EarlyFlakeDetection")]
+        public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpansForPre224, int expectedSpansForPost224)
+        {
+            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
+            var tests = new List<MockCIVisibilityTest>();
+            var testSuites = new List<MockCIVisibilityTestSuite>();
+            var testModules = new List<MockCIVisibilityTestModule>();
+            var expectedTestCount = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
+
+            var sessionId = RandomIdGenerator.Shared.NextSpanId();
+            var sessionCommand = "test command";
+            var sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
+            SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+            SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+            SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
+            SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
+
+            const string gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
+            const string gitBranch = "main";
+            const string gitCommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
+
+            try
+            {
+                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
+
+                using var agent = EnvironmentHelper.GetMockAgent();
+                agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
+
+                const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
+                agent.EventPlatformProxyPayloadReceived += (sender, e) =>
+                {
+                    if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
+                    {
+                        e.Value.Response = new MockTracerResponse(settingsJson, 200);
+                        return;
+                    }
+
+                    if (e.Value.PathAndQuery.EndsWith("api/v2/ci/libraries/tests"))
+                    {
+                        e.Value.Response = new MockTracerResponse(testsJson, 200);
+                        return;
+                    }
+
+                    if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
+                    {
+                        e.Value.Response = new MockTracerResponse($"{{\"data\":[],\"meta\":{{\"correlation_id\":\"{correlationId}\"}}}}", 200);
+                        return;
+                    }
+
+                    if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
+                    {
+                        e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
+
+                        var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                        if (payload.Events?.Length > 0)
+                        {
+                            foreach (var @event in payload.Events)
+                            {
+                                if (@event.Content.ToString() is { } eventContent)
+                                {
+                                    if (@event.Type == SpanTypes.Test)
+                                    {
+                                        tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
+                                    }
+                                    else if (@event.Type == SpanTypes.TestSuite)
+                                    {
+                                        testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(eventContent));
+                                    }
+                                    else if (@event.Type == SpanTypes.TestModule)
+                                    {
+                                        testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(eventContent));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+
+                using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
+
+                var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings(expectedTestCount == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4", null, null, null, null, expectedSpansForPre224, expectedSpansForPost224);
+                settings.DisableRequireUniquePrefix();
+                await Verifier.Verify(
+                    tests
+                       .OrderBy(s => s.Resource)
+                       .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Name))
+                       .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters))
+                       .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsNew))
+                       .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsRetry))
+                       .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.AbortReason)),
+                    settings);
+
+                // Check the tests, suites and modules count
+                Assert.Equal(expectedTestCount, tests.Count);
+                testSuites.Should().HaveCountLessThanOrEqualTo(2);
+                Assert.Single(testModules);
             }
             catch
             {

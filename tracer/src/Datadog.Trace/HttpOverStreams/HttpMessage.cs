@@ -6,13 +6,13 @@
 using System;
 using System.Text;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.HttpOverStreams
 {
     internal abstract class HttpMessage
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpMessage>();
-        private static readonly UTF8Encoding Utf8Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
         public HttpMessage(HttpHeaders headers, IHttpContent content)
         {
@@ -41,30 +41,40 @@ namespace Datadog.Trace.HttpOverStreams
             if (string.Equals("application/json", contentType, StringComparison.OrdinalIgnoreCase))
             {
                 // Default
-                return Utf8Encoding;
+                return EncodingHelpers.Utf8NoBom;
             }
 
             // text/plain; charset=utf-8
-            string[] pairs = contentType.Split(';');
-
-            foreach (string pair in pairs)
+            foreach (var pair in contentType.SplitIntoSpans(';'))
             {
-                string[] parts = pair.Split('=');
+                var parts = pair.AsSpan();
+                var index = parts.IndexOf('=');
 
-                if (parts.Length == 2 && string.Equals(parts[0].Trim(), "charset", System.StringComparison.OrdinalIgnoreCase))
+                if (index != -1)
                 {
-                    switch (parts[1].Trim())
+                    var firstPart = parts.Slice(0, index).Trim();
+
+                    if (!firstPart.Equals("charset".AsSpan(), StringComparison.OrdinalIgnoreCase))
                     {
-                        case "utf-8":
-                            return Utf8Encoding;
-                        case "us-ascii":
-                            return Encoding.ASCII;
+                        continue;
+                    }
+
+                    var secondPart = parts.Slice(index + 1).Trim();
+
+                    if (secondPart.Equals("utf-8".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        return EncodingHelpers.Utf8NoBom;
+                    }
+
+                    if (secondPart.Equals("us-ascii".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Encoding.ASCII;
                     }
                 }
             }
 
             Log.Warning("Assuming default UTF-8, Could not find an encoding for: {ContentType}", contentType);
-            return Utf8Encoding;
+            return EncodingHelpers.Utf8NoBom;
         }
     }
 }

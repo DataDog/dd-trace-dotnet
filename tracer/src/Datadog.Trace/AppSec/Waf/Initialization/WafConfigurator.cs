@@ -44,11 +44,10 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                         var nameProp = ev.Value<JValue>("name") ?? emptyJValue;
                         var conditionsArray = ev.Value<JArray>("conditions");
                         var addresses = conditionsArray?
-                            .SelectMany(x => x.Value<JObject>("parameters")?.Value<JArray>("inputs") ?? Enumerable.Empty<JToken>())
-                            .ToList() ?? new List<JToken>();
-                        var addressesJoin = addresses.Any() ? addresses : Enumerable.Empty<JToken>();
+                            .SelectMany(x => x.Value<JObject>("parameters")?.Value<JArray>("inputs") ?? [])
+                            .ToList() ?? [];
 
-                        Log.Debug("DDAS-0007-00: Loaded rule: {Id} - {Name} on addresses: {Addresses}", idProp.Value, nameProp.Value, string.Join(", ", addressesJoin));
+                        Log.Debug("DDAS-0007-00: Loaded rule: {Id} - {Name} on addresses: {Addresses}", idProp.Value, nameProp.Value, string.Join(", ", addresses));
                     }
                 }
                 catch (Exception ex)
@@ -117,9 +116,9 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return root;
         }
 
-        internal InitResult Configure(IntPtr rulesObj, IEncoder encoder, DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
+        internal InitResult Configure(ref DdwafObjectStruct rulesObj, IEncoder encoder, DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
         {
-            var wafHandle = _wafLibraryInvoker.Init(rulesObj, ref configStruct, ref diagnostics);
+            var wafHandle = _wafLibraryInvoker.Init(ref rulesObj, ref configStruct, ref diagnostics);
             if (wafHandle == IntPtr.Zero)
             {
                 Log.Warning("DDAS-0005-00: WAF initialization failed.");

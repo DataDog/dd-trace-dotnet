@@ -375,6 +375,10 @@ lib/
 libdatadog-*/
 *-prefix/
 cmake-build-debug/
+.cmake/
 
 #jetbrains cache folder
 .cache/jb
+
+#datadog coverage
+datadog-coverage-*

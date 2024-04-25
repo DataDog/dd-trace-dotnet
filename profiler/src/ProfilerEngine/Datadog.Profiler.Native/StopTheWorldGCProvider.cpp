@@ -26,9 +26,10 @@ StopTheWorldGCProvider::StopTheWorldGCProvider(
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration)
+    IConfiguration* pConfiguration,
+    shared::pmr::memory_resource* memoryResource)
     :
-    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
+    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource)
 {
 }
 
@@ -40,7 +41,6 @@ void StopTheWorldGCProvider::OnSuspension(uint64_t timestamp, int32_t number, ui
     rawSample.SpanId = 0;
     rawSample.AppDomainId = (AppDomainID)nullptr;
     rawSample.ThreadInfo = nullptr;
-    rawSample.Stack.clear();
 
     rawSample.Number = number;
     rawSample.Generation = generation;

@@ -18,7 +18,7 @@
 namespace trace
 {
 
-class ModuleMetadata
+class ModuleMetadata : public ModuleMetadataBase
 {
 private:
     std::mutex wrapper_mutex;
@@ -33,10 +33,6 @@ private:
     mdTypeSpec moduleSpecSanityToken = mdTypeSpecNil;
 
 public:
-    const ComPtr<IMetaDataImport2> metadata_import{};
-    const ComPtr<IMetaDataEmit2> metadata_emit{};
-    const ComPtr<IMetaDataAssemblyImport> assembly_import{};
-    const ComPtr<IMetaDataAssemblyEmit> assembly_emit{};
     const shared::WSTRING assemblyName = shared::EmptyWStr;
     const AppDomainID app_domain_id;
     const GUID module_version_id;
@@ -50,10 +46,7 @@ public:
                    std::unique_ptr<std::vector<IntegrationDefinition>>&& integrations,
                    const AssemblyProperty* corAssemblyProperty, const bool enableByRefInstrumentation,
                    const bool enableCallTargetStateByRef) :
-        metadata_import(metadata_import),
-        metadata_emit(metadata_emit),
-        assembly_import(assembly_import),
-        assembly_emit(assembly_emit),
+        ModuleMetadataBase(metadata_import, metadata_emit, assembly_import, assembly_emit),
         assemblyName(assembly_name),
         app_domain_id(app_domain_id),
         module_version_id(module_version_id),
@@ -69,10 +62,7 @@ public:
                    const shared::WSTRING& assembly_name, const AppDomainID app_domain_id,
                    const AssemblyProperty* corAssemblyProperty, const bool enableByRefInstrumentation,
                    const bool enableCallTargetStateByRef) :
-        metadata_import(metadata_import),
-        metadata_emit(metadata_emit),
-        assembly_import(assembly_import),
-        assembly_emit(assembly_emit),
+        ModuleMetadataBase(metadata_import, metadata_emit, assembly_import, assembly_emit),
         assemblyName(assembly_name),
         app_domain_id(app_domain_id),
         module_version_id(),

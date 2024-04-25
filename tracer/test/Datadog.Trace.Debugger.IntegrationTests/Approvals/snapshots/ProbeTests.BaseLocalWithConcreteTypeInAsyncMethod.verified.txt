@@ -1,0 +1,75 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "arg": {
+                "type": "Int32",
+                "value": "2"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "arg": {
+                "type": "Int32",
+                "value": "2"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "PII PiiBase"
+              },
+              "pii": {
+                "fields": {
+                  "Pii2Value": {
+                    "type": "String",
+                    "value": "Pii2"
+                  },
+                  "TestValue": {
+                    "type": "String",
+                    "value": "PiiBase"
+                  }
+                },
+                "type": "Pii2",
+                "value": "Pii2"
+              },
+              "value": {
+                "type": "String",
+                "value": "PiiBase"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Pii",
+            "type": "Samples.Probes.TestRuns.SmokeTests.BaseLocalWithConcreteTypeInAsyncMethod"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Pii",
+      "name": "Samples.Probes.TestRuns.SmokeTests.BaseLocalWithConcreteTypeInAsyncMethod",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

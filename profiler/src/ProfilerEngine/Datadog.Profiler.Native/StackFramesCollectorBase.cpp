@@ -3,17 +3,20 @@
 
 #include "StackFramesCollectorBase.h"
 
+#include "CallstackProvider.h"
 #include "Configuration.h"
 #include "EnvironmentVariables.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
+
+#include "shared/src/native-src/dd_span.hpp"
 
 #include <assert.h>
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
 
-StackFramesCollectorBase::StackFramesCollectorBase(IConfiguration const* _configuration)
+StackFramesCollectorBase::StackFramesCollectorBase(IConfiguration const* _configuration, CallstackProvider* callstackProvider)
 {
     _isRequestedCollectionAbortSuccessful = false;
     _pStackSnapshotResult = std::make_unique<StackSnapshotResultBuffer>();
@@ -21,6 +24,7 @@ StackFramesCollectorBase::StackFramesCollectorBase(IConfiguration const* _config
     _isCurrentCollectionAbortRequested.store(false);
     _isCIVisibilityEnabled = _configuration->IsCIVisibilityEnabled();
     _ciVisibilitySpanId = _configuration->GetCIVisibilitySpanId();
+    _callstackProvider = callstackProvider;
 }
 
 bool StackFramesCollectorBase::AddFrame(std::uintptr_t ip)
@@ -38,9 +42,9 @@ void StackFramesCollectorBase::SetFrameCount(std::uint16_t count)
     _pStackSnapshotResult->SetFramesCount(count);
 }
 
-std::pair<uintptr_t*, std::uint16_t> StackFramesCollectorBase::Data()
+shared::span<uintptr_t> StackFramesCollectorBase::Data()
 {
-    return {_pStackSnapshotResult->Data(), StackSnapshotResultBuffer::MaxSnapshotStackDepth_Limit};
+    return _pStackSnapshotResult->Data();
 }
 
 void StackFramesCollectorBase::RequestAbortCurrentCollection()
@@ -148,6 +152,8 @@ void StackFramesCollectorBase::PrepareForNextCollection()
     // This is because malloc() uses a lock and so if we suspend a thread that was allocating, we will deadlock.
     // So we pre-allocate the memory buffer and reset it before suspending the target thread.
     _pStackSnapshotResult->Reset();
+    _pStackSnapshotResult->SetCallstack(_callstackProvider->Get());
+
 
     // Clear the current collection thread pointer:
     _pCurrentCollectionThreadInfo = nullptr;

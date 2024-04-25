@@ -2,51 +2,47 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
-using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+
 #pragma warning disable SA1649 // File name must match first type name
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
+namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
+
+internal static class BeginMethodHandler<TIntegration, TTarget>
 {
-    internal static class BeginMethodHandler<TIntegration, TTarget>
+    private static readonly InvokeDelegate _invokeDelegate;
+
+    static BeginMethodHandler()
     {
-        private static readonly InvokeDelegate _invokeDelegate;
-
-        static BeginMethodHandler()
+        try
         {
-            try
+            if (IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), []) is { } dynMethod)
             {
-                DynamicMethod dynMethod = IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), Array.Empty<Type>());
-                if (dynMethod != null)
-                {
-                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new CallTargetInvokerException(ex);
-            }
-            finally
-            {
-                if (_invokeDelegate is null)
-                {
-                    _invokeDelegate = instance => CallTargetState.GetDefault();
-                }
+                _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
             }
         }
-
-        internal delegate CallTargetState InvokeDelegate(TTarget instance);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static CallTargetState Invoke(TTarget instance)
+        catch (Exception ex)
         {
-            var activeScope = Tracer.Instance.InternalActiveScope;
-            // We don't use Tracer.Instance.DistributedSpanContext directly because we already retrieved the
-            // active scope from an AsyncLocal instance, and we want to avoid retrieving twice.
-            var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.Context;
-            return new CallTargetState(activeScope, spanContextRaw, _invokeDelegate(instance));
+            throw new CallTargetInvokerException(ex);
         }
+        finally
+        {
+            _invokeDelegate ??= _ => CallTargetState.GetDefault();
+        }
+    }
+
+    internal delegate CallTargetState InvokeDelegate(TTarget? instance);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static CallTargetState Invoke(TTarget? instance)
+    {
+        var activeScope = Tracer.Instance.InternalActiveScope;
+        // We don't use Tracer.Instance.DistributedSpanContext directly because we already retrieved the
+        // active scope from an AsyncLocal instance, and we want to avoid retrieving twice.
+        var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.Context;
+        return new CallTargetState(activeScope, spanContextRaw, _invokeDelegate(instance));
     }
 }

@@ -14,6 +14,8 @@ namespace Datadog.Trace.Tests.Sampling
     [Collection(nameof(Datadog.Trace.Tests.Sampling))]
     public class CustomSamplingRuleGlobTests
     {
+        private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
+
         [Fact]
         public void Constructs_ZeroRateOnly_From_Config_String()
         {
@@ -54,7 +56,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Constructs_With_ResourceName()
         {
             const string config = """[{ "sample_rate":0.3, resource: "/api/v1/*" }]""";
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).Single();
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob, Timeout).Single();
 
             var matchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v1/user/123" };
             var nonMatchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v2/user/123" };
@@ -68,7 +70,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Constructs_With_Tags()
         {
             const string config = """[{ "sample_rate":0.3, tags: { "http.method": "GE?", "http.status_code": "200", "balance": "*" } }]""";
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).Single();
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob, Timeout).Single();
 
             var matchingSpan1 = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now);
             matchingSpan1.SetTag("http.method", "GET");
@@ -109,7 +111,7 @@ namespace Datadog.Trace.Tests.Sampling
                                   ]
                                   """;
 
-            var rules = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).ToArray();
+            var rules = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob, Timeout).ToArray();
             rules.Should().HaveCount(4);
 
             var cartRule = rules[0];
@@ -153,7 +155,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void RuleShouldBeCaseInsensitive()
         {
             var config = "[{\"sample_rate\":0.5, \"service\":\"SHOPPING-cart-service\", \"name\":\"CHECKOUT\"}]";
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).Single();
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob, Timeout).Single();
             VerifySingleRule(rule, TestSpans.CartCheckoutSpan, true);
         }
 
@@ -164,13 +166,13 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData("""[{"sample_rate":0.3, "name":"["}]""", 1)] // invalid regex, but valid glob
         public void Malformed_Rules_Do_Not_Register_Or_Crash(string ruleConfig, int count)
         {
-            var rules = CustomSamplingRule.BuildFromConfigurationString(ruleConfig, SamplingRulesFormat.Glob).ToArray();
+            var rules = CustomSamplingRule.BuildFromConfigurationString(ruleConfig, SamplingRulesFormat.Glob, Timeout).ToArray();
             rules.Should().HaveCount(count);
         }
 
         private static void VerifyRate(string config, float expectedRate)
         {
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).Single();
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob, Timeout).Single();
             VerifyRate(rule, expectedRate);
         }
 
@@ -181,7 +183,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private static void VerifySingleRule(string config, Span span, bool isMatch)
         {
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob).Single();
+            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Glob, Timeout).Single();
             VerifySingleRule(rule, span, isMatch);
         }
 

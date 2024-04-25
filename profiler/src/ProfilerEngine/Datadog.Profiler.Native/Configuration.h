@@ -69,7 +69,7 @@ public:
     bool IsEtwEnabled() const override;
     bool IsSsiDeployed() const override;
     bool IsSsiActivated() const override;
-
+    bool IsEtwLoggingEnabled() const override;
 
 
 private:
@@ -157,4 +157,5 @@ private:
     bool _isEtwEnabled;
     bool _isSsiDeployed;
     bool _isSsiActivated;
+    bool _isEtwLoggingEnabled;
 };

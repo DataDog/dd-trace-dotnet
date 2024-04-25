@@ -19,7 +19,6 @@ internal class AppSecRequestContext
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
     private List<Dictionary<string, object>>? _raspStackTraces = null;
-    private bool _isApiSecurity;
 
     internal void CloseWebSpan(TraceTagCollection tags, Span span)
     {
@@ -36,16 +35,6 @@ internal class AppSecRequestContext
                 span.SetMetaStruct(_exploitStackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
             }
         }
-
-        if (_isApiSecurity)
-        {
-            Security.Instance.ApiSecurity.ReleaseRequest();
-        }
-    }
-
-    internal void MarkApiSecurity()
-    {
-        _isApiSecurity = true;
     }
 
     internal void AddWafSecurityEvents(IReadOnlyCollection<object> events)

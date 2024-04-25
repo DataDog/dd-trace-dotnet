@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
-    internal static class ErrorHandlingHelper
+    public static class ErrorHandlingHelper
     {
         public const string CustomHandlerPrefix = "/custom";
         public const string ReExecuteHandlerPrefix = "/reexecute";

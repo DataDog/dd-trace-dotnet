@@ -54,32 +54,9 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public SpanTagAssertion<T> IsPresent(string tagName)
-        {
-            bool keyExists = _tags.TryGetValue(tagName, out T value);
-            if (keyExists)
-            {
-                _tags.Remove(tagName);
-            }
+        public SpanTagAssertion<T> IsPresent(string tagName, params string[] fallbackTagNames) => IsOptionalOrPresent(isRequired: true, new string[] { tagName }.Concat(fallbackTagNames).ToArray());
 
-            if (!keyExists || value is null)
-            {
-                _result.WithFailure(GeneratePresentFailureString("tag", tagName));
-            }
-
-            return this;
-        }
-
-        public SpanTagAssertion<T> IsOptional(string tagName)
-        {
-            bool keyExists = _tags.TryGetValue(tagName, out T value);
-            if (keyExists)
-            {
-                _tags.Remove(tagName);
-            }
-
-            return this;
-        }
+        public SpanTagAssertion<T> IsOptional(string tagName, params string[] fallbackTagNames) => IsOptionalOrPresent(isRequired: false, new string[] { tagName }.Concat(fallbackTagNames).ToArray());
 
         public SpanTagAssertion<T> Matches(string tagName, T expectedValue)
         {
@@ -154,6 +131,35 @@ namespace Datadog.Trace.TestHelpers
                                 + "]";
 
                 _result.WithFailure(GenerateMatchesOneOfFailureString("tag", tagName, expectedValueString, value?.ToString()));
+            }
+
+            return this;
+        }
+
+        private SpanTagAssertion<T> IsOptionalOrPresent(bool isRequired, params string[] tagNames)
+        {
+            // Instead of passing all arguments using params, require one string argument at compile-time
+            List<string> foundTags = new();
+
+            foreach (var tagName in tagNames)
+            {
+                if (_tags.TryGetValue(tagName, out T value) && value is not null)
+                {
+                    _tags.Remove(tagName);
+                    foundTags.Add(tagName);
+                }
+            }
+
+            if (isRequired && foundTags.Count == 0)
+            {
+                var propertyName = string.Join(" or ", tagNames.Select(s => '"' + s + '"'));
+                _result.WithFailure(GeneratePresentFailureString("tag", propertyName));
+            }
+            else if (foundTags.Count > 1)
+            {
+                var propertyName = string.Join(" and ", tagNames.Select(s => '"' + s + '"'));
+                var found = string.Join(" and ", foundTags.Select(s => '"' + s + '"'));
+                _result.WithFailure(GeneratePresentFoundMultipleFailureString("tag", propertyName, found));
             }
 
             return this;

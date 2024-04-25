@@ -18,7 +18,7 @@ namespace Datadog.Trace.Ci.Coverage;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class CoverageReporter
 {
-    private static CoverageEventHandler _handler = new DefaultWithGlobalCoverageEventHandler();
+    private static CoverageEventHandler _handler = CIVisibility.Settings.TestsSkippingEnabled == true ? new DefaultCoverageEventHandler() : new DefaultWithGlobalCoverageEventHandler();
 
     /// <summary>
     /// Gets or sets coverage handler

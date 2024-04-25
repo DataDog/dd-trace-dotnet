@@ -135,15 +135,23 @@ private:
 
         ddog_CharSlice* pMetadata = nullptr;
         ddog_CharSlice ffi_metadata{};
-
         if (!metadata.empty())
         {
             ffi_metadata = FfiHelper::StringToCharSlice(metadata);
             pMetadata = &ffi_metadata;
         }
 
+        // json defined in internal RFC - Pprof System Info Support
+        // Mostly already passed through tags today
+        ddog_CharSlice* pOptions = nullptr;
         auto* endpoints_stats = encodedProfile->endpoints_stats;
-        auto requestResult = ddog_prof_Exporter_Request_build(_exporter.get(), start, end, to_compress_files_view, uncompressed_files_view, static_cast<ddog_Vec_Tag const*>(*tags._impl), endpoints_stats, pMetadata, 10000);
+        auto requestResult =
+            ddog_prof_Exporter_Request_build(
+                _exporter.get(), start, end,
+                to_compress_files_view, uncompressed_files_view,
+                static_cast<ddog_Vec_Tag const*>(*tags._impl),
+                endpoints_stats, pMetadata, pOptions,
+                10000);
 
         if (requestResult.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
         {

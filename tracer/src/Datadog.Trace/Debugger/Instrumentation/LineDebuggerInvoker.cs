@@ -46,17 +46,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                state.SnapshotCreator.StopSampling();
                 var paramName = state.MethodMetadataInfo.ParameterNames[index];
-                var captureInfo = new CaptureInfo<TArg>(value: arg, methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
+                var captureInfo = new CaptureInfo<TArg>(state.MethodMetadataIndex, value: arg, methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
+                var probeData = state.ProbeData;
 
-                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData))
                 {
                     state.IsActive = false;
                 }
 
                 state.HasLocalsOrReturnValue = false;
-                state.SnapshotCreator.StartSampling();
             }
             catch (Exception e)
             {
@@ -81,23 +80,21 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                state.SnapshotCreator.StopSampling();
                 var localVariableNames = state.MethodMetadataInfo.LocalVariableNames;
                 if (!MethodDebuggerInvoker.TryGetLocalName(index, localVariableNames, out var localName))
                 {
-                    state.SnapshotCreator.StartSampling();
                     return;
                 }
 
-                var captureInfo = new CaptureInfo<TLocal>(value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+                var captureInfo = new CaptureInfo<TLocal>(state.MethodMetadataIndex, value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+                var probeData = state.ProbeData;
 
-                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData))
                 {
                     state.IsActive = false;
                 }
 
                 state.HasLocalsOrReturnValue = true;
-                state.SnapshotCreator.StartSampling();
             }
             catch (Exception e)
             {
@@ -169,22 +166,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return CreateInvalidatedLineDebuggerState();
                 }
 
-                var state = new LineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance);
-
-                if (!state.SnapshotCreator.ProbeHasCondition &&
-                    !state.ProbeData.Sampler.Sample())
+                if (!probeData.Processor.ShouldProcess(in probeData))
                 {
+                    Log.Warning("BeginLine: Skipping the instrumentation. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
                     return CreateInvalidatedLineDebuggerState();
                 }
 
-                var captureInfo = new CaptureInfo<Type>(invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLine, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath));
+                var state = new LineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance);
+                var captureInfo = new CaptureInfo<Type>(state.MethodMetadataIndex, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLine, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath));
 
-                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData))
                 {
                     state.IsActive = false;
                 }
 
-                state.SnapshotCreator.StartSampling();
                 return state;
             }
             catch (Exception e)
@@ -209,13 +204,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                state.SnapshotCreator.StopSampling();
                 var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
                                            state.MethodMetadataInfo.ParameterNames.Length > 0 ||
                                            !state.MethodMetadataInfo.Method.IsStatic;
 
-                var captureInfo = new CaptureInfo<object>(value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.EndLine, hasLocalOrArgument: hasArgumentsOrLocals, method: state.MethodMetadataInfo.Method, lineCaptureInfo: new LineCaptureInfo(state.LineNumber, state.ProbeFilePath));
-                state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator);
+                var captureInfo = new CaptureInfo<object>(state.MethodMetadataIndex, value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.EndLine, hasLocalOrArgument: hasArgumentsOrLocals, method: state.MethodMetadataInfo.Method, lineCaptureInfo: new LineCaptureInfo(state.LineNumber, state.ProbeFilePath));
+                var probeData = state.ProbeData;
+                state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData);
 
                 state.HasLocalsOrReturnValue = false;
             }

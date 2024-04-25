@@ -36,16 +36,9 @@ internal abstract class CoverageInfo
         double total = 0L;
         double executed = 0L;
 
-        if (this is FileCoverageInfo { Segments.Count: > 0 } fCovInfo)
+        if (this is FileCoverageInfo fCovInfo)
         {
-            total = fCovInfo.Segments.Count;
-            foreach (var segment in fCovInfo.Segments)
-            {
-                if (segment[4] != 0)
-                {
-                    executed++;
-                }
-            }
+            fCovInfo.IncrementCounts(ref total, ref executed);
         }
         else if (this is ComponentCoverageInfo { Files.Count: > 0 } cCovInfo)
         {
@@ -66,7 +59,7 @@ internal abstract class CoverageInfo
             }
         }
 
-        _data = new[] { Math.Round((executed / total) * 100, 2).ToValidPercentage(), total, executed };
+        _data = [Math.Round((executed / total) * 100, 2).ToValidPercentage(), total, executed];
     }
 
     protected void ClearData()

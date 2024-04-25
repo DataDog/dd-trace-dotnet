@@ -7,11 +7,13 @@ on:
 jobs:
   bump_version:
     # If this is a 1.x release, do the version bump in the release/1.x branch
-    # If this is a 2.x.0 release, do the version bump on master
-    # If this is a 2.x.x hotfix release, _don't_ do a version bump
+    # If this is a 2.x release, do the version bump in the release/2.x branch
+    # If this is a 3.x.0 release, do the version bump on master
+    # If this is a 3.x.x hotfix release, _don't_ do a version bump
     if: |
       startsWith(github.event.release.tag_name, 'v1.')
-      || (startsWith(github.event.release.tag_name, 'v2.')
+      || startsWith(github.event.release.tag_name, 'v2.')
+      || (startsWith(github.event.release.tag_name, 'v3.')
         && endsWith(github.event.release.tag_name, '.0'))
 
     runs-on: windows-latest
@@ -27,6 +29,9 @@ jobs:
         run: |
           if( "${{ github.event.release.tag_name}}".StartsWith("v1.")) {
             echo "::set-output name=ref::release/1.x"
+          # TODO: Uncomment the following once we cut the release/2.x branch and merge v3
+          # } elseif("${{ github.event.release.tag_name}}".StartsWith("v2.")) {
+            # echo "::set-output name=ref::release/2.x"
           } else {
             echo "::set-output name=ref::master"
           }

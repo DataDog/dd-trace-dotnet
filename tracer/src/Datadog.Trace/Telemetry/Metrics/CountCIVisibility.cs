@@ -29,7 +29,7 @@ internal enum CountCIVisibility
     /// </summary>
     [TelemetryMetric<
         MetricTags.CIVisibilityTestFramework,
-        MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark>
+        MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection>
         ("event_finished", isCommon: true, NS.CIVisibility)] EventFinished,
 
     /// <summary>
@@ -180,4 +180,15 @@ internal enum CountCIVisibility
     /// The number of errors while processing code coverage by CI Visibility
     /// </summary>
     [TelemetryMetric("code_coverage.errors", isCommon: true, NS.CIVisibility)] CodeCoverageErrors,
+
+    /// <summary>
+    /// The number of requests sent to the early flake detection endpoint by CI Visibility
+    /// </summary>
+    [TelemetryMetric("early_flake_detection.request", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionRequest,
+
+    /// <summary>
+    /// The number of early flake detection requests sent to the endpoint that errored by CI Visibility
+    /// </summary>
+    [TelemetryMetric<MetricTags.CIVisibilityErrorType>
+        ("early_flake_detection.request_errors", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionRequestErrors,
 }

@@ -80,6 +80,10 @@ namespace Datadog.Trace.Sampling
 
         public abstract void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval);
 
+        public virtual void OnRefresh(int intervalMs, int checksInLastInterval, int allowedInLastInterval)
+        {
+        }
+
         public abstract void OnFinally(Span span);
 
         public float GetEffectiveRate()
@@ -134,6 +138,7 @@ namespace Datadog.Trace.Sampling
                     _windowAllowed = 0;
                     _windowChecks = 0;
                     _windowBegin = now;
+                    OnRefresh(_intervalMilliseconds, _previousWindowChecks, _previousWindowAllowed);
                 }
 
                 while (_intervalQueue.TryPeek(out var time) && now.Subtract(time) > _interval)

@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
@@ -17,9 +18,12 @@ internal static class XUnitIntegration
     internal const string IntegrationName = nameof(IntegrationId.XUnit);
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.XUnit;
 
+    private static long _totalTestCases;
+    private static long _newTestCases;
+
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-    internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, Type targetType)
+    internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, Type targetType, RetryMessageBus? retryMessageBus = null)
     {
         // Get the test suite instance
         var testSuite = TestSuite.Current;
@@ -79,6 +83,39 @@ internal static class XUnitIntegration
             test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
         }
 
+        // Early flake detection flags
+        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true)
+        {
+            var testIsNew = !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
+            if (testIsNew)
+            {
+                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
+
+                if (retryMessageBus is null)
+                {
+                    Interlocked.Increment(ref _newTestCases);
+                }
+            }
+
+            if (retryMessageBus is not null)
+            {
+                retryMessageBus.TestIsNew = testIsNew;
+                if (testIsNew)
+                {
+                    if (retryMessageBus.ExecutionIndex > 0)
+                    {
+                        test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                    }
+                    else
+                    {
+                        Interlocked.Increment(ref _newTestCases);
+                    }
+                }
+
+                Common.CheckFaultyThreshold(test, Interlocked.Read(ref _newTestCases), Interlocked.Read(ref _totalTestCases));
+            }
+        }
+
         // Test code and code owners
         if (testMethod is not null)
         {
@@ -103,6 +140,17 @@ internal static class XUnitIntegration
     {
         try
         {
+            TimeSpan? duration = null;
+            var testTags = test.GetTags();
+            if (testTags.EarlyFlakeDetectionTestIsNew == "true" && test.GetInternalSpan() is Span internalSpan)
+            {
+                duration = internalSpan.Context.TraceContext.Clock.ElapsedSince(internalSpan.StartTime);
+                if (duration.Value.TotalMinutes >= 5)
+                {
+                    testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+                }
+            }
+
             if (exceptionAggregator?.ToException() is { } exception)
             {
                 if (exception.GetType().Name == "SkipException")
@@ -112,12 +160,12 @@ internal static class XUnitIntegration
                 else
                 {
                     test.SetErrorInfo(exception);
-                    test.Close(TestStatus.Fail);
+                    test.Close(TestStatus.Fail, duration);
                 }
             }
             else
             {
-                test.Close(TestStatus.Pass);
+                test.Close(TestStatus.Pass, duration);
             }
         }
         catch (Exception ex)
@@ -144,5 +192,10 @@ internal static class XUnitIntegration
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
         isForcedRun = itrShouldSkip && isUnskippable;
         return itrShouldSkip && !isUnskippable;
+    }
+
+    internal static void IncrementTotalTestCases()
+    {
+        Interlocked.Increment(ref _totalTestCases);
     }
 }

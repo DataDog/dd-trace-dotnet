@@ -4,6 +4,9 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
@@ -102,6 +105,22 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
+        }
+
+        [SkippableFact]
+        public async Task TestNullAction()
+        {
+            // test integrations like ReflectedHttpActionDescriptor_ExecuteAsync_Integration and ControllerActionInvoker_InvokeAction_Integration dont crash
+            var url = "/api/home/null-action/pathparam/appscan_fingerprint";
+            var url2 = "/api/home/null-action-async/pathparam/appscan_fingerprint";
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.UseTextForParameters($"scenario=null-action");
+            var dateTime = DateTime.UtcNow;
+            var res = await SubmitRequest(url, null, null);
+            var res2 = await SubmitRequest(url2, null, null);
+            var spans = WaitForSpans(_iisFixture.Agent, 2, null, minDateTime: dateTime, url: url);
+            var spans2 = WaitForSpans(_iisFixture.Agent, 2, null, minDateTime: dateTime, url: url2);
+            await VerifySpans(spans.Concat(spans2).ToImmutableList(), settings);
         }
 
         public async Task InitializeAsync()

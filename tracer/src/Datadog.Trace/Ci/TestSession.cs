@@ -28,7 +28,7 @@ public sealed class TestSession
 {
     private static readonly AsyncLocal<TestSession?> CurrentSession = new();
     private readonly Span _span;
-    private readonly Dictionary<string, string>? _environmentVariablesToRestore = null;
+    private readonly Dictionary<string, string?>? _environmentVariablesToRestore = null;
     private int _finished;
 
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
@@ -415,7 +415,7 @@ public sealed class TestSession
         span.Finish(duration.Value);
 
         // Record EventFinished telemetry metric
-        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
+        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
                 MetricTags.CIVisibilityTestingEventType.Session,
                 Framework == CommonTags.TestingFrameworkNameBenchmarkDotNet) is { } eventTypeWithMetadata)
         {

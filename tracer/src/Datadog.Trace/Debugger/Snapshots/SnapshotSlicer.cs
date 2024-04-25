@@ -23,7 +23,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly int _maxDepth;
         private readonly int _maxSnapshotSize;
 
-        private SnapshotSlicer(int maxDepth, int maxSnapshotSize)
+        internal SnapshotSlicer(int maxDepth, int maxSnapshotSize)
         {
             _maxSnapshotSize = maxSnapshotSize;
             _maxDepth = maxDepth;

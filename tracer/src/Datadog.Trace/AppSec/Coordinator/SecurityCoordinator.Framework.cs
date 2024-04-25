@@ -256,19 +256,21 @@ internal readonly partial struct SecurityCoordinator
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
-    internal void CheckAndBlock(Dictionary<string, object> args, bool tryToReportSchema = false)
+    internal void CheckAndBlock(Dictionary<string, object> args, bool lastWafCall = false)
     {
-        if (tryToReportSchema)
+        var result = RunWaf(args, lastWafCall);
+        if (result is not null)
         {
-            var isApiSecurityProcessed = _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
-            if (isApiSecurityProcessed)
-            {
-                _localRootSpan.Context.TraceContext.MarkApiSecurity();
-            }
-        }
+            var reporting = MakeReportingFunction(result);
 
-        var result = RunWaf(args);
-        CheckAndBlock(result);
+            if (result.ShouldBlock)
+            {
+                ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
+            }
+
+            // here we assume if we haven't blocked we'll have collected the correct status elsewhere
+            reporting(null, result.BlockInfo is not null || result.RedirectInfo is not null);
+        }
     }
 
     internal void CheckAndBlockRasp(IResult? result)
@@ -286,28 +288,12 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal void CheckAndBlock(IResult? result)
-    {
-        if (result is not null)
-        {
-            var reporting = MakeReportingFunction(result);
-
-            if (result.BlockInfo is not null || result.RedirectInfo is not null)
-            {
-                ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
-            }
-
-            // here we assume if we haven't blocked we'll have collected the correct status elsewhere
-            reporting(null, result.BlockInfo is not null || result.RedirectInfo is not null);
-        }
-    }
-
     private Action<int?, bool> MakeReportingFunction(IResult result)
     {
         var securityCoordinator = this;
         return (status, blocked) =>
         {
-            if (result.BlockInfo is not null || result.RedirectInfo is not null)
+            if (result.ShouldBlock)
             {
                 securityCoordinator._httpTransport.MarkBlocked();
             }
@@ -427,7 +413,7 @@ internal readonly partial struct SecurityCoordinator
                     {
                         if (!queryDic.ContainsKey(v))
                         {
-                            queryDic.Add(v, new string[0]);
+                            queryDic.Add(v, Array.Empty<string>());
                         }
                     }
                 }
@@ -503,6 +489,16 @@ internal readonly partial struct SecurityCoordinator
         public HttpTransport(HttpContext context) => _context = context;
 
         internal override bool IsBlocked => _context.Items[BlockingAction.BlockDefaultActionName] is true;
+
+        internal override int StatusCode => _context.Response.StatusCode;
+
+        internal override IDictionary<string, object>? RouteData => _context.Request.RequestContext.RouteData?.Values;
+
+        internal override bool ReportedExternalWafsRequestHeaders
+        {
+            get => _context.Items["ReportedExternalWafsRequestHeaders"] is true;
+            set => _context.Items["ReportedExternalWafsRequestHeaders"] = value;
+        }
 
         internal override void MarkBlocked() => _context.Items[BlockingAction.BlockDefaultActionName] = true;
 

@@ -161,6 +161,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             if (expectedActionType != null)
             {
+                result.ShouldBlock.Should().BeTrue();
                 result.BlockInfo.Should().NotBeNull();
                 result.Actions.Keys.Should().OnlyContain(s => s == expectedActionType);
             }

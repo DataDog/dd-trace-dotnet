@@ -652,9 +652,9 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [build]
+      jobs: [native_tracer, native_loader_and_managed, upload_artifacts]
 
-  - job: build
+  - job: native_tracer
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
@@ -666,17 +666,62 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
-      displayName: Build tracer home
+    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader CompileNativeSrc PublishNativeTracer
+      displayName: Build native-tracer
       retryCountOnTaskFailure: 1
 
     - publish: $(monitoringHome)
-      displayName: Uploading macos profiler artifact
-      artifact: macos-tracer-home
+      displayName: Uploading macos native tracer artifact
+      artifact: build-macos-native_tracer
+
+  - job: native_loader_and_managed
+    timeoutInMinutes: 60 #default value
+    dependsOn: [ ]
+    pool:
+      vmImage: macos-11
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    # The CreateRootDescriptorsFile tasks expects the native loader but we build that in the other stage
+    - script: ./tracer/build.sh BuildManagedTracerHome BuildNativeLoader --skip CreateRootDescriptorsFile
+      displayName: Build managed tracer + native loader
+      retryCountOnTaskFailure: 1
+
+    - publish: $(monitoringHome)
+      displayName: Uploading macos native tracer artifact
+      artifact: build-macos-native_loader
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
       artifact: build-macos-working-directory
+
+  - job: upload_artifacts
+    timeoutInMinutes: 60 #default value
+    dependsOn: [native_tracer, native_loader_and_managed ]
+    pool:
+      vmImage: macos-11
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download native tracer
+      inputs:
+        artifact: build-macos-native_tracer
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download native loader and managed
+      inputs:
+        artifact: build-macos-native_loader
+        path: $(monitoringHome)
+
+    - publish: $(monitoringHome)
+      displayName: Uploading combined macos profiler artifact
+      artifact: macos-tracer-home
 
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -1046,7 +1091,7 @@ stages:
       jobs: [managed]
 
   - job: managed
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 90
     pool:
       vmImage: macos-11
     steps:
@@ -1058,6 +1103,13 @@ stages:
       - template: steps/restore-working-directory.yml
         parameters:
           artifact: build-macos-working-directory
+
+      # The native tracer is built and uploaded separately for perf reasons, so needs to be explicitly downloaded here
+      - task: DownloadPipelineArtifact@2
+        displayName: Download native tracer
+        inputs:
+          artifact: build-macos-native_tracer
+          path: $(monitoringHome)
 
       - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
         displayName: Build and Test
@@ -1234,7 +1286,7 @@ stages:
   - job: Win
     pool:
       name: azure-windows-scale-set
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
 
@@ -1626,7 +1678,7 @@ stages:
     - powershell: |
         # Required to reload environment apparently
         Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
-        choco install cppcheck -y --version 2.9
+        choco install cppcheck -y --version 2.12
         $errorCode = $LASTEXITCODE
         if ($errorCode -ne 0)
         {
@@ -2260,7 +2312,7 @@ stages:
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
-        eq(variables.isMainBranch, true),
+        eq(variables.isMainOrReleaseBranch, true),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
       )
     )
@@ -2334,7 +2386,7 @@ stages:
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
-        eq(variables.isMainBranch, true),
+        eq(variables.isMainOrReleaseBranch, true),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
       )
     )
@@ -3259,7 +3311,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
-    - template: steps/restore-working-directory.yml
+    # download _everything_ not just the bin/obj/package files
+    - task: DownloadPipelineArtifact@2
+      displayName: Download working dir
+      inputs:
+        artifact: build-windows-working-directory
+        path: $(System.DefaultWorkingDirectory)
+      retryCountOnTaskFailure: 5
 
     # Download everything to monitoring home
     # BuildBundleNuget moves everything to the required folders
@@ -3359,6 +3417,8 @@ stages:
 
     - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
       displayName: Build Bundle, Benchmark NuGet and tools
+      env:
+        MSBUILDDISABLENODEREUSE: "1"
 
     - publish: $(artifacts)/nuget/bundle
       displayName: Uploading Bundle package
@@ -3853,7 +3913,7 @@ stages:
             -H "Authorization: token $GITHUB_TOKEN"\
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/lib-injection.yml/dispatches \
-            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)"}}'
+            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)","is_latest":"$(isMainBranch)"}}'
         displayName: Start lib-injection GitHub Actions worfklow
         env:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
@@ -3885,9 +3945,9 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Linux64, Windows64, LinuxArm64, AsmLinux64]
+      jobs: [Linux64, Windows64, LinuxArm64]
       allowSkipped: true
-  #### Throughput Linux 64, windows 64, linux arm 64
+  #### Throughput Linux 64, Windows 64, Linux arm 64
 
   - job: Linux64
     timeoutInMinutes: 60
@@ -4022,61 +4082,13 @@ stages:
       # bother trying to upload these in case of failure, which means we can retry the
       # stages without issue
       artifact: crank_linux_arm64_1
-    
-    #### Throughput-AppSec Linux 64
-
-  - job: AsmLinux64
-    timeoutInMinutes: 60
-    pool: Throughput-AppSec
-    condition: >
-      or(
-        eq(variables.isMainBranch, true),
-        eq(variables.force_appsec_throughput_run, 'true'),
-        eq(variables.isAppSecChanged, 'True')
-      )
-
-    steps:
-      - template: steps/clone-repo.yml
-        parameters:
-          targetShaId: $(targetShaId)
-          targetBranch: $(targetBranch)
-      - task: DownloadPipelineArtifact@2
-        displayName: Download linux native binary
-        inputs:
-          artifact: linux-monitoring-home-linux-x64
-          path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
-
-      - script: |
-          test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
-          test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
-          test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
-          mkdir -p $(CrankDir)/results/logs
-          cd $(CrankDir)
-          chmod +x ./run-appsec.sh
-          ./run-appsec.sh "linux"
-        displayName: Crank
-        env:
-          DD_SERVICE: dd-trace-dotnet
-          DD_ENV: CI
-
-      - script: |
-          cp $(CrankDir)/*.json $(CrankDir)/results
-        displayName: Copy the results to results dir
-
-      - publish: "$(CrankDir)/results"
-        displayName: Publish results
-        # We don't include the JobAttempt in this case, because we rely on a specific name
-        # and an error in the throughput tests probably means no usable data, so dont
-        # bother trying to upload these in case of failure, which means we can retry the
-        # stages without issue
-        artifact: crank_linux_x64_asm_1
 
 - stage: throughput_profiler
   condition: >
     and(succeeded(), 
         eq(variables.isMainRepository, true),
         or(
-          eq(variables.isMainBranch, true),
+          eq(variables.isMainOrReleaseBranch, true),
           eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')))
   dependsOn: [package_linux, generate_variables, build_windows_tracer, merge_commit_id]
   variables:
@@ -4694,7 +4706,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -4778,7 +4790,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        vmImage: ubuntu-latest
+        name: azure-linux-smoke-scale-set
       
       steps:
         - template: steps/clone-repo.yml
@@ -4857,7 +4869,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -4947,7 +4959,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -5011,7 +5023,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -5083,7 +5095,7 @@ stages:
       installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
       linuxArtifacts: "linux-packages-linux-x64"
     pool:
-      vmImage: ubuntu-latest
+      name: azure-linux-smoke-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -5957,13 +5969,6 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_1
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download crank_linux_x64_asm_1
-      continueOnError: true
-      inputs:
-        artifact: crank_linux_x64_asm_1
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_asm_1
-
-    - task: DownloadPipelineArtifact@2
       displayName: Download crank_windows_x64_1
       continueOnError: true
       inputs:
@@ -6057,7 +6062,7 @@ stages:
     and(
       failed(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(variables['isMainBranch'], true)
+      eq(variables['isMainOrReleaseBranch'], true)
     )
   dependsOn: [trace_pipeline] # so it runs last
   jobs:

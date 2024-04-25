@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
@@ -407,7 +408,7 @@ namespace Datadog.Trace
         {
             // null parent means use the currently active span
             parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
-
+            string lastParentId = null;
             TraceContext traceContext;
 
             if (parent is SpanContext parentSpanContext)
@@ -429,6 +430,13 @@ namespace Datadog.Trace
                     traceContext.Origin = parentSpanContext.Origin;
                     traceContext.AdditionalW3CTraceState = parentSpanContext.AdditionalW3CTraceState;
                 }
+
+                // if the parent is a remote context, set the last parent id that came from the distributed header
+                // note that parentSpanContext.LastParent may be null
+                if (parentSpanContext.IsRemote)
+                {
+                    lastParentId = parentSpanContext.LastParentId;
+                }
             }
             else
             {
@@ -443,12 +451,24 @@ namespace Datadog.Trace
                 traceContext.SetSamplingPriority(samplingPriority);
 
                 if (traceId == TraceId.Zero &&
-                    Activity.ActivityListener.GetCurrentActivity() is Activity.DuckTypes.IW3CActivity { TraceId: { } activityTraceId })
+                    Activity.ActivityListener.GetCurrentActivity() is Activity.DuckTypes.IW3CActivity { TraceId: { } activityTraceId } activity)
                 {
-                    // if there's an existing Activity we try to use its TraceId,
-                    // but if Activity.IdFormat is not ActivityIdFormat.W3C, it may be null or unparsable
-                    rawTraceId = activityTraceId;
-                    HexString.TryParseTraceId(activityTraceId, out traceId);
+                    bool useActivityTraceId = true;
+
+                    // if the ignore handler _should_ listen to an activity, that activity _should_ be ignored
+                    if (activity is Activity.DuckTypes.IActivity5 activity5 && ActivityHandlersRegister.IgnoreHandler.ShouldListenTo(activity5.Source.Name, activity5.Source.Version))
+                    {
+                        // if the activity was ignored, we don't want to use its traceID as it'd create orphaned spans in the traces
+                        useActivityTraceId = false;
+                    }
+
+                    if (useActivityTraceId)
+                    {
+                        // if there's an existing Activity we try to use its TraceId,
+                        // but if Activity.IdFormat is not ActivityIdFormat.W3C, it may be null or unparsable
+                        rawTraceId = activityTraceId;
+                        HexString.TryParseTraceId(activityTraceId, out traceId);
+                    }
                 }
             }
 
@@ -462,7 +482,9 @@ namespace Datadog.Trace
                 traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
             }
 
-            return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+            var context = new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+            context.LastParentId = lastParentId; // lastParentId is only non-null when parent is extracted from W3C headers
+            return context;
         }
 
         /// <remarks>

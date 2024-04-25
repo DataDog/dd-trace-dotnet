@@ -14,15 +14,15 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
     /// <summary>
     /// Holds data needed during Debugger instrumentation execution.
     /// </summary>
-    internal readonly record struct ProbeData(string ProbeId, AdaptiveSampler Sampler, ProbeProcessor Processor)
+    internal readonly record struct ProbeData(string ProbeId, IAdaptiveSampler Sampler, IProbeProcessor Processor)
     {
         internal static ProbeData Empty = new(string.Empty, null, null);
 
         public string ProbeId { get; } = ProbeId;
 
-        public AdaptiveSampler Sampler { get; } = Sampler;
+        public IAdaptiveSampler Sampler { get; } = Sampler;
 
-        public ProbeProcessor Processor { get; } = Processor;
+        public IProbeProcessor Processor { get; } = Processor;
 
         public bool IsEmpty() => this == Empty;
     }

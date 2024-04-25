@@ -13,7 +13,9 @@ namespace Datadog.Trace.Debugger.Sink.Models
     {
         RECEIVED,
         INSTALLED,
+        EMITTING,
         BLOCKED,
-        ERROR
+        ERROR,
+        INSTRUMENTED
     }
 }
