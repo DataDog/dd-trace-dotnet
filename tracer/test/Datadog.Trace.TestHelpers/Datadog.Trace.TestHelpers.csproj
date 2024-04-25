@@ -22,5 +22,12 @@
 
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
+
+  <!-- Ensure that the Configuration and Logging namespaces are available for netcoreapp3.1 and net7.0 -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' Or '$(TargetFramework)' == 'net7.0' ">
+    <DefineConstants>$(DefineConstants);DATADOG_CONFIGURATION;DATADOG_LOGGING</DefineConstants>
+  </ItemGroup>
+
 </Project>
