@@ -43,7 +43,7 @@ internal static class RaspModule
         RunWaf(arguments, rootSpan);
     }
 
-    private static IResult? RunWaf(Dictionary<string, object> arguments, Span rootSpan)
+    private static void RunWaf(Dictionary<string, object> arguments, Span rootSpan)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
         var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
@@ -51,7 +51,5 @@ internal static class RaspModule
         // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
         // the blockings, so we report first and then block
         securityCoordinator.ReportAndBlock(result);
-
-        return result;
     }
 }
