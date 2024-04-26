@@ -141,7 +141,8 @@
         }
       ],
       "on_match": [
-        "customblock"
+        "customblock",
+        "generate_stack"
       ]
     }
   ]

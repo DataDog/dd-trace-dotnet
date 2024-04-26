@@ -44,12 +44,7 @@ internal static class RaspModule
         }
 
         var arguments = new Dictionary<string, object> { [address] = valueToCheck };
-        var result = RunWaf(arguments, rootSpan);
-
-        if (result is not null)
-        {
-            RecordTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout);
-        }
+        var result = RunWaf(arguments, rootSpan, address);
     }
 
     private static void RecordTelemetry(string address, bool isMatch, bool timeOut)
@@ -72,7 +67,7 @@ internal static class RaspModule
         }
     }
 
-    private static IResult? RunWaf(Dictionary<string, object> arguments, Span rootSpan)
+    private static IResult? RunWaf(Dictionary<string, object> arguments, Span rootSpan, string address)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, Tracer.Instance.InternalActiveScope.Root.Span);
         var result = securityCoordinator.RunWaf(arguments, logException: (log, ex) => log.Error(ex, "Error in RASP."), runWithEphemeral: true);
@@ -90,6 +85,11 @@ internal static class RaspModule
             {
                 SendStack(rootSpan, stackId);
             }
+        }
+
+        if (result is not null)
+        {
+            RecordTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout);
         }
 
         securityCoordinator.CheckAndBlockRasp(result);
