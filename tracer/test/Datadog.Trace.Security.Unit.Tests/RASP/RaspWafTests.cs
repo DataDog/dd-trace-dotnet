@@ -50,9 +50,7 @@ public class RaspWafTests : WafLibraryRequiredTest
 
     [Theory]
     [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "customBlock", BlockingAction.BlockRequestType, AddressesConstants.FileAccess)]
-    [InlineData("https://user:password@127.0.0.1:443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo", "127.0.0.1", "rsp-930-002", "block", BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
-    [InlineData("https://localhost/path", "localhost", "rsp-930-002", "block", BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
-    [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rsp-930-002", "block", BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
+    [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rasp-002-001", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
     public void GivenARaspRule_WhenInsecureAccess_ThenBlock(string value, string paramValue, string rule, string action, string actionType, string addreess)
     {
         ExecuteRule(

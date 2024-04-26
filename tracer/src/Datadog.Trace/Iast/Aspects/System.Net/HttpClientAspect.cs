@@ -7,9 +7,7 @@
 using System.Net.Http;
 #endif
 using System;
-using System.IO;
 using Datadog.Trace.AppSec.Rasp;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient;
 #if NETFRAMEWORK
 using Datadog.Trace.DuckTyping;
 #endif
