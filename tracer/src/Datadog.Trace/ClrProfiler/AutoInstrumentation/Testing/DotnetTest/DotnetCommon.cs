@@ -196,12 +196,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             {
                 // Modify the collect property
                 var item = msbuildArgsList[isCollectIndex];
+                Log.Debug("InjectCodeCoverageCollector.DotnetTest: Existing raw collect property values: {CollectProperty}", item);
                 var cleanItem = item.Replace(collectProperty, string.Empty)
                                     .Replace("\"", string.Empty);
-                Log.Debug("InjectCodeCoverageCollector.DotnetTest: Existing collect property values: {CollectProperty}", cleanItem);
+                Log.Debug("InjectCodeCoverageCollector.DotnetTest: Existing clean collect property values: {CollectProperty}", cleanItem);
                 var values = cleanItem.Split(new[] { ';' }, StringSplitOptions.None);
 
-                if (!values.Contains(datadogCoverageCollector))
+                if (!values.Contains(datadogCoverageCollector, StringComparer.OrdinalIgnoreCase))
                 {
                     Log.Information("InjectCodeCoverageCollector.DotnetTest: Appending the Datadog data collector.");
                     item = $"{collectProperty}\"{string.Join(";", values.Concat(datadogCoverageCollector))}\"";

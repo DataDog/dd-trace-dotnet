@@ -1029,24 +1029,14 @@ namespace Datadog.Trace.Coverage.Collector
             private string GetMscorlibBasePath(Version version)
             {
                 string? GetSubFolderForVersion()
-                {
-                    switch (version.Major)
+                    => version.Major switch
                     {
-                        case 1:
-                            if (version.MajorRevision == 3300)
-                            {
-                                return "v1.0.3705";
-                            }
-
-                            return "v1.1.4322";
-                        case 2:
-                            return "v2.0.50727";
-                        case 4:
-                            return "v4.0.30319";
-                        default:
-                            throw new NotSupportedException("Version not supported: " + version);
-                    }
-                }
+                        1 when version.MajorRevision == 3300 => "v1.0.3705",
+                        1 => "v1.1.4322",
+                        2 => "v2.0.50727",
+                        4 => "v4.0.30319",
+                        _ => throw new NotSupportedException("Version not supported: " + version),
+                    };
 
                 var rootPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Microsoft.NET");
                 string[] frameworkPaths =

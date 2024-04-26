@@ -21,14 +21,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
     ParameterTypeNames = ["System.String[]", "System.Collections.Generic.List`1[Microsoft.VisualStudio.TestPlatform.CommandLine.Processors.IArgumentProcessor]&"],
     MinimumVersion = "15.0.0",
     MaximumVersion = "15.*.*",
-    IntegrationName = Common.DotnetTestIntegrationName)]
+    IntegrationName = DotnetCommon.DotnetTestIntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ExecutorGetArgumentProcessorsIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TProcessors>(TTarget instance, ref string[]? args, ref TProcessors? processors)
     {
-        if (!Common.DotnetTestIntegrationEnabled || CIVisibility.Settings.CodeCoverageEnabled != true || args is null)
+        if (!DotnetCommon.DotnetTestIntegrationEnabled || CIVisibility.Settings.CodeCoverageEnabled != true || args is null)
         {
             return CallTargetState.GetDefault();
         }

@@ -258,29 +258,26 @@ namespace Datadog.Trace.Tools.Runner
         {
             try
             {
-                using (Process childProcess = new Process())
-                {
-                    childProcess.StartInfo = startInfo;
-                    childProcess.EnableRaisingEvents = true;
-                    childProcess.Start();
+                using var childProcess = new Process();
+                childProcess.StartInfo = startInfo;
+                childProcess.EnableRaisingEvents = true;
+                childProcess.Start();
 
-                    using (cancellationToken.Register(
-                               () =>
-                               {
-                                   try
-                                   {
-                                       childProcess.Kill();
-                                   }
-                                   catch
-                                   {
-                                       // .
-                                   }
-                               }))
+                using var ctr = cancellationToken.Register(
+                    () =>
                     {
-                        childProcess.WaitForExit();
-                        return cancellationToken.IsCancellationRequested ? 1 : childProcess.ExitCode;
-                    }
-                }
+                        try
+                        {
+                            childProcess.Kill();
+                        }
+                        catch
+                        {
+                            // .
+                        }
+                    });
+
+                childProcess.WaitForExit();
+                return cancellationToken.IsCancellationRequested ? 1 : childProcess.ExitCode;
             }
             catch (System.ComponentModel.Win32Exception win32Exception)
             {

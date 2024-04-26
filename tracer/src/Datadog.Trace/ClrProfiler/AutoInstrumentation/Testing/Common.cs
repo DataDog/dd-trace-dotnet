@@ -8,7 +8,6 @@ using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -16,12 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 {
     internal static class Common
     {
-        internal const string DotnetTestIntegrationName = nameof(IntegrationId.DotnetTest);
-        internal const IntegrationId DotnetTestIntegrationId = Configuration.IntegrationId.DotnetTest;
-
         internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
-
-        internal static bool DotnetTestIntegrationEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
 
         internal static string GetParametersValueData(object paramValue)
         {

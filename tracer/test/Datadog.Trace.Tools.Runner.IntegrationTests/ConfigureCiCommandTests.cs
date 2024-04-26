@@ -16,15 +16,8 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
     [Collection(nameof(ConsoleTestsCollection))]
-    public class ConfigureCiCommandTests
+    public class ConfigureCiCommandTests(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper _output;
-
-        public ConfigureCiCommandTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
         [SkippableTheory]
         [Trait("RunOnWindows", "True")]
         [InlineData("azp", @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+);\](?<value>.*)")]
@@ -32,7 +25,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [InlineData("github", @"(?<name>[A-Z1-9_]+)=(?<value>.*)", "GITHUB_ENV")]
         public void ConfigureCi(string ciProviderName, string pattern, string envKeyWithFilePath = null)
         {
-            using var agent = MockTracerAgent.Create(_output, TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
             var agentUrl = $"http://localhost:{agent.Port}";
 
             var commandLine = $"ci configure {ciProviderName} --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
@@ -104,7 +97,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             {
                 Environment.SetEnvironmentVariable(key, value);
 
-                using var agent = MockTracerAgent.Create(_output, TcpPortProvider.GetOpenPort());
+                using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
                 var agentUrl = $"http://localhost:{agent.Port}";
 
                 var commandLine = $"ci configure --tracer-home tracerHome --agent-url {agentUrl}";

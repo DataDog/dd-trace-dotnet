@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tools.Runner
 
             Utils.WriteInfo($"Writing environment variables to {environmentVariableFile}.");
             using var fs = new FileStream(environmentVariableFile, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-            using var sw = new StreamWriter(fs, Encoding.UTF8);
+            using var sw = new StreamWriter(fs, EncodingHelpers.Utf8NoBom);
             foreach (var item in environmentVariables)
             {
                 Utils.WriteInfo($"Writing: {item.Key}");

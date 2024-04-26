@@ -22,14 +22,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
     ParameterTypeNames = ["System.Collections.Generic.IEnumerable`1[System.String]", ClrNames.Bool, ClrNames.String],
     MinimumVersion = "6.0.0",
     MaximumVersion = "9.*.*",
-    IntegrationName = Common.DotnetTestIntegrationName)]
+    IntegrationName = DotnetCommon.DotnetTestIntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class TestCommandctorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref IEnumerable<string>? msbuildArgs, ref bool noRestore, ref string? msbuildPath)
     {
-        if (!Common.DotnetTestIntegrationEnabled || CIVisibility.Settings.CodeCoverageEnabled != true || msbuildArgs is null)
+        if (!DotnetCommon.DotnetTestIntegrationEnabled || CIVisibility.Settings.CodeCoverageEnabled != true || msbuildArgs is null)
         {
             return CallTargetState.GetDefault();
         }

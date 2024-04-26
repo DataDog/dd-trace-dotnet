@@ -22,14 +22,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
     ParameterTypeNames = ["System.String[]"],
     MinimumVersion = "15.0.0",
     MaximumVersion = "15.*.*",
-    IntegrationName = Common.DotnetTestIntegrationName)]
+    IntegrationName = DotnetCommon.DotnetTestIntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ExecutorExecuteIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref string[]? args)
     {
-        if (!Common.DotnetTestIntegrationEnabled)
+        if (!DotnetCommon.DotnetTestIntegrationEnabled)
         {
             return CallTargetState.GetDefault();
         }
