@@ -58,8 +58,7 @@ namespace Datadog.Trace.DatabaseMonitoring
 
                 // For SqlServer & Oracle we don't inject the traceparent to avoid affecting performance, since those DBs generate a new plan for any query changes
                 if (propagationStyle == DbmPropagationLevel.Full
-                 && integrationId is not IntegrationId.SqlClient
-                 && integrationId is not IntegrationId.Oracle)
+                 && integrationId is not (IntegrationId.SqlClient or IntegrationId.Oracle))
                 {
                     traceParentInjected = true;
                     propagatorStringBuilder.Append(',').Append(W3CTraceContextPropagator.TraceParentHeaderName).Append("='").Append(W3CTraceContextPropagator.CreateTraceParentHeader(span.Context)).Append("'*/");
