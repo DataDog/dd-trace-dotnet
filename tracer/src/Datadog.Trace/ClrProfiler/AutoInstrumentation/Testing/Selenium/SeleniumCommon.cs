@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -68,6 +69,7 @@ internal static class SeleniumCommon
         _seleniumCookieType ??= instance.Type.Assembly.GetType("OpenQA.Selenium.Cookie");
         if (_seleniumCookieType is not null)
         {
+            var span = test.GetInternalSpan();
             var traceId = test.GetInternalSpan().Context.TraceId;
 
             // Create a cookie with the traceId to be used by the RUM library
@@ -80,22 +82,32 @@ internal static class SeleniumCommon
                 Interlocked.Increment(ref _openPageCount);
 
                 // Tag the current test with browser information
-                test.GetInternalSpan().Type = SpanTypes.Browser;
-                test.SetTag("test.browser.driver", "selenium");
-                test.SetTag("test.browser.driver_version", instance.Type.Assembly.GetName().Version?.ToString() ?? "unknown");
+                span.Type = SpanTypes.Browser;
+                test.SetTag(BrowserTags.BrowserDriver, "selenium");
+                test.SetTag(BrowserTags.BrowserDriverVersion, instance.Type.Assembly.GetName().Version?.ToString() ?? "unknown");
 
-                var browserName = instance.Instance?.GetType().Name switch
+                var capabilities = instance.Capabilities;
+                var browserName = capabilities.GetCapability("browserName")?.ToString() ?? "unknown";
+                var browserVersion = (capabilities.GetCapability("browserVersion") ?? capabilities.GetCapability("version"))?.ToString() ?? string.Empty;
+                if (span.GetTag(BrowserTags.BrowserName) is { } currentBrowserName && currentBrowserName != browserName)
                 {
-                    "ChromeDriver" => "Chrome",
-                    "ChromiumDriver" => "Chromium",
-                    "EdgeDriver" => "Edge",
-                    "FirefoxDriver" => "Firefox",
-                    "InternetExplorerDriver" => "Internet Explorer",
-                    "SafariDriver" => "Safari",
-                    _ => "Unknown"
-                };
-                test.SetTag("test.browser.name", browserName);
-                test.SetTag("test.browser.version", string.Empty);
+                    // According to the spec: If we have usage of different drivers in the same test, we set the browser name to empty
+                    test.SetTag(BrowserTags.BrowserName, string.Empty);
+                }
+                else
+                {
+                    test.SetTag(BrowserTags.BrowserName, browserName);
+                }
+
+                if (span.GetTag(BrowserTags.BrowserVersion) is { } currentBrowserVersion && currentBrowserVersion != browserVersion)
+                {
+                    // According to the spec: If we have usage of different drivers in the same test, we set the browser version to empty
+                    test.SetTag(BrowserTags.BrowserVersion, string.Empty);
+                }
+                else
+                {
+                    test.SetTag(BrowserTags.BrowserVersion, browserVersion);
+                }
 
                 // Add an action when the test close to flush the RUM data
                 // in case the test never calls to driver.Close() or driver.Quit()
@@ -135,14 +147,11 @@ internal static class SeleniumCommon
         try
         {
             // Execute RUM flush script
-            if (instance.ExecuteScript(RumStopSessionScript, null) is bool isRumFlushed)
+            if (instance.ExecuteScript(RumStopSessionScript, null) is true)
             {
-                test.SetTag("test.is_rum_active", isRumFlushed ? "true" : "false");
-                if (isRumFlushed)
-                {
-                    Log.Information<int>("RUM flush script has been called, waiting for {RumFlushWaitMillis}ms.", CIVisibility.Settings.RumFlushWaitMillis);
-                    Thread.Sleep(CIVisibility.Settings.RumFlushWaitMillis);
-                }
+                test.SetTag(BrowserTags.IsRumActive, "true");
+                Log.Information<int>("RUM flush script has been called, waiting for {RumFlushWaitMillis}ms.", CIVisibility.Settings.RumFlushWaitMillis);
+                Thread.Sleep(CIVisibility.Settings.RumFlushWaitMillis);
             }
 
             // Delete injected RUM session cookie

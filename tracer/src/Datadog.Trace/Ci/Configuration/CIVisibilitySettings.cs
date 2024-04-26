@@ -5,10 +5,12 @@
 #nullable enable
 
 using System;
+using System.Collections.Specialized;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Configuration
 {
@@ -214,7 +216,22 @@ namespace Datadog.Trace.Ci.Configuration
 
         private TracerSettings InitializeTracerSettings()
         {
-            var tracerSettings = new TracerSettings(GlobalConfigurationSource.Instance, new ConfigurationTelemetry());
+            var source = GlobalConfigurationSource.CreateDefaultConfigurationSource();
+            var defaultExcludedUrlSubstrings = string.Empty;
+            if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.HttpClientExcludedUrlSubstrings) is { } substrings &&
+                !string.IsNullOrWhiteSpace(substrings))
+            {
+                defaultExcludedUrlSubstrings = substrings + ", ";
+            }
+
+            source.InsertInternal(0, new NameValueConfigurationSource(
+                                      new NameValueCollection
+                                      {
+                                          [ConfigurationKeys.HttpClientExcludedUrlSubstrings] = defaultExcludedUrlSubstrings + "/session/FakeSessionIdForPollingPurposes",
+                                      },
+                                      ConfigurationOrigins.Calculated));
+
+            var tracerSettings = new TracerSettings(source, new ConfigurationTelemetry());
 
             if (Logs)
             {

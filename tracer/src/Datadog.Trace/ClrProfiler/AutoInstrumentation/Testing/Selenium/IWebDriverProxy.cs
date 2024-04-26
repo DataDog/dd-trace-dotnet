@@ -19,6 +19,11 @@ internal interface IWebDriverProxy : IDuckType
     object? SessionId { get; }
 
     /// <summary>
+    /// Gets the capabilities of the current driver.
+    /// </summary>
+    ICapabilities Capabilities { get; }
+
+    /// <summary>
     /// Calls method: System.Object OpenQA.Selenium.WebDriver::ExecuteScript(System.String,System.Object[])
     /// </summary>
     [Duck(ParameterTypeNames = new string[] { "System.String", "System.Object[]" })]
