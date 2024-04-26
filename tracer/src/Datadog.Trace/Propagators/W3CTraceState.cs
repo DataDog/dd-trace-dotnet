@@ -13,16 +13,19 @@ internal readonly struct W3CTraceState
 
     public readonly string? Origin;
 
+    public readonly string? LastParent;
+
     // format is "_dd.p.key1:value1;_dd.p.key2:value2"
     public readonly string? PropagatedTags;
 
     // the string left in "tracestate" after removing "dd=*"
     public readonly string? AdditionalValues;
 
-    public W3CTraceState(int? samplingPriority, string? origin, string? propagatedTags, string? additionalValues)
+    public W3CTraceState(int? samplingPriority, string? origin, string? lastParent, string? propagatedTags, string? additionalValues)
     {
         SamplingPriority = samplingPriority;
         Origin = origin;
+        LastParent = lastParent;
         PropagatedTags = propagatedTags;
         AdditionalValues = additionalValues;
     }

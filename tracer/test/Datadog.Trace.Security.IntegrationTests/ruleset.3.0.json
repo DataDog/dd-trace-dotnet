@@ -3,6 +3,17 @@
   "metadata": {
     "rules_version": "1.3.0"
   },
+  "actions": [
+    {
+      "id": "customblock",
+      "type": "block_request",
+      "parameters": {
+        "status_code": 403,
+        "grpc_status_code": "10",
+        "type": "auto"
+      }
+    }
+  ],
   "rules": [
     {
       "id": "ublock",
@@ -151,6 +162,42 @@
       ],
       "on_match": [
         "block"
+      ]
+    },
+    {
+      "id": "test-dummy-rule-custom-block",
+      "name": "Dummy rule to test blocking with a custom action",
+      "tags": {
+        "type": "security_scanner",
+        "crs_id": "913121",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              }
+            ],
+            "list": [
+              "dummy_custom_action"
+            ]
+          },
+          "operator": "phrase_match"
+        }
+      ],
+      "transformers": [
+        "lowercase"
+      ],
+      "on_match": [
+        "customblock"
       ]
     },
     {

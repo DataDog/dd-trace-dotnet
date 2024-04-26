@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "FunctionWithLogging": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7260",
+      "launchBrowser": false
+    }
+  }
+}

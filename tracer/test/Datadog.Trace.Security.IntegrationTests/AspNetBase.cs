@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -66,9 +67,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             _httpClient.DefaultRequestHeaders.ConnectionClose = true;
 #endif
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
-            EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
-            EnvironmentHelper.CustomEnvironmentVariables.Add("DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT", 10_000_000.ToString());
-            EnvironmentHelper.CustomEnvironmentVariables.Add("DD_IAST_REGEXP_TIMEOUT", 10_000_000.ToString());
         }
 
         protected bool IncludeAllHttpSpans { get; set; } = false;
@@ -265,13 +263,21 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
 
-        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null)
+        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null, IEnumerable<KeyValuePair<string, string>> headers = null)
         {
             var values = _httpClient.DefaultRequestHeaders.GetValues("user-agent");
 
             if (!string.IsNullOrEmpty(userAgent) && values.All(c => string.Compare(c, userAgent, StringComparison.Ordinal) != 0))
             {
                 _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
+            }
+
+            if (headers != null)
+            {
+                foreach (var header in headers)
+                {
+                    _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+                }
             }
 
             try
@@ -298,6 +304,24 @@ namespace Datadog.Trace.Security.IntegrationTests
             return WaitForSpans(agent, expectedSpans, phase, minDateTime, url);
         }
 
+        protected IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
+        {
+            agent.SpanFilters.Clear();
+
+            if (!IncludeAllHttpSpans)
+            {
+                agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
+            }
+
+            var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
+            if (spans.Count != expectedSpans)
+            {
+                Output?.WriteLine($"spans.Count: {spans.Count} != expectedSpans: {expectedSpans}, this is phase: {phase}");
+            }
+
+            return spans;
+        }
+
         protected Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, params string[] urls)
         {
             return SendRequestsAsync(agent, 1, urls);
@@ -320,24 +344,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             {
                 await SubmitRequest(url, body, contentType, userAgent);
             }
-        }
-
-        private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
-        {
-            agent.SpanFilters.Clear();
-
-            if (!IncludeAllHttpSpans)
-            {
-                agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
-            }
-
-            var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
-            if (spans.Count != expectedSpans)
-            {
-                Output?.WriteLine($"spans.Count: {spans.Count} != expectedSpans: {expectedSpans}, this is phase: {phase}");
-            }
-
-            return spans;
         }
 
         private void SortJToken(JToken result)

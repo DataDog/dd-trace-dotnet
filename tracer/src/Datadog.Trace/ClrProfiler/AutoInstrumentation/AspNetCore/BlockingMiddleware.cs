@@ -18,16 +18,13 @@ internal class BlockingMiddleware
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<BlockingMiddleware>();
 
-    private readonly bool _endPipeline;
-
     // if we add support for ASP.NET Core on .NET Framework, we can't directly reference RequestDelegate, so this would need to be written
     private readonly RequestDelegate? _next;
-    private readonly bool _startPipeline;
+    private readonly bool _endPipeline;
 
-    internal BlockingMiddleware(RequestDelegate? next = null, bool startPipeline = false, bool endPipeline = false)
+    internal BlockingMiddleware(RequestDelegate? next = null, bool endPipeline = false)
     {
         _next = next;
-        _startPipeline = startPipeline;
         _endPipeline = endPipeline;
     }
 
@@ -89,12 +86,13 @@ internal class BlockingMiddleware
                     context.Response.StatusCode = 404;
                 }
 
-                var result = securityCoordinator.Scan(_startPipeline);
+                // _endPipeline: true won't happen unless the EndpointMiddleware couldn't find an endpoint to serve. Most of the time this middleware will be called just at the beginning of the pipeline. We still want it in the end to run discovery scans checks.
+                var result = securityCoordinator.Scan(_endPipeline);
                 if (result is not null)
                 {
                     if (result.ShouldBlock)
                     {
-                        var action = security.GetBlockingAction(result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                        var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), result.BlockInfo, result.RedirectInfo);
                         await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                         securityCoordinator.MarkBlocked();
                     }
@@ -118,7 +116,8 @@ internal class BlockingMiddleware
             }
             catch (Exception e) when (GetBlockException(e) is { } blockException)
             {
-                var action = security.GetBlockingAction(blockException.Result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                // Use blockinfo here
+                var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.BlockInfo, null);
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                 if (security.Enabled)
                 {

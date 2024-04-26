@@ -16,6 +16,7 @@ using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -36,8 +37,6 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
         private readonly SecuritySettings _settings;
-        private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater> { { RcmProducts.AsmFeatures, new AsmFeaturesProduct() }, { RcmProducts.Asm, new AsmProduct() }, { RcmProducts.AsmDd, new AsmDdProduct() }, { RcmProducts.AsmData, new AsmDataProduct() } };
-
         private readonly ConfigurationStatus _configurationStatus;
         private readonly bool _noLocalRules;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
@@ -51,16 +50,7 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
         /// </summary>
-        public Security(SecuritySettings? settings = null, IWaf? waf = null, IDictionary<string, Action>? actions = null, IRcmSubscriptionManager? rcmSubscriptionManager = null)
-            : this(settings, waf, rcmSubscriptionManager)
-        {
-            if (actions != null)
-            {
-                _configurationStatus.Actions = actions;
-            }
-        }
-
-        private Security(SecuritySettings? settings = null, IWaf? waf = null, IRcmSubscriptionManager? rcmSubscriptionManager = null)
+        public Security(SecuritySettings? settings = null, IWaf? waf = null, IRcmSubscriptionManager? rcmSubscriptionManager = null)
         {
             _rcmSubscriptionManager = rcmSubscriptionManager ?? RcmSubscriptionManager.Instance;
             try
@@ -167,52 +157,39 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
+        private ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
         {
             string? rcmUpdateError = null;
             UpdateResult? updateResult = null;
 
             try
             {
-                foreach (var product in _productConfigUpdaters)
-                {
-                    if (configsByProduct.TryGetValue(product.Key, out var configurations))
-                    {
-                        product.Value.ProcessUpdates(_configurationStatus, configurations);
-                    }
-
-                    if (removedConfigs?.TryGetValue(product.Key, out var configsForThisProductToRemove) is true)
-                    {
-                        product.Value.ProcessRemovals(_configurationStatus, configsForThisProductToRemove);
-                    }
-                }
-
-                _configurationStatus.EnableAsm = !_configurationStatus.AsmFeaturesByFile.IsEmpty() && _configurationStatus.AsmFeaturesByFile.All(a => a.Value.Enabled == true);
+                // store the last config state, clearing any previous state, without deserializing any payloads yet.
+                var anyChange = _configurationStatus.StoreLastConfigState(configsByProduct, removedConfigs);
+                var securityStateChange = Enabled != _configurationStatus.EnableAsm;
 
                 // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case
-                if (_configurationStatus.IncomingUpdateState.SecurityStateChange && _settings.CanBeToggled)
+                if (securityStateChange && _settings.CanBeToggled)
                 {
+                    // disable ASM scenario
                     if (Enabled && _configurationStatus.EnableAsm == false)
                     {
                         DisposeWafAndInstrumentations(true);
-                        _configurationStatus.IncomingUpdateState.SecurityStateChange = false;
-                    }
+                    } // enable ASM scenario taking into account rcm changes for other products/data
                     else if (!Enabled && _configurationStatus.EnableAsm == true)
                     {
+                        _configurationStatus.ApplyStoredFiles();
                         InitWafAndInstrumentations(true);
                         rcmUpdateError = _wafInitResult?.ErrorMessage;
-                        // no point in updating the waf with potentially new rules as it's initialized here with new rules
-                        _configurationStatus.IncomingUpdateState.WafKeysToApply.Remove(ConfigurationStatus.WafRulesKey);
-                        // reapply others
-                        _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
-                        _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
-                        _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
-                        _configurationStatus.IncomingUpdateState.SecurityStateChange = false;
+                        if (_wafInitResult?.RuleFileVersion is not null)
+                        {
+                            WafRuleFileVersion = _wafInitResult.RuleFileVersion;
+                        }
                     }
-                }
-
-                if (Enabled && _configurationStatus.IncomingUpdateState.WafKeysToApply.Any())
+                } // update asm configuration
+                else if (Enabled && anyChange)
                 {
+                    _configurationStatus.ApplyStoredFiles();
                     updateResult = _waf?.UpdateWafFromConfigurationStatus(_configurationStatus);
                     if (updateResult?.Success ?? false)
                     {
@@ -261,10 +238,9 @@ namespace Datadog.Trace.AppSec
             return applyDetails;
         }
 
-        internal BlockingAction GetBlockingAction(string id, string[]? requestAcceptHeaders)
+        internal BlockingAction GetBlockingAction(string[]? requestAcceptHeaders, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
         {
             var blockingAction = new BlockingAction();
-            _configurationStatus.Actions.TryGetValue(id, out var action);
 
             void SetAutomaticResponseContent()
             {
@@ -303,16 +279,35 @@ namespace Datadog.Trace.AppSec
                 blockingAction.ResponseContent = _settings.BlockedHtmlTemplate;
             }
 
-            if (action?.Parameters == null)
+            int GetStatusCode(Dictionary<string, object?> information, int defaultValue)
             {
+                information.TryGetValue("status_code", out var actionStatusCode);
+
+                if (actionStatusCode is string statusCodeString && int.TryParse(statusCodeString, out var statusCode))
+                {
+                    return statusCode;
+                }
+                else
+                {
+                    Log.Warning("Received a custom block action with an invalid status code {StatusCode}.", actionStatusCode?.ToString());
+                    return defaultValue;
+                }
+            }
+
+            // This should never happen
+            if (blockInfo is null && redirectInfo is null)
+            {
+                Log.Warning("No blockInfo or RedirectInfo found");
                 SetAutomaticResponseContent();
                 blockingAction.StatusCode = 403;
             }
             else
             {
-                if (action.Type == BlockingAction.BlockRequestType)
+                if (blockInfo is not null)
                 {
-                    switch (action.Parameters!.Type)
+                    blockInfo.TryGetValue("type", out var type);
+
+                    switch (type)
                     {
                         case "auto":
                             SetAutomaticResponseContent();
@@ -325,21 +320,29 @@ namespace Datadog.Trace.AppSec
                         case "html":
                             SetHtmlResponseContent();
                             break;
+
+                        default:
+                            Log.Warning("Received a custom block action of invalid type {Type}, an automatic response will be set", type?.ToString());
+                            SetAutomaticResponseContent();
+                            break;
                     }
 
-                    blockingAction.StatusCode = action.Parameters.StatusCode;
+                    blockingAction.StatusCode = GetStatusCode(blockInfo, 403);
                 }
-                else if (action.Type == BlockingAction.RedirectRequestType)
+                else
                 {
-                    if (!string.IsNullOrEmpty(action.Parameters.Location))
+                    redirectInfo!.TryGetValue("location", out var location);
+
+                    if (location is string locationString && locationString != string.Empty)
                     {
-                        blockingAction.StatusCode = action.Parameters.StatusCode is >= 300 and < 400 ? action.Parameters.StatusCode : 303;
-                        blockingAction.RedirectLocation = action.Parameters.Location;
+                        var statusCode = GetStatusCode(redirectInfo, 303);
+                        blockingAction.StatusCode = statusCode is >= 300 and < 400 ? statusCode : 303;
+                        blockingAction.RedirectLocation = locationString;
                         blockingAction.IsRedirect = true;
                     }
                     else
                     {
-                        Log.Warning("Received a custom block action of type redirect with a status code {StatusCode}, an automatic response will be set", action.Parameters.StatusCode.ToString());
+                        Log.Warning("Received a custom block action of type redirect with null or empty location, an automatic response will be set");
                         SetAutomaticResponseContent();
                         blockingAction.StatusCode = 403;
                     }
@@ -354,11 +357,6 @@ namespace Datadog.Trace.AppSec
         {
             _waf?.Dispose();
             Encoder.Pool.Dispose();
-        }
-
-        internal void SetDebugEnabled(bool enabled)
-        {
-            _wafLibraryInvoker?.SetupLogging(enabled);
         }
 
         private void SetRemoteConfigCapabilites()
@@ -377,7 +375,7 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmTrustedIps, _noLocalRules);
         }
 
-        private void InitWafAndInstrumentations(bool fromRemoteConfig = false)
+        private void InitWafAndInstrumentations(bool configurationFromRcm = false)
         {
             // initialization of WafLibraryInvoker
             if (_libraryInitializationResult == null)
@@ -394,7 +392,14 @@ namespace Datadog.Trace.AppSec
                 _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
             }
 
-            _wafInitResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _configurationStatus.RulesByFile.Values.FirstOrDefault()?.All, setupWafSchemaExtraction: _settings.ApiSecurityEnabled, _settings.UseUnsafeEncoder);
+            _wafInitResult = Waf.Waf.Create(
+                _wafLibraryInvoker!,
+                _settings.ObfuscationParameterKeyRegex,
+                _settings.ObfuscationParameterValueRegex,
+                _settings.Rules,
+                configurationFromRcm ? _configurationStatus : null,
+                _settings.UseUnsafeEncoder,
+                GlobalSettings.Instance.DebugEnabledInternal && _settings.WafDebugEnabled);
             if (_wafInitResult.Success)
             {
                 // we don't reapply configurations to the waf here because it's all done in the subscription function, as new data might have been received at the same time as the enable command, we don't want to update twice (here and in the subscription)
@@ -408,13 +413,13 @@ namespace Datadog.Trace.AppSec
                 _rateLimiter ??= new(_settings.TraceRateLimit);
                 Enabled = true;
                 InitializationError = null;
-                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
+                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, configurationFromRcm);
                 if (_wafInitResult.EmbeddedRules != null)
                 {
                     _configurationStatus.FallbackEmbeddedRuleSet ??= RuleSet.From(_wafInitResult.EmbeddedRules);
                 }
 
-                if (!fromRemoteConfig)
+                if (!configurationFromRcm)
                 {
                     // occurs the first time we initialize the WAF
                     TelemetryFactory.Metrics.SetWafVersion(_waf!.Version);

@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Sampling;
 using FluentAssertions;
 using Xunit;
@@ -11,6 +12,8 @@ namespace Datadog.Trace.Tests.Sampling;
 
 public class RegexBuilderTests
 {
+    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
+
     [Theory]
     // regex
     [InlineData(null, "regex", null)]
@@ -32,7 +35,7 @@ public class RegexBuilderTests
     [InlineData("te?st", "glob", "^te.st$")]
     public void Build(string pattern, string format, string expected)
     {
-        var regex = RegexBuilder.Build(pattern, format);
+        var regex = RegexBuilder.Build(pattern, format, Timeout);
 
         if (expected == null)
         {

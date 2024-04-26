@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using Datadog.Trace.Debugger.Helpers;
 
@@ -16,13 +17,13 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public Sampling? Sampling { get; set; }
 
-        public string Template { get; set; }
+        public string? Template { get; set; }
 
-        public SnapshotSegment[] Segments { get; set; }
+        public SnapshotSegment[]? Segments { get; set; }
 
-        public SnapshotSegment When { get; set; }
+        public SnapshotSegment? When { get; set; }
 
-        public bool Equals(LogProbe other)
+        public bool Equals(LogProbe? other)
         {
             if (ReferenceEquals(null, other))
             {
@@ -37,7 +38,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
             return base.Equals(other) && Equals(Capture, other.Capture) && Equals(Sampling, other.Sampling) && Template == other.Template && CaptureSnapshot == other.CaptureSnapshot && Segments.NullableSequentialEquals(other.Segments) && Equals(When, other.When);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj))
             {

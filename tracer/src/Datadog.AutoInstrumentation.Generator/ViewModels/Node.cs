@@ -194,6 +194,11 @@ internal class Node
 
             case TypeDef typeDef:
             {
+                foreach (var nestedTypeDef in typeDef.NestedTypes.OrderBy(m => m.Name))
+                {
+                    FillChildren(ref children, nestedTypeDef);
+                }
+
                 foreach (var methodDef in typeDef.Methods.OrderBy(m => m.Name))
                 {
                     FillChildren(ref children, methodDef);

@@ -27,7 +27,7 @@ private:
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
     std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
     std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> m_fault_tolerant_method_duplicator = nullptr;
-    bool is_debugger_enabled = false;
+    bool is_debugger_or_exception_debugging_enabled = false;
 
     static bool IsCoreLibOr3rdParty(const WSTRING& assemblyName);
     static WSTRING GenerateRandomProbeId();

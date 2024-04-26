@@ -72,6 +72,7 @@ public:
     MOCK_METHOD(bool, IsEtwEnabled, (), (const override));
     MOCK_METHOD(bool, IsSsiDeployed, (), (const override));
     MOCK_METHOD(bool, IsSsiActivated, (), (const override));
+    MOCK_METHOD(bool, IsEtwLoggingEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter

@@ -489,7 +489,6 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             if (isStackSnapshotSuccessful)
             {
                 UpdateSnapshotInfos(pStackSnapshotResult, duration, thisSampleTimestampNanosecs);
-                pStackSnapshotResult->DetermineAppDomain(pThreadInfo->GetClrThreadId(), _pCorProfilerInfo);
             }
 
             // If we got here, then either target thread == sampler thread (we are sampling the current thread),
@@ -564,11 +563,12 @@ int64_t StackSamplerLoop::ComputeWallTime(int64_t currentTimestampNs, int64_t pr
 }
 
 void StackSamplerLoop::PersistStackSnapshotResults(
-    StackSnapshotResultBuffer const* pSnapshotResult,
+    StackSnapshotResultBuffer* pSnapshotResult,
     std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
     PROFILING_TYPE profilingType)
 {
-    if (pSnapshotResult == nullptr || pSnapshotResult->GetFramesCount() == 0)
+    auto callstack = pSnapshotResult->GetCallstack();
+    if (pSnapshotResult == nullptr || callstack.Size() == 0)
     {
         return;
     }
@@ -580,8 +580,8 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         rawSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
         rawSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawSample.SpanId = pSnapshotResult->GetSpanId();
-        rawSample.AppDomainId = pSnapshotResult->GetAppDomainId();
-        pSnapshotResult->CopyInstructionPointers(rawSample.Stack);
+        rawSample.AppDomainId = pThreadInfo->GetAppDomainId();
+        rawSample.Stack = std::move(callstack);
         rawSample.ThreadInfo = pThreadInfo;
         rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
         _pWallTimeCollector->Add(std::move(rawSample));
@@ -594,8 +594,8 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
         rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
         rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
-        rawCpuSample.AppDomainId = pSnapshotResult->GetAppDomainId();
-        pSnapshotResult->CopyInstructionPointers(rawCpuSample.Stack);
+        rawCpuSample.AppDomainId = pThreadInfo->GetAppDomainId();
+        rawCpuSample.Stack = std::move(callstack);
         rawCpuSample.ThreadInfo = pThreadInfo;
         rawCpuSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
         _pCpuTimeCollector->Add(std::move(rawCpuSample));

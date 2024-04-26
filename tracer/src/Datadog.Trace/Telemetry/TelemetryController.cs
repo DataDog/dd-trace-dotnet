@@ -20,6 +20,7 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Telemetry;
 
@@ -92,6 +93,14 @@ internal class TelemetryController : ITelemetryController
         _application.RecordTracerSettings(settings, defaultServiceName);
         _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
         _queue.Enqueue(new WorkItem(WorkItem.ItemType.EnableSending, null));
+    }
+
+    public void RecordGitMetadata(GitMetadata gitMetadata)
+    {
+        _application.RecordGitMetadata(gitMetadata);
+
+        _configuration.Record(ConfigurationKeys.GitRepositoryUrl, gitMetadata.RepositoryUrl, recordValue: true, ConfigurationOrigins.Calculated);
+        _configuration.Record(ConfigurationKeys.GitCommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
     }
 
     public void Start()

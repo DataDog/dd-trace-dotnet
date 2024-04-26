@@ -30,13 +30,16 @@ namespace Datadog.Trace.Tests
             _testOutputHelper = testOutputHelper;
         }
 
-        [Fact]
+        [SkippableFact]
         public void UnsafeTypeVerifyIlTest()
         {
+#if DEBUG
+            throw new Xunit.SkipException("This test requires RELEASE mode and will fail in DEBUG mode on some target frameworks");
+#else
             var originalType = typeof(System.Runtime.CompilerServices.Unsafe);
             var vendoredType = typeof(VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe);
 
-            var framework = Assembly.GetExecutingAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkDisplayName;
+            var framework = Assembly.GetExecutingAssembly().GetCustomAttribute<TargetFrameworkAttribute>()!.FrameworkDisplayName;
             var frameworks = new[] { ".NET Framework 4.6.2", ".NET 5.0", ".NET 6.0", ".NET Core 3.1" };
             // TTo BitCast TFrom, TTo (TFrom source) is new in .NET 8
             _testOutputHelper.WriteLine(framework);
@@ -116,6 +119,7 @@ namespace Datadog.Trace.Tests
             {
                 return m => GetILMethodTokenAgnostic(m, out var ilBody);
             }
+#endif
         }
 
         [Fact]

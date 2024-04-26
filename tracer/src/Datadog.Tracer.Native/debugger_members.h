@@ -160,12 +160,14 @@ enum class ProbeStatus
 {
     RECEIVED,
     INSTALLED,
+    EMITTING,
     BLOCKED,
     /**
      * \brief Preceding with underscore because ERROR is a widely used preprocessor constant.
      */
     // ReSharper disable once CppInconsistentNaming
-    _ERROR  // NOLINT(clang-diagnostic-reserved-identifier, bugprone-reserved-identifier)
+    _ERROR,  // NOLINT(clang-diagnostic-reserved-identifier, bugprone-reserved-identifier)
+    INSTRUMENTED
 };
 
 struct ProbeMetadata

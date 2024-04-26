@@ -110,11 +110,17 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
     {
         PCCOR_SIGNATURE argSigBuff;
         auto signatureSize = argOrLocal.GetSignature(argSigBuff);
-        if (argSigBuff[0] == ELEMENT_TYPE_BYREF)
+        if (argSigBuff[0] == ELEMENT_TYPE_BYREF || argSigBuff[0] == ELEMENT_TYPE_PTR)
         {
             argumentSignatureBuffer = argSigBuff + 1;
             argumentSignatureSize = signatureSize - 1;
             signatureLength += signatureSize - 1;
+        }
+        else if (argSigBuff[0] == ELEMENT_TYPE_PINNED)
+        {
+            argumentSignatureBuffer = argSigBuff + 2;
+            argumentSignatureSize = signatureSize - 2;
+            signatureLength += signatureSize - 2;
         }
         else
         {
@@ -142,7 +148,7 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
                                                           &logArgMethodSpec);
     if (FAILED(hr))
     {
-        Logger::Warn("Error creating log exception method spec.");
+        Logger::Warn("Error creating LogArg or LogLocal method spec.");
         return hr;
     }
 
@@ -296,12 +302,18 @@ const WSTRING& DebuggerTokens::GetCallTargetReturnGenericType()
     return managed_profiler_debugger_returntype_generics;
 }
 
-int DebuggerTokens::GetAdditionalLocalsCount()
+const WSTRING& DebuggerTokens::GetCallTargetRefStructType()
+{
+    return EmptyWStr;
+}
+
+int DebuggerTokens::GetAdditionalLocalsCount(const std::vector<TypeSignature>& methodTypeArguments)
 {
     return 3;
 }
 
-void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
+void DebuggerTokens::AddAdditionalLocals(TypeSignature* methodReturnValue, std::vector<TypeSignature>* methodTypeArguments,
+                                         COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
                                          ULONG& signatureSize, bool isAsyncMethod)
 {
     // Gets the calltarget state of line probe type buffer and size
@@ -1452,7 +1464,7 @@ HRESULT DebuggerTokens::WriteRentArray(void* rewriterWrapperPtr, const TypeSigna
                                                           &logArgMethodSpec);
     if (FAILED(hr))
     {
-        Logger::Warn("Error creating log exception method spec.");
+        Logger::Warn("Error creating RentArray method spec.");
         return hr;
     }
 

@@ -47,23 +47,21 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                state.SnapshotCreator.StopSampling();
                 var localVariableNames = state.MethodMetadataInfo.LocalVariableNames;
                 if (!MethodDebuggerInvoker.TryGetLocalName(index, localVariableNames, out var localName))
                 {
-                    state.SnapshotCreator.StartSampling();
                     return;
                 }
 
-                var captureInfo = new CaptureInfo<TLocal>(value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+                var captureInfo = new CaptureInfo<TLocal>(state.MethodMetadataIndex, value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
+                var probeData = state.ProbeData;
 
-                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData))
                 {
                     state.IsActive = false;
                 }
 
                 state.HasLocalsOrReturnValue = true;
-                state.SnapshotCreator.StartSampling();
             }
             catch (Exception e)
             {
@@ -157,24 +155,22 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return CreateInvalidatedAsyncLineDebuggerState();
                 }
 
-                var kickoffParentObject = AsyncHelper.GetAsyncKickoffThisObject(instance);
-                var state = new AsyncLineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance, kickoffParentObject);
-
-                if (!state.SnapshotCreator.ProbeHasCondition &&
-                    !state.ProbeData.Sampler.Sample())
+                if (!probeData.Processor.ShouldProcess(in probeData))
                 {
+                    Log.Warning("[Async]BeginLine: Skipping the instrumentation. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
                     return CreateInvalidatedAsyncLineDebuggerState();
                 }
 
+                var kickoffParentObject = AsyncHelper.GetAsyncKickoffThisObject(instance);
+                var state = new AsyncLineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance, kickoffParentObject);
                 var asyncInfo = new AsyncCaptureInfo(state.MoveNextInvocationTarget, state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: state.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: state.MethodMetadataInfo.AsyncMethodHoistedArguments);
-                var captureInfo = new CaptureInfo<Type>(value: null, type: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLineAsync, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath), asyncCaptureInfo: asyncInfo);
+                var captureInfo = new CaptureInfo<Type>(state.MethodMetadataIndex, value: null, type: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLineAsync, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath), asyncCaptureInfo: asyncInfo);
 
-                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData))
                 {
                     state.IsActive = false;
                 }
 
-                state.SnapshotCreator.StartSampling();
                 return state;
             }
             catch (Exception e)
@@ -199,15 +195,15 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                state.SnapshotCreator.StopSampling();
                 var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
                                            state.MethodMetadataInfo.AsyncMethodHoistedArguments.Length > 0 ||
                                            state.KickoffInvocationTarget != null;
 
                 state.HasLocalsOrReturnValue = false;
                 var asyncCaptureInfo = new AsyncCaptureInfo(state.MoveNextInvocationTarget, state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType, kickoffMethod: state.MethodMetadataInfo.KickoffMethod, hoistedArgs: state.MethodMetadataInfo.AsyncMethodHoistedArguments, hoistedLocals: state.MethodMetadataInfo.AsyncMethodHoistedLocals);
-                var captureInfo = new CaptureInfo<object>(value: state.KickoffInvocationTarget, type: state.MethodMetadataInfo.KickoffInvocationTargetType, name: "this", memberKind: ScopeMemberKind.This, methodState: MethodState.EndLineAsync, hasLocalOrArgument: hasArgumentsOrLocals, asyncCaptureInfo: asyncCaptureInfo, lineCaptureInfo: new LineCaptureInfo(state.LineNumber, state.ProbeFilePath));
-                state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator);
+                var captureInfo = new CaptureInfo<object>(state.MethodMetadataIndex, value: state.KickoffInvocationTarget, type: state.MethodMetadataInfo.KickoffInvocationTargetType, name: "this", memberKind: ScopeMemberKind.This, methodState: MethodState.EndLineAsync, hasLocalOrArgument: hasArgumentsOrLocals, asyncCaptureInfo: asyncCaptureInfo, lineCaptureInfo: new LineCaptureInfo(state.LineNumber, state.ProbeFilePath));
+                var probeData = state.ProbeData;
+                state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData);
             }
             catch (Exception e)
             {

@@ -70,9 +70,9 @@ namespace Datadog.Trace.Ci
             return TelemetryFactory.Instance.CreateCiVisibilityTelemetryController(settings, discoveryService, isAgentAvailable: !_settings.Agentless);
         }
 
-        protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
+        protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager, ITelemetryController telemetry)
         {
-            return new CIGitMetadataTagsProvider();
+            return new CIGitMetadataTagsProvider(telemetry);
         }
 
         protected override ITraceSampler GetSampler(ImmutableTracerSettings settings)

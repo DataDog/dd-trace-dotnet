@@ -133,6 +133,8 @@ namespace Datadog.Trace
             // first span added is the local root span
             if (Interlocked.CompareExchange(ref _rootSpan, span, null) == null)
             {
+                span.MarkSpanForExceptionDebugging();
+
                 // if we don't have a sampling priority yet, make a sampling decision now
                 if (_samplingPriority == null)
                 {
@@ -282,16 +284,6 @@ namespace Datadog.Trace
                     CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array[i + spans.Offset]);
                 }
             }
-        }
-
-        public void MarkApiSecurity()
-        {
-            if (Volatile.Read(ref _appSecRequestContext) is null)
-            {
-                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
-            }
-
-            _appSecRequestContext!.MarkApiSecurity();
         }
     }
 }

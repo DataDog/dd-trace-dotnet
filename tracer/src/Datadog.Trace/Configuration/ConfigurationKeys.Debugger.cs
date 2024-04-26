@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 
 namespace Datadog.Trace.Configuration
 {
@@ -54,12 +55,6 @@ namespace Datadog.Trace.Configuration
             public const string SymbolDatabaseUploadEnabled = "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_UPLOAD_ENABLED";
 
             /// <summary>
-            /// Configuration key for forcing the client library to upload symbol data, regardless of whether it is requested by our backend. For internal use and testing.
-            /// Default value is false (disabled).
-            /// </summary>
-            public const string SymbolDatabaseUploadEnabledInternal = "DD_DYNAMIC_INSTRUMENTATION_INTERAL_FORCE_SYMBOL_DATABASE_UPLOAD";
-
-            /// <summary>
             /// Configuration key for a separated comma list of libraries to include in the symbol database upload
             /// Default value is empty.
             /// </summary>
@@ -90,6 +85,40 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.RedactedTypes"/>
             public const string RedactedTypes = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_TYPES";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Exception Debugging.
+            /// Default value is false (disabled).
+            /// </summary>
+            /// <seealso cref="ExceptionDebuggingSettings.Enabled"/>
+            public const string ExceptionDebuggingEnabled = "DD_EXCEPTION_DEBUGGING_ENABLED";
+
+            /// <summary>
+            /// Configuration key for the maximum number of frames in a call stack we would like to capture values for.
+            /// </summary>
+            /// <seealso cref="ExceptionDebuggingSettings.MaximumFramesToCapture"/>
+            public const string ExceptionDebuggingMaxFramesToCapture = "DD_EXCEPTION_DEBUGGING_MAX_FRAMES_TO_CAPTURE";
+
+            /// <summary>
+            /// Configuration key to enable capturing the variables of all the frames in exception call stack.
+            /// Default value is false.
+            /// </summary>
+            /// <seealso cref="ExceptionDebuggingSettings.CaptureFullCallStack"/>
+            public const string ExceptionDebuggingCaptureFullCallStackEnabled = "DD_EXCEPTION_DEBUGGING_CAPTURE_FULL_CALLSTACK_ENABLED";
+
+            /// <summary>
+            /// Configuration key for the interval used to track exceptions
+            /// Default value is <c>1</c>h.
+            /// </summary>
+            /// <seealso cref="ExceptionDebuggingSettings.RateLimit"/>
+            public const string RateLimitSeconds = "DD_EXCEPTION_DEBUGGING_RATE_LIMIT_SECONDS";
+
+            /// <summary>
+            /// Configuration key for setting the maximum number of exceptions to be analyzed by Exception Debugging within a 1-second time interval.
+            /// Default value is <c>100</c>.
+            /// </summary>
+            /// <seealso cref="ExceptionDebuggingSettings.MaxExceptionAnalysisLimit"/>
+            public const string MaxExceptionAnalysisLimit = "DD_EXCEPTION_DEBUGGING_MAX_EXCEPTION_ANALYSIS_LIMIT";
         }
     }
 }

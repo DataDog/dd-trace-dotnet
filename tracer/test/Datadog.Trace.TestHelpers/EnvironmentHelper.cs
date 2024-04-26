@@ -237,6 +237,22 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables[ConfigurationKeys.AppSec.Rules] = externalRulesFile;
             }
 
+            // set the querystring regex to something stupidly large, as it can introduce random flake into snapshots
+            if (!environmentVariables.ContainsKey("DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT"))
+            {
+                environmentVariables["DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT"] = 10_000_000.ToString();
+            }
+
+            if (!environmentVariables.ContainsKey("DD_IAST_REGEXP_TIMEOUT"))
+            {
+                environmentVariables["DD_IAST_REGEXP_TIMEOUT"] = 10_000_000.ToString();
+            }
+
+            if (!environmentVariables.ContainsKey("DD_APPSEC_WAF_TIMEOUT"))
+            {
+                environmentVariables["DD_APPSEC_WAF_TIMEOUT"] = 10_000_000.ToString();
+            }
+
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
             {
                 var value = Environment.GetEnvironmentVariable(name);

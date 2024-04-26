@@ -67,4 +67,5 @@ public:
     virtual bool IsEtwEnabled() const = 0;
     virtual bool IsSsiDeployed() const = 0;
     virtual bool IsSsiActivated() const = 0;
+    virtual bool IsEtwLoggingEnabled() const = 0;
 };

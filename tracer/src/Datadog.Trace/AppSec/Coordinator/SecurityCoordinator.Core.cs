@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
@@ -60,16 +61,29 @@ internal readonly partial struct SecurityCoordinator
         return headersDic;
     }
 
-    internal void CheckAndBlock(IResult? result)
+    internal void BlockAndReport(IResult? result)
     {
         if (result is not null)
         {
-            if (result!.ShouldBlock)
+            if (result.ShouldBlock)
             {
-                throw new BlockException(result);
+                throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo!);
             }
 
             TryReport(result, result.ShouldBlock);
+        }
+    }
+
+    internal void ReportAndBlock(IResult? result)
+    {
+        if (result is not null)
+        {
+            TryReport(result, result.ShouldBlock);
+
+            if (result.ShouldBlock)
+            {
+                throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo!, true);
+            }
         }
     }
 
@@ -153,9 +167,19 @@ internal readonly partial struct SecurityCoordinator
 
         public HttpTransport(HttpContext context) => _context = context;
 
-        internal override bool IsBlocked => _context.Items["block"] is true;
+        internal override bool IsBlocked => _context.Items[BlockingAction.BlockDefaultActionName] is true;
 
-        internal override void MarkBlocked() => _context.Items["block"] = true;
+        internal override int StatusCode => _context.Response.StatusCode;
+
+        internal override IDictionary<string, object>? RouteData => _context.GetRouteData()?.Values;
+
+        internal override bool ReportedExternalWafsRequestHeaders
+        {
+            get => _context.Items["ReportedExternalWafsRequestHeaders"] is true;
+            set => _context.Items["ReportedExternalWafsRequestHeaders"] = value;
+        }
+
+        internal override void MarkBlocked() => _context.Items[BlockingAction.BlockDefaultActionName] = true;
 
         internal override IContext GetAdditiveContext() => _context.Features.Get<IContext>();
 

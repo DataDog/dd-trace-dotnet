@@ -256,49 +256,34 @@ internal readonly partial struct SecurityCoordinator
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
-    internal void CheckAndBlock(Dictionary<string, object> args, bool tryToReportSchema = false)
+    internal void BlockAndReport(Dictionary<string, object> args, bool lastWafCall = false)
     {
-        if (tryToReportSchema)
-        {
-            var isApiSecurityProcessed = _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
-            if (isApiSecurityProcessed)
-            {
-                _localRootSpan.Context.TraceContext.MarkApiSecurity();
-            }
-        }
-
-        var result = RunWaf(args);
-        CheckAndBlock(result);
-    }
-
-    internal void CheckAndBlockRasp(IResult? result)
-    {
-        if (result is not null)
-        {
-            var reporting = MakeReportingFunction(result);
-            // here we assume if we haven't blocked we'll have collected the correct status elsewhere
-            reporting(null, result.ShouldBlock);
-
-            if (result.ShouldBlock)
-            {
-                ChooseBlockingMethodAndBlock(result, reporting);
-            }
-        }
-    }
-
-    internal void CheckAndBlock(IResult? result)
-    {
+        var result = RunWaf(args, lastWafCall);
         if (result is not null)
         {
             var reporting = MakeReportingFunction(result);
 
             if (result.ShouldBlock)
             {
-                ChooseBlockingMethodAndBlock(result, reporting);
+                ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
             }
 
             // here we assume if we haven't blocked we'll have collected the correct status elsewhere
             reporting(null, result.ShouldBlock);
+        }
+    }
+
+    internal void ReportAndBlock(IResult? result)
+    {
+        if (result is not null)
+        {
+            var reporting = MakeReportingFunction(result);
+            reporting(null, result.ShouldBlock);
+
+            if (result.ShouldBlock)
+            {
+                ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
+            }
         }
     }
 
@@ -316,9 +301,9 @@ internal readonly partial struct SecurityCoordinator
         };
     }
 
-    private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting)
+    private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
     {
-        var blockingAction = _security.GetBlockingAction(result.Actions[0], [_context.Request.Headers["Accept"]]);
+        var blockingAction = _security.GetBlockingAction([_context.Request.Headers["Accept"]], blockInfo, redirectInfo);
         var isWebApiRequest = _context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
         if (isWebApiRequest)
         {
@@ -427,7 +412,7 @@ internal readonly partial struct SecurityCoordinator
                     {
                         if (!queryDic.ContainsKey(v))
                         {
-                            queryDic.Add(v, new string[0]);
+                            queryDic.Add(v, Array.Empty<string>());
                         }
                     }
                 }
@@ -502,9 +487,19 @@ internal readonly partial struct SecurityCoordinator
 
         public HttpTransport(HttpContext context) => _context = context;
 
-        internal override bool IsBlocked => _context.Items["block"] is true;
+        internal override bool IsBlocked => _context.Items[BlockingAction.BlockDefaultActionName] is true;
 
-        internal override void MarkBlocked() => _context.Items["block"] = true;
+        internal override int StatusCode => _context.Response.StatusCode;
+
+        internal override IDictionary<string, object>? RouteData => _context.Request.RequestContext.RouteData?.Values;
+
+        internal override bool ReportedExternalWafsRequestHeaders
+        {
+            get => _context.Items["ReportedExternalWafsRequestHeaders"] is true;
+            set => _context.Items["ReportedExternalWafsRequestHeaders"] = value;
+        }
+
+        internal override void MarkBlocked() => _context.Items[BlockingAction.BlockDefaultActionName] = true;
 
         internal override IContext? GetAdditiveContext() => _context.Items[WafKey] as IContext;
 

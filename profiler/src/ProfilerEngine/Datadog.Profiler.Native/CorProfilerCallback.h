@@ -35,6 +35,9 @@
 #include "ThreadLifetimeProvider.h"
 #include "shared/src/native-src/string.h"
 #include "IEtwEventsManager.h"
+#include "MemoryResourceManager.h"
+
+#include "shared/src/native-src/dd_memory_resource.hpp"
 
 #include <atomic>
 #include <memory>
@@ -60,12 +63,6 @@ class Loader;
 
 class CorProfilerCallback : public ICorProfilerCallback10
 {
-private:
-    static const std::vector<shared::WSTRING> ManagedAssembliesToLoad_AppDomainDefault_ProcNonIIS;
-    static const std::vector<shared::WSTRING> ManagedAssembliesToLoad_AppDomainNonDefault_ProcNonIIS;
-    static const std::vector<shared::WSTRING> ManagedAssembliesToLoad_AppDomainDefault_ProcIIS;
-    static const std::vector<shared::WSTRING> ManagedAssembliesToLoad_AppDomainNonDefault_ProcIIS;
-
 public:
     CorProfilerCallback();
     virtual ~CorProfilerCallback();
@@ -206,6 +203,7 @@ public:
     IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
     IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
     IExporter* GetExporter() { return _pExporter.get(); }
+    SamplesCollector* GetSamplesCollector() { return _pSamplesCollector; }
 
 private :
     static CorProfilerCallback* _this;
@@ -263,6 +261,7 @@ private :
     std::unique_ptr<IMetadataProvider> _pMetadataProvider;
     std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
     bool _isETWStarted = false;
+    MemoryResourceManager _memoryResourceManager;
 
 private:
     static void ConfigureDebugLog();

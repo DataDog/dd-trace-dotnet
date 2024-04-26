@@ -3,6 +3,17 @@
   "metadata": {
     "rules_version": "1.10.0"
   },
+  "actions": [
+    {
+      "id": "customblock",
+      "type": "block_request",
+      "parameters": {
+        "status_code": 403,
+        "grpc_status_code": "10",
+        "type": "auto"
+      }
+    }
+  ],
   "rules": [
     {
       "id": "rasp-001-001",
@@ -45,27 +56,23 @@
         }
       ],
       "on_match": [
-        "block"
+        "customblock",
+        "stack_trace"
       ]
     },
     {
-      "id": "rasp-002-001",
-      "name": "Server-side request forgery",
+      "id": "test-dummy-rule",
+      "name": "Dummy rule to test blocking",
       "tags": {
-        "type": "ssrf",
-        "category": "vulnerability_trigger",
-        "module": "rasp"
+        "type": "security_scanner",
+        "crs_id": "913121",
+        "category": "attack_attempt"
       },
       "conditions": [
         {
           "operator": "ssrf_detector",
           "parameters": {
-            "resource": [
-              {
-                "address": "server.io.net.url"
-              }
-            ],
-            "params": [
+            "inputs": [
               {
                 "address": "server.request.query"
               },
@@ -84,8 +91,12 @@
               {
                 "address": "graphql.server.resolver"
               }
+            ],
+            "list": [
+              "dummy_rule"
             ]
-          }
+          },
+          "operator": "phrase_match"
         }
       ],
       "on_match": [
@@ -93,8 +104,8 @@
       ]
     },
     {
-      "id": "test-dummy-rule",
-      "name": "Dummy rule to test blocking",
+      "id": "test-dummy-rule2",
+      "name": "Dummy rule to test blocking2",
       "tags": {
         "type": "security_scanner",
         "crs_id": "913121",
@@ -112,10 +123,19 @@
               },
               {
                 "address": "server.request.path_params"
+              },
+              {
+                "address": "grpc.server.request.message"
+              },
+              {
+                "address": "graphql.server.all_resolvers"
+              },
+              {
+                "address": "graphql.server.resolver"
               }
             ],
             "list": [
-              "dummy_rule"
+              "dummyrule2"
             ]
           },
           "operator": "phrase_match"
@@ -125,7 +145,7 @@
         "lowercase"
       ],
       "on_match": [
-        "block"
+        "customblock"
       ]
     }
   ]

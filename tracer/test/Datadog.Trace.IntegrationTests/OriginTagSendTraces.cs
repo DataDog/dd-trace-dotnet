@@ -22,7 +22,7 @@ namespace Datadog.Trace.IntegrationTests
         {
             var settings = new TracerSettings();
             _testApi = new MockApi();
-            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
+            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
             _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 
@@ -36,6 +36,7 @@ namespace Datadog.Trace.IntegrationTests
                 }
             }
 
+            _tracer.FlushAsync();
             var traceChunks = _testApi.Wait();
 
             traceChunks.SelectMany(s => s)
@@ -57,6 +58,7 @@ namespace Datadog.Trace.IntegrationTests
                 }
             }
 
+            _tracer.FlushAsync();
             var traceChunks = _testApi.Wait();
 
             traceChunks.SelectMany(s => s)

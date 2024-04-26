@@ -4,7 +4,6 @@
 
 variables:
   commit_hash: 0
-  enable_metrics: 0
 
 jobs:
   server:

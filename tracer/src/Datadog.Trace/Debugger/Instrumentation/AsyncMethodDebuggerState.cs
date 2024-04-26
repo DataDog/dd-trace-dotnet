@@ -32,7 +32,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
             ProbeId = probeId;
             HasLocalsOrReturnValue = false;
             HasArguments = false;
-            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(probeData.Processor);
+            var processor = probeData.Processor;
+            SnapshotCreator = processor.CreateSnapshotCreator();
             ProbeData = probeData;
         }
 
@@ -69,7 +70,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator
         /// </summary>
-        internal DebuggerSnapshotCreator SnapshotCreator { get; }
+        internal IDebuggerSnapshotCreator SnapshotCreator { get; }
 
         /// <summary>
         /// Gets or sets the LiveDebugger BeginMethod scope

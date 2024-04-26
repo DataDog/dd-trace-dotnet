@@ -101,7 +101,7 @@ namespace Samples.AspNetCoreMvc.Controllers
         {
             if (Request.Headers.ContainsKey(CorrelationIdentifierHeaderName))
             {
-                Response.Headers.Add(CorrelationIdentifierHeaderName, Request.Headers[CorrelationIdentifierHeaderName]);
+                Response.Headers[CorrelationIdentifierHeaderName] = Request.Headers[CorrelationIdentifierHeaderName];
             }
         }
     }

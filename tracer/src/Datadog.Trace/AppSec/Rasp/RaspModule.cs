@@ -7,12 +7,17 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.AppSec.Rasp;
 
 internal static class RaspModule
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
+
     internal static void OnLfi(string file)
     {
         CheckVulnerability(AddressesConstants.FileAccess, file);
@@ -40,13 +45,16 @@ internal static class RaspModule
         }
 
         var arguments = new Dictionary<string, object> { [address] = valueToCheck };
-        RunWaf(arguments);
+        RunWaf(arguments, rootSpan);
     }
 
-    private static void RunWaf(Dictionary<string, object> arguments)
+    private static void RunWaf(Dictionary<string, object> arguments, Span rootSpan)
     {
-        var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, Tracer.Instance.InternalActiveScope.Root.Span);
-        var result = securityCoordinator.RunWaf(arguments, (log, ex) => log.Error(ex, "Error in RASP OnLfi"));
-        securityCoordinator.CheckAndBlockRasp(result);
+        var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
+        var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
+
+        // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
+        // the blockings, so we report first and then block
+        securityCoordinator.ReportAndBlock(result);
     }
 }

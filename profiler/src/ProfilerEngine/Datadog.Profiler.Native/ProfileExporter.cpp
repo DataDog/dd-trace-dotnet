@@ -677,8 +677,8 @@ fs::path ProfileExporter::CreatePprofOutputPath(IConfiguration* configuration)
 
     // TODO: add process name to the path using Configuration::GetServiceName() and remove unsupported characters
 
-    std::error_code errorCode;
-    if (fs::create_directories(pprofOutputPath, errorCode) || errorCode)
+    std::error_code errorCode;                              // not a problem if the directory already exists
+    if (fs::create_directories(pprofOutputPath, errorCode) || (errorCode.value() == 0))
     {
         return pprofOutputPath;
     }

@@ -59,7 +59,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.49.0";
+    readonly string Version = "2.51.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -427,7 +427,8 @@ partial class Build : NukeBuild
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
-                .SetProperty("BuildStandalone", "false"));
+                .SetProperty("BuildStandalone", "false")
+                .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1"));
         });
 
     Target PackRunnerToolNuget => _ => _
@@ -436,16 +437,17 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetPack(x => x
-                // we have to restore and build dependencies to make sure we remove the pdb and xml files
                 .SetProject(Solution.GetProject(Projects.DdTrace))
                 .SetConfiguration(BuildConfiguration)
+                .EnableNoDependencies()
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
                 .SetProperty("BuildStandalone", "false")
                 .SetProperty("DebugSymbols", "False")
                 .SetProperty("DebugType", "None")
-                .SetProperty("GenerateDocumentationFile", "False"));
+                .SetProperty("GenerateDocumentationFile", "False")
+                .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1"));
         });
 
     Target BuildStandaloneTool => _ => _
@@ -471,7 +473,7 @@ partial class Build : NukeBuild
                 .SetProject(Solution.GetProject(Projects.DdTrace))
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
-                // .EnableNoDependencies()
+                .EnableNoDependencies()
                 .SetFramework(TargetFramework.NET7_0)
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
@@ -480,6 +482,7 @@ partial class Build : NukeBuild
                 .SetProperty("DebugSymbols", "False")
                 .SetProperty("DebugType", "None")
                 .SetProperty("GenerateDocumentationFile", "False")
+                .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1")
                 .CombineWith(runtimes, (c, runtime) => c
                                 .SetProperty("PublishDir", runtime.output)
                                 .SetRuntime(runtime.rid)));

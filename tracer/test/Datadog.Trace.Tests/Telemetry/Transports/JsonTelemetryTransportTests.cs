@@ -35,7 +35,9 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     languageName: "node.js",
                     languageVersion: "14.16.1",
                     runtimeName: "dotnet",
-                    runtimeVersion: "7.0.3"),
+                    runtimeVersion: "7.0.3",
+                    commitSha: "testCommitSha",
+                    repositoryUrl: "testRepositoryUrl"),
                 host: new HostTelemetryData(
                     hostname: "i-09ecf74c319c49be8",
                     os: "GNU/Linux",
@@ -96,7 +98,9 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     languageName: "node.js",
                     languageVersion: "14.16.1",
                     runtimeName: "dotnet",
-                    runtimeVersion: "7.0.3"),
+                    runtimeVersion: "7.0.3",
+                    commitSha: "testCommitSha",
+                    repositoryUrl: "testRepositoryUrl"),
                 host: new HostTelemetryData(
                     hostname: "i-09ecf74c319c49be8",
                     os: "GNU/Linux",
@@ -165,7 +169,9 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     languageName: "node.js",
                     languageVersion: "14.16.1",
                     runtimeName: "dotnet",
-                    runtimeVersion: "7.0.3"),
+                    runtimeVersion: "7.0.3",
+                    commitSha: "testCommitSha",
+                    repositoryUrl: "testRepositoryUrl"),
                 host: new HostTelemetryData(
                     hostname: "i-09ecf74c319c49be8",
                     os: "GNU/Linux",
@@ -229,7 +235,9 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     languageName: "node.js",
                     languageVersion: "14.16.1",
                     runtimeName: "dotnet",
-                    runtimeVersion: "7.0.3"),
+                    runtimeVersion: "7.0.3",
+                    commitSha: "testCommitSha",
+                    repositoryUrl: "testRepositoryUrl"),
                 host: new HostTelemetryData(
                     hostname: "i-09ecf74c319c49be8",
                     os: "GNU/Linux",

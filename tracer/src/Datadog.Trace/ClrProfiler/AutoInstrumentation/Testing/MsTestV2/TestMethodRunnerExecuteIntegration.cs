@@ -2,8 +2,10 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
+using System.Collections;
 using System.ComponentModel;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -44,24 +46,93 @@ public static class TestMethodRunnerExecuteIntegration
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        if (returnValue is Array { Length: 1 } returnValueArray)
+        if (returnValue is IList { Count: > 0 } lstResults)
         {
-            var unitTestResultObject = returnValueArray.GetValue(0);
-
-            if (unitTestResultObject != null && unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult))
+            foreach (var unitTestResultObject in lstResults)
             {
-                if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
+                if (unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult))
                 {
-                    if (!MsTestIntegration.ShouldSkip(instance.TestMethodInfo, out _, out _))
+                    if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive)
                     {
-                        // This instrumentation catches all tests being ignored
-                        MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType())?
-                                         .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                        if (!MsTestIntegration.ShouldSkip(instance.TestMethodInfo, out _, out _))
+                        {
+                            // This instrumentation catches all tests being ignored
+                            MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false)?
+                               .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                        }
                     }
+                    else if (unitTestResult.Outcome is UnitTestResultOutcome.Error or UnitTestResultOutcome.Failed)
+                    {
+                        // We need to check if the test is failing because a Class initialization error
+                        if (instance.TestMethodInfo.Parent.Instance.TryDuckCast<ClassInfoInitializationExceptionStruct>(out var classInfoInitializationExceptionStruct))
+                        {
+                            if (classInfoInitializationExceptionStruct.ClassInitializationException is { } classInitializationException &&
+                                MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false) is { } test)
+                            {
+                                test.SetErrorInfo(classInitializationException);
+                                test.Close(TestStatus.Fail);
+                            }
+                        }
+                        else
+                        {
+                            Common.Log.Warning("Parent class cannot be duck casted to ClassInfoInitializationExceptionStruct.");
+                        }
+
+                        // We need to check if the test is failing because a Class cleanup error
+                        if (instance.TestMethodInfo.Parent.Instance.TryDuckCast<ClassInfoCleanupExceptionsStruct>(out var classInfoCleanupExceptionsStruct))
+                        {
+                            if (classInfoCleanupExceptionsStruct.ClassCleanupException is { } classCleanupException &&
+                                MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(instance.TestMethodInfo.Parent) is { } suite)
+                            {
+                                suite.SetErrorInfo(classCleanupException);
+                            }
+                        }
+                        else
+                        {
+                            Common.Log.Debug("Parent class cannot be duck casted to ClassInfoCleanupExceptionsStruct.");
+                        }
+
+                        // We need to check if the test is failing because a Assembly initialization error
+                        if (instance.TestMethodInfo.Parent.Parent.Instance.TryDuckCast<AssemblyInfoExceptionsStruct>(out var assemblyInfoExceptionsStruct))
+                        {
+                            if (assemblyInfoExceptionsStruct.AssemblyInitializationException is { } assemblyInitializationException &&
+                                MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false) is { } test)
+                            {
+                                test.SetErrorInfo(assemblyInitializationException);
+                                test.Close(TestStatus.Fail);
+                            }
+                        }
+                        else
+                        {
+                            Common.Log.Warning("Parent assembly cannot be duck casted to AssemblyInfoExceptionsStruct.");
+                        }
+                    }
+                }
+                else
+                {
+                    Common.Log.Warning("Result cannot be duck casted to UnitTestResultStruct.");
                 }
             }
         }
 
         return new CallTargetReturn<TReturn>(returnValue);
+    }
+
+    [DuckCopy]
+    internal struct ClassInfoInitializationExceptionStruct
+    {
+        public Exception? ClassInitializationException;
+    }
+
+    [DuckCopy]
+    internal struct ClassInfoCleanupExceptionsStruct
+    {
+        public Exception? ClassCleanupException;
+    }
+
+    [DuckCopy]
+    internal struct AssemblyInfoExceptionsStruct
+    {
+        public Exception? AssemblyInitializationException;
     }
 }

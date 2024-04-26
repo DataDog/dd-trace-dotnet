@@ -222,6 +222,7 @@ internal static class MetricTags
         [Description("integration_name:xpathinjection")] XpathInjection,
         [Description("integration_name:reflectioninjection")] ReflectionInjection,
         [Description("integration_name:xss")] Xss,
+        [Description("integration_name:nhibernate")] NHibernate,
     }
 
     public enum InstrumentationError
@@ -318,6 +319,20 @@ internal static class MetricTags
         [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
     }
 
+    public enum CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection
+    {
+        [Description("event_type:test")] Test,
+        [Description("event_type:test;is_benchmark")] Test_IsBenchmark,
+        [Description("event_type:suite")] Suite,
+        [Description("event_type:module")] Module,
+        [Description("event_type:session")] Session_NoCodeOwner_IsSupportedCi,
+        [Description("event_type:session;is_unsupported_ci")] Session_NoCodeOwner_UnsupportedCi,
+        [Description("event_type:session;has_codeowner;is_unsupported_ci")] Session_HasCodeOwner_UnsupportedCi,
+        [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
+        [Description("event_type:test;is_new:true")] Test_EFDTestIsNew,
+        [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow")] Test_EFDTestIsNew_EFDTestAbortSlow,
+    }
+
     public enum CIVisibilityCoverageLibrary
     {
         [Description("library:custom")] Custom,
@@ -377,5 +392,9 @@ internal static class MetricTags
         [Description("coverage_enabled")] CoverageEnabled_ItrSkipDisabled,
         [Description("itrskip_enabled")] CoverageDisabled_ItrSkipEnabled,
         [Description("coverage_enabled;itrskip_enabled")] CoverageEnabled_ItrSkipEnabled,
+        [Description("early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipDisabled_EFDEnabled,
+        [Description("coverage_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipDisabled_EFDEnabled,
+        [Description("itrskip_enabled;early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled,
+        [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled,
     }
 }

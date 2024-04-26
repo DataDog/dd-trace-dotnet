@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "CallstackProvider.h"
 #include "CollectorBase.h"
 #include "IFrameStore.h"
 #include "IManagedThreadList.h"
@@ -16,6 +17,10 @@
 #include "MetricsRegistry.h"
 #include "CounterMetric.h"
 #include "IUpscaleProvider.h"
+
+#include "shared/src/native-src/dd_memory_resource.hpp"
+
+#include <memory>
 
 class IConfiguration;
 class SampleValueTypeProvider;
@@ -34,7 +39,9 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
-        MetricsRegistry& metricsRegistry);
+        MetricsRegistry& metricsRegistry,
+        CallstackProvider pool,
+        shared::pmr::memory_resource* memoryResource);
 
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);
@@ -71,4 +78,5 @@ private:
     IConfiguration const* const _pConfiguration;
     std::shared_ptr<CounterMetric> _exceptionsCountMetric;
     std::shared_ptr<CounterMetric> _sampledExceptionsCountMetric;
+    CallstackProvider _callstackProvider;
 };

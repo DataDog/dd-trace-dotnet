@@ -25,7 +25,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         private readonly AdaptiveSampler _globalSampler = CreateSampler(DefaultGlobalSamplesPerSecond);
 
-        private readonly ConcurrentDictionary<string, AdaptiveSampler> _samplers = new();
+        private readonly ConcurrentDictionary<string, IAdaptiveSampler> _samplers = new();
 
         internal static ProbeRateLimiter Instance
         {
@@ -41,9 +41,14 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private static AdaptiveSampler CreateSampler(int samplesPerSecond = DefaultSamplesPerSecond) =>
             new(TimeSpan.FromSeconds(1), samplesPerSecond, 180, 16, null);
 
-        public AdaptiveSampler GerOrAddSampler(string probeId)
+        public IAdaptiveSampler GerOrAddSampler(string probeId)
         {
             return _samplers.GetOrAdd(probeId, _ => CreateSampler(1));
+        }
+
+        public bool TryAddSampler(string probeId, IAdaptiveSampler sampler)
+        {
+            return _samplers.TryAdd(probeId, sampler);
         }
 
         public bool Sample(string probeId)

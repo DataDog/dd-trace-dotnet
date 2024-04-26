@@ -63,9 +63,8 @@ public static class UserManagerCreateIntegration
     {
         var security = Security.Instance;
         var user = state.State as IIdentityUser;
-        if (security.TrackUserEvents)
+        if (security.TrackUserEvents && state.Scope is { Span: { } span })
         {
-            var span = state.Scope.Span;
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
 

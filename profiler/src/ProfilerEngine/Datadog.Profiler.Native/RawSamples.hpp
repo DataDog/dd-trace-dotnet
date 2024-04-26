@@ -3,17 +3,25 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include <list>
+
+#include "LinkedList.hpp"
+
+#include "shared/src/native-src/dd_memory_resource.hpp"
 
 template <class TRawSample>
 class RawSamples
 {
 public:
-    using const_iterator = typename std::list<TRawSample>::const_iterator;
+    using iterator = typename LinkedList<TRawSample>::iterator;
 
-    RawSamples() = default;
+    RawSamples(shared::pmr::memory_resource* memoryResource) :
+        _memoryResource{memoryResource},
+        _samples{memoryResource}
+    {
+    }
 
-    RawSamples(RawSamples&& other)
+    RawSamples(RawSamples&& other) :
+        RawSamples(shared::pmr::get_default_resource())
     {
         *this = std::move(other);
     };
@@ -21,6 +29,8 @@ public:
     RawSamples& operator=(RawSamples&& other)
     {
         _samples = std::move(other._samples);
+        std::swap(_memoryResource, other._memoryResource);
+
         return *this;
     }
 
@@ -31,39 +41,41 @@ public:
     {
         std::lock_guard<std::mutex> lock(_lock);
 
-        std::list<TRawSample> result;
-        _samples.swap(result);
+        LinkedList<TRawSample> result{_memoryResource};
+        _samples.Swap(result);
 
-        return RawSamples(std::move(result));
+        return RawSamples(std::move(result), _memoryResource);
     }
 
     void Add(TRawSample&& sample)
     {
         std::lock_guard<std::mutex> lock(_lock);
-        _samples.push_back(std::forward<TRawSample>(sample));
+        _samples.Append(std::forward<TRawSample>(sample));
     }
 
-    auto cbegin() const
+    auto begin()
     {
-        return _samples.cbegin();
+        return _samples.begin();
     }
 
-    auto cend() const
+    auto end()
     {
-        return _samples.cend();
+        return _samples.end();
     }
 
     std::size_t size() const
     {
-        return _samples.size();
+        return _samples.Size();
     }
 
 private:
-    RawSamples(std::list<TRawSample> samples) :
-        _samples{std::move(samples)}
+    RawSamples(LinkedList<TRawSample> samples, shared::pmr::memory_resource* memoryResource) :
+        _samples{std::move(samples)},
+        _memoryResource{memoryResource}
     {
     }
 
     std::mutex _lock;
-    std::list<TRawSample> _samples;
+    LinkedList<TRawSample> _samples;
+    shared::pmr::memory_resource* _memoryResource;
 };

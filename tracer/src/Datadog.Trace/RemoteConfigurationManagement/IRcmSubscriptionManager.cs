@@ -28,5 +28,5 @@ internal interface IRcmSubscriptionManager
 
     byte[] GetCapabilities();
 
-    Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse>> callback);
+    Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback);
 }

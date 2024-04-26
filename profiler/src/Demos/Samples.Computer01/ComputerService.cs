@@ -51,6 +51,7 @@ namespace Samples.Computer01
 #endif
         private Obfuscation _obfuscation;
         private ThreadSpikes _threadSpikes;
+        private StringConcat _stringConcat;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -174,6 +175,10 @@ namespace Samples.Computer01
 
                 case Scenario.ThreadSpikes:
                     StartThreadSpikes(nbThreads, parameter);
+                    break;
+
+                case Scenario.StringConcat:
+                    StartStringConcat(parameter);
                     break;
 
                 default:
@@ -301,6 +306,10 @@ namespace Samples.Computer01
 
                 case Scenario.ThreadSpikes:
                     StopThreadSpikes();
+                    break;
+
+                case Scenario.StringConcat:
+                    StopStringConcat();
                     break;
             }
         }
@@ -431,6 +440,10 @@ namespace Samples.Computer01
 
                     case Scenario.ThreadSpikes:
                         RunThreadSpikes(nbThreads, parameter);
+                        break;
+
+                    case Scenario.StringConcat:
+                        RunStringConcat(parameter);
                         break;
 
                     default:
@@ -629,6 +642,12 @@ namespace Samples.Computer01
             _threadSpikes.Start();
         }
 
+        private void StartStringConcat(int count)
+        {
+            _stringConcat = new StringConcat(count);
+            _stringConcat.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -765,6 +784,11 @@ namespace Samples.Computer01
         private void StopThreadSpikes()
         {
             _threadSpikes.Stop();
+        }
+
+        private void StopStringConcat()
+        {
+            _stringConcat.Stop();
         }
 
         private void RunComputer()
@@ -938,6 +962,12 @@ namespace Samples.Computer01
         private void RunThreadSpikes(int threadCount, int duration)
         {
             var test = new ThreadSpikes(threadCount, duration);
+            test.Run();
+        }
+
+        private void RunStringConcat(int count)
+        {
+            var test = new StringConcat(count);
             test.Run();
         }
 

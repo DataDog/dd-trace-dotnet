@@ -62,12 +62,11 @@ public static class SignInManagerPasswordSignInUserIntegration
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TReturn : ISignInResult
     {
-        if (Security.Instance is { TrackUserEvents: true } security)
+        if (Security.Instance is { TrackUserEvents: true } security && state.Scope is { Span: { } span })
         {
             var userExists = (state.State as IDuckType)?.Instance is not null;
             var user = state.State as IIdentityUser;
 
-            var span = state.Scope.Span;
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
             if (!returnValue.Succeeded)

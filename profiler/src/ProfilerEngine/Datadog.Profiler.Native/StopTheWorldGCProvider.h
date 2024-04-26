@@ -7,6 +7,8 @@
 #include "IGCSuspensionsListener.h"
 #include "RawStopTheWorldSample.h"
 
+#include "shared/src/native-src/dd_memory_resource.hpp"
+
 class IFrameStore;
 class IThreadsCpuManager;
 class IAppDomainStore;
@@ -27,7 +29,8 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration);
+        IConfiguration* pConfiguration,
+        shared::pmr::memory_resource* memoryResource);
 
     // Inherited via IGCSuspensionsListener
     void OnSuspension(uint64_t timestamp, int32_t number, uint32_t generation, uint64_t pauseDuration) override;

@@ -205,7 +205,7 @@ public class DistributedPropagatorTests
                        RawSpanId = RawSpanId,
                        SamplingPriority = SamplingPriority,
                        PropagatedTags = PropagatedTagsCollection,
-                       AdditionalW3CTraceState = AdditionalW3CTraceState
+                       AdditionalW3CTraceState = AdditionalW3CTraceState,
                    });
     }
 

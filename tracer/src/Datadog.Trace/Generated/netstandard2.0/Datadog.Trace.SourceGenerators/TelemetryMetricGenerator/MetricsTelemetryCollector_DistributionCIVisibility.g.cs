@@ -63,4 +63,16 @@ internal partial class MetricsTelemetryCollector
     public void RecordDistributionCIVisibilityCodeCoverageFiles(double value)
     {
     }
+
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionRequestMs(double value)
+    {
+    }
+
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(double value)
+    {
+    }
+
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseTests(double value)
+    {
+    }
 }

@@ -26,6 +26,7 @@ public:
               uint32_t timeoutMS);
     ~IpcServer();
 
+    // TODO: remove this method and use Start instead in the sample application
     static std::unique_ptr<IpcServer> StartAsync(
         IIpcLogger* pLogger,
         const std::string& portName,
@@ -34,11 +35,11 @@ public:
         uint32_t outBufferSize,
         uint32_t maxInstances = PIPE_UNLIMITED_INSTANCES,
         uint32_t timeoutMS = NMPWAIT_USE_DEFAULT_WAIT);
+    void WaitForNamedPipe(DWORD timeoutMS);
     void Stop();
 
 private:
     static void CALLBACK StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID context);
-    static void CALLBACK ConnectCallback(PTP_CALLBACK_INSTANCE instance, PVOID context);
     void ShowLastError(const char* message, uint32_t lastError = ::GetLastError());
 
 private:
@@ -50,8 +51,11 @@ private:
     uint32_t _timeoutMS;
     INamedPipeHandler* _pHandler;
     IIpcLogger* _pLogger;
+    HANDLE _hNamedPipe;
 
-    uint32_t _serverCount;
+    // will be set when the server is initialized
+    HANDLE _hInitializedEvent;
+
     std::atomic<bool> _stopRequested = false;
 };
 

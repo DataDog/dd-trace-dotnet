@@ -81,8 +81,8 @@ public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFix
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("LoadFromGAC", "True")]
-    [InlineData("block_request", 200)]
-    [InlineData("redirect_request", 302)]
+    [InlineData(BlockingAction.BlockRequestType, 200)]
+    [InlineData(BlockingAction.RedirectRequestType, 302)]
     [Trait("RunOnWindows", "True")]
     public async Task TestBlockingAction(string type, int statusCode)
     {

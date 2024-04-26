@@ -3,9 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Security.Unit.Tests.Utils;
@@ -13,89 +15,125 @@ using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
+using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.Rasp.Unit.Tests;
 
 public class RaspWafTests : WafLibraryRequiredTest
 {
     [Theory]
-    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "block")]
-    public void PathTraversalRule(string value, string paramValue, string rule, string ruleFile, string action)
+    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "customblock", BlockingAction.BlockRequestType)]
+    public void GivenALfiRule_WhenActionReturnCodeIsChanged_ThenChangesAreApplied(string value, string paramValue, string rule, string ruleFile, string action, string actionType)
     {
-        Execute(
-            AddressesConstants.FileAccess,
-            value,
-            paramValue,
-            rule,
-            ruleFile,
-            action);
+        var args = CreateArgs(paramValue);
+        var context = InitWaf(true, ruleFile, args, out var waf);
+
+        var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, value } };
+        var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds);
+        resultEph.BlockInfo["status_code"].Should().Be("403");
+        var jsonString = JsonConvert.SerializeObject(resultEph.Data);
+        var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
+        resultData.Rule.Id.Should().Be(rule);
+
+        ConfigurationStatus configurationStatus = new(string.Empty);
+        var newAction = CreateNewStatusAction(action, actionType, 500);
+        configurationStatus.Actions[action] = newAction;
+        configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
+        var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
+        res.Success.Should().BeTrue();
+
+        context = waf.CreateContext();
+        context.Run(args, TimeoutMicroSeconds);
+        var resultEphNew = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds);
+        resultEphNew.BlockInfo["status_code"].Should().Be("500");
     }
 
     [Theory]
-    [InlineData("https://user:password@127.0.0.1:443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo", "127.0.0.1", "rsp-930-002", "rasp-rule-set.json", "block")]
-    [InlineData("https://localhost/path", "localhost", "rsp-930-002", "rasp-rule-set.json", "block")]
-    [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rsp-930-002", "rasp-rule-set.json", "block")]
-    public void SsrfRule(string value, string paramValue, string rule, string ruleFile, string action)
+    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "customBlock", BlockingAction.BlockRequestType, AddressesConstants.FileAccess)]
+    [InlineData("https://user:password@127.0.0.1:443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo", "127.0.0.1", "rsp-930-002", "block", BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
+    [InlineData("https://localhost/path", "localhost", "rsp-930-002", "block", BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
+    [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rsp-930-002", "block", BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
+    public void GivenARaspRule_WhenInsecureAccess_ThenBlock(string value, string paramValue, string rule, string action, string actionType, string addreess)
     {
-        Execute(
-            AddressesConstants.UrlAccess,
+        ExecuteRule(
+            addreess,
             value,
             paramValue,
             rule,
-            ruleFile,
-            action);
+            "rasp-rule-set.json",
+            action,
+            actionType);
     }
 
-    private void Execute(string address, object value, string vulnerabilityType, string rule = null, string ruleFile = null, string expectedAction = null)
+    private void ExecuteRule(string address, object value, string paramValue, string rule, string ruleFile, string expectedAction, string actionType)
     {
-        ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, true, expectedAction);
-        ExecuteInternal(address, value, vulnerabilityType, rule, true, ruleFile, false, expectedAction);
-        ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, true, expectedAction);
-        ExecuteInternal(address, value, vulnerabilityType, rule, false, ruleFile, false, expectedAction);
+        ExecuteInternal(address, value, paramValue, rule, true, ruleFile, expectedAction, 1, actionType);
+        ExecuteInternal(address, value, paramValue, rule, false, ruleFile, expectedAction, 1, actionType);
+        ExecuteInternal(address, value, paramValue, rule, true, ruleFile, expectedAction, 5, actionType);
+        ExecuteInternal(address, value, paramValue, rule, false, ruleFile, expectedAction, 5, actionType);
     }
 
-    private void ExecuteInternal(string address, object value, string requestParam, string rule, bool newEncoder, string ruleFile, bool useTwoCalls, string expectedAction = null)
+    private void ExecuteInternal(string address, object value, string requestParam, string rule, bool newEncoder, string ruleFile, string expectedAction, int runNtimes, string actionType)
     {
-        var args = new Dictionary<string, object>();
+        var args = CreateArgs(requestParam);
+        var context = InitWaf(newEncoder, ruleFile, args, out _);
 
-        if (!useTwoCalls)
+        var argsVulnerable = new Dictionary<string, object> { { address, value } };
+        for (int i = 0; i < runNtimes; i++)
         {
-            args[address] = value;
+            var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds);
+            CheckResult(rule, expectedAction, resultEph, actionType);
         }
+    }
 
-        args.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
-        args.Add(AddressesConstants.RequestBody, new[] { "param", requestParam });
-        args.Add(AddressesConstants.RequestMethod, "GET");
-
+    private IContext InitWaf(bool newEncoder, string ruleFile, Dictionary<string, object> args, out Waf waf)
+    {
         var initResult = Waf.Create(
             WafLibraryInvoker,
             string.Empty,
             string.Empty,
             useUnsafeEncoder: newEncoder,
             embeddedRulesetPath: ruleFile);
-        using var waf = initResult.Waf;
+        waf = initResult.Waf;
         waf.Should().NotBeNull();
-        using var context = waf.CreateContext();
-        var result = context.Run(args, TimeoutMicroSeconds);
+        var context = waf.CreateContext();
+        context.Run(args, TimeoutMicroSeconds);
+        return context;
+    }
 
-        if (useTwoCalls)
+    private Dictionary<string, object> CreateArgs(string requestParam)
+    {
+        return new Dictionary<string, object>
         {
-            args.Clear();
-            args[address] = value;
-            result = context.Run(args, TimeoutMicroSeconds);
+            { AddressesConstants.RequestUriRaw, "http://localhost:54587/" },
+            { AddressesConstants.RequestBody, new[] { "param", requestParam } },
+            { AddressesConstants.RequestMethod, "GET" }
+        };
+    }
+
+    private void CheckResult(string rule, string expectedAction, IResult result, string actionType)
+    {
+        result.ReturnCode.Should().Be(WafReturnCode.Match);
+        result.Actions.ContainsKey(actionType).Should().BeTrue();
+        var jsonString = JsonConvert.SerializeObject(result.Data);
+        var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
+        resultData.Rule.Id.Should().Be(rule);
+    }
+
+    private Action CreateNewStatusAction(string action, string actionType, int newStatus)
+    {
+        var newAction = new Action();
+        newAction.Id = action;
+        newAction.Type = actionType;
+        newAction.Parameters = new AppSec.Rcm.Models.Asm.Parameter();
+        newAction.Parameters.StatusCode = newStatus;
+        newAction.Parameters.Type = "auto";
+
+        if (newAction.Type == BlockingAction.RedirectRequestType)
+        {
+            newAction.Parameters.Location = "/toto";
         }
 
-        if (requestParam is not null)
-        {
-            result.ReturnCode.Should().Be(WafReturnCode.Match);
-            if (!string.IsNullOrEmpty(expectedAction))
-            {
-                result.Actions[0].Should().BeEquivalentTo(expectedAction);
-            }
-
-            var jsonString = JsonConvert.SerializeObject(result.Data);
-            var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
-            resultData.Rule.Id.Should().Be(rule);
-        }
+        return newAction;
     }
 }

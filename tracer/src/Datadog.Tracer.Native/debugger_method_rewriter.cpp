@@ -102,7 +102,7 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
         const auto [elementType, argTypeFlags] = argOrLocal.GetElementTypeAndFlags();
         
         bool isTypeIsByRefLike = false;
-        HRESULT hr = IsTypeByRefLike(moduleMetadata, argOrLocal, debuggerTokens->GetCorLibAssemblyRef(), isTypeIsByRefLike);
+        HRESULT hr = IsTypeByRefLike(m_corProfiler->info_, moduleMetadata, argOrLocal, debuggerTokens->GetCorLibAssemblyRef(), isTypeIsByRefLike);
 
         if (FAILED(hr))
         {
@@ -113,6 +113,13 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
         {
             Logger::Warn("DebuggerRewriter: Skipped ", isArgs ? "argument" : "local",
                          " index = ", argOrLocalIndex, " because it's By-Ref like.");
+            continue;
+        }
+
+        if (argTypeFlags & TypeFlagPinnedType)
+        {
+            Logger::Warn("DebuggerRewriter: Skipped ", isArgs ? "argument" : "local", " index = ", argOrLocalIndex,
+                         " because it's a pinned local.");
             continue;
         }
 
@@ -326,6 +333,12 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
                      spanOnMethodProbes.size(), " span probes on methodDef: ", methodHandler->GetMethodDef());
 
         auto hr = Rewrite(moduleHandler, methodHandler, pFunctionControl, methodProbes, lineProbes, spanOnMethodProbes);
+
+        if (hr == S_OK)
+        {
+            MarkAllProbesAsInstrumented(methodProbes, lineProbes, spanOnMethodProbes);
+        }
+
         return FAILED(hr) ? S_FALSE : S_OK;
     }
 }
@@ -1536,7 +1549,7 @@ void DebuggerMethodRewriter::LogDebugCallerInfo(const FunctionInfo* caller, cons
 }
 
 HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
-    const MethodProbeDefinitions& methodProbes, ModuleID module_id,
+    MethodProbeDefinitions& methodProbes, ModuleID module_id,
     ModuleMetadata& module_metadata, FunctionInfo* caller,
     DebuggerTokens* debugger_tokens, mdToken function_token, bool isStatic, TypeSignature* methodReturnType,
     const std::vector<TypeSignature>& methodLocals, int numLocals, ILRewriterWrapper& rewriterWrapper,
@@ -1699,6 +1712,16 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     ILInstr* loadInstanceInstr;
     hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr, debugger_tokens);
     IfFailRet(hr);
+
+    if (loadInstanceInstr->m_opcode == CEE_LDNULL)
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::ApplyMethodProbe() Failed to load this for async method. "
+                     "methodProbeId = ",
+                     methodProbeId, " module_id= ", module_id, ", functon_token=", function_token);
+        MarkAllMethodProbesAsError(methodProbes, async_method_could_not_load_this);
+        return E_FAIL;
+    }
+
     rewriterWrapper.LoadInt32(instrumentedMethodIndex);
     rewriterWrapper.LoadInt32(instrumentationVersion);
     rewriterWrapper.LoadToken(function_token);
@@ -2028,6 +2051,25 @@ HRESULT DebuggerMethodRewriter::GetTaskReturnType(const ILInstr* instruction, Mo
     return E_FAIL;
 }
 
+void DebuggerMethodRewriter::MarkAllProbesAsInstrumented(MethodProbeDefinitions& methodProbes,
+    LineProbeDefinitions& lineProbes, SpanProbeOnMethodDefinitions& spanOnMethodProbes)
+{
+    for (const auto& probe : methodProbes)
+    {
+        ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::INSTRUMENTED);
+    }
+
+    for (const auto& probe : lineProbes)
+    {
+        ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::INSTRUMENTED);
+    }
+
+    for (const auto& probe : spanOnMethodProbes)
+    {
+        ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::INSTRUMENTED);
+    }
+}
+
 void DebuggerMethodRewriter::MarkAllProbesAsError(MethodProbeDefinitions& methodProbes,
                                                   LineProbeDefinitions& lineProbes,
                                                   SpanProbeOnMethodDefinitions& spanOnMethodProbes,
@@ -2212,8 +2254,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         methodReturnType = caller->method_signature.GetReturnValue();
     }
-    auto debuggerLocals = std::vector<ULONG>(debuggerTokens->GetAdditionalLocalsCount());
-    hr = debuggerTokens->ModifyLocalSigAndInitialize(&rewriterWrapper, &methodReturnType, &callTargetStateIndex, &exceptionIndex,
+    auto debuggerLocals = std::vector<ULONG>(debuggerTokens->GetAdditionalLocalsCount(methodArguments));
+    hr = debuggerTokens->ModifyLocalSigAndInitialize(&rewriterWrapper, &methodReturnType, &methodArguments, &callTargetStateIndex, &exceptionIndex,
                                                      &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
                                                      &exceptionToken, &callTargetReturnToken, &firstInstruction, debuggerLocals, isAsyncMethod);
 
@@ -2233,7 +2275,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         // In async methods, the return value can't be byref-like (it can't be Task<T> where T is byref-like, because
         // byref-like can't exist as a generic param). Therefore, we only need to worry about non-async methods.
         bool isTypeIsByRefLike = false;
-        hr = IsTypeByRefLike(module_metadata, methodReturnType, debuggerTokens->GetCorLibAssemblyRef(), isTypeIsByRefLike);
+        hr = IsTypeByRefLike(m_corProfiler->info_, module_metadata, methodReturnType, debuggerTokens->GetCorLibAssemblyRef(), isTypeIsByRefLike);
         if (FAILED(hr))
         {
             Logger::Warn("DebuggerRewriter: Failed to determine if the return value is By-Ref like.");
@@ -2246,7 +2288,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     }
 
     bool isTypeIsByRefLike = false;
-    hr = IsTypeTokenByRefLike(module_metadata, caller->type.id, isTypeIsByRefLike);
+    hr = IsTypeTokenByRefLike(m_corProfiler->info_, module_metadata, caller->type.id, isTypeIsByRefLike);
 
     if (FAILED(hr))
     {
@@ -2440,75 +2482,6 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     }
 
     return S_OK;
-}
-
-HRESULT DebuggerMethodRewriter::IsTypeByRefLike(
-    ModuleMetadata& module_metadata, 
-    const TypeSignature& typeSig,
-    const mdAssemblyRef& corLibAssemblyRef,
-    bool& isTypeIsByRefLike) const
-{
-    auto metaDataImportOfTypeDef = module_metadata.metadata_import;
-    auto metaDataEmitOfTypeDef = module_metadata.metadata_emit;
-    auto typeDefOrRefOrSpecToken = typeSig.GetTypeTok(metaDataEmitOfTypeDef, corLibAssemblyRef);
-
-    // Get open type from type spec
-    if (TypeFromToken(typeDefOrRefOrSpecToken) == mdtTypeSpec)
-    {
-        PCCOR_SIGNATURE sig;
-        const ULONG sigLength = typeSig.GetSignature(sig);
-        GenericTypeProps genericProps {sig, sigLength};
-        const auto hr = genericProps.TryParse();
-
-        if (hr == S_OK && genericProps.OpenTypeToken != mdTokenNil)
-        {
-            typeDefOrRefOrSpecToken = genericProps.OpenTypeToken;
-        }
-        else if (genericProps.SpecElementType == ELEMENT_TYPE_VAR || genericProps.SpecElementType == ELEMENT_TYPE_MVAR)
-        {
-            isTypeIsByRefLike = false;
-            return S_OK;
-        }
-        else
-        {
-            Logger::Warn("[IsTypeByRefLike] Failed to get open type token for generic type. Assuming no byref-like.");
-            isTypeIsByRefLike = false;
-            return S_OK;
-        }
-    }
-
-    return IsTypeTokenByRefLike(module_metadata, typeDefOrRefOrSpecToken, isTypeIsByRefLike);
-}
-
-HRESULT DebuggerMethodRewriter::IsTypeTokenByRefLike(ModuleMetadata& module_metadata, mdToken typeDefOrRefOrSpecToken, bool& isTypeIsByRefLike) const
-{
-    auto metaDataImportOfTypeDef = module_metadata.metadata_import;
-
-    // Get open type from type spec
-    if (TypeFromToken(typeDefOrRefOrSpecToken) == mdtTypeSpec)
-    {
-        Logger::Warn("IsTypeTokenByRefLike is not resolving type specs. Use IsTypeByRefLike instead.");
-        isTypeIsByRefLike = false;
-        return S_OK;
-    }
-
-    if (TypeFromToken(typeDefOrRefOrSpecToken) == mdtTypeRef)
-    {
-        const auto& metadata_import = module_metadata.metadata_import;
-        const auto& assembly_import = module_metadata.assembly_import;
-
-        auto hr = ResolveType(m_corProfiler->info_, metadata_import, assembly_import, typeDefOrRefOrSpecToken,
-                              typeDefOrRefOrSpecToken, metaDataImportOfTypeDef);
-
-        if (FAILED(hr))
-        {
-            // For now we ignore issues with resolving types.
-            isTypeIsByRefLike = false;
-            return S_OK;
-        }
-    }
-
-    return IsByRefLike(metaDataImportOfTypeDef, typeDefOrRefOrSpecToken, isTypeIsByRefLike);
 }
 
 void DebuggerMethodRewriter::AdjustExceptionHandlingClauses(ILInstr* pFromInstr, ILInstr* pToInstr,

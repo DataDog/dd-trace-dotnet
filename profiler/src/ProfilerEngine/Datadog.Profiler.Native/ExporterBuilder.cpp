@@ -50,7 +50,7 @@ ExporterBuilder& ExporterBuilder::SetTags(Tags tags)
 
 struct ExporterBuilder::AgentEndpoint
 {
-    ddog_Endpoint inner;
+    ddog_prof_Endpoint inner;
 };
 
 std::unique_ptr<libdatadog::AgentProxy> ExporterBuilder::CreateAgentProxy()
@@ -103,10 +103,10 @@ ExporterBuilder::AgentEndpoint ExporterBuilder::CreateEndpoint()
     {
         assert(!_site.empty());
         assert(!_apiKey.empty());
-        return {ddog_Endpoint_agentless(FfiHelper::StringToCharSlice(_site), FfiHelper::StringToCharSlice(_apiKey))};
+        return {ddog_prof_Endpoint_agentless(FfiHelper::StringToCharSlice(_site), FfiHelper::StringToCharSlice(_apiKey))};
     }
 
-    return {ddog_Endpoint_agent(FfiHelper::StringToCharSlice(_url))};
+    return {ddog_prof_Endpoint_agent(FfiHelper::StringToCharSlice(_url))};
 }
 
 std::unique_ptr<Exporter> ExporterBuilder::Build()

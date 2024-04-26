@@ -79,6 +79,8 @@ public sealed class Test
         }
     }
 
+    internal bool IsClosed => Interlocked.CompareExchange(ref _finished, 0, 0) == 1;
+
     /// <summary>
     /// Gets the test name
     /// </summary>
@@ -403,9 +405,11 @@ public sealed class Test
         scope.Dispose();
 
         // Record EventFinished telemetry metric
-        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
+        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
                 MetricTags.CIVisibilityTestingEventType.Test,
-                tags.Type == TestTags.TypeBenchmark) is { } eventTypeWithMetadata)
+                tags.Type == TestTags.TypeBenchmark,
+                tags.EarlyFlakeDetectionTestIsNew == "true",
+                tags.EarlyFlakeDetectionTestAbortReason == "slow") is { } eventTypeWithMetadata)
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework), eventTypeWithMetadata);
         }
@@ -422,5 +426,15 @@ public sealed class Test
     internal ISpan GetInternalSpan()
     {
         return _scope.Span;
+    }
+
+    internal TestSpanTags GetTags()
+    {
+        return (TestSpanTags)_scope.Span.Tags;
+    }
+
+    internal void SetName(string name)
+    {
+        ((TestSpanTags)_scope.Span.Tags).Name = name;
     }
 }

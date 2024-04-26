@@ -3,11 +3,17 @@
 
 #include "gtest/gtest.h"
 
+#include "CallstackProvider.h"
+#include "MemoryResourceManager.h"
 #include "StackSnapshotResultBuffer.h"
+
+#include "shared/src/native-src/dd_span.hpp"
 
 TEST(StackSnapshotResultBufferTest, CheckAddedFrames)
 {
+    auto p = CallstackProvider(MemoryResourceManager::GetDefault());
     auto buffer = StackSnapshotResultBuffer();
+    buffer.SetCallstack(p.Get());
 
     std::vector<std::uintptr_t> expectedIps = {42, 21, 11, 4};
     for (auto ip : expectedIps)
@@ -15,17 +21,17 @@ TEST(StackSnapshotResultBufferTest, CheckAddedFrames)
         buffer.AddFrame(ip);
     }
 
-    ASSERT_EQ(expectedIps.size(), buffer.GetFramesCount());
+    Callstack expectedCallstack(shared::span<std::uintptr_t>(expectedIps.data(), expectedIps.size()));
+    auto callstack = buffer.GetCallstack();
 
-    std::vector<std::uintptr_t> ips;
-    buffer.CopyInstructionPointers(ips);
-
-    ASSERT_EQ(expectedIps, ips);
+    ASSERT_EQ(expectedCallstack, callstack);
 }
 
 TEST(StackSnapshotResultBufferTest, CheckAddedFakeFrame)
 {
+    auto p = CallstackProvider(MemoryResourceManager::GetDefault());
     auto buffer = StackSnapshotResultBuffer();
+    buffer.SetCallstack(p.Get());
 
     std::vector<std::uintptr_t> expectedIps = {42, 21, 11, 4};
 
@@ -40,28 +46,24 @@ TEST(StackSnapshotResultBufferTest, CheckAddedFakeFrame)
 
     ASSERT_EQ(expectedIps.size(), buffer.GetFramesCount());
 
-    std::vector<std::uintptr_t> ips;
-    buffer.CopyInstructionPointers(ips);
+    Callstack expectedCallstack(shared::span<std::uintptr_t>(expectedIps.data(), expectedIps.size()));
+    auto callstack = buffer.GetCallstack();
 
-    ASSERT_EQ(expectedIps, ips);
+    ASSERT_EQ(expectedCallstack, callstack);
 }
 
-TEST(StackSnapshotResultBufferTest, CheckIfWeReachTheBufferLimitTheLastFrameIsFake)
+TEST(StackSnapshotResultBufferTest, CheckIfWeReachTheBufferLimit)
 {
+    auto p = CallstackProvider(MemoryResourceManager::GetDefault());
     auto buffer = StackSnapshotResultBuffer();
+    buffer.SetCallstack(p.Get());
 
-    for (auto i = 1; i < 2049; i++)
+    for (auto i = 0; i < Callstack::MaxFrames; i++)
     {
         ASSERT_TRUE(buffer.AddFrame(i));
     }
 
-    ASSERT_FALSE(buffer.AddFrame(2049));
+    ASSERT_FALSE(buffer.AddFrame(Callstack::MaxFrames));
 
-    ASSERT_EQ(2049, buffer.GetFramesCount());
-
-    std::vector<std::uintptr_t> ips;
-    buffer.CopyInstructionPointers(ips);
-
-    // The last frame is a fake frame
-    ASSERT_EQ(0, ips.back());
+    ASSERT_EQ(Callstack::MaxFrames, buffer.GetFramesCount());
 }

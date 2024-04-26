@@ -54,6 +54,9 @@ namespace Datadog.Trace.Ci.Configuration
 
             // Check if Datadog.Trace should be installed in the GAC
             InstallDatadogTraceInGac = config.WithKeys(ConfigurationKeys.CIVisibility.InstallDatadogTraceInGac).AsBool(true);
+
+            // Early flake detection
+            EarlyFlakeDetectionEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled).AsBool();
         }
 
         /// <summary>
@@ -152,6 +155,11 @@ namespace Datadog.Trace.Ci.Configuration
         public bool InstallDatadogTraceInGac { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the Early flake detection feature is enabled.
+        /// </summary>
+        public bool? EarlyFlakeDetectionEnabled { get; private set; }
+
+        /// <summary>
         /// Gets the tracer settings
         /// </summary>
         public TracerSettings TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, () => InitializeTracerSettings())!;
@@ -169,6 +177,11 @@ namespace Datadog.Trace.Ci.Configuration
         internal void SetTestsSkippingEnabled(bool value)
         {
             TestsSkippingEnabled = value;
+        }
+
+        internal void SetEarlyFlakeDetectionEnabled(bool value)
+        {
+            EarlyFlakeDetectionEnabled = value;
         }
 
         internal void SetAgentlessConfiguration(bool enabled, string? apiKey, string? agentlessUrl)

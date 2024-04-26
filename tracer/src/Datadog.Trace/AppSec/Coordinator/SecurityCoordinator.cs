@@ -12,6 +12,7 @@ using System.IO.Compression;
 using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -60,22 +61,13 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    public IResult? Scan(bool firstTime = false)
+    public IResult? Scan(bool lastTime = false)
     {
         var args = GetBasicRequestArgsForWaf();
-        if (firstTime)
-        {
-            var isApiSecurityProcessed = _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
-            if (isApiSecurityProcessed)
-            {
-                _localRootSpan.Context.TraceContext.MarkApiSecurity();
-            }
-        }
-
-        return RunWaf(args);
+        return RunWaf(args, lastTime);
     }
 
-    public IResult? RunWaf(Dictionary<string, object> args, Action<IDatadogLogger, Exception>? logException = null)
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false)
     {
         LogAddressIfDebugEnabled(args);
         IResult? result = null;
@@ -93,10 +85,20 @@ internal readonly partial struct SecurityCoordinator
                 }
             }
 
+            _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode.ToString(), _httpTransport.RouteData);
+
             if (additiveContext != null)
             {
                 // run the WAF and execute the results
-                result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
+                if (runWithEphemeral)
+                {
+                    result = additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds);
+                }
+                else
+                {
+                    result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
+                }
+
                 RecordTelemetry(result);
 
                 // Show the deserilized string of additiveContext
@@ -106,14 +108,13 @@ internal readonly partial struct SecurityCoordinator
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            if (logException is not null)
+            var stringBuilder = new StringBuilder();
+            foreach (var kvp in args)
             {
-                logException(Log, ex);
+                stringBuilder.Append($"Key: {kvp.Key} Value: {kvp.Value}, ");
             }
-            else
-            {
-                Log.Error(ex, "Call into the security module failed");
-            }
+
+            Log.Error(ex, "Call into the security module failed with arguments {Args}", stringBuilder.ToString());
         }
         finally
         {

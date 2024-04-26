@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -13,6 +14,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
@@ -44,6 +46,7 @@ public class SpanMessagePackFormatterTests
         spans[1].Tags.SetMetric("Metric1", 1.1);
         spans[1].Tags.SetMetric("Metric2", 2.1);
         spans[1].Tags.SetMetric("Metric3", 3.1);
+        spans[1].Context.LastParentId = "0123456789abcdef";
 
         spans[2].Error = true;
 
@@ -90,8 +93,16 @@ public class SpanMessagePackFormatterTests
             }
             else
             {
-                tagsProcessor.Remaining.Should()
-                             .HaveCount(1).And.Contain(new KeyValuePair<string, string>("language", "dotnet"));
+                if (!string.IsNullOrEmpty(expected.Context.LastParentId))
+                {
+                    tagsProcessor.Remaining.Should()
+                                 .HaveCount(2).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("_dd.parent_id", "0123456789abcdef"));
+                }
+                else
+                {
+                    tagsProcessor.Remaining.Should()
+                                 .HaveCount(1).And.Contain(new KeyValuePair<string, string>("language", "dotnet"));
+                }
             }
 
             var metricsProcessor = new TagsProcessor<double>(actual.Metrics);
@@ -111,6 +122,86 @@ public class SpanMessagePackFormatterTests
         }
     }
 
+    [Fact]
+    public void SpanLink_Tag_Serialization()
+    {
+        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
+
+        var parentContext = new SpanContext(new TraceId(0, 1), 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
+
+        var spans = new[]
+        {
+            new Span(parentContext, DateTimeOffset.UtcNow),
+            new Span(new SpanContext(parentContext, new TraceContext(Mock.Of<IDatadogTracer>()), "ServiceName1"), DateTimeOffset.UtcNow),
+            new Span(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
+        };
+        var attributesToAdd = new List<KeyValuePair<string, string>>
+        {
+            new("link.name", "manually_linking"),
+            new("pair", "false"),
+            new("arbitrary", "56709")
+        };
+        spans[0].AddSpanLink(spans[1], attributesToAdd);
+        var tmpSpanLink = spans[1].AddSpanLink(spans[2]);
+        tmpSpanLink.AddAttribute("attribute1", "value1");
+        tmpSpanLink.AddAttribute("attribute2", "value2");
+        spans[1].AddSpanLink(spans[0]);
+
+        foreach (var span in spans)
+        {
+            span.SetDuration(TimeSpan.FromSeconds(1));
+        }
+
+        var traceChunk = new TraceChunkModel(new(spans));
+
+        byte[] bytes = [];
+
+        var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
+        var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
+
+        for (int i = 0; i < result.Length; i++)
+        {
+            var expected = spans[i];
+            var actual = result[i];
+
+            if (expected.SpanLinks is not null)
+            {
+                for (int j = 0; j < expected.SpanLinks.Count; j++)
+                {
+                    var expectedSpanlink = expected.SpanLinks[j];
+                    var actualSpanLink = actual.SpanLinks[j];
+                    actualSpanLink.TraceIdHigh.Should().Be(expectedSpanlink.Context.TraceId128.Upper);
+                    actualSpanLink.TraceIdLow.Should().Be(expectedSpanlink.Context.TraceId128.Lower);
+                    actualSpanLink.SpanId.Should().Be(expectedSpanlink.Context.SpanId);
+                    var expectedTraceState = W3CTraceContextPropagator.CreateTraceStateHeader(expectedSpanlink.Context);
+                    // tracestate is only added when trace is from distributed tracing
+                    if (expectedSpanlink.Context.IsRemote)
+                    {
+                        actualSpanLink.TraceState.Should().Be(expectedTraceState);
+                    }
+
+                    // 3 possible values, 1, 0 or null
+                    var samplingPriority = expectedSpanlink.Context.TraceContext?.SamplingPriority ?? expectedSpanlink.Context.SamplingPriority;
+                    var expectedTraceFlags = samplingPriority switch
+                    {
+                        null => 0u,             // not set
+                        > 0 => 1u + (1u << 31), // keep
+                        <= 0 => 1u << 31,       // drop
+                    };
+                    if (expectedTraceFlags > 0)
+                    {
+                        actualSpanLink.TraceFlags.Should().Be(expectedTraceFlags);
+                    }
+
+                    if (expectedSpanlink.Attributes is { Count: > 0 })
+                    {
+                        actualSpanLink.Attributes.Should().BeEquivalentTo(expectedSpanlink.Attributes);
+                    }
+                }
+            }
+        }
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -118,7 +209,7 @@ public class SpanMessagePackFormatterTests
     {
         var mockApi = new MockApi();
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, generate128BitTraceId } });
-        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null);
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
         var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
         using (_ = tracer.StartActive("root"))
@@ -152,6 +243,28 @@ public class SpanMessagePackFormatterTests
             tagValue0.Should().BeNull();
             tagValue1.Should().BeNull();
         }
+    }
+
+    [Fact]
+    public async Task LastParentId_Tag()
+    {
+        var mockApi = new MockApi();
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, false } });
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+
+        using (var scope = tracer.StartActiveInternal("root"))
+        {
+            scope.Span.Context.LastParentId = "0123456789abcdef";
+        }
+
+        await tracer.FlushAsync();
+        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
+
+        var span0 = traceChunks[0][0];
+        var tagValue0 = span0.GetTag("_dd.parent_id");
+
+        tagValue0.Should().Be("0123456789abcdef");
     }
 
     private readonly struct TagsProcessor<T> : IItemProcessor<T>

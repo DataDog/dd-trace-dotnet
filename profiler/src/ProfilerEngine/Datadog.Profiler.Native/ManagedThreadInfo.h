@@ -15,6 +15,8 @@
 
 #include <atomic>
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <utility>
 
 static constexpr int32_t MinFieldAlignRequirement = 8;
@@ -31,11 +33,11 @@ public:
 struct ManagedThreadInfo : public IThreadInfo
 {
 private:
-    ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle, shared::WSTRING pThreadName);
+    ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pCorProfilerInfo, DWORD osThreadId, HANDLE osThreadHandle, shared::WSTRING pThreadName);
     static std::uint32_t GenerateProfilerThreadInfoId();
 
 public:
-    explicit ManagedThreadInfo(ThreadID clrThreadId);
+    explicit ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pCorProfilerInfo);
     ~ManagedThreadInfo() = default;
 
     inline std::uint32_t GetProfilerThreadInfoId() const;
@@ -91,9 +93,11 @@ public:
 #endif
     inline bool CanBeInterrupted() const;
 
+    inline AppDomainID GetAppDomainId();
+
 private:
-    inline void BuildProfileThreadId();
-    inline void BuildProfileThreadName();
+    inline std::string BuildProfileThreadId();
+    inline std::string BuildProfileThreadName();
 
 private:
     static constexpr std::uint32_t MaxProfilerThreadInfoId = 0xFFFFFF; // = 16,777,215
@@ -133,13 +137,26 @@ private:
     // to know (for now, maybe more later) if the profiler interrupted a thread which was
     // doing a syscalls.
     volatile int* _sharedMemoryArea;
+    ICorProfilerInfo4* _info;
+    std::shared_mutex _threadIdMutex;
+    std::shared_mutex _threadNameMutex;
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()
 {
+    {
+        auto l = std::shared_lock(_threadIdMutex);
+        if (!_profileThreadId.empty())
+        {
+            return _profileThreadId;
+        }
+    }
+
+    auto id = BuildProfileThreadId();
+    std::unique_lock l(_threadIdMutex);
     if (_profileThreadId.empty())
     {
-        BuildProfileThreadId();
+        _profileThreadId = std::move(id);
     }
 
     return _profileThreadId;
@@ -147,22 +164,32 @@ std::string ManagedThreadInfo::GetProfileThreadId()
 
 std::string ManagedThreadInfo::GetProfileThreadName()
 {
-    if (_profileThreadName.empty())
     {
-        BuildProfileThreadName();
+        std::shared_lock l(_threadNameMutex);
+        if (!_profileThreadName.empty())
+        {
+            return _profileThreadName;
+        }
     }
 
+    auto s = BuildProfileThreadName();
+    std::unique_lock l(_threadNameMutex);
+    if (_profileThreadName.empty())
+    {
+        _profileThreadName = std::move(s);
+    }
     return _profileThreadName;
 }
 
-inline void ManagedThreadInfo::BuildProfileThreadId()
+inline std::string ManagedThreadInfo::BuildProfileThreadId()
 {
     std::stringstream builder;
     builder << "<" << std::dec << _profilerThreadInfoId << "> [#" << _osThreadId << "]";
-    _profileThreadId = builder.str();
+
+    return builder.str();
 }
 
-inline void ManagedThreadInfo::BuildProfileThreadName()
+inline std::string ManagedThreadInfo::BuildProfileThreadName()
 {
     std::stringstream nameBuilder;
     if (GetThreadName().empty())
@@ -175,7 +202,7 @@ inline void ManagedThreadInfo::BuildProfileThreadName()
     }
     nameBuilder << " [#" << _osThreadId << "]";
 
-    _profileThreadName = nameBuilder.str();
+    return nameBuilder.str();
 }
 
 std::uint32_t ManagedThreadInfo::GetProfilerThreadInfoId() const
@@ -203,7 +230,12 @@ inline void ManagedThreadInfo::SetOsInfo(DWORD osThreadId, HANDLE osThreadHandle
     _osThreadId = osThreadId;
     _osThreadHandle = ScopedHandle(osThreadHandle);
 
-    BuildProfileThreadId();
+    auto id = BuildProfileThreadId();
+    std::unique_lock l(_threadIdMutex);
+    if (_profileThreadId.empty())
+    {
+        _profileThreadId = std::move(id);
+    }
 }
 
 inline const shared::WSTRING& ManagedThreadInfo::GetThreadName() const
@@ -214,7 +246,13 @@ inline const shared::WSTRING& ManagedThreadInfo::GetThreadName() const
 inline void ManagedThreadInfo::SetThreadName(shared::WSTRING pThreadName)
 {
     _pThreadName = std::move(pThreadName);
-    BuildProfileThreadName();
+
+    auto s = BuildProfileThreadName();
+    std::unique_lock l(_threadNameMutex);
+    if (_profileThreadName.empty())
+    {
+        _profileThreadName = std::move(s);
+    }
 }
 
 inline std::uint64_t ManagedThreadInfo::GetLastSampleHighPrecisionTimestampNanoseconds() const
@@ -415,3 +453,14 @@ inline void ManagedThreadInfo::SetSharedMemory(volatile int* memoryArea)
     _sharedMemoryArea = memoryArea;
 }
 #endif
+
+inline AppDomainID ManagedThreadInfo::GetAppDomainId()
+{
+    // This function will be called in the signal handler.
+    // As far as I saw, this function is safe'ish to be called from a signal handler.
+    // If at some point, it's not safe anymore, we will have to rethink how we get
+    // the AppDomainID from a signal handler.
+    AppDomainID appDomainId{0};
+    HRESULT hr = _info->GetThreadAppDomain(_clrThreadId, &appDomainId);
+    return appDomainId;
+}

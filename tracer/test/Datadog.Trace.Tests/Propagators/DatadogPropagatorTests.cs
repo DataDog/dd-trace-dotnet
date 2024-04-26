@@ -214,6 +214,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
                            PropagatedTags = PropagatedTagsCollection,
+                           IsRemote = true,
                        });
         }
 
@@ -238,6 +239,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
                            PropagatedTags = PropagatedTagsCollection,
+                           IsRemote = true,
                        });
         }
 
@@ -261,6 +263,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
                            PropagatedTags = PropagatedTagsCollection,
+                           IsRemote = true,
                        });
         }
 
@@ -291,6 +294,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawTraceId = RawTraceId,
                            RawSpanId = "0000000000000000",
                            PropagatedTags = EmptyPropagatedTags,
+                           IsRemote = true,
                        });
         }
 
@@ -355,6 +359,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
                            PropagatedTags = PropagatedTagsCollection,
+                           IsRemote = true,
                        });
         }
 
@@ -389,6 +394,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Origin = Origin,
                            SamplingPriority = expectedSamplingPriority,
                            PropagatedTags = PropagatedTagsCollection,
+                           IsRemote = true,
                        });
         }
 

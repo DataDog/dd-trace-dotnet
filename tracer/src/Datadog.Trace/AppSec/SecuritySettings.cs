@@ -85,38 +85,39 @@ namespace Datadog.Trace.AppSec
                                                || val.Equals(UserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase))
                                          .ToLowerInvariant();
 
-            ApiSecuritySampling = config
-                                 .WithKeys(ConfigurationKeys.AppSec.ApiSecurityRequestSampleRate)
-                                 .AsDouble(val => val is <= 1 and >= 0)
-                                 .GetValueOrDefault(0.1);
-
-            ApiSecurityMaxConcurrentRequests = config
-                                              .WithKeys(ConfigurationKeys.AppSec.ApiSecurityMaxConcurrentRequests)
-                                              .AsInt32(val => val >= 1)
-                                              .GetValueOrDefault(1);
-
-            ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled)
+            ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEnabled, "DD_EXPERIMENTAL_API_SECURITY_ENABLED")
                                        .AsBool(false);
+
+            ApiSecuritySampleDelay = config.WithKeys(ConfigurationKeys.AppSec.ApiSecuritySampleDelay)
+                                           .AsDouble(30.0, val => val >= 0.0)
+                                           .Value;
+
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
                                      .AsBool(false);
 
             // For now, RASP is disabled by default.
             RaspEnabled = config.WithKeys(ConfigurationKeys.AppSec.RaspEnabled)
-                                     .AsBool(false) && Enabled;
+                                .AsBool(false) && Enabled;
 
             StackTraceEnabled = config.WithKeys(ConfigurationKeys.AppSec.StackTraceEnabled)
-                         .AsBool(true);
+                                      .AsBool(true);
 
             MaxStackTraces = config
                                   .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
-                                  .AsInt32(val => val >= 0)
-                                  .GetValueOrDefault(2);
+                                  .AsInt32(defaultValue: 2, validator: val => val >= 1)
+                                  .Value;
 
             MaxStackTraceDepth = config
                                   .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
-                                  .AsInt32(val => val >= 0)
-                                  .GetValueOrDefault(32);
+                                  .AsInt32(defaultValue: 32, validator: val => val >= 1)
+                                  .Value;
+
+            WafDebugEnabled = config
+                             .WithKeys(ConfigurationKeys.AppSec.WafDebugEnabled)
+                             .AsBool(defaultValue: false);
         }
+
+        public double ApiSecuritySampleDelay { get; set; }
 
         public double ApiSecuritySampling { get; }
 
@@ -125,6 +126,8 @@ namespace Datadog.Trace.AppSec
         public bool Enabled { get; }
 
         public bool UseUnsafeEncoder { get; }
+
+        public bool WafDebugEnabled { get; }
 
         public bool CanBeToggled { get; }
 

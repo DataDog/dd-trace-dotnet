@@ -78,7 +78,7 @@
                   },
                   "Source": {
                     "type": "String",
-                    "value": "System.Linq"
+                    "value": "Samples.Probes.TestRuns"
                   },
                   "StackTrace": "ScrubbedValue"
                 },
@@ -128,7 +128,12 @@
             },
             "throwable": {
               "message": "Sequence contains no matching element",
-              "stacktrace": [],
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.SmokeTests.AsyncTaskReturnWithExceptionTest.First",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
               "type": "System.InvalidOperationException"
             }
           }

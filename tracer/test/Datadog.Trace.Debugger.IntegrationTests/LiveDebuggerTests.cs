@@ -67,7 +67,7 @@ public class LiveDebuggerTests : TestHelper
         {
             var memoryAssertions = MemoryAssertions.CaptureSnapshotToAssertOn(sample);
 
-            memoryAssertions.NoObjectsExist<DebuggerSink>();
+            memoryAssertions.NoObjectsExist<SnapshotSink>();
             memoryAssertions.NoObjectsExist<LineProbeResolver>();
         }
         finally

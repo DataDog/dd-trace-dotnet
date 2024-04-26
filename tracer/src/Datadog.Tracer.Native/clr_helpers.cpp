@@ -380,6 +380,18 @@ std::tuple<unsigned, int> TypeSignature::GetElementTypeAndFlags() const
 
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
 
+    if (*pbCur == ELEMENT_TYPE_PTR)
+    {
+        pbCur++;
+        typeFlags |= TypeFlagByRef;
+    }
+
+    if (*pbCur == ELEMENT_TYPE_PINNED)
+    {
+        pbCur++;
+        typeFlags |= TypeFlagPinnedType;
+    }
+
     if (*pbCur == ELEMENT_TYPE_VOID)
     {
         typeFlags |= TypeFlagVoid;
@@ -428,11 +440,16 @@ std::tuple<unsigned, int> TypeSignature::GetElementTypeAndFlags() const
     return {elementType, typeFlags};
 }
 
-mdToken TypeSignature::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const
+mdToken TypeSignature::GetTypeTok(const ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const
 {
     mdToken token = mdTokenNil;
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
     const PCCOR_SIGNATURE pStart = pbCur;
+
+    if (*pbCur == ELEMENT_TYPE_PTR || *pbCur == ELEMENT_TYPE_PINNED)
+    {
+        pbCur++;
+    }
 
     if (*pbCur == ELEMENT_TYPE_BYREF)
     {
@@ -1251,7 +1268,7 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
     auto hr = metadata_import->GetTypeRefProps(typeRefToken, &resolutionScope, refTypeName.data(), kNameMaxSize, &nameSize);
     if (FAILED(hr) || resolutionScope == mdTokenNil)
     {
-        Logger::Error("[ResolveType] GetTypeRefProps [1] has failed. typeRefToken: ", typeRefToken);
+        Logger::Info("[ResolveType] GetTypeRefProps [1] has failed. typeRefToken: ", typeRefToken);
         return E_FAIL;
     }
 
@@ -1498,4 +1515,70 @@ void LogManagedProfilerAssemblyDetails()
     Logger::Debug("sizeof(pulHashAlgId): ", sizeof(managed_profiler_assembly_property.pulHashAlgId));
     Logger::Debug("assemblyFlags: ", managed_profiler_assembly_property.assemblyFlags);
 }
+
+HRESULT IsTypeByRefLike(ICorProfilerInfo4* corProfilerInfo4, const ModuleMetadataBase& module_metadata, const TypeSignature& typeSig,
+                                        const mdAssemblyRef& corLibAssemblyRef, bool& isTypeIsByRefLike) {
+    auto metaDataImportOfTypeDef = module_metadata.metadata_import;
+    auto metaDataEmitOfTypeDef = module_metadata.metadata_emit;
+    auto typeDefOrRefOrSpecToken = typeSig.GetTypeTok(metaDataEmitOfTypeDef, corLibAssemblyRef);
+
+    // Get open type from type spec
+    if (TypeFromToken(typeDefOrRefOrSpecToken) == mdtTypeSpec)
+    {
+        PCCOR_SIGNATURE sig;
+        const ULONG sigLength = typeSig.GetSignature(sig);
+        GenericTypeProps genericProps {sig, sigLength};
+        const auto hr = genericProps.TryParse();
+
+        if (hr == S_OK && genericProps.OpenTypeToken != mdTokenNil)
+        {
+            typeDefOrRefOrSpecToken = genericProps.OpenTypeToken;
+        }
+        else if (genericProps.SpecElementType == ELEMENT_TYPE_VAR || genericProps.SpecElementType == ELEMENT_TYPE_MVAR)
+        {
+            isTypeIsByRefLike = false;
+            return S_OK;
+        }
+        else
+        {
+            Logger::Warn("[IsTypeByRefLike] Failed to get open type token for generic type. Assuming no byref-like.");
+            isTypeIsByRefLike = false;
+            return S_OK;
+        }
+    }
+
+    return IsTypeTokenByRefLike(corProfilerInfo4, module_metadata, typeDefOrRefOrSpecToken, isTypeIsByRefLike);
+}
+
+HRESULT IsTypeTokenByRefLike(ICorProfilerInfo4* corProfilerInfo4, const ModuleMetadataBase& module_metadata, mdToken typeDefOrRefOrSpecToken,
+                                             bool& isTypeIsByRefLike) {
+    auto metaDataImportOfTypeDef = module_metadata.metadata_import;
+
+    // Get open type from type spec
+    if (TypeFromToken(typeDefOrRefOrSpecToken) == mdtTypeSpec)
+    {
+        Logger::Warn("IsTypeTokenByRefLike is not resolving type specs. Use IsTypeByRefLike instead.");
+        isTypeIsByRefLike = false;
+        return S_OK;
+    }
+
+    if (TypeFromToken(typeDefOrRefOrSpecToken) == mdtTypeRef)
+    {
+        const auto& metadata_import = module_metadata.metadata_import;
+        const auto& assembly_import = module_metadata.assembly_import;
+
+        auto hr = ResolveType(corProfilerInfo4, metadata_import, assembly_import, typeDefOrRefOrSpecToken,
+                              typeDefOrRefOrSpecToken, metaDataImportOfTypeDef);
+
+        if (FAILED(hr))
+        {
+            // For now we ignore issues with resolving types.
+            isTypeIsByRefLike = false;
+            return S_OK;
+        }
+    }
+
+    return IsByRefLike(metaDataImportOfTypeDef, typeDefOrRefOrSpecToken, isTypeIsByRefLike);
+}
+
 } // namespace trace

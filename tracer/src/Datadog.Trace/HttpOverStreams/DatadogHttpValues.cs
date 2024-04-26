@@ -9,5 +9,7 @@ namespace Datadog.Trace.HttpOverStreams
         public const char CarriageReturn = '\r';
         public const char LineFeed = '\n';
         public const string CrLf = "\r\n";
+
+        public const string Boundary = "faa0a896-8bc8-48f3-b46d-016f2b15a884";
     }
 }

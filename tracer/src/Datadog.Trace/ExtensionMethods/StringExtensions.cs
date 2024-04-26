@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Util;
 
@@ -95,7 +98,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="normalizePeriods">True if we replace dots by underscores</param>
         /// <param name="normalizedTagName">If the method returns true, the normalized tag name</param>
         /// <returns>Returns whether the conversion was successful</returns>
-        public static bool TryConvertToNormalizedTagName(this string value, bool normalizePeriods, out string normalizedTagName)
+        public static bool TryConvertToNormalizedTagName(this string? value, bool normalizePeriods, [NotNullWhen(true)] out string? normalizedTagName)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -103,7 +106,7 @@ namespace Datadog.Trace.ExtensionMethods
                 return false;
             }
 
-            var trimmedValue = value.Trim();
+            var trimmedValue = value!.Trim();
             if (!char.IsLetter(trimmedValue[0]) || trimmedValue.Length > 200)
             {
                 normalizedTagName = null;
@@ -131,7 +134,8 @@ namespace Datadog.Trace.ExtensionMethods
             return true;
         }
 
-        public static string SanitizeNulls(this string txt)
+        [return:NotNullIfNotNull(nameof(txt))]
+        public static string? SanitizeNulls(this string? txt)
         {
             return txt?.Replace("\0", string.Empty);
         }

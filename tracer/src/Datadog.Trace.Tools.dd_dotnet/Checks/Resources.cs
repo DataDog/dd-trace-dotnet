@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static void ResetChecks() => _checkNumber = 1;
 
-        public static string EnableDiagnosticsSet(string key) => $"The environment variable {key} is set to 0, which disables profiling.";
+        public static string EnableDiagnosticsSet(string key) => $"The environment variable {key} is set to 0, which disables profiling. No tracing, profiling, or security data will be collected until is set to 1.";
 
         public static string GetProcessError(string error) => $"Could not fetch information about target process: {error}. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
 

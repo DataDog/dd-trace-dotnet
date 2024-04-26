@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Text;
 
@@ -19,13 +21,13 @@ namespace Datadog.Trace.Util
         internal const int MaxBuilderSize = 360;
 
         [ThreadStatic]
-        private static StringBuilder _cachedInstance;
+        private static StringBuilder? _cachedInstance;
 
         public static StringBuilder Acquire(int capacity)
         {
             if (capacity <= MaxBuilderSize)
             {
-                StringBuilder sb = _cachedInstance;
+                var sb = _cachedInstance;
                 if (sb != null)
                 {
                     // Avoid StringBuilder block fragmentation by getting a new StringBuilder

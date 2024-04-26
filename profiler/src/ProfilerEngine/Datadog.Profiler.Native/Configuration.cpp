@@ -89,7 +89,8 @@ Configuration::Configuration()
     }
 
     _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
-     ExtractSsiState(_isSsiDeployed, _isSsiActivated);
+    ExtractSsiState(_isSsiDeployed, _isSsiActivated);
+    _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -547,6 +548,14 @@ bool Configuration::IsSsiActivated() const
     return _isSsiActivated;
 }
 
+bool Configuration::IsEtwLoggingEnabled() const
+{
+#ifdef LINUX
+    return false;
+#else
+    return _isEtwLoggingEnabled;
+#endif
+}
 
 bool convert_to(shared::WSTRING const& s, bool& result)
 {

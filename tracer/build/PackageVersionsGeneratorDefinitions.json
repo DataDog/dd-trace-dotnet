@@ -626,5 +626,18 @@
       "ExcludeTargetFrameworks": ["netcoreapp3.1", "net5.0"]
     }
     ]
+  },
+  {
+    "IntegrationName": "AzureServiceBus",
+    "SampleProjectName": "Samples.AzureServiceBus",
+    "NugetPackageSearchName": "Azure.Messaging.ServiceBus",
+    "MinVersion": "7.4.0",
+    "MaxVersionExclusive": "7.18.0",
+    "SpecificVersions": [
+      "7.4.*",
+      "7.10.*",
+      "7.13.*",
+      "7.*.*"
+    ]
   }
 ]

@@ -291,7 +291,7 @@ TEST(ManagedThreadListTest, CheckMultipleIterators)
 TEST(ManagedThreadListTest, CheckRegisterThreadTwice)
 {
     ManagedThreadList threads(nullptr);
-    auto thread = std::make_shared<ManagedThreadInfo>(1);
+    auto thread = std::make_shared<ManagedThreadInfo>(1, nullptr);
 
     ASSERT_TRUE(threads.RegisterThread(thread));
     ASSERT_FALSE(threads.RegisterThread(thread));

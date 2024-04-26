@@ -15,13 +15,11 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public int MaxLength { get; set; }
 
-        public int MaxFieldDepth { get; set; }
-
         public int MaxFieldCount { get; set; }
 
         public bool Equals(Capture other)
         {
-            return MaxReferenceDepth == other.MaxReferenceDepth && MaxCollectionSize == other.MaxCollectionSize && MaxLength == other.MaxLength && MaxFieldDepth == other.MaxFieldDepth && MaxFieldCount == other.MaxFieldCount;
+            return MaxReferenceDepth == other.MaxReferenceDepth && MaxCollectionSize == other.MaxCollectionSize && MaxLength == other.MaxLength && MaxFieldCount == other.MaxFieldCount;
         }
 
         public override bool Equals(object obj)
@@ -31,7 +29,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(MaxReferenceDepth, MaxCollectionSize, MaxLength, MaxFieldDepth, MaxFieldCount);
+            return HashCode.Combine(MaxReferenceDepth, MaxCollectionSize, MaxLength, MaxFieldCount);
         }
     }
 }

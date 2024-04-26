@@ -2,8 +2,8 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable  enable
 
-using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Coverage.Models.Tests;
@@ -17,11 +17,11 @@ internal sealed class FileCoverage
     /// Gets or sets path/name of the file
     /// </summary>
     [JsonProperty("filename")]
-    public string FileName { get; set; }
+    public string? FileName { get; set; }
 
     /// <summary>
-    /// Gets or sets the limits of regions with executable code, where region begin/ends or changes count
+    /// Gets or sets the bitmap of the file with the executed code
     /// </summary>
-    [JsonProperty("segments")]
-    public List<uint[]> Segments { get; set; } = new();
+    [JsonProperty("bitmap")]
+    public byte[]? Bitmap { get; set; }
 }

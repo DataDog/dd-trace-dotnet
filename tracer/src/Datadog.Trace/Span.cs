@@ -4,12 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -122,6 +124,8 @@ namespace Datadog.Trace
         internal ITags Tags { get; set; }
 
         internal SpanContext Context { get; }
+
+        internal List<SpanLink> SpanLinks { get; private set; }
 
         internal DateTimeOffset StartTime { get; private set; }
 
@@ -421,11 +425,16 @@ namespace Datadog.Trace
                     SetTag(Trace.Tags.ErrorMsg, exception.Message);
                     SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
                     SetTag(Trace.Tags.ErrorStack, exception.ToString());
+
+                    if (IsRootSpan)
+                    {
+                        ExceptionDebugging.Report(this, exception);
+                    }
                 }
                 catch (Exception ex)
                 {
                     // We have found rare cases where exception.ToString() throws an exception, such as in a FileNotFoundException
-                    Log.Warning(ex, "Error setting exception tags on span {SpanId} in trace {TraceId}", SpanId, TraceId);
+                    Log.Warning(ex, "Error setting exception tags on span {SpanId} in trace {TraceId128}", SpanId, TraceId128);
                 }
             }
         }
@@ -461,6 +470,11 @@ namespace Datadog.Trace
             ResourceName ??= OperationName;
             if (Interlocked.CompareExchange(ref _isFinished, 1, 0) == 0)
             {
+                if (IsRootSpan)
+                {
+                    ExceptionDebugging.EndRequest();
+                }
+
                 Duration = duration;
                 if (Duration < TimeSpan.Zero)
                 {
@@ -512,6 +526,11 @@ namespace Datadog.Trace
             Duration = duration;
         }
 
+        internal void MarkSpanForExceptionDebugging()
+        {
+            ExceptionDebugging.BeginRequest();
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void WriteCtorDebugMessage()
         {
@@ -528,6 +547,26 @@ namespace Datadog.Trace
             Log.Debug(
                 "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])\nDetails:{ToString}",
                 new object[] { Context.RawSpanId, Context.ParentIdInternal, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags, ToString() });
+        }
+
+        /// <summary>
+        /// Adds a SpanLink to the current Span if the Span is active.
+        /// </summary>
+        /// <param name="spanLinkToAdd">The Span to add as a SpanLink</param>
+        /// <param name="attributes">List of KeyValue pairings of attributes to add to the SpanLink. Defaults to null</param>
+        /// <returns>returns the SpanLink on success or null on failure (span is closed already)</returns>
+        internal SpanLink AddSpanLink(Span spanLinkToAdd, List<KeyValuePair<string, string>> attributes = null)
+        {
+            if (IsFinished)
+            {
+                Log.Warning("AddSpanLink should not be called after the span was closed");
+                return null;
+            }
+
+            SpanLinks ??= new List<SpanLink>();
+            var spanLink = new SpanLink(spanLinkToAdd, this, attributes);
+            SpanLinks.Add(spanLink);
+            return spanLink;
         }
     }
 }

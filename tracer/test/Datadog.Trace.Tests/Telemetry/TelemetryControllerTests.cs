@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -48,6 +49,88 @@ public class TelemetryControllerTests
         controller.Start();
 
         var data = await WaitForRequestStarted(transport, _timeout);
+        await controller.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TelemetryControllerShouldSendGitMetadataWithTelemetry()
+    {
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+
+        var controller = new TelemetryController(
+            new ConfigurationTelemetry(),
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            _flushInterval);
+
+        var sha = "testCommitSha";
+        var repo = "testRepositoryUrl";
+        controller.RecordGitMetadata(new GitMetadata(sha, repo));
+        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.Start();
+
+        var data = await WaitForRequestStarted(transport, _timeout);
+        data.FirstOrDefault().Application.CommitSha.Should().Be(sha);
+        data.FirstOrDefault().Application.RepositoryUrl.Should().Be(repo);
+
+        var config = data
+                    .Select(x => x.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted))
+                    .FirstOrDefault(x => x != null);
+
+        config
+          ?.Configuration
+           .Where(x => x.Name == "DD_GIT_REPOSITORY_URL")
+           .OrderByDescending(x => x.SeqId)
+           .Select(x => x.Value!.ToString())
+           .FirstOrDefault()
+           .Should()
+           .Be(repo);
+
+        config
+          ?.Configuration
+           .Where(x => x.Name == "DD_GIT_COMMIT_SHA")
+           .OrderByDescending(x => x.SeqId)
+           .Select(x => x.Value!.ToString())
+           .FirstOrDefault()
+           .Should()
+           .Be(sha);
+
+        await controller.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task TelemetryControllerShouldUpdateGitMetadataWithTelemetry()
+    {
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+
+        var controller = new TelemetryController(
+            new ConfigurationTelemetry(),
+            new DependencyTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
+            transportManager,
+            _flushInterval);
+
+        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.Start();
+
+        var data = await WaitForRequestStarted(transport, _timeout);
+        data.FirstOrDefault().Application.CommitSha.Should().BeNullOrEmpty();
+        data.FirstOrDefault().Application.RepositoryUrl.Should().BeNullOrEmpty();
+
+        var sha = "testCommitSha";
+        var repo = "testRepositoryUrl";
+        controller.RecordGitMetadata(new GitMetadata(sha, repo));
+
+        transport.Clear();
+        data = await WaitFor(transport, _timeout, "app-heartbeat");
+        data.FirstOrDefault().Application.CommitSha.Should().Be(sha);
+        data.FirstOrDefault().Application.RepositoryUrl.Should().Be(repo);
+
         await controller.DisposeAsync();
     }
 
@@ -386,6 +469,11 @@ public class TelemetryControllerTests
         }
 
         public string GetTransportInfo() => nameof(TestTelemetryTransport);
+
+        public void Clear()
+        {
+            _data.Clear();
+        }
     }
 
     internal class SlowTelemetryTransport : ITelemetryTransport

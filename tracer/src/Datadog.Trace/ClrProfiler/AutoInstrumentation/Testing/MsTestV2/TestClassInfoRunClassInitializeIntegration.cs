@@ -42,12 +42,16 @@ public static class TestClassInfoRunClassInitializeIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext testContext)
         where TTarget : ITestClassInfo
     {
-        if (!MsTestIntegration.IsEnabled)
+        if (!MsTestIntegration.IsEnabled || instance.Instance is null)
         {
             return CallTargetState.GetDefault();
         }
 
-        instance.ClassCleanupMethod ??= EmptyCleanUpMethodInfo;
+        lock (instance.Instance)
+        {
+            instance.ClassCleanupMethod ??= EmptyCleanUpMethodInfo;
+        }
+
         return new CallTargetState(null, MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(instance));
     }
 

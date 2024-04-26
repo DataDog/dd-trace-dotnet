@@ -15,7 +15,6 @@ internal class AppSecRequestContext
 {
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
-    private bool _isApiSecurity;
 
     internal void CloseWebSpan(TraceTagCollection tags)
     {
@@ -27,16 +26,6 @@ internal class AppSecRequestContext
                 tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
             }
         }
-
-        if (_isApiSecurity)
-        {
-            Security.Instance.ApiSecurity.ReleaseRequest();
-        }
-    }
-
-    internal void MarkApiSecurity()
-    {
-        _isApiSecurity = true;
     }
 
     internal void AddWafSecurityEvents(IReadOnlyCollection<object> events)

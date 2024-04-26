@@ -362,6 +362,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
         private MemberRef ResolveMemberRef(ModuleDef module, MetadataMember metadataMember)
         {
             var parametersTypes = metadataMember.Parameters.Select(p => (IFullName)p.GetTypeSig(module, this)).ToList();
+            List<MemberRef> candidatesMemberRefs = new List<MemberRef>();
             foreach (var memberRef in module.GetMemberRefs())
             {
                 if (!memberRef.Name.String.Equals(metadataMember.MethodOrField, StringComparison.InvariantCultureIgnoreCase))
@@ -381,7 +382,19 @@ namespace Datadog.InstrumentedAssemblyGenerator
                         continue;
                     }
 
-                    if (!memberRef.DeclaringType.FullName.Equals(((IFullName)metadataMember.TypeSig.GetTypeSig(module, this))?.FullName ?? metadataMember.Type, StringComparison.InvariantCultureIgnoreCase))
+                    var fullName = ((IFullName)metadataMember.TypeSig.GetTypeSig(module, this))?.FullName ?? metadataMember.Type;
+                    if (fullName.StartsWith("modreq") || fullName.StartsWith("modopt"))
+                    {
+                        var lastIndexOfMod = fullName.IndexOf(')');
+                        if (lastIndexOfMod < 0)
+                        {
+                            continue;
+                        }
+
+                        fullName = fullName.Substring(lastIndexOfMod + 1).TrimStart();
+                    }
+
+                    if (!memberRef.DeclaringType.FullName.Equals(fullName, StringComparison.InvariantCultureIgnoreCase))
                     {
                         continue;
                     }
@@ -396,38 +409,105 @@ namespace Datadog.InstrumentedAssemblyGenerator
                 bool founded = true;
                 for (int i = 0; i < metadataMember.Parameters.Length; i++)
                 {
-                    if (!candidateParams[i].FullName.Equals(parametersTypes[i].FullName, StringComparison.InvariantCultureIgnoreCase) &&
-                        !candidateParams[i].ContainsGenericParameter)
+                    if (candidateParams[i].ContainsGenericParameter)
+                    {
+                        TypeSig candidate = candidateParams[i];
+                        while (candidate.ElementType is ElementType.Ptr or ElementType.ByRef)
+                        {
+                            candidate = candidate.Next;
+                        }
+
+                        if (candidate.ElementType == ElementType.SZArray)
+                        {
+                            var indexOfArrayStarts = parametersTypes[i].FullName.IndexOf('[');
+                            if (indexOfArrayStarts < 0)
+                            {
+                                founded = false;
+                                break;
+                            }
+
+                            var arrayType = candidate.Next;
+                            if (arrayType.ElementType is ElementType.Var or ElementType.MVar)
+                            {
+                                candidatesMemberRefs.Add(memberRef);
+                                break;
+                            }
+
+                            if (!arrayType.FullName.Equals(parametersTypes[i].FullName.Remove(indexOfArrayStarts, 2), StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                founded = false;
+                                break;
+                            }
+                        }
+                        else if (candidate.ElementType == ElementType.Var)
+                        {
+                            var ownerType = candidate.ToGenericVar().OwnerType.ToTypeSig();
+                            var genericInst = ownerType.ToGenericInstSig();
+                            if (genericInst == null)
+                            {
+                                candidatesMemberRefs.Add(memberRef);
+                                break;
+                            }
+                            else
+                            {
+                                var genericArgs = genericInst.GenericArguments;
+                                for (int j = 0; j < metadataMember.Parameters.Length; j++)
+                                {
+                                    if (!genericArgs[j].FullName.Equals(parametersTypes[j].FullName, StringComparison.InvariantCultureIgnoreCase))
+                                    {
+                                        founded = false;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        else if (candidate.ElementType == ElementType.MVar)
+                        {
+                            var genericArgs = candidateParams[i].ToGenericMVar().OwnerMethod.MethodSig.GetParams();
+                            for (int j = 0; j < metadataMember.Parameters.Length; j++)
+                            {
+                                if (!genericArgs[j].FullName.Equals(parametersTypes[j].FullName, StringComparison.InvariantCultureIgnoreCase))
+                                {
+                                    founded = false;
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            string name = parametersTypes[i].FullName;
+                            int startOfGenericArgs = MetadataNameParser.GetStartOfGenericIndex(name);
+                            if (startOfGenericArgs < 0 || !name.Substring(0, startOfGenericArgs).Equals(candidate.FullName.Substring(0, startOfGenericArgs), StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                founded = false;
+                                break;
+                            }
+
+                            int closedGenericIndex = name.Substring(startOfGenericArgs).LastIndexOf('>') + startOfGenericArgs;
+
+                            if (MetadataNameParser.GetGenericParamsFromMethodOrTypeName(name, startOfGenericArgs, closedGenericIndex).Length != candidate.ToGenericInstSig().GenericArguments.Count)
+                            {
+                                founded = false;
+                                break;
+                            }
+                        }
+                    }
+                    else if (!candidateParams[i].FullName.Equals(parametersTypes[i].FullName, StringComparison.InvariantCultureIgnoreCase))
                     {
                         founded = false;
                         break;
                     }
-
-                    if (candidateParams[i].ContainsGenericParameter &&
-                        candidateParams[i].ElementType != ElementType.Var &&
-                        candidateParams[i].ElementType != ElementType.MVar)
-                    {
-                        string name = parametersTypes[i].FullName;
-                        int startOfGenericArgs = MetadataNameParser.GetStartOfGenericIndex(name);
-                        if (startOfGenericArgs < 0 || !name.Substring(0, startOfGenericArgs).Equals(candidateParams[i].FullName.Substring(0, startOfGenericArgs), StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            founded = false;
-                            break;
-                        }
-
-                        int closedGenericIndex = name.Substring(startOfGenericArgs).LastIndexOf('>') + startOfGenericArgs;
-                        if (MetadataNameParser.GetGenericParamsFromMethodOrTypeName(name, startOfGenericArgs, closedGenericIndex).Length != candidateParams[i].ToGenericInstSig().GenericArguments.Count)
-                        {
-                            founded = false;
-                            break;
-                        }
-                    }
                 }
 
-                if (founded)
+                if (founded && candidatesMemberRefs.Count == 0)
                 {
                     return memberRef;
                 }
+            }
+
+            if (candidatesMemberRefs.Count == 1)
+            {
+                return candidatesMemberRefs[0];
             }
 
             return null;

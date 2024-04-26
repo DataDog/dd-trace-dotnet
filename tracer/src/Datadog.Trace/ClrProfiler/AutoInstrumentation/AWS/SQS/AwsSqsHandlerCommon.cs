@@ -141,10 +141,10 @@ internal static class AwsSqsHandlerCommon
     internal static TResponse AfterReceive<TResponse>(TResponse response, Exception? exception, in CallTargetState state)
         where TResponse : IReceiveMessageResponse
     {
-        if (response.Instance != null && response.Messages != null && response.Messages.Count > 0 && state.State != null)
+        if (response.Instance != null && response.Messages is { Count: > 0 } && state is { State: not null, Scope.Span: { } span })
         {
             var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-            if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
+            if (dataStreamsManager is { IsEnabled: true })
             {
                 var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:sqs" };
                 foreach (var o in response.Messages)
@@ -163,7 +163,7 @@ internal static class AwsSqsHandlerCommon
 
                     var adapter = AwsSqsHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
                     var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
-                    state.Scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
+                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
                 }
             }
         }
