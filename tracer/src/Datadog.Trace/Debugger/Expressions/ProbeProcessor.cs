@@ -158,9 +158,22 @@ namespace Datadog.Trace.Debugger.Expressions
             return _evaluator;
         }
 
-        public bool ShouldProcess(in ProbeData probeData)
+        public bool ShouldProcess(in ProbeData probeData, out string reason)
         {
-            return HasCondition() || probeData.Sampler.Sample();
+            if (HasCondition())
+            {
+                reason = "probe has condition";
+                return true;
+            }
+
+            if (probeData.Sampler.Sample())
+            {
+                reason = "probe does not have condition but it pass the rate limiting";
+                return true;
+            }
+
+            reason = "Probe does not have condition and it does not pass rate limiting";
+            return false;
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)

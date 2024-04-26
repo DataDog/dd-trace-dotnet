@@ -94,7 +94,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             if (!MethodMetadataCollection.Instance.TryCreateAsyncMethodMetadataIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
             {
-                Log.Warning("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. methodMetadataId = {MethodMetadataIndex}, instrumentationVersion = {InstrumentationVersion}", new object[] { methodMetadataIndex, instrumentationVersion });
+                Log.Debug("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. methodMetadataId = {MethodMetadataIndex}, instrumentationVersion = {InstrumentationVersion}", new object[] { methodMetadataIndex, instrumentationVersion });
                 return;
             }
 
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             if (!MethodMetadataCollection.Instance.IndexExists(methodMetadataIndex))
             {
-                Log.Warning("BeginMethod: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadaId = {MethodMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, probeId });
+                Log.Debug("BeginMethod: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadaId = {MethodMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, probeId });
                 state = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
                 return;
             }
@@ -166,9 +166,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            if (!probeData.Processor.ShouldProcess(in probeData))
+            if (!probeData.Processor.ShouldProcess(in probeData, out string reason))
             {
-                Log.Warning("BeginMethod: Skipping the instrumentation. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
+                Log.Warning("BeginMethod: Skipping the instrumentation. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}. Skip reason: {Reason}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId, reason });
                 state = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
                 return;
             }

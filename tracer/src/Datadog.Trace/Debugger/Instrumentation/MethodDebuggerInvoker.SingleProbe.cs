@@ -80,20 +80,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             if (!MethodMetadataCollection.Instance.IndexExists(methodMetadataIndex))
             {
-                Log.Warning("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadaId = {MethodMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, probeId });
+                Log.Debug("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadaId = {MethodMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, probeId });
                 return CreateInvalidatedDebuggerState();
             }
 
             ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
             if (probeData.IsEmpty())
             {
-                Log.Warning("BeginMethod_StartMarker: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
+                Log.Debug("BeginMethod_StartMarker: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
                 return CreateInvalidatedDebuggerState();
             }
 
-            if (!probeData.Processor.ShouldProcess(in probeData))
+            if (!probeData.Processor.ShouldProcess(in probeData, out string reason))
             {
-                Log.Warning("BeginMethod_StartMarker: Skipping the instrumentation. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
+                Log.Warning("BeginMethod_StartMarker: Skipping the instrumentation. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}. Skip reason: {Reason}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId, reason });
                 return CreateInvalidatedDebuggerState();
             }
 

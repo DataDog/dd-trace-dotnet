@@ -33,13 +33,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public MethodUniqueIdentifier Method { get; }
 
-        public bool ShouldProcess(in ProbeData probeData)
+        public bool ShouldProcess(in ProbeData probeData, out string reason)
         {
             if (!ShadowStackHolder.IsShadowStackTrackingEnabled)
             {
                 // In Exception Debugging V1, we only care about exceptions propagating up the call stack in webservice apps, when there's a request in-flight.
                 // When we will support Caught & Logged Exceptions, we will need to adjust this.
                 // `IsShadowStackTrackingEnabled` is equivalent to using `ShadowStackTree.IsInRequestContext`, as of now.
+                reason = "ShadowStackTracking is disable";
                 return false;
             }
 
@@ -47,9 +48,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (shadowStack.CurrentStackFrameNode?.IsInvalidPath == true)
             {
+                reason = "InvalidPath";
                 return false;
             }
 
+            reason = string.Empty;
             return true;
         }
 

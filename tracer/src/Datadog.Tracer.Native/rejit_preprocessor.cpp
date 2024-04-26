@@ -137,7 +137,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         const auto caller = GetFunctionInfo(metadataImport, methodDef);
         if (!caller.IsValid())
         {
-            Logger::Warn("    * Skipping ", shared::TokenStr(&methodDef), ": the methoddef is not valid!");
+            Logger::Warn("    * Skipping ", shared::TokenStr(&methodDef), ": could not get function info for MethodDef token.");
             continue;
         }
 
@@ -147,8 +147,10 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         auto hr = functionInfo.method_signature.TryParse();
         if (FAILED(hr))
         {
-            Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
-                ": the method signature cannot be parsed.");
+            Logger::Warn(
+                    "    * Skipping [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
+                    ", Type=", caller.type.name, ", Method=", caller.name, "]", ": could not parse method signature.");
+            Logger::Debug("    Method signature is: ", functionInfo.method_signature.str());
             continue;
         }
 
@@ -160,7 +162,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
                 caller.name.find(tracemethodintegration_getterprefix) == 0)
             {
                 Logger::Warn(
-                    "    * Skipping enqueue for ReJIT, special method detected during '*' wildcard search [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
+                    "    * Skipping special method detected during '*' wildcard search [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
                     ", Type=", caller.type.name, ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(), "]");
                 continue;
             }
@@ -173,8 +175,9 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             // instrumentation target
             if (numOfArgs != target_method.signature_types.size() - 1)
             {
-                Logger::Info("    * Skipping ", caller.type.name, ".", caller.name,
-                    ": the methoddef doesn't have the right number of arguments (", numOfArgs, " arguments).");
+                Logger::Debug("    * Skipping [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
+                    ", Type=", caller.type.name, ", Method=", caller.name, "(", numOfArgs, " params)", "]"
+                    ": method doesn't have the right number of arguments (", numOfArgs, " arguments).");
                 continue;
             }
 
@@ -196,8 +199,9 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             }
             if (argumentsMismatch)
             {
-                Logger::Info("    * Skipping ", target_method.method_name,
-                    ": the methoddef doesn't have the right type of arguments.");
+                Logger::Debug("    * Skipping [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
+                    ", Type=", caller.type.name, ", Method=", caller.name, "(", numOfArgs, " params)", "]"
+                    ": method doesn't have the right type of arguments.");
                 continue;
             }
         }
@@ -225,8 +229,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             moduleHandler->SetModuleMetadata(moduleMetadata);
         }
 
-        Logger::Info("Method enqueued for ReJIT for ", target_method.type.name, ".", target_method.method_name,
-                  "(", (target_method.signature_types.size() - 1), " params).");
+        Logger::Info("Method enqueued for ReJIT for ", caller.type.name, ".", caller.name,
+                  "(", caller.method_signature.NumberOfArguments(), " params).");
         EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
                          functionInfo, moduleHandler);
 

@@ -13,7 +13,7 @@ namespace Datadog.Trace.Debugger.Expressions
 {
     internal interface IProbeProcessor
     {
-        bool ShouldProcess(in ProbeData probeData);
+        bool ShouldProcess(in ProbeData probeData, out string reason);
 
         bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator snapshotCreator, in ProbeData probeData);
 
