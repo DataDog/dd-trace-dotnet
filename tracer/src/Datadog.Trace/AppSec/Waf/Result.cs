@@ -36,6 +36,11 @@ namespace Datadog.Trace.AppSec.Waf
                     RedirectInfo = value as Dictionary<string, object?>;
                     ShouldBlock = true;
                 }
+
+                if (Actions.TryGetValue(BlockingAction.GenerateStackType, out value))
+                {
+                    SendStackInfo = value as Dictionary<string, object?>;
+                }
             }
 
             AggregatedTotalRuntime = aggregatedTotalRuntime;
