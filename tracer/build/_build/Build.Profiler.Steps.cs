@@ -22,7 +22,7 @@ using Logger = Serilog.Log;
 partial class Build
 {
     [Parameter("Enrich the default Profiler test filter: Runs only integration tests with the Tracer or All of them (default: false)")]
-    readonly bool RunTestsWithTracerOnly = false;
+    readonly bool RunOnlyTestsWithTracer = false;
 
     const string ClangTidyChecks = "-clang-analyzer-osx*,-clang-analyzer-optin.osx*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-type-vararg,-readability-braces-around-statements";
     const string LinuxApiWrapperLibrary = "Datadog.Linux.ApiWrapper.x64.so";
@@ -230,7 +230,7 @@ partial class Build
     {
         var isDebugRun = await IsDebugRun();
 
-        if (RunTestsWithTracerOnly)
+        if (RunOnlyTestsWithTracer)
         {
             filter = $"{filter}&WithTracer=True";
         }
