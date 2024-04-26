@@ -97,7 +97,7 @@ namespace Datadog.Trace.AppSec
                         }
                     }
 
-                    securityTransport.CheckAndBlock(inputData);
+                    securityTransport.BlockAndReport(inputData);
                 }
             }
 

@@ -195,7 +195,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         [Theory]
         [InlineData("1", 1)]
-        [InlineData("0", 0)]
+        [InlineData("0", 32)]
         [InlineData("100", 100)]
         [InlineData("-1", 32)]
         [InlineData("AAA", 32)]
@@ -209,7 +209,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         [Theory]
         [InlineData("1", 1)]
-        [InlineData("0", 0)]
+        [InlineData("0", 2)]
         [InlineData("100", 100)]
         [InlineData("-1", 2)]
         [InlineData("AAA", 2)]

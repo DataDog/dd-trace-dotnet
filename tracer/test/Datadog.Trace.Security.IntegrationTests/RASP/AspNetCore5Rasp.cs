@@ -7,12 +7,15 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
+using VerifyTests;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -42,11 +45,13 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         : base("AspNetCore5", outputHelper, "/shutdown", testName: "AspNetCore5.SecurityEnabled")
     {
         EnableRasp();
+        SetSecurity(true);
         EnableIast(enableIast);
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, "rasp-rule-set.json");
         EnableEvidenceRedaction(false);
         EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
         IastEnabled = enableIast;
@@ -70,24 +75,22 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         SetHttpPort(Fixture.HttpPort);
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
+    [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestRaspIastPathTraversalRequest()
+    public async Task TestRaspRequest(string url, string exploit)
     {
-        var filePath = "file.csv";
-        var filename = IastEnabled ? "Rasp.PathTraversal.AspNetCore5.IastEnabled" : "Rasp.PathTraversal.AspNetCore5.IastDisabled";
-        var url = $"/Iast/GetFileContent?file={filePath}";
+        var testName = IastEnabled ? "RaspIast.AspNetCore5" : "Rasp.AspNetCore5";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spans = await SendRequestsAsync(agent, [url]);
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-
         var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseParameters(url, exploit);
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
     }
 }
 #endif
