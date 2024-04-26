@@ -141,9 +141,6 @@
           "operator": "phrase_match"
         }
       ],
-      "transformers": [
-        "lowercase"
-      ],
       "on_match": [
         "customblock"
       ]

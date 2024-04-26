@@ -471,7 +471,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 result = "Error in request." + ex.ToString();
             }
