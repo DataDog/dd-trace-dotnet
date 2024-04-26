@@ -1,0 +1,148 @@
+{
+  "version": "2.2",
+  "metadata": {
+    "rules_version": "1.10.0"
+  },
+  "actions": [
+    {
+      "id": "customblock",
+      "type": "block_request",
+      "parameters": {
+        "status_code": 403,
+        "grpc_status_code": "10",
+        "type": "auto"
+      }
+    }
+  ],
+  "rules": [
+    {
+      "id": "rasp-001-001",
+      "name": "Path traversal attack",
+      "tags": {
+        "type": "lfi",
+        "category": "vulnerability_trigger",
+        "module": "rasp"
+      },
+      "conditions": [
+        {
+          "operator": "lfi_detector",
+          "parameters": {
+            "resource": [
+              {
+                "address": "server.io.fs.file"
+              }
+            ],
+            "params": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              },
+              {
+                "address": "grpc.server.request.message"
+              },
+              {
+                "address": "graphql.server.all_resolvers"
+              },
+              {
+                "address": "graphql.server.resolver"
+              }
+            ]
+          }
+        }
+      ],
+      "on_match": [
+        "customblock",
+        "stack_trace"
+      ]
+    },
+    {
+      "id": "test-dummy-rule",
+      "name": "Dummy rule to test blocking",
+      "tags": {
+        "type": "security_scanner",
+        "crs_id": "913121",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              },
+              {
+                "address": "grpc.server.request.message"
+              },
+              {
+                "address": "graphql.server.all_resolvers"
+              },
+              {
+                "address": "graphql.server.resolver"
+              }
+            ],
+            "list": [
+              "dummy_rule"
+            ]
+          },
+          "operator": "phrase_match"
+        }
+      ],
+      "on_match": [
+        "block"
+      ]
+    },
+    {
+      "id": "test-dummy-rule2",
+      "name": "Dummy rule to test blocking2",
+      "tags": {
+        "type": "security_scanner",
+        "crs_id": "913121",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              },
+              {
+                "address": "grpc.server.request.message"
+              },
+              {
+                "address": "graphql.server.all_resolvers"
+              },
+              {
+                "address": "graphql.server.resolver"
+              }
+            ],
+            "list": [
+              "dummyrule2"
+            ]
+          },
+          "operator": "phrase_match"
+        }
+      ],
+      "on_match": [
+        "customblock"
+      ]
+    }
+  ]
+}

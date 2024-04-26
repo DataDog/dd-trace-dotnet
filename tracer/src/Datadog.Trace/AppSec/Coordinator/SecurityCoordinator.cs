@@ -67,7 +67,7 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args, lastTime);
     }
 
-    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false)
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false)
     {
         LogAddressIfDebugEnabled(args);
         IResult? result = null;
@@ -90,13 +90,27 @@ internal readonly partial struct SecurityCoordinator
             if (additiveContext != null)
             {
                 // run the WAF and execute the results
-                result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
+                if (runWithEphemeral)
+                {
+                    result = additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds);
+                }
+                else
+                {
+                    result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
+                }
+
                 RecordTelemetry(result);
             }
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            Log.Error(ex, "Call into the security module failed");
+            var stringBuilder = new StringBuilder();
+            foreach (var kvp in args)
+            {
+                stringBuilder.Append($"Key: {kvp.Key} Value: {kvp.Value}, ");
+            }
+
+            Log.Error(ex, "Call into the security module failed with arguments {Args}", stringBuilder.ToString());
         }
         finally
         {

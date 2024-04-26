@@ -448,7 +448,8 @@ enum MethodArgumentTypeFlag
 {
     TypeFlagByRef = 0x01,
     TypeFlagVoid = 0x02,
-    TypeFlagBoxedType = 0x04
+    TypeFlagBoxedType = 0x04,
+    TypeFlagPinnedType = 0x08
 };
 
 // Represents a segment inside a larger signature (Method Signature / Local Var Signature) of
