@@ -15,10 +15,11 @@ namespace Datadog.Trace.AppSec;
 
 internal class AppSecRequestContext
 {
-    private const string _exploitStackKey = "_dd.stack.exploit";
+    private const string _stackKey = "_dd.stack";
+    private const string _exploitStackKey = "exploit";
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
-    private List<Dictionary<string, object>>? _raspStackTraces = null;
+    private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces = null;
 
     internal void CloseWebSpan(TraceTagCollection tags, Span span)
     {
@@ -32,7 +33,7 @@ internal class AppSecRequestContext
 
             if (_raspStackTraces?.Count > 0)
             {
-                span.SetMetaStruct(_exploitStackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
+                span.SetMetaStruct(_stackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
             }
         }
     }
@@ -54,12 +55,16 @@ internal class AppSecRequestContext
                 _raspStackTraces = new();
             }
 
-            if (_raspStackTraces.Count >= maxStackTraces)
+            if (!_raspStackTraces.ContainsKey(_exploitStackKey))
+            {
+                _raspStackTraces.Add(_exploitStackKey, new());
+            }
+            else if (_raspStackTraces[_exploitStackKey].Count >= maxStackTraces)
             {
                 return;
             }
 
-            _raspStackTraces.Add(stackTrace.ToDictionary());
+            _raspStackTraces[_exploitStackKey].Add(stackTrace.ToDictionary());
         }
     }
 }
