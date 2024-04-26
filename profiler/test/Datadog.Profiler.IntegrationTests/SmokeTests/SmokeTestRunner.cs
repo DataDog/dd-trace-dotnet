@@ -54,7 +54,7 @@ namespace Datadog.Profiler.SmokeTests
         public void RunAndCheckWithRetries(int retryCount, string[] errorExceptions = null)
         {
             // allow retries for the test to pass due to named pipe flackiness in CI
-            for (int i = 0; i < retryCount; i++)
+            for (var i = 0; i < retryCount; i++)
             {
                 try
                 {
@@ -99,6 +99,19 @@ namespace Datadog.Profiler.SmokeTests
             return agent;
         }
 
+        private static bool SkipError(string line, string[] errorExceptions)
+        {
+            foreach (var errorException in errorExceptions)
+            {
+                if (line.Contains(errorException))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void RunChecks(MockDatadogAgent agent, string[] errorExceptions)
         {
             CheckLogFiles(errorExceptions);
@@ -126,7 +139,7 @@ namespace Datadog.Profiler.SmokeTests
 
             Assert.NotEmpty(files);
 
-            foreach (string logFile in files)
+            foreach (var logFile in files)
             {
                 Assert.False(LogFileContainsErrorMessage(logFile, errorExceptions), $"Found error message in the log file {logFile}");
             }
@@ -143,41 +156,25 @@ namespace Datadog.Profiler.SmokeTests
             Assert.True(agent.NbCallsOnProfilingEndpoint >= MinimumExpectedNbPprofFiles, $"The number of calls to the agent was not greater than or equal to {MinimumExpectedNbPprofFiles}. Actual value {agent.NbCallsOnProfilingEndpoint}");
         }
 
-
-        private bool SkipError(string line, string[] errorExceptions)
-        {
-            foreach (var errorException in errorExceptions)
-            {
-                if (line.Contains(errorException))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         private bool LogFileContainsErrorMessage(string logFile, string[] errorExceptions)
         {
             var errorLinePattern = new Regex(@"\| error \|", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-            using (var file = File.OpenRead(logFile))
-            using (var reader = new StreamReader(file))
+            using var file = File.OpenRead(logFile);
+            using var reader = new StreamReader(file);
+            while (!reader.EndOfStream)
             {
-                while (!reader.EndOfStream)
+                var line = reader.ReadLine();
+
+                if (line != null && errorLinePattern.IsMatch(line))
                 {
-                    var line = reader.ReadLine();
-
-                    if (line != null && errorLinePattern.IsMatch(line))
+                    if ((errorExceptions != null) && SkipError(line, errorExceptions))
                     {
-                        if ((errorExceptions != null) && SkipError(line, errorExceptions))
-                        {
-                            continue;
-                        }
-
-                        _output.WriteLine(line);
-                        return true;
+                        continue;
                     }
+
+                    _output.WriteLine(line);
+                    return true;
                 }
             }
 

@@ -31,6 +31,8 @@ internal readonly partial struct SecurityCoordinator
 
     private static bool CanAccessHeaders => true;
 
+    public static HttpContext Context => CoreHttpContextStore.Instance.Get();
+
     public static Dictionary<string, string[]> ExtractHeadersFromRequest(IHeaderDictionary headers)
     {
         var headersDic = new Dictionary<string, string[]>(headers.Keys.Count);
@@ -59,7 +61,7 @@ internal readonly partial struct SecurityCoordinator
         return headersDic;
     }
 
-    internal void CheckAndBlock(IResult? result)
+    internal void BlockAndReport(IResult? result)
     {
         if (result is not null)
         {
@@ -69,6 +71,19 @@ internal readonly partial struct SecurityCoordinator
             }
 
             TryReport(result, result.ShouldBlock);
+        }
+    }
+
+    internal void ReportAndBlock(IResult? result)
+    {
+        if (result is not null)
+        {
+            TryReport(result, result.ShouldBlock);
+
+            if (result.ShouldBlock)
+            {
+                throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo!, true);
+            }
         }
     }
 

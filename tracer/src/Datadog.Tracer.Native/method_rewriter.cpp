@@ -301,9 +301,9 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                 reWriterWrapper.BeginLoadValueIntoArray(i);
                 reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
                 const auto [elementType, argTypeFlags] = methodArguments[i].GetElementTypeAndFlags();
-                if (argTypeFlags & TypeFlagByRef)
+                if (argTypeFlags & TypeFlagByRef || argTypeFlags & TypeFlagPinnedType)
                 {
-                    Logger::Warn("*** CallTarget_RewriterCallback(): Methods with ref parameters "
+                    Logger::Warn("*** CallTarget_RewriterCallback(): Methods with ref parameters or pinned locals"
                         "cannot be instrumented. ");
                     return S_FALSE;
                 }

@@ -33,7 +33,7 @@ namespace Datadog.Trace
                     { AddressesConstants.UserId, userId },
                 };
 
-                securityCoordinator.CheckAndBlock(wafArgs);
+                securityCoordinator.BlockAndReport(wafArgs);
             }
         }
     }

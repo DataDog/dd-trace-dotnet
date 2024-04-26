@@ -26,7 +26,7 @@ namespace Datadog.Profiler.IntegrationTests
 
         public int NbCallsOnProfilingEndpoint { get; private set; }
 
-        public bool IsReady => _readinessNotifier.Wait(TimeSpan.FromSeconds(5)); // wait for 5 sec to declare it as not ready
+        public bool IsReady => _readinessNotifier.Wait(TimeSpan.FromSeconds(30)); // wait for Agent being ready
 
         protected ITestOutputHelper Output { get; set; }
 

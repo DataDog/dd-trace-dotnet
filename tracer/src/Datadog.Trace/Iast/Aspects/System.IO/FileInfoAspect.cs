@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
@@ -32,6 +33,7 @@ public class FileInfoAspect
     public static string ReviewPath(string path)
     {
         IastModule.OnPathTraversal(path);
+        RaspModule.OnLfi(path);
         return path;
     }
 }

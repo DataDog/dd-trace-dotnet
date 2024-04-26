@@ -7,7 +7,6 @@
 
 #include <fstream>
 
-
 std::string FileHelper::GenerateFilename(std::string const& filename, std::string const& extension, std::string const& serviceName, std::string const& id)
 {
     static std::string pid = std::to_string(OpSysTools::GetProcId());
@@ -23,20 +22,24 @@ std::string FileHelper::GenerateFilename(std::string const& filename, std::strin
 
 std::string FileHelper::GenerateFileSuffix(const std::string& applicationName, const std::string& extension, std::string const& pid, std::string const& id)
 {
-    auto time = std::time(nullptr);
-    struct tm buf = {};
+    std::stringstream oss;
+    oss << applicationName + "_" << pid << "_";
+
+    if (id.empty())
+    {
+        auto time = std::time(nullptr);
+        struct tm buf = {};
 
 #ifdef _WINDOWS
-    localtime_s(&buf, &time);
+        localtime_s(&buf, &time);
 #else
-    localtime_r(&time, &buf);
+        localtime_r(&time, &buf);
 #endif
-
-    std::stringstream oss;
-    oss << applicationName + "_" << pid << "_" << std::put_time(&buf, "%F_%H-%M-%S");
-    if (!id.empty())
+        oss << std::put_time(&buf, "%F_%H-%M-%S");
+    }
+    else
     {
-        oss << "_" << id;
+        oss << id;
     }
 
     oss << extension;

@@ -5,19 +5,11 @@
 
 /*
  * This file was copied from the .net core repository.
- * When running on Linux, we use catchsegv to display callstacks if our
- * application ran into a segmentation fault.
- * This tool runs our test application as child process.
- *
- * If the application is stuck, we kill the process (the one with catchsegv), but the child process is not killed.
- * We use this class to have the capability to kill the entire process tree whatever the framework we target.
  *
  * Note: since .Net Core 3.1, Kill method on Process class has a boolean value to kill the entire process tree or not.
  */
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.Extensions.Internal
@@ -42,14 +34,11 @@ namespace Microsoft.Extensions.Internal
             }
             else
             {
-                var children = new HashSet<int>();
-                GetAllChildIdsUnix(pid, children, timeout);
-                foreach (var childId in children)
-                {
-                    KillProcessUnix(childId, timeout);
-                }
-
-                KillProcessUnix(pid, timeout);
+                RunProcessAndWaitForExit(
+                    "kill",
+                    $"-9 {pid}",
+                    timeout,
+                    out var stdout);
             }
         }
 
@@ -85,46 +74,6 @@ namespace Microsoft.Extensions.Internal
                 process.Kill();
                 return false;
             }
-        }
-
-        private static void GetAllChildIdsUnix(int parentId, ISet<int> children, TimeSpan timeout)
-        {
-            var succeeded = RunProcessAndWaitForExit(
-                "pgrep",
-                $"-P {parentId}",
-                timeout,
-                out var stdout);
-
-            if (succeeded && !string.IsNullOrEmpty(stdout))
-            {
-                using (var reader = new StringReader(stdout))
-                {
-                    while (true)
-                    {
-                        var text = reader.ReadLine();
-                        if (text == null)
-                        {
-                            return;
-                        }
-
-                        if (int.TryParse(text, out var id))
-                        {
-                            children.Add(id);
-                            // Recursively get the children
-                            GetAllChildIdsUnix(id, children, timeout);
-                        }
-                    }
-                }
-            }
-        }
-
-        private static void KillProcessUnix(int processId, TimeSpan timeout)
-        {
-            RunProcessAndWaitForExit(
-                "kill",
-                $"-9 {processId}",
-                timeout,
-                out var stdout);
         }
     }
 }
