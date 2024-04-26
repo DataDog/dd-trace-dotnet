@@ -380,6 +380,18 @@ std::tuple<unsigned, int> TypeSignature::GetElementTypeAndFlags() const
 
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
 
+    if (*pbCur == ELEMENT_TYPE_PTR)
+    {
+        pbCur++;
+        typeFlags |= TypeFlagByRef;
+    }
+
+    if (*pbCur == ELEMENT_TYPE_PINNED)
+    {
+        pbCur++;
+        typeFlags |= TypeFlagPinnedType;
+    }
+
     if (*pbCur == ELEMENT_TYPE_VOID)
     {
         typeFlags |= TypeFlagVoid;
@@ -433,6 +445,11 @@ mdToken TypeSignature::GetTypeTok(const ComPtr<IMetaDataEmit2>& pEmit, mdAssembl
     mdToken token = mdTokenNil;
     PCCOR_SIGNATURE pbCur = &pbBase[offset];
     const PCCOR_SIGNATURE pStart = pbCur;
+
+    if (*pbCur == ELEMENT_TYPE_PTR || *pbCur == ELEMENT_TYPE_PINNED)
+    {
+        pbCur++;
+    }
 
     if (*pbCur == ELEMENT_TYPE_BYREF)
     {
