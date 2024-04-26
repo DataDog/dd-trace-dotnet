@@ -65,6 +65,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
         private readonly byte[] _lastParentIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.LastParentId);
+        private readonly byte[] _baseServiceNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.BaseService);
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
@@ -424,7 +425,15 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            // SCI tags will be sent only once per trace chunk
+            // add _dd.base_service tag to spans where the service name has been overrideen
+            if (!string.Equals(span.Context.ServiceNameInternal, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _baseServiceNameBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, model.TraceChunk.DefaultServiceName);
+            }
+
+            // SCI tags will be sent only once per trace
             if (model.IsFirstSpanInChunk)
             {
                 var gitCommitShaRawBytes = MessagePackStringCache.GetGitCommitShaBytes(model.TraceChunk.GitCommitSha);
