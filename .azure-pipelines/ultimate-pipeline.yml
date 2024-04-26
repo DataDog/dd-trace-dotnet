@@ -1277,7 +1277,7 @@ stages:
     and(
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
     )
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
@@ -1419,7 +1419,7 @@ stages:
     and(
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
     )
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
@@ -1484,7 +1484,7 @@ stages:
     and(
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
     )
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
@@ -1548,7 +1548,7 @@ stages:
   condition: >
     and(
       succeeded(),
-      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
     )
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
@@ -1764,7 +1764,7 @@ stages:
     and(
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
     )
   dependsOn: [build_windows_tracer, package_windows, generate_variables, merge_commit_id]
   variables:
@@ -1852,7 +1852,7 @@ stages:
     and(
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
     )
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
@@ -2672,7 +2672,7 @@ stages:
     and(
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
     )
   dependsOn: [package_arm64, generate_variables, merge_commit_id]
   variables:
