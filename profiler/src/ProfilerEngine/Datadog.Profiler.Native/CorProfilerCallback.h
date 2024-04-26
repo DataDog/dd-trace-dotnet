@@ -38,6 +38,8 @@
 #include "ThreadLifetimeProvider.h"
 #include "shared/src/native-src/string.h"
 #include "IEtwEventsManager.h"
+#include "ISsiLifetime.h"
+#include "ISsiManager.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -62,7 +64,7 @@ class Loader;
 }
 
 
-class CorProfilerCallback : public ICorProfilerCallback10
+class CorProfilerCallback : public ICorProfilerCallback10, public ISsiLifetime
 {
 public:
     CorProfilerCallback(std::shared_ptr<IConfiguration> pConfiguration);
@@ -193,6 +195,10 @@ public:
     }
 
     IClrLifetime* GetClrLifetime() const;
+
+    // ISsiLifetime implementation
+    // for SSI, the services need to be started after the runtime is initialized
+    void OnStartDelayedProfiling() override;
 
 // Access to global services
 // All services are allocated/started and stopped/deleted by the CorProfilerCallback (no need to use unique_ptr/shared_ptr)

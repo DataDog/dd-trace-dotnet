@@ -13,6 +13,7 @@
 #include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
 #include "IProfilerTelemetry.h"
+#include "ISsiLifetime.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "TagsHelper.h"
@@ -87,6 +88,7 @@ public:
     MOCK_METHOD(void, SetEndpoint, (const std::string& runtimeId, uint64_t traceId, const std::string& endpoint), (override));
     MOCK_METHOD(void, RegisterUpscaleProvider, (IUpscaleProvider * provider), (override));
     MOCK_METHOD(void, RegisterProcessSamplesProvider, (ISamplesProvider * provider), (override));
+    MOCK_METHOD(void, CreateTelemetryMetricsWorker, (std::string runtimeId, ApplicationInfo* pInfo), (override));
 };
 
 class MockSamplesCollector : public ISamplesCollector
@@ -158,6 +160,23 @@ public:
     MOCK_METHOD(const char*, GetName, (), (override));
 };
 
+class SsiLifetimeForTest : public ISsiLifetime
+{
+public:
+    void OnStartDelayedProfiling() override
+    {
+        _hasBeenStarted = true;
+    }
+
+    bool IsProfilingEnabled() const
+    {
+        return _hasBeenStarted;
+    }
+
+private:
+    bool _hasBeenStarted = false;
+};
+
 class ProfilerTelemetryForTest : public IProfilerTelemetry
 {
 public:
@@ -178,6 +197,10 @@ public:
         _duration = duration;
         _sentProfiles = sentProfiles;
         _heuristic = heuristics;
+    }
+
+    void SetExporter(IExporter* exporter) override
+    {
     }
 
 public:

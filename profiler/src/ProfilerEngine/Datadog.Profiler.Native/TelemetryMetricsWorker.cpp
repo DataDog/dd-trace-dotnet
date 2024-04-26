@@ -62,6 +62,14 @@ bool TelemetryMetricsWorker::Start(
     const std::string& environment
 )
 {
+    if (_pHandle != nullptr)
+    {
+        assert(false);
+
+        Log::Error("It is not allowed to start telemetry worker for (", serviceName, ") more than once.");
+        return false;
+    }
+
     _serviceName = serviceName;
 
     if (!pConfiguration->IsSsiDeployed())
@@ -135,11 +143,13 @@ bool TelemetryMetricsWorker::Start(
     }
 
     // metrics definition
+    // TODO: see if we need to also emit ssi_heuristic.number_of_runtime_id
     ddog_CharSlice numberOfProfilesMetricName = FfiHelper::StringToCharSlice(std::string("ssi_heuristic.number_of_profiles"));
 
     ddog_Vec_Tag tags = ddog_Vec_Tag_new();
 
-    // TODO: check possible error
+    // telemetry metrics are supposed to be emitted only if deployed via SSI
+    // --> should always be "ssi"
     std::string installationTagValue = (pConfiguration->IsSsiDeployed()) ? std::string("ssi") : std::string("manual");
     ddog_Vec_Tag_push(&tags,
         libdatadog::FfiHelper::StringToCharSlice(std::string("installation")),
@@ -157,14 +167,61 @@ bool TelemetryMetricsWorker::Start(
         libdatadog::FfiHelper::StringToCharSlice(enablementTagValue)
     );
 
-
-    // TODO: these have dynamic values depending on the heuristics and the number of sent profiles
-    //ddog_Vec_Tag_push(&tags, DDOG_CHARSLICE_C_BARE("has_sent_profiles"), DDOG_CHARSLICE_C_BARE("???"));
-    //ddog_Vec_Tag_push(&tags, DDOG_CHARSLICE_C_BARE("heuristic_hypothetical_decision"), DDOG_CHARSLICE_C_BARE("???"));
-
     // tags is consummed
     _numberOfProfilesKey = ddog_telemetry_handle_register_metric_context(
         _pHandle, numberOfProfilesMetricName, DDOG_METRIC_TYPE_COUNT, tags, true, DDOG_METRIC_NAMESPACE_PROFILERS);
+
+    return true;
+}
+
+bool TelemetryMetricsWorker::AddPoint(double value, bool hasSentProfiles, SkipProfileHeuristicType heuristics)
+{
+    if (_pHandle == nullptr)
+    {
+        assert(false);
+
+        Log::Debug("Impossible to add telemetry point: worker is not started.");
+        return false;
+    }
+
+    ddog_Vec_Tag tags = ddog_Vec_Tag_new();
+    ddog_Vec_Tag_push(&tags,
+        libdatadog::FfiHelper::StringToCharSlice(std::string("has_sent_profiles")),
+        libdatadog::FfiHelper::StringToCharSlice(hasSentProfiles ? std::string("true") : std::string("false")));
+
+    std::string heuristicTag;
+    if (heuristics == SkipProfileHeuristicType::AllTriggered)
+    {
+        heuristicTag = "triggered";
+    }
+    else
+    {
+        if ((heuristics & SkipProfileHeuristicType::NoSpan) == SkipProfileHeuristicType::NoSpan)
+        {
+            heuristicTag += "no_span";
+        }
+
+        if ((heuristics & SkipProfileHeuristicType::ShortLived) == SkipProfileHeuristicType::ShortLived)
+        {
+            if (!heuristicTag.empty())
+            {
+                heuristicTag += "_";
+            }
+
+            heuristicTag = "short_lived";
+        }
+    }
+    ddog_Vec_Tag_push(&tags,
+        libdatadog::FfiHelper::StringToCharSlice(std::string("heuristic_hypothetical_decision")),
+        libdatadog::FfiHelper::StringToCharSlice(heuristicTag));
+
+    auto result = ddog_telemetry_handle_add_point_with_tags(_pHandle, &_numberOfProfilesKey, value, tags);
+    if (result.tag == DDOG_OPTION_VEC_U8_SOME_VEC_U8)
+    {
+        Log::Debug("Failed to add telemetry point");
+
+        return false;
+    }
 
     return true;
 }

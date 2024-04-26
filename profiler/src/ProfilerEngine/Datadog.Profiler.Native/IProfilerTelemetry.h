@@ -8,6 +8,7 @@
 
 class IExporter;
 
+// TODO: move these enums to a separate file
 // This is a bits flag that represents the heuristics that were not triggered
 // For example:
 //   if
@@ -45,6 +46,10 @@ enum class DeploymentMode
     SingleStepInstrumentation = 2
 };
 
+
+// TODO: this class was used when we planned to send metrics when the process starts and ends
+//       It is also used in tests.
+//       See how to "merge" with TelemetryMetricsWorker
 class IProfilerTelemetry
 {
 public:

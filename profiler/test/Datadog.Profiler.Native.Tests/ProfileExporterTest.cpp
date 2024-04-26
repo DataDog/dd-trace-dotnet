@@ -82,8 +82,9 @@ TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ProfilerTelemetry telemetry(&mockConfiguration);
+    ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo,
-                                    &enabledProfilers, metricsRegistry, metadataProvider, allocRecorder);
+                                    &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder);
 
     // Add samples to only one application
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
@@ -198,8 +199,9 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ProfilerTelemetry telemetry(&mockConfiguration);
+    ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -306,8 +308,9 @@ TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ProfilerTelemetry telemetry(&mockConfiguration);
+    ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -399,8 +402,9 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ProfilerTelemetry telemetry(&mockConfiguration);
+    ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
 }
 
 TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
@@ -445,8 +449,9 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ProfilerTelemetry telemetry(&mockConfiguration);
+    ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
 }
 
 TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
@@ -484,8 +489,9 @@ TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ProfilerTelemetry telemetry(&mockConfiguration);
+    ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
 }
 
 TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
@@ -525,8 +531,9 @@ TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
     IMetadataProvider* metadataProvider = nullptr;
     ProfilerTelemetry telemetry(&mockConfiguration);
     EXPECT_CALL(processSamplesProvider, GetSamples()).Times(1).WillOnce(Return(::testing::ByMove(std::make_unique<FakeSamples>())));
+    ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
 
     exporter.RegisterProcessSamplesProvider(static_cast<ISamplesProvider*>(&processSamplesProvider));
 
@@ -569,8 +576,9 @@ TEST(ProfileExporterTest, MakeSureNoCrashForReallyLongCallstack)
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
     ProfilerTelemetry telemetry(&mockConfiguration);
+    ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, allocRecorder);
+                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder);
 
     std::string runtimeId = "MyRid";
     auto callstack = CreateCallstack(2048);

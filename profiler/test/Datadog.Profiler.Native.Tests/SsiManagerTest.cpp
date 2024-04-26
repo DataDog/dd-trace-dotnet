@@ -18,8 +18,9 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_ShortLived)
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
 
     ProfilerTelemetryForTest telemetry;
+    SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry);
+    SsiManager manager(configuration.get(), &telemetry, &lifetime);
     manager.ProcessStart();
     manager.SetLifetimeDuration(-1);  // short lived
     manager.OnSpanCreated();
@@ -34,8 +35,9 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_NoSpan)
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
 
     ProfilerTelemetryForTest telemetry;
+    SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry);
+    SsiManager manager(configuration.get(), &telemetry, &lifetime);
     manager.SetLifetimeDuration(1);  // long lived
     // but no span created
     manager.ProcessStart();
@@ -50,8 +52,9 @@ TEST(SsiManagerTest, Should_StartAsSSI_When_DeployedAsSSI)
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
 
     ProfilerTelemetryForTest telemetry;
+    SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry);
+    SsiManager manager(configuration.get(), &telemetry, &lifetime);
     manager.SetLifetimeDuration(1);  // long lived
     manager.ProcessStart();
 
@@ -64,8 +67,9 @@ TEST(SsiManagerTest, Should_StartAsManual_When_NotDeployedAsSSI)
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(false));
 
     ProfilerTelemetryForTest telemetry;
+    SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry);
+    SsiManager manager(configuration.get(), &telemetry, &lifetime);
     manager.SetLifetimeDuration(1);  // long lived
     manager.ProcessStart();
 
@@ -78,8 +82,9 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_NotDeployedAsSSI)
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(false));
 
     ProfilerTelemetryForTest telemetry;
+    SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry);
+    SsiManager manager(configuration.get(), &telemetry, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerActivated(), false);
 }
@@ -90,8 +95,9 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSI)
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
 
     ProfilerTelemetryForTest telemetry;
+    SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry);
+    SsiManager manager(configuration.get(), &telemetry, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerActivated(), false);
 }
@@ -103,8 +109,9 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndDisabled
     EXPECT_CALL(mockConfiguration, IsProfilerEnabled()).WillRepeatedly(Return(false));
 
     ProfilerTelemetryForTest telemetry;
+    SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry);
+    SsiManager manager(configuration.get(), &telemetry, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerActivated(), false);
 }
@@ -116,8 +123,9 @@ TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndEnabled)
     EXPECT_CALL(mockConfiguration, IsProfilerEnabled()).WillRepeatedly(Return(true));
 
     ProfilerTelemetryForTest telemetry;
+    SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry);
+    SsiManager manager(configuration.get(), &telemetry, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerActivated(), true);
 }
@@ -129,8 +137,9 @@ TEST(SsiManagerTest, Should_ProfilerBeActivated_When_NotDeployedAsSSIAndEnabled)
     EXPECT_CALL(mockConfiguration, IsProfilerEnabled()).WillRepeatedly(Return(true));
 
     ProfilerTelemetryForTest telemetry;
+    SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry);
+    SsiManager manager(configuration.get(), &telemetry, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerActivated(), true);
 }
@@ -141,8 +150,9 @@ TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndSpanAndLong
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
 
     ProfilerTelemetryForTest telemetry;
+    SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry);
+    SsiManager manager(configuration.get(), &telemetry, &lifetime);
     manager.OnSpanCreated();
     manager.SetLifetimeDuration(1);  // long lived
 
@@ -155,8 +165,9 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndSpanOnly
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
 
     ProfilerTelemetryForTest telemetry;
+    SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry);
+    SsiManager manager(configuration.get(), &telemetry, &lifetime);
     manager.SetLifetimeDuration(-1);  // short lived
     manager.ProcessStart();
     manager.OnSpanCreated();
@@ -170,8 +181,9 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndLongLive
     EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
 
     ProfilerTelemetryForTest telemetry;
+    SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry);
+    SsiManager manager(configuration.get(), &telemetry, &lifetime);
     manager.SetLifetimeDuration(1);  // long lived
 
     ASSERT_EQ(manager.IsProfilerActivated(), false);

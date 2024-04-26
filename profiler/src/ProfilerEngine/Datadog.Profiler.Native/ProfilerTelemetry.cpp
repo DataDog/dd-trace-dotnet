@@ -73,7 +73,8 @@ void ProfilerTelemetry::ProcessEnd(uint64_t duration, uint64_t sentProfiles, Ski
 
     if (_pExporter != nullptr)
     {
-        _pExporter->SendProcessSsiMetrics(duration, _isSsiDeployed, heuristics);
+        // could have been done in the exporter
+        // _pExporter->SendProcessSsiMetrics(duration, _isSsiDeployed, heuristics);
     }
 }
 

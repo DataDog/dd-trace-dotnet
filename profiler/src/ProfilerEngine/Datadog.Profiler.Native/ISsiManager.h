@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "IProfilerTelemetry.h"
+
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -23,6 +25,9 @@ public:
     // send metrics
     virtual void ProcessStart() = 0;
     virtual void ProcessEnd() = 0;
+
+    // heuristics state
+    virtual SkipProfileHeuristicType GetSkipProfileHeuristic() = 0;
 
     virtual ~ISsiManager() = default;
 };

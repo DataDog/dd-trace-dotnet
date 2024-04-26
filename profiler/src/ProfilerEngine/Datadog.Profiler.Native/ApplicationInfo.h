@@ -1,5 +1,8 @@
 #pragma once
 #include <string>
+#include <memory>
+
+#include "TelemetryMetricsWorker.h"
 
 struct ApplicationInfo
 {
@@ -10,6 +13,5 @@ public:
     std::string RepositoryUrl;
     std::string CommitSha;
 
-    // TODO: add telemetry metrics worker
-
+    std::shared_ptr<libdatadog::TelemetryMetricsWorker> Worker;
 };

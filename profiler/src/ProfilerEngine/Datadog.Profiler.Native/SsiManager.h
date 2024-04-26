@@ -4,13 +4,14 @@
 #pragma once
 
 #include "ISsiManager.h"
+#include "IProfilerTelemetry.h"
+#include "Timer.h"
 
 #include <memory>
 #include <thread>
 
 class IConfiguration;
-class IProfilerTelemetry;
-
+class ISsiLifetime;
 
 // TODO: try to find a way to enable SetLifetimeDuration only for tests (works for Windows but not for Linux)
 #define DD_TEST
@@ -18,9 +19,9 @@ class IProfilerTelemetry;
 class SsiManager : public ISsiManager
 {
 public:
-// TODO: We need to pass another interface to notify when the profiler should start profiling
-//       Is it enough to pass CorProfilerCallback*?
-    SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTelemetry);
+    // We need to pass another interface to notify when the profiler should start profiling
+    // CorProfilerCallback is implementing this ISsiLifetime interface
+    SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTelemetry, ISsiLifetime* pSsiLifetime);
     ~SsiManager() = default;
 
 #ifdef DD_TEST
@@ -40,11 +41,19 @@ public:
     void ProcessStart() override;
     void ProcessEnd() override;
 
+    SkipProfileHeuristicType GetSkipProfileHeuristic() override;
+
+private:
+    void OnShortLivedEnds();
+
 private:
     IConfiguration* _pConfiguration;
     IProfilerTelemetry* _pTelemetry;
+    ISsiLifetime* _pSsiLifetime;
     bool _hasSpan = false;
+    bool _isLongLived = false;
     bool _isSsiDeployed = false;
+    Timer _timer;
 
 #ifdef DD_TEST
 private:

@@ -26,6 +26,8 @@ class IAllocationsRecorder;
 class IProcessSamplesProvider;
 class IMetadataProvider;
 class IConfiguration;
+class IRuntimeInfo;
+class ISsiManager;
 
 namespace libdatadog {
 class Exporter;
@@ -44,6 +46,7 @@ public:
         IEnabledProfilers* enabledProfilers,
         MetricsRegistry& metricsRegistry,
         IMetadataProvider* metadataProvider,
+        ISsiManager* ssiManager,
         IAllocationsRecorder* allocationsRecorder);
     ~ProfileExporter() override;
 
@@ -52,8 +55,7 @@ public:
     void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
     void RegisterUpscaleProvider(IUpscaleProvider* provider) override;
     void RegisterProcessSamplesProvider(ISamplesProvider* provider) override;
-    void SendProcessSsiMetrics(uint64_t duration, bool isDeployedWithSsi, SkipProfileHeuristicType heuristics) override;
-    void CreateTelemetryMetricsWorker(ApplicationInfo* pInfo) override;
+    void CreateTelemetryMetricsWorker(std::string runtimeId, ApplicationInfo* pInfo) override;
 
     static std::string BuildAgentEndpoint(IConfiguration* configuration);
 
@@ -136,6 +138,8 @@ private:
     IMetadataProvider* _metadataProvider;
     std::unique_ptr<libdatadog::Exporter> _exporter;
     IConfiguration* _configuration;
+    IRuntimeInfo* _runtimeInfo;
+    ISsiManager* _ssiManager;
 
 public: // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

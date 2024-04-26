@@ -15,6 +15,7 @@
 #include "IMetricsSender.h"
 #include "IRuntimeInfo.h"
 #include "ISamplesProvider.h"
+#include "ISsiManager.h"
 #include "IUpscaleProvider.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -82,13 +83,16 @@ ProfileExporter::ProfileExporter(
     IEnabledProfilers* enabledProfilers,
     MetricsRegistry& metricsRegistry,
     IMetadataProvider* metadataProvider,
+    ISsiManager* ssiManager,
     IAllocationsRecorder* allocationsRecorder) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
     _allocationsRecorder{allocationsRecorder},
     _metadataProvider{metadataProvider},
-    _configuration{configuration}
+    _configuration{configuration},
+    _runtimeInfo{runtimeInfo},
+    _ssiManager{ssiManager}
 {
     _exporter = CreateExporter(_configuration, CreateTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
@@ -530,13 +534,21 @@ bool ProfileExporter::Export()
 
         const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(runtimeId));
 
+        // telemetry metrics are counting the number of profiles sent or that should have been sent if the heuristics were triggered
+        SkipProfileHeuristicType heuristicTag =
+            (_ssiManager == nullptr)  // could be null in tests
+            ? SkipProfileHeuristicType::AllTriggered
+            : _ssiManager->GetSkipProfileHeuristic();
+
         if (profile == nullptr || samplesCount == 0)
         {
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
 
-            // TODO: send telemetry about empty profiles
+            applicationInfo.Worker->AddPoint(1, false, heuristicTag);
+
             continue;
         }
+        applicationInfo.Worker->AddPoint(1, true, heuristicTag);
 
         if (_exporter == nullptr)
         {
@@ -587,57 +599,7 @@ bool ProfileExporter::Export()
     return exported;
 }
 
-void ProfileExporter::SendProcessSsiMetrics(uint64_t duration, bool isDeployedWithSsi, SkipProfileHeuristicType heuristics)
-{
-    // for each service, send the corresponding SSI metrics
-    std::vector<std::string_view> keys;
-    {
-        std::lock_guard lock(_perAppInfoLock);
-        for (const auto& [key, _] : _perAppInfo)
-        {
-            keys.push_back(key);
-        }
-    }
-
-    // it is possible that the Tracer was started (special sqlserver or dd-trace case for example)
-    if (keys.empty())
-    {
-        auto rid = ::shared::GenerateRuntimeId();  // fake but unique GUID
-        auto appInfo = _applicationStore->GetApplicationInfo(rid); // to get the default service information
-
-        // TODO: send metrics corresponding to this unique fake runtime ID
-
-        return;
-    }
-
-    // for each runtime ID, send the corresponding SSI metrics
-    for (auto& runtimeId : keys)
-    {
-        int32_t exportsCount;
-
-        // The goal here is to minimize the amount of time we hold the profileInfo lock.
-        // The lock in ProfileInfoScope guarantees that nobody else is currently holding a reference to the profileInfo.
-        // While inside the lock owned by the profileinfo scope, its profile is moved to the profile local variable
-        // (i.e. the profileinfo will then contains a null profile field when the next sample will be added)
-        // This way, we know that nobody else will ever use that profile again, and we can take our time to manipulate it
-        // outside of the lock.
-        {
-            const auto scope = GetOrCreateInfo(runtimeId);
-
-            // Get everything we need then release the lock
-            //profile = std::move(scope.profileInfo.profile);
-            //samplesCount = scope.profileInfo.samplesCount;
-
-            exportsCount = scope.profileInfo.exportsCount;
-        }
-
-        const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(runtimeId));
-
-        // TODO: send metrics corresponding to this runtime ID
-    }
-}
-
-void ProfileExporter::CreateTelemetryMetricsWorker(ApplicationInfo* pInfo)
+void ProfileExporter::CreateTelemetryMetricsWorker(std::string runtimeId, ApplicationInfo* pInfo)
 {
     if (pInfo == nullptr)
     {
@@ -645,15 +607,41 @@ void ProfileExporter::CreateTelemetryMetricsWorker(ApplicationInfo* pInfo)
         return;
     }
 
-    // TODO: check that the telemetry worker is not already created
+    if (pInfo->Worker != nullptr)
+    {
+        assert(false);
+        Log::Debug("A telemetry worker already exists for ", pInfo->ServiceName);
+        return;
+    }
 
-    // TODO: create the worker and assign it to the application info
+    // agentless mode is not supported for telemetry
+    if (_configuration->IsAgentless())
+    {
+        Log::Info("No telemetry available in agentless mode", pInfo->ServiceName);
+        return;
+    }
 
-
+    // create the worker and assign it to the application info
+    auto agentUrl = BuildAgentEndpoint(_configuration);
+    auto languageVersion = _runtimeInfo->GetClrString();
+    pInfo->Worker = std::make_unique<libdatadog::TelemetryMetricsWorker>();
+    bool success = pInfo->Worker->Start(
+        _configuration,
+        pInfo->ServiceName,
+        pInfo->Version,
+        LanguageFamily,
+        languageVersion,
+        LibraryVersion,
+        agentUrl,
+        runtimeId,
+        pInfo->Environment);
+    if (!success)
+    {
+        Log::Error("Failed to start the telemetry worker for ", pInfo->ServiceName);
+        pInfo->Worker = nullptr;
+    }
 }
-
-
-
+//
 // Tags
 // -----------------------------------------------
 //  installation:  CONSTANT
@@ -672,7 +660,7 @@ void ProfileExporter::CreateTelemetryMetricsWorker(ApplicationInfo* pInfo)
 //      triggered (heuristics are triggered, ie process is not short lived and emitted at least one span. Important: it does not matter if they are actually used to decide if profile are emitted or not)
 //      no_span
 //      short_lived
-//      no_span, short_lived
+//      no_span_short_lived
 
 
 std::string ProfileExporter::CreateMetricsFileContent() const

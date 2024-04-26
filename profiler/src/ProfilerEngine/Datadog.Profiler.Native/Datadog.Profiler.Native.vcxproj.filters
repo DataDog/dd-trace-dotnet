@@ -449,10 +449,22 @@
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
     <ClInclude Include="LinkedList.hpp" />
-    <ClInclude Include="ISsiManager.h" />
-    <ClInclude Include="SsiManager.h" />
     <ClInclude Include="TelemetryMetricsWorker.h">
       <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="Callstack.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="CallstackProvider.h" />
+    <ClInclude Include="MemoryResourceManager.h" />
+    <ClInclude Include="ISsiManager.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="SsiManager.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="ISsiLifetime.h">
+      <Filter>Profiler-Driver</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -692,12 +704,24 @@
       <Filter>CorProfiler-Infrastructure</Filter>
 >>>>>>> 577d2ec4d (Add entry points for profiler telemetry related to SSI)
     </ClCompile>
-    <ClCompile Include="SsiManager.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
     <ClCompile Include="TelemetryMetricsWorker.cpp">
       <Filter>libdatadog</Filter>
     </ClCompile>
+<<<<<<< HEAD
+=======
+    <ClCompile Include="Callstack.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="CallstackProvider.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryResourceManager.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="SsiManager.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+>>>>>>> b89121d5e (First version with telemetry)
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

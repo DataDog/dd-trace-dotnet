@@ -4,14 +4,17 @@
 #include "SsiManager.h"
 #include "IConfiguration.h"
 #include "IProfilerTelemetry.h"
+#include "ISsiLifetime.h"
 #include "OsSpecificApi.h"
 #include "OpSysTools.h"
 
 
-SsiManager::SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTelemetry)
+SsiManager::SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTelemetry, ISsiLifetime* pSsiLifetime)
     :
     _pConfiguration(pConfiguration),
-    _pTelemetry(pTelemetry)
+    _pTelemetry(pTelemetry),
+    _pSsiLifetime(pSsiLifetime),
+    _timer([this] { OnShortLivedEnds(); }, std::chrono::milliseconds(_pConfiguration->SsiShortLivedThreshold()*1000))
 {
     _isSsiDeployed = pConfiguration->IsSsiDeployed();
 }
@@ -23,10 +26,23 @@ SsiManager::SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTele
     }
 #endif
 
+void SsiManager::OnShortLivedEnds()
+{
+    _isLongLived = true;
+    if (_hasSpan)
+    {
+        _pSsiLifetime->OnStartDelayedProfiling();
+    }
+}
+
 
 void SsiManager::OnSpanCreated()
 {
     _hasSpan = true;
+    if (_isLongLived)
+    {
+        _pSsiLifetime->OnStartDelayedProfiling();
+    }
 }
 
 bool SsiManager::IsSpanCreated()
@@ -53,7 +69,7 @@ bool SsiManager::IsLongLived()
 
 // the profiler is enabled if either:
 //     - the profiler is enabled in the configuration
-//  or - the profiler is deployed via SSI and DD_INJECTION_ENABLED contains "profiler"
+//  or - the profiler is deployed via SSI and DD_INJECTION_ENABLED contains "profiling"
 bool SsiManager::IsProfilerEnabled()
 {
     if (_pConfiguration->IsProfilerEnabled())
@@ -93,6 +109,9 @@ bool SsiManager::IsProfilerActivated()
 void SsiManager::ProcessStart()
 {
     _pTelemetry->ProcessStart(_isSsiDeployed ? DeploymentMode::SingleStepInstrumentation : DeploymentMode::Manual);
+
+    // start the lifetime timer to detect when the process is not more short lived
+    _timer.Start();
 }
 
 void SsiManager::ProcessEnd()
@@ -129,6 +148,15 @@ void SsiManager::ProcessEnd()
     uint64_t sentProfiles = lifetime / _pConfiguration->GetUploadInterval().count() + 1;
 
     // compute the non triggered heuristics
+    heuristics = (SkipProfileHeuristicType)(heuristics | GetSkipProfileHeuristic());
+
+    _pTelemetry->ProcessEnd((uint64_t)lifetime, sentProfiles, heuristics);
+}
+
+SkipProfileHeuristicType SsiManager::GetSkipProfileHeuristic()
+{
+    SkipProfileHeuristicType heuristics = SkipProfileHeuristicType::AllTriggered;
+
     if (!IsLongLived())
     {
         heuristics = (SkipProfileHeuristicType)(heuristics | SkipProfileHeuristicType::ShortLived);
@@ -138,6 +166,6 @@ void SsiManager::ProcessEnd()
         heuristics = (SkipProfileHeuristicType)(heuristics | SkipProfileHeuristicType::NoSpan);
     }
 
-    _pTelemetry->ProcessEnd((uint64_t)lifetime, sentProfiles, heuristics);
+    return heuristics;
 }
 

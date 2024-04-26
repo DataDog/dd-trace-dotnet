@@ -5,6 +5,8 @@
 
 #include <string>
 
+#include "IProfilerTelemetry.h"
+
 extern "C"
 {
 #include "datadog/common.h"
@@ -33,7 +35,7 @@ public:
         const std::string& runtimeId,
         const std::string& environment
         );
-
+    bool AddPoint(double value, bool hasSentProfiles, SkipProfileHeuristicType heuristic);
     void Stop();
 
 private:

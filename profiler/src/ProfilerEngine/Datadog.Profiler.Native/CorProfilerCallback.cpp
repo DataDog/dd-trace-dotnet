@@ -454,6 +454,7 @@ void CorProfilerCallback::InitializeServices()
         _pEnabledProfilers.get(),
         _metricsRegistry,
         _pMetadataProvider.get(),
+        _pSsiManager.get(),
         _pAllocationsRecorder.get()
         );
     _pProfilerTelemetry->SetExporter(_pExporter.get());
@@ -551,6 +552,21 @@ void CorProfilerCallback::InitializeServices()
             _pSamplesCollector->Register(_pGarbageCollectionProvider);
         }
     }
+}
+
+
+// Single Step Instrumentation heuristics are triggered so profiling can start
+void CorProfilerCallback::OnStartDelayedProfiling()
+{
+    // check race conditions for shutdown
+    if (!_isInitialized.load())
+    {
+        return;
+    }
+
+    StartServices();
+
+    Log::Info("Profiler is started after a delay.");
 }
 
 bool CorProfilerCallback::StartServices()
@@ -988,7 +1004,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     PrintEnvironmentVariables();
 
     _pProfilerTelemetry = std::make_unique<ProfilerTelemetry>(_pConfiguration.get());
-    _pSsiManager = std::make_unique<SsiManager>(_pConfiguration.get(), _pProfilerTelemetry.get());
+    _pSsiManager = std::make_unique<SsiManager>(_pConfiguration.get(), _pProfilerTelemetry.get(), this);
     _pSsiManager->ProcessStart();
 
     double coresThreshold = _pConfiguration->MinimumCores();
