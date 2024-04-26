@@ -576,8 +576,8 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           // since Trace ID and Span ID for the headers match this will be extracted
-                           // only when extract first and Datadog,tracecontext is defined will this not be extracted
+                           // Since Trace ID and Span ID for the headers match this will be extracted.
+                           // Only when extract first and Datadog,tracecontext is defined will this _not_ be extracted.
                            LastParentId = (extractFirst && !w3CHeaderFirst) ? null : "0123456789abcdef",
                        });
         }
@@ -635,8 +635,8 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           // since Trace ID and Span ID for the headers match this will be extracted
-                           // only when extract first and Datadog,tracecontext is defined will this not be extracted
+                           // Since Trace ID and Span ID for the headers match this will be extracted.
+                           // Only when extract first and Datadog,tracecontext is defined will this _not_ be extracted.
                            LastParentId = (extractFirst && !w3CHeaderFirst) ? null : "0123456789abcdef",
                        });
         }
@@ -690,8 +690,8 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           // since Trace ID and Span ID for the headers match this will be extracted
-                           // only when extract first and Datadog,tracecontext is defined will this not be extracted
+                           // Since Trace ID and Span ID for the headers match this will be extracted.
+                           // Only when extract first and Datadog,tracecontext is defined will this _not_ be extracted.
                            LastParentId = (extractFirst && !w3CHeaderFirst) ? null : "0123456789abcdef",
                        });
         }
@@ -745,8 +745,8 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           // for extract first and Datadog,tracecontext we won't set the last parent to zero
-                           // in all other cases it will be set to zero
+                           // For extract first and Datadog,tracecontext we won't set the last parent to zero.
+                           // In all other cases it will be set to zero.
                            LastParentId = (extractFirst && !w3CHeaderFirst) ? null : ZeroLastParentId,
                        });
         }
@@ -800,8 +800,8 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           // since the ParentIds differ between the headers we don't set the LastParentId when we have Datadog,tracecontext
-                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
+                           // Since the ParentIds differ between the headers we _don't_ set the LastParentId when we have Datadog,tracecontext.
+                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // If we have Datadog headers don't use p.
                        });
         }
 
