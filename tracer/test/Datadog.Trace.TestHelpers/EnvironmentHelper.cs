@@ -253,12 +253,6 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_APPSEC_WAF_TIMEOUT"] = 10_000_000.ToString();
             }
 
-            // Setting the only propagation style to extract to Datadog to prevent changing current snapshots
-            if (!environmentVariables.ContainsKey("DD_TRACE_PROPAGATION_STYLE_EXTRACT"))
-            {
-                environmentVariables["DD_TRACE_PROPAGATION_STYLE_EXTRACT"] = "Datadog";
-            }
-
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
             {
                 var value = Environment.GetEnvironmentVariable(name);
