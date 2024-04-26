@@ -320,7 +320,7 @@ internal static class MetricTags
         [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
     }
 
-    public enum CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection
+    public enum CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum
     {
         [Description("event_type:test")] Test,
         [Description("event_type:test;is_benchmark")] Test_IsBenchmark,
@@ -332,6 +332,12 @@ internal static class MetricTags
         [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
         [Description("event_type:test;is_new:true")] Test_EFDTestIsNew,
         [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow")] Test_EFDTestIsNew_EFDTestAbortSlow,
+        [Description("event_type:test;browser_driver:selenium")] Test_BrowserDriverSelenium,
+        [Description("event_type:test;is_new:true;browser_driver:selenium")] Test_EFDTestIsNew_BrowserDriverSelenium,
+        [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow;browser_driver:selenium")] Test_EFDTestIsNew_EFDTestAbortSlow_BrowserDriverSelenium,
+        [Description("event_type:test;browser_driver:selenium;is_rum:true")] Test_BrowserDriverSelenium_IsRum,
+        [Description("event_type:test;is_new:true;browser_driver:selenium;is_rum:true")] Test_EFDTestIsNew_BrowserDriverSelenium_IsRum,
+        [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow;browser_driver:selenium;is_rum:true")] Test_EFDTestIsNew_EFDTestAbortSlow_BrowserDriverSelenium_IsRum,
     }
 
     public enum CIVisibilityCoverageLibrary

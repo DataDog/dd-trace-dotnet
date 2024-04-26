@@ -97,4 +97,19 @@ internal partial class TestSpanTags : TestSuiteSpanTags
 
     [Tag(EarlyFlakeDetectionTags.TestIsRetry)]
     public string EarlyFlakeDetectionTestIsRetry { get; set; }
+
+    [Tag(BrowserTags.BrowserDriver)]
+    public string BrowserDriver { get; set; }
+
+    [Tag(BrowserTags.BrowserDriverVersion)]
+    public string BrowserDriverVersion { get; set; }
+
+    [Tag(BrowserTags.BrowserName)]
+    public string BrowserName { get; set; }
+
+    [Tag(BrowserTags.BrowserVersion)]
+    public string BrowserVersion { get; set; }
+
+    [Tag(BrowserTags.IsRumActive)]
+    public string IsRumActive { get; set; }
 }

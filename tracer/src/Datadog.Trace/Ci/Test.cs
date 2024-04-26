@@ -421,7 +421,9 @@ public sealed class Test
                 MetricTags.CIVisibilityTestingEventType.Test,
                 tags.Type == TestTags.TypeBenchmark,
                 tags.EarlyFlakeDetectionTestIsNew == "true",
-                tags.EarlyFlakeDetectionTestAbortReason == "slow") is { } eventTypeWithMetadata)
+                tags.EarlyFlakeDetectionTestAbortReason == "slow",
+                !string.IsNullOrEmpty(tags.BrowserDriver),
+                tags.IsRumActive == "true") is { } eventTypeWithMetadata)
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework), eventTypeWithMetadata);
         }

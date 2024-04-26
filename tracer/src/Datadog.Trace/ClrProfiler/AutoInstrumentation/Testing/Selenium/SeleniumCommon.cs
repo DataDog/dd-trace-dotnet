@@ -70,7 +70,8 @@ internal static class SeleniumCommon
         if (_seleniumCookieType is not null)
         {
             var span = test.GetInternalSpan();
-            var traceId = test.GetInternalSpan().Context.TraceId;
+            var tags = test.GetTags();
+            var traceId = span.Context.TraceId;
 
             // Create a cookie with the traceId to be used by the RUM library
             if (Activator.CreateInstance(_seleniumCookieType, CookieName, traceId.ToString()) is { } cookieInstance)
@@ -83,30 +84,30 @@ internal static class SeleniumCommon
 
                 // Tag the current test with browser information
                 span.Type = SpanTypes.Browser;
-                test.SetTag(BrowserTags.BrowserDriver, "selenium");
-                test.SetTag(BrowserTags.BrowserDriverVersion, instance.Type.Assembly.GetName().Version?.ToString() ?? "unknown");
+                tags.BrowserDriver = "selenium";
+                tags.BrowserDriverVersion = instance.Type.Assembly.GetName().Version?.ToString() ?? "unknown";
 
                 var capabilities = instance.Capabilities;
                 var browserName = capabilities.GetCapability("browserName")?.ToString() ?? "unknown";
                 var browserVersion = (capabilities.GetCapability("browserVersion") ?? capabilities.GetCapability("version"))?.ToString() ?? string.Empty;
-                if (span.GetTag(BrowserTags.BrowserName) is { } currentBrowserName && currentBrowserName != browserName)
+                if (tags.BrowserName is { } currentBrowserName && currentBrowserName != browserName)
                 {
                     // According to the spec: If we have usage of different drivers in the same test, we set the browser name to empty
-                    test.SetTag(BrowserTags.BrowserName, string.Empty);
+                    tags.BrowserName = string.Empty;
                 }
                 else
                 {
-                    test.SetTag(BrowserTags.BrowserName, browserName);
+                    tags.BrowserName = browserName;
                 }
 
-                if (span.GetTag(BrowserTags.BrowserVersion) is { } currentBrowserVersion && currentBrowserVersion != browserVersion)
+                if (tags.BrowserVersion is { } currentBrowserVersion && currentBrowserVersion != browserVersion)
                 {
                     // According to the spec: If we have usage of different drivers in the same test, we set the browser version to empty
-                    test.SetTag(BrowserTags.BrowserVersion, string.Empty);
+                    tags.BrowserVersion = string.Empty;
                 }
                 else
                 {
-                    test.SetTag(BrowserTags.BrowserVersion, browserVersion);
+                    tags.BrowserVersion = browserVersion;
                 }
 
                 // Add an action when the test close to flush the RUM data
@@ -149,7 +150,7 @@ internal static class SeleniumCommon
             // Execute RUM flush script
             if (instance.ExecuteScript(RumStopSessionScript, null) is true)
             {
-                test.SetTag(BrowserTags.IsRumActive, "true");
+                test.GetTags().IsRumActive = "true";
                 Log.Information<int>("RUM flush script has been called, waiting for {RumFlushWaitMillis}ms.", CIVisibility.Settings.RumFlushWaitMillis);
                 Thread.Sleep(CIVisibility.Settings.RumFlushWaitMillis);
             }
