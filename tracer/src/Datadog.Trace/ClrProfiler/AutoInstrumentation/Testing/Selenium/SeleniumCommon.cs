@@ -69,6 +69,8 @@ internal static class SeleniumCommon
         if (_seleniumCookieType is not null)
         {
             var traceId = test.GetInternalSpan().Context.TraceId;
+
+            // Create a cookie with the traceId to be used by the RUM library
             if (Activator.CreateInstance(_seleniumCookieType, CookieName, traceId.ToString()) is { } cookieInstance)
             {
                 Log.Debug("Inject: {Parameters}", JsonConvert.SerializeObject(parameters ?? new object()));
@@ -97,6 +99,7 @@ internal static class SeleniumCommon
 
                 // Add an action when the test close to flush the RUM data
                 // in case the test never calls to driver.Close() or driver.Quit()
+                // CloseAndFlush can be called multiple times.
                 test.AddOnCloseAction(t => CloseAndFlush(instance, t));
             }
         }
@@ -115,21 +118,23 @@ internal static class SeleniumCommon
             return;
         }
 
-        if (test.GetInternalSpan().GetTag("test.is_rum_active") is not null)
-        {
-            // Already closed don't need to close
-            return;
-        }
-
         if (instance.SessionId is null)
         {
             // The session is already closed (driver might be disposed)
             return;
         }
 
+        var cookies = instance.Manage().Cookies;
+        if (cookies.GetCookieNamed(CookieName) is null)
+        {
+            // Already closed don't need to close
+            return;
+        }
+
         Log.Debug("CloseAndFlush RUM session");
         try
         {
+            // Execute RUM flush script
             if (instance.ExecuteScript(RumStopSessionScript, null) is bool isRumFlushed)
             {
                 test.SetTag("test.is_rum_active", isRumFlushed ? "true" : "false");
@@ -141,7 +146,7 @@ internal static class SeleniumCommon
             }
 
             // Delete injected RUM session cookie
-            instance.Manage().Cookies.DeleteCookieNamed(CookieName);
+            cookies.DeleteCookieNamed(CookieName);
         }
         catch (Exception ex)
         {

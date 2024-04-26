@@ -23,4 +23,12 @@ internal interface IICookieJarProxy : IDuckType
     /// </summary>
     /// <param name="name">The name of the cookie to be deleted.</param>
     void DeleteCookieNamed(string name);
+
+    /// <summary>
+    /// Gets a cookie with the specified name.
+    /// </summary>
+    /// <param name="name">The name of the cookie to retrieve.</param>
+    /// <returns>The Cookie containing the name. Returns <see langword="null"/>
+    /// if no cookie with the specified name is found.</returns>
+    object? GetCookieNamed(string name);
 }
