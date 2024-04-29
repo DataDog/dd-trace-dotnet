@@ -745,9 +745,9 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           // For extract first and Datadog,tracecontext we won't set the last parent to zero.
+                           // If `p` is missing for Datadog,tracecontext we won't set the last parent to zero, same if extract first enabled
                            // In all other cases it will be set to zero.
-                           LastParentId = (extractFirst && !w3CHeaderFirst) ? null : ZeroLastParentId,
+                           LastParentId = !w3CHeaderFirst ? null : ZeroLastParentId,
                        });
         }
 

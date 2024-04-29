@@ -19,6 +19,7 @@ namespace Datadog.Trace.Propagators
     {
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
+        internal const string ZeroLastParentId = "0000000000000000";
 
         private static readonly object GlobalLock = new();
         private static SpanContextPropagator? _instance;
@@ -169,7 +170,7 @@ namespace Datadog.Trace.Propagators
                         {
                             localSpanContext.AdditionalW3CTraceState += spanContext.AdditionalW3CTraceState;
 
-                            if (localSpanContext.RawSpanId == spanContext.RawSpanId && !string.IsNullOrEmpty(spanContext.LastParentId))
+                            if (localSpanContext.RawSpanId == spanContext.RawSpanId && !string.IsNullOrEmpty(spanContext.LastParentId) && !string.Equals(spanContext.LastParentId, ZeroLastParentId))
                             {
                                 // if we match trace IDs and span IDs set the last parent
                                 localSpanContext.LastParentId = spanContext.LastParentId;
