@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Util;
