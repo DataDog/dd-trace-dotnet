@@ -7,6 +7,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
@@ -69,7 +70,6 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         EnableIast(enableIast);
         EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
         EnableEvidenceRedaction(false);
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
@@ -86,29 +86,34 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
 
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
-    [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
-    [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
-    [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
-    [InlineData("/Iast/SsrfAttackNoCatch?host=127.0.0.1", "SSRF")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
+    [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
+    [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
+    [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
+    [InlineData("/Iast/SsrfAttackNoCatch?host=127.0.0.1", "SSRF")]
     public async Task TestRaspRequest(string url, string exploit)
     {
-        var testName = _enableIast ? "RaspIast.AspNetMvc5" : "Rasp.AspNetMvc5";
-        testName += _classicMode ? ".Classic" : ".Integrated";
-        IncludeAllHttpSpans = true;
-        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.UseParameters(url, exploit);
         settings.AddIastScrubbing();
-        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
+        var dateTime = DateTime.UtcNow;
+        var testName = _enableIast ? "RaspIast.AspNetMvc5" : "Rasp.AspNetMvc5";
+        testName += _classicMode ? ".Classic" : ".Integrated";
+        await SubmitRequest(url, null, "application/json");
+        var spans = agent.WaitForSpans(2, minDateTime: dateTime);
+        await VerifySpans(spans, settings, testName: testName, methodNameOverride: exploit);
     }
 
     public async Task InitializeAsync()
     {
         await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         SetHttpPort(_iisFixture.HttpPort);
+        // we need to have a first request to the home page to avoid the initialization metrics of the waf and sampling priority set to 2.0 because of that
+        var answer = await SubmitRequest("/", null, string.Empty);
+        // because of this we need to add a filter
+        _iisFixture.Agent.SpanFilters.Add(s => !s.Resource.Contains("home/index"));
     }
 
     public Task DisposeAsync() => Task.CompletedTask;
