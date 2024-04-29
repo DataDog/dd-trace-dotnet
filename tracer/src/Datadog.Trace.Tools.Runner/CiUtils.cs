@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Spectre.Console;
@@ -33,11 +34,11 @@ internal static class CiUtils
         string[] args,
         bool reducePathLength)
     {
-        // CI Visibility mode is enabled.
-        var ciVisibilitySettings = CIVisibility.Settings;
-
         // Define the arguments
         var lstArguments = new List<string>(args.Length > 1 ? args.Skip(1) : []);
+
+        // CI Visibility mode is enabled.
+        var ciVisibilitySettings = CIVisibility.Settings;
 
         // Get profiler environment variables
         if (!RunHelper.TryGetEnvironmentVariables(
@@ -50,6 +51,9 @@ internal static class CiUtils
             context.ExitCode = 1;
             return new InitResults(false, lstArguments, null, false, false, Task.CompletedTask);
         }
+
+        // Reload the CI Visibility settings (in case they were changed by the environment variables using the `--set-env` option)
+        ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
 
         // We force CIVisibility mode on child process
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";

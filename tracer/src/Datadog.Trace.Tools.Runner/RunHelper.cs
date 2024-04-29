@@ -5,11 +5,15 @@
 
 using System.Collections.Generic;
 using System.CommandLine.Invocation;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tools.Runner
 {
     internal static class RunHelper
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RunHelper));
+
         public static bool TryGetEnvironmentVariables(ApplicationContext applicationContext, InvocationContext invocationContext, CommonTracerSettings settings, out Dictionary<string, string> profilerEnvironmentVariables)
         {
             return TryGetEnvironmentVariables(applicationContext, invocationContext, settings, Utils.CIVisibilityOptions.None, out profilerEnvironmentVariables);
@@ -40,6 +44,11 @@ namespace Datadog.Trace.Tools.Runner
                         var (key, value) = ParseEnvironmentVariable(env);
 
                         profilerEnvironmentVariables[key] = value;
+                        if (Program.CallbackForTests is null)
+                        {
+                            Log.Debug("Setting: {Key}={Value}", key, value);
+                            EnvironmentHelpers.SetEnvironmentVariable(key, value);
+                        }
                     }
                 }
             }
