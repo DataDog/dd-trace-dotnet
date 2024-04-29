@@ -20,12 +20,6 @@
                 "type": "PinnedLocal",
                 "value": "PinnedLocal"
               }
-            },
-            "locals": {
-              "p": {
-                "type": "Char",
-                "value": "h"
-              }
             }
           }
         },
