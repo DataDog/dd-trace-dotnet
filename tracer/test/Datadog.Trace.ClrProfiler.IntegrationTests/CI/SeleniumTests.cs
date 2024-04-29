@@ -34,10 +34,13 @@ public class SeleniumTests : TestingFrameworkEvpTest
 
     [SkippableTheory]
     [MemberData(nameof(PackageVersions.Selenium), MemberType = typeof(PackageVersions))]
+    [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     public async Task Injection(string packageVersion)
     {
+        SkipOn.Platform(SkipOn.PlatformValue.Linux);
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         var tests = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
         var testModules = new List<MockCIVisibilityTestModule>();
