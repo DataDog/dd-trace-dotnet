@@ -196,6 +196,11 @@
     <!-- Latest package https://www.nuget.org/packages/RabbitMQ.Client/6.8.1 -->
     <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
 
+    <!-- Integration: WebDriver -->
+    <!-- Assembly: WebDriver -->
+    <!-- Latest package https://www.nuget.org/packages/Selenium.WebDriver/4.20.0 -->
+    <PackageReference Include="Selenium.WebDriver" Version="4.20.0" />
+
     <!-- Integration: Serilog -->
     <!-- Assembly: Serilog -->
     <!-- Latest package https://www.nuget.org/packages/Serilog/3.1.1 -->
