@@ -278,6 +278,8 @@ internal class CreatedumpCommand : Command
 
     private void Execute(InvocationContext context)
     {
+        AnsiConsole.WriteLine("Invoking createdump: " + Environment.CommandLine);
+
         var allArguments = _allArguments.GetValue(context);
 
         try
@@ -286,12 +288,22 @@ internal class CreatedumpCommand : Command
             {
                 if (ParseArguments(allArguments, out var pid, out var signal, out var crashThread))
                 {
+                    AnsiConsole.WriteLine("Generating crash report");
                     GenerateCrashReport(pid, signal, crashThread);
                 }
+                else
+                {
+                    AnsiConsole.WriteLine("Failed to parse arguments");
+                }
+            }
+            else
+            {
+                AnsiConsole.WriteLine("Telemetry is disabled");
             }
         }
         catch (Exception ex)
         {
+            AnsiConsole.WriteLine("Exception: " + ex);
             _errors.Add($"Unexpected exception: {ex.Message}");
         }
         finally

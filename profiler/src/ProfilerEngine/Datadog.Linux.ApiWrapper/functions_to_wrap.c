@@ -185,14 +185,18 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
         }
     }
 
+    printf("execve hook\n");
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wtautological-compare"
     if (ddTracePath != NULL && pathname != NULL)
     {
+        printf("execve ddtracepath is set\n");
         size_t length = strlen(pathname);
 
         if (length >= 11 && strcmp(pathname + length - 11, "/createdump") == 0)
         {
+            printf("execve contains createdump\n");
             // Execute the alternative crash handler, and prepend "createdump" to the arguments
 
             // Count the number of arguments (the list ends with a null pointer)
