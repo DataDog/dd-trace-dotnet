@@ -399,8 +399,12 @@ namespace Datadog.Trace
         /// <param name="exception">The exception.</param>
         internal void SetException(Exception exception)
         {
-            Error = true;
-            SetExceptionTags(exception);
+            // We do not log BlockExceptions as errors
+            if (exception is not AppSec.BlockException)
+            {
+                Error = true;
+                SetExceptionTags(exception);
+            }
         }
 
         /// <summary>
@@ -410,7 +414,7 @@ namespace Datadog.Trace
         /// <param name="exception">The exception.</param>
         internal void SetExceptionTags(Exception exception)
         {
-            if (exception != null)
+            if (exception != null && exception is not AppSec.BlockException)
             {
                 try
                 {
