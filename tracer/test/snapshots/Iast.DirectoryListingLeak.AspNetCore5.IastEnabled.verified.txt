@@ -22,7 +22,7 @@
         "method": "Configure"
       },
       "evidence": {
-        "value": "Directory listing is configured"
+        "value": "Directory listing is configured with: UseDirectoryBrowser"
       }
     }
   ]

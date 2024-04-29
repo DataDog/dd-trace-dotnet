@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles;
 [InstrumentMethod(
     AssemblyName = "Microsoft.AspNetCore.StaticFiles",
     TypeName = "Microsoft.AspNetCore.Builder.DirectoryBrowserExtensions",
-    MethodName = "UseDirectoryBrowser",
+    MethodName = MethodName,
     ReturnTypeName = "Microsoft.AspNetCore.Builder.IApplicationBuilder",
     ParameterTypeNames = ["Microsoft.AspNetCore.Builder.IApplicationBuilder"],
     MinimumVersion = "2",
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles;
 [InstrumentMethod(
     AssemblyName = "Microsoft.AspNetCore.StaticFiles",
     TypeName = "Microsoft.AspNetCore.Builder.DirectoryBrowserExtensions",
-    MethodName = "UseDirectoryBrowser",
+    MethodName = MethodName,
     ReturnTypeName = "Microsoft.AspNetCore.Builder.IApplicationBuilder",
     ParameterTypeNames = ["Microsoft.AspNetCore.Builder.IApplicationBuilder", "Microsoft.AspNetCore.Builder.DirectoryBrowserOptions"],
     MinimumVersion = "2",
@@ -38,13 +38,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class DirectoryBrowserExtensionsUseDirectoryBrowserIntegration
 {
+    private const string MethodName = "UseDirectoryBrowser";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DirectoryBrowserExtensionsUseDirectoryBrowserIntegration>();
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         try
         {
-            IastModule.OnDirectoryListingLeak();
+            IastModule.OnDirectoryListingLeak(MethodName);
         }
         catch (Exception ex)
         {

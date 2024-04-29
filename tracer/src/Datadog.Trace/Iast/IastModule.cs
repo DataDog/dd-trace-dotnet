@@ -389,7 +389,7 @@ internal static partial class IastModule
         return AddWebVulnerability(authHeader, integrationId, VulnerabilityTypeName.InsecureAuthProtocol, (VulnerabilityTypeName.InsecureAuthProtocol + ':' + authHeader).GetStaticHashCode());
     }
 
-    public static void OnDirectoryListingLeak()
+    public static void OnDirectoryListingLeak(string methodName)
     {
         if (!Iast.Instance.Settings.Enabled) { return; }
 
@@ -397,7 +397,7 @@ internal static partial class IastModule
             VulnerabilityTypeName.DirectoryListingLeak,
             VulnerabilityTypeName.DirectoryListingLeak.GetStaticHashCode(),
             GetLocation(),
-            new Evidence("Directory listing is configured"),
+            new Evidence($"Directory listing is configured with: {methodName}"),
             IntegrationId.DirectoryListingLeak);
 
         AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
