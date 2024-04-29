@@ -8,6 +8,7 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -30,6 +31,7 @@ public class GrpcDotNetTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Iast.TelemetryVerbosity, "Off");
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "200");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "1");
 
         SetEnvironmentVariable("IAST_GRPC_SOURCE_TEST", "1");
     }
@@ -50,6 +52,11 @@ public class GrpcDotNetTests : TestHelper
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
+
+        // Add scrub for the location data, as using APM sample, we won't disable symbols on their sample
+        (Regex RegexPattern, string Replacement) locationMsgRegex = (new Regex(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,4}(\s)*},"), string.Empty);
+        settings.AddRegexScrubber(locationMsgRegex);
+
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName(filename)
