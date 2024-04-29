@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -49,9 +50,50 @@ public class CreatedumpTests : ConsoleTestHelper
     private static (string Key, string Value)[] CreatedumpConfig => [("COMPlus_DbgEnableMiniDump", "1"), ("COMPlus_DbgMiniDumpName", "/dev/null")];
 
     [SkippableTheory]
+    [InlineData("1", true)]
+    [InlineData("0", false)]
+    public async Task Passthrough(string passthrough, bool shouldCallCreatedump)
+    {
+        // This tests the case when a dotnet exe calls another one
+        // The expected behavior is that in the parent process, we check if COMPlus_DbgEnableMiniDump
+        // was already set. If it was, then we need to forward the call to createdump in case of crash.
+        // If it wasn't set, then we set it so that dd-dotnet will be invoked in case of crash.
+        // If a child dotnet process is spawned, we may then mistakenly think that COMPlus_DbgEnableMiniDump
+        // was set from the environment, even though it was set by us. To prevent that, we set the
+        // DD_TRACE_CRASH_HANDLER_PASSTHROUGH environment variable, which codifies the result of the
+        // "was COMPlus_DbgEnableMiniDump set?" check.
+
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+        using var reportFile = new TemporaryFile();
+
+        (string, string)[] args = [LdPreloadConfig, ..CreatedumpConfig, ("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", passthrough), ..CrashReportConfig(reportFile)];
+
+        using var helper = await StartConsoleWithArgs("crash-datadog", args);
+
+        await helper.Task;
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        File.Exists(reportFile.Path).Should().BeTrue();
+
+        if (shouldCallCreatedump)
+        {
+            helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
+        }
+        else
+        {
+            helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
+        }
+    }
+
+    [SkippableTheory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task CreatedumpPassthrough(bool enableCrashDumps)
+    public async Task DoNothingIfNotEnabled(bool enableCrashDumps)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
@@ -72,46 +114,7 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        helper.StandardOutput.Should().NotContain("The crash might have been caused by automatic instrumentation");
-
-        if (enableCrashDumps)
-        {
-            helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
-        }
-        else
-        {
-            helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
-        }
-
-        File.Exists(reportFile.Path).Should().BeFalse();
-    }
-
-    [SkippableTheory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task DoNothingIfNotEnabled(bool enableCrashDumps)
-    {
-        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-
-        using var reportFile = new TemporaryFile();
-
-        var args = new List<(string, string)> { LdPreloadConfig };
-
-        if (enableCrashDumps)
-        {
-            args.Add(("COMPlus_DbgEnableMiniDump", "1"));
-            args.Add(("COMPlus_DbgMiniDumpName", "/dev/null"));
-        }
-
-        using var helper = await StartConsoleWithArgs("crash-datadog", args.ToArray());
-
-        await helper.Task;
-
-        using var assertionScope = new AssertionScope();
-        assertionScope.AddReportable("stdout", helper.StandardOutput);
-        assertionScope.AddReportable("stderr", helper.ErrorOutput);
-
-        helper.StandardOutput.Should().NotContain("The crash might have been caused by automatic instrumentation");
+        helper.StandardOutput.Should().NotContain(CrashReportExpectedOutput);
 
         if (enableCrashDumps)
         {
@@ -148,7 +151,13 @@ public class CreatedumpTests : ConsoleTestHelper
 
         var report = JObject.Parse(reportFile.GetContent());
 
-        report["tags"]!["exception"]!.Value<string>().Should().StartWith("Type: System.BadImageFormatException\nMessage: Expected\nStack Trace:\n");
+        var metadataTags = (JArray)report["metadata"]!["tags"];
+
+        var exception = metadataTags
+                       .Select(t => t.Value<string>())
+                       .FirstOrDefault(t => t.StartsWith("exception:"));
+
+        exception.Should().NotBeNull().And.StartWith("exception:Type: System.BadImageFormatException\nMessage: Expected\nStack Trace:\n");
         report["siginfo"]!["signum"]!.Value<string>().Should().Be("6");
     }
 

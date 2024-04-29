@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Microsoft.Diagnostics.Runtime;
 using Spectre.Console;
@@ -133,35 +134,146 @@ internal class CreatedumpCommand : Command
         signal = default;
         crashThread = default;
 
-        if (arguments.Length < 2)
-        {
-            return false;
-        }
+        // Parse the createdump command-line
+        // Unfortunately, the pid is not necessarily at the beginning or the end, it can be between other arguments.
+        // It can get tricky when arguments have values, because unless we know the argument there is no sure way
+        // to figure out if whatever follows is the value of the argument or the pid.
+        // For instance:
+        // $ createdump -a 456 -b 789
+        // Is 456 the value of a and 789 the pid, or is 456 the pid and 789 the value of b?
 
-        if (!int.TryParse(arguments[1], out pid))
+        // First, construct the list of known arguments. With those, at least, we can't go wrong.
+        // https://github.com/dotnet/runtime/blob/99dd60d8886155bb60768c8ef5a5a3225ad95ba4/src/coreclr/debug/createdump/createdumpmain.cpp#L19-L37
+        // and https://github.com/dotnet/runtime/blob/99dd60d8886155bb60768c8ef5a5a3225ad95ba4/src/coreclr/pal/src/thread/process.cpp#L2499-L2519
+        var knownArguments = new Dictionary<string, bool>
         {
-            return false;
-        }
+            { "-f", true },
+            { "--name", true },
+            { "-n", false },
+            { "--normal", false },
+            { "-h", false },
+            { "--withheap", false },
+            { "-t", false },
+            { "--triage", false },
+            { "-u", false },
+            { "--full", false },
+            { "-d", false },
+            { "--diag", false },
+            { "-v", false },
+            { "--verbose", false },
+            { "-l", true },
+            { "--logtofile", true },
+            { "--creashreport", true },
+            { "--crashreportonly", false },
+            { "--crashthread", true },
+            { "--signal", true },
+            { "--singlefile", false },
+            { "--nativeaot", false },
+            { "--code", true },
+            { "--errno", true },
+            { "--address", true }
+        };
 
-        for (int i = 2; i < arguments.Length - 1; i++)
+        const string pidRegex = "[0-9]+";
+
+        // The values that might be a pid, that we need to disambiguate
+        var pidCandidates = new List<string>();
+
+        var parsedArguments = new Dictionary<string, string?>();
+        var queue = new Queue<string>(arguments);
+
+        while (queue.Count > 0)
         {
-            if (arguments[i] == "--signal")
+            var argument = queue.Dequeue();
+
+            if (knownArguments.TryGetValue(argument, out var hasValue))
             {
-                if (int.TryParse(arguments[i + 1], out int s))
+                // The easy case: we know the argument, so we know if whatever follows is its value
+                string? value = null;
+
+                if (hasValue)
                 {
-                    signal = s;
+                    queue.TryDequeue(out value);
+                }
+
+                parsedArguments[argument] = value;
+                continue;
+            }
+
+            if (argument.StartsWith('-'))
+            {
+                // Unknown argument :(
+                // We don't know if the argument is supposed to have a value or not, so we peek at the next token
+                // and try to figure it out
+                if (queue.TryPeek(out var value))
+                {
+                    if (value.StartsWith('-'))
+                    {
+                        // Probably another argument
+                        parsedArguments[argument] = null;
+                        continue;
+                    }
+
+                    // It's either the pid or the value of the argument
+                    _ = queue.Dequeue();
+
+                    if (Regex.IsMatch(value, pidRegex))
+                    {
+                        pidCandidates.Add(value);
+                    }
+
+                    parsedArguments[argument] = value;
+                }
+                else
+                {
+                    parsedArguments[argument] = null;
+                }
+
+                continue;
+            }
+
+            // Unmatched value not following an argument, it is very likely to be the pid
+            if (Regex.IsMatch(argument, pidRegex))
+            {
+                // Add it at the beginning of the candidates, as it's almost certainly the pid
+                pidCandidates.Insert(0, argument);
+            }
+        }
+
+        if (parsedArguments.TryGetValue("--signal", out var rawSignal) && int.TryParse(rawSignal, out var signalValue))
+        {
+            signal = signalValue;
+        }
+
+        if (parsedArguments.TryGetValue("--crashthread", out var rawCrashthread) && int.TryParse(rawCrashthread, out var crashThreadValue))
+        {
+            crashThread = crashThreadValue;
+        }
+
+        // Have we found the pid?
+        if (pidCandidates.Count == 1)
+        {
+            // Best case scenario
+            return int.TryParse(pidCandidates[0], out pid);
+        }
+
+        // Check all the values to check if one is really a pid
+        foreach (var candidate in pidCandidates)
+        {
+            if (int.TryParse(candidate, out pid))
+            {
+                try
+                {
+                    using var process = System.Diagnostics.Process.GetProcessById(pid);
+                    return true;
+                }
+                catch
+                {
                 }
             }
-            else if (arguments[i] == "--crashthread")
-            {
-                if (int.TryParse(arguments[i + 1], out int t))
-                {
-                    crashThread = t;
-                }
-            }
         }
 
-        return true;
+        return false;
     }
 
     private void Execute(InvocationContext context)
@@ -274,11 +386,6 @@ internal class CreatedumpCommand : Command
         if (crashThread != null)
         {
             exception = _runtime.Threads.FirstOrDefault(t => t.OSThreadId == crashThread.Value)?.CurrentException;
-
-            if (exception != null)
-            {
-                _ = SetException(crashReport, exception);
-            }
         }
 
         bool isSuspicious;
@@ -406,62 +513,6 @@ internal class CreatedumpCommand : Command
         }
 
         return true;
-    }
-
-    private bool AddTag(ICrashReport crashReport, string key, string value)
-    {
-        var keyPtr = IntPtr.Zero;
-        var valuePtr = IntPtr.Zero;
-
-        try
-        {
-            keyPtr = Marshal.StringToHGlobalAnsi(key);
-            valuePtr = Marshal.StringToHGlobalAnsi(value);
-
-            try
-            {
-                crashReport.AddTag(keyPtr, valuePtr);
-                return true;
-            }
-            catch (Win32Exception ex)
-            {
-                _errors.Add($"Failed to add tag: {GetLastError(crashReport, ex)}");
-                return false;
-            }
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(keyPtr);
-            Marshal.FreeHGlobal(valuePtr);
-        }
-    }
-
-    private bool SetException(ICrashReport crashReport, ClrException exception)
-    {
-        var key = IntPtr.Zero;
-        var value = IntPtr.Zero;
-
-        try
-        {
-            key = Marshal.StringToHGlobalAnsi("exception");
-            value = Marshal.StringToHGlobalAnsi(exception.ToString());
-
-            try
-            {
-                crashReport.AddTag(key, value);
-                return true;
-            }
-            catch (Win32Exception ex)
-            {
-                _errors.Add($"Failed to add exception tag: {GetLastError(crashReport, ex)}");
-                return false;
-            }
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(key);
-            Marshal.FreeHGlobal(value);
-        }
     }
 
     private unsafe bool SetMetadata(ICrashReport crashReport, ClrRuntime runtime, ClrException? exception)
