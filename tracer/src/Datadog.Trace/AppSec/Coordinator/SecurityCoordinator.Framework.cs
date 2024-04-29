@@ -283,6 +283,13 @@ internal readonly partial struct SecurityCoordinator
             if (result.ShouldBlock)
             {
                 ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
+
+                // We should throw an exception to avoid the code from continuing
+
+                if (result.BlockInfo is not null)
+                {
+                    throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo);
+                }
             }
         }
     }
