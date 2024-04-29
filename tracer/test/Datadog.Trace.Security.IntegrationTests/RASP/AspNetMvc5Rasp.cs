@@ -88,7 +88,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
     [Trait("Category", "EndToEnd")]
     [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
     [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
-    [InlineData("/Iast/SsrfAttack?host=169.254.169.254", "SSRF")]
+    [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     public async Task TestRaspRequest(string url, string exploit)

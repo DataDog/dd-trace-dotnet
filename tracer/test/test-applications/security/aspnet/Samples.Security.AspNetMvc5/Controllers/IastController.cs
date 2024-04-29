@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web.Script.Serialization;
 using System.Xml;
-using System.IO;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -471,9 +470,9 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
             }
-            catch (HttpRequestException ex)
+            catch
             {
-                result = "Error in request." + ex.ToString();
+                result = "Error in request.";
             }
 
             return Content(result);
