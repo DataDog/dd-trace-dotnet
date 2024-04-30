@@ -15,8 +15,5 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         [JsonProperty("rule_matches")]
         public RuleMatch[] RuleMatches { get; set; }
-
-        [JsonProperty("stack_id")]
-        public string StackId { get; set; }
     }
 }

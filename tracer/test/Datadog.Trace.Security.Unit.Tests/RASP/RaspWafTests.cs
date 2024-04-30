@@ -115,7 +115,6 @@ public class RaspWafTests : WafLibraryRequiredTest
         var jsonString = JsonConvert.SerializeObject(result.Data);
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
         resultData.Rule.Id.Should().Be(rule);
-        resultData.StackId.Should().NotBeNullOrEmpty();
     }
 
     private Action CreateNewStatusAction(string action, string actionType, int newStatus)
