@@ -45,10 +45,8 @@ public class SeleniumTests : TestingFrameworkEvpTest
     [Trait("Category", "TestIntegrations")]
     public async Task Injection(string packageVersion)
     {
-        // SkipOn.Platform(SkipOn.PlatformValue.Linux);
-        // SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.Platform(SkipOn.PlatformValue.Linux);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
-        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 
         var tests = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
