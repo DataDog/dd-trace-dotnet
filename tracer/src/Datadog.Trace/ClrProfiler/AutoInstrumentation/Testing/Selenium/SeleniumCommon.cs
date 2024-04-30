@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium;
 
@@ -76,7 +77,10 @@ internal static class SeleniumCommon
             // Create a cookie with the traceId to be used by the RUM library
             if (Activator.CreateInstance(_seleniumCookieType, CookieName, traceId.ToString()) is { } cookieInstance)
             {
-                Log.Debug("Inject: {Parameters}", JsonConvert.SerializeObject(parameters ?? new object()));
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Inject: {Parameters}", JsonConvert.SerializeObject(parameters ?? new object()));
+                }
 
                 // Inject cookie for RUM session
                 instance.Manage().Cookies.AddCookie(cookieInstance);

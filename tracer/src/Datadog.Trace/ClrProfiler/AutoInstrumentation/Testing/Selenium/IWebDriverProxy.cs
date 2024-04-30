@@ -26,8 +26,8 @@ internal interface IWebDriverProxy : IDuckType
     /// <summary>
     /// Calls method: System.Object OpenQA.Selenium.WebDriver::ExecuteScript(System.String,System.Object[])
     /// </summary>
-    [Duck(ParameterTypeNames = new string[] { "System.String", "System.Object[]" })]
-    object ExecuteScript(string script, object[]? args);
+    [Duck(ParameterTypeNames = ["System.String", "System.Object[]"])]
+    object? ExecuteScript(string script, object[]? args);
 
     /// <summary>
     /// Calls method: OpenQA.Selenium.IOptions OpenQA.Selenium.WebDriver::Manage()
