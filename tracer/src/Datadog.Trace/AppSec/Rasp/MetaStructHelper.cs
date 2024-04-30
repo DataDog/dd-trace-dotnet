@@ -13,7 +13,7 @@ namespace Datadog.Trace.AppSec.Rasp;
 
 internal static class MetaStructHelper
 {
-    public static Dictionary<string, object> StackToDictionary(string? type, string language, string id, string? message, List<Dictionary<string, object>> frames)
+    public static Dictionary<string, object> StackTraceInfoToDictionary(string? type, string language, string id, string? message, List<Dictionary<string, object>> frames)
     {
         var dict = new Dictionary<string, object>(3);
 
@@ -30,35 +30,6 @@ internal static class MetaStructHelper
             dict["message"] = message;
         }
 
-        var frameList = new List<object>(frames.Count);
-
-        foreach (var frame in frames)
-        {
-            frameList.Add(frame);
-        }
-
-        dict["frames"] = frameList;
-
-        return dict;
-    }
-
-    public static Dictionary<string, object> StackTraceInfoToDictionary(string? type, string language, string id, string? message, List<Dictionary<string, object>> frames)
-    {
-        var dict = new Dictionary<string, object>(3);
-
-        if (type is not null)
-        {
-            dict["type"] = type;
-        }
-
-        dict["language"] = language;
-        dict["id"] = id;
-
-        if (message != null)
-        {
-            dict["message"] = message;
-        }
-
         dict["frames"] = frames;
 
         return dict;
@@ -66,7 +37,7 @@ internal static class MetaStructHelper
 
     public static Dictionary<string, object> StackFrameToDictionary(uint id, string? text, string? file, uint? line, uint? column, string? ns, string? className, string? function)
     {
-        var dict = new Dictionary<string, object>(8)
+        var dict = new Dictionary<string, object>(7)
         {
             { "id", id }
         };

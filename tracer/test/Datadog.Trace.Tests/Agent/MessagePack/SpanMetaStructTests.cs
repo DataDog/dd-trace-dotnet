@@ -32,8 +32,8 @@ public class SpanMetaStructTests
     private static List<object> stackData =
                 new List<object>()
                 {
-                    MetaStructHelper.StackToDictionary("typevalue", "dotnet", "213123213123213", null, new List<Dictionary<string, object>>() { stackFrame1, stackFrame2 }),
-                    MetaStructHelper.StackToDictionary("type2222", "dotnet", "test55555", null, new List<Dictionary<string, object>>() { stackFrame3, stackFrame4 }),
+                    MetaStructHelper.StackTraceInfoToDictionary("typevalue", "dotnet", "213123213123213", null, new List<Dictionary<string, object>>() { stackFrame1, stackFrame2 }),
+                    MetaStructHelper.StackTraceInfoToDictionary("type2222", "dotnet", "test55555", null, new List<Dictionary<string, object>>() { stackFrame3, stackFrame4 }),
                 };
 
     public static TheoryData<List<Tuple<string, object?>>> Data
