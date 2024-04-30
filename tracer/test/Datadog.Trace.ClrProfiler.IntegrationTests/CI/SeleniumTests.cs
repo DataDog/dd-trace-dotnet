@@ -67,7 +67,6 @@ public class SeleniumTests : TestingFrameworkEvpTest
         SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
         SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
         SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
-        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
 
         using var agent = MockTracerAgent.Create(Output);
