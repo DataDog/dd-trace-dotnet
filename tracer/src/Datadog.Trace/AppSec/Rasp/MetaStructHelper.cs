@@ -15,22 +15,22 @@ internal static class MetaStructHelper
 {
     public static Dictionary<string, object> StackTraceInfoToDictionary(string? type, string language, string id, string? message, List<Dictionary<string, object>> frames)
     {
-        var dict = new Dictionary<string, object>(3);
+        var dict = new Dictionary<string, object>(3)
+        {
+            { "language", language },
+            { "id", id },
+            { "frames", frames }
+        };
 
-        if (type is not null)
+        if (type is not null && type.Length > 0)
         {
             dict["type"] = type;
         }
 
-        dict["language"] = language;
-        dict["id"] = id;
-
-        if (message is not null)
+        if (message is not null && message.Length > 0)
         {
             dict["message"] = message;
         }
-
-        dict["frames"] = frames;
 
         return dict;
     }
@@ -42,12 +42,12 @@ internal static class MetaStructHelper
             { "id", id }
         };
 
-        if (text is not null)
+        if (text is not null && text.Length > 0)
         {
             dict["text"] = text;
         }
 
-        if (file is not null)
+        if (file is not null && file.Length > 0)
         {
             dict["file"] = file;
         }
@@ -62,17 +62,17 @@ internal static class MetaStructHelper
             dict["column"] = column.Value;
         }
 
-        if (ns is not null)
+        if (ns is not null && ns.Length > 0)
         {
             dict["namespace"] = ns;
         }
 
-        if (className is not null)
+        if (className is not null && className.Length > 0)
         {
             dict["class_name"] = className;
         }
 
-        if (function is not null)
+        if (function is not null && function.Length > 0)
         {
             dict["function"] = function;
         }

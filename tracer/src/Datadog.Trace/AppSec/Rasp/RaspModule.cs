@@ -58,7 +58,7 @@ internal static class RaspModule
             result.SendStackInfo.TryGetValue("stack_id", out var stackIdObject);
             var stackId = stackIdObject as string;
 
-            if (stackId is null)
+            if (stackId is null || stackId.Length == 0)
             {
                 Log.Warning("RASP: A stack was received without Id.");
             }
