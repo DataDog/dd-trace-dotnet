@@ -26,15 +26,13 @@ internal static class StackReporter
             return null;
         }
 
-        var stack = MetaStructHelper.StackTraceInfoToDictionary(null, _language, id, null, frames);
-
-        return stack;
+        return MetaStructHelper.StackTraceInfoToDictionary(null, _language, id, null, frames);
     }
 
-    private static List<Dictionary<string, object>>? GetFrames(int maxStaxckTraceDepth)
+    private static List<Dictionary<string, object>>? GetFrames(int maxStackTraceDepth)
     {
         var stackTrace = new StackTrace(true);
-        var stackFrameList = new List<Dictionary<string, object>>(maxStaxckTraceDepth);
+        var stackFrameList = new List<Dictionary<string, object>>(maxStackTraceDepth);
         int counter = 0;
 
         foreach (var frame in stackTrace.GetFrames())
@@ -57,7 +55,7 @@ internal static class StackReporter
                 counter++;
             }
 
-            if (maxStaxckTraceDepth > 0 && counter >= maxStaxckTraceDepth)
+            if (maxStackTraceDepth > 0 && counter >= maxStackTraceDepth)
             {
                 break;
             }
