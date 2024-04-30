@@ -1124,7 +1124,7 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
         if (moduleId == 0) continue;
 
         ComPtr<IUnknown> metadata_interfaces;
-        auto hr = info->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2,
+        auto hr = info->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2,
                                                             metadata_interfaces.GetAddressOf());
         if (FAILED(hr))
         {
