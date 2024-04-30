@@ -1,0 +1,32 @@
+@page "/Iast/ExecuteQueryFromBodyQueryData/"
+@using Datadog.Trace.Annotations.Controllers
+
+<h3>Execute Query From Body Query Data</h3>
+
+<p>@message</p>
+
+@code {
+    private QueryData queryData = new();
+
+    private string message;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            if (queryData != null)
+            {
+                message = IastController.Instance.Query(queryData);
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"Error: " + ex.Message;
+        }
+
+        if (string.IsNullOrEmpty(message))
+        {
+            message = $"No query data was provided";
+        }
+    }
+}

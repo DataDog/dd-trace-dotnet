@@ -1,0 +1,70 @@
+@page "/Iast/StrictTransportSecurity/"
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.WebUtilities
+@using Datadog.Trace.Annotations.Controllers
+@using System.Net
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>Strict Transport Security</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? _contentType = "text/html";
+    private int? _returnCode = 200;
+    private string? _hstsHeaderValue = string.Empty;
+    private string? _xForwardedProto = string.Empty;
+
+    private string _message = "Failed";
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("returnCode", out var returnCode))
+        {
+            _returnCode = int.Parse(returnCode!);
+        }
+        
+        if (query.TryGetValue("contentType", out var contentType))
+        {
+            _contentType = contentType;
+        }
+        
+        if (query.TryGetValue("hstsHeaderValue", out var hstsHeaderValue))
+        {
+            _hstsHeaderValue = hstsHeaderValue;
+        }
+        
+        if (query.TryGetValue("xForwardedProto", out var xForwardedProto))
+        {
+            _xForwardedProto = xForwardedProto;
+        }
+        
+        if (HttpContextAccessor.HttpContext == null) return;
+        
+        // We don't want a header injection vulnerability here, so we untaint the header values by
+        // using reflection to access the private field "m_string" from the String class.
+        var hstsHeaderValueUntainted = IastController.CopyStringAvoidTainting(_hstsHeaderValue);
+        var xForwardedProtoUntainted = IastController.CopyStringAvoidTainting(_xForwardedProto);
+        var contentTypeUntainted = IastController.CopyStringAvoidTainting(_contentType);
+
+        if (!string.IsNullOrEmpty(hstsHeaderValueUntainted))
+        {
+            HttpContextAccessor.HttpContext.Response.Headers.Add("Strict-Transport-Security", hstsHeaderValueUntainted);
+        }
+
+        if (!string.IsNullOrEmpty(xForwardedProtoUntainted))
+        {
+            HttpContextAccessor.HttpContext.Response.Headers.Add("X-Forwarded-Proto", xForwardedProtoUntainted);
+        }
+
+        if (_returnCode != (int)HttpStatusCode.OK)
+        {
+            HttpContextAccessor.HttpContext.Response.StatusCode = _returnCode!.Value;
+        }
+
+        _message = "StrictTransportSecurityMissing";
+    }
+}

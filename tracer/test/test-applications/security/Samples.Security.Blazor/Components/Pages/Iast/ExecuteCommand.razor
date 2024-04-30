@@ -1,0 +1,61 @@
+@page "/Iast/ExecuteCommand/"
+@using Datadog.Trace.Annotations.Controllers
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.WebUtilities
+
+<h3>Execute Command</h3>
+
+@if (string.IsNullOrEmpty(File))
+{
+    <form method="get">
+        <label for="file">File:</label>
+        <input type="text" id="file" name="file" />
+        <br />
+        <label for="argumentLine">Argument Line:</label>
+        <input type="text" id="argumentLine" name="argumentLine" />
+        <br />
+        <button type="submit">Submit</button>
+    </form>
+}
+
+<p>@_message</p>
+
+@code {
+    [Parameter]
+    public string? File { get; set; }
+
+    [Parameter]
+    public string? ArgumentLine { get; set; }
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var urlQuery = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (urlQuery.TryGetValue("file", out var file))
+        {
+            File = file;
+        }
+        
+        if (urlQuery.TryGetValue("argumentLine", out var argumentLine))
+        {
+            ArgumentLine = argumentLine;
+        }
+        
+        try
+        {
+            _message = !string.IsNullOrEmpty(File) ? IastController.ExecuteCommandInternal(File, ArgumentLine) : $"No file was provided";
+        }
+        catch (Exception ex)
+        {
+            _message = $"Error: " + ex.Message;
+        }
+
+        if (string.IsNullOrEmpty(_message))
+        {
+            _message = $"No file or argument line was provided";
+        }
+    }
+}

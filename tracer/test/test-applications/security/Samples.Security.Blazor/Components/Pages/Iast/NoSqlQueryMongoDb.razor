@@ -1,0 +1,63 @@
+@page "/Iast/NoSqlQueryMongoDb/"
+
+@using MongoDB.Bson
+@using Datadog.Trace.Annotations.Controllers
+@using MongoDB.Driver
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavigationManager
+
+<h3>NoSQL Query MongoDB</h3>
+
+<p>@_message</p>
+
+@code {
+    private int? Price { get; set; }
+    private string? Query { get; set; }
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("price", out var price))
+        {
+            Price = int.Parse(price!);
+        }
+        
+        if (query.TryGetValue("query", out var queryValue))
+        {
+            Query = queryValue;
+        }
+        
+        try
+        {
+            if (Price.HasValue)
+            {
+                var taintedQuery = "{ \"Price\" :\"" + Price + "\"}";
+                var document = BsonDocument.Parse(taintedQuery);
+                var collection = IastController.Instance.MongoDb.GetCollection<BsonDocument>("Books");
+                var find = collection.Find(document).ToList();
+                _message = $"Found {find.Count} books with price {Price}";
+            }
+
+            if (!string.IsNullOrEmpty(Query))
+            {
+                var document = BsonDocument.Parse(Query);
+                var collection = IastController.Instance.MongoDb.GetCollection<BsonDocument>("Books");
+                var find = collection.Find(document).ToList();
+                _message = $"Found {find.Count} books with query {Query}";
+            }
+        }
+        catch (Exception ex)
+        {
+            _message = $"Error: " + ex.Message;
+        }
+
+        if (string.IsNullOrEmpty(_message))
+        {
+            _message = $"No price or query was provided";
+        }
+    }
+}

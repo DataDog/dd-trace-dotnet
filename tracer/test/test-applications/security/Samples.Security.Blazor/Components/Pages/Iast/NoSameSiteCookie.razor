@@ -1,0 +1,31 @@
+@page "/Iast/NoSameSiteCookie/"
+@using Datadog.Trace.Annotations.Controllers
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>Test Cookie Name</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var cookieOptions = IastController.GetDefaultCookieOptionsInstance();
+        cookieOptions.SameSite = SameSiteMode.None;
+        HttpContextAccessor.HttpContext?.Response.Cookies.Append("NoSameSiteKey", "NoSameSiteValue", cookieOptions);
+        HttpContextAccessor.HttpContext?.Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
+
+        var cookieOptionsLax = IastController.GetDefaultCookieOptionsInstance();
+        cookieOptionsLax.SameSite = SameSiteMode.Lax;
+        HttpContextAccessor.HttpContext?.Response.Cookies.Append("NoSameSiteKeyLax", "NoSameSiteValueLax", cookieOptionsLax);
+
+        var cookieOptionsDefault = new CookieOptions();
+        cookieOptionsDefault.HttpOnly = true;
+        cookieOptionsDefault.Secure = true;
+        HttpContextAccessor.HttpContext?.Response.Cookies.Append("NoSameSiteKeyDef", "NoSameSiteValueDef", cookieOptionsDefault);
+        
+        _message = "Cookies have been set";
+
+    }
+}

@@ -1,0 +1,45 @@
+@page "/Iast/NewtonsoftJsonParseTainting/"
+@using Newtonsoft.Json.Linq
+@using Datadog.Trace.Annotations.Controllers
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavigationManager
+
+<h3>Newtonsoft Json Parse Tainting</h3>
+
+<p>@_message</p>
+
+@code {
+    public required string Json { get; set; }
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("json", out var json))
+        {
+            Json = json!;
+        }
+        
+        try
+        {
+            var doc = JObject.Parse(Json);
+            var str = doc.Value<string>("key");
+
+            // Trigger a vulnerability with the tainted string
+            IastController.ExecuteCommandInternal(str, "");
+            _message = "Parsed JSON: " + str;
+        }
+        catch (Exception ex)
+        {
+            _message = "Error: " + ex.Message;
+        }
+
+        if (string.IsNullOrEmpty(_message))
+        {
+            _message = "No json was provided";
+        }
+    }
+}

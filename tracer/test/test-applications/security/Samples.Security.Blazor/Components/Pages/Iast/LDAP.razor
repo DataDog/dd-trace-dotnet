@@ -1,0 +1,65 @@
+@page "/Iast/LDAP/"
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.WebUtilities
+@using System.DirectoryServices
+
+<h3>LDAP</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? Path { get; set; }
+    private string? Username { get; set; }
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("path", out var path))
+        {
+            Path = path;
+        }
+        
+        if (query.TryGetValue("username", out var username))
+        {
+            Username = username;
+        }
+        
+        try
+        {
+            DirectoryEntry entry;
+            try
+            {
+                var directoryEntryPath = !string.IsNullOrEmpty(Path) ? Path : "LDAP://fakeorg";
+                entry = new DirectoryEntry(directoryEntryPath, string.Empty, string.Empty, AuthenticationTypes.None);
+            }
+            catch
+            {
+                entry = new DirectoryEntry();
+            }
+
+            var search = new DirectorySearcher(entry);
+            if (!string.IsNullOrEmpty(Username))
+            {
+                search.Filter = "(uid=" + Username + ")";
+            }
+            
+            var result = search.FindAll();
+            var resultString = string.Empty;
+            for (var i = 0; i < result.Count; i++)
+            {
+                resultString += result[i].Path + Environment.NewLine;
+            }
+
+            _message = "Result: " + resultString;
+        }
+        catch
+        {
+            _message = "Result: Not connected";
+        }
+
+    }
+}

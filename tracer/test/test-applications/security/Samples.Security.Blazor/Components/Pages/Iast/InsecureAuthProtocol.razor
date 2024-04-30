@@ -1,0 +1,35 @@
+@page "/Iast/InsecureAuthProtocol/"
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavigationManager
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>Insecure Authentication Protocol</h3>
+
+<p>@_message</p>
+
+@code {
+    private bool _forbidden;
+    
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("forbidden", out var forbidden))
+        {
+            _forbidden = bool.Parse(forbidden!);
+        }
+        
+        if (_forbidden && HttpContextAccessor.HttpContext != null)
+        {
+            _message = "You are not allowed to access this page.";
+            HttpContextAccessor.HttpContext.Response.StatusCode = 403;
+        }
+        else
+        {
+            _message = "You are allowed to access this page.";
+        }
+    }
+}

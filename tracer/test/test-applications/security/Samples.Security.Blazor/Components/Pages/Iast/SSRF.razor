@@ -1,0 +1,46 @@
+@page "/Iast/SSRF/"
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.WebUtilities
+
+<h3>SSRF</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? Url { get; set; }
+    private string? Host { get; set; }
+
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("url", out var url))
+        {
+            Url = url;
+        }
+        
+        if (query.TryGetValue("host", out var host))
+        {
+            Host = host;
+        }
+        
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(Url))
+            {
+                _message = new HttpClient().GetStringAsync(Url).Result;
+            }
+            else
+            {
+                _message = new HttpClient().GetStringAsync("https://user:password@" + Host + ":443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo").Result;
+            }
+        }
+        catch
+        {
+            _message = "Error in request.";
+        }
+    }
+}

@@ -1,0 +1,28 @@
+@page "/Iast/SafeCookie/"
+@using Datadog.Trace.Annotations.Controllers
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>Safe Cookie</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var cookieOptions = IastController.GetDefaultCookieOptionsInstance();
+        cookieOptions.SameSite = SameSiteMode.Strict;
+        cookieOptions.HttpOnly = true;
+        cookieOptions.Secure = true;
+        HttpContextAccessor.HttpContext?.Response.Cookies.Append("SafeCookieKey", "SafeCookieValue", cookieOptions);
+
+        var cookie2 = new CookieOptions();
+        cookie2.Secure = false;
+        cookie2.HttpOnly = false;
+        cookieOptions.SameSite = SameSiteMode.None;
+        HttpContextAccessor.HttpContext?.Response.Cookies.Append("UnsafeEmptyCookie", string.Empty, cookieOptions);
+
+        _message = "Cookies have been set";
+    }
+}

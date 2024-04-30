@@ -1,0 +1,18 @@
+@page "/Iast/ExecuteCommandFromCookie/"
+@using Datadog.Trace.Annotations.Controllers
+@inject IHttpContextAccessor HttpContextAccessor;
+
+<h3>Execute Command From Cookie</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        var file = HttpContextAccessor.HttpContext?.Request.Cookies["file"];
+        var argumentLine = HttpContextAccessor.HttpContext?.Request.Cookies["argumentLine"];
+        _message = IastController.ExecuteCommandInternal(file, argumentLine);
+    }
+}

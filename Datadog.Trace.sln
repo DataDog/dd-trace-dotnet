@@ -566,6 +566,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Yarp.DistributedTra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MSTestTests2", "tracer\test\test-applications\integrations\Samples.MSTestTests2\Samples.MSTestTests2.csproj", "{0F1D9FB5-4415-40F1-B7B0-6DD5A3BAB0C4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Security.Blazor", "tracer\test\test-applications\security\Samples.Security.Blazor\Samples.Security.Blazor.csproj", "{FB33FA7B-5598-41DB-879A-13E8ACEC8EB1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1354,6 +1356,10 @@ Global
 		{0F1D9FB5-4415-40F1-B7B0-6DD5A3BAB0C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0F1D9FB5-4415-40F1-B7B0-6DD5A3BAB0C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0F1D9FB5-4415-40F1-B7B0-6DD5A3BAB0C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB33FA7B-5598-41DB-879A-13E8ACEC8EB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB33FA7B-5598-41DB-879A-13E8ACEC8EB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB33FA7B-5598-41DB-879A-13E8ACEC8EB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB33FA7B-5598-41DB-879A-13E8ACEC8EB1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1574,6 +1580,7 @@ Global
 		{483A27EE-7682-417C-9FCA-C2171C13F693} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{E10243AE-34FC-47B5-B898-B5203C36920C} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{0F1D9FB5-4415-40F1-B7B0-6DD5A3BAB0C4} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{FB33FA7B-5598-41DB-879A-13E8ACEC8EB1} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

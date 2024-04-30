@@ -1,0 +1,37 @@
+@page "/Iast/GetFileContent/"
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.WebUtilities
+
+<h3>Get File Content</h3>
+
+<p>@_message</p>
+
+@code {
+    private string? _file;
+    
+    private string _message = "No file was provided";
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("file", out var file))
+        {
+            _file = file;
+        }
+        
+        if (string.IsNullOrEmpty(_file)) return;
+
+        try
+        {
+            var result = File.ReadAllText(_file);
+            _message = "File content: " + result;
+        }
+        catch (Exception ex)
+        {
+            _message = "Error: " + ex.Message;
+        }
+    }
+}
+
