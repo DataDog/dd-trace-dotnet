@@ -5,6 +5,7 @@
 
 using System;
 using System.Net;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
 
@@ -55,6 +56,7 @@ public class WebClientAspect
     public static object Review(string parameter)
     {
         IastModule.OnSSRF(parameter);
+        RaspModule.OnSSRF(parameter);
         return parameter;
     }
 
@@ -117,6 +119,7 @@ public class WebClientAspect
     public static object ReviewUri(Uri parameter)
     {
         IastModule.OnSSRF(parameter.OriginalString);
+        RaspModule.OnSSRF(parameter.OriginalString);
         return parameter;
     }
 }

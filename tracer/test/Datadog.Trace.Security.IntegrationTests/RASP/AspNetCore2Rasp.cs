@@ -77,6 +77,7 @@ public abstract class AspNetCore2Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     [SkippableTheory]
     [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
     [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
+    [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
     [Trait("RunOnWindows", "True")]
     public async Task TestRaspRequest(string url, string exploit)
     {

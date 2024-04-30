@@ -573,6 +573,23 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content(result, "text/html");
         }
 
+        [HttpGet("SsrfAttack")]
+        [Route("SsrfAttack")]
+        public ActionResult SsrfAttack(string host)
+        {
+            string result = string.Empty;
+            try
+            {
+                result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
+            }
+            catch (HttpRequestException ex)
+            {
+                result = "Error in request." + ex.ToString();
+            }
+
+            return Content(result);
+        }
+
         private ActionResult ExecuteQuery(string query)
         {
             var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
@@ -805,7 +822,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             if (!string.IsNullOrEmpty(propagationHeader))
             {
-                Response.Headers.Add("propagation", propagationHeader);
+                Response.Headers.TryAdd("propagation", propagationHeader);
                 return Content($"returned propagation header");
             }
 
