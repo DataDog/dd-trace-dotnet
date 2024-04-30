@@ -49,15 +49,16 @@ public class RaspWafTests : WafLibraryRequiredTest
     }
 
     [Theory]
-    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "customBlock", BlockingAction.BlockRequestType)]
-    public void GivenAPathTraversalRule_WhenInsecureAccess_ThenBlock(string value, string paramValue, string rule, string ruleFile, string action, string actionType)
+    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "customBlock", BlockingAction.BlockRequestType, AddressesConstants.FileAccess)]
+    [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rasp-002-001", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
+    public void GivenARaspRule_WhenInsecureAccess_ThenBlock(string value, string paramValue, string rule, string action, string actionType, string address)
     {
         ExecuteRule(
-            AddressesConstants.FileAccess,
+            address,
             value,
             paramValue,
             rule,
-            ruleFile,
+            "rasp-rule-set.json",
             action,
             actionType);
     }

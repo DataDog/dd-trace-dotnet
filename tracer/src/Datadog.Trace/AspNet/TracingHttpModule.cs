@@ -387,7 +387,7 @@ namespace Datadog.Trace.AspNet
                 {
                     AddHeaderTagsFromHttpResponse(httpContext, scope);
 
-                    if (exception != null && !is404)
+                    if (exception != null && !is404 && exception is not AppSec.BlockException)
                     {
                         scope.Span.SetException(exception);
                         if (!HttpRuntime.UsingIntegratedPipeline)

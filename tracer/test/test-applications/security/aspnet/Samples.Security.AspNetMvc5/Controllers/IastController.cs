@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web.Script.Serialization;
 using System.Xml;
-using System.IO;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -648,6 +647,29 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             ViewData["XSS"] = WebUtility.HtmlEncode(param);
             return View("ReflectedXss");
+        }
+
+        [Route("SsrfAttack")]
+        public ActionResult SsrfAttack(string host)
+        {
+            string result = string.Empty;
+            try
+            {
+                result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
+            }
+            catch
+            {
+                result = "Error in request.";
+            }
+
+            return Content(result);
+        }
+
+        [Route("SsrfAttack")]
+        public ActionResult SsrfAttackNoCatch(string host)
+        {
+            var result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
+            return Content(result);
         }
     }
 }
