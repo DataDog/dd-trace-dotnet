@@ -43,7 +43,7 @@ public class SeleniumTests : TestingFrameworkEvpTest
     {
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+        // SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         var tests = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
