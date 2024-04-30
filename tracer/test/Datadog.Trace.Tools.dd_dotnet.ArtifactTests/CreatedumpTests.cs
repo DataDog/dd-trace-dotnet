@@ -6,8 +6,10 @@
 #if !NETFRAMEWORK
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -229,9 +231,82 @@ public class CreatedumpTests : ConsoleTestHelper
 
         helper.StandardOutput.Should()
               .NotContain(CrashReportExpectedOutput)
-              .And.EndWith("Args: crash\n"); // Making sure there is no additional output
+              .And.EndWith("Crashing...\n"); // Making sure there is no additional output
 
         File.Exists(reportFile.Path).Should().BeFalse();
+    }
+
+    [SkippableFact]
+    public async Task ReportedStacktrace()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash-datadog",
+                               [LdPreloadConfig, ..CrashReportConfig(reportFile)]);
+
+        await helper.Task;
+
+        File.Exists(reportFile.Path).Should().BeTrue();
+
+        var reader = new StringReader(helper.StandardOutput);
+
+        int? expectedPid = null;
+        var expectedCallstack = new List<string>();
+
+        var pidRegex = "PID: (?<pid>[0-9]+)";
+
+        while (reader.ReadLine() is { } line)
+        {
+            var pidMatch = Regex.Match(line, pidRegex);
+
+            if (pidMatch.Success)
+            {
+                expectedPid = int.Parse(pidMatch.Groups["pid"].Value);
+                continue;
+            }
+
+            if (line.StartsWith("Frame|"))
+            {
+                expectedCallstack.Add(line.Split('|')[1]);
+            }
+        }
+
+        expectedPid.Should().NotBeNull();
+        expectedCallstack.Should().HaveCountGreaterOrEqualTo(2);
+
+        var report = JObject.Parse(reportFile.GetContent());
+
+        ValidateStacktrace(report["stacktrace"]);
+        ValidateStacktrace(report["additional_stacktraces"][expectedPid.Value.ToString()]);
+
+        void ValidateStacktrace(JToken callstack)
+        {
+            callstack.Should().BeOfType<JArray>();
+
+            var frames = (JArray)callstack;
+
+            using var assertionScope = new AssertionScope();
+
+            try
+            {
+                assertionScope.AddReportable("Frames", string.Join(Environment.NewLine, frames.Select(f => f["names"][0]["name"].Value<string>())));
+            }
+            catch (Exception e)
+            {
+                assertionScope.AddReportable("Frames", e.ToString());
+            }
+
+            foreach (var expectedFrame in expectedCallstack)
+            {
+                var frame = frames.FirstOrDefault(f => f["names"][0]["name"].Value<string>().Equals(expectedFrame));
+
+                frame.Should().NotBeNull($"couldn't find expected frame {expectedFrame}");
+            }
+        }
     }
 
     private static (string Key, string Value)[] CrashReportConfig(TemporaryFile reportFile)
