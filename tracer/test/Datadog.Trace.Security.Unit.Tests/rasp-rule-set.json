@@ -50,7 +50,7 @@
               },
               {
                 "address": "graphql.server.resolver"
-            }
+              }
             ]
           }
         }
