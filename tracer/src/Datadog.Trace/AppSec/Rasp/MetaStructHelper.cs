@@ -59,14 +59,7 @@ internal static class MetaStructHelper
             dict["message"] = message;
         }
 
-        var frameList = new List<object>(frames.Count);
-
-        foreach (var frame in frames)
-        {
-            frameList.Add(frame);
-        }
-
-        dict["frames"] = frameList;
+        dict["frames"] = frames;
 
         return dict;
     }
