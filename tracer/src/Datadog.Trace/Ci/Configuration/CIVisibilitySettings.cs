@@ -218,7 +218,7 @@ namespace Datadog.Trace.Ci.Configuration
         {
             var source = GlobalConfigurationSource.CreateDefaultConfigurationSource();
             var defaultExcludedUrlSubstrings = string.Empty;
-            if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.HttpClientExcludedUrlSubstrings) is { } substrings &&
+            if (((ITelemeteredConfigurationSource)source).GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings, NullConfigurationTelemetry.Instance, null, false)?.Result is { } substrings &&
                 !string.IsNullOrWhiteSpace(substrings))
             {
                 defaultExcludedUrlSubstrings = substrings + ", ";
