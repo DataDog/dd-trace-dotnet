@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+// #if NET5_0_OR_GREATER
+
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -41,6 +43,8 @@ public class SeleniumTests : TestingFrameworkEvpTest
     {
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+
         var tests = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
         var testModules = new List<MockCIVisibilityTestModule>();
@@ -161,3 +165,5 @@ public class SeleniumTests : TestingFrameworkEvpTest
         }
     }
 }
+
+// #endif
