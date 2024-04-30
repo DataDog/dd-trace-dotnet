@@ -34,7 +34,7 @@ internal static class StackReporter
     private static List<Dictionary<string, object>>? GetFrames(int maxStaxckTraceDepth)
     {
         var stackTrace = new StackTrace(true);
-        var stackFrameList = new List<Dictionary<string, object>>(stackTrace.FrameCount);
+        var stackFrameList = new List<Dictionary<string, object>>(maxStaxckTraceDepth);
         int counter = 0;
 
         foreach (var frame in stackTrace.GetFrames())

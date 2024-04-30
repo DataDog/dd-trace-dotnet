@@ -53,7 +53,7 @@ internal static class RaspModule
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
         var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
 
-        if (result?.SendStackInfo != null && Security.Instance.Settings.StackTraceEnabled)
+        if (result?.SendStackInfo is not null && Security.Instance.Settings.StackTraceEnabled)
         {
             result.SendStackInfo.TryGetValue("stack_id", out var stackIdObject);
             var stackId = stackIdObject as string;
