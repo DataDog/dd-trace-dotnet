@@ -64,6 +64,7 @@ public class CreatedumpTests : ConsoleTestHelper
         // "was COMPlus_DbgEnableMiniDump set?" check.
 
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 
         using var reportFile = new TemporaryFile();
 
@@ -96,6 +97,7 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task DoNothingIfNotEnabled(bool enableCrashDumps)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 
         using var reportFile = new TemporaryFile();
 
@@ -135,6 +137,7 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task DisableTelemetry(bool telemetryEnabled, bool crashdumpEnabled)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 
         using var reportFile = new TemporaryFile();
 
@@ -180,6 +183,7 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task WriteCrashReport()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 
         using var reportFile = new TemporaryFile();
 
@@ -213,6 +217,7 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task IgnoreNonDatadogCrashes()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 
         using var reportFile = new TemporaryFile();
 
