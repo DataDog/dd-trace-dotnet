@@ -18,7 +18,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.Transports
 {
-    internal class HttpClientRequest : IApiRequest, IMultipartApiRequest
+    internal class HttpClientRequest : IApiRequest
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpClientRequest>();
 

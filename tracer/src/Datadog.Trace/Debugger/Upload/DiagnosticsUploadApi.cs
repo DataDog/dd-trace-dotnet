@@ -63,10 +63,9 @@ namespace Datadog.Trace.Debugger.Upload
             if (uri.Contains("diagnostics"))
             {
                 var multipart = _apiRequestFactory.Create(new Uri(uri));
-                var multipartRequest = (IMultipartApiRequest)multipart;
 
                 return
-                    multipartRequest
+                    multipart
                          .PostAsync(new MultipartFormItem[]
                           {
                               new("event", MimeTypes.Json, "event.json", data)
