@@ -77,9 +77,9 @@ internal static class RaspModule
     {
         var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, id);
 
-        if (stack.HasValue)
+        if (stack is not null)
         {
-            rootSpan.Context.TraceContext.AddStackTraceElement(stack.Value, Security.Instance.Settings.MaxStackTraces);
+            rootSpan.Context.TraceContext.AddStackTraceElement(stack, Security.Instance.Settings.MaxStackTraces);
             return true;
         }
 

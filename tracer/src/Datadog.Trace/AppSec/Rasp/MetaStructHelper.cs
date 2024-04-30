@@ -13,11 +13,40 @@ namespace Datadog.Trace.AppSec.Rasp;
 
 internal static class MetaStructHelper
 {
-    public static Dictionary<string, object> StackToDictionary(string? type, string language, string id, string? message, List<StackFrame> frames)
+    public static Dictionary<string, object> StackToDictionary(string? type, string language, string id, string? message, List<Dictionary<string, object>> frames)
     {
         var dict = new Dictionary<string, object>(3);
 
-        if (type != null)
+        if (type is not null)
+        {
+            dict["type"] = type;
+        }
+
+        dict["language"] = language;
+        dict["id"] = id;
+
+        if (message is not null)
+        {
+            dict["message"] = message;
+        }
+
+        var frameList = new List<object>(frames.Count);
+
+        foreach (var frame in frames)
+        {
+            frameList.Add(frame);
+        }
+
+        dict["frames"] = frameList;
+
+        return dict;
+    }
+
+    public static Dictionary<string, object> StackTraceInfoToDictionary(string? type, string language, string id, string? message, List<Dictionary<string, object>> frames)
+    {
+        var dict = new Dictionary<string, object>(3);
+
+        if (type is not null)
         {
             dict["type"] = type;
         }
@@ -34,10 +63,55 @@ internal static class MetaStructHelper
 
         foreach (var frame in frames)
         {
-            frameList.Add(frame.ToDictionary());
+            frameList.Add(frame);
         }
 
         dict["frames"] = frameList;
+
+        return dict;
+    }
+
+    public static Dictionary<string, object> StackFrameToDictionary(uint id, string? text, string? file, uint? line, uint? column, string? ns, string? className, string? function)
+    {
+        var dict = new Dictionary<string, object>(8)
+        {
+            { "id", id }
+        };
+
+        if (text is not null)
+        {
+            dict["text"] = text;
+        }
+
+        if (file is not null)
+        {
+            dict["file"] = file;
+        }
+
+        if (line.HasValue)
+        {
+            dict["line"] = line.Value;
+        }
+
+        if (column.HasValue)
+        {
+            dict["column"] = column.Value;
+        }
+
+        if (ns is not null)
+        {
+            dict["namespace"] = ns;
+        }
+
+        if (className is not null)
+        {
+            dict["class_name"] = className;
+        }
+
+        if (function is not null)
+        {
+            dict["function"] = function;
+        }
 
         return dict;
     }

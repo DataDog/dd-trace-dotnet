@@ -17,24 +17,24 @@ internal static class StackReporter
 {
     private const string _language = "dotnet";
 
-    public static StackTraceInfo? GetStack(int maxStaxckTraceDepth, string id)
+    public static Dictionary<string, object>? GetStack(int maxStackTraceDepth, string id)
     {
-        var frames = GetFrames(maxStaxckTraceDepth);
+        var frames = GetFrames(maxStackTraceDepth);
 
         if (frames is null || frames.Count == 0)
         {
             return null;
         }
 
-        var stack = new StackTraceInfo(null, _language, id, null, frames);
+        var stack = MetaStructHelper.StackTraceInfoToDictionary(null, _language, id, null, frames);
 
         return stack;
     }
 
-    private static List<StackFrame>? GetFrames(int maxStaxckTraceDepth)
+    private static List<Dictionary<string, object>>? GetFrames(int maxStaxckTraceDepth)
     {
         var stackTrace = new System.Diagnostics.StackTrace(true);
-        var stackFrameList = new List<StackFrame>(stackTrace.FrameCount);
+        var stackFrameList = new List<Dictionary<string, object>>(stackTrace.FrameCount);
         int counter = 0;
 
         foreach (var frame in stackTrace.GetFrames())
@@ -45,7 +45,7 @@ internal static class StackReporter
             {
                 var fileName = System.IO.Path.GetFileName(frame?.GetFileName());
                 var fileNameValid = !string.IsNullOrEmpty(fileName);
-                stackFrameList.Add(new StackFrame(
+                stackFrameList.Add(MetaStructHelper.StackFrameToDictionary(
                     (uint)counter,
                     null,
                     fileName,

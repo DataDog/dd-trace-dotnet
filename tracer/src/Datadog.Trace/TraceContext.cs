@@ -120,7 +120,7 @@ namespace Datadog.Trace
             _appSecRequestContext!.AddWafSecurityEvents(events);
         }
 
-        internal void AddStackTraceElement(AppSec.Rasp.StackTraceInfo stack, int maxStackTraces)
+        internal void AddStackTraceElement(Dictionary<string, object> stack, int maxStackTraces)
         {
             if (Volatile.Read(ref _appSecRequestContext) is null)
             {

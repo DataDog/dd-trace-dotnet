@@ -46,7 +46,7 @@ internal class AppSecRequestContext
         }
     }
 
-    internal void AddRaspStackTrace(StackTraceInfo stackTrace, int maxStackTraces)
+    internal void AddRaspStackTrace(Dictionary<string, object> stackTrace, int maxStackTraces)
     {
         lock (_sync)
         {
@@ -64,7 +64,7 @@ internal class AppSecRequestContext
                 return;
             }
 
-            _raspStackTraces[_exploitStackKey].Add(stackTrace.ToDictionary());
+            _raspStackTraces[_exploitStackKey].Add(stackTrace);
         }
     }
 }

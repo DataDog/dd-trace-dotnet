@@ -24,16 +24,16 @@ public class SpanMetaStructTests
     private const string StringKey = "StringKey";
     private const string StringValue = "value";
     private static readonly IFormatterResolver FormatterResolver = SpanFormatterResolver.Instance;
-    private static StackFrame stackFrame1 = new StackFrame(1, "text", "file.cs", 33, null, "testnamespace", "class1", "method1");
-    private static StackFrame stackFrame2 = new StackFrame(2, "text2", "file2.cs", 55, null, "testnamespace", "class2", "method2");
-    private static StackFrame stackFrame3 = new StackFrame(3, "text3", "file3.cs", 77, null, "testnamespace", "class3", "method3");
-    private static StackFrame stackFrame4 = new StackFrame(4, "text4", "file4.cs", 77, null, "testnamespace", "class4", "method4");
+    private static Dictionary<string, object> stackFrame1 = MetaStructHelper.StackFrameToDictionary(1, "text", "file.cs", 33, null, "testnamespace", "class1", "method1");
+    private static Dictionary<string, object> stackFrame2 = MetaStructHelper.StackFrameToDictionary(2, "text2", "file2.cs", 55, null, "testnamespace", "class2", "method2");
+    private static Dictionary<string, object> stackFrame3 = MetaStructHelper.StackFrameToDictionary(3, "text3", "file3.cs", 77, null, "testnamespace", "class3", "method3");
+    private static Dictionary<string, object> stackFrame4 = MetaStructHelper.StackFrameToDictionary(4, "text4", "file4.cs", 77, null, "testnamespace", "class4", "method4");
 
     private static List<object> stackData =
                 new List<object>()
                 {
-                    MetaStructHelper.StackToDictionary("typevalue", "dotnet", "213123213123213", null, new List<StackFrame>() { stackFrame1, stackFrame2 }),
-                    MetaStructHelper.StackToDictionary("type2222", "dotnet", "test55555", null, new List<StackFrame>() { stackFrame3, stackFrame4 }),
+                    MetaStructHelper.StackToDictionary("typevalue", "dotnet", "213123213123213", null, new List<Dictionary<string, object>>() { stackFrame1, stackFrame2 }),
+                    MetaStructHelper.StackToDictionary("type2222", "dotnet", "test55555", null, new List<Dictionary<string, object>>() { stackFrame3, stackFrame4 }),
                 };
 
     public static TheoryData<List<Tuple<string, object?>>> Data
