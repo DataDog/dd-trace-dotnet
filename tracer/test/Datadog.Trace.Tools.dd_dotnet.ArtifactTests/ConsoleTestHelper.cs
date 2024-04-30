@@ -68,6 +68,14 @@ public abstract class ConsoleTestHelper : ToolTestHelper
                 aspNetCorePort: 1000,
                 processStart.Environment);
         }
+        else
+        {
+            // We should still apply the custom environment variables
+            foreach (string key in environmentHelper.CustomEnvironmentVariables.Keys)
+            {
+                processStart.Environment[key] = environmentHelper.CustomEnvironmentVariables[key];
+            }
+        }
 
         foreach (var (key, value) in environmentVariables)
         {
