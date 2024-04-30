@@ -23,6 +23,11 @@ internal static class RaspModule
         CheckVulnerability(AddressesConstants.FileAccess, file);
     }
 
+    internal static void OnSSRF(string url)
+    {
+        CheckVulnerability(AddressesConstants.UrlAccess, url);
+    }
+
     private static void CheckVulnerability(string address, string valueToCheck)
     {
         var security = Security.Instance;
