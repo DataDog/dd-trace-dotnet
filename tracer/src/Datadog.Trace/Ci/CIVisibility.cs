@@ -272,6 +272,20 @@ namespace Datadog.Trace.Ci
             {
                 Log.Information("CI Visibility is exiting.");
                 LifetimeManager.Instance.RunShutdownTasks();
+
+                // If the continuous profiler is attached we ensure to flush the remaining profiles before closing.
+                try
+                {
+                    if (ContinuousProfiler.Profiler.Instance.Status.IsProfilerReady)
+                    {
+                        ContinuousProfiler.NativeInterop.FlushProfile();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error flushing the profiler.");
+                }
+
                 Interlocked.Exchange(ref _firstInitialization, 1);
             }
         }
