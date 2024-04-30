@@ -292,7 +292,7 @@ internal class CreatedumpCommand : Command
         }
         catch (Exception ex)
         {
-            _errors.Add($"Unexpected exception: {ex.Message}");
+            _errors.Add($"Unexpected exception: {ex}");
         }
         finally
         {
