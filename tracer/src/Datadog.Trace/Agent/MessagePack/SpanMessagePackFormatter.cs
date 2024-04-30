@@ -413,7 +413,8 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
 
             // add "version" tags to all spans whose service name is the default service name
-            if (string.Equals(span.Context.ServiceNameInternal, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+            var serviceNameEqualsDefault = string.Equals(span.Context.ServiceNameInternal, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase);
+            if (serviceNameEqualsDefault)
             {
                 var versionRawBytes = MessagePackStringCache.GetVersionBytes(model.TraceChunk.ServiceVersion);
 
@@ -426,7 +427,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // add _dd.base_service tag to spans where the service name has been overrideen
-            if (!string.Equals(span.Context.ServiceNameInternal, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+            if (!serviceNameEqualsDefault && !string.IsNullOrEmpty(model.TraceChunk.DefaultServiceName))
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _baseServiceNameBytes);
