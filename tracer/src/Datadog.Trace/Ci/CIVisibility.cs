@@ -272,6 +272,20 @@ namespace Datadog.Trace.Ci
             {
                 Log.Information("CI Visibility is exiting.");
                 LifetimeManager.Instance.RunShutdownTasks();
+
+                // If the continuous profiler is attached we ensure to flush the remaining profiles before closing.
+                try
+                {
+                    if (ContinuousProfiler.Profiler.Instance.Status.IsProfilerReady)
+                    {
+                        ContinuousProfiler.NativeInterop.FlushProfile();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error flushing the profiler.");
+                }
+
                 Interlocked.Exchange(ref _firstInitialization, 1);
             }
         }
@@ -518,7 +532,18 @@ namespace Datadog.Trace.Ci
                 {
                     processName ??= GetProcessName();
                     // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
-                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) &&
+                        Environment.CommandLine.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet' test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet.exe test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet.exe\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet.exe' test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet.dll test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet.dll\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet.dll' test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf(" test ", StringComparison.OrdinalIgnoreCase) == -1)
                     {
                         Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
                         return false;

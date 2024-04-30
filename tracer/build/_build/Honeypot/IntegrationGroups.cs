@@ -100,6 +100,9 @@ namespace Honeypot
             NugetPackages.Add("amqmdnetstd", new [] { "IBMMQDotnetClient" });
             NugetPackages.Add("Yarp.ReverseProxy", new [] { "Yarp.ReverseProxy" });
             NugetPackages.Add("Microsoft.AspNetCore.Html.Abstractions", new [] { "Microsoft.AspNetCore.Html.Abstractions" });
+            NugetPackages.Add("dotnet", Array.Empty<string>());
+            NugetPackages.Add("vstest.console", Array.Empty<string>());
+            NugetPackages.Add("vstest.console.arm64", Array.Empty<string>());
             NugetPackages.Add("WebDriver", new[] { "Selenium.WebDriver" });
         }
 

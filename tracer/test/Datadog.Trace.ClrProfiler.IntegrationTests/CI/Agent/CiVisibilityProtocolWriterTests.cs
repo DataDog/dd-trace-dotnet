@@ -149,7 +149,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         public async Task AgentlessCodeCoverageCompressedPayloadTest()
         {
             var requestFactory = new HttpClientRequestFactory(new Uri("http://localhost"), Array.Empty<KeyValuePair<string, string>>(), new TestMessageHandler());
-            var apiRequest = (IMultipartApiRequest)requestFactory.Create(new Uri("http://localhost/api"));
+            var apiRequest = requestFactory.Create(new Uri("http://localhost/api"));
             var response = await apiRequest.PostAsync(
                                           new[] { new MultipartFormItem("TestName", "application/binary", "TestFileName", "TestContent"u8.ToArray()) },
                                           MultipartCompression.GZip)

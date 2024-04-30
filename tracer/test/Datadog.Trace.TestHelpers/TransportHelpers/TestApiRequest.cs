@@ -68,4 +68,9 @@ internal class TestApiRequest : IApiRequest
             return await PostAsync(new ArraySegment<byte>(ms.ToArray()), ContentTypeHelper.GetContentType(contentType, multipartBoundary), contentEncoding);
         }
     }
+
+    public Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
+    {
+        throw new NotImplementedException();
+    }
 }

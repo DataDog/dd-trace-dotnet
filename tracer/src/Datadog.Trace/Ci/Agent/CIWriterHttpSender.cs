@@ -130,12 +130,6 @@ namespace Datadog.Trace.Ci.Agent
                 {
                     statusCode = await SendPayloadAsync(senderFunc, request, payload, state, isFinalTry).ConfigureAwait(false);
                 }
-                catch (MultipartApiRequestNotSupported mReqEx)
-                {
-                    Log.Error(mReqEx, "Error trying to send a multipart request to: {Url}", url.ToString());
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadDropped(payload.TelemetryEndpoint);
-                    return;
-                }
                 catch (Exception ex)
                 {
                     exception = ex;
@@ -250,29 +244,8 @@ namespace Datadog.Trace.Ci.Agent
             Log.Debug<int>("Sending {Count} multipart items...", payload.Count);
             await SendPayloadAsync(
                 payload,
-                static (request, payload, payloadArray) =>
-                {
-                    if (request is IMultipartApiRequest multipartRequest)
-                    {
-                        return multipartRequest.PostAsync(payloadArray, payload.UseGZip ? MultipartCompression.GZip : MultipartCompression.None);
-                    }
-
-                    MultipartApiRequestNotSupported.Throw();
-                    return Task.FromResult<IApiResponse>(null);
-                },
+                static (request, payload, payloadArray) => request.PostAsync(payloadArray, payload.UseGZip ? MultipartCompression.GZip : MultipartCompression.None),
                 payloadArray).ConfigureAwait(false);
-        }
-
-        private class MultipartApiRequestNotSupported : NotSupportedException
-        {
-            public MultipartApiRequestNotSupported()
-                : base("Sender doesn't support IMultipartApiRequest.")
-            {
-            }
-
-            [DebuggerHidden]
-            [DoesNotReturn]
-            public static void Throw() => throw new MultipartApiRequestNotSupported();
         }
     }
 }

@@ -10,11 +10,12 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
     [Collection(nameof(ConsoleTestsCollection))]
-    public class LegacyCommandLineArgumentsTests
+    public class LegacyCommandLineArgumentsTests(ITestOutputHelper output)
     {
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
@@ -50,7 +51,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             // CI visibility mode checks if there's a running agent
-            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
 
             var agentUrl = $"http://localhost:{agent.Port}";
 
