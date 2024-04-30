@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 using FluentAssertions;
@@ -23,65 +24,16 @@ public class SpanMetaStructTests
     private const string StringKey = "StringKey";
     private const string StringValue = "value";
     private static readonly IFormatterResolver FormatterResolver = SpanFormatterResolver.Instance;
+    private static StackFrame stackFrame1 = new StackFrame(1, "text", "file.cs", 33, null, "testnamespace", "class1", "method1");
+    private static StackFrame stackFrame2 = new StackFrame(2, "text2", "file2.cs", 55, null, "testnamespace", "class2", "method2");
+    private static StackFrame stackFrame3 = new StackFrame(3, "text3", "file3.cs", 77, null, "testnamespace", "class3", "method3");
+    private static StackFrame stackFrame4 = new StackFrame(4, "text4", "file4.cs", 77, null, "testnamespace", "class4", "method4");
+
     private static List<object> stackData =
                 new List<object>()
                 {
-                    new Dictionary<string, object>()
-                    {
-                        { "type", "typevalue" },
-                        { "language", "dotnet" },
-                        { "id", "213123213123213" },
-                        {
-                            "frames", new List<object>()
-                            {
-                                new Dictionary<string, object>()
-                                {
-                                    { "id", "1" },
-                                    { "text", "text" },
-                                    { "file", "file.cs" },
-                                    { "line", 33U },
-                                    { "namespace", "testnamespace" },
-                                    { "class_name", "class1" },
-                                    { "function", "method1" },
-                                },
-                                new Dictionary<string, object>()
-                                {
-                                    { "id", "2" },
-                                    { "text", "text2" },
-                                    { "file", "file2.cs" },
-                                    { "line", 55U },
-                                    { "namespace", "testnamespace" },
-                                    { "class_name", "class2" },
-                                    { "function", "method2" },
-                                }
-                            }
-                        }
-                    },
-                    new Dictionary<string, object>()
-                    {
-                        { "type", "type2222" },
-                        { "language", "dotnet" },
-                        { "id", "test55555" },
-                        {
-                            "frames", new List<object>()
-                            {
-                                new Dictionary<string, object>()
-                                {
-                                    { "id", "frameid" },
-                                    { "text", "text" },
-                                    { "file", "file.cs" },
-                                    { "line", 33U },
-                                },
-                                new Dictionary<string, object>()
-                                {
-                                    { "id", "frameid2" },
-                                    { "text", "text2" },
-                                    { "file", "file2.cs" },
-                                    { "line", 55U },
-                                }
-                            }
-                        }
-                    }
+                    MetaStructHelper.StackToDictionary("typevalue", "dotnet", "213123213123213", null, new List<StackFrame>() { stackFrame1, stackFrame2 }),
+                    MetaStructHelper.StackToDictionary("type2222", "dotnet", "test55555", null, new List<StackFrame>() { stackFrame3, stackFrame4 }),
                 };
 
     public static TheoryData<List<Tuple<string, object?>>> Data
@@ -114,7 +66,7 @@ public class SpanMetaStructTests
         // We add the elements to the meta struct
         foreach (var item in dataToEncode)
         {
-            span.SetMetaStruct(item.Item1, ObjectToByteArray(item.Item2));
+            span.SetMetaStruct(item.Item1, MetaStructHelper.ObjectToByteArray(item.Item2));
         }
 
         var spanBytes = new byte[] { };
@@ -188,18 +140,5 @@ public class SpanMetaStructTests
         }
 
         return offset;
-    }
-
-    private static byte[] ObjectToByteArray(object? value)
-    {
-        // 256 is the size that the serializer would reserve initially for empty arrays, so we create
-        // the buffer with that size to avoid this first resize. If a bigger size is required later, the serializer
-        // will resize it.
-
-        var buffer = new byte[256];
-        var bytesCopied = PrimitiveObjectFormatter.Instance.Serialize(ref buffer, 0, value, null);
-        Array.Resize(ref buffer, bytesCopied);
-
-        return buffer;
     }
 }

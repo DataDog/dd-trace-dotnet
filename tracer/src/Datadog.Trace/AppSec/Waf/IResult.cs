@@ -23,6 +23,8 @@ namespace Datadog.Trace.AppSec.Waf
 
         public Dictionary<string, object?>? RedirectInfo { get; }
 
+        public Dictionary<string, object?>? SendStackInfo { get; }
+
         IReadOnlyCollection<object>? Data { get; }
 
         Dictionary<string, object?>? Actions { get; }

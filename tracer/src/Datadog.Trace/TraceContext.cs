@@ -120,6 +120,16 @@ namespace Datadog.Trace
             _appSecRequestContext!.AddWafSecurityEvents(events);
         }
 
+        internal void AddStackTraceElement(AppSec.Rasp.StackTraceInfo stack, int maxStackTraces)
+        {
+            if (Volatile.Read(ref _appSecRequestContext) is null)
+            {
+                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
+            }
+
+            _appSecRequestContext!.AddRaspStackTrace(stack, maxStackTraces);
+        }
+
         internal void EnableIastInRequest()
         {
             if (Volatile.Read(ref _iastRequestContext) is null)
@@ -175,7 +185,7 @@ namespace Datadog.Trace
 
                 if (_appSecRequestContext != null)
                 {
-                    _appSecRequestContext.CloseWebSpan(Tags);
+                    _appSecRequestContext.CloseWebSpan(Tags, span);
                 }
             }
 
