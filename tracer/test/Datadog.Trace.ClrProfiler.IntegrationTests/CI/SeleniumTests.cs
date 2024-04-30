@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-// #if NET5_0_OR_GREATER
-
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -29,11 +27,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [UsesVerify]
 public class SeleniumTests : TestingFrameworkEvpTest
 {
+    private readonly GacFixture _gacFixture;
+
     public SeleniumTests(ITestOutputHelper output)
         : base("Selenium", output)
     {
         SetServiceName("xunit-selenium-tests");
         SetServiceVersion("1.0.0");
+        _gacFixture = new GacFixture();
+        _gacFixture.AddAssembliesToGac();
     }
 
     [SkippableTheory]
@@ -45,7 +47,7 @@ public class SeleniumTests : TestingFrameworkEvpTest
     {
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-        // SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         var tests = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
@@ -162,6 +164,9 @@ public class SeleniumTests : TestingFrameworkEvpTest
                .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)),
             settings);
     }
-}
 
-// #endif
+    public override void Dispose()
+    {
+        _gacFixture.RemoveAssembliesFromGac();
+    }
+}
