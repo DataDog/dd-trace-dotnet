@@ -67,7 +67,7 @@ publish:
           try {
               # The grants option at the end is used to allow public access on the files we upload as the acls only aren't enough.
               aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
-              If ($LASTEXITCODE -eq 0) { 
+              If ($LASTEXITCODE -eq 0) {
                 return
               }
 
@@ -166,6 +166,7 @@ package:
       allow_failure: false
   script:
     - ../.gitlab/build-deb-rpm.sh
+    - find . -iregex '.*\.\(deb\|rpm\)' -printf '%f\0' | xargs -0 dd-pkg lint
   variables:
     ARCH: amd64
 
@@ -179,6 +180,7 @@ package-arm:
       allow_failure: false
   script:
     - ../.gitlab/build-deb-rpm.sh
+    - find . -iregex '.*\.\(deb\|rpm\)' -printf '%f\0' | xargs -0 dd-pkg lint
   variables:
     ARCH: arm64
 
