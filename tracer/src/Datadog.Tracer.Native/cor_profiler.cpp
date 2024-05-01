@@ -204,23 +204,23 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         info10 = nullptr;
     }
 
-    // get ICorProfilerInfo for >= .NET Core 2.1
-    ICorProfilerInfo9* info9 = nullptr;
-    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo9), (void**) &info9);
+    // get ICorProfilerInfo for >= .NET Core 2.0
+    ICorProfilerInfo8* info8 = nullptr;
+    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo8), (void**) &info8);
     if (SUCCEEDED(hr))
     {
-        Logger::Debug("Interface ICorProfilerInfo9 found.");
+        Logger::Debug("Interface ICorProfilerInfo8 found.");
     }
     else
     {
-        info9 = nullptr;
+        info8 = nullptr;
     }
 
     runtime_information_ = GetRuntimeInformation(this->info_);
-    if (info9 == nullptr && runtime_information_.is_core())
+    if (info8 == nullptr && runtime_information_.is_core())
     {
         Logger::Warn(
-            "DATADOG TRACER DIAGNOSTICS - Profiler disabled: .NET Core 2.1 or greater runtime is required for .NET Core automatic instrumentation.");
+            "DATADOG TRACER DIAGNOSTICS - Profiler disabled: .NET Core 2.0 or greater runtime is required for .NET Core automatic instrumentation.");
         return E_FAIL;
     }
 
@@ -3786,8 +3786,8 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
     }
     else
     {
-        dllLpName = MAKEINTRESOURCE(NETCOREAPP21_MANAGED_ENTRYPOINT_DLL);
-        symbolsLpName = MAKEINTRESOURCE(NETCOREAPP21_MANAGED_ENTRYPOINT_SYMBOLS);
+        dllLpName = MAKEINTRESOURCE(NETCOREAPP20_MANAGED_ENTRYPOINT_DLL);
+        symbolsLpName = MAKEINTRESOURCE(NETCOREAPP20_MANAGED_ENTRYPOINT_SYMBOLS);
     }
 
     HRSRC hResAssemblyInfo = FindResource(hInstance, dllLpName, L"ASSEMBLY");
