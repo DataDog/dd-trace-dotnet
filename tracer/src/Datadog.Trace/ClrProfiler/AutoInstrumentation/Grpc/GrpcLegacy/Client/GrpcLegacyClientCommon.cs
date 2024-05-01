@@ -169,7 +169,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
             normalizedHost = HttpRequestUtils.GetNormalizedHost(host);
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
             ChannelToHostMap.AddOrUpdate(channelInstance, normalizedHost);
 #else
             ChannelToHostMap.GetValue(channelInstance, x => normalizedHost);

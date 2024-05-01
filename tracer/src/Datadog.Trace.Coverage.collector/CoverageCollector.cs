@@ -161,7 +161,7 @@ namespace Datadog.Trace.Coverage.Collector
 
             var processedDirectories = new HashSet<string>();
             var numAssemblies = 0;
-            var tracerAssemblyName = DatadogTraceConstants.AssemblyName;
+            var tracerAssemblyName = typeof(Tracer).Assembly.GetName().Name;
 
             // Process assemblies in parallel.
             Parallel.ForEach(
@@ -239,7 +239,7 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 foreach (var directory in processedDirectories)
                 {
-                    var version = DatadogTraceConstants.AssemblyVersion.ToString();
+                    var version = typeof(Instrumentation).Assembly.GetName().Version?.ToString();
                     foreach (var depsJsonPath in Directory.EnumerateFiles(directory, "*.deps.json", SearchOption.TopDirectoryOnly))
                     {
                         try

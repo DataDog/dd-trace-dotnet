@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <RootNamespace>Datadog.Trace.ClrProfiler.Managed.Loader</RootNamespace>
-    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
     <OutputPath>..\bin\ProfilerResources\</OutputPath>
 
     <!-- NuGet -->
     <Version>3.0.0-prerelease</Version>
 
-    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.1) -->
+    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 

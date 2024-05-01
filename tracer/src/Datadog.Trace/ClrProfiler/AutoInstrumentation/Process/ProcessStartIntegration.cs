@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             {
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
                     IastModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, startInfo.ArgumentList, Configuration.IntegrationId.Process);
 #else
                     IastModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, null, Configuration.IntegrationId.Process);

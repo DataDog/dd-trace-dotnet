@@ -156,7 +156,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
             normalizedSeedNodes = StringBuilderCache.GetStringAndRelease(sb);
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
             ClientSourceToNormalizedSeedNodesMap.AddOrUpdate(clientConfiguration.Instance!, normalizedSeedNodes);
 #else
             ClientSourceToNormalizedSeedNodesMap.GetValue(clientConfiguration.Instance!, x => normalizedSeedNodes);
@@ -188,7 +188,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
             normalizedSeedNodes = StringBuilderCache.GetStringAndRelease(sb);
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
             ClientSourceToNormalizedSeedNodesMap.AddOrUpdate(connectionStringValue.Instance!, normalizedSeedNodes);
 #else
             ClientSourceToNormalizedSeedNodesMap.GetValue(connectionStringValue.Instance!, x => normalizedSeedNodes);
