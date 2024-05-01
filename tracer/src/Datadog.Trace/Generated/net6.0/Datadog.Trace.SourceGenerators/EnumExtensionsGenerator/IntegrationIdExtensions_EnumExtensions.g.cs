@@ -17,7 +17,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 67;
+    public const int Length = 68;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -96,6 +96,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Xss => nameof(Datadog.Trace.Configuration.IntegrationId.Xss),
             Datadog.Trace.Configuration.IntegrationId.NHibernate => nameof(Datadog.Trace.Configuration.IntegrationId.NHibernate),
             Datadog.Trace.Configuration.IntegrationId.DotnetTest => nameof(Datadog.Trace.Configuration.IntegrationId.DotnetTest),
+            Datadog.Trace.Configuration.IntegrationId.Selenium => nameof(Datadog.Trace.Configuration.IntegrationId.Selenium),
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual => nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual),
             _ => value.ToString(),
         };
@@ -176,6 +177,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Xss,
             Datadog.Trace.Configuration.IntegrationId.NHibernate,
             Datadog.Trace.Configuration.IntegrationId.DotnetTest,
+            Datadog.Trace.Configuration.IntegrationId.Selenium,
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual,
         };
 
@@ -256,6 +258,7 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.Xss),
             nameof(Datadog.Trace.Configuration.IntegrationId.NHibernate),
             nameof(Datadog.Trace.Configuration.IntegrationId.DotnetTest),
+            nameof(Datadog.Trace.Configuration.IntegrationId.Selenium),
             nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual),
         };
 }
