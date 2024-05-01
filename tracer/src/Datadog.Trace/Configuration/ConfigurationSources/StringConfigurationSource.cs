@@ -109,7 +109,7 @@ namespace Datadog.Trace.Configuration
                 else if (colonIndex > 0)
                 {
                     // if a colon is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
-                    // note we already did TrimStart() on the key, so it only needs TrimEnd().
+                    // note we already did Trim() on the entire entry, so the key portion only needs TrimEnd().
                     var key = trimmedEntry.Substring(0, colonIndex).TrimEnd();
                     var value = trimmedEntry.Substring(colonIndex + 1).Trim();
                     dictionary[key] = value;
