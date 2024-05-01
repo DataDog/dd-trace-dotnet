@@ -13,18 +13,17 @@ The .NET tracer v3.0.0 includes breaking changes that you must be aware of befor
 - Breaking changes
 	- **Custom-only** tracing (using the _Datadog.Trace_ NuGet package), _without_ any automatic tracing, will no longer be supported. Custom instrumentation with the  _Datadog.Trace_ NuGet where you have _also_ configured [automatic-instrumentation](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/) is still supported as it was in v2.x.x.
 	- **The public API surface has changed** in the *Datadog.Trace* NuGet package. A number of previously obsolete APIs have been removed, and some other APIs have been marked obsolete. Most changes are related to how you create `TracerSettings`  and `Tracer` instances.
-	- **.NET Core 2.0** will no longer work with automatic or custom instrumentation. This has been marked [End Of Life (EOL)](https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core/#supported-net-core-runtimes)  by Microsoft since 2018, and will no longer work at all in v3.0.0+ of the Datadog .NET tracer.
 	- **Changes to default settings**. The default values of some settings have changed, and others have been removed. See below for more details.
 	- **Changes in behavior**. The semantic requirements and meaning of some settings have changed, as have some of the tags added to traces.  See below for more details.
 	- **The 32-bit MSI installer will no longer be available**. The 64-bit MSI installer already includes support for tracing 32-bit processes, so you should use this installer instead. 
     - **The client library will still be injected when `DD_TRACE_ENABLED=0`**. In v2.x.x, setting `DD_TRACE_ENABLED=0` would prevent the client library from being injected into the application completely. In v3.0.0+, the client library will still be injected, but tracing will be disabled.
 - Deprecation notices
-	- **.NET Core 2.1 is marked EOL** in v3.0.0+ of the tracer. That means versions  2.1, 2.2 and 3.0 of .NET Core are now EOL. .NET Core 2.1 may still work with v3.0.0+, but is will no longer receive significant testing and you will receive limited support for issues arising with EOL versions.
+	- **.NET Core 2.1 is marked EOL** in v3.0.0+ of the tracer. That means versions 2.0, 2.1, 2.2 and 3.0 of .NET Core are now EOL. These versions may still work with v3.0.0+, but they will no longer receive significant testing and you will receive limited support for issues arising with EOL versions.
 	- **Datadog.Trace.OpenTracing is now obsolete**. OpenTracing is considered deprecated, and so _Datadog.Trace.OpenTracing_ is considered deprecated. See the following details on future deprecation.
 	- **macOS 11 is no longer supported for CI Visibility** in v3.0.0+. Only macOS 12 and above are supported.
 - Major version policy and future deprecation
 	- **Announcing a major version roadmap**. We intend to make yearly major releases, starting from v3.0.0 in 2024, and v4.0.0 in 2025. We clearly will aim for minimal breaking changes, with the primary focus being on maintaining support for new versions of .NET and removal of EOL frameworks and operating systems.
-	- **Planned removal of support for .NET Core 2.1** in version v4.0.0+. We intend to completely remove support for .NET Core 2.x and .NET Core 3.0 in v4.0.0. .NET Framework 4.6.1+ will continue to be supported.
+	- **Planned removal of support for .NET Core 2.x and .NET Core 3.0** in version v4.0.0+. We intend to completely remove support for .NET Core 2.x and .NET Core 3.0 in v4.0.0. .NET Framework 4.6.1+ will continue to be supported.
 	- **Planned removal of support for some linux distributions**. In version v4.0.0, we intend to drop support for CentOS 7, RHEL 7, and CentOS Stream 8.
 	- **Planned remove of support for App Analytics**. In version v4.0.0, we intend to drop support for App Analytics and associated settings.
 
@@ -91,17 +90,6 @@ Tracer.Configure(settings);          // <- Add this line
 
 Also note that the implementation types from all public APIs have changed. For example, `ISpan.Context` returns an `ISpanContext` instance, but this is no longer `SpanContext`.
 
-#### .NET Core 2.0 no longer works with automatic or custom instrumentation
-
-**What changed?**
-Instrumenting a .NET Core 2.0 application with automatic instrumentation will no longer work, and will not produce traces.
-
-**Why did we change it?**
-Microsoft dropped support for .NET Core 2.0 in 2018, and [it is EOL for the .NET tracer](https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core/). 
-
-**What action should you take?**
-If you are using .NET Core 2.0, we strongly suggest upgrading to a newer version of .NET/.NET Core. If you cannot upgrade, you can continue to use the 2.x.x version of the .NET tracer, but you will receive no feature updates or bug fixes.
-
 #### Changes to default settings
 
 **What changed and why?**
@@ -167,7 +155,7 @@ This section details some of the APIs. supported platforms, and runtimes that ar
 .NET Core 2.1 was marked EOL by Microsoft in August 2021. Similarly .NET Core 2.0, .NET Core 2.2, and .NET Core 3.0 are already considered EOL. This change applies a consistent policy across older runtimes,  allows us to continue to support newer runtimes, and has limited use across customers.
 
 **What action should you take?**
-If you're currently running applications on .NET Core 2.1, you can still do so with v3.0.0 of the .NET tracer. However, we strongly suggest updating to [a supported version of .NET Core/.NET](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core#lifecycle). In a future major version of the .NET tracer we intend to remove support for .NET Core 2.1 completely, as described in the following section.
+If you're currently running applications on .NET Core 2.1, you can still do so with v3.0.0 of the .NET tracer. However, we strongly suggest updating to [a supported version of .NET Core/.NET](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core#lifecycle). In a future major version of the .NET tracer we intend to remove support for .NET Core 2.1 and other EOL runtimes completely, as described in the following section.
 
 #### Datadog.Trace.OpenTracing is now obsolete
 
@@ -214,10 +202,10 @@ Note that this policy does _not_ mean the bar for making breaking changes has be
 
 **What changed?**
 In the next version of the .NET tracer (v4.0.0) we plan to drop support for the following .NET versions:
-- .NET Core 2.0 (Datadog .NET tracer support removed in v3.0.0)
-- .NET Core 2.1 (Datadog .NET tracer support removed in v4.0.0)
-- .NET Core 2.2 (Datadog .NET tracer support removed in v4.0.0)
-- .NET Core 3.0 (Datadog .NET tracer support removed in v4.0.0)
+- .NET Core 2.0
+- .NET Core 2.1
+- .NET Core 2.2
+- .NET Core 3.0
 
 The .NET tracer will no longer instrument applications using these runtimes.
 

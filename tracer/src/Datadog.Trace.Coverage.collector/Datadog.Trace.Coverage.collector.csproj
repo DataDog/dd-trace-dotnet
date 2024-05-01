@@ -1,13 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netstandard2.0</TargetFrameworks>
+        <TargetFramework>netstandard2.0</TargetFramework>
         <ImplicitUsings>false</ImplicitUsings>
         <Nullable>enable</Nullable>
         <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <!-- Ignore errors in missing references in XML  -->
-        <NoWarn>CS1574;CS1584;CS1581;CS1580</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -17,83 +15,10 @@
       <!-- Microsoft.Extensions.FileSystemGlobbing 6.0.0 doesn't support netcoreapp2.1 -->
       <!-- Microsoft.Extensions.FileSystemGlobbing 7.0.0 doesn't support net5.0 -->
       <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="5.0.0" />
-
-      <!-- Required for vendored Unsafe code -->
-      <PackageReference Include="Fody" Version="6.8.0">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-      <PackageReference Include="InlineIL.Fody" Version="1.8.0" PrivateAssets="All" />
     </ItemGroup>
 
-  <ItemGroup>
-    <!-- CI visibility bits -->
-    <Compile Include="..\Datadog.Trace\Ci\Configuration\CIVisibilitySettings.Shared.cs" Link="Ci\Configuration\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Ci\Coverage\Attributes\*.cs" Link="Ci\Coverage\Attributes\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Ci\Coverage\Exceptions\*.cs" Link="Ci\Coverage\Exceptions\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Ci\Coverage\Util\*.cs" Link="Ci\Coverage\Util\%(Filename)%(Extension)" />
-
-    <Compile Include="..\Datadog.Trace\Configuration\ConfigurationKeys.cs" Link="%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Configuration\ConfigurationKeys.Logging.cs" Link="%(Filename)%(Extension)" />
-
-    <!-- Configuration and Telemetry bits   -->
-    <Compile Include="..\Datadog.Trace\Configuration\GlobalSettings.cs" Link="Configuration\%(RecursiveDir)%(Filename)%(Extension)" />
-
-    <Compile Include="..\Datadog.Trace\Configuration\ConfigurationSources\**\*.cs" Link="Configuration\ConfigurationSources\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Remove="..\Datadog.Trace\Configuration\ConfigurationSources\Telemetry\ConfigurationTelemetry.cs" />
-
-    <Compile Include="..\Datadog.Trace\Telemetry\TelemetryErrorCode.cs" Link="Telemetry\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Telemetry\Metrics\MetricTags.cs" Link="Telemetry\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Telemetry\Metrics\PublicApiUsage.cs" Link="Telemetry\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Telemetry\DTOs\ConfigurationKeyValue.cs" Link="Telemetry\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Telemetry\DTOs\ErrorData.cs" Link="Telemetry\%(Filename)%(Extension)" />
-
-    <!-- Logging bits -->
-    <Compile Include="..\Datadog.Trace\Logging\Internal\DatadogLoggingFactory.Shared.cs" Link="Logging\Internal\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Logging\Internal\IDatadogLogger.cs" Link="Logging\Internal\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Logging\Internal\DatadogSerilogLogger.cs" Link="Logging\Internal\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Logging\Internal\ILogRateLimiter.cs" Link="Logging\Internal\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Logging\Internal\NullLogRateLimiter.cs" Link="Logging\Internal\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Logging\Internal\Configuration\FileLoggingConfiguration.cs" Link="Logging\Internal\Configuration\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Logging\Internal\Configuration\LogSinkOptions.cs" Link="Logging\Internal\Configuration\%(RecursiveDir)%(Filename)%(Extension)" />
-
-    <!--Vendored code -->
-    <Compile Include="..\Datadog.Trace\Vendors\Newtonsoft.Json\**\*.cs" Link="Vendors\Newtonsoft.Json\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Vendors\Serilog\**\*.cs" Link="Vendors\Serilog\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Vendors\Serilog.Sinks.File\**\*.cs" Link="Vendors\Serilog.Sinks.File\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Vendors\System.Runtime.CompilerServices.Unsafe\**\*.cs" Link="Vendors\System.Runtime.CompilerServices.Unsafe\%(RecursiveDir)%(Filename)%(Extension)" />
-
-    <!--Helpers -->
-    <Compile Include="..\Datadog.Trace\ExtensionMethods\StringExtensions.cs" Link="ExtensionMethods\%(Filename)%(Extension)" />
-    
-    <Compile Include="..\Datadog.Trace\TracerConstants.cs" Link="%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="Configuration\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Util\System.Diagnostics.CodeAnalysis.Attributes.cs" Link="Util\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Util\System.Runtime.CompilerServices.Attributes.cs" Link="Util\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Util\EnvironmentHelpers.cs" Link="Util\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Util\ThrowHelper.cs" Link="Util\%(Filename)%(Extension)" />
-    <Compile Include="..\Datadog.Trace\Util\StringBuilderCache.cs" Link="Util\%(Filename)%(Extension)" />
-  </ItemGroup>
-
-  <!-- Below this point is reserved for vendor items -->
-  <!--Newtonsoft.Json-->
-  <!-- Modifications: Original condition was only for net45, but we include net461 here so that net45 and net461 generate the same Newtonsoft.Json -->
-  <!-- Modifications: Remove HAVE_XLINQ constant in both builds to avoid assembly reference to System.Xml.Linq.dll -->
-  <!-- Modifications: Remove HAVE_DATA_CONTRACTS, HAVE_IGNORE_DATA_MEMBER_ATTRIBUTE constant in both builds to remove assembly reference on System.Runtime.Serialization.dll -->
-  <!-- Modifications: Remove HAVE_ADO_NET as it triggers warnings with NativeAOT -->
-  <PropertyGroup>
-    <DefineConstants>$(DefineConstants);HAVE_APP_DOMAIN;HAVE_ASYNC;HAVE_BIG_INTEGER;HAVE_BINARY_FORMATTER;HAVE_BINARY_SERIALIZATION;HAVE_BINARY_EXCEPTION_SERIALIZATION;HAVE_CHAR_TO_LOWER_WITH_CULTURE;HAVE_CHAR_TO_STRING_WITH_CULTURE;HAVE_COM_ATTRIBUTES;HAVE_COMPONENT_MODEL;HAVE_CONCURRENT_COLLECTIONS;HAVE_COVARIANT_GENERICS;HAVE_DATE_TIME_OFFSET;HAVE_DB_NULL_TYPE_CODE;HAVE_DYNAMIC;HAVE_EMPTY_TYPES;HAVE_ENTITY_FRAMEWORK;HAVE_EXPRESSIONS;HAVE_FAST_REVERSE;HAVE_FSHARP_TYPES;HAVE_FULL_REFLECTION;HAVE_GUID_TRY_PARSE;HAVE_HASH_SET;HAVE_ICLONEABLE;HAVE_ICONVERTIBLE;HAVE_INOTIFY_COLLECTION_CHANGED;HAVE_INOTIFY_PROPERTY_CHANGING;HAVE_ISET;HAVE_LINQ;HAVE_MEMORY_BARRIER;HAVE_METHOD_IMPL_ATTRIBUTE;HAVE_NON_SERIALIZED_ATTRIBUTE;HAVE_READ_ONLY_COLLECTIONS;HAVE_SECURITY_SAFE_CRITICAL_ATTRIBUTE;HAVE_SERIALIZATION_BINDER_BIND_TO_NAME;HAVE_STREAM_READER_WRITER_CLOSE;HAVE_STRING_JOIN_WITH_ENUMERABLE;HAVE_TIME_SPAN_PARSE_WITH_CULTURE;HAVE_TIME_SPAN_TO_STRING_WITH_CULTURE;HAVE_TIME_ZONE_INFO;HAVE_TRACE_WRITER;HAVE_TYPE_DESCRIPTOR;HAVE_UNICODE_SURROGATE_DETECTION;HAVE_VARIANT_TYPE_PARAMETERS;HAVE_VERSION_TRY_PARSE;HAVE_XML_DOCUMENT;HAVE_XML_DOCUMENT_TYPE;HAVE_CONCURRENT_DICTIONARY;HAVE_REGEX_TIMEOUTS;HAS_ARRAY_EMPTY</DefineConstants>
-  </PropertyGroup>
-
-  <!--Serilog-->
-
-  <PropertyGroup>
-    <DefineConstants>$(DefineConstants);ASYNCLOCAL;HASHTABLE</DefineConstants>
-  </PropertyGroup>
-
-  <!--Serilog.Sinks.File-->
-  <PropertyGroup>
-    <DefineConstants>$(DefineConstants);OS_MUTEX</DefineConstants>
-  </PropertyGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+    </ItemGroup>
 
 </Project>
