@@ -16,7 +16,7 @@ namespace Datadog.Trace.RuntimeMetrics
 {
     internal class RuntimeMetricsWriter : IDisposable
     {
-#if NETCOREAPP && !NETCOREAPP3_1_OR_GREATER
+#if NETSTANDARD
         // In < .NET Core 3.1 we don't send CommittedMemory, so we report differently on < .NET Core 3.1
         private const string ProcessMetrics = $"{MetricsNames.ThreadsCount}, {MetricsNames.CpuUserTime}, {MetricsNames.CpuSystemTime}, {MetricsNames.CpuPercentage}";
 #else
@@ -43,7 +43,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private readonly IRuntimeMetricsListener _listener;
 
         private readonly bool _enableProcessMetrics;
-#if NETCOREAPP && !NETCOREAPP3_1_OR_GREATER
+#if NETSTANDARD
         // In .NET Core <3.1 on non-Windows, Process.PrivateMemorySize64 returns 0, so we disable this.
         // https://github.com/dotnet/runtime/issues/23284
         private readonly bool _enableProcessMemory = false;
@@ -87,7 +87,7 @@ namespace Datadog.Trace.RuntimeMetrics
                 _previousSystemCpu = systemCpu;
 
                 _enableProcessMetrics = true;
-#if NETCOREAPP && !NETCOREAPP3_1_OR_GREATER
+#if NETSTANDARD
                 // In .NET Core <3.1 on non-Windows, Process.PrivateMemorySize64 returns 0, so we disable this.
                 // https://github.com/dotnet/runtime/issues/23284
                 _enableProcessMemory = FrameworkDescription.Instance switch
@@ -160,7 +160,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
                     _statsd.Gauge(MetricsNames.ThreadsCount, threadCount);
 
-#if NETCOREAPP && !NETCOREAPP3_1_OR_GREATER
+#if NETSTANDARD
                     if (_enableProcessMemory)
                     {
                         _statsd.Gauge(MetricsNames.CommittedMemory, memoryUsage);
@@ -224,7 +224,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private static IRuntimeMetricsListener InitializeListener(IDogStatsd statsd, TimeSpan delay, bool inAzureAppServiceContext)
         {
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
             return new RuntimeEventListener(statsd, delay);
 #elif NETFRAMEWORK
 

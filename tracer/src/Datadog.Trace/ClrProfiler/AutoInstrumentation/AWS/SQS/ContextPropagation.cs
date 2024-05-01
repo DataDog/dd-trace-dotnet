@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             else
             {
                 // In .NET Fx and Net Core 2.1, removing an element while iterating on keys throws.
-#if !NETCOREAPP3_0_OR_GREATER
+#if !NETCOREAPP2_1_OR_GREATER
                 List<string>? attributesToRemove = null;
 #endif
                 // Make sure we do not propagate any other datadog header here in the rare cases where users would have added them manually
@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                         (attributeName.StartsWith("x-datadog", StringComparison.OrdinalIgnoreCase)
                             || attributeName.Equals(DataStreamsPropagationHeaders.PropagationKey, StringComparison.OrdinalIgnoreCase)))
                     {
-#if !NETCOREAPP3_0_OR_GREATER
+#if !NETCOREAPP2_1_OR_GREATER
                         attributesToRemove ??= new List<string>();
                         attributesToRemove.Add(attributeName);
 #else
@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                     }
                 }
 
-#if !NETCOREAPP3_0_OR_GREATER
+#if !NETCOREAPP2_1_OR_GREATER
                 if (attributesToRemove != null)
                 {
                     foreach (var attribute in attributesToRemove)

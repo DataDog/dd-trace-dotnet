@@ -91,7 +91,7 @@ internal static class StackWalker
     {
         foreach (var assemblyToSkip in AssemblyNamesToSkip)
         {
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
             if (assemblyToSkip.EndsWith('.'))
 #else
             if (assemblyToSkip.EndsWith("."))
