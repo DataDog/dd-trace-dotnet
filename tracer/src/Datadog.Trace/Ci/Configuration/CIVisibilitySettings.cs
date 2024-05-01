@@ -5,10 +5,12 @@
 #nullable enable
 
 using System;
+using System.Collections.Specialized;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Configuration
 {
@@ -57,6 +59,9 @@ namespace Datadog.Trace.Ci.Configuration
 
             // Early flake detection
             EarlyFlakeDetectionEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled).AsBool();
+
+            // RUM flush milliseconds
+            RumFlushWaitMillis = config.WithKeys(ConfigurationKeys.CIVisibility.RumFlushWaitMillis).AsInt32(500);
         }
 
         /// <summary>
@@ -160,6 +165,11 @@ namespace Datadog.Trace.Ci.Configuration
         public bool? EarlyFlakeDetectionEnabled { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating the number of milliseconds to wait after flushing RUM data.
+        /// </summary>
+        public int RumFlushWaitMillis { get; }
+
+        /// <summary>
         /// Gets the tracer settings
         /// </summary>
         public TracerSettings TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, () => InitializeTracerSettings())!;
@@ -206,7 +216,22 @@ namespace Datadog.Trace.Ci.Configuration
 
         private TracerSettings InitializeTracerSettings()
         {
-            var tracerSettings = new TracerSettings(GlobalConfigurationSource.Instance, new ConfigurationTelemetry());
+            var source = GlobalConfigurationSource.CreateDefaultConfigurationSource();
+            var defaultExcludedUrlSubstrings = string.Empty;
+            if (((ITelemeteredConfigurationSource)source).GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings, NullConfigurationTelemetry.Instance, null, false)?.Result is { } substrings &&
+                !string.IsNullOrWhiteSpace(substrings))
+            {
+                defaultExcludedUrlSubstrings = substrings + ", ";
+            }
+
+            source.InsertInternal(0, new NameValueConfigurationSource(
+                                      new NameValueCollection
+                                      {
+                                          [ConfigurationKeys.HttpClientExcludedUrlSubstrings] = defaultExcludedUrlSubstrings + "/session/FakeSessionIdForPollingPurposes",
+                                      },
+                                      ConfigurationOrigins.Calculated));
+
+            var tracerSettings = new TracerSettings(source, new ConfigurationTelemetry());
 
             if (Logs)
             {

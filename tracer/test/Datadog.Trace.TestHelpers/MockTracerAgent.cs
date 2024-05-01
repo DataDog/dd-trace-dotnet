@@ -831,7 +831,7 @@ namespace Datadog.Trace.TestHelpers
 
         private MockTracerResponse HandleEvpProxyPayload(MockHttpRequest request)
         {
-            if (ShouldDeserializeTraces && request.ContentLength >= 1)
+            if (ShouldDeserializeTraces)
             {
                 try
                 {
@@ -1182,7 +1182,7 @@ namespace Datadog.Trace.TestHelpers
                                     ctx.Response.StatusCode = mockTracerResponse.StatusCode;
                                 }
 
-                                ctx.Response.ContentType = "application/json";
+                                ctx.Response.ContentType = mockTracerResponse.ContentType;
                                 ctx.Response.ContentLength64 = buffer.LongLength;
                                 ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                                 ctx.Response.Close();

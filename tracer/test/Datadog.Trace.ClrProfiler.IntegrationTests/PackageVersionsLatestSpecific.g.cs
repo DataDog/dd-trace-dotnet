@@ -1852,5 +1852,57 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> Selenium =>
+
+          new List<object[]>
+          {
+#if DEFAULT_SAMPLES
+              new object[] { string.Empty },
+#else
+#if NETCOREAPP2_1
+                new object[] { "4.0.1" },
+                new object[] { "4.10.0" },
+                new object[] { "4.15.0" },
+                new object[] { "4.20.0" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "4.0.1" },
+                new object[] { "4.10.0" },
+                new object[] { "4.15.0" },
+                new object[] { "4.20.0" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "4.0.1" },
+                new object[] { "4.10.0" },
+                new object[] { "4.15.0" },
+                new object[] { "4.20.0" },
+#endif
+#if NET5_0
+                new object[] { "4.0.1" },
+                new object[] { "4.10.0" },
+                new object[] { "4.15.0" },
+                new object[] { "4.20.0" },
+#endif
+#if NET6_0
+                new object[] { "4.0.1" },
+                new object[] { "4.10.0" },
+                new object[] { "4.15.0" },
+                new object[] { "4.20.0" },
+#endif
+#if NET7_0
+                new object[] { "4.0.1" },
+                new object[] { "4.10.0" },
+                new object[] { "4.15.0" },
+                new object[] { "4.20.0" },
+#endif
+#if NET8_0
+                new object[] { "4.0.1" },
+                new object[] { "4.10.0" },
+                new object[] { "4.15.0" },
+                new object[] { "4.20.0" },
+#endif
+#endif
+          };
+
     }
 }

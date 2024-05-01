@@ -923,6 +923,23 @@
     "packages": []
   },
   {
+    "integrationName": "Selenium",
+    "assemblyName": "WebDriver",
+    "minAssemblyVersionInclusive": "3.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": [
+      {
+        "name": "Selenium.WebDriver",
+        "minVersionAvailableInclusive": "2.2.0",
+        "minVersionSupportedInclusive": "3.0.0",
+        "minVersionTestedInclusive": "4.0.1",
+        "maxVersionSupportedInclusive": "4.20.0",
+        "maxVersionAvailableInclusive": "4.20.0",
+        "maxVersionTestedInclusive": "4.20.0"
+      }
+    ]
+  },
+  {
     "integrationName": "Serilog",
     "assemblyName": "Serilog",
     "minAssemblyVersionInclusive": "1.0.0",
