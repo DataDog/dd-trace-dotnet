@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Vendors.Serilog.Events;
