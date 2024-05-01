@@ -150,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler
                 InitializeTracer(sw);
             }
 
-#if NETCOREAPP
+#if NETSTANDARD2_0 || NETCOREAPP3_1
             try
             {
                 // On .NET Core 2.0-3.0 we see an occasional hang caused by OpenSSL being loaded

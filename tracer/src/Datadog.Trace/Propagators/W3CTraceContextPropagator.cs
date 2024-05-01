@@ -407,7 +407,7 @@ namespace Datadog.Trace.Propagators
                         value = ReplaceCharacters(value, LowerBound, UpperBound, OutOfBoundsReplacement, ExtractPropagatedTagValueReplacements);
 
                         propagatedTagsBuilder.Append(TagPropagation.PropagatedTagPrefix)
-                                             .Append(name.Slice(2)) // tag name without "t." prefix
+                                             .Append(name[2..]) // tag name without "t." prefix
                                              .Append(TagPropagation.KeyValueSeparator)
                                              .Append(value)
                                              .Append(TagPropagation.TagPairSeparator);

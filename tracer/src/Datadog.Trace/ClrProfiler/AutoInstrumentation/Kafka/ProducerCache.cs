@@ -20,7 +20,7 @@ internal static class ProducerCache
 
     public static void AddBootstrapServers(object producer, string bootstrapServers)
     {
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
         ProducerToBootstrapServersMap.AddOrUpdate(producer, bootstrapServers);
 #else
         ProducerToBootstrapServersMap.GetValue(producer, x => bootstrapServers);
@@ -29,7 +29,7 @@ internal static class ProducerCache
 
     public static void AddDefaultDeliveryHandler(object producer)
     {
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
         ProducerToDefaultDeliveryHandlerMap.AddOrUpdate(producer, CreateDefaultDeliveryHandler(producer.GetType()));
 #else
         ProducerToDefaultDeliveryHandlerMap.GetValue(producer, x => CreateDefaultDeliveryHandler(producer.GetType()));
