@@ -101,7 +101,7 @@ namespace Datadog.Trace.Configuration
 
                 if (colonIndex < 0 && enableHeaderTagsBehaviors)
                 {
-                    // entries with no colon are allowed (e.g. "key1, key2:value2, key3"),
+                    // entries with no colon are allowed (e.g. key1 and key3 in "key1, key2:value2, key3"),
                     // it's a key with no value.
                     var key = trimmedEntry;
                     dictionary[key] = string.Empty;
