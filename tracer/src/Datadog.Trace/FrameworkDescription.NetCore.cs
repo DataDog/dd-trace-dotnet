@@ -8,7 +8,6 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace
 {
@@ -164,6 +163,7 @@ namespace Datadog.Trace
                     return null;
                 }
 
+#if NETCOREAPP
                 // Parse the NAME, PRETTY_NAME, and VERSION fields.
                 // These fields are suitable for presentation to the user.
                 ReadOnlySpan<char> prettyName = default, name = default, version = default;
@@ -186,16 +186,45 @@ namespace Datadog.Trace
                 {
                     if (!version.IsEmpty)
                     {
-                        return StringHelpers.Concat(name, " ", version);
+                        return string.Concat(name, " ", version);
                     }
 
                     return new string(name);
                 }
+#else
+                // Parse the NAME, PRETTY_NAME, and VERSION fields.
+                // These fields are suitable for presentation to the user.
+                string prettyName = default, name = default, version = default;
+                foreach (string line in lines)
+                {
+                    _ = TryGetFieldValue(line, "PRETTY_NAME=", ref prettyName) ||
+                        TryGetFieldValue(line, "NAME=", ref name) ||
+                        TryGetFieldValue(line, "VERSION=", ref version);
+
+                    // Prefer "PRETTY_NAME".
+                    if (!string.IsNullOrEmpty(prettyName))
+                    {
+                        return prettyName;
+                    }
+                }
+
+                // Fall back to "NAME[ VERSION]".
+                if (!string.IsNullOrEmpty(name))
+                {
+                    if (!string.IsNullOrEmpty(version))
+                    {
+                        return string.Concat(name, " ", version);
+                    }
+
+                    return name;
+                }
+#endif
             }
 
             // Fallback to the "default" value
             return RuntimeInformation.OSDescription;
 
+#if NETCOREAPP
             static bool TryGetFieldValue(ReadOnlySpan<char> line, ReadOnlySpan<char> prefix, ref ReadOnlySpan<char> value)
             {
                 if (!line.StartsWith(prefix))
@@ -208,20 +237,36 @@ namespace Datadog.Trace
                 // Remove enclosing quotes.
                 if (fieldValue.Length >= 2 &&
                     fieldValue[0] is '"' or '\'' &&
-                    fieldValue[0] == fieldValue[fieldValue.Length - 1])
+                    fieldValue[0] == fieldValue[^1])
                 {
-                    fieldValue = fieldValue.Slice(1, fieldValue.Length - 2);
+                    fieldValue = fieldValue[1..^1];
                 }
 
                 value = fieldValue;
                 return true;
             }
-        }
+#else
+            static bool TryGetFieldValue(string line, string prefix, ref string value)
+            {
+                if (!line.StartsWith(prefix))
+                {
+                    return false;
+                }
 
-        private readonly ref struct Details(ReadOnlySpan<char> name, ReadOnlySpan<char> version)
-        {
-            public readonly ReadOnlySpan<char> Name = name;
-            public readonly ReadOnlySpan<char> Version = version;
+                var fieldValue = line.Substring(prefix.Length);
+
+                // Remove enclosing quotes.
+                if (fieldValue.Length >= 2 &&
+                    fieldValue[0] is '"' or '\'' &&
+                    fieldValue[0] == fieldValue[fieldValue.Length - 1])
+                {
+                    fieldValue = fieldValue.Substring(1, fieldValue.Length - 2);
+                }
+
+                value = fieldValue;
+                return true;
+            }
+#endif
         }
     }
 }

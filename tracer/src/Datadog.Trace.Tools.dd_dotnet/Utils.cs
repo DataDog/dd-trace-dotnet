@@ -80,7 +80,7 @@ internal class Utils
 
         tracerHome ??= Path.Combine(AppContext.BaseDirectory, "..");
 
-        string tracerMsBuild = FileExists(Path.Combine(tracerHome, "netcoreapp2.1", "Datadog.Trace.MSBuild.dll"));
+        string tracerMsBuild = FileExists(Path.Combine(tracerHome, "netstandard2.0", "Datadog.Trace.MSBuild.dll"));
         string tracerProfiler32 = string.Empty;
         string tracerProfiler64 = string.Empty;
         string? tracerProfilerArm64 = null;

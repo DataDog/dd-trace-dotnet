@@ -5,14 +5,13 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.Internal.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Datadog.Trace.Coverage.Collector
 {
@@ -29,13 +28,7 @@ namespace Datadog.Trace.Coverage.Collector
             _collectionContext = collectionContext;
             _isDebugEnabled = GlobalSettings.Instance.DebugEnabledInternal;
 
-            var source = GlobalConfigurationSource.Instance;
-            var hasFileSink = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance)
-                             .WithKeys(ConfigurationKeys.LogSinks)
-                             .AsString()
-                            ?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                             .Contains(LogSinkOptions.File) ?? true;
-            if (hasFileSink && DatadogLoggingFactory.GetFileLoggingConfiguration(source, NullConfigurationTelemetry.Instance) is { } fileConfig)
+            if (DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactory.Config).File is { } fileConfig)
             {
                 var loggerConfiguration = new LoggerConfiguration().Enrich.FromLogContext().MinimumLevel.Debug();
 
