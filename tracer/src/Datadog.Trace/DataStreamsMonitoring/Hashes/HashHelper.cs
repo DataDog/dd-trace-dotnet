@@ -51,12 +51,12 @@ internal static class HashHelper
         return new NodeHash(hash);
     }
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
     [System.Runtime.CompilerServices.SkipLocalsInit]
 #endif
     public static PathwayHash CalculatePathwayHash(NodeHash nodeHash, PathwayHash parentHash)
     {
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
         Span<byte> bytes = stackalloc byte[16];
         System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(bytes, nodeHash.Value);
         System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(bytes.Slice(8), parentHash.Value);

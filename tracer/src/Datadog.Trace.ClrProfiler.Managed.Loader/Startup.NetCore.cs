@@ -22,18 +22,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static string ResolveManagedProfilerDirectory()
         {
-            string tracerFrameworkDirectory = "netcoreapp2.1";
+            string tracerFrameworkDirectory = "netstandard2.0";
 
             var version = Environment.Version;
-
-            // safety net - we should bail out in native instrumentation _before_ we get to this point anyway,
-            // but just in case, check we're not in an unsupported framework
-
-            if (version is { Major: 1 } or { Major: 2, Minor: 0 })
-            {
-                StartupLogger.Log($" .NET Core {version.Major}.{version.Minor} is not supported by the Datadog .NET Tracer. .NET Core 2.1 or newer is required");
-                return null;
-            }
 
             // Old versions of .net core have a major version of 4
             if ((version.Major == 3 && version.Minor >= 1) || version.Major >= 5)
