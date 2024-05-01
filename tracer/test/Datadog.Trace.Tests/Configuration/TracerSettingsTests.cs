@@ -362,14 +362,17 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("v1", SchemaVersion.V1)]
-        [InlineData("V1", SchemaVersion.V1)]
-        [InlineData("", SchemaVersion.V0)]
-        [InlineData(null, SchemaVersion.V0)]
-        [InlineData("v1 ", SchemaVersion.V0)]
-        public void MetadataSchemaVersion(string value, object expected)
+        [InlineData("v1", SchemaVersion.V1, true)]
+        [InlineData("V1", SchemaVersion.V1, false)]
+        [InlineData("", SchemaVersion.V0, false)]
+        [InlineData(null, SchemaVersion.V0, true)]
+        [InlineData("v1 ", SchemaVersion.V0, false)]
+        [InlineData("v0", SchemaVersion.V1, true)]
+        [InlineData("V0", SchemaVersion.V1, true)]
+        [InlineData("invalid", SchemaVersion.V1, true)] // invalid but with remove it should be V1
+        public void MetadataSchemaVersion(string value, object expected, bool removeService)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.MetadataSchemaVersion, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.RemoveClientServiceNamesEnabled, removeService.ToString()), (ConfigurationKeys.MetadataSchemaVersion, value));
             var settings = new TracerSettings(source);
 
             settings.MetadataSchemaVersion.Should().Be((SchemaVersion)expected);

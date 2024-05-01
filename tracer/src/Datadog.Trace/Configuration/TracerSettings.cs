@@ -190,7 +190,11 @@ namespace Datadog.Trace.Configuration
                                         converter: x => x switch
                                         {
                                             "v1" or "V1" => SchemaVersion.V1,
+                                            // if we enable RemoveClientServiceNames, we need to use V1 to get the service mapping working
+                                            "v0" or "V0" when RemoveClientServiceNamesEnabled => SchemaVersion.V1,
                                             "v0" or "V0" => SchemaVersion.V0,
+                                            // for invalid and RemoveClientServiceNames, we will also use V1
+                                            _ when RemoveClientServiceNamesEnabled => SchemaVersion.V1,
                                             _ => ParsingResult<SchemaVersion>.Failure(),
                                         },
                                         validator: null);
