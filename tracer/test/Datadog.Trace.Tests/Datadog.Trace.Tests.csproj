@@ -29,7 +29,6 @@
 
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\..\src\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
-    <ProjectReference Include="..\..\src\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj" Aliases="DatadogTraceCollector" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
   </ItemGroup>
 

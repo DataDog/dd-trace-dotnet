@@ -835,7 +835,7 @@ public class StringAspects
         return result;
     }
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// String.Replace aspect
     /// </summary>

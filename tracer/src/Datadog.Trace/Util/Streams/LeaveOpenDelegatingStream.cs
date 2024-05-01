@@ -25,7 +25,7 @@ internal abstract class LeaveOpenDelegatingStream(Stream innerStream) : Delegati
         // Override so that we don't dispose the inner stream
     }
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
     public override ValueTask DisposeAsync()
     {
         // Override so that we don't dispose the inner stream

@@ -39,6 +39,13 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     [ThreadStatic]
     private static RandomIdGenerator? _shared;
 
+#if !NETCOREAPP3_1_OR_GREATER
+    /// <summary>
+    /// Buffer used to avoid allocating a new byte array each time we generate a 128-bit trace id.
+    /// </summary>
+    private static byte[]? _buffer;
+#endif
+
     // in .NET < 6, we implement Xoshiro256** instead of using System.Random,
     // so we need to keep some state. it is not safe to access from multiple threads,
     // hence the threadstatic field.
@@ -95,6 +102,19 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
     }
 
     public static RandomIdGenerator Shared => _shared ??= new RandomIdGenerator();
+
+#if !NETCOREAPP3_1_OR_GREATER
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static byte[] GetBuffer(int size)
+    {
+        if (_buffer == null || _buffer.Length < size)
+        {
+            _buffer = new byte[size];
+        }
+
+        return _buffer;
+    }
+#endif
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong RotateLeft(ulong x, int k) => (x << k) | (x >> (64 - k));
