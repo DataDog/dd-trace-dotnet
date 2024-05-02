@@ -34,6 +34,7 @@ In this section we describe the important breaking changes introduced in v3.0.0+
 #### Custom-only tracing is no longer supported
 
 **What changed?**
+
 In version 2.x.x of the tracer, you can add tracing to your application in two ways:
 - Using [automatic instrumentation](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/). You will automatically receive traces for common libraries and frameworks.
 - Using [custom instrumentation](https://docs.datadoghq.com/tracing/trace_collection/automatic_instrumentation/dd_libraries/dotnet-core/?tab=windows#custom-instrumentation) by referencing the [_Datadog.Trace_ ](https://www.nuget.org/packages/Datadog.Trace) or [Datadog.Trace.OpenTracing](https://www.nuget.org/packages/Datadog.Trace.OpenTracing) NuGet packages.
@@ -93,6 +94,7 @@ Also note that the implementation types from all public APIs have changed. For e
 #### Changes to default settings
 
 **What changed and why?**
+
 Several settings have changed their default values:
 - `DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED` now defaults to `true`. This setting provides a better experience in the majority of cases.
 - `DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED` now defaults to `true`. This setting provides a better experience in the majority of cases.
@@ -104,7 +106,8 @@ We recommend using the new settings if possible. If this is not possible, you ca
 
 **What changed and why?**
 Some settings have changed their behavior, and there are some changes to reported tags
-- `DD_TRACE_HEADER_TAGS` [no longer replaces periods or spaces in names](https://github.com/DataDog/dd-trace-dotnet/pull/4599) . The new behavior is consistent with the behavior of other tracer languages.
+- `DD_TRACE_HEADER_TAGS` [no longer replaces periods or spaces in names](https://github.com/DataDog/dd-trace-dotnet/pull/4599). The new behavior is consistent with the behavior of other tracer languages.
+- `DD_TRACE_HEADER_TAGS` [now considers trailing `:` in entries as invalid, and splits key-value pairs on the last `:` in the entry](https://github.com/DataDog/dd-trace-dotnet/pull/5438). The new behavior is consistent with the behavior of other tracer languages.
 - The `language` tag is [now added to added to all spans](https://github.com/DataDog/dd-trace-dotnet/pull/4839) with the value `dotnet`. Previously, some spans were not tagged, but were subsequently tagged with the value `.NET`. This change removes the inconsistency
 - `DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON` now refers to an absolute file path instead of providing the template content directly. This makes it easier to provide custom values.
 - `DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML` now refers to an absolute file path instead of providing the template content directly. This makes it easier to provide custom values.
@@ -112,6 +115,8 @@ Some settings have changed their behavior, and there are some changes to reporte
 
 **What action should you take?**
 If you require the previous `DD_TRACE_HEADER_TAGS` normalization behavior, you must apply this normalization yourself, replacing periods and spaces with underscores in the value you pass to `DD_TRACE_HEADER_TAGS`.
+
+Review any cases where you are setting `DD_TRACE_HEADER_TAGS` with entries that end in `:` or which contain multiple `:` values. For example, in `key1:, key2:key3:value4`, `key1:` is considered an invalid value in v3.0.0 whereas it was valid in v2.x.x. The final entry will be split into `key2:key3` and `value4` in v3.0.0, whereas in v2.x.x it was split into `key2` and `key3:value4`.  
 
 If you are currently using `DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON` or `DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML`, you should move that content to a file, and provide the absolute file path in the settings.
 

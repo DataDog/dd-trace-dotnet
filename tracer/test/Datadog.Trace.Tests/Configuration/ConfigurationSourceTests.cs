@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tests.Configuration
         private static readonly Dictionary<string, string> TagsK1V1K2V2 = new() { { "k1", "v1" }, { "k2", "v2" } };
         private static readonly Dictionary<string, string> TagsK2V2 = new() { { "k2", "v2" } };
         private static readonly Dictionary<string, string> TagsWithColonsInValue = new() { { "k1", "v1" }, { "k2", "v2:with:colons" }, { "trailing", "colon:good:" } };
-        private static readonly Dictionary<string, string> HeaderTagsWithOptionalMappings = new() { { "header1", "tag1" }, { "header2", "Content-Type" }, { "header3", "Content-Type" }, { "header4", "C!!!ont_____ent----tYp!/!e" }, { "validheaderonly", string.Empty }, { "validheaderwithoutcolon", string.Empty } };
+        private static readonly Dictionary<string, string> HeaderTagsWithOptionalMappings = new() { { "header1", "tag1" }, { "header2", "Content-Type" }, { "header3", "Content-Type" }, { "header4", "C!!!ont_____ent----tYp!/!e" }, { "validheaderwithoutcolon", string.Empty } };
         private static readonly Dictionary<string, string> HeaderTagsWithDots = new() { { "header3", "my.header.with.dot" }, { "my.new.header.with.dot", string.Empty } };
         private static readonly Dictionary<string, string> HeaderTagsSameTag = new() { { "header1", "tag1" }, { "header2", "tag1" } };
 
@@ -116,7 +116,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return (ConfigurationKeys.GlobalAnalyticsEnabled, "false", s => s.AnalyticsEnabled, false);
 #pragma warning restore 618
 
-            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:Content-Type,header3: Content-Type ,header4:C!!!ont_____ent----tYp!/!e,header6:9invalidtagname,:invalidtagonly,validheaderonly:,validheaderwithoutcolon,:", s => s.HeaderTags, HeaderTagsWithOptionalMappings);
+            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:Content-Type,header3: Content-Type ,header4:C!!!ont_____ent----tYp!/!e,header6:9invalidtagname,:invalidtagonly,invalidheaderonly:,validheaderwithoutcolon,:", s => s.HeaderTags, HeaderTagsWithOptionalMappings);
             yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:tag1", s => s.HeaderTags, HeaderTagsSameTag);
             yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header1:tag2", s => s.HeaderTags.Count, 1);
             yield return (ConfigurationKeys.HeaderTags, "header3:my.header.with.dot,my.new.header.with.dot", s => s.HeaderTags, HeaderTagsWithDots);
