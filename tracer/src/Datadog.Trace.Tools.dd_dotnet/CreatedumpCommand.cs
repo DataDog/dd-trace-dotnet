@@ -58,7 +58,7 @@ internal class CreatedumpCommand : Command
             }
 
             methodData->SymbolAddress = method.NativeCode;
-            methodData->ModuleAddress = method.Type.Module.ImageBase;
+            methodData->ModuleAddress = method!.Type!.Module!.ImageBase;
             methodData->IsSuspicious = IsMethodSuspicious(method);
 
             var assemblyName = method.Type.Module.AssemblyName;
@@ -147,11 +147,11 @@ internal class CreatedumpCommand : Command
 
     private static bool IsMethodSuspicious(ClrMethod method)
     {
-        var assemblyName = Path.GetFileName(method.Type.Module.Name ?? string.Empty);
+        var assemblyName = Path.GetFileName(method.Type?.Module?.Name ?? string.Empty);
 
         if (assemblyName.StartsWith("Datadog", StringComparison.OrdinalIgnoreCase))
         {
-            var typeName = method.Type.Name;
+            var typeName = method.Type!.Name;
 
             if (typeName != null)
             {
@@ -173,7 +173,7 @@ internal class CreatedumpCommand : Command
             return true;
         }
 
-        if (method.Type.Module.IsDynamic && assemblyName.StartsWith("DuckType"))
+        if (method.Type!.Module!.IsDynamic && assemblyName.StartsWith("DuckType"))
         {
             return true;
         }
@@ -457,7 +457,7 @@ internal class CreatedumpCommand : Command
         if (!isSuspicious && exception != null)
         {
             // The stacks aren't suspicious, but maybe the exception is
-            var exceptionType = exception.Type.Name ?? string.Empty;
+            var exceptionType = exception.Type?.Name ?? string.Empty;
 
             var suspiciousExceptionTypes = new[] { "System.InvalidProgramException", "System.Security.VerificationException", "System.MissingMethodException", "System.BadImageFormatException" };
 
@@ -574,7 +574,7 @@ internal class CreatedumpCommand : Command
         {
             ClrFlavor.Core => ".NET Core",
             ClrFlavor.Desktop => ".NET Framework",
-            ClrFlavor.NativeAOT => "NativeAOT",
+            // ClrFlavor.NativeAOT => "NativeAOT",
             ClrFlavor f => f.ToString()
         };
 
