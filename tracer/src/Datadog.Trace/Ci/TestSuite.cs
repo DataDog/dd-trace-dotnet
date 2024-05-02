@@ -38,7 +38,7 @@ public sealed class TestSuite
 
         span.Type = SpanTypes.TestSuite;
         span.ResourceName = name;
-        span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep);
+        span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
         span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
 
         tags.SuiteId = span.SpanId;

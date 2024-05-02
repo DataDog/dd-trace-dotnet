@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -19,25 +21,23 @@ namespace Datadog.Trace.Sampling
         private readonly bool _alwaysMatch;
 
         // TODO consider moving toward these https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/SimpleRegex.cs
-        private readonly Regex _serviceNameRegex;
-        private readonly Regex _operationNameRegex;
-        private readonly Regex _resourceNameRegex;
-        private readonly List<KeyValuePair<string, Regex>> _tagRegexes;
+        private readonly Regex? _serviceNameRegex;
+        private readonly Regex? _operationNameRegex;
+        private readonly Regex? _resourceNameRegex;
+        private readonly List<KeyValuePair<string, Regex?>>? _tagRegexes;
 
         private bool _regexTimedOut;
 
         public CustomSamplingRule(
             float rate,
-            string ruleName,
             string patternFormat,
-            string serviceNamePattern,
-            string operationNamePattern,
-            string resourceNamePattern,
-            ICollection<KeyValuePair<string, string>> tagPatterns,
+            string? serviceNamePattern,
+            string? operationNamePattern,
+            string? resourceNamePattern,
+            ICollection<KeyValuePair<string, string?>>? tagPatterns,
             TimeSpan timeout)
         {
             _samplingRate = rate;
-            RuleName = ruleName;
 
             _serviceNameRegex = RegexBuilder.Build(serviceNamePattern, patternFormat, timeout);
             _operationNameRegex = RegexBuilder.Build(operationNamePattern, patternFormat, timeout);
@@ -54,15 +54,13 @@ namespace Datadog.Trace.Sampling
             }
         }
 
-        public string RuleName { get; }
-
         public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.TraceSamplingRule;
 
         /// <summary>
-        /// Gets or sets the priority of the rule.
+        /// Gets the priority of the rule.
         /// Configuration rules will default to 1 as a priority and rely on order of specification.
         /// </summary>
-        public int Priority { get; protected set; } = 1;
+        public int Priority => 1;
 
         public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, string patternFormat, TimeSpan timeout)
         {
@@ -71,23 +69,19 @@ namespace Datadog.Trace.Sampling
                 if (!string.IsNullOrWhiteSpace(configuration) &&
                     JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration) is { Count: > 0 } rules)
                 {
-                    var index = 0;
                     var samplingRules = new List<CustomSamplingRule>(rules.Count);
 
                     foreach (var r in rules)
                     {
-                        index++; // Used to create a readable rule name if one is not specified
-
                         samplingRules.Add(
                             new CustomSamplingRule(
-                                r.SampleRate,
-                                r.RuleName ?? $"config-rule-{index}",
-                                patternFormat,
-                                r.Service,
-                                r.OperationName,
-                                r.Resource,
-                                r.Tags,
-                                timeout));
+                                rate: r.SampleRate,
+                                patternFormat: patternFormat,
+                                serviceNamePattern: r.Service,
+                                operationNamePattern: r.OperationName,
+                                resourceNamePattern: r.Resource,
+                                tagPatterns: r.Tags,
+                                timeout: timeout));
                     }
 
                     return samplingRules;
@@ -135,27 +129,31 @@ namespace Datadog.Trace.Sampling
             return _samplingRate;
         }
 
-        [Serializable]
+        public override string ToString()
+        {
+            // later this will return different values depending on the rule's provenance:
+            // local, customer (remote), or dynamic (remote)
+            return "LocalSamplingRule";
+        }
+
+        // ReSharper disable once ClassNeverInstantiated.Local
         private class CustomRuleConfig
         {
-            [JsonProperty(PropertyName = "rule_name")]
-            public string RuleName { get; set; }
-
             [JsonRequired]
             [JsonProperty(PropertyName = "sample_rate")]
             public float SampleRate { get; set; }
 
             [JsonProperty(PropertyName = "name")]
-            public string OperationName { get; set; }
+            public string? OperationName { get; set; }
 
             [JsonProperty(PropertyName = "service")]
-            public string Service { get; set; }
+            public string? Service { get; set; }
 
             [JsonProperty(PropertyName = "resource")]
-            public string Resource { get; set; }
+            public string? Resource { get; set; }
 
             [JsonProperty(PropertyName = "tags")]
-            public Dictionary<string, string> Tags { get; set; }
+            public Dictionary<string, string?>? Tags { get; set; }
         }
     }
 }

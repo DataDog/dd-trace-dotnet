@@ -172,7 +172,7 @@ public sealed class TestModule
 
         span.Type = SpanTypes.TestModule;
         span.ResourceName = name;
-        span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep);
+        span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
         span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
 
         tags.ModuleId = span.SpanId;

@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
@@ -228,19 +227,24 @@ namespace Datadog.Trace.Agent.MessagePack
         private int WriteSpanLink(ref byte[] bytes, int offset, in SpanModel spanModel)
         {
             int originalOffset = offset;
+
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanLinkBytes);
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spanModel.Span.SpanLinks.Count);
+
             foreach (var spanLink in spanModel.Span.SpanLinks)
             {
                 var context = spanLink.Context;
                 var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
+
                 var traceFlags = samplingPriority switch
                 {
                     null => 0u,             // not set
                     > 0 => 1u + (1u << 31), // keep
                     <= 0 => 1u << 31,       // drop
                 };
+
                 var len = 3;
+
                 // check to serialize tracestate
                 if (context.IsRemote)
                 {

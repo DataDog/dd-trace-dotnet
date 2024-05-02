@@ -46,7 +46,6 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(
                 new CustomSamplingRule(
                     rate: 1,
-                    ruleName: "Allow_all",
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
@@ -70,7 +69,6 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(
                 new CustomSamplingRule(
                     rate: 1,
-                    ruleName: "Allow_all",
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
@@ -94,7 +92,6 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(
                 new CustomSamplingRule(
                     rate: 0,
-                    ruleName: "Allow_nothing",
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
@@ -118,7 +115,6 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(
                 new CustomSamplingRule(
                     rate: 0.5f,
-                    ruleName: "Allow_half",
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",

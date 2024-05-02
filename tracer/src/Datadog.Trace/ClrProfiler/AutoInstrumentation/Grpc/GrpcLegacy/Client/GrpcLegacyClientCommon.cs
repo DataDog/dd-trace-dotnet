@@ -81,9 +81,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 span.SetHeaderTags(requestMetadataWrapper, tracer.Settings.GrpcTagsInternal, GrpcCommon.RequestMetadataTagPrefix);
                 scope = tracer.ActivateSpan(span);
 
-                if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null)
+                if (setSamplingPriority && existingSpanContext?.SamplingPriority is { } samplingPriority)
                 {
-                    span.Context.TraceContext?.SetSamplingPriority(existingSpanContext.SamplingPriority.Value);
+                    span.Context.TraceContext?.SetSamplingPriority(samplingPriority);
                 }
 
                 GrpcCommon.RecordFinalStatus(span, receivedStatus.StatusCode, receivedStatus.Detail, receivedStatus.DebugException);
@@ -242,10 +242,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
             var serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
             var tags = tracer.CurrentTraceSettings.Schema.Client.CreateGrpcClientTags();
-            var span = tracer.StartSpan(operationName, tags, serviceName: serviceName, addToTraceContext: false);
             tags.SetAnalyticsSampleRate(IntegrationId.Grpc, tracer.Settings, enabledWithGlobalSetting: false);
             tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
+            var span = tracer.StartSpan(operationName, tags, serviceName: serviceName, addToTraceContext: false);
             span.Type = SpanTypes.Grpc;
             span.ResourceName = methodFullName;
 
