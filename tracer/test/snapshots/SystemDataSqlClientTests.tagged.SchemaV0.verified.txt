@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -16,6 +16,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -39,6 +40,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -62,6 +64,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -85,6 +88,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -108,6 +112,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -131,6 +136,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -154,6 +160,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -177,6 +184,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -200,6 +208,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -223,6 +232,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -246,6 +256,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -269,6 +280,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -292,6 +304,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -315,6 +328,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -338,6 +352,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -361,6 +376,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -384,6 +400,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -407,6 +424,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -430,6 +448,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -453,6 +472,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -476,6 +496,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -499,6 +520,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -522,6 +544,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -545,6 +568,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -568,6 +592,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -591,6 +616,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -614,6 +640,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -637,6 +664,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -660,6 +688,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -683,6 +712,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -706,6 +736,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -729,6 +760,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -752,6 +784,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -775,6 +808,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -798,6 +832,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -821,6 +856,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -844,6 +880,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -867,6 +904,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -890,6 +928,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -913,6 +952,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -936,6 +976,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -959,6 +1000,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -982,6 +1024,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1005,6 +1048,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1028,6 +1072,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1051,6 +1096,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1074,6 +1120,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1097,6 +1144,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1120,6 +1168,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1143,6 +1192,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1166,6 +1216,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1189,6 +1240,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1212,6 +1264,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1235,6 +1288,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1258,6 +1312,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1281,6 +1336,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1304,6 +1360,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1327,6 +1384,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1350,6 +1408,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1373,6 +1432,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1396,6 +1456,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1419,6 +1480,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1442,6 +1504,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1465,6 +1528,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1488,6 +1552,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1511,6 +1576,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1534,6 +1600,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1557,6 +1624,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1580,6 +1648,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1603,6 +1672,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1626,6 +1696,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1649,6 +1720,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1672,6 +1744,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1695,6 +1768,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1718,6 +1792,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1741,6 +1816,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1764,6 +1840,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1787,6 +1864,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1810,6 +1888,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1833,6 +1912,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1856,6 +1936,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1879,6 +1960,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1902,6 +1984,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1925,6 +2008,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1948,6 +2032,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1971,6 +2056,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1994,6 +2080,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2017,6 +2104,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2040,6 +2128,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2063,6 +2152,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2086,6 +2176,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2109,6 +2200,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2132,6 +2224,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2155,6 +2248,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2178,6 +2272,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2201,6 +2296,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2224,6 +2320,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2247,6 +2344,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2270,6 +2368,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2293,6 +2392,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2316,6 +2416,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2339,6 +2440,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2362,6 +2464,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2385,6 +2488,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2408,6 +2512,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2431,6 +2536,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2454,6 +2560,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2477,6 +2584,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2500,6 +2608,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2523,6 +2632,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2546,6 +2656,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2569,6 +2680,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2592,6 +2704,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2615,6 +2728,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2638,6 +2752,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2661,6 +2776,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2684,6 +2800,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2707,6 +2824,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2730,6 +2848,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2753,6 +2872,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2776,6 +2896,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2799,6 +2920,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2822,6 +2944,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2845,6 +2968,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2868,6 +2992,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2891,6 +3016,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2914,6 +3040,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2937,6 +3064,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2960,6 +3088,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2983,6 +3112,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3006,6 +3136,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3029,6 +3160,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3052,6 +3184,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3075,6 +3208,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3098,6 +3232,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3121,6 +3256,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3144,6 +3280,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3167,6 +3304,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3190,6 +3328,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3213,6 +3352,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3236,6 +3376,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3259,6 +3400,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3282,6 +3424,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3305,6 +3448,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3328,6 +3472,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3351,6 +3496,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3374,6 +3520,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3397,6 +3544,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3420,6 +3568,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3443,6 +3592,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3466,6 +3616,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3489,6 +3640,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3512,6 +3664,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3535,6 +3688,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3558,6 +3712,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3581,6 +3736,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3604,6 +3760,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3627,6 +3784,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3650,6 +3808,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3673,6 +3832,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3696,6 +3856,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3719,6 +3880,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3742,6 +3904,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3765,6 +3928,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3788,6 +3952,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3811,6 +3976,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3834,6 +4000,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3857,6 +4024,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
