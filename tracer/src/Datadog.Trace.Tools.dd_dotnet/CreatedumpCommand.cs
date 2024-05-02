@@ -23,7 +23,7 @@ internal class CreatedumpCommand : Command
 {
     private const int MethodNameMaxLength = 1024;
 
-    private static readonly List<string> _errors = new();
+    private static readonly List<string> Errors = new();
     private static ClrRuntime? _runtime;
 
     private readonly Argument<string[]> _allArguments = new("args");
@@ -46,7 +46,7 @@ internal class CreatedumpCommand : Command
         {
             if (_runtime == null)
             {
-                _errors.Add("ClrRuntime is not initialized");
+                Errors.Add("ClrRuntime is not initialized");
                 return -2;
             }
 
@@ -59,9 +59,12 @@ internal class CreatedumpCommand : Command
 
             methodData->SymbolAddress = method.NativeCode;
             methodData->ModuleAddress = method.Type.Module.ImageBase;
-            methodData->IsSuspicious = IsSuspicious(method);
+            methodData->IsSuspicious = IsMethodSuspicious(method);
 
-            var name = $"{Path.GetFileName(method.Type.Module.AssemblyName)}!{method.Type}.{method.Name}";
+            var assemblyName = method.Type.Module.AssemblyName;
+            var methodName = ShouldRedactFrame(assemblyName) ? "REDACTED" : $"{method.Type}.{method.Name}";
+
+            var name = $"{Path.GetFileName(assemblyName)}!{methodName}";
 
             var length = Math.Min(Encoding.ASCII.GetByteCount(name), MethodNameMaxLength - 1); // -1 to save space for the null terminator
 
@@ -75,9 +78,59 @@ internal class CreatedumpCommand : Command
         }
         catch (Exception ex)
         {
-            _errors.Add($"Error while resolving method: {ex.Message}");
+            Errors.Add($"Error while resolving method: {ex.Message}");
             return -1;
         }
+    }
+
+    private static bool ShouldRedactFrame(string? assemblyName)
+    {
+        // It would be nice to get those names directly from the source-generated InstrumentationDefinitions.IsInstrumentedAssembly
+        if (assemblyName == null
+         || assemblyName.StartsWith("Datadog.", StringComparison.Ordinal)
+         || assemblyName.StartsWith("mscorlib", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Microsoft.", StringComparison.Ordinal)
+         || assemblyName.StartsWith("System.", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Azure.", StringComparison.Ordinal)
+         || assemblyName.StartsWith("AWSSDK.", StringComparison.Ordinal)
+         || assemblyName.StartsWith("AerospikeClient,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Amazon.Lambda.RuntimeSupport,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("amqmdnetstd,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Confluent.Kafka,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Couchbase.NetClient,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Elasticsearch.Net,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("GraphQL,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("GraphQL.SystemReactive,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Grpc.AspNetCore.Server,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Grpc.Core,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Grpc.Net.Client,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("HotChocolate.Execution,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("log4net,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("MongoDB.Driver.Core,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("MySql.Data,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("MySqlConnector,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("netstandard,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("NLog,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Npgsql,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("nunit.framework,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("OpenTelemetry,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("OpenTelemetry.Api,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Oracle.DataAccess,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Oracle.ManagedDataAccess,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("RabbitMQ.Client,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Serilog,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("ServiceStack.Redis,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("StackExchange.Redis,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("StackExchange.Redis.StrongName,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("System,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("xunit.execution.desktop,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("xunit.execution.dotnet,", StringComparison.Ordinal)
+         || assemblyName.StartsWith("Yarp.ReverseProxy,", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static bool IsTelemetryEnabled()
@@ -92,11 +145,11 @@ internal class CreatedumpCommand : Command
         return true;
     }
 
-    private static bool IsSuspicious(ClrMethod method)
+    private static bool IsMethodSuspicious(ClrMethod method)
     {
         var assemblyName = Path.GetFileName(method.Type.Module.Name ?? string.Empty);
 
-        if (assemblyName != null && assemblyName.StartsWith("Datadog", StringComparison.OrdinalIgnoreCase))
+        if (assemblyName.StartsWith("Datadog", StringComparison.OrdinalIgnoreCase))
         {
             var typeName = method.Type.Name;
 
@@ -120,7 +173,7 @@ internal class CreatedumpCommand : Command
             return true;
         }
 
-        if (method.Type.Module.IsDynamic && assemblyName != null && assemblyName.StartsWith("DuckType"))
+        if (method.Type.Module.IsDynamic && assemblyName.StartsWith("DuckType"))
         {
             return true;
         }
@@ -292,22 +345,22 @@ internal class CreatedumpCommand : Command
         }
         catch (Exception ex)
         {
-            _errors.Add($"Unexpected exception: {ex}");
+            Errors.Add($"Unexpected exception: {ex}");
         }
         finally
         {
-            if (_errors.Count > 0)
+            if (Errors.Count > 0)
             {
                 AnsiConsole.WriteLine("Datadog - Some errors occurred while analyzing the crash:");
 
-                foreach (var error in _errors.Take(3))
+                foreach (var error in Errors.Take(3))
                 {
                     AnsiConsole.WriteLine($"- {error}");
                 }
 
-                if (_errors.Count > 3)
+                if (Errors.Count > 3)
                 {
-                    AnsiConsole.WriteLine($"... and {_errors.Count - 3} more");
+                    AnsiConsole.WriteLine($"... and {Errors.Count - 3} more");
                 }
             }
 
@@ -331,7 +384,7 @@ internal class CreatedumpCommand : Command
 
         if (export == 0)
         {
-            _errors.Add("Failed to load the CreateCrashReport function");
+            Errors.Add("Failed to load the CreateCrashReport function");
             return;
         }
 
@@ -344,7 +397,7 @@ internal class CreatedumpCommand : Command
 
         if (ptr == IntPtr.Zero)
         {
-            _errors.Add("Failed to create crash report");
+            Errors.Add("Failed to create crash report");
             return;
         }
 
@@ -354,7 +407,7 @@ internal class CreatedumpCommand : Command
 
         if (result != 0)
         {
-            _errors.Add($"Failed to query interface: {result}");
+            Errors.Add($"Failed to query interface: {result}");
             return;
         }
 
@@ -366,7 +419,7 @@ internal class CreatedumpCommand : Command
         }
         catch (Win32Exception ex)
         {
-            _errors.Add($"Failed to initialize crash report: {GetLastError(crashReport, ex)}");
+            Errors.Add($"Failed to initialize crash report: {GetLastError(crashReport, ex)}");
             return;
         }
 
@@ -397,7 +450,7 @@ internal class CreatedumpCommand : Command
         }
         catch (Win32Exception ex)
         {
-            _errors.Add($"Failed to resolve stacks: {GetLastError(crashReport, ex)}");
+            Errors.Add($"Failed to resolve stacks: {GetLastError(crashReport, ex)}");
             return;
         }
 
@@ -457,7 +510,7 @@ internal class CreatedumpCommand : Command
         }
         catch (Win32Exception ex)
         {
-            _errors.Add($"Failed to send crash report: {GetLastError(crashReport, ex)}");
+            Errors.Add($"Failed to send crash report: {GetLastError(crashReport, ex)}");
             return;
         }
 
@@ -508,7 +561,7 @@ internal class CreatedumpCommand : Command
         }
         catch (Win32Exception ex)
         {
-            _errors.Add($"Failed to set signal info: {GetLastError(crashReport, ex)}");
+            Errors.Add($"Failed to set signal info: {GetLastError(crashReport, ex)}");
             return false;
         }
 
@@ -597,7 +650,7 @@ internal class CreatedumpCommand : Command
             }
             catch (Win32Exception ex)
             {
-                _errors.Add($"Failed to set metadata: {GetLastError(crashReport, ex)}");
+                Errors.Add($"Failed to set metadata: {GetLastError(crashReport, ex)}");
                 return false;
             }
 

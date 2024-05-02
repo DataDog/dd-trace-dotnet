@@ -76,7 +76,9 @@ namespace Samples.Console_
             foreach (var frame in stackTrace.GetFrames())
             {
                 var method = frame.GetMethod();
-                Console.WriteLine($"Frame|{Path.GetFileName(method.Module.Assembly.Location)}!{method.DeclaringType.FullName}.{method.Name}");
+
+                var methodName = method.Module.Assembly == typeof(Program).Assembly ? "REDACTED" : $"{method.DeclaringType.FullName}.{method.Name}"; 
+                Console.WriteLine($"Frame|{Path.GetFileName(method.Module.Assembly.Location)}!{methodName}");
             }
 
             Console.WriteLine("Crashing...");
