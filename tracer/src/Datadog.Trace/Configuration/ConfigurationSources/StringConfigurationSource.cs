@@ -75,36 +75,44 @@ namespace Datadog.Trace.Configuration
                 return dictionary;
             }
 
+            bool enableHeaderTagsBehaviors = allowOptionalMappings;
             var entries = data.Split(DictionarySeparatorChars, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var entry in entries)
             {
-                // we need TrimStart() before looking for ':' so we can skip entries with no key
+                // we need Trim() before looking for ':' so we can skip entries with no key
                 // (that is, entries with a leading ':', like "<empty or whitespace>:value")
-                var trimmedEntry = entry.TrimStart();
-
-                if (trimmedEntry.Length > 0)
+                var trimmedEntry = entry.Trim();
+                if (trimmedEntry.Length == 0 || trimmedEntry.StartsWith(":"))
                 {
-                    // colonIndex == 0 is a leading colon, not valid
-                    var colonIndex = trimmedEntry.IndexOf(':');
+                    continue;
+                }
+                else if (enableHeaderTagsBehaviors && trimmedEntry.EndsWith(":"))
+                {
+                    // When parsing header tags, any input trailing colons is invalid
+                    continue;
+                }
 
-                    if (colonIndex < 0 && allowOptionalMappings)
-                    {
-                        // entries with no colon are allowed (e.g. "key1, key2:value2, key3"),
-                        // it's a key with no value.
-                        // note we already did TrimStart(), so we only need TrimEnd().
-                        var key = trimmedEntry.TrimEnd();
-                        dictionary[key] = string.Empty;
-                    }
-                    else if (colonIndex > 0)
-                    {
-                        // split at the first colon only. any other colons are part of the value.
-                        // if a colon is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
-                        // note we already did TrimStart() on the key, so it only needs TrimEnd().
-                        var key = trimmedEntry.Substring(0, colonIndex).TrimEnd();
-                        var value = trimmedEntry.Substring(colonIndex + 1).Trim();
-                        dictionary[key] = value;
-                    }
+                var colonIndex = enableHeaderTagsBehaviors switch
+                {
+                    false => trimmedEntry.IndexOf(':'), // In the general case, we split on the first colon
+                    true => trimmedEntry.LastIndexOf(':'), // However, for header tags parsing is recommended to split on last colon
+                };
+
+                if (colonIndex < 0 && enableHeaderTagsBehaviors)
+                {
+                    // entries with no colon are allowed (e.g. key1 and key3 in "key1, key2:value2, key3"),
+                    // it's a key with no value.
+                    var key = trimmedEntry;
+                    dictionary[key] = string.Empty;
+                }
+                else if (colonIndex > 0)
+                {
+                    // if a colon is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
+                    // note we already did Trim() on the entire entry, so the key portion only needs TrimEnd().
+                    var key = trimmedEntry.Substring(0, colonIndex).TrimEnd();
+                    var value = trimmedEntry.Substring(colonIndex + 1).Trim();
+                    dictionary[key] = value;
                 }
             }
 
