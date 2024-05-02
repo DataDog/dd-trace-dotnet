@@ -79,36 +79,44 @@ namespace Datadog.Trace.Configuration
                 return dictionary;
             }
 
+            bool enableHeaderTagsBehaviors = allowOptionalMappings;
             var entries = data.Split(DictionarySeparatorChars, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var entry in entries)
             {
-                // we need TrimStart() before looking for the separator so we can skip entries with no key
+                // we need Trim() before looking forthe separator so we can skip entries with no key
                 // (that is, entries with a leading separator, like "<empty or whitespace>:value")
-                var trimmedEntry = entry.TrimStart();
-
-                if (trimmedEntry.Length > 0)
+                var trimmedEntry = entry.Trim();
+                if (trimmedEntry.Length == 0 || trimmedEntry[0] == separator)
                 {
-                    // separatorIndex == 0 is a leading separator, not valid
-                    var separatorIndex = trimmedEntry.IndexOf(separator);
+                    continue;
+                }
+                else if (enableHeaderTagsBehaviors && trimmedEntry[trimmedEntry.Length - 1] == separator)
+                {
+                    // When parsing header tags, any input trailing colons is invalid
+                    continue;
+                }
 
-                    if (separatorIndex < 0 && allowOptionalMappings)
-                    {
-                        // entries with no separator are allowed (e.g. "key1, key2:value2, key3"),
-                        // it's a key with no value.
-                        // note we already did TrimStart(), so we only need TrimEnd().
-                        var key = trimmedEntry.TrimEnd();
-                        dictionary[key] = string.Empty;
-                    }
-                    else if (separatorIndex > 0)
-                    {
-                        // split at the first separator only. any other separators are part of the value.
-                        // if a separator is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
-                        // note we already did TrimStart() on the key, so it only needs TrimEnd().
-                        var key = trimmedEntry.Substring(0, separatorIndex).TrimEnd();
-                        var value = trimmedEntry.Substring(separatorIndex + 1).Trim();
-                        dictionary[key] = value;
-                    }
+                var separatorIndex = enableHeaderTagsBehaviors switch
+                {
+                    false => trimmedEntry.IndexOf(separator), // In the general case, we split on the first colon
+                    true => trimmedEntry.LastIndexOf(separator), // However, for header tags parsing is recommended to split on last colon
+                };
+
+                if (separatorIndex < 0 && enableHeaderTagsBehaviors)
+                {
+                    // entries with no separator are allowed (e.g. key1 and key3 in "key1, key2:value2, key3"),
+                    // it's a key with no value.
+                    var key = trimmedEntry;
+                    dictionary[key] = string.Empty;
+                }
+                else if (separatorIndex > 0)
+                {
+                    // if a separator is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
+                    // note we already did Trim() on the entire entry, so the key portion only needs TrimEnd().
+                    var key = trimmedEntry.Substring(0, separatorIndex).TrimEnd();
+                    var value = trimmedEntry.Substring(separatorIndex + 1).Trim();
+                    dictionary[key] = value;
                 }
             }
 

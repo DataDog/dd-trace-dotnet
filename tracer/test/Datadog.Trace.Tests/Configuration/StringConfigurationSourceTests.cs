@@ -1,4 +1,4 @@
-﻿// <copyright file="StringConfigurationSourceTests.cs" company="Datadog">
+// <copyright file="StringConfigurationSourceTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,9 +20,23 @@ public class StringConfigurationSourceTests
     [InlineData(":")]       // lonely pair separator
     [InlineData(",")]       // lonely key/value separator
     [InlineData(" : , : ")] // mix of separators and whitespace
-    public void ParseCustomKeyValues_WhitespaceOnly(string entry)
+    public void ParseCustomKeyValues_WhitespaceOnly_ValueOptional(string entry)
     {
-        var dictionary = StringConfigurationSource.ParseCustomKeyValues(entry);
+        var dictionary = StringConfigurationSource.ParseCustomKeyValues(entry, allowOptionalMappings: true);
+        dictionary.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("")]        // empty
+    [InlineData(" ")]       // 1 space
+    [InlineData("  ")]      // 2 spaces
+    [InlineData("\t")]      // tab
+    [InlineData(":")]       // lonely pair separator
+    [InlineData(",")]       // lonely key/value separator
+    [InlineData(" : , : ")] // mix of separators and whitespace
+    public void ParseCustomKeyValues_WhitespaceOnly_ValueRequired(string entry)
+    {
+        var dictionary = StringConfigurationSource.ParseCustomKeyValues(entry, allowOptionalMappings: false);
         dictionary.Should().BeEmpty();
     }
 
@@ -37,26 +51,47 @@ public class StringConfigurationSourceTests
     [InlineData(" key:")]    // space before key
     [InlineData(" key :")]   // 1 space around key
     [InlineData("  key  :")] // 2 spaces around key
+    [InlineData("  key  : ")] // 2 spaces around key and space at end
     public void ParseCustomKeyValues_WhitespaceAroundKey_NoValue_ValueOptional(string entry)
     {
         var dictionary = StringConfigurationSource.ParseCustomKeyValues(entry, allowOptionalMappings: true);
 
-        dictionary.Should().HaveCount(1);
-        dictionary.Should().Contain(new KeyValuePair<string, string>("key", string.Empty));
+        if (entry.TrimEnd().EndsWith(":"))
+        {
+            dictionary.Should().HaveCount(0);
+        }
+        else
+        {
+            dictionary.Should().HaveCount(1);
+            dictionary.Should().Contain(new KeyValuePair<string, string>("key", string.Empty));
+        }
     }
 
     [Theory]
-    [InlineData("key:")]    // no space
-    [InlineData("key :")]   // space after key
-    [InlineData(" key:")]   // space before key
-    [InlineData(" key :")]  // space before and after key
-    [InlineData(" key : ")] // space before and after key and in value
+    [InlineData("key")]      // no space
+    [InlineData("key ")]     // space after key
+    [InlineData(" key")]     // space before key
+    [InlineData(" key ")]    // 1 space around key
+    [InlineData("  key  ")]  // 2 spaces around key
+    [InlineData("key:")]     // no space
+    [InlineData("key :")]    // space after key
+    [InlineData(" key:")]    // space before key
+    [InlineData(" key :")]   // 1 space around key
+    [InlineData("  key  :")] // 2 spaces around key
+    [InlineData("  key  : ")] // 2 spaces around key and space at end
     public void ParseCustomKeyValues_WhitespaceAroundKey_NoValue_ValueRequired_WithColon(string entry)
     {
         var dictionary = StringConfigurationSource.ParseCustomKeyValues(entry, allowOptionalMappings: false);
 
-        dictionary.Should().HaveCount(1);
-        dictionary.Should().Contain(new KeyValuePair<string, string>("key", string.Empty));
+        if (entry.Contains(":"))
+        {
+            dictionary.Should().HaveCount(1);
+            dictionary.Should().Contain(new KeyValuePair<string, string>("key", string.Empty));
+        }
+        else
+        {
+            dictionary.Should().HaveCount(0);
+        }
     }
 
     [Theory]
