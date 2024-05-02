@@ -402,12 +402,15 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("", true, new string[0])]
         [InlineData("   ", true, new string[0])]
         // nominal
-        [InlineData("key1:value1,key2:value2,key3", true, new[] { "key1:value1", "key2:value2", "key3:" })]
+        [InlineData("key1:value1,key2:value2,key3", true, new[] { "key1|value1", "key2|value2", "key3|" })]
         // trim whitespace
-        [InlineData(" key1 : value1 ", true, new[] { "key1:value1" })]
+        [InlineData(" key1 : value1 ", true, new[] { "key1|value1" })]
         // other normalization
-        [InlineData("key1:val.u e1?!", true, new[] { "key1:val.u e1?!" })]
-        [InlineData("k.e y?!1", false, new[] { "k.e y?!1:" })]
+        [InlineData("key1:val.u e1?!", true, new[] { "key1|val.u e1?!" })]
+        [InlineData("k.e y?!1", false, new[] { "k.e y?!1|" })]
+        [InlineData(":leadingcolon", false, new string[0])]
+        [InlineData(":leadingcolon", true, new string[0])]
+        [InlineData("one:two:three", true, new[] { "one:two|three" })]
         public void HeaderTags(string value, bool normalizationFixEnabled, string[] expected)
         {
             var source = CreateConfigurationSource(
@@ -415,7 +418,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled, normalizationFixEnabled ? "1" : "0"));
             var settings = new TracerSettings(source);
 
-            settings.HeaderTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
+            settings.HeaderTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Substring(0, v.IndexOf('|')), v => v.Substring(v.IndexOf('|') + 1)));
         }
 
         [Theory]
