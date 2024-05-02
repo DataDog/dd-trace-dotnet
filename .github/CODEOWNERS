@@ -97,7 +97,6 @@ docker-compose.serverless.yml                                      @DataDog/trac
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RabbitMQ/                                     @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Redis/                                        @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Remoting/                                     @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/                                      @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/TraceAnnotations/                             @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Wcf/                                          @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 
