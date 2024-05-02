@@ -16,6 +16,10 @@ on:
         required: true
         default: 'False'
 
+      commit_sha:
+        description: 'Commit sha of the current build'
+        required: true
+
 jobs:
   build-and-publish-base-image:
     runs-on: ubuntu-latest
@@ -42,6 +46,7 @@ jobs:
         AzureDevopsBuildId: "${{ github.event.inputs.azdo_build_id }}"
 
     - uses: ./.github/actions/create-system-test-docker-base-images
+      if: ${{ false }}  # disable for now. TODO enable again
       name: 'Create system test docker images'
       with:
         artifacts_path: "${{steps.assets.outputs.artifacts_path}}"
@@ -49,3 +54,13 @@ jobs:
         lib_waf_version: "${{steps.versions.outputs.lib_waf_version}}"
         waf_rules_version: "${{steps.versions.outputs.waf_rules_version}}"
         github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: ./.github/actions/create-system-test-onboarding-docker-base-images
+      name: 'Create system test onboarding docker images'
+      with:
+        artifacts_path: "${{steps.assets.outputs.artifacts_path}}"
+        package_version: "${{steps.versions.outputs.version}}"
+        commit_sha: "${{github.event.inputs.commit_sha}}"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  #TODO PRUNE IMAGES
