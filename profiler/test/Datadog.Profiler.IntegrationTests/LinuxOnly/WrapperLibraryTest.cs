@@ -90,7 +90,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             
             RegisterCrashHandler(runner);
 
-            using var processHelper = runner.LaunchProcess(catchsegv: false);
+            using var processHelper = runner.LaunchProcess();
 
             processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
             processHelper.Drain();
@@ -109,7 +109,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpName", "/dev/null");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpType", string.Empty);
 
-            using var processHelper = runner.LaunchProcess(catchsegv: false);
+            using var processHelper = runner.LaunchProcess();
 
             processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
             processHelper.Drain();
