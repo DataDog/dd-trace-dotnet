@@ -22,7 +22,7 @@ internal static class MetaStructHelper
             { "frames", frames }
         };
 
-        if (type is not null && type.Length > 0)
+        if (type is { Length: > 0 })
         {
             dict["type"] = type;
         }
