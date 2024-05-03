@@ -43,7 +43,7 @@ runs:
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: ghcr.io/datadog/dd-trace-dotnet/onboarding-dotnet:${{commit_sha}}
+        tags: ghcr.io/datadog/dd-trace-dotnet/onboarding-dotnet:${{inputs.commit_sha}}
         platforms: 'linux/amd64'
         context: ${{inputs.artifacts_path}}
         file: ${{inputs.artifacts_path}}/system-tests-onboarding.dockerfile
