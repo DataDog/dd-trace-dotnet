@@ -17,6 +17,7 @@ test_echo:
   image: registry.ddbuild.io/images/ci_docker_base
   tags: ["runner:docker"]
   script:
+    - export DOTNET_PACKAGE_VERSION=$DOTNET_PACKAGE_VERSION_DEV
     - echo "Hello, world-----> $DOTNET_PACKAGE_VERSION"
     - echo "Hello, world dev -----> $DOTNET_PACKAGE_VERSION_DEV"
   variables:
