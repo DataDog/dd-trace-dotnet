@@ -84,7 +84,6 @@ internal static class RaspModule
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
         var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
 
-
         if (result is not null)
         {
             RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout);
