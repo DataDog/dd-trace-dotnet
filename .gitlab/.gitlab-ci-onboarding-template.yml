@@ -1,5 +1,6 @@
 
 stages:
+  - wait_for_images
   - package
   - publish
   - release
@@ -13,16 +14,48 @@ variables:
    description: "Used by the package stage when triggered manually"
 
 test_echo:
-  stage: package
+  stage: wait_for_images
   image: registry.ddbuild.io/images/ci_docker_base
   tags: ["runner:docker"]
   script:
     - export DOTNET_PACKAGE_VERSION=$DOTNET_PACKAGE_VERSION_DEV
     - echo "Hello, world-----> $DOTNET_PACKAGE_VERSION"
     - echo "Hello, world dev -----> $DOTNET_PACKAGE_VERSION_DEV"
+    - echo "COMMIT_SHA ---> ${CI_COMMIT_SHORT_SHA}"
   variables:
     DOTNET_PACKAGE_VERSION: $DOTNET_PACKAGE_VERSION_DEV
 
+.wait_for_single_step_packages:
+  stage: wait_for_images
+  image: registry.ddbuild.io/images/ci_docker_base
+  when: delayed
+  start_in: 1 minutes 
+  tags: ["runner:docker"]
+  before_script:
+    - export GH_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.gh_ghcr_token --with-decryption --query "Parameter.Value" --out text) 
+  script: |
+    cp .gitlab/.gitlab-ci-onboarding-template.yml gitlab-ci-package-dev.yml 
+    image=ghcr.io/datadog/dd-trace-dotnet/onboarding-dotnet:7e700f10e57edee8d565e0e6b6a38af4145ea48d_
+    echo $GH_TOKEN|docker login ghcr.io -u publisher --password-stdin
+    
+    if docker pull $image ; then
+      echo "Docker base image ready"
+    else
+      echo "Docker base image not found..."
+      sed -i "s/.wait_for_single_step_packages/wait_for_single_step_packages/g" gitlab-ci-package-dev.yml 
+      sed -i "s/.trigger-ci/trigger-ci/g" gitlab-ci-package-dev.yml 
+    fi
+  artifacts:
+    paths:
+      - gitlab-ci-package-dev.yml
+
+.trigger-ci:
+  stage: trigger-ci
+  trigger:
+    strategy: depend
+    include:
+      - artifact: gitlab-ci-package-dev.yml
+        job: .wait_for_single_step_packages
 package-dev:
   extends: .package
   rules:
