@@ -295,7 +295,7 @@ namespace Datadog.Trace.Tools.Runner
                             cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
                             outputLines[0] is { Length: > 0 } temporalOutput)
                         {
-                            foreach (var path in ParseWhereisOutput(temporalOutput))
+                            foreach (var path in ProcessHelpers.ParseWhereisOutput(temporalOutput))
                             {
                                 if (File.Exists(path))
                                 {
@@ -328,25 +328,6 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             return 1;
-        }
-
-        public static IEnumerable<string> ParseWhereisOutput(string output)
-        {
-            if (string.IsNullOrEmpty(output))
-            {
-                return null;
-            }
-
-            // Split the string by spaces to separate parts
-            var parts = output.Split(' ');
-
-            // Check if the first part ends with a colon (e.g., "dotnet:")
-            if (parts.Length > 1 && parts[0].EndsWith(":"))
-            {
-                return parts.Skip(1);
-            }
-
-            return null; // Return null if no valid path is found
         }
 
         public static string[] SplitArgs(string command, bool keepQuote = false)

@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
@@ -18,16 +19,16 @@ public class UtilsTests
         yield return ["dotnet: /usr/bin/dotnet /usr/lib/dotnet /etc/dotnet", new[] { "/usr/bin/dotnet", "/usr/lib/dotnet", "/etc/dotnet" }];
         yield return ["git: /usr/bin/git", new[] { "/usr/bin/git" }];
         yield return ["cmake: /usr/bin/cmake /usr/lib/cmake /usr/share/cmake", new[] { "/usr/bin/cmake", "/usr/lib/cmake", "/usr/share/cmake" }];
-        yield return ["docker:", null];
-        yield return [string.Empty, null];
-        yield return [null, null];
+        yield return ["docker:", Array.Empty<string>()];
+        yield return [string.Empty, Array.Empty<string>()];
+        yield return [null, Array.Empty<string>()];
     }
 
     [Theory]
     [MemberData(nameof(ParseWhereIsOutputData))]
     public void ParseWhereisOutputTests(string line, string[] expectedPaths)
     {
-        var actualPath = Utils.ParseWhereisOutput(line);
+        var actualPath = ProcessHelpers.ParseWhereisOutput(line);
         actualPath.Should().BeEquivalentTo(expectedPaths);
     }
 }

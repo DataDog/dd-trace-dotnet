@@ -5,7 +5,10 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -81,11 +84,56 @@ namespace Datadog.Trace.Util
 #endif
             }
 
-            using var processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
+            Process? processInfo = null;
+            try
+            {
+                processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
+            }
+            catch (System.ComponentModel.Win32Exception) when (command.UseWhereIsIfFileNotFound)
+            {
+                if (FrameworkDescription.Instance.OSDescription == OSPlatformName.Linux &&
+                    !string.Equals(command.Cmd, "whereis", StringComparison.OrdinalIgnoreCase))
+                {
+                    var cmdResponse = RunCommand(new Command("whereis", $"-b {processStartInfo.FileName}"));
+                    if (cmdResponse?.ExitCode == 0 &&
+                        cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                        outputLines[0] is { Length: > 0 } temporalOutput)
+                    {
+                        foreach (var path in ParseWhereisOutput(temporalOutput))
+                        {
+                            if (File.Exists(path))
+                            {
+                                processStartInfo.FileName = path;
+                                processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
+                                break;
+                            }
+                        }
+                    }
+                }
+                else if (!string.Equals(command.Cmd, "where", StringComparison.OrdinalIgnoreCase))
+                {
+                    var cmdResponse = RunCommand(new Command("where", processStartInfo.FileName));
+                    if (cmdResponse?.ExitCode == 0 &&
+                        cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                        outputLines[0] is { Length: > 0 } processPath &&
+                        File.Exists(processPath))
+                    {
+                        processStartInfo.FileName = processPath;
+                        processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
+                    }
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
             if (processInfo is null)
             {
                 return null;
             }
+
+            using var disposableProcessInfo = processInfo;
 
             if (input is not null)
             {
@@ -135,12 +183,56 @@ namespace Datadog.Trace.Util
 #endif
             }
 
-            using var processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
+            Process? processInfo = null;
+            try
+            {
+                processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
+            }
+            catch (System.ComponentModel.Win32Exception) when (command.UseWhereIsIfFileNotFound)
+            {
+                if (FrameworkDescription.Instance.OSDescription == OSPlatformName.Linux &&
+                    !string.Equals(command.Cmd, "whereis", StringComparison.OrdinalIgnoreCase))
+                {
+                    var cmdResponse = await RunCommandAsync(new Command("whereis", $"-b {processStartInfo.FileName}")).ConfigureAwait(false);
+                    if (cmdResponse?.ExitCode == 0 &&
+                        cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                        outputLines[0] is { Length: > 0 } temporalOutput)
+                    {
+                        foreach (var path in ParseWhereisOutput(temporalOutput))
+                        {
+                            if (File.Exists(path))
+                            {
+                                processStartInfo.FileName = path;
+                                processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
+                                break;
+                            }
+                        }
+                    }
+                }
+                else if (!string.Equals(command.Cmd, "where", StringComparison.OrdinalIgnoreCase))
+                {
+                    var cmdResponse = await RunCommandAsync(new Command("where", processStartInfo.FileName)).ConfigureAwait(false);
+                    if (cmdResponse?.ExitCode == 0 &&
+                        cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                        outputLines[0] is { Length: > 0 } processPath &&
+                        File.Exists(processPath))
+                    {
+                        processStartInfo.FileName = processPath;
+                        processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
+                    }
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
             if (processInfo is null)
             {
                 return null;
             }
 
+            using var disposableProcessInfo = processInfo;
             if (input is not null)
             {
                 await processInfo.StandardInput.WriteAsync(input).ConfigureAwait(false);
@@ -169,6 +261,25 @@ namespace Datadog.Trace.Util
 
             Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
             return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode);
+        }
+
+        internal static IEnumerable<string> ParseWhereisOutput(string output)
+        {
+            if (string.IsNullOrEmpty(output))
+            {
+                return [];
+            }
+
+            // Split the string by spaces to separate parts
+            var parts = output.Split(' ');
+
+            // Check if the first part ends with a colon (e.g., "dotnet:")
+            if (parts.Length > 1 && parts[0].EndsWith(":"))
+            {
+                return parts.Skip(1);
+            }
+
+            return []; // Return empty if no valid path is found
         }
 
         /// <summary>
@@ -231,8 +342,9 @@ namespace Datadog.Trace.Util
             public readonly Encoding? ErrorEncoding;
             public readonly Encoding? InputEncoding;
             public readonly bool DoNotTrace;
+            public readonly bool UseWhereIsIfFileNotFound;
 
-            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null, bool doNotTrace = true)
+            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null, bool doNotTrace = true, bool useWhereIsIfFileNotFound = false)
             {
                 Cmd = cmd;
                 Arguments = arguments;
@@ -242,6 +354,7 @@ namespace Datadog.Trace.Util
                 ErrorEncoding = errorEncoding;
                 InputEncoding = inputEncoding;
                 DoNotTrace = doNotTrace;
+                UseWhereIsIfFileNotFound = useWhereIsIfFileNotFound;
             }
         }
 
