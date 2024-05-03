@@ -151,9 +151,10 @@ internal static class CiUtils
                 // EVP proxy is enabled.
                 // By setting the environment variables we avoid the usage of the DiscoveryService in each child process
                 // to ask for EVP proxy support.
-                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy] = "1";
-                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, "1");
-                Log.Debug("RunCiCommand: EVP proxy was detected.");
+                var evpProxyMode = CIVisibility.EventPlatformProxySupportFromEndpointUrl(agentConfiguration?.EventPlatformProxyEndpoint).ToString();
+                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy] = evpProxyMode;
+                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, evpProxyMode);
+                Log.Debug("RunCiCommand: EVP proxy was detected: {Mode}", evpProxyMode);
             }
 
             // If we have an api key, and the code coverage or the tests skippable environment variables
