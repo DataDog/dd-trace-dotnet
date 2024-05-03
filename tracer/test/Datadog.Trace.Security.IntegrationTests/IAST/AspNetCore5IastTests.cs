@@ -1051,7 +1051,6 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         EnableIast(IastEnabled);
         EnableEvidenceRedaction(RedactionEnabled);
         EnableIastTelemetry(IastTelemetryLevel);
-        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
         DisableObfuscationQueryString();
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);

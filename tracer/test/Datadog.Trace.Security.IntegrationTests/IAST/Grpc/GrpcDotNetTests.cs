@@ -42,7 +42,7 @@ public class GrpcDotNetTests : TestHelper
     public async Task SubmitsTraces()
     {
         GuardAlpine();
-        GuardLinux();
+        SkipOn.Platform(SkipOn.PlatformValue.Linux);
 
         const int expectedSpanCount = 24;
         const string filename = "Iast.GrpcDotNetTests.BodyPropagation.SubmitsTraces";
@@ -68,14 +68,6 @@ public class GrpcDotNetTests : TestHelper
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")))
         {
             throw new SkipException("GRPC.Tools does not support Alpine");
-        }
-    }
-
-    private static void GuardLinux()
-    {
-        if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
-        {
-            throw new SkipException("Can't run https tests on Linux");
         }
     }
 }
