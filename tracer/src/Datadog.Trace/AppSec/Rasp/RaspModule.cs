@@ -17,6 +17,11 @@ namespace Datadog.Trace.AppSec.Rasp;
 internal static class RaspModule
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
+    private static Dictionary<string, RaspRuleType> _addressRuleType = new()
+    {
+        { AddressesConstants.FileAccess, RaspRuleType.Lfi },
+        { AddressesConstants.UrlAccess, RaspRuleType.Ssrf }
+    };
 
     internal static void OnLfi(string file)
     {
@@ -45,13 +50,38 @@ internal static class RaspModule
         }
 
         var arguments = new Dictionary<string, object> { [address] = valueToCheck };
-        RunWaf(arguments, rootSpan);
+        RunWaf(arguments, rootSpan, address);
     }
 
-    private static void RunWaf(Dictionary<string, object> arguments, Span rootSpan)
+    private static void RecordTelemetry(string address, bool isMatch, bool timeOut)
+    {
+        if (!_addressRuleType.TryGetValue(address, out var ruleType))
+        {
+            Log.Warning("RASP: Rule type not found for address {Address}", address);
+        }
+
+        TelemetryFactory.Metrics.RecordCountRaspRuleEval(ruleType);
+
+        if (isMatch)
+        {
+            TelemetryFactory.Metrics.RecordCountRaspRuleMatch(ruleType);
+        }
+
+        if (timeOut)
+        {
+            TelemetryFactory.Metrics.RecordCountRaspTimeout(ruleType);
+        }
+    }
+
+    private static void RunWaf(Dictionary<string, object> arguments, Span rootSpan, string address)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
         var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
+
+        if (result is not null)
+        {
+            RecordTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout);
+        }
 
         // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
         // the blockings, so we report first and then block
