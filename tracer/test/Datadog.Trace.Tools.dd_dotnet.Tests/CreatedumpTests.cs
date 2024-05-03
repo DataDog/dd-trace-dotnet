@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Diagnostics;
 using FluentAssertions;
 using Xunit;
 
@@ -27,5 +28,20 @@ public class CreatedumpTests
             signal.Should().Be(expectedSignal);
             crashThread.Should().Be(expectedCrashThread);
         }
+    }
+
+    [SkippableFact]
+    public void UseValidPidIfMultiple()
+    {
+        // When there are multiple arguments looking like PIDs, the parser tests them and return the first valid one
+        var currentPid = Process.GetCurrentProcess().Id;
+        var commandLine = $"999999 999998 {currentPid} 999997";
+
+        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var crashThread);
+
+        result.Should().Be(true);
+        pid.Should().Be(currentPid);
+        signal.Should().BeNull();
+        crashThread.Should().BeNull();
     }
 }
