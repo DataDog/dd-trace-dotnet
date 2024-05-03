@@ -461,7 +461,7 @@ internal static partial class IastModule
             }
 
             OnExecutedSinkTelemetry(IastInstrumentedSinks.Xss);
-            return GetScope(text!, IntegrationId.Xss, VulnerabilityTypeName.Xss, OperationNameXss, Always);
+            return GetScope(text!, IntegrationId.Xss, VulnerabilityTypeName.Xss, OperationNameXss, Always, exclusionMark: Mark.Xss);
         }
         catch (Exception ex)
         {
@@ -555,7 +555,7 @@ internal static partial class IastModule
         return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
     }
 
-    private static IastModuleResponse GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null, bool addLocation = true, int? hash = null, StackTrace? externalStack = null)
+    private static IastModuleResponse GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null, bool addLocation = true, int? hash = null, StackTrace? externalStack = null, Mark exclusionMark = Mark.None)
     {
         var tracer = Tracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
@@ -592,6 +592,13 @@ internal static partial class IastModule
             }
         }
 
+        // Check for marked (excluded) ranges
+        var ranges = Ranges.NotMarkedRanges(tainted?.Ranges, exclusionMark);
+        if (ranges is null || ranges.Length == 0)
+        {
+            return IastModuleResponse.Empty;
+        }
+
         var location = addLocation ? GetLocation(externalStack, currentSpan?.SpanId) : null;
         if (addLocation && location is null)
         {
@@ -599,8 +606,8 @@ internal static partial class IastModule
         }
 
         var vulnerability = (hash is null) ?
-            new Vulnerability(vulnerabilityType, location, new Evidence(evidenceValue, tainted?.Ranges), integrationId) :
-            new Vulnerability(vulnerabilityType, (int)hash, location, new Evidence(evidenceValue, tainted?.Ranges), integrationId);
+            new Vulnerability(vulnerabilityType, location, new Evidence(evidenceValue, ranges), integrationId) :
+            new Vulnerability(vulnerabilityType, (int)hash, location, new Evidence(evidenceValue, ranges), integrationId);
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {

@@ -136,7 +136,7 @@ internal static class Ranges
 
                 if (newLength > 0)
                 {
-                    newRanges[newRangeIndex] = new Range(newStart, newLength, range.Source);
+                    newRanges[newRangeIndex] = new Range(newStart, newLength, range.Source, range.Mark);
                 }
             }
         }
@@ -186,10 +186,69 @@ internal static class Ranges
                 newEnd = endAfterRemoveArea ? ranges[i].Start + ranges[i].Length - (endIndex - beginIndex) : beginIndex;
             }
 
-            var newRange = new Range(newStart, newEnd - newStart, ranges[i].Source);
+            var newRange = new Range(newStart, newEnd - newStart, ranges[i].Source, ranges[i].Mark);
             newRanges.Add(newRange);
         }
 
         return newRanges.ToArray();
+    }
+
+    internal static Range[] CopyWithMark(Range[] ranges, Mark mark)
+    {
+        var newRanges = new List<Range>();
+
+        foreach (var range in ranges)
+        {
+            var newRange = new Range(range.Start, range.Length, range.Source, mark);
+            newRanges.Add(newRange);
+        }
+
+        return newRanges.ToArray();
+    }
+
+    internal static Range[]? NotMarkedRanges(Range[]? ranges, Mark mark)
+    {
+        // Skip if no mark is provided
+        if (ranges == null || mark == Mark.None) { return ranges; }
+
+        var markedRangesCount = RangesMarkedCount(ranges, mark);
+        if (markedRangesCount == 0)
+        {
+            return ranges;
+        }
+
+        // All ranges are marked
+        if (markedRangesCount == ranges.Length)
+        {
+            return null;
+        }
+
+        var newRanges = new Range[ranges.Length - markedRangesCount];
+        var newRangesIndex = 0;
+
+        foreach (var range in ranges)
+        {
+            if (!range.IsMarked(mark))
+            {
+                newRanges[newRangesIndex++] = range;
+            }
+        }
+
+        return newRanges;
+    }
+
+    private static int RangesMarkedCount(IEnumerable<Range> ranges, Mark mark)
+    {
+        var count = 0;
+
+        foreach (var range in ranges)
+        {
+            if (range.IsMarked(mark))
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 }
