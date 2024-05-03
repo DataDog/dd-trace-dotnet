@@ -52,17 +52,23 @@ build_single_step_packages:
     image=ghcr.io/datadog/dd-trace-dotnet/onboarding-dotnet:7e700f10e57edee8d565e0e6b6a38af4145ea48d
     mkdir -p $target_dir
     echo $GH_TOKEN|docker login ghcr.io -u publisher --password-stdin
-    docker pull $image
-    docker save -o $target_dir/image.tar $image 
-    tar xf $target_dir/image.tar -C $target_dir
-    layers=$(jq -r '.[0].Layers[]' $target_dir/manifest.json)
-    for i in $layers; do
-      tar xf $target_dir/$i -C $target_dir
-    done 
-    rm -rf $target_dir/image.tar $target_dir/manifest.json $target_dir/oci-layout  $target_dir/index.json 
-    rm -rf $target_dir/blobs/
-    ls -l $target_dir
-    cat $target_dir PACKAGE_VERSION
+    
+    if docker pull $image ; then
+      echo "Docker image exists"
+      docker save -o $target_dir/image.tar $image 
+      tar xf $target_dir/image.tar -C $target_dir
+      layers=$(jq -r '.[0].Layers[]' $target_dir/manifest.json)
+      for i in $layers; do
+        tar xf $target_dir/$i -C $target_dir
+      done 
+      rm -rf $target_dir/image.tar $target_dir/manifest.json $target_dir/oci-layout  $target_dir/index.json 
+      rm -rf $target_dir/blobs/
+      ls -l $target_dir
+      cat $target_dir/PACKAGE_VERSION
+    else
+      echo "Command failed"
+    fi
+
   artifacts:
     expire_in: 2 weeks
     paths:
