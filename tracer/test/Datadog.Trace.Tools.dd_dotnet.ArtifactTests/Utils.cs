@@ -17,6 +17,11 @@ public static class Utils
 #if NETFRAMEWORK
         return string.Empty;
 #else
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            return string.Empty;
+        }
+
         string archFolder;
 
         if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64)

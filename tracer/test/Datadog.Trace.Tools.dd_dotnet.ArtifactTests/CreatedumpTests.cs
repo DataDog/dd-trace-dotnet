@@ -23,15 +23,15 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests;
 public class CreatedumpTests : ConsoleTestHelper
 {
     private const string CreatedumpExpectedOutput = "Writing minidump";
-    private const string CrashReportExpectedOutput = "The crash might have been caused by automatic instrumentation";
+    private const string CrashReportExpectedOutput = "The crash may have been caused by automatic instrumentation";
 
     public CreatedumpTests(ITestOutputHelper output)
         : base(output)
     {
         // Those environment variables can be set by Nuke, and will impact the outcome of the tests
-        EnvironmentHelper.CustomEnvironmentVariables["COMPlus_DbgMiniDumpType"] = string.Empty;
-        EnvironmentHelper.CustomEnvironmentVariables["COMPlus_DbgEnableMiniDump"] = string.Empty;
-        EnvironmentHelper.CustomEnvironmentVariables["DD_INSTRUMENTATION_TELEMETRY_ENABLED"] = string.Empty;
+        SetEnvironmentVariable("COMPlus_DbgMiniDumpType", string.Empty);
+        SetEnvironmentVariable("COMPlus_DbgEnableMiniDump", string.Empty);
+        SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", string.Empty);
     }
 
     private static (string Key, string Value) LdPreloadConfig
@@ -42,7 +42,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
             if (!File.Exists(path))
             {
-                throw new FileNotFoundException($"LD wrapper not found at path {path}");
+                throw new FileNotFoundException($"LD wrapper not found at path {path}. Ensure you have built the profiler home directory using BuildProfilerHome");
             }
 
             return ("LD_PRELOAD", path);

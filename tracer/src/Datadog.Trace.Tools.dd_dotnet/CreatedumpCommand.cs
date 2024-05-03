@@ -47,7 +47,7 @@ internal class CreatedumpCommand : Command
             if (_runtime == null)
             {
                 Errors.Add("ClrRuntime is not initialized");
-                return -2;
+                return 2;
             }
 
             var method = _runtime.GetMethodByInstructionPointer((ulong)ip);
@@ -79,7 +79,7 @@ internal class CreatedumpCommand : Command
         catch (Exception ex)
         {
             Errors.Add($"Error while resolving method: {ex.Message}");
-            return -1;
+            return 3;
         }
     }
 
@@ -155,7 +155,7 @@ internal class CreatedumpCommand : Command
 
             if (typeName != null)
             {
-                if (typeName == "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.BlockingMiddleware")
+                if (typeName.EndsWith("BlockingMiddleware"))
                 {
                     return false;
                 }
@@ -461,7 +461,7 @@ internal class CreatedumpCommand : Command
 
             var suspiciousExceptionTypes = new[] { "System.InvalidProgramException", "System.Security.VerificationException", "System.MissingMethodException", "System.BadImageFormatException" };
 
-            if (exceptionType.StartsWith("Datadog") || suspiciousExceptionTypes.Contains(exceptionType))
+            if (exceptionType.StartsWith("Datadog", StringComparison.OrdinalIgnoreCase) || suspiciousExceptionTypes.Contains(exceptionType))
             {
                 isSuspicious = true;
             }
@@ -472,7 +472,7 @@ internal class CreatedumpCommand : Command
             return;
         }
 
-        AnsiConsole.WriteLine("Datadog - The crash might have been caused by automatic instrumentation, sending crash report...");
+        AnsiConsole.WriteLine("Datadog - The crash may have been caused by automatic instrumentation, sending crash report...");
 
         if (signal.HasValue)
         {
