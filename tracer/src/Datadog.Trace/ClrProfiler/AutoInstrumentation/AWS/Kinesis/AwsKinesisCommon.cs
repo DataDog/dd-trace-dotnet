@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -20,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         internal const string IntegrationName = nameof(IntegrationId.AwsKinesis);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsKinesis;
 
-        public static Scope CreateScope(Tracer tracer, string operation, string spanKind, ISpanContext parentContext, out AwsKinesisTags tags)
+        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, ISpanContext? parentContext, out AwsKinesisTags? tags)
         {
             tags = null;
 
@@ -30,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
