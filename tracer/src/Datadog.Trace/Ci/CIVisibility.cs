@@ -84,10 +84,12 @@ namespace Datadog.Trace.Ci
             var eventPlatformProxyEnabled = false;
             if (!settings.Agentless)
             {
-                if (settings.ForceAgentsEvpProxy)
+                if (!string.IsNullOrWhiteSpace(settings.ForceAgentsEvpProxy))
                 {
                     // if we force the evp proxy (internal switch)
-                    EventPlatformProxySupport = EventPlatformProxySupport.V2;
+                    EventPlatformProxySupport = Enum.TryParse<EventPlatformProxySupport>(settings.ForceAgentsEvpProxy, out var parsedValue) ?
+                                                    parsedValue :
+                                                    EventPlatformProxySupport.V2;
                 }
                 else
                 {
@@ -101,6 +103,10 @@ namespace Datadog.Trace.Ci
                 }
 
                 eventPlatformProxyEnabled = EventPlatformProxySupport != EventPlatformProxySupport.None;
+                if (eventPlatformProxyEnabled)
+                {
+                    Log.Information("EVP Proxy was enabled with mode: {Mode}", EventPlatformProxySupport);
+                }
             }
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
@@ -168,7 +174,9 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility from dd-trace / runner");
             Settings = settings;
-            EventPlatformProxySupport = settings.ForceAgentsEvpProxy ? EventPlatformProxySupport.V2 : IsEventPlatformProxySupportedByAgent(discoveryService);
+            EventPlatformProxySupport = Enum.TryParse<EventPlatformProxySupport>(settings.ForceAgentsEvpProxy, out var parsedValue) ?
+                                            parsedValue :
+                                            IsEventPlatformProxySupportedByAgent(discoveryService);
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
@@ -745,6 +753,11 @@ namespace Datadog.Trace.Ci
             }
 
             var eventPlatformProxyEndpoint = agentConfiguration.EventPlatformProxyEndpoint;
+            return EventPlatformProxySupportFromEndpointUrl(eventPlatformProxyEndpoint);
+        }
+
+        internal static EventPlatformProxySupport EventPlatformProxySupportFromEndpointUrl(string? eventPlatformProxyEndpoint)
+        {
             if (!string.IsNullOrEmpty(eventPlatformProxyEndpoint))
             {
                 if (eventPlatformProxyEndpoint?.Contains("/v2") == true)

@@ -15,7 +15,7 @@ internal static class CIVisibilityEventsFactory
     {
         return span.Type switch
         {
-            SpanTypes.Test => span.Tags is TestSpanTags ? new TestEvent(span) : new TestEvent(span, 1),
+            SpanTypes.Test or SpanTypes.Browser => span.Tags is TestSpanTags ? new TestEvent(span) : new TestEvent(span, 1),
             SpanTypes.TestSuite when span.Tags is TestSuiteSpanTags => new TestSuiteEvent(span),
             SpanTypes.TestModule when span.Tags is TestModuleSpanTags => new TestModuleEvent(span),
             SpanTypes.TestSession => new TestSessionEvent(span),

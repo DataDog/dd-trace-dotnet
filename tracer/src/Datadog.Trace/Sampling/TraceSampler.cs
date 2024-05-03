@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -15,7 +17,7 @@ namespace Datadog.Trace.Sampling
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceSampler>();
 
         private readonly IRateLimiter _limiter;
-        private readonly DefaultSamplingRule _defaultRule = new();
+        private readonly AgentSamplingRule _defaultRule = new();
         private readonly List<ISamplingRule> _rules = new();
 
         public TraceSampler(IRateLimiter limiter)
@@ -42,8 +44,8 @@ namespace Datadog.Trace.Sampling
                         if (Log.IsEnabled(LogEventLevel.Debug))
                         {
                             Log.Debug(
-                                "Matched on rule {RuleName}. Applying rate of {Rate} to trace id {TraceId}",
-                                rule.RuleName,
+                                "Matched on rule {Rule}. Applying rate of {Rate} to trace id {TraceId}",
+                                rule,
                                 sampleRate,
                                 span.Context.RawTraceId);
                         }

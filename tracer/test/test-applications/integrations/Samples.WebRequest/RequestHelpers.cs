@@ -657,10 +657,8 @@ namespace Samples.WebRequest
         private static NameValueCollection GenerateCurrentDistributedTracingHeaders()
         {
             var current = Activity.Current;
-            var decimalTraceId = Convert.ToUInt64(current.TraceId.ToHexString().Substring(16, 16), 16);
-            var decimalSpanId = Convert.ToUInt64(current.SpanId.ToHexString(), 16);
 
-            return new NameValueCollection()
+            return new NameValueCollection
             {
                 { "traceparent", current.Id },
                 { "tracestate", current.TraceStateString },

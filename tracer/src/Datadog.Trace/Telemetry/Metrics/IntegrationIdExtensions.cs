@@ -79,6 +79,8 @@ internal static class IntegrationIdExtensions
             IntegrationId.Xss => MetricTags.IntegrationName.Xss,
             IntegrationId.NHibernate => MetricTags.IntegrationName.NHibernate,
             IntegrationId.DotnetTest => MetricTags.IntegrationName.DotnetTest,
+            IntegrationId.Selenium => MetricTags.IntegrationName.Selenium,
+            IntegrationId.DirectoryListingLeak => MetricTags.IntegrationName.DirectoryListingLeak,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

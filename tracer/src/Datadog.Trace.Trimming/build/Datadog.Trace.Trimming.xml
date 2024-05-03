@@ -75,6 +75,7 @@
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Server.IIS" />
    <assembly fullname="Microsoft.AspNetCore.Server.Kestrel.Core" />
+   <assembly fullname="Microsoft.AspNetCore.StaticFiles" />
    <assembly fullname="Microsoft.Azure.Cosmos.Client" />
    <assembly fullname="Microsoft.Azure.Functions.Worker.Core" />
    <assembly fullname="Microsoft.Azure.WebJobs.Host" />
@@ -1053,6 +1054,7 @@
    </assembly>
    <assembly fullname="vstest.console" />
    <assembly fullname="vstest.console.arm64" />
+   <assembly fullname="WebDriver" />
    <assembly fullname="xunit.execution.desktop" />
    <assembly fullname="xunit.execution.dotnet" />
    <assembly fullname="Yarp.ReverseProxy" />

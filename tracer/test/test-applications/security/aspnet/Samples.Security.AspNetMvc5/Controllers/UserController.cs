@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Web.Mvc;
-using Datadog.Trace;
 using Samples.AspNetMvc5.Models;
 
 namespace Samples.AspNetMvc5.Controllers
@@ -10,13 +9,7 @@ namespace Samples.AspNetMvc5.Controllers
         [ValidateInput(false)]
         public ActionResult Index()
         {
-            var userId = "user3";
-
-            var userDetails = new UserDetails()
-            {
-                Id = userId,
-            };
-            Tracer.Instance.ActiveScope?.Span.SetUser(userDetails);
+            Samples.SampleHelpers.SetUser("user3");
 
             return View();
         }

@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.MessagePack;
 
@@ -62,7 +61,7 @@ internal readonly struct TraceChunkModel
     /// <param name="spans">The spans that will be within this <see cref="TraceChunkModel"/>.</param>
     /// <param name="samplingPriority">Optional sampling priority to override the <see cref="TraceContext"/> sampling priority.</param>
     public TraceChunkModel(in ArraySegment<Span> spans, int? samplingPriority = null)
-        : this(spans, GetTraceContext(spans), samplingPriority)
+        : this(spans, TraceContext.GetTraceContext(spans), samplingPriority)
     {
         // since all we have is an array of spans, use the trace context from the first span
         // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
@@ -78,19 +77,29 @@ internal readonly struct TraceChunkModel
 
         if (traceContext is not null)
         {
-            DefaultServiceName = traceContext.Tracer?.DefaultServiceName;
             SamplingPriority ??= traceContext.SamplingPriority;
+
             Environment = traceContext.Environment;
             ServiceVersion = traceContext.ServiceVersion;
             Origin = traceContext.Origin;
             Tags = traceContext.Tags;
-            IsRunningInAzureAppService = traceContext.Tracer?.Settings?.IsRunningInAzureAppService ?? false;
-            AzureAppServiceSettings = traceContext.Tracer?.Settings?.AzureAppServiceMetadata ?? null;
-            if (traceContext.Tracer?.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&
-                gitMetadata != GitMetadata.Empty)
+
+            if (traceContext.Tracer is { } tracer)
             {
-                GitRepositoryUrl = gitMetadata.RepositoryUrl;
-                GitCommitSha = gitMetadata.CommitSha;
+                DefaultServiceName = tracer.DefaultServiceName;
+
+                if (tracer.Settings is { } settings)
+                {
+                    IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
+                    AzureAppServiceSettings = settings.AzureAppServiceMetadata ?? null;
+                }
+
+                if (tracer.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&
+                    gitMetadata != GitMetadata.Empty)
+                {
+                    GitRepositoryUrl = gitMetadata.RepositoryUrl;
+                    GitCommitSha = gitMetadata.CommitSha;
+                }
             }
         }
     }
@@ -120,16 +129,6 @@ internal readonly struct TraceChunkModel
 
     // used in tests
     internal bool HashSetInitialized => _hashSet?.IsValueCreated == true && _hashSet.Value.Count > 0;
-
-    private static TraceContext? GetTraceContext(in ArraySegment<Span> spans)
-    {
-        if (spans.Count > 0)
-        {
-            return spans.Array![spans.Offset].Context.TraceContext;
-        }
-
-        return null;
-    }
 
     public SpanModel GetSpanModel(int spanIndex)
     {

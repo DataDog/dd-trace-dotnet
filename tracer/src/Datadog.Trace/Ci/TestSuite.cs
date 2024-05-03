@@ -38,7 +38,7 @@ public sealed class TestSuite
 
         span.Type = SpanTypes.TestSuite;
         span.ResourceName = name;
-        span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep);
+        span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
         span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
 
         tags.SuiteId = span.SpanId;
@@ -175,7 +175,7 @@ public sealed class TestSuite
         span.Finish(duration.Value);
 
         // Record EventFinished telemetry metric
-        TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Tags.Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Suite);
+        TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Tags.Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Suite);
 
         Current = null;
         Module.RemoveSuite(Name);
