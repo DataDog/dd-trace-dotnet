@@ -205,7 +205,8 @@ namespace Datadog.Trace.AppSec
         public bool ApiSecurityEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating whether or not sca is enabled, defaults to null.
+        /// Gets a value indicating whether or not SCA (Software Composition Analysis) is enabled, defaults to null.
+        /// It is not use locally, but ready by the backend.
         /// </summary>
         public bool? ScaEnabled { get; }
 

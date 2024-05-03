@@ -15,8 +15,6 @@ namespace Datadog.Trace.Telemetry
 {
     internal class TelemetrySettings
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TelemetrySettings));
-
         public TelemetrySettings(
             bool telemetryEnabled,
             string? configurationError,
