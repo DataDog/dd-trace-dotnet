@@ -30,60 +30,70 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
     // *** Ensure corlib assembly ref
     if (corLibAssemblyRef == mdAssemblyRefNil)
     {
+        mdAssemblyRef newCorLibAssemblyRef;
         auto hr = module_metadata->assembly_emit->DefineAssemblyRef(
             corAssemblyProperty.ppbPublicKey, corAssemblyProperty.pcbPublicKey, corAssemblyProperty.szName.data(),
             &corAssemblyProperty.pMetaData, &corAssemblyProperty.pulHashAlgId, sizeof(corAssemblyProperty.pulHashAlgId),
-            corAssemblyProperty.assemblyFlags, &corLibAssemblyRef);
-        if (corLibAssemblyRef == mdAssemblyRefNil)
+            corAssemblyProperty.assemblyFlags, &newCorLibAssemblyRef);
+        if (newCorLibAssemblyRef == mdAssemblyRefNil)
         {
             Logger::Warn("Wrapper corLibAssemblyRef could not be defined.");
             return hr;
         }
+        corLibAssemblyRef = newCorLibAssemblyRef;
     }
 
     // *** Ensure System.Object type ref
     if (objectTypeRef == mdTypeRefNil)
     {
-        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemObject, &objectTypeRef);
+        mdTypeRef newObjectTypeRef;
+        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemObject, &newObjectTypeRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper objectTypeRef could not be defined.");
             return hr;
         }
+        objectTypeRef = newObjectTypeRef;
     }
 
     // *** Ensure System.Exception type ref
     if (exTypeRef == mdTypeRefNil)
     {
-        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemException, &exTypeRef);
+        mdTypeRef newExTypeRef;
+        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemException, &newExTypeRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper exTypeRef could not be defined.");
             return hr;
         }
+        exTypeRef = newExTypeRef;
     }
 
     // *** Ensure System.Type type ref
     if (typeRef == mdTypeRefNil)
     {
-        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemTypeName, &typeRef);
+        mdTypeRef newTypeRef;
+        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemTypeName, &newTypeRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper typeRef could not be defined.");
             return hr;
         }
+        typeRef = newTypeRef;
     }
 
     // *** Ensure System.RuntimeTypeHandle type ref
     if (runtimeTypeHandleRef == mdTypeRefNil)
     {
+        mdTypeRef newRuntimeTypeHandleRef;
         auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, RuntimeTypeHandleTypeName,
-                                                                      &runtimeTypeHandleRef);
+                                                                      &newRuntimeTypeHandleRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper runtimeTypeHandleRef could not be defined.");
             return hr;
         }
+        runtimeTypeHandleRef = newRuntimeTypeHandleRef;
     }
 
     // *** Ensure Type.GetTypeFromHandle token
@@ -107,25 +117,29 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
         memcpy(&signature[offset], &runtimeTypeHandle_buffer, runtimeTypeHandle_size);
         offset += runtimeTypeHandle_size;
 
+        mdMemberRef newGetTypeFromHandleToken;
         auto hr = module_metadata->metadata_emit->DefineMemberRef(typeRef, GetTypeFromHandleMethodName, signature,
-                                                                  offset, &getTypeFromHandleToken);
+                                                                  offset, &newGetTypeFromHandleToken);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper getTypeFromHandleToken could not be defined.");
             return hr;
         }
+        getTypeFromHandleToken = newGetTypeFromHandleToken;
     }
 
     // *** Ensure System.RuntimeMethodHandle type ref
     if (runtimeMethodHandleRef == mdTypeRefNil)
     {
+        mdTypeRef newRuntimeMethodHandleRef;
         auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, RuntimeMethodHandleTypeName,
-                                                                      &runtimeMethodHandleRef);
+                                                                      &newRuntimeMethodHandleRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper runtimeMethodHandleRef could not be defined.");
             return hr;
         }
+        runtimeMethodHandleRef = newRuntimeMethodHandleRef;
     }
 
     return S_OK;
@@ -154,13 +168,15 @@ mdTypeRef CallTargetTokens::GetTargetVoidReturnTypeRef()
     // *** Ensure calltargetreturn void type ref
     if (callTargetReturnVoidTypeRef == mdTypeRefNil)
     {
+        mdTypeRef newCallTargetReturnVoidTypeRef;
         hr = module_metadata->metadata_emit->DefineTypeRefByName(
-            profilerAssemblyRef, GetCallTargetReturnType().data(), &callTargetReturnVoidTypeRef);
+            profilerAssemblyRef, GetCallTargetReturnType().data(), &newCallTargetReturnVoidTypeRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper callTargetReturnVoidTypeRef could not be defined.");
             return mdTypeRefNil;
         }
+        callTargetReturnVoidTypeRef = newCallTargetReturnVoidTypeRef;
     }
 
     return callTargetReturnVoidTypeRef;
@@ -204,14 +220,16 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnVoidDefaultMemberRef()
         memcpy(&signature[offset], &callTargetReturnVoidTypeBuffer, callTargetReturnVoidTypeSize);
         offset += callTargetReturnVoidTypeSize;
 
+        mdMemberRef newCallTargetReturnVoidTypeGetDefault;
         hr = module_metadata->metadata_emit->DefineMemberRef(
             callTargetReturnVoidTypeRef, managed_profiler_calltarget_returntype_getdefault_name.data(), signature,
-            signatureLength, &callTargetReturnVoidTypeGetDefault);
+            signatureLength, &newCallTargetReturnVoidTypeGetDefault);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper callTargetReturnVoidTypeGetDefault could not be defined.");
             return mdMemberRefNil;
         }
+        callTargetReturnVoidTypeGetDefault = newCallTargetReturnVoidTypeGetDefault;
     }
 
     return callTargetReturnVoidTypeGetDefault;
@@ -289,14 +307,16 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(const TypeSig
         signature[offset++] = ELEMENT_TYPE_MVAR;
         signature[offset++] = 0x00;
 
+        mdMemberRef newGetDefaultMemberRef;
         auto hr = module_metadata->metadata_emit->DefineMemberRef(
             callTargetTypeRef, managed_profiler_calltarget_getdefaultvalue_name.data(), signature, signatureLength,
-            &getDefaultMemberRef);
+            &newGetDefaultMemberRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper getDefaultMemberRef could not be defined.");
             return hr;
         }
+        getDefaultMemberRef = newGetDefaultMemberRef;
     }
 
     // *** Create de MethodSpec using the TypeSignature
@@ -536,6 +556,8 @@ ModuleMetadata* CallTargetTokens::GetMetadata()
 
 HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
 {
+    std::lock_guard<std::mutex> guard(metadata_mutex);
+
     auto hr = EnsureCorLibTokens();
     if (FAILED(hr))
     {
@@ -571,40 +593,46 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
         {
             public_key_size = 0;
         }
-
+            
+        mdAssemblyRef newProfilerAssemblyRef;
         hr = module_metadata->assembly_emit->DefineAssemblyRef(&assemblyReference.public_key.data, public_key_size,
-                                                               assemblyReference.name.data(), &assembly_metadata, nullptr,
-                                                               0, 0, &profilerAssemblyRef);
+            assemblyReference.name.data(), &assembly_metadata, nullptr,
+            0, 0, &newProfilerAssemblyRef);
 
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper profilerAssemblyRef could not be defined.");
             return hr;
         }
+        profilerAssemblyRef = newProfilerAssemblyRef;
     }
 
     // *** Ensure calltarget type ref
     if (callTargetTypeRef == mdTypeRefNil)
     {
+        mdTypeRef newCallTargetTypeRef;
         hr = module_metadata->metadata_emit->DefineTypeRefByName(
-            profilerAssemblyRef, GetCallTargetType().data(), &callTargetTypeRef);
+            profilerAssemblyRef, GetCallTargetType().data(), &newCallTargetTypeRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper callTargetTypeRef could not be defined.");
             return hr;
         }
+        callTargetTypeRef = newCallTargetTypeRef;
     }
 
     // *** Ensure calltargetstate type ref
     if (callTargetStateTypeRef == mdTypeRefNil)
     {
+        mdTypeRef newCallTargetStateTypeRef;
         hr = module_metadata->metadata_emit->DefineTypeRefByName(
-            profilerAssemblyRef, GetCallTargetStateType().data(), &callTargetStateTypeRef);
+            profilerAssemblyRef, GetCallTargetStateType().data(), &newCallTargetStateTypeRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper callTargetStateTypeRef could not be defined.");
             return hr;
         }
+        callTargetStateTypeRef = newCallTargetStateTypeRef;
     }
 
     // *** Ensure CallTargetState.GetDefault() member ref
@@ -624,25 +652,29 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
         memcpy(&signature[offset], &callTargetStateTypeBuffer, callTargetStateTypeSize);
         offset += callTargetStateTypeSize;
 
+        mdMemberRef newCallTargetStateTypeGetDefault;
         auto hr = module_metadata->metadata_emit->DefineMemberRef(
             callTargetStateTypeRef, managed_profiler_calltarget_statetype_getdefault_name.data(), signature,
-            signatureLength, &callTargetStateTypeGetDefault);
+            signatureLength, &newCallTargetStateTypeGetDefault);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper callTargetStateTypeGetDefault could not be defined.");
             return hr;
         }
+        callTargetStateTypeGetDefault = newCallTargetStateTypeGetDefault;
     }
 
     // *** Ensure calltargetrefstruct type ref
     if (callTargetRefStructTypeRef == mdTypeRefNil) {
         if (GetCallTargetRefStructType() != EmptyWStr) {
+            mdTypeRef newCallTargetRefStructTypeRef;
             hr = module_metadata->metadata_emit->DefineTypeRefByName(
-                profilerAssemblyRef, GetCallTargetRefStructType().data(), &callTargetRefStructTypeRef);
+                profilerAssemblyRef, GetCallTargetRefStructType().data(), &newCallTargetRefStructTypeRef);
             if (FAILED(hr)) {
                 Logger::Warn("Wrapper callTargetRefStructTypeRef could not be defined.");
                 return hr;
             }
+            callTargetRefStructTypeRef = newCallTargetRefStructTypeRef;
         }
     }
 
@@ -663,13 +695,15 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(TypeSignature* returnAr
     // *** Ensure calltargetreturn type ref
     if (callTargetReturnTypeRef == mdTypeRefNil)
     {
+        mdTypeRef newCallTargetReturnTypeRef;
         hr = module_metadata->metadata_emit->DefineTypeRefByName(
-            profilerAssemblyRef, GetCallTargetReturnGenericType().data(), &callTargetReturnTypeRef);
+            profilerAssemblyRef, GetCallTargetReturnGenericType().data(), &newCallTargetReturnTypeRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper callTargetReturnTypeRef could not be defined.");
             return mdTypeSpecNil;
         }
+        callTargetReturnTypeRef = newCallTargetReturnTypeRef;
     }
 
     PCCOR_SIGNATURE returnSignatureBuffer;
