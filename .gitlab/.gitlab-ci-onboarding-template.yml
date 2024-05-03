@@ -14,8 +14,10 @@ variables:
 
 test_echo:
   stage: package
+  image: registry.ddbuild.io/images/ci_docker_base
+  tags: ["runner:docker"]
   script:
-    - echo "Hello, world!"
+    - echo "Hello, world-----> ${DOTNET_PACKAGE_VERSION}"
 
 package-dev:
   extends: .package

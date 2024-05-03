@@ -82,21 +82,23 @@ compute-ci:
   stage: compute-ci
   needs:
     - check_single_step_packages
-  script: 
+  script:
+    - cp .gitlab/.gitlab-ci-onboarding-template.yml gitlab-ci-package-dev.yml 
     - |
       echo "Generating CI DEV configuration"
       if test -f "artifacts/PACKAGE_VERSION"; then
-        cat artifacts/PACKAGE_VERSION
+        DOTNET_PACKAGE_VERSION=${cat artifacts/PACKAGE_VERSION}.${CI_COMMIT_SHORT_SHA}
+        echo "DOTNET_PACKAGE_VERSION=${DOTNET_PACKAGE_VERSION}"
+        sed -i "s/DOTNET_PACKAGE_VERSION:/DOTNET_PACKAGE_VERSION: $DOTNET_PACKAGE_VERSION/g" gitlab-ci-package-dev.yml 
+        sed -i 's/description: "Used by the package stage when triggered manually"/##/g' gitlab-ci-package-dev.yml 
       fi
-    - cp .gitlab/.gitlab-ci-onboarding-template.yml gitlab-ci-package-dev.yml
+    
   artifacts:
     paths:
       - gitlab-ci-package-dev.yml
 
 trigger-ci:
   stage: trigger-ci
-  image: registry.ddbuild.io/images/ci_docker_base
-  tags: ["runner:docker"]
   trigger:
     strategy: depend
     include:
