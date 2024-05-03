@@ -39,6 +39,154 @@ internal class CreatedumpCommand : Command
         this.SetHandler(Execute);
     }
 
+    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? crashThread)
+    {
+        pid = default;
+        signal = default;
+        crashThread = default;
+
+        // Parse the createdump command-line
+        // Unfortunately, the pid is not necessarily at the beginning or the end, it can be between other arguments.
+        // It can get tricky when arguments have values, because unless we know the argument there is no sure way
+        // to figure out if whatever follows is the value of the argument or the pid.
+        // For instance:
+        // $ createdump -a 456 -b 789
+        // Is 456 the value of a and 789 the pid, or is 456 the pid and 789 the value of b?
+
+        // First, construct the list of known arguments. With those, at least, we can't go wrong.
+        // https://github.com/dotnet/runtime/blob/99dd60d8886155bb60768c8ef5a5a3225ad95ba4/src/coreclr/debug/createdump/createdumpmain.cpp#L19-L37
+        // and https://github.com/dotnet/runtime/blob/99dd60d8886155bb60768c8ef5a5a3225ad95ba4/src/coreclr/pal/src/thread/process.cpp#L2499-L2519
+        var knownArguments = new Dictionary<string, bool>
+        {
+            { "-f", true },
+            { "--name", true },
+            { "-n", false },
+            { "--normal", false },
+            { "-h", false },
+            { "--withheap", false },
+            { "-t", false },
+            { "--triage", false },
+            { "-u", false },
+            { "--full", false },
+            { "-d", false },
+            { "--diag", false },
+            { "-v", false },
+            { "--verbose", false },
+            { "-l", true },
+            { "--logtofile", true },
+            { "--creashreport", true },
+            { "--crashreportonly", false },
+            { "--crashthread", true },
+            { "--signal", true },
+            { "--singlefile", false },
+            { "--nativeaot", false },
+            { "--code", true },
+            { "--errno", true },
+            { "--address", true }
+        };
+
+        const string pidRegex = "[0-9]+";
+
+        // The values that might be a pid, that we need to disambiguate
+        var pidCandidates = new List<string>();
+
+        var parsedArguments = new Dictionary<string, string?>();
+        var queue = new Queue<string>(arguments);
+
+        while (queue.Count > 0)
+        {
+            var argument = queue.Dequeue();
+
+            if (knownArguments.TryGetValue(argument, out var hasValue))
+            {
+                // The easy case: we know the argument, so we know if whatever follows is its value
+                string? value = null;
+
+                if (hasValue)
+                {
+                    queue.TryDequeue(out value);
+                }
+
+                parsedArguments[argument] = value;
+                continue;
+            }
+
+            if (argument.StartsWith('-'))
+            {
+                // Unknown argument :(
+                // We don't know if the argument is supposed to have a value or not, so we peek at the next token
+                // and try to figure it out
+                if (queue.TryPeek(out var value))
+                {
+                    if (value.StartsWith('-'))
+                    {
+                        // Probably another argument
+                        parsedArguments[argument] = null;
+                        continue;
+                    }
+
+                    // It's either the pid or the value of the argument
+                    _ = queue.Dequeue();
+
+                    if (Regex.IsMatch(value, pidRegex))
+                    {
+                        pidCandidates.Add(value);
+                    }
+
+                    parsedArguments[argument] = value;
+                }
+                else
+                {
+                    parsedArguments[argument] = null;
+                }
+
+                continue;
+            }
+
+            // Unmatched value not following an argument, it is very likely to be the pid
+            if (Regex.IsMatch(argument, pidRegex))
+            {
+                // Add it at the beginning of the candidates, as it's almost certainly the pid
+                pidCandidates.Insert(0, argument);
+            }
+        }
+
+        if (parsedArguments.TryGetValue("--signal", out var rawSignal) && int.TryParse(rawSignal, out var signalValue))
+        {
+            signal = signalValue;
+        }
+
+        if (parsedArguments.TryGetValue("--crashthread", out var rawCrashthread) && int.TryParse(rawCrashthread, out var crashThreadValue))
+        {
+            crashThread = crashThreadValue;
+        }
+
+        // Have we found the pid?
+        if (pidCandidates.Count == 1)
+        {
+            // Best case scenario
+            return int.TryParse(pidCandidates[0], out pid);
+        }
+
+        // Check all the values to check if one is really a pid
+        foreach (var candidate in pidCandidates)
+        {
+            if (int.TryParse(candidate, out pid))
+            {
+                try
+                {
+                    using var process = System.Diagnostics.Process.GetProcessById(pid);
+                    return true;
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        return false;
+    }
+
     [UnmanagedCallersOnly]
     private static unsafe int ResolveManagedMethod(IntPtr ip, ResolveMethodData* methodData)
     {
@@ -182,154 +330,6 @@ internal class CreatedumpCommand : Command
         if (method.Type.Module.IsDynamic && assemblyName.StartsWith("DuckType"))
         {
             return true;
-        }
-
-        return false;
-    }
-
-    private static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? crashThread)
-    {
-        pid = default;
-        signal = default;
-        crashThread = default;
-
-        // Parse the createdump command-line
-        // Unfortunately, the pid is not necessarily at the beginning or the end, it can be between other arguments.
-        // It can get tricky when arguments have values, because unless we know the argument there is no sure way
-        // to figure out if whatever follows is the value of the argument or the pid.
-        // For instance:
-        // $ createdump -a 456 -b 789
-        // Is 456 the value of a and 789 the pid, or is 456 the pid and 789 the value of b?
-
-        // First, construct the list of known arguments. With those, at least, we can't go wrong.
-        // https://github.com/dotnet/runtime/blob/99dd60d8886155bb60768c8ef5a5a3225ad95ba4/src/coreclr/debug/createdump/createdumpmain.cpp#L19-L37
-        // and https://github.com/dotnet/runtime/blob/99dd60d8886155bb60768c8ef5a5a3225ad95ba4/src/coreclr/pal/src/thread/process.cpp#L2499-L2519
-        var knownArguments = new Dictionary<string, bool>
-        {
-            { "-f", true },
-            { "--name", true },
-            { "-n", false },
-            { "--normal", false },
-            { "-h", false },
-            { "--withheap", false },
-            { "-t", false },
-            { "--triage", false },
-            { "-u", false },
-            { "--full", false },
-            { "-d", false },
-            { "--diag", false },
-            { "-v", false },
-            { "--verbose", false },
-            { "-l", true },
-            { "--logtofile", true },
-            { "--creashreport", true },
-            { "--crashreportonly", false },
-            { "--crashthread", true },
-            { "--signal", true },
-            { "--singlefile", false },
-            { "--nativeaot", false },
-            { "--code", true },
-            { "--errno", true },
-            { "--address", true }
-        };
-
-        const string pidRegex = "[0-9]+";
-
-        // The values that might be a pid, that we need to disambiguate
-        var pidCandidates = new List<string>();
-
-        var parsedArguments = new Dictionary<string, string?>();
-        var queue = new Queue<string>(arguments);
-
-        while (queue.Count > 0)
-        {
-            var argument = queue.Dequeue();
-
-            if (knownArguments.TryGetValue(argument, out var hasValue))
-            {
-                // The easy case: we know the argument, so we know if whatever follows is its value
-                string? value = null;
-
-                if (hasValue)
-                {
-                    queue.TryDequeue(out value);
-                }
-
-                parsedArguments[argument] = value;
-                continue;
-            }
-
-            if (argument.StartsWith('-'))
-            {
-                // Unknown argument :(
-                // We don't know if the argument is supposed to have a value or not, so we peek at the next token
-                // and try to figure it out
-                if (queue.TryPeek(out var value))
-                {
-                    if (value.StartsWith('-'))
-                    {
-                        // Probably another argument
-                        parsedArguments[argument] = null;
-                        continue;
-                    }
-
-                    // It's either the pid or the value of the argument
-                    _ = queue.Dequeue();
-
-                    if (Regex.IsMatch(value, pidRegex))
-                    {
-                        pidCandidates.Add(value);
-                    }
-
-                    parsedArguments[argument] = value;
-                }
-                else
-                {
-                    parsedArguments[argument] = null;
-                }
-
-                continue;
-            }
-
-            // Unmatched value not following an argument, it is very likely to be the pid
-            if (Regex.IsMatch(argument, pidRegex))
-            {
-                // Add it at the beginning of the candidates, as it's almost certainly the pid
-                pidCandidates.Insert(0, argument);
-            }
-        }
-
-        if (parsedArguments.TryGetValue("--signal", out var rawSignal) && int.TryParse(rawSignal, out var signalValue))
-        {
-            signal = signalValue;
-        }
-
-        if (parsedArguments.TryGetValue("--crashthread", out var rawCrashthread) && int.TryParse(rawCrashthread, out var crashThreadValue))
-        {
-            crashThread = crashThreadValue;
-        }
-
-        // Have we found the pid?
-        if (pidCandidates.Count == 1)
-        {
-            // Best case scenario
-            return int.TryParse(pidCandidates[0], out pid);
-        }
-
-        // Check all the values to check if one is really a pid
-        foreach (var candidate in pidCandidates)
-        {
-            if (int.TryParse(candidate, out pid))
-            {
-                try
-                {
-                    using var process = System.Diagnostics.Process.GetProcessById(pid);
-                    return true;
-                }
-                catch
-                {
-                }
-            }
         }
 
         return false;
