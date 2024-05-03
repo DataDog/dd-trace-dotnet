@@ -50,10 +50,7 @@ internal class AppSecRequestContext
     {
         lock (_sync)
         {
-            if (_raspStackTraces is null)
-            {
-                _raspStackTraces = new();
-            }
+            _raspStackTraces ??= new();
 
             if (!_raspStackTraces.ContainsKey(_exploitStackKey))
             {
