@@ -9,8 +9,8 @@ include:
 
 variables:
   GIT_PROFILER_REF: master
-  DOTNET_PACKAGE_VERSION:
-    description: "Used by the package stage when triggered manually"
+  DOTNET_PACKAGE_VERSION: "2.5.0"
+   # description: "Used by the package stage when triggered manually"
 
 test_echo:
   stage: package
