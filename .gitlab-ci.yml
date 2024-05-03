@@ -40,6 +40,18 @@ build:
     paths:
     - artifacts
 
+build_single_step_packages:
+  stage: build
+  before_script:
+    - export GH_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.gh-token --with-decryption --query "Parameter.Value" --out text) 
+  script: 
+    - echo RUN TAG LIST
+    - 'curl -v -H "Authorization: Bearer ${GH_TOKEN}" https://ghcr.io/v2/datadog/dd-trace-dotnet/onboarding-dotnet/tags/list'
+    - echo RUN CHECK MANIFEST
+    - 'curl -v -H "Authorization: Bearer ${GH_TOKEN}" https://ghcr.io/v2/datadog/dd-trace-dotnet/onboarding-dotnet/manifests/7e700f10e57edee8d565e0e6b6a38af4145ea48d'
+    - echo FINISH
+
+
 publish:
   only:
     - master
