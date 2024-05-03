@@ -95,12 +95,11 @@ compute-ci:
         sed -i 's/description: "Used by the package stage when triggered manually"/##/g' gitlab-ci-package-dev.yml
         echo "----------------------------------"
         echo "----------------------------------"
-        cat gitlab-ci-package-dev.yml
       else
         sed -i "s/.wait_for_single_step_packages/wait_for_single_step_packages/g" gitlab-ci-package-dev.yml 
         sed -i "s/.trigger-ci/trigger-ci/g" gitlab-ci-package-dev.yml 
       fi
-    
+      cat gitlab-ci-package-dev.yml   
   artifacts:
     paths:
       - gitlab-ci-package-dev.yml

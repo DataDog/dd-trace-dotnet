@@ -50,7 +50,7 @@ test_echo:
       - gitlab-ci-package-dev.yml
 
 .trigger-ci:
-  stage: trigger-ci
+  stage: wait_for_images
   trigger:
     strategy: depend
     include:
