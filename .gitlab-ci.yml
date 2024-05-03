@@ -49,7 +49,7 @@ build_single_step_packages:
     - export GH_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.gh_ghcr_token --with-decryption --query "Parameter.Value" --out text) 
   script: |
     target_dir=artifacts
-    image=ghcr.io/datadog/dd-trace-dotnet/onboarding-dotnet:7e700f10e57edee8d565e0e6b6a38af4145ea48d
+    image=ghcr.io/datadog/dd-trace-dotnet/onboarding-dotnet:7e700f10e57edee8d565e0e6b6a38af4145ea48d_
     mkdir -p $target_dir
     echo $GH_TOKEN|docker login ghcr.io -u publisher --password-stdin
     
