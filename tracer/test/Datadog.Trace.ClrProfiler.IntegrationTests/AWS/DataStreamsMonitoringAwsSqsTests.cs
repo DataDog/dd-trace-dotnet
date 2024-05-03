@@ -70,7 +70,7 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
          *  - 1 produce pathway point (tagged with 'direction:out')
          *  - 1 consume pathway points (either with a parent for the "normal" case, or without when headers are full)
          */
-        using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
 #if NETFRAMEWORK
             // there is no snapshot for NetFramework so this test would fail if run

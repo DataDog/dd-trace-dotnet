@@ -87,6 +87,10 @@ namespace Samples.AWS.SQS
 
         public static async Task RunSpecificScenario(AmazonSQSClient sqsClient, Scenario s)
         {
+            // Ensure there's a parent span for all the requests, so that when we compare
+            // the injected context to the active, we _have_ an active trace
+            using var scope = SampleHelpers.CreateScope("async-methods");
+
             // setup
             await CreateSqsQueuesAsync(sqsClient);
             await GetQueuesUrlAsync(sqsClient);
