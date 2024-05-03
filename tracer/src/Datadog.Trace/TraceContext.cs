@@ -184,10 +184,7 @@ namespace Datadog.Trace
                     }
                 }
 
-                if (_appSecRequestContext != null)
-                {
-                    _appSecRequestContext.CloseWebSpan(Tags, span);
-                }
+                _appSecRequestContext?.CloseWebSpan(Tags, span);
             }
 
             if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
