@@ -17,7 +17,7 @@ internal static partial class RaspRuleTypeExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 3;
+    public const int Length = 2;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType"/> value.
@@ -30,7 +30,6 @@ internal static partial class RaspRuleTypeExtensions
     public static string ToStringFast(this Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType value)
         => value switch
         {
-            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.None => "waf_version;rule_type:none",
             Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Lfi => "waf_version;rule_type:lfi",
             Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Ssrf => "waf_version;rule_type:ssrf",
             _ => value.ToString(),
@@ -46,7 +45,6 @@ internal static partial class RaspRuleTypeExtensions
     public static Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType[] GetValues()
         => new []
         {
-            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.None,
             Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Lfi,
             Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Ssrf,
         };
@@ -62,7 +60,6 @@ internal static partial class RaspRuleTypeExtensions
     public static string[] GetNames()
         => new []
         {
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.None),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Lfi),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Ssrf),
         };
@@ -78,7 +75,6 @@ internal static partial class RaspRuleTypeExtensions
     public static string[] GetDescriptions()
         => new []
         {
-            "waf_version;rule_type:none",
             "waf_version;rule_type:lfi",
             "waf_version;rule_type:ssrf",
         };

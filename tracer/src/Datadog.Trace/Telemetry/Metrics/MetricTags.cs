@@ -250,9 +250,8 @@ internal static class MetricTags
     [EnumExtensions]
     public enum RaspRuleType
     {
-        [Description("waf_version;rule_type:none")] None = 0,
-        [Description("waf_version;rule_type:lfi")] Lfi = 1,
-        [Description("waf_version;rule_type:ssrf")] Ssrf = 2,
+        [Description("waf_version;rule_type:lfi")] Lfi = 0,
+        [Description("waf_version;rule_type:ssrf")] Ssrf = 1,
     }
 
     public enum TruncationReason

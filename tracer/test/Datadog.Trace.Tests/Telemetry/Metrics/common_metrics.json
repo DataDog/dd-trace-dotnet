@@ -378,7 +378,6 @@
       "description": "The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. `type:timeout`, `type:network`, `type:status_code`)",
       "send_to_user": false,
       "user_tags":[]
-
     },
     "telemetry_api.errors": {
       "tags": [
@@ -589,6 +588,14 @@
       "metric_type": "count",
       "data_type": "values",
       "description": "Number of tainted values at the end of a request",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "json.tag.size.exceeded": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "operations",
+      "description": "Number of times that _dd.iast.json tag exceeds the maximum span tag size",
       "send_to_user": false,
       "user_tags":[]
     }

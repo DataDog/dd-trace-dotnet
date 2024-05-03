@@ -58,6 +58,7 @@ internal static class RaspModule
         if (!_addressRuleType.TryGetValue(address, out var ruleType))
         {
             Log.Warning("RASP: Rule type not found for address {Address}", address);
+            return;
         }
 
         TelemetryFactory.Metrics.RecordCountRaspRuleEval(ruleType);

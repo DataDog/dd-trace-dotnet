@@ -183,9 +183,6 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<MetricTags.TruncationReason>("waf.input_truncated", isCommon: true, NS.ASM)] InputTruncated,
 
-    #endregion
-    #region Rasp Namespace
-
     /// <summary>
     /// Counts the number of times a rule type is evaluated.
     /// </summary>
