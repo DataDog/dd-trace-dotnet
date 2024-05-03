@@ -65,7 +65,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="3.2.525201" />
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="3.2.525301" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageReference Include="Spectre.Console" Version="0.43.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
