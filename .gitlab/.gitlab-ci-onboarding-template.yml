@@ -9,8 +9,8 @@ include:
 
 variables:
   GIT_PROFILER_REF: master
-  DOTNET_PACKAGE_VERSION: "2.5.0"
-   # description: "Used by the package stage when triggered manually"
+  DOTNET_PACKAGE_VERSION_DEV: 
+   description: "Used by the package stage when triggered manually"
 
 test_echo:
   stage: package
@@ -18,6 +18,9 @@ test_echo:
   tags: ["runner:docker"]
   script:
     - echo "Hello, world-----> $DOTNET_PACKAGE_VERSION"
+    - echo "Hello, world dev -----> $DOTNET_PACKAGE_VERSION_DEV"
+  env:
+    DOTNET_PACKAGE_VERSION: $DOTNET_PACKAGE_VERSION_DEV
 
 package-dev:
   extends: .package
