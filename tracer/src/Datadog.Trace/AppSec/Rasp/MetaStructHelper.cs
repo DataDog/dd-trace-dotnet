@@ -27,7 +27,7 @@ internal static class MetaStructHelper
             dict["type"] = type;
         }
 
-        if (message is not null && message.Length > 0)
+        if (message is { Length: > 0 })
         {
             dict["message"] = message;
         }
@@ -42,12 +42,12 @@ internal static class MetaStructHelper
             { "id", id }
         };
 
-        if (text is not null && text.Length > 0)
+        if (text is { Length: > 0 })
         {
             dict["text"] = text;
         }
 
-        if (file is not null && file.Length > 0)
+        if (file is { Length: > 0 })
         {
             dict["file"] = file;
         }
@@ -62,17 +62,17 @@ internal static class MetaStructHelper
             dict["column"] = column.Value;
         }
 
-        if (ns is not null && ns.Length > 0)
+        if (ns is { Length: > 0 })
         {
             dict["namespace"] = ns;
         }
 
-        if (className is not null && className.Length > 0)
+        if (className is { Length: > 0 })
         {
             dict["class_name"] = className;
         }
 
-        if (function is not null && function.Length > 0)
+        if (function is { Length: > 0 })
         {
             dict["function"] = function;
         }

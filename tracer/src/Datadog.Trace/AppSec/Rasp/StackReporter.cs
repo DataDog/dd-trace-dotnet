@@ -66,6 +66,6 @@ internal static class StackReporter
 
     private static bool AssemblyExcluded(string assembly)
     {
-        return assembly.Equals("Datadog.Trace", StringComparison.OrdinalIgnoreCase);
+        return assembly.StartsWith("Datadog.Trace", StringComparison.OrdinalIgnoreCase);
     }
 }

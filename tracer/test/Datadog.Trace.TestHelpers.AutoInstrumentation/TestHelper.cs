@@ -362,7 +362,6 @@ namespace Datadog.Trace.TestHelpers
         public void EnableRasp(bool enable = true)
         {
             SetEnvironmentVariable(ConfigurationKeys.AppSec.RaspEnabled, enable.ToString().ToLower());
-            SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "true");
         }
 
         public void EnableEvidenceRedaction(bool? enable = null)
