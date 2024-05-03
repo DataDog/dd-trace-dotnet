@@ -29,7 +29,7 @@ internal static class StackReporter
         return MetaStructHelper.StackTraceInfoToDictionary(null, _language, id, null, frames);
     }
 
-    private static List<Dictionary<string, object>>? GetFrames(int maxStackTraceDepth)
+    private static List<Dictionary<string, object>> GetFrames(int maxStackTraceDepth)
     {
         var stackTrace = new StackTrace(true);
         var stackFrameList = new List<Dictionary<string, object>>(maxStackTraceDepth);
