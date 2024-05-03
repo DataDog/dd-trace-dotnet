@@ -2,6 +2,7 @@
 stages:
   - package
   - publish
+  - release
 
 include:
   - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
@@ -15,7 +16,7 @@ test_echo:
   stage: package
   script:
     - echo "Hello, world!"
-    
+
 package-dev:
   extends: .package
   rules:
