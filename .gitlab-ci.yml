@@ -95,6 +95,8 @@ compute-ci:
 
 trigger-ci:
   stage: trigger-ci
+  image: registry.ddbuild.io/images/ci_docker_base
+  tags: ["runner:docker"]
   trigger:
     strategy: depend
     include:
