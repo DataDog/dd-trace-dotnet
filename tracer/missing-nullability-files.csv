@@ -642,16 +642,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/DynamoDb/ScanAsyncIntegrat
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/DynamoDb/ScanIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/DynamoDb/UpdateItemAsyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/DynamoDb/UpdateItemIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/AwsKinesisCommon.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/ContextPropagation.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/IAmazonKinesisRequestWithStreamName.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/IContainsData.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/IPutRecordRequest.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/IPutRecordsRequest.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/PutRecordAsyncIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/PutRecordIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/PutRecordsAsyncIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Kinesis/PutRecordsIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Lambda/HandlerWrapperSetHandlerIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Lambda/ILambdaExtensionRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Lambda/LambdaCommon.cs
