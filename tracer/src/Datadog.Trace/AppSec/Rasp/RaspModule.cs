@@ -17,10 +17,13 @@ namespace Datadog.Trace.AppSec.Rasp;
 internal static class RaspModule
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
-    private static Dictionary<string, RaspRuleType> _addressRuleType = new()
+
+    private static RaspRuleType? TryGetAddressRuleType(string address)
+    => address switch
     {
-        { AddressesConstants.FileAccess, RaspRuleType.Lfi },
-        { AddressesConstants.UrlAccess, RaspRuleType.Ssrf }
+        AddressesConstants.FileAccess => RaspRuleType.Lfi,
+        AddressesConstants.UrlAccess => RaspRuleType.Ssrf,
+        _ => null,
     };
 
     internal static void OnLfi(string file)
@@ -55,22 +58,24 @@ internal static class RaspModule
 
     private static void RecordRaspTelemetry(string address, bool isMatch, bool timeOut)
     {
-        if (!_addressRuleType.TryGetValue(address, out var ruleType))
+        var ruleType = TryGetAddressRuleType(address);
+
+        if (ruleType is null)
         {
             Log.Warning("RASP: Rule type not found for address {Address}", address);
             return;
         }
 
-        TelemetryFactory.Metrics.RecordCountRaspRuleEval(ruleType);
+        TelemetryFactory.Metrics.RecordCountRaspRuleEval(ruleType.Value);
 
         if (isMatch)
         {
-            TelemetryFactory.Metrics.RecordCountRaspRuleMatch(ruleType);
+            TelemetryFactory.Metrics.RecordCountRaspRuleMatch(ruleType.Value);
         }
 
         if (timeOut)
         {
-            TelemetryFactory.Metrics.RecordCountRaspTimeout(ruleType);
+            TelemetryFactory.Metrics.RecordCountRaspTimeout(ruleType.Value);
         }
     }
 
