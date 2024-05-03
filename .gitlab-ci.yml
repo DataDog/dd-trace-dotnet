@@ -42,6 +42,8 @@ build:
 
 build_single_step_packages:
   stage: build
+  image: registry.ddbuild.io/ci/serverless-tools:1
+  tags: ["arch:amd64"]
   before_script:
     - export GH_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.gh-token --with-decryption --query "Parameter.Value" --out text) 
   script: 
