@@ -62,7 +62,11 @@ build_single_step_packages:
     rm -rf $target_dir/image.tar $target_dir/manifest.json $target_dir/oci-layout  $target_dir/index.json 
     rm -rf $target_dir/blobs/
     ls -l $target_dir
-
+    cat $target_dir PACKAGE_VERSION
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+    - artifacts
 publish:
   only:
     - master
