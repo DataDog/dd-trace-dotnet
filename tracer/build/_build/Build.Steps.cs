@@ -284,7 +284,7 @@ partial class Build
             DeleteDirectory(NativeTracerProject.Directory / "build");
 
             var finalArchs = FastDevLoop ? new[]  { "arm64" } : OsxArchs;
-            
+
             var lstNativeBinaries = new List<string>();
             foreach (var arch in finalArchs)
             {
@@ -2221,7 +2221,7 @@ partial class Build
                     if (line.Contains("#nullable enable"))
                     {
                         missingNullability = false;
-                        break;        
+                        break;
                     }
                 }
 

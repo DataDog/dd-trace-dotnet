@@ -114,6 +114,11 @@ namespace Datadog.Trace.Configuration
             /// Activate debug logs for the WAF
             /// </summary>
             internal const string WafDebugEnabled = "DD_APPSEC_WAF_DEBUG";
+
+            /// <summary>
+            /// Activate SCA (Software Composition Analysis), used in the backend
+            /// </summary>
+            internal const string ScaEnabled = "DD_APPSEC_SCA_ENABLED";
         }
     }
 }
