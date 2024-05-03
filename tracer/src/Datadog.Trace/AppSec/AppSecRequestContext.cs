@@ -15,7 +15,8 @@ namespace Datadog.Trace.AppSec;
 
 internal class AppSecRequestContext
 {
-    private const string _stackKey = "_dd.stack";
+    private const string StackKey = "_dd.stack";
+    private const string ExploitStackKey = "exploit";
     private const string _exploitStackKey = "exploit";
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
