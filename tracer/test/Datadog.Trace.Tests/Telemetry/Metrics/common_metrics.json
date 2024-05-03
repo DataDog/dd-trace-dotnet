@@ -303,7 +303,7 @@
       "data_type": "requests",
       "description": "Number of successful host lib injection",
       "send_to_user": false,
-      "user_tags": []
+      "user_tags":[]
     },
     "host_lib_injection.failure": {
       "tags": [
@@ -314,7 +314,7 @@
       "data_type": "requests",
       "description": "Number of failed host lib injection",
       "send_to_user": false,
-      "user_tags": []
+      "user_tags":[]
     },
     "docker_lib_injection.success": {
       "tags": [
@@ -325,7 +325,7 @@
       "data_type": "requests",
       "description": "Number of successful docker lib injection",
       "send_to_user": false,
-      "user_tags": []
+      "user_tags":[]
     },
     "docker_lib_injection.failure": {
       "tags": [
@@ -336,7 +336,7 @@
       "data_type": "requests",
       "description": "Number of failed docker lib injection",
       "send_to_user": false,
-      "user_tags": []
+      "user_tags":[]
     }
   },
   "telemetry": {
@@ -378,7 +378,6 @@
       "description": "The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. `type:timeout`, `type:network`, `type:status_code`)",
       "send_to_user": false,
       "user_tags":[]
-
     },
     "telemetry_api.errors": {
       "tags": [
@@ -484,6 +483,39 @@
       "description": "Count of errors reported by the WAF on about particular config item",
       "send_to_user": false,
       "user_tags":[]
+    },
+    "rasp.rule.eval": {
+      "tags": [
+        "waf_version",
+        "rule_type"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Counts the number of times a rule type is evaluated",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "rasp.rule.match": {
+      "tags": [
+        "waf_version",
+        "rule_type"
+      ],
+      "metric_type": "count",
+      "data_type": "matches",
+      "description": "Counts the number of times a rule type has a match",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "rasp.timeout": {
+      "tags": [
+        "waf_version",
+        "rule_type"
+      ],
+      "metric_type": "count",
+      "data_type": "timeouts",
+      "description": "Counts the number of times a timeout was hit when evaluating a specific rule type",
+      "send_to_user": false,
+      "user_tags":[]
     }
   },
   "iast": {
@@ -558,6 +590,14 @@
       "description": "Number of tainted values at the end of a request",
       "send_to_user": false,
       "user_tags":[]
+    },
+    "json.tag.size.exceeded": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "operations",
+      "description": "Number of times that _dd.iast.json tag exceeds the maximum span tag size",
+      "send_to_user": false,
+      "user_tags":[]
     }
   },
   "sidecar": {
@@ -566,6 +606,14 @@
       "metric_type": "gauge",
       "data_type": "sessions",
       "description": "Number of sessions active in parallel",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "server.memory_usage": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "Memory consumption of the sidecar",
       "send_to_user": false,
       "user_tags":[]
     },
@@ -607,7 +655,7 @@
       ],
       "metric_type": "count",
       "data_type": "events",
-      "description": "The number of events finished, tagged by event type (possible values are: `event_type:test`, `event_type:suite`, `event_type:module` or `event_type:session`), testing framework name (e.g. `test_framework:xunit`, `test_framework:nunit`, `test_framework:jest`) . Also, if the event_type is `session` two boolean tags will be set (has_codeowner and unsupported_ci), if the event_type is `test` a boolean `is_benchmark` flag will be set.",
+      "description": "The number of events finished, tagged by event type (possible values are: `event_type:test`, `event_type:suite`, `event_type:module` or `event_type:session`), testing framework name (e.g. `test_framework:xunit`, `test_framework:nunit`, `test_framework:jest`) . If the event_type is `session` two boolean tags will be set (`has_codeowner` and `unsupported_ci`) and additional string tag might be set (`early_flake_detection_abort_reason` if early flakiness detection feature was aborted for that particular session; currently has only one possible value: `faulty`). If the event_type is `test` boolean `is_benchmark`, `is_new`, `is_rum` flags will be set (if `is_rum` is set, additional `browser_driver` tag will be added, which currently has only one possible value; if `is_new` is set, additional `early_flake_detection_abort_reason` tag will be added, which currently has only one possible value).",
       "send_to_user": false,
       "user_tags":[]
     },
@@ -850,11 +898,12 @@
     "git_requests.settings_response": {
       "tags": [
         "coverage_enabled",
-        "itrskip_enabled"
+        "itrskip_enabled",
+        "early_flake_detection_enabled"
       ],
       "metric_type": "count",
       "data_type": "response",
-      "description": "The number of settings responses from the endpoint tagged by the coverage_enabled and itrskip_enabled responses",
+      "description": "The number of settings responses from the endpoint tagged with `coverage_enabled`, `itrskip_enabled` or `early_flake_detection_enabled` flags (if corresponding boolean settings are set in the response)",
       "send_to_user": false,
       "user_tags":[]
     },
@@ -1005,5 +1054,32 @@
       "user_tags":[]
     }
   },
-  "profiler": {}
+  "profilers": {
+    "ssi_heuristic.number_of_profiles": {
+      "tags": [
+        "installation",
+        "enablement_choice",
+        "has_sent_profiles",
+        "heuristic_hypothetical_decision"
+      ],
+      "metric_type": "count",
+      "data_type": "profiles",
+      "description": "The number of profiles that would have been hypothetically emitted if SSI was enabled for profiling",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "ssi_heuristic.number_of_runtime_id": {
+      "tags": [
+        "installation",
+        "enablement_choice",
+        "has_sent_profiles",
+        "heuristic_hypothetical_decision"
+      ],
+      "metric_type": "count",
+      "data_type": "runtimes",
+      "description": "The number of runtimes that would have been hypothetically profiled if SSI was enabled for profiling",
+      "send_to_user": false,
+      "user_tags":[]
+    }
+  }
 }

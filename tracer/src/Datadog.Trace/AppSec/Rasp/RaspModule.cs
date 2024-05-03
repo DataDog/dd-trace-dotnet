@@ -18,6 +18,14 @@ internal static class RaspModule
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
 
+    private static RaspRuleType? TryGetAddressRuleType(string address)
+    => address switch
+    {
+        AddressesConstants.FileAccess => RaspRuleType.Lfi,
+        AddressesConstants.UrlAccess => RaspRuleType.Ssrf,
+        _ => null,
+    };
+
     internal static void OnLfi(string file)
     {
         CheckVulnerability(AddressesConstants.FileAccess, file);
@@ -45,13 +53,41 @@ internal static class RaspModule
         }
 
         var arguments = new Dictionary<string, object> { [address] = valueToCheck };
-        RunWaf(arguments, rootSpan);
+        RunWafRasp(arguments, rootSpan, address);
     }
 
-    private static void RunWaf(Dictionary<string, object> arguments, Span rootSpan)
+    private static void RecordRaspTelemetry(string address, bool isMatch, bool timeOut)
+    {
+        var ruleType = TryGetAddressRuleType(address);
+
+        if (ruleType is null)
+        {
+            Log.Warning("RASP: Rule type not found for address {Address}", address);
+            return;
+        }
+
+        TelemetryFactory.Metrics.RecordCountRaspRuleEval(ruleType.Value);
+
+        if (isMatch)
+        {
+            TelemetryFactory.Metrics.RecordCountRaspRuleMatch(ruleType.Value);
+        }
+
+        if (timeOut)
+        {
+            TelemetryFactory.Metrics.RecordCountRaspTimeout(ruleType.Value);
+        }
+    }
+
+    private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
         var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
+
+        if (result is not null)
+        {
+            RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout);
+        }
 
         try
         {
