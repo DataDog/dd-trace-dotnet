@@ -248,6 +248,13 @@ internal static class MetricTags
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
     }
 
+    [EnumExtensions]
+    public enum RaspRuleType
+    {
+        [Description("waf_version;rule_type:lfi")] Lfi = 0,
+        [Description("waf_version;rule_type:ssrf")] Ssrf = 1,
+    }
+
     public enum TruncationReason
     {
         [Description("truncation_reason:string_too_long")]StringTooLong = 1,
