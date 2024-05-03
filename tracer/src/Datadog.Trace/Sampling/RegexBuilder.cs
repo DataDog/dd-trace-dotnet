@@ -64,7 +64,7 @@ internal static class RegexBuilder
         }
     }
 
-    public static List<KeyValuePair<string, Regex?>> Build(ICollection<KeyValuePair<string, string?>> patterns, string format, TimeSpan timeout)
+    public static List<KeyValuePair<string, Regex?>> Build(ICollection<KeyValuePair<string, string?>>? patterns, string format, TimeSpan timeout)
     {
         if (patterns is { Count: > 0 })
         {

@@ -119,7 +119,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 isSpan = true;
             }
 
-            var correlationId = value.Type == SpanTypes.Test ? CIVisibility.GetSkippableTestsCorrelationId() : null;
+            var correlationId = value.Type is SpanTypes.Test or SpanTypes.Browser ? CIVisibility.GetSkippableTestsCorrelationId() : null;
             if (correlationId is not null)
             {
                 len++;

@@ -44,6 +44,27 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
             => (await SendAsync(WebRequestMethods.Http.Post, contentType, new HttpOverStreams.HttpContent.PushStreamContent(writeToRequestStream), contentEncoding, chunkedEncoding: true, multipartBoundary).ConfigureAwait(false)).Item1;
 
+        public async Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
+        {
+            var contentEncoding = multipartCompression switch
+            {
+                MultipartCompression.None => null,
+                MultipartCompression.GZip => "gzip",
+                _ => throw new InvalidOperationException($"Unknown compression type: {multipartCompression}"),
+            };
+
+            var sendResult = await SendAsync(
+                                    WebRequestMethods.Http.Post,
+                                    contentType: MimeTypes.MultipartFormData,
+                                    new HttpOverStreams.HttpContent.MultipartFormContent(items, multipartCompression),
+                                    contentEncoding: contentEncoding,
+                                    chunkedEncoding: true,
+                                    DatadogHttpValues.Boundary)
+                               .ConfigureAwait(false);
+
+            return sendResult.Item1;
+        }
+
         private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content, string contentEncoding, bool chunkedEncoding, string multipartBoundary = null)
         {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())

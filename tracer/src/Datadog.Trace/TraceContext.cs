@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
@@ -35,26 +34,25 @@ namespace Datadog.Trace
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
         private int? _samplingPriority;
-        // _rootSpan was chosen at some point to be used as the key for a lock that protects
+
+        // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
         // * _openSpans
         // although it's a nullable field, the _rootSpan must always be set before operations on
-        // _spans & _samplingPriority take place, so it's okay to use it as a lock key
+        // _spans take place, so it's okay to use it as a lock key
         // even though we need to override the nullable warnings in some places.
-        // The reason _rootSpan was chosen is unknown, we're assuming it's to avoid
-        // allocation a separate field for the lock
+        // The reason _rootSpan was chosen is to avoid
+        // allocating a separate object for the lock.
         private Span? _rootSpan;
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection? tags = null)
         {
             CurrentTraceSettings = tracer.PerTraceSettings;
 
-            var settings = tracer.Settings;
-
             // TODO: Environment, ServiceVersion, GitCommitSha, and GitRepositoryUrl are stored on the TraceContext
             // even though they likely won't change for the lifetime of the process. We should consider moving them
             // elsewhere to reduce the memory usage.
-            if (settings is not null)
+            if (tracer.Settings is { } settings)
             {
                 // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
                 Environment = settings.EnvironmentInternal;
@@ -69,7 +67,6 @@ namespace Datadog.Trace
         public Span? RootSpan
         {
             get => _rootSpan;
-            private set => _rootSpan = value;
         }
 
         public TraceClock Clock => _clock;
@@ -81,7 +78,6 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the collection of trace-level tags.
         /// </summary>
-        [NotNull]
         public TraceTagCollection Tags { get; }
 
         /// <summary>
@@ -110,6 +106,11 @@ namespace Datadog.Trace
         /// </summary>
         internal IastRequestContext? IastRequestContext => _iastRequestContext;
 
+        internal static TraceContext? GetTraceContext(in ArraySegment<Span> spans) =>
+            spans.Count > 0 ?
+                spans.Array![spans.Offset].Context.TraceContext :
+                null;
+
         internal void AddWafSecurityEvents(IReadOnlyCollection<object> events)
         {
             if (Volatile.Read(ref _appSecRequestContext) is null)
@@ -118,6 +119,16 @@ namespace Datadog.Trace
             }
 
             _appSecRequestContext!.AddWafSecurityEvents(events);
+        }
+
+        internal void AddStackTraceElement(Dictionary<string, object> stack, int maxStackTraces)
+        {
+            if (Volatile.Read(ref _appSecRequestContext) is null)
+            {
+                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
+            }
+
+            _appSecRequestContext!.AddRaspStackTrace(stack, maxStackTraces);
         }
 
         internal void EnableIastInRequest()
@@ -155,7 +166,7 @@ namespace Datadog.Trace
             ArraySegment<Span> spansToWrite = default;
 
             // Propagate the resource name to the profiler for root web spans
-            if (span.IsRootSpan && span.Type == SpanTypes.Web)
+            if (span is { IsRootSpan: true, Type: SpanTypes.Web })
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
@@ -173,10 +184,7 @@ namespace Datadog.Trace
                     }
                 }
 
-                if (_appSecRequestContext != null)
-                {
-                    _appSecRequestContext.CloseWebSpan(Tags);
-                }
+                _appSecRequestContext?.CloseWebSpan(Tags, span);
             }
 
             if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
@@ -256,6 +264,7 @@ namespace Datadog.Trace
 
             if (priority > 0 && mechanism != null)
             {
+                // add the tag once, but never overwrite an existing tag
                 Tags.TryAddTag(tagName, SamplingMechanism.GetTagValue(mechanism.Value));
             }
             else if (priority <= 0)
@@ -277,11 +286,11 @@ namespace Datadog.Trace
                 return;
             }
 
-            if (spans.Array![spans.Offset].Context.TraceContext?.SamplingPriority <= 0)
+            if (SamplingPriorityValues.IsDrop(SamplingPriority))
             {
                 for (int i = 0; i < spans.Count; i++)
                 {
-                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array[i + spans.Offset]);
+                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array![i + spans.Offset]);
                 }
             }
         }

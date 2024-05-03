@@ -639,5 +639,19 @@
       "7.13.*",
       "7.*.*"
     ]
+  },
+  {
+    "IntegrationName": "Selenium",
+    "SampleProjectName": "Samples.Selenium",
+    "NugetPackageSearchName": "Selenium.WebDriver",
+    "MinVersion": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
+    "SpecificVersions": [
+      "4.0.*",
+      "4.10.*",
+      "4.15.*",
+      "4.20.*",
+      "4.*.*"
+    ]
   }
 ]

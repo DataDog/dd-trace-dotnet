@@ -3,16 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.Sampling
 {
     internal interface ISamplingRule
     {
-        /// <summary>
-        /// Gets the rule name.
-        /// Used for debugging purposes mostly.
-        /// </summary>
-        string RuleName { get; }
-
         /// <summary>
         /// Gets the rule priority.
         /// Higher number means higher priority.

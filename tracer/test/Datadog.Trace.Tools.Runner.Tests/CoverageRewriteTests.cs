@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -121,7 +122,12 @@ public class CoverageRewriteTests
         }
     }
 
-    [Theory]
+#if NETCOREAPP2_1
+    // Due to a BCL Bug in .NET Core 2.1 [DirectoryInfo.GetDirectories()] triggered by this test, we need to skip the test if we find a NullReferenceException
+    [SkippableTheory(typeof(NullReferenceException))]
+#else
+    [SkippableTheory]
+#endif
     [MemberData(nameof(CoverageModeData))]
     public async Task NoFilter(string coverageMode)
     {
@@ -154,7 +160,12 @@ public class CoverageRewriteTests
         await Verifier.Verify(transCode, transVerifySettings);
     }
 
-    [Theory]
+#if NETCOREAPP2_1
+    // Due to a BCL Bug in .NET Core 2.1 [DirectoryInfo.GetDirectories()] triggered by this test, we need to skip the test if we find a NullReferenceException
+    [SkippableTheory(typeof(NullReferenceException))]
+#else
+    [SkippableTheory]
+#endif
     [MemberData(nameof(FiltersByCoverageModeData))]
     public async Task WithFilters(string targetSnapshot, string configurationSettingsXml, string coverageMode)
     {

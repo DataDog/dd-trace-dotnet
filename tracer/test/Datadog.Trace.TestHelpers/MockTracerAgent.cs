@@ -638,30 +638,32 @@ namespace Datadog.Trace.TestHelpers
 
         private void HandlePotentialDebuggerData(MockHttpRequest request)
         {
-            if (request.ContentLength >= 1)
+            try
             {
-                try
+                var body = request.ReadStreamBody();
+                if (body.Length == 0)
                 {
-                    var body = request.ReadStreamBody();
-                    using var stream = new MemoryStream(body);
-                    using var streamReader = new StreamReader(stream);
-                    var batch = streamReader.ReadToEnd();
-
-                    ReceiveDebuggerBatch(batch);
+                    return;
                 }
-                catch (Exception ex)
+
+                using var stream = new MemoryStream(body);
+                using var streamReader = new StreamReader(stream);
+                var batch = streamReader.ReadToEnd();
+
+                ReceiveDebuggerBatch(batch);
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message.ToLowerInvariant();
+
+                if (message.Contains("beyond the end of the stream"))
                 {
-                    var message = ex.Message.ToLowerInvariant();
-
-                    if (message.Contains("beyond the end of the stream"))
-                    {
-                        // Accept call is likely interrupted by a dispose
-                        // Swallow the exception and let the test finish
-                        return;
-                    }
-
-                    throw;
+                    // Accept call is likely interrupted by a dispose
+                    // Swallow the exception and let the test finish
+                    return;
                 }
+
+                throw;
             }
 
             void ReceiveDebuggerBatch(string batch)
@@ -678,30 +680,32 @@ namespace Datadog.Trace.TestHelpers
 
         private void HandlePotentialDiagnosticsData(MockHttpRequest request)
         {
-            if (request.ContentLength >= 1)
+            try
             {
-                try
+                var body = request.ReadStreamBody();
+                if (body.Length == 0)
                 {
-                    var body = request.ReadStreamBody();
-                    using var stream = new MemoryStream(body);
-                    using var streamReader = new StreamReader(stream);
-                    var batch = streamReader.ReadToEnd();
-
-                    ReceiveDiagnosticsBatch(batch);
+                    return;
                 }
-                catch (Exception ex)
+
+                using var stream = new MemoryStream(body);
+                using var streamReader = new StreamReader(stream);
+                var batch = streamReader.ReadToEnd();
+
+                ReceiveDiagnosticsBatch(batch);
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message.ToLowerInvariant();
+
+                if (message.Contains("beyond the end of the stream"))
                 {
-                    var message = ex.Message.ToLowerInvariant();
-
-                    if (message.Contains("beyond the end of the stream"))
-                    {
-                        // Accept call is likely interrupted by a dispose
-                        // Swallow the exception and let the test finish
-                        return;
-                    }
-
-                    throw;
+                    // Accept call is likely interrupted by a dispose
+                    // Swallow the exception and let the test finish
+                    return;
                 }
+
+                throw;
             }
 
             void ReceiveDiagnosticsBatch(string batch)
@@ -827,7 +831,7 @@ namespace Datadog.Trace.TestHelpers
 
         private MockTracerResponse HandleEvpProxyPayload(MockHttpRequest request)
         {
-            if (ShouldDeserializeTraces && request.ContentLength >= 1)
+            if (ShouldDeserializeTraces)
             {
                 try
                 {
@@ -1178,7 +1182,7 @@ namespace Datadog.Trace.TestHelpers
                                     ctx.Response.StatusCode = mockTracerResponse.StatusCode;
                                 }
 
-                                ctx.Response.ContentType = "application/json";
+                                ctx.Response.ContentType = mockTracerResponse.ContentType;
                                 ctx.Response.ContentLength64 = buffer.LongLength;
                                 ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                                 ctx.Response.Close();

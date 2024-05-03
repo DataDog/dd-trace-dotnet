@@ -532,6 +532,16 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for enabling or disabling the early flake detection feature in CI Visibility
             /// </summary>
             public const string EarlyFlakeDetectionEnabled = "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED";
+
+            /// <summary>
+            /// Configuration key for setting the code coverage collector path
+            /// </summary>
+            public const string CodeCoverageCollectorPath = "DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH";
+
+            /// <summary>
+            /// Configuration key for set the rum flushing wait in milliseconds
+            /// </summary>
+            public const string RumFlushWaitMillis = "DD_CIVISIBILITY_RUM_FLUSH_WAIT_MILLIS";
         }
 
         /// <summary>

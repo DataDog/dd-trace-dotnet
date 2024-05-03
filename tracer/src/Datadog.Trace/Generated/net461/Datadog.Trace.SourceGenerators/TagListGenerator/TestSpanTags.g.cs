@@ -40,6 +40,16 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> EarlyFlakeDetectionTestIsNewBytes => new byte[] { 171, 116, 101, 115, 116, 46, 105, 115, 95, 110, 101, 119 };
         // EarlyFlakeDetectionTestIsRetryBytes = MessagePack.Serialize("test.is_retry");
         private static ReadOnlySpan<byte> EarlyFlakeDetectionTestIsRetryBytes => new byte[] { 173, 116, 101, 115, 116, 46, 105, 115, 95, 114, 101, 116, 114, 121 };
+        // BrowserDriverBytes = MessagePack.Serialize("test.browser.driver");
+        private static ReadOnlySpan<byte> BrowserDriverBytes => new byte[] { 179, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 100, 114, 105, 118, 101, 114 };
+        // BrowserDriverVersionBytes = MessagePack.Serialize("test.browser.driver_version");
+        private static ReadOnlySpan<byte> BrowserDriverVersionBytes => new byte[] { 187, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 100, 114, 105, 118, 101, 114, 95, 118, 101, 114, 115, 105, 111, 110 };
+        // BrowserNameBytes = MessagePack.Serialize("test.browser.name");
+        private static ReadOnlySpan<byte> BrowserNameBytes => new byte[] { 177, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 110, 97, 109, 101 };
+        // BrowserVersionBytes = MessagePack.Serialize("test.browser.version");
+        private static ReadOnlySpan<byte> BrowserVersionBytes => new byte[] { 180, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 118, 101, 114, 115, 105, 111, 110 };
+        // IsRumActiveBytes = MessagePack.Serialize("test.is_rum_active");
+        private static ReadOnlySpan<byte> IsRumActiveBytes => new byte[] { 178, 116, 101, 115, 116, 46, 105, 115, 95, 114, 117, 109, 95, 97, 99, 116, 105, 118, 101 };
 
         public override string? GetTag(string key)
         {
@@ -56,6 +66,11 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.itr.forced_run" => ForcedRun,
                 "test.is_new" => EarlyFlakeDetectionTestIsNew,
                 "test.is_retry" => EarlyFlakeDetectionTestIsRetry,
+                "test.browser.driver" => BrowserDriver,
+                "test.browser.driver_version" => BrowserDriverVersion,
+                "test.browser.name" => BrowserName,
+                "test.browser.version" => BrowserVersion,
+                "test.is_rum_active" => IsRumActive,
                 _ => base.GetTag(key),
             };
         }
@@ -96,6 +111,21 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "test.is_retry": 
                     EarlyFlakeDetectionTestIsRetry = value;
+                    break;
+                case "test.browser.driver": 
+                    BrowserDriver = value;
+                    break;
+                case "test.browser.driver_version": 
+                    BrowserDriverVersion = value;
+                    break;
+                case "test.browser.name": 
+                    BrowserName = value;
+                    break;
+                case "test.browser.version": 
+                    BrowserVersion = value;
+                    break;
+                case "test.is_rum_active": 
+                    IsRumActive = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -158,6 +188,31 @@ namespace Datadog.Trace.Ci.Tagging
             if (EarlyFlakeDetectionTestIsRetry is not null)
             {
                 processor.Process(new TagItem<string>("test.is_retry", EarlyFlakeDetectionTestIsRetry, EarlyFlakeDetectionTestIsRetryBytes));
+            }
+
+            if (BrowserDriver is not null)
+            {
+                processor.Process(new TagItem<string>("test.browser.driver", BrowserDriver, BrowserDriverBytes));
+            }
+
+            if (BrowserDriverVersion is not null)
+            {
+                processor.Process(new TagItem<string>("test.browser.driver_version", BrowserDriverVersion, BrowserDriverVersionBytes));
+            }
+
+            if (BrowserName is not null)
+            {
+                processor.Process(new TagItem<string>("test.browser.name", BrowserName, BrowserNameBytes));
+            }
+
+            if (BrowserVersion is not null)
+            {
+                processor.Process(new TagItem<string>("test.browser.version", BrowserVersion, BrowserVersionBytes));
+            }
+
+            if (IsRumActive is not null)
+            {
+                processor.Process(new TagItem<string>("test.is_rum_active", IsRumActive, IsRumActiveBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -239,6 +294,41 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.is_retry (tag):")
                   .Append(EarlyFlakeDetectionTestIsRetry)
+                  .Append(',');
+            }
+
+            if (BrowserDriver is not null)
+            {
+                sb.Append("test.browser.driver (tag):")
+                  .Append(BrowserDriver)
+                  .Append(',');
+            }
+
+            if (BrowserDriverVersion is not null)
+            {
+                sb.Append("test.browser.driver_version (tag):")
+                  .Append(BrowserDriverVersion)
+                  .Append(',');
+            }
+
+            if (BrowserName is not null)
+            {
+                sb.Append("test.browser.name (tag):")
+                  .Append(BrowserName)
+                  .Append(',');
+            }
+
+            if (BrowserVersion is not null)
+            {
+                sb.Append("test.browser.version (tag):")
+                  .Append(BrowserVersion)
+                  .Append(',');
+            }
+
+            if (IsRumActive is not null)
+            {
+                sb.Append("test.is_rum_active (tag):")
+                  .Append(IsRumActive)
                   .Append(',');
             }
 

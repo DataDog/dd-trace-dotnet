@@ -1,4 +1,4 @@
-// <copyright file="DefaultSamplingRuleTests.cs" company="Datadog">
+// <copyright file="AgentSamplingRuleTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
 {
-    public class DefaultSamplingRuleTests
+    public class AgentSamplingRuleTests
     {
         [Theory]
         // Value returned by the agent per default
@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests.Sampling
             scope.Span.Context.TraceContext.Environment = expectedEnv;
 
             // create sampling rule
-            var rule = new DefaultSamplingRule();
+            var rule = new AgentSamplingRule();
             rule.SetDefaultSampleRates(new Dictionary<string, float> { { key, .5f } });
 
             // assert that the sampling rate applied to the span is correct
@@ -45,13 +45,13 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Fact]
-        public async Task DefaultSamplingRuleIsApplied()
+        public async Task SamplingRulesAreApplied()
         {
             const string configuredService = "NiceService";
             const string configuredEnv = "BeautifulEnv";
             const string unconfiguredService = "RogueService";
 
-            var rule = new DefaultSamplingRule();
+            var rule = new AgentSamplingRule();
 
             var settings = new TracerSettings();
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);

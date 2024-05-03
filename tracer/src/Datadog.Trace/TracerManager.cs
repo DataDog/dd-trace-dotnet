@@ -27,7 +27,6 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -162,7 +161,7 @@ namespace Datadog.Trace
 
         public RuntimeMetricsWriter RuntimeMetrics { get; }
 
-        public PerTraceSettings PerTraceSettings { get; set; }
+        public PerTraceSettings PerTraceSettings { get; }
 
         /// <summary>
         /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="Tracer"/> instances
