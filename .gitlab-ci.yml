@@ -1,6 +1,8 @@
 
 stages:
   - build
+  - compute-ci
+  - trigger-ci
   - package
   - publish
   - deploy
@@ -40,7 +42,7 @@ build:
     paths:
     - artifacts
 
-build_single_step_packages:
+check_single_step_packages:
   stage: build
   #image: registry.ddbuild.io/ci/serverless-tools:1
   image: registry.ddbuild.io/images/ci_docker_base
@@ -72,7 +74,29 @@ build_single_step_packages:
   artifacts:
     expire_in: 2 weeks
     paths:
-    - artifacts
+    - artifacts/PACKAGE_VERSION
+
+compute-ci:
+  image: registry.ddbuild.io/ci/auto_inject/gitlab:current  
+  stage: compute-ci
+  needs:
+    - check_single_step_packages
+  script: 
+    - echo "Generating CI DEV configuration"
+    - cat artifacts/PACKAGE_VERSION
+    - cp .gitlab/.gitlab-ci-onboarding-template.yml gitlab-ci-package-dev.yml
+  artifacts:
+    paths:
+      - gitlab-ci-package-dev.yml
+
+trigger-ci:
+  stage: trigger-ci
+  trigger:
+    strategy: depend
+    include:
+      - artifact: gitlab-ci-package-dev.yml
+        job: compute-ci
+
 publish:
   only:
     - master

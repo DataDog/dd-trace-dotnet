@@ -1,0 +1,61 @@
+
+stages:
+  - package
+  - publish
+
+include:
+  - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
+
+variables:
+  GIT_PROFILER_REF: master
+  DOTNET_PACKAGE_VERSION:
+    description: "Used by the package stage when triggered manually"
+
+test_echo:
+  stage: package
+  script:
+    - echo "Hello, world!"
+    
+package-dev:
+  extends: .package
+  rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: on_success
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: manual
+      allow_failure: false
+  script:
+    - ../.gitlab/build-deb-rpm.sh
+  variables:
+    ARCH: amd64
+
+package-arm-dev:
+  extends: .package-arm
+  rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: on_success
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: manual
+      allow_failure: false
+  script:
+    - ../.gitlab/build-deb-rpm.sh
+  variables:
+    ARCH: arm64
+
+package-oci-dev:
+  stage: package
+  extends: .package-oci
+  rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: on_success
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: manual
+      allow_failure: false
+  script:
+    - ../.gitlab/build-oci.sh
+  parallel:
+    matrix:
+      - ARCH:
+        - arm64
+        - amd64
+
