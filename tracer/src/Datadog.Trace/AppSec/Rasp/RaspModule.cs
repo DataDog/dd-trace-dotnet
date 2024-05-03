@@ -84,13 +84,46 @@ internal static class RaspModule
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
         var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
 
+
         if (result is not null)
         {
             RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout);
         }
 
+        try
+        {
+            if (result?.SendStackInfo is not null && Security.Instance.Settings.StackTraceEnabled)
+            {
+                result.SendStackInfo.TryGetValue("stack_id", out var stackIdObject);
+                var stackId = stackIdObject as string;
+
+                if (stackId is null || stackId.Length == 0)
+                {
+                    Log.Warning("RASP: A stack was received without Id.");
+                }
+                else
+                {
+                    SendStack(rootSpan, stackId);
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Log.Error(ex, "RASP: Error while sending stack.");
+        }
+
         // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
         // the blockings, so we report first and then block
         securityCoordinator.ReportAndBlock(result);
+    }
+
+    private static void SendStack(Span rootSpan, string id)
+    {
+        var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, id);
+
+        if (stack is not null)
+        {
+            rootSpan.Context.TraceContext.AddStackTraceElement(stack, Security.Instance.Settings.MaxStackTraces);
+        }
     }
 }
