@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -17,7 +18,11 @@ namespace Samples.Console_
                 Ready();
 
                 var exception = args[0] == "crash-datadog" ? (Exception)new BadImageFormatException("Expected") : new InvalidOperationException("Expected");
-                DumpCallstackAndThrow(exception);
+
+                // Add an indirection to have a BCL type on the callstack, to properly test obfuscation
+                SynchronizationContext.SetSynchronizationContext(new DummySynchronizationContext());
+                IProgress<Exception> progress = new Progress<Exception>(DumpCallstackAndThrow);
+                progress.Report(exception);
             }
             else
             {
@@ -77,8 +82,16 @@ namespace Samples.Console_
             {
                 var method = frame.GetMethod();
 
-                var methodName = method.Module.Assembly == typeof(Program).Assembly ? "REDACTED" : $"{method.DeclaringType.FullName}.{method.Name}"; 
-                Console.WriteLine($"Frame|{Path.GetFileName(method.Module.Assembly.Location)}!{methodName}");
+                // ClrMD has a different representation of generics
+                var declaringType = method.DeclaringType.FullName;
+                var methodName = method.Name;
+
+                var symbol = method.Module.Assembly == typeof(Program).Assembly ? "REDACTED" : $"{declaringType}.{methodName}";
+
+                // .NET and ClrMD reports generics with a different syntax
+                symbol = symbol.Replace("Progress`1", "Progress<System.__Canon>");
+
+                Console.WriteLine($"Frame|{Path.GetFileName(method.Module.Assembly.Location)}!{symbol}");
             }
 
             Console.WriteLine("Crashing...");
@@ -88,6 +101,13 @@ namespace Samples.Console_
         private static void Ready()
         {
             Console.WriteLine($"Waiting - PID: {Process.GetCurrentProcess().Id} - Profiler attached: {SampleHelpers.IsProfilerAttached()}");
+        }
+
+        private class DummySynchronizationContext : SynchronizationContext
+        {
+            public override void Post(SendOrPostCallback d, object state) => d(state);
+
+            public override void Send(SendOrPostCallback d, object state) => d(state);
         }
     }
 }
