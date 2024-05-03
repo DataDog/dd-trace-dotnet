@@ -52,6 +52,9 @@ build_single_step_packages:
     - echo RUN CHECK MANIFEST
     - 'curl -v -H "Authorization: Bearer ${GH_TOKEN}" https://ghcr.io/v2/datadog/dd-trace-dotnet/onboarding-dotnet/manifests/7e700f10e57edee8d565e0e6b6a38af4145ea48d'
     - echo FINISH
+    - echo $GH_TOKEN|docker login ghcr.io -u publisher --password-stdin
+    - docker pull ghcr.io/datadog/dd-trace-dotnet/onboarding-dotnet:7e700f10e57edee8d565e0e6b6a38af4145ea48d
+    - echo FINISH2
 
 
 publish:
