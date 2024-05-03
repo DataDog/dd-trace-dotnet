@@ -217,6 +217,35 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         newFixture.Dispose();
         newFixture.SetOutput(null);
     }
+
+    [SkippableTheory]
+    [InlineData("IAST_TEST_ENABLE_DIRECTORY_LISTING_REQUEST_PATH")]
+    [InlineData("IAST_TEST_ENABLE_DIRECTORY_LISTING_WHOLE_APP")]
+    [InlineData("IAST_TEST_ENABLE_DIRECTORY_LISTING_STRING_PATH")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestDirectoryListingLeak(string featureEnvVar)
+    {
+        SetEnvironmentVariable(featureEnvVar, "true");
+
+        var filename = "Iast.DirectoryListingLeak.AspNetCore5.IastEnabled";
+        var newFixture = new AspNetCoreTestFixture();
+        newFixture.SetOutput(Output);
+
+        var datetimeOffset = DateTimeOffset.UtcNow; // Catch vulnerability at the startup of the app
+        await TryStartApp(newFixture);
+
+        var agent = newFixture.Agent;
+        var spans = agent.WaitForSpans(1, minDateTime: datetimeOffset);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+
+        newFixture.Dispose();
+        newFixture.SetOutput(null);
+    }
 }
 
 public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsFullSampling

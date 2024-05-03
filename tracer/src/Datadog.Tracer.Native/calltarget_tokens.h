@@ -26,16 +26,17 @@ class CallTargetTokens
 {
 private:
     ModuleMetadata* module_metadata_ptr = nullptr;
+    std::mutex metadata_mutex;
 
     // CorLib tokens
-    mdAssemblyRef corLibAssemblyRef = mdAssemblyRefNil;
-    mdTypeRef objectTypeRef = mdTypeRefNil;
-    mdTypeRef typeRef = mdTypeRefNil;
-    mdToken getTypeFromHandleToken = mdTokenNil;
+    volatile mdAssemblyRef corLibAssemblyRef = mdAssemblyRefNil;
+    volatile mdTypeRef objectTypeRef = mdTypeRefNil;
+    volatile mdTypeRef typeRef = mdTypeRefNil;
+    volatile mdToken getTypeFromHandleToken = mdTokenNil;
 
-    mdMemberRef callTargetStateTypeGetDefault = mdMemberRefNil;
-    mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
-    mdMemberRef getDefaultMemberRef = mdMemberRefNil;
+    volatile mdMemberRef callTargetStateTypeGetDefault = mdMemberRefNil;
+    volatile mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
+    volatile mdMemberRef getDefaultMemberRef = mdMemberRefNil;
 
     mdTypeRef GetTargetStateTypeRef();
     mdTypeRef GetTargetVoidReturnTypeRef();
@@ -51,18 +52,18 @@ private:
 
 protected:
     // CallTarget tokens
-    mdAssemblyRef profilerAssemblyRef = mdAssemblyRefNil;
+    volatile mdAssemblyRef profilerAssemblyRef = mdAssemblyRefNil;
 
     const bool enable_by_ref_instrumentation = false;
     const bool enable_calltarget_state_by_ref = false;
-    mdTypeRef callTargetTypeRef = mdTypeRefNil;
-    mdTypeRef callTargetStateTypeRef = mdTypeRefNil;
-    mdTypeRef callTargetReturnVoidTypeRef = mdTypeRefNil;
-    mdTypeRef callTargetReturnTypeRef = mdTypeRefNil;
-    mdTypeRef callTargetRefStructTypeRef = mdTypeRefNil;
-    mdTypeRef exTypeRef = mdTypeRefNil;
-    mdTypeRef runtimeTypeHandleRef = mdTypeRefNil;
-    mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
+    volatile mdTypeRef callTargetTypeRef = mdTypeRefNil;
+    volatile mdTypeRef callTargetStateTypeRef = mdTypeRefNil;
+    volatile mdTypeRef callTargetReturnVoidTypeRef = mdTypeRefNil;
+    volatile mdTypeRef callTargetReturnTypeRef = mdTypeRefNil;
+    volatile mdTypeRef callTargetRefStructTypeRef = mdTypeRefNil;
+    volatile mdTypeRef exTypeRef = mdTypeRefNil;
+    volatile mdTypeRef runtimeTypeHandleRef = mdTypeRefNil;
+    volatile mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
 
     ModuleMetadata* GetMetadata();
     virtual HRESULT EnsureBaseCalltargetTokens();

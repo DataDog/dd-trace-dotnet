@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 // a new interface that implements both ILoggerProvider and ISupportExternalScope
                 // and duck cast to that
                 var thisAssembly = typeof(DirectSubmissionLoggerProvider).Assembly;
-                var assemblyName = new AssemblyName("DirectLogSubmissionILoggerFactoryAssembly") { Version = thisAssembly.GetName().Version };
+                var assemblyName = new AssemblyName("Datadog.DirectLogSubmissionILoggerFactoryAssembly") { Version = thisAssembly.GetName().Version };
 
                 var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
                 var moduleBuilder = (ModuleBuilder)assemblyBuilder.DefineDynamicModule("MainModule");

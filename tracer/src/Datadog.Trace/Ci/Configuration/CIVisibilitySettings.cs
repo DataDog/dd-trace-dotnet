@@ -52,7 +52,7 @@ namespace Datadog.Trace.Ci.Configuration
             GitUploadEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.GitUploadEnabled).AsBool();
 
             // Force evp proxy
-            ForceAgentsEvpProxy = config.WithKeys(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy).AsBool(false);
+            ForceAgentsEvpProxy = config.WithKeys(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy).AsString();
 
             // Check if Datadog.Trace should be installed in the GAC
             InstallDatadogTraceInGac = config.WithKeys(ConfigurationKeys.CIVisibility.InstallDatadogTraceInGac).AsBool(true);
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Ci.Configuration
         /// <summary>
         /// Gets a value indicating whether EVP Proxy must be used.
         /// </summary>
-        public bool ForceAgentsEvpProxy { get; }
+        public string? ForceAgentsEvpProxy { get; }
 
         /// <summary>
         /// Gets a value indicating whether we ensure Datadog.Trace GAC installation.

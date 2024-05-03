@@ -223,8 +223,9 @@ internal static class MetricTags
         [Description("integration_name:reflectioninjection")] ReflectionInjection,
         [Description("integration_name:xss")] Xss,
         [Description("integration_name:nhibernate")] NHibernate,
-        [Description("integration_name:dotnettest")]DotnetTest,
+        [Description("integration_name:dotnettest")] DotnetTest,
         [Description("integration_name:selenium")] Selenium,
+        [Description("integration_name:directorylistingleak")] DirectoryListingLeak,
     }
 
     public enum InstrumentationError
@@ -305,6 +306,7 @@ internal static class MetricTags
         [Description("vulnerability_type:reflection_injection")] ReflectionInjection = 21,
         [Description("vulnerability_type:insecure_auth_protocol")] InsecureAuthProtocol = 22,
         [Description("vulnerability_type:xss")] Xss = 23,
+        [Description("vulnerability_type:directory_listing_leak")] DirectoryListingLeak = 24,
     }
 
     public enum CIVisibilityTestFramework
