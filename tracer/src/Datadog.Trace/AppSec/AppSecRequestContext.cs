@@ -17,7 +17,6 @@ internal class AppSecRequestContext
 {
     private const string StackKey = "_dd.stack";
     private const string ExploitStackKey = "exploit";
-    private const string _exploitStackKey = "exploit";
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces = null;
@@ -34,7 +33,7 @@ internal class AppSecRequestContext
 
             if (_raspStackTraces?.Count > 0)
             {
-                span.SetMetaStruct(_stackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
+                span.SetMetaStruct(StackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
             }
         }
     }
@@ -53,16 +52,16 @@ internal class AppSecRequestContext
         {
             _raspStackTraces ??= new();
 
-            if (!_raspStackTraces.ContainsKey(_exploitStackKey))
+            if (!_raspStackTraces.ContainsKey(ExploitStackKey))
             {
-                _raspStackTraces.Add(_exploitStackKey, new());
+                _raspStackTraces.Add(ExploitStackKey, new());
             }
-            else if (_raspStackTraces[_exploitStackKey].Count >= maxStackTraces)
+            else if (_raspStackTraces[ExploitStackKey].Count >= maxStackTraces)
             {
                 return;
             }
 
-            _raspStackTraces[_exploitStackKey].Add(stackTrace);
+            _raspStackTraces[ExploitStackKey].Add(stackTrace);
         }
     }
 }

@@ -53,19 +53,26 @@ internal static class RaspModule
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
         var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
 
-        if (result?.SendStackInfo is not null && Security.Instance.Settings.StackTraceEnabled)
+        try
         {
-            result.SendStackInfo.TryGetValue("stack_id", out var stackIdObject);
-            var stackId = stackIdObject as string;
+            if (result?.SendStackInfo is not null && Security.Instance.Settings.StackTraceEnabled)
+            {
+                result.SendStackInfo.TryGetValue("stack_id", out var stackIdObject);
+                var stackId = stackIdObject as string;
 
-            if (stackId is null || stackId.Length == 0)
-            {
-                Log.Warning("RASP: A stack was received without Id.");
+                if (stackId is null || stackId.Length == 0)
+                {
+                    Log.Warning("RASP: A stack was received without Id.");
+                }
+                else
+                {
+                    SendStack(rootSpan, stackId);
+                }
             }
-            else
-            {
-                SendStack(rootSpan, stackId);
-            }
+        }
+        catch (System.Exception ex)
+        {
+            Log.Error(ex, "RASP: Error while sending stack.");
         }
 
         // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
@@ -73,16 +80,13 @@ internal static class RaspModule
         securityCoordinator.ReportAndBlock(result);
     }
 
-    private static bool SendStack(Span rootSpan, string id)
+    private static void SendStack(Span rootSpan, string id)
     {
         var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, id);
 
         if (stack is not null)
         {
             rootSpan.Context.TraceContext.AddStackTraceElement(stack, Security.Instance.Settings.MaxStackTraces);
-            return true;
         }
-
-        return false;
     }
 }
