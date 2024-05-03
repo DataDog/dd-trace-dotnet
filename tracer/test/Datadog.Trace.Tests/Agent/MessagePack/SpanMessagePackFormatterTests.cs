@@ -31,8 +31,7 @@ public class SpanMessagePackFormatterTests
     public void SerializeSpans()
     {
         var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
-        using var tracer = TracerHelper.Create();
-        var traceContext = new TraceContext(tracer);
+        var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
         var parentContext = new SpanContext(new TraceId(0, 1), 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
 
         var spans = new[]
