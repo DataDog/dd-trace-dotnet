@@ -50,10 +50,10 @@ internal static class RaspModule
         }
 
         var arguments = new Dictionary<string, object> { [address] = valueToCheck };
-        RunWaf(arguments, rootSpan, address);
+        RunWafRasp(arguments, rootSpan, address);
     }
 
-    private static void RecordTelemetry(string address, bool isMatch, bool timeOut)
+    private static void RecordRaspTelemetry(string address, bool isMatch, bool timeOut)
     {
         if (!_addressRuleType.TryGetValue(address, out var ruleType))
         {
@@ -74,14 +74,14 @@ internal static class RaspModule
         }
     }
 
-    private static void RunWaf(Dictionary<string, object> arguments, Span rootSpan, string address)
+    private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
         var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
 
         if (result is not null)
         {
-            RecordTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout);
+            RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout);
         }
 
         // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
