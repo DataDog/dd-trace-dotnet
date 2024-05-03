@@ -77,7 +77,8 @@ check_single_step_packages:
     - artifacts/PACKAGE_VERSION
 
 compute-ci:
-  image: registry.ddbuild.io/ci/auto_inject/gitlab:current  
+  image: registry.ddbuild.io/ci/auto_inject/gitlab:current
+  tags: ["arch:amd64"]
   stage: compute-ci
   needs:
     - check_single_step_packages
