@@ -227,7 +227,7 @@ void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemo
                 for (const auto& methodToIndexPair : probeMetadata->methodIndexMap)
                 {
                     const auto method = methodToIndexPair.first;
-                    const auto moduleHandler = m_rejit_handler->GetOrAddModule(method.moduleId);
+                    const auto moduleHandler = m_debugger_rejit_preprocessor->GetOrAddModule(method.moduleId);
                     if (moduleHandler == nullptr)
                     {
                         Logger::Warn("Module handler is returned as null while tried to RemoveProbes, this only "
@@ -526,7 +526,7 @@ void DebuggerProbesInstrumentationRequester::DetermineReInstrumentProbes(
 
     for (const auto& request : revertRequests)
     {
-        const auto moduleHandler = m_rejit_handler->GetOrAddModule(request.moduleId);
+        const auto moduleHandler = m_debugger_rejit_preprocessor->GetOrAddModule(request.moduleId);
         if (moduleHandler == nullptr)
         {
             Logger::Warn("Module handler is returned as null while tried to RemoveProbes, this only happens if "

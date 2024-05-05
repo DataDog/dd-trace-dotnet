@@ -20,7 +20,7 @@ namespace trace
 /// <summary>
 /// Rejit handler representation of a method
 /// </summary>
-class TracerRejitHandlerModuleMethod : public trace::RejitHandlerModuleMethod
+class TracerRejitHandlerModuleMethod : public RejitHandlerModuleMethod
 {
 private:
     std::unique_ptr<IntegrationDefinition> m_integrationDefinition;

@@ -2,7 +2,7 @@
 
 #include "cor.h"
 #include "corprof.h"
-#include "integration.h"
+#include "tracer_integration_definition.h"
 #include "module_metadata.h"
 #include "rejit_preprocessor.h"
 #include <future>
@@ -20,7 +20,7 @@ struct FunctionInfo;
 /// <summary>
 /// TracerRejitPreprocessor
 /// </summary>
-class TracerRejitPreprocessor : public trace::RejitPreprocessor<IntegrationDefinition>
+class TracerRejitPreprocessor : public RejitPreprocessor<IntegrationDefinition>
 {
 public:
     using RejitPreprocessor::RejitPreprocessor;

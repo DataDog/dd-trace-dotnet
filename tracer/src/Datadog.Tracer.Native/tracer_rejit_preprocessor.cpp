@@ -61,7 +61,4 @@ bool TracerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo,
            target_method.type.assembly.name != moduleInfo.assembly.name;
 }
 
-template class RejitPreprocessor<std::shared_ptr<debugger::MethodProbeDefinition>>;
-template class RejitPreprocessor<IntegrationDefinition>;
-
 } // namespace trace

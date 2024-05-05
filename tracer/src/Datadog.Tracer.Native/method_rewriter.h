@@ -27,11 +27,10 @@ public:
     {        
     }
 
-    virtual HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl) = 0;
-    virtual InstrumentingProducts GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
-                                              RejitHandlerModuleMethod* methodHandler) = 0;
-    virtual WSTRING GetInstrumentationId(RejitHandlerModule* moduleHandler,
-                                              RejitHandlerModuleMethod* methodHandler) = 0;
+    virtual HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
+                            ICorProfilerFunctionControl* pFunctionControl, ICorProfilerInfo* corProfilerInfo) = 0;
+    virtual InstrumentingProducts GetInstrumentingProduct(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) = 0;
+    virtual WSTRING GetInstrumentationId(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) = 0;
 
     virtual ~MethodRewriter() = default;
 };

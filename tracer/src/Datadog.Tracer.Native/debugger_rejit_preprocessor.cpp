@@ -92,7 +92,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
                 continue;
             }
 
-            auto moduleHandler = m_rejit_handler->GetOrAddModule(moduleInfo.id);
+            auto moduleHandler = GetOrAddModule(moduleInfo.id);
             if (moduleHandler == nullptr)
             {
                 Logger::Warn("Module handler is null, this only happens if the RejitHandler has been shutdown.");

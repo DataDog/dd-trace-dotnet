@@ -65,7 +65,7 @@ namespace trace
 /// <param name="methodHandler">Method ReJIT handler representation</param>
 /// <returns>Result of the rewriting</returns>
 HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
-                                      ICorProfilerFunctionControl* pFunctionControl)
+                                      ICorProfilerFunctionControl* pFunctionControl, ICorProfilerInfo* corProfilerInfo)
 {
     /*  ===============================
         Current CallTarget Limitations:
@@ -156,7 +156,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
 
     // *** Create rewriter
-    ILRewriter rewriter(m_corProfiler->info_, pFunctionControl, module_id, function_token);
+    ILRewriter rewriter(corProfilerInfo, pFunctionControl, module_id, function_token);
     bool modified = false;
     auto hr = rewriter.Import();
     if (FAILED(hr))

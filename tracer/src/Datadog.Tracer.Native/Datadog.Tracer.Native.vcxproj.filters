@@ -113,6 +113,7 @@
     <ClCompile Include="tracer_integration_definition.cpp">
       <Filter>Tracer</Filter>
     </ClCompile>
+    <ClCompile Include="function_control_wrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -260,6 +261,7 @@
     <ClInclude Include="tracer_integration_definition.h">
       <Filter>Tracer</Filter>
     </ClInclude>
+    <ClInclude Include="function_control_wrapper.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">

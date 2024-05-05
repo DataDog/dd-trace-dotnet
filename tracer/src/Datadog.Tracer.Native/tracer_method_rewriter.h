@@ -23,8 +23,7 @@ public:
     {
     }
 
-    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
-                    ICorProfilerFunctionControl* pFunctionControl) override;
+    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl, ICorProfilerInfo* corProfilerInfo) override;
 
     InstrumentingProducts GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
                                                   RejitHandlerModuleMethod* methodHandler) override;
