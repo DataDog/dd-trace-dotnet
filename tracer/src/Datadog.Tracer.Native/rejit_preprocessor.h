@@ -98,28 +98,6 @@ public:
     void EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests, std::shared_ptr<std::promise<void>> promise);
 };
 
-/// <summary>
-/// TracerRejitPreprocessor
-/// </summary>
-class TracerRejitPreprocessor : public RejitPreprocessor<IntegrationDefinition>
-{
-public:
-    using RejitPreprocessor::RejitPreprocessor;
-
-protected:
-    const MethodReference& GetTargetMethod(const IntegrationDefinition& integrationDefinition) final;
-    const bool GetIsDerived(const IntegrationDefinition& definition) final;
-    const bool GetIsInterface(const IntegrationDefinition& definition) final;
-    const bool GetIsExactSignatureMatch(const IntegrationDefinition& definition) final;
-    const bool GetIsEnabled(const IntegrationDefinition& definition) final;
-    const bool SupportsSelectiveEnablement() final;
-
-    const std::unique_ptr<RejitHandlerModuleMethod>
-    CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
-                 const IntegrationDefinition& integrationDefinition) final;
-    bool ShouldSkipModule(const ModuleInfo& moduleInfo, const IntegrationDefinition& integrationDefinition) final;
-};
-
 } // namespace trace
 
 #endif // DD_CLR_PROFILER_REJIT_PREPROCESSOR_H_

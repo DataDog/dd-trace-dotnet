@@ -1,5 +1,4 @@
-#ifndef DD_CLR_PROFILER_REJIT_HANDLER_H_
-#define DD_CLR_PROFILER_REJIT_HANDLER_H_
+#pragma once
 
 #include <atomic>
 #include <mutex>
@@ -56,25 +55,6 @@ public:
     MethodRewriter* GetMethodRewriter();
 
     virtual ~RejitHandlerModuleMethod() = default;
-};
-
-/// <summary>
-/// Rejit handler representation of a method
-/// </summary>
-class TracerRejitHandlerModuleMethod : public RejitHandlerModuleMethod
-{
-private:
-    std::unique_ptr<IntegrationDefinition> m_integrationDefinition;
-
-public:
-    TracerRejitHandlerModuleMethod(
-                    mdMethodDef methodDef,
-                    RejitHandlerModule* module,
-                    const FunctionInfo& functionInfo,
-                    const IntegrationDefinition& integrationDefinition,
-                    std::unique_ptr<MethodRewriter> methodRewriter);
-    
-    IntegrationDefinition* GetIntegrationDefinition();
 };
 
 using RejitHandlerModuleMethodCreatorFunc = std::function<std::unique_ptr<RejitHandlerModuleMethod>(const mdMethodDef, RejitHandlerModule*)>;
@@ -173,6 +153,5 @@ public:
     AssemblyProperty* GetCorAssemblyProperty();
 };
 
-} // namespace trace
 
-#endif // DD_CLR_PROFILER_REJIT_HANDLER_H_
+} // namespace trace
