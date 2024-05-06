@@ -5,6 +5,8 @@
 
 using System;
 
+#nullable enable
+
 namespace Datadog.Trace.Iast;
 
 [Flags]
