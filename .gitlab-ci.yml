@@ -99,7 +99,7 @@ compute-ci-package-snapshot-version:
         #Set values in the gitlab-ci file
         sed -i "s/DOTNET_PACKAGE_VERSION_DEV:/DOTNET_PACKAGE_VERSION_DEV: ${DOTNET_PACKAGE_DEV_VERSION}/g" gitlab-ci-snapshot-package-test.yml 
         sed -i 's/description: "Used by the package stage when triggered manually"/##/g' gitlab-ci-snapshot-package-test.yml
-        sed -i "s/DOTNET_PACKAGE_MAJOR_VERSION:/DOTNET_PACKAGE_MAJOR_VERSION: $(DOTNET_PACKAGE_MAJOR_VERSION)/g" gitlab-ci-snapshot-package-test.yml 
+        sed -i "s/DOTNET_PACKAGE_MAJOR_VERSION:/DOTNET_PACKAGE_MAJOR_VERSION: ${DOTNET_PACKAGE_MAJOR_VERSION}/g" gitlab-ci-snapshot-package-test.yml 
         sed -i 's/description: "Major version. By default all builds are generated with the same major version"/##/g' gitlab-ci-snapshot-package-test.yml
       fi
       echo "----------------------------------"

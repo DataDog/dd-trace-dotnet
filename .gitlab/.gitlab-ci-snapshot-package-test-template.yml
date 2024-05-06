@@ -61,7 +61,7 @@ package-oci-snapshot:
   needs: [download-extract-binaries]
   extends: .package-oci
   rules:
-    - if: $$DOTNET_PACKAGE_DEV_VERSION
+    - if: $DOTNET_PACKAGE_DEV_VERSION
       when: on_success
   script:
     - ls 
