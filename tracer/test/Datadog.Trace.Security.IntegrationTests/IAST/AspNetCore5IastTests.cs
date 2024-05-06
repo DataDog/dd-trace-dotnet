@@ -853,12 +853,14 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
                             .DisableRequireUniquePrefix();
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [InlineData("RawValue")]
+    [InlineData("<script>alert('XSS')</script>")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestIastReflectedXssEscapedRequest()
+    public async Task TestIastReflectedXssEscapedRequest(string param)
     {
         var filename = "Iast.ReflectedXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        var url = "/Iast/ReflectedXssEscaped?param=RawValue";
+        var url = "/Iast/ReflectedXssEscaped?param=" + param;
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
@@ -867,6 +869,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
+
+        // Add a scrubber to remove the "?param=<value>" from the a single line
+        (Regex RegexPattern, string Replacement) scrubber = (new Regex(@"\?param=[^ ]+"), "?param=...,\n");
+        settings.AddRegexScrubber(scrubber);
+
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
