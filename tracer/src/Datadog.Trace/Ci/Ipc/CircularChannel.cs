@@ -17,18 +17,33 @@ internal class CircularChannel : IDisposable
     private const int HeaderSize = 8;
     private const int MaxMessageSize = BufferSize - HeaderSize;
     private const int PollingInterval = 500;
+    private const int MutexTimeout = 10000;
 
     private readonly MemoryMappedFile _mmf;
     private readonly MemoryMappedViewAccessor _accessor;
     private readonly Mutex _mutex;
     private readonly Timer _pollingTimer;
+    private bool _disposed;
 
     public CircularChannel(string fileName)
     {
+        var fileInfo = new FileInfo(fileName);
+        if (fileInfo is { Exists: true, Length: < BufferSize })
+        {
+            // Resize file if it exists but is too small
+            using var stream = new FileStream(fileName, FileMode.Open, FileAccess.Write, FileShare.None);
+            stream.SetLength(BufferSize);
+        }
+
         _mmf = MemoryMappedFile.CreateFromFile(fileName, FileMode.OpenOrCreate, "CircularBuffer", BufferSize);
         _accessor = _mmf.CreateViewAccessor();
-        _mutex = new Mutex(false, $"{fileName}.mutex");
-        InitializeHeader();
+        _mutex = new Mutex(false, $"{Path.GetFileNameWithoutExtension(fileName)}.mutex");
+        if (!fileInfo.Exists)
+        {
+            // Initialize only if the file did not exist prior
+            InitializeHeader();
+        }
+
         _pollingTimer = new Timer(PollForMessages, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(PollingInterval));
     }
 
@@ -36,7 +51,12 @@ internal class CircularChannel : IDisposable
 
     private void InitializeHeader()
     {
-        _mutex.WaitOne();
+        var hasHandle = _mutex.WaitOne(MutexTimeout);
+        if (!hasHandle)
+        {
+            throw new TimeoutException("Failed to acquire mutex within the time limit.");
+        }
+
         try
         {
             _accessor.Write(0, 0); // Write pointer
@@ -50,7 +70,12 @@ internal class CircularChannel : IDisposable
 
     private void PollForMessages(object? state)
     {
-        _mutex.WaitOne();
+        var hasHandle = _mutex.WaitOne(MutexTimeout);
+        if (!hasHandle)
+        {
+            throw new TimeoutException("Failed to acquire mutex within the time limit.");
+        }
+
         try
         {
             var writePos = _accessor.ReadInt32(0);
@@ -58,6 +83,13 @@ internal class CircularChannel : IDisposable
             while (readPos != writePos)
             {
                 var length = _accessor.ReadInt32(HeaderSize + readPos);
+                // Simple sanity check
+                if (length is < 0 or > MaxMessageSize)
+                {
+                    // Handle error, reset pointers, or skip
+                    break;
+                }
+
                 var data = new byte[length];
                 _accessor.ReadArray(HeaderSize + readPos + 4, data, 0, length);
 
@@ -68,6 +100,10 @@ internal class CircularChannel : IDisposable
 
                 readPos = nextReadPos; // Update local readPos to continue reading if more data is available
             }
+        }
+        catch (Exception ex)
+        {
+            CIVisibility.Log.Error(ex, "CircularChannel: Error while polling for messages");
         }
         finally
         {
@@ -82,18 +118,33 @@ internal class CircularChannel : IDisposable
             throw new ArgumentException("Data too large for the message buffer", nameof(data));
         }
 
-        _mutex.WaitOne();
+        var hasHandle = _mutex.WaitOne(MutexTimeout);
+        if (!hasHandle)
+        {
+            throw new TimeoutException("Failed to acquire mutex within the time limit.");
+        }
+
         try
         {
             var writePos = _accessor.ReadInt32(0);
             var readPos = _accessor.ReadInt32(4);
             var nextWritePos = (writePos + data.Length + 4) % MaxMessageSize;
 
-            // Check for buffer overflow condition:
-            // Ensure that if the write position is behind the read position (writePos < readPos),
-            // the next write position after writing the data (nextWritePos) does not surpass
-            // the read position, potentially overwriting unread data.
-            if (writePos < readPos && nextWritePos > readPos)
+            // Check for buffer overflow conditions to prevent data corruption:
+            // 1. When writePos is less than readPos:
+            //    - nextWritePos must not be greater than or equal to readPos, which would mean it has
+            //      overwritten unread data that readPos has not yet reached.
+            //    - nextWritePos must also not wrap around and end up less than writePos. This would
+            //      indicate that it has circled back and started overwriting the beginning of the buffer,
+            //      potentially corrupting data that may not have been read yet.
+            // 2. When writePos is greater than readPos:
+            //    - nextWritePos wrapping around and ending up between readPos and writePos would also
+            //      indicate an overflow, as it would overwrite unread data between these positions.
+            //
+            // These conditions collectively ensure that new data does not overwrite unread data in the circular buffer,
+            // maintaining the integrity of the data in scenarios where the buffer wraps or is close to wrapping.
+            if ((writePos < readPos && (nextWritePos >= readPos || nextWritePos < writePos)) ||
+                (writePos > readPos && nextWritePos < writePos && nextWritePos > readPos))
             {
                 throw new InvalidOperationException("Buffer overflow");
             }
@@ -108,16 +159,17 @@ internal class CircularChannel : IDisposable
         }
     }
 
-    public void Close()
+    public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
         _pollingTimer.Dispose();
         _accessor.Dispose();
         _mmf.Dispose();
         _mutex.Dispose();
-    }
-
-    public void Dispose()
-    {
-        Close();
+        _disposed = true;
     }
 }
