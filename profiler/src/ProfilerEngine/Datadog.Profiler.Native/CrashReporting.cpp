@@ -148,7 +148,7 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
     return 0;
 }
 
-int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback, bool* isSuspicious)
+int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious)
 {
     auto threads = GetThreads();
 
@@ -158,7 +158,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedMe
 
     for (auto threadId : threads)
     {
-        auto frames = GetThreadFrames(threadId, resolveCallback);
+        auto frames = GetThreadFrames(threadId, resolveCallback, context);
 
         ddog_prof_Slice_StackFrame stackTrace;
 

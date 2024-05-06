@@ -188,39 +188,70 @@ internal class CreatedumpCommand : Command
     }
 
     [UnmanagedCallersOnly]
-    private static unsafe int ResolveManagedMethod(IntPtr ip, ResolveMethodData* methodData)
+    private static unsafe int ResolveManagedCallstack(int threadId, IntPtr context, ResolveMethodData** managedCallstack, int* numberOfFrames)
     {
         try
         {
+            *numberOfFrames = 0;
+
             if (_runtime == null)
             {
                 Errors.Add("ClrRuntime is not initialized");
                 return 2;
             }
 
-            var method = _runtime.GetMethodByInstructionPointer((ulong)ip);
+            var thread = _runtime.Threads.FirstOrDefault(t => t.OSThreadId == threadId);
 
-            if (method == null)
+            if (thread == null)
             {
-                return 1;
+                return 4;
             }
 
-            methodData->SymbolAddress = method.NativeCode;
-            methodData->ModuleAddress = method.Type.Module.ImageBase;
-            methodData->IsSuspicious = IsMethodSuspicious(method);
+            var handle = GCHandle.FromIntPtr(context);
 
-            var assemblyName = method.Type.Module.AssemblyName;
-            var methodName = ShouldRedactFrame(assemblyName) ? "REDACTED" : $"{method.Type}.{method.Name}";
+            if (!handle.IsAllocated || handle.Target is not List<IntPtr> bag)
+            {
+                return 5;
+            }
 
-            var name = $"{Path.GetFileName(assemblyName)}!{methodName}";
+            var frames = thread.EnumerateStackTrace()
+                               .Where(f => f.Kind == ClrStackFrameKind.ManagedMethod)
+                               .ToList();
 
-            var length = Math.Min(Encoding.ASCII.GetByteCount(name), MethodNameMaxLength - 1); // -1 to save space for the null terminator
+            var nativeMemory = NativeMemory.Alloc((nuint)frames.Count, (nuint)sizeof(ResolveMethodData));
+            bag.Add((IntPtr)nativeMemory);
 
-            var destination = new Span<byte>(methodData->Name, MethodNameMaxLength);
+            *managedCallstack = (ResolveMethodData*)nativeMemory;
 
-            Encoding.ASCII.GetBytes(name, destination);
+            for (int i = 0; i < frames.Count; i++)
+            {
+                var frame = frames[i];
+                var resolvedFrame = *managedCallstack + i;
 
-            destination[length] = (byte)'\0';
+                resolvedFrame->Ip = frame.InstructionPointer;
+                resolvedFrame->Sp = frame.StackPointer;
+
+                if (frame.Method != null)
+                {
+                    resolvedFrame->SymbolAddress = frame.Method.NativeCode;
+                    resolvedFrame->ModuleAddress = frame.Method.Type.Module.ImageBase;
+                    resolvedFrame->IsSuspicious = IsMethodSuspicious(frame.Method);
+
+                    var assemblyName = frame.Method.Type.Module.AssemblyName;
+                    var methodName = ShouldRedactFrame(assemblyName) ? "REDACTED" : $"{frame.Method.Type}.{frame.Method.Name}";
+                    var name = $"{Path.GetFileName(assemblyName)}!{methodName}";
+
+                    var length = Math.Min(Encoding.ASCII.GetByteCount(name), MethodNameMaxLength - 1); // -1 to save space for the null terminator
+
+                    var destination = new Span<byte>(resolvedFrame->Name, MethodNameMaxLength);
+
+                    Encoding.ASCII.GetBytes(name, destination);
+
+                    destination[length] = (byte)'\0';
+                }
+            }
+
+            *numberOfFrames = frames.Count;
 
             return 0;
         }
@@ -449,15 +480,27 @@ internal class CreatedumpCommand : Command
 
         bool isSuspicious;
 
+        var bag = new List<IntPtr>();
+        var handle = GCHandle.Alloc(bag);
+
         try
         {
-            var callback = (delegate* unmanaged<IntPtr, ResolveMethodData*, int>)&ResolveManagedMethod;
-            crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback, out isSuspicious);
+            var callback = (delegate* unmanaged<int, IntPtr, ResolveMethodData**, int*, int>)&ResolveManagedCallstack;
+            crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback, GCHandle.ToIntPtr(handle), out isSuspicious);
         }
         catch (Win32Exception ex)
         {
             Errors.Add($"Failed to resolve stacks: {GetLastError(crashReport, ex)}");
             return;
+        }
+        finally
+        {
+            handle.Free();
+
+            foreach (var nativeMemory in bag)
+            {
+                NativeMemory.Free((void*)nativeMemory);
+            }
         }
 
         if (!isSuspicious && exception != null)
@@ -676,6 +719,8 @@ internal class CreatedumpCommand : Command
     {
         public ulong SymbolAddress;
         public ulong ModuleAddress;
+        public ulong Ip;
+        public ulong Sp;
         public bool IsSuspicious;
         public fixed byte Name[MethodNameMaxLength];
     }

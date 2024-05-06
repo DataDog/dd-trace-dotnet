@@ -22,6 +22,9 @@ struct ResolveMethodData
 {
     uint64_t symbolAddress;
     uint64_t moduleAddress;
+    uint64_t ip;
+    uint64_t sp;
+
     bool isSuspicious;
 
     char symbolName[1024];
@@ -43,7 +46,9 @@ struct Tag
     char* value;
 };
 
-typedef int (*ResolveManagedMethod)(uintptr_t ip, ResolveMethodData* methodData);
+// typedef int (*ResolveManagedMethod)(uintptr_t ip, ResolveMethodData* methodData);
+
+typedef int (*ResolveManagedCallstack)(int32_t threadId, void* context, ResolveMethodData** methodData, int32_t* numberOfFrames);
 
 // {3B3BA8A9-F807-43BF-A3A9-55E369C0C532}
 const IID IID_ICrashReporting = {0x3b3ba8a9, 0xf807, 0x43bf, { 0xa3, 0xa9, 0x55, 0xe3, 0x69, 0xc0, 0xc5, 0x32} };
@@ -59,7 +64,7 @@ public:
     virtual int32_t STDMETHODCALLTYPE GetLastError(const char** message, int32_t* length) = 0;
     virtual int32_t STDMETHODCALLTYPE AddTag(const char* key, const char* value) = 0;
     virtual int32_t STDMETHODCALLTYPE SetSignalInfo(int32_t signal, const char* description) = 0;
-    virtual int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback, bool* isSuspicious) = 0;
+    virtual int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) = 0;
     virtual int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) = 0;
     virtual int32_t STDMETHODCALLTYPE Send() = 0;
     virtual int32_t STDMETHODCALLTYPE WriteToFile(const char* url) = 0;
@@ -80,7 +85,7 @@ public:
     int32_t STDMETHODCALLTYPE Initialize() override;
     int32_t STDMETHODCALLTYPE AddTag(const char* key, const char* value) override;
     int32_t STDMETHODCALLTYPE SetSignalInfo(int32_t signal, const char* description) override;
-    int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedMethod resolveCallback, bool* isSuspicious) override;
+    int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) override;
     int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) override;
     int32_t STDMETHODCALLTYPE Send() override;
     int32_t STDMETHODCALLTYPE WriteToFile(const char* url) override;
@@ -92,7 +97,7 @@ protected:
     ddog_prof_CrashInfo _crashInfo;
     void SetLastError(ddog_Error error);
     virtual std::vector<int32_t> GetThreads() = 0;
-    virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod) = 0;
+    virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;
     virtual std::string GetSignalInfo(int32_t signal) = 0;
 
 private:

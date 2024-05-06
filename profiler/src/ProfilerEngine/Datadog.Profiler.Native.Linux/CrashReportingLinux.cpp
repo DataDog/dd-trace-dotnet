@@ -137,19 +137,45 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
     return modules;
 }
 
-std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, ResolveManagedMethod resolveManagedMethod)
+std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context)
 {
     std::vector<StackFrame> frames;
 
-    auto context = _UPT_create(tid);
+    auto libunwindContext = _UPT_create(tid);
 
     unw_cursor_t cursor;
 
-    auto result = unw_init_remote(&cursor, _addressSpace, context);
+    auto result = unw_init_remote(&cursor, _addressSpace, libunwindContext);
 
     if (result != 0)
     {
         return frames;
+    }
+
+    // Get the managed callstack
+    ResolveMethodData* managedCallstack;
+    int32_t numberOfManagedFrames;
+
+    auto resolved = resolveManagedCallstack(tid, context, &managedCallstack, &numberOfManagedFrames);
+
+    std::vector<StackFrame> managedFrames;
+
+    if (resolved == 0)
+    {
+        for (int i = 0; i < numberOfManagedFrames; i++)
+        {
+            auto managedFrame = managedCallstack[i];
+
+            StackFrame stackFrame;
+            stackFrame.ip = managedFrame.ip;
+            stackFrame.sp = managedFrame.sp;
+            stackFrame.method = std::string(managedFrame.symbolName);
+            stackFrame.moduleAddress = managedFrame.moduleAddress;
+            stackFrame.symbolAddress = managedFrame.symbolAddress;
+            stackFrame.isSuspicious = managedFrame.isSuspicious;
+
+            managedFrames.push_back(stackFrame);
+        }
     }
 
     unw_word_t ip;
@@ -168,68 +194,96 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
         ResolveMethodData methodData;
 
-        auto resolved = resolveManagedMethod(ip, &methodData);
+        auto module = FindModule(ip);
+        stackFrame.moduleAddress = module.second;
 
-        if (resolved != 0)
+        unw_proc_info_t procInfo;
+        result = unw_get_proc_info(&cursor, &procInfo);
+
+        if (result == 0)
         {
-            // Not a managed method
+            stackFrame.symbolAddress = procInfo.start_ip;
 
-            auto module = FindModule(ip);
-            stackFrame.moduleAddress = module.second;
-
-            unw_proc_info_t procInfo;
-            result = unw_get_proc_info(&cursor, &procInfo);
+            unw_word_t offset;
+            result = unw_get_proc_name(&cursor, methodData.symbolName, sizeof(methodData.symbolName), &offset);
 
             if (result == 0)
             {
-                stackFrame.symbolAddress = procInfo.start_ip;
+                stackFrame.method = std::string(methodData.symbolName);
 
-                unw_word_t offset;
-                result = unw_get_proc_name(&cursor, methodData.symbolName, sizeof(methodData.symbolName), &offset);
+                auto demangleResult = ddog_demangle(libdatadog::FfiHelper::StringToCharSlice(stackFrame.method), DDOG_PROF_DEMANGLE_OPTIONS_COMPLETE);
 
-                if (result == 0)
+                if (demangleResult.tag == DDOG_PROF_STRING_WRAPPER_RESULT_OK)
                 {
-                    stackFrame.method = std::string(methodData.symbolName);
+                    // TODO: There is currently no safe way to free the StringWrapper
+                    auto stringWrapper = demangleResult.ok;
 
-                    auto demangleResult = ddog_demangle(libdatadog::FfiHelper::StringToCharSlice(stackFrame.method), DDOG_PROF_DEMANGLE_OPTIONS_COMPLETE);
-
-                    if (demangleResult.tag == DDOG_PROF_STRING_WRAPPER_RESULT_OK)
+                    if (stringWrapper.message.len > 0)
                     {
-                        // TODO: There is currently no safe way to free the StringWrapper
-                        auto stringWrapper = demangleResult.ok;
-
-                        if (stringWrapper.message.len > 0)
-                        {
-                            stackFrame.method = std::string((char*)stringWrapper.message.ptr, stringWrapper.message.len);
-                        }
+                        stackFrame.method = std::string((char*)stringWrapper.message.ptr, stringWrapper.message.len);
                     }
                 }
-                else
-                {
-                    std::ostringstream unknownModule;
-                    unknownModule << module.first << "!<unknown>+" << std::hex << (ip - module.second);
-                    stackFrame.method = unknownModule.str();
-                }
             }
+            else
+            {
+                std::ostringstream unknownModule;
+                unknownModule << module.first << "!<unknown>+" << std::hex << (ip - module.second);
+                stackFrame.method = unknownModule.str();
+            }
+        }
 
-            // TODO: Check if the stacktrace is from the tracer or the profiler
-            stackFrame.isSuspicious = false;
-        }
-        else if (resolved == 0)
-        {
-            stackFrame.method = std::string(methodData.symbolName);
-            stackFrame.moduleAddress = methodData.moduleAddress;
-            stackFrame.symbolAddress = methodData.symbolAddress;
-            stackFrame.isSuspicious = methodData.isSuspicious;
-        }
+        // TODO: Check if the stacktrace is from the tracer or the profiler
+        stackFrame.isSuspicious = false;
 
         frames.push_back(stackFrame);
 
     } while (unw_step(&cursor) > 0);
 
-    _UPT_destroy(context);
+    _UPT_destroy(libunwindContext);
 
-    return frames;
+    return MergeFrames(frames, managedFrames);
+}
+
+std::vector<StackFrame> CrashReportingLinux::MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames)
+{
+    std::vector<StackFrame> result;
+
+    size_t i = 0, j = 0;
+    while (i < nativeFrames.size() && j < managedFrames.size())
+    {
+        if (nativeFrames.at(i).sp < managedFrames.at(j).sp)
+        {
+            result.push_back(nativeFrames.at(i));
+            ++i;
+        }
+        else if (managedFrames.at(j).sp < nativeFrames.at(i).sp)
+        {
+            result.push_back(managedFrames.at(j));
+            ++j;
+        }
+        else
+        { // frames[i].sp == managedFrames[j].sp
+            // Prefer managedFrame when sp values are the same
+            result.push_back(managedFrames.at(j));
+            ++i; // Skip the frame from frames
+            ++j; // Move to next managedFrame
+        }
+    }
+
+    // Add any remaining frames that are left in either vector
+    while (i < nativeFrames.size())
+    {
+        result.push_back(nativeFrames.at(i));
+        ++i;
+    }
+
+    while (j < managedFrames.size())
+    {
+        result.push_back(managedFrames.at(j));
+        ++j;
+    }
+
+    return result;
 }
 
 std::string CrashReportingLinux::GetSignalInfo(int32_t signal)

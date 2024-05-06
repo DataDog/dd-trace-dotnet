@@ -97,10 +97,10 @@ internal unsafe class ICrashReport : Datadog.Trace.Tools.dd_dotnet.ICrashReport
         }
         return returnvalue;
     }
-    public int ResolveStacks(int a0, nint a1, out bool a2)
+    public int ResolveStacks(int a0, nint a1, nint a2, out bool a3)
     {
-        var func = (delegate* unmanaged[Stdcall]<IntPtr, int, nint, out bool, out int, int>)*(VTable + 7);
-        var result = func(_implementation, a0, a1, out a2, out var returnvalue);
+        var func = (delegate* unmanaged[Stdcall]<IntPtr, int, nint, nint, out bool, out int, int>)*(VTable + 7);
+        var result = func(_implementation, a0, a1, a2, out a3, out var returnvalue);
         if (result != 0)
         {
             throw new System.ComponentModel.Win32Exception(result);
