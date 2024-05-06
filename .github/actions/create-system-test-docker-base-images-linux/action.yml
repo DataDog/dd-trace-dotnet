@@ -26,7 +26,7 @@ runs:
       shell: bash
       run: |
         echo "OUTPUT ARTIFACT PATH: ${{inputs.artifacts_path}}"
-        cp ./tracer/build/_build/docker/system-tests-onboarding.dockerfile ${{inputs.artifacts_path}}
+        cp ./tracer/build/_build/docker/system-tests-linux.dockerfile ${{inputs.artifacts_path}}
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
@@ -39,13 +39,13 @@ runs:
       shell: bash
       run: docker login -u publisher -p ${{ inputs.github_token }} ghcr.io
 
-    - name: Docker Build linux-x64 and linux-arm64 onboarding images
+    - name: Docker Build linux-x64 and linux-arm64 images
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: ghcr.io/datadog/dd-trace-dotnet/onboarding-dotnet:${{inputs.commit_sha}}
+        tags: ghcr.io/datadog/dd-trace-dotnet/apm-library-dotnet:${{inputs.commit_sha}}
         platforms: 'linux/amd64'
         context: ${{inputs.artifacts_path}}
-        file: ${{inputs.artifacts_path}}/system-tests-onboarding.dockerfile
+        file: ${{inputs.artifacts_path}}/system-tests-linux.dockerfile
         build-args: |
           PACKAGE_VERSION=${{inputs.package_version}}

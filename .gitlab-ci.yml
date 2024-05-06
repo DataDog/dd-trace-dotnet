@@ -1,8 +1,7 @@
 
 stages:
   - build
-  - compute-ci
-  - trigger-ci
+  - wait_for_images
   - package
   - publish
   - deploy
@@ -15,6 +14,7 @@ variables:
   GIT_PROFILER_REF: master
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
+  DOCKER_BINARIES_IMAGE: ghcr.io/datadog/dd-trace-dotnet/apm-library-dotnet
 
 build:
   only:
@@ -42,75 +42,82 @@ build:
     paths:
     - artifacts
 
-check_single_step_packages:
+wait-single-step-snapshot-packages:
   #only:
   #  - master
-  stage: build
-  #image: registry.ddbuild.io/ci/serverless-tools:1
+  stage: wait_for_images
   image: registry.ddbuild.io/images/ci_docker_base
   tags: ["runner:docker"]
+  when: delayed
+  start_in: 1 minutes 
   before_script:
     - export GH_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.gh_ghcr_token --with-decryption --query "Parameter.Value" --out text) 
   script: |
+    #Create a directory to store the image
     target_dir=artifacts
-    image=ghcr.io/datadog/dd-trace-dotnet/onboarding-dotnet:7e700f10e57edee8d565e0e6b6a38af4145ea48d_
     mkdir -p $target_dir
+    image="${DOCKER_BINARIES_IMAGE}:${CI_COMMIT_SHA}"
+
+    #Login to the ghcr registry to pull private images
     echo $GH_TOKEN|docker login ghcr.io -u publisher --password-stdin
     
-    if docker pull $image ; then
-      echo "Docker image exists"
-      docker save -o $target_dir/image.tar $image 
-      tar xf $target_dir/image.tar -C $target_dir
-      layers=$(jq -r '.[0].Layers[]' $target_dir/manifest.json)
-      for i in $layers; do
-        tar xf $target_dir/$i -C $target_dir
-      done 
-      rm -rf $target_dir/image.tar $target_dir/manifest.json $target_dir/oci-layout  $target_dir/index.json 
-      rm -rf $target_dir/blobs/
-      ls -l $target_dir
-      cat $target_dir/PACKAGE_VERSION
-    else
-      echo "Command failed"
-    fi
+    #Wait for the image to be available
+    echo "Waiting for the image [$image] to be available"
+    TIMEOUT=3000
+    STARTED=0
+    until (( STARTED == TIMEOUT )) || docker pull $image; do
+        sleep 100
+        (( STARTED += 100 ))
+    done
+    (( STARTED < TIMEOUT ))
+
+    #Here, the image should be available, otherwise the job will fail on command 'docker save'
+    .gitlab/extract_docker_image.sh $image $target_dir
 
   artifacts:
     expire_in: 2 weeks
     paths:
     - artifacts/PACKAGE_VERSION
 
-compute-ci:
+compute-ci-package-snapshot-version:
   image: registry.ddbuild.io/ci/auto_inject/gitlab:current
   tags: ["arch:amd64"]
-  stage: compute-ci
+  stage: wait_for_images
   needs:
-    - check_single_step_packages
+    - wait-single-step-snapshot-packages
   script:
-    - cp .gitlab/.gitlab-ci-onboarding-template.yml gitlab-ci-package-dev.yml 
+    - cp .gitlab/.gitlab-ci-dev-package-test-template.yml gitlab-ci-snapshot-package-test.yml 
     - |
       echo "Generating CI DEV configuration"
       if test -f "artifacts/PACKAGE_VERSION"; then
-        DOTNET_PACKAGE_VERSION=$(cat artifacts/PACKAGE_VERSION).${CI_COMMIT_SHORT_SHA}
-        echo "DOTNET_PACKAGE_VERSION=${DOTNET_PACKAGE_VERSION}"
-        sed -i "s/DOTNET_PACKAGE_VERSION_DEV:/DOTNET_PACKAGE_VERSION_DEV: ${DOTNET_PACKAGE_VERSION}/g" gitlab-ci-package-dev.yml 
-        sed -i 's/description: "Used by the package stage when triggered manually"/##/g' gitlab-ci-package-dev.yml
-        echo "----------------------------------"
-        echo "----------------------------------"
-      else
-        sed -i "s/.wait_for_single_step_packages/wait_for_single_step_packages/g" gitlab-ci-package-dev.yml 
-        sed -i "s/.trigger-ci/trigger-ci/g" gitlab-ci-package-dev.yml 
+        #Set the version of the package
+        DOTNET_PACKAGE_DEV_VERSION=$(cat artifacts/PACKAGE_VERSION).dev.${CI_COMMIT_SHORT_SHA}
+        DOTNET_PACKAGE_MAJOR_VERSION=$(cat artifacts/PACKAGE_VERSION)
+        echo "DOTNET_PACKAGE_DEV_VERSION=${DOTNET_PACKAGE_DEV_VERSION}"
+        echo "DOTNET_PACKAGE_MAJOR_VERSION=${DOTNET_PACKAGE_MAJOR_VERSION}"
+
+        #Set values in the gitlab-ci file
+        sed -i "s/DOTNET_PACKAGE_VERSION_DEV:/DOTNET_PACKAGE_VERSION_DEV: ${DOTNET_PACKAGE_DEV_VERSION}/g" gitlab-ci-snapshot-package-test.yml 
+        sed -i 's/description: "Used by the package stage when triggered manually"/##/g' gitlab-ci-snapshot-package-test.yml
+        sed -i "s/DOTNET_PACKAGE_MAJOR_VERSION:/DOTNET_PACKAGE_MAJOR_VERSION: $(DOTNET_PACKAGE_MAJOR_VERSION)/g" gitlab-ci-snapshot-package-test.yml 
+        sed -i 's/description: "Major version. By default all builds are generated with the same major version"/##/g' gitlab-ci-snapshot-package-test.yml
       fi
-      cat gitlab-ci-package-dev.yml   
+      echo "----------------------------------"
+      echo "----------------------------------"
+      cat gitlab-ci-snapshot-package-test.yml   
   artifacts:
     paths:
-      - gitlab-ci-package-dev.yml
+      - gitlab-ci-snapshot-package-test.yml
 
-trigger-ci:
-  stage: trigger-ci
+trigger-package-snapshot-testing:
+  stage: wait_for_images
+  needs:
+    - compute-ci-package-snapshot-version
   trigger:
     strategy: depend
     include:
-      - artifact: gitlab-ci-package-dev.yml
-        job: compute-ci
+      - artifact: gitlab-ci-snapshot-package-test.yml
+        job: compute-ci-package-snapshot-version
 
 publish:
   only:

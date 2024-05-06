@@ -10,9 +10,15 @@ if [ -z "$ARCH" ]; then
   ARCH=amd64
 fi
 
-curl --location --fail \
+if [ -n "$DOTNET_PACKAGE_DEV_VERSION" ]; then
+  echo "Generate packages using local binaries. Set dev version: $DOTNET_PACKAGE_DEV_VERSION"
+  DOTNET_PACKAGE_VERSION=${DOTNET_PACKAGE_DEV_VERSION}
+  cp artifacts/$ARCH/datadog-dotnet-apm_${DOTNET_PACKAGE_MAJOR_VERSION}_$ARCH.deb datadog-dotnet-apm.old
+else
+  curl --location --fail \
   --output datadog-dotnet-apm.old \
   "https://github.com/DataDog/dd-trace-dotnet/releases/download/v$DOTNET_PACKAGE_VERSION/datadog-dotnet-apm_${DOTNET_PACKAGE_VERSION}_$ARCH.deb"
+fi
 
 fpm --input-type deb \
   --output-type dir \

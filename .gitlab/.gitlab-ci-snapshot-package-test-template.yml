@@ -1,0 +1,75 @@
+
+stages:
+  - package
+  - single-step-instrumentation-tests
+  - publish
+  - release
+
+include:
+  - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
+  - local: ".gitlab/single-step-instrumentation-tests.yml"
+
+variables:
+  GIT_PROFILER_REF: master
+  DOTNET_PACKAGE_DEV_VERSION: 
+   description: "Specific version for current build"
+  DOTNET_PACKAGE_MAJOR_VERSION: 
+   description: "Major version. By default all builds are generated with the same major version"
+  DOCKER_BINARIES_IMAGE: ghcr.io/datadog/dd-trace-dotnet/apm-library-dotnet
+
+download-extract-binaries:
+  stage: package
+  image: registry.ddbuild.io/images/ci_docker_base
+  tags: ["runner:docker"]
+  script:
+    - mkdir -p artifacts
+    - echo $GH_TOKEN|docker login ghcr.io -u publisher --password-stdin
+    - .gitlab/extract_docker_image.sh ${DOCKER_BINARIES_IMAGE}:${CI_COMMIT_SHA} artifacts
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+    - artifacts/
+
+package-snapshot:
+  extends: .package
+  needs: [download-extract-binaries]
+  rules:
+    - if: $DOTNET_PACKAGE_DEV_VERSION
+      when: on_success
+  script:
+    - ls 
+    - ls artifacts/
+    - ../.gitlab/build-deb-rpm.sh
+  variables:
+    ARCH: amd64
+
+package-arm-snapshot:
+  extends: .package-arm
+  needs: [download-extract-binaries]
+  rules:
+    - if: $DOTNET_PACKAGE_DEV_VERSION
+      when: on_success
+  script:
+    - ls 
+    - ls artifacts/
+    - ../.gitlab/build-deb-rpm.sh
+  variables:
+    ARCH: arm64
+
+package-oci-snapshot:
+  stage: package
+  needs: [download-extract-binaries]
+  extends: .package-oci
+  rules:
+    - if: $$DOTNET_PACKAGE_DEV_VERSION
+      when: on_success
+  script:
+    - ls 
+    - ls artifacts/
+    - ../.gitlab/build-oci.sh
+  parallel:
+    matrix:
+      - ARCH:
+        - arm64
+        - amd64
+
