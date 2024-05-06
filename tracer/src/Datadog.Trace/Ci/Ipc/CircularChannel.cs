@@ -16,7 +16,7 @@ internal class CircularChannel : IDisposable
 {
     private const int BufferSize = 65536;
     private const int HeaderSize = 4;
-    private const int MaxMessageSize = BufferSize - HeaderSize;
+    private const int MaxMessageSize = BufferSize - HeaderSize - 2;
     private const int PollingInterval = 500;
     private const int MutexTimeout = 10000;
 
@@ -84,7 +84,7 @@ internal class CircularChannel : IDisposable
 
                 var length = _accessor.ReadUInt16(HeaderSize + readPos);
                 // Simple sanity check
-                if (length > MaxMessageSize - 2)
+                if (length > MaxMessageSize)
                 {
                     // Handle error, reset pointers, or skip
                     break;
@@ -143,7 +143,7 @@ internal class CircularChannel : IDisposable
 
     public void Write(byte[] data)
     {
-        if (data.Length > MaxMessageSize - 2)
+        if (data.Length > MaxMessageSize)
         {
             throw new ArgumentException("Data too large for the message buffer", nameof(data));
         }
