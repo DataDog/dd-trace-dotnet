@@ -30,6 +30,7 @@ struct ResolveMethodData
 struct StackFrame 
 {
     uint64_t ip;    
+    uint64_t sp;
     std::string method;
     uint64_t symbolAddress;
     uint64_t moduleAddress;

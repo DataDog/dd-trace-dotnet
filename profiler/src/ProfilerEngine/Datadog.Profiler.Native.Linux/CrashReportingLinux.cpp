@@ -153,14 +153,17 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
     }
 
     unw_word_t ip;
+    unw_word_t sp;
 
     // Walk the stack
     do
     {
         unw_get_reg(&cursor, UNW_REG_IP, &ip);
+        unw_get_reg(&cursor, UNW_REG_SP, &sp);
 
         StackFrame stackFrame;
         stackFrame.ip = ip;
+        stackFrame.sp = sp;
         stackFrame.isSuspicious = false;
 
         ResolveMethodData methodData;

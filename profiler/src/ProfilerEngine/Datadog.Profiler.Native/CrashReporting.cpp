@@ -191,6 +191,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedMe
             };
 
             auto ip = static_cast<uintptr_t>(frame.ip);
+            auto sp = static_cast<uintptr_t>(frame.sp);
             auto moduleAddress = static_cast<uintptr_t>(frame.moduleAddress);
             auto symbolAddress = static_cast<uintptr_t>(frame.symbolAddress);
 
@@ -201,7 +202,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedMe
                     .ptr = &stackFrameNames[i],
                     .len = 1,
                 },
-                .sp = 0,
+                .sp = sp,
                 .symbol_address = symbolAddress,
             };
         }
