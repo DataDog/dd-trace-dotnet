@@ -29,8 +29,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
         internal static bool DotnetTestIntegrationEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
 
+        internal static bool IsDataCollectorDomain { get; } = string.Equals(DomainMetadata.Instance.AppDomainName, "datacollector");
+
+        internal static bool IsTestHostDomain { get; } = string.Equals(DomainMetadata.Instance.AppDomainName, "testhost");
+
         internal static TestSession? CreateSession()
         {
+            // We create test session if not DataCollector or TestHost domain
+            if (IsDataCollectorDomain || IsTestHostDomain)
+            {
+                return null;
+            }
+
             var ciVisibilitySettings = CIVisibility.Settings;
             var agentless = ciVisibilitySettings.Agentless;
             var isEvpProxy = CIVisibility.EventPlatformProxySupport != EventPlatformProxySupport.None;

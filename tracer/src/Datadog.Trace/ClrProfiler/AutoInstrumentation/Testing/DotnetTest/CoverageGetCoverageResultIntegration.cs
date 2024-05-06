@@ -1,0 +1,63 @@
+// <copyright file="CoverageGetCoverageResultIntegration.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+#nullable enable
+using System;
+using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
+
+#pragma warning disable SA1201
+
+/// <summary>
+/// Coverlet.Core.CoverageResult Coverlet.Core.Coverage::GetCoverageResult() calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyName = "coverlet.core",
+    TypeName = "Coverlet.Core.Coverage",
+    MethodName = "GetCoverageResult",
+    ReturnTypeName = "Coverlet.Core.CoverageResult",
+    ParameterTypeNames = [],
+    MinimumVersion = "6.0.0",
+    MaximumVersion = "6.*.*",
+    IntegrationName = DotnetCommon.DotnetTestIntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+public class CoverageGetCoverageResultIntegration
+{
+    internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
+        where TReturn : ICoverageResultProxy
+    {
+        if (DotnetCommon.IsDataCollectorDomain &&
+            instance?.GetType().Assembly() is { } assembly &&
+            assembly.GetType("Coverlet.Core.CoverageSummary") is { } coverageSummaryType)
+        {
+            var coverageSummary = Activator.CreateInstance(coverageSummaryType).DuckCast<ICoverageSummaryProxy>();
+            var coverageDetails = coverageSummary!.CalculateLineCoverage(returnValue.Modules);
+            DotnetCommon.Log.Warning("CoverageGetCoverageResult.Percentage: {Value}", coverageDetails.Percent);
+        }
+
+        return new CallTargetReturn<TReturn>(returnValue);
+    }
+
+    internal interface ICoverageResultProxy : IDuckType
+    {
+        object Modules { get; set; }
+    }
+
+    internal interface ICoverageSummaryProxy : IDuckType
+    {
+        [Duck(ParameterTypeNames = ["Coverlet.Core.Modules, coverlet.core"])]
+        CoverageDetails CalculateLineCoverage(object modules);
+    }
+
+    [DuckCopy]
+    internal struct CoverageDetails
+    {
+        public double Percent;
+    }
+}
