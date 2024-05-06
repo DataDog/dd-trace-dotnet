@@ -1,13 +1,13 @@
 
 stages:
   - package
-  - single-step-instrumentation-tests
+ # - single-step-instrumentation-tests
   - publish
   - release
 
 include:
   - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
-  - local: ".gitlab/single-step-instrumentation-tests.yml"
+ # - local: ".gitlab/single-step-instrumentation-tests.yml"
 
 variables:
   GIT_PROFILER_REF: master

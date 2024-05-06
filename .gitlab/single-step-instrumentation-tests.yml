@@ -39,7 +39,7 @@ onboarding_tests:
   needs: [package-snapshot,package-arm-snapshot,package-oci-snapshot]
   allow_failure: false
   variables:
-    TEST_LIBRARY: nodejs
+    TEST_LIBRARY: dotnet
     ONBOARDING_FILTER_ENV: prod
   parallel:
       matrix:
