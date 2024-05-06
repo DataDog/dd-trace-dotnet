@@ -20,6 +20,103 @@
 
 
 
+
+## [Release 2.51.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.51.0)
+
+## Summary
+
+- [APM] Fix rare `TypeLoadException` when running instrumented code
+- [APM] Fix issue with runtime metrics that could cause memory usage to be reported as negative on x86
+- [IAST] Directory listing leak vulnerability detection (Kestrel)
+- [ASM] RASP: SSRF blocking. LFi reporting.
+- [CI Visibility] Early Flake Detection
+- [CI Visibility]  Selenium + RUM support
+- [Dynamic Instrumentation] Support pointer and pinned local
+- [Profiler] Several fixes
+
+## Changes
+
+### Tracer
+* Encode the last seen Datadog span ID within `tracestate` (#5176)
+* Check to ignore Activity when creating TraceID (#5318)
+* read variable responsible for enabling SCA (#5432)
+* Fix sending `Content-Length: 0` when using chunked-encoding (#5445)
+* Add full support for multipart form requests (#5448)
+* Avoid batching updates in runtime metrics (#5469)
+* Update `RegexBuilder` to accept a `Timeout` so we can reduce flake (#5471)
+* [Tracing] sampling code cleanup (#5477)
+* Switch memory mapped counters to unsigned (#5480)
+* [Dynamic Instrumentation] Add 'connectionString' to the list of redacted values (#5487)
+* [Dynamic Instrumentation] Do not create probe processor and rate limiting for unbound line probes (#5503)
+* [Dynamic Instrumentation] Consolidate PII redaction keys for all libraries. (#5522)
+
+### CI Visibility
+* [CI Visibility] Early Flake Detection (#5320)
+* [CI Visibility] - Improvements to the `dd-trace ci ...` commands (#5468)
+* [CI Visibility] - Selenium + RUM support (#5505)
+* [CI Visibility] - Ensure continuous profiler flush on CI Visibility close method (#5513)
+* [CI Visibility] - Fix force Evp proxy environment variable (#5526)
+* [CI Visibility] Add linux `whereis` command as a fallback to locate the target binary. (#5532)
+
+### ASM
+* [ASM][IAST] Add Directory listing leak vulnerability (kestrel) (#5475)
+* [ASM] change env variable name to remove experimental keyword (#5478)
+* [ASM][IAST] Add exception for Vary: Origin (#5486)
+* Send Rasp settings. Change codeowner file for snapshots. (#5490)
+* [ASM] RASP: Lfi reporting (#5491)
+* [ASM] Rasp: Block SSRF attacks (#5507)
+* [ASM] Add stack traces to the span for RASP vulnerabilities (#5515)
+* [ASM] Add RASP telemetry (#5527)
+
+### Continuous Profiler
+* [Profiler] Fix crash in Sampler at shutdown (#5483)
+* [Profiler] Fix various thing in the profiler testing infrastructure (#5495)
+* [Profiler] Fix bug debug info store & line of code (Code viewer) (#5496)
+
+### Debugger
+* [Dynamic Instrumentation] Fix `System.ArgumentNullException` while processing span decoration probes with empty tags (#5444)
+* [Debugger][Test] skip some tests that fail in `DEBUG` mode (#5452)
+* [Dynamic Instrumentation] DEBUG-2320 Support pointer and pinned local (#5464)
+* [Dynamic Instrumentation] DEBUG-2321 Add local pinned and pointer for instrumentation verification (#5465)
+* [Dynamic Instrumentation] DEBUG-2322 Find correct member ref based on best candidate (#5467)
+* [Dynamic Instrumentation] Fix PinnedLocalTest (#5511)
+
+### Serverless
+* [Serverless] add `CI_COMMIT_TAG` to be sent downstream (#5460)
+
+### Fixes
+* Fix nullable reference bugs in Kinesis integration (#5528)
+
+### Build / Test
+* Avoid more flake in smoke tests (#5413)
+* Try again to fix dd-trace build (#5429)
+* Refactor test infrastructure to support chunked encoding/gzip correctly (#5446)
+* Add testing of `IMultipartApiRequest` for UDS, streams and gzip (#5447)
+* [CI] Minor cleanup (#5450)
+* Fix dotnet_tool build (#5470)
+* Fix some flaky tests in IAST and sampling (#5472)
+* Ignore expected CI Visibility error (#5482)
+* [CLI Tool] Updated COMPlus_EnableDiagnostics Message  (#5485)
+* Simplify CI Visibility snapshot names (#5488)
+* [CI] Fix flake in Git Telemetry (#5497)
+* Remove direct references to Datadog.Trace from Security samples (#5500)
+* Fix DSM SQS tests (#5530)
+
+### Miscellaneous
+* Calltarget `ref struct` support (#5442)
+* [APM] Add git reference to application telemetry (#5459)
+* Update WAF to version 1.17 (#5463)
+* Don't send errors from Exceptions during requests to RCM (#5466)
+* Fix RegisterIastAspects signature (#5474)
+* Fix git metadata collection (#5489)
+* Fix race condition when initializing metadata (#5508)
+* Remove some write flags from GetModuleMetaData calls (#5517)
+* Prefix dynamic assemblies with "Datadog." (#5523)
+* Include inner exceptions in the telemetry logs (#5529)
+
+
+[Changes since 2.50.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.50.0...v2.51.0)
+
 ## [Release 2.50.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.50.0)
 
 ## Summary
