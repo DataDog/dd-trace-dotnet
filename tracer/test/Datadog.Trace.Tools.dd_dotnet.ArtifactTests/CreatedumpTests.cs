@@ -296,7 +296,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
             foreach (var expectedFrame in expectedCallstack)
             {
-                var frame = frames.FirstOrDefault(f => f["names"][0]["name"].Value<string>().Equals(expectedFrame));
+                var frame = frames.FirstOrDefault(f => expectedFrame.Equals(f["names"][0]["name"].Value<string>()));
 
                 frame.Should().NotBeNull($"couldn't find expected frame {expectedFrame}");
             }
