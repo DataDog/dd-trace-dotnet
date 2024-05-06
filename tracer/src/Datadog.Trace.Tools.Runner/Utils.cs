@@ -285,13 +285,38 @@ namespace Datadog.Trace.Tools.Runner
                 // The file could not be found, let's try to find it using the where command and retry
                 if (!File.Exists(startInfo.FileName))
                 {
-                    var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", startInfo.FileName));
-                    if (cmdResponse?.ExitCode == 0 &&
-                        cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
-                        outputLines[0] is { Length: > 0 } processPath)
+                    if (FrameworkDescription.Instance.OSDescription == OSPlatformName.Linux)
                     {
-                        startInfo.FileName = processPath;
-                        return RunProcess(startInfo, cancellationToken);
+                        // In linux we need to use `whereis`
+                        // output example:
+                        // dotnet: /usr/bin/dotnet /usr/lib/dotnet /etc/dotnet
+                        var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("whereis", $"-b {startInfo.FileName}"));
+                        if (cmdResponse?.ExitCode == 0 &&
+                            cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                            outputLines[0] is { Length: > 0 } temporalOutput)
+                        {
+                            foreach (var path in ProcessHelpers.ParseWhereisOutput(temporalOutput))
+                            {
+                                if (File.Exists(path))
+                                {
+                                    startInfo.FileName = path;
+                                    return RunProcess(startInfo, cancellationToken);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Both windows and macos can use `where` instead
+                        var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", startInfo.FileName));
+                        if (cmdResponse?.ExitCode == 0 &&
+                            cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                            outputLines[0] is { Length: > 0 } processPath &&
+                            File.Exists(processPath))
+                        {
+                            startInfo.FileName = processPath;
+                            return RunProcess(startInfo, cancellationToken);
+                        }
                     }
                 }
 
@@ -628,6 +653,7 @@ namespace Datadog.Trace.Tools.Runner
 
             // We try to ensure Datadog.Trace.dll is installed in the gac for compatibility with .NET Framework fusion class loader
             // Let's find gacutil, because CI Visibility runs with the SDK / CI environments it's probable that's available.
+            // Because gacutil is only available in Windows we use `where` command to find it.
             var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", "gacutil"));
             if (cmdResponse?.ExitCode == 0 &&
                 cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
@@ -696,6 +722,7 @@ namespace Datadog.Trace.Tools.Runner
              */
 
             Log.Debug("EnsureNETFrameworkVSTestConsoleDevPathSupport: Looking for vstest.console");
+            // Because vstest.console is only available in windows we use `where` command to find it.
             var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", "vstest.console"));
             if (cmdResponse?.ExitCode == 0 &&
                 cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
