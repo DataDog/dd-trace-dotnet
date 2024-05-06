@@ -43,9 +43,9 @@ onboarding_tests:
     ONBOARDING_FILTER_ENV: prod
   parallel:
       matrix:
-        - ONBOARDING_FILTER_WEBLOG: [test-app-nodejs]
+        - ONBOARDING_FILTER_WEBLOG: [test-app-dotnet]
           SCENARIO: [SIMPLE_HOST_AUTO_INJECTION]
-        - ONBOARDING_FILTER_WEBLOG: [test-app-nodejs-container]
+        - ONBOARDING_FILTER_WEBLOG: [test-app-dotnet-container]
           SCENARIO: [SIMPLE_CONTAINER_AUTO_INJECTION]
   script:
     - git clone https://git@github.com/DataDog/system-tests.git system-tests
