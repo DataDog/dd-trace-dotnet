@@ -8,7 +8,7 @@ using System;
 namespace Datadog.Trace.Iast;
 
 [Flags]
-internal enum Mark
+internal enum Mark : byte
 {
     None = 0,
     Xss = 1,
