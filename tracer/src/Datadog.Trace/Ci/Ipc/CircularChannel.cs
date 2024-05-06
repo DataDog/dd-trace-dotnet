@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Threading;
@@ -73,15 +74,19 @@ internal class CircularChannel : IDisposable
         var hasHandle = _mutex.WaitOne(MutexTimeout);
         if (!hasHandle)
         {
-            throw new TimeoutException("Failed to acquire mutex within the time limit.");
+            CIVisibility.Log.Error("Failed to acquire mutex within the time limit.");
+            return;
         }
 
+        List<byte[]>? messagesToHandle = null;
         try
         {
             var writePos = _accessor.ReadInt32(0);
             var readPos = _accessor.ReadInt32(4);
             while (readPos != writePos)
             {
+                messagesToHandle ??= new List<byte[]>();
+
                 var length = _accessor.ReadInt32(HeaderSize + readPos);
                 // Simple sanity check
                 if (length is < 0 or > MaxMessageSize)
@@ -96,7 +101,8 @@ internal class CircularChannel : IDisposable
                 var nextReadPos = (readPos + length + 4) % MaxMessageSize;
                 _accessor.Write(4, nextReadPos); // Update read pointer
 
-                MessageReceived?.Invoke(this, data);
+                // We store all the messages before releasing the mutex to avoid blocking the producer for each event call
+                messagesToHandle.Add(data);
 
                 readPos = nextReadPos; // Update local readPos to continue reading if more data is available
             }
@@ -108,6 +114,15 @@ internal class CircularChannel : IDisposable
         finally
         {
             _mutex.ReleaseMutex();
+        }
+
+        // Once we have released the mutex, we can safely handle the messages
+        if (messagesToHandle is not null)
+        {
+            foreach (var data in messagesToHandle)
+            {
+                MessageReceived?.Invoke(this, data);
+            }
         }
     }
 
