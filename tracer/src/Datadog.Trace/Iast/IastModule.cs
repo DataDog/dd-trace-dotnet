@@ -593,8 +593,7 @@ internal static partial class IastModule
         }
 
         // Check for marked (excluded) ranges
-        var ranges = Ranges.NotMarkedRanges(tainted?.Ranges, exclusionMark);
-        if (ranges is null || ranges.Length == 0)
+        if (Ranges.RangesMarked(tainted?.Ranges, exclusionMark))
         {
             return IastModuleResponse.Empty;
         }
@@ -606,8 +605,8 @@ internal static partial class IastModule
         }
 
         var vulnerability = (hash is null) ?
-            new Vulnerability(vulnerabilityType, location, new Evidence(evidenceValue, ranges), integrationId) :
-            new Vulnerability(vulnerabilityType, (int)hash, location, new Evidence(evidenceValue, ranges), integrationId);
+            new Vulnerability(vulnerabilityType, location, new Evidence(evidenceValue, tainted?.Ranges), integrationId) :
+            new Vulnerability(vulnerabilityType, (int)hash, location, new Evidence(evidenceValue, tainted?.Ranges), integrationId);
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {

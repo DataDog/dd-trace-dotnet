@@ -206,49 +206,21 @@ internal static class Ranges
         return newRanges.ToArray();
     }
 
-    internal static Range[]? NotMarkedRanges(Range[]? ranges, Mark mark)
+    internal static bool RangesMarked(IEnumerable<Range>? ranges, Mark mark)
     {
-        // Skip if no mark is provided
-        if (ranges == null || mark == Mark.None) { return ranges; }
-
-        var markedRangesCount = RangesMarkedCount(ranges, mark);
-        if (markedRangesCount == 0)
+        if (ranges is null || mark == Mark.None)
         {
-            return ranges;
+            return false;
         }
-
-        // All ranges are marked
-        if (markedRangesCount == ranges.Length)
-        {
-            return null;
-        }
-
-        var newRanges = new Range[ranges.Length - markedRangesCount];
-        var newRangesIndex = 0;
-
-        foreach (var range in ranges)
-        {
-            if (!range.IsMarked(mark))
-            {
-                newRanges[newRangesIndex++] = range;
-            }
-        }
-
-        return newRanges;
-    }
-
-    private static int RangesMarkedCount(IEnumerable<Range> ranges, Mark mark)
-    {
-        var count = 0;
 
         foreach (var range in ranges)
         {
             if (range.IsMarked(mark))
             {
-                count++;
+                return true;
             }
         }
 
-        return count;
+        return false;
     }
 }
