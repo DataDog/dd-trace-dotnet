@@ -36,7 +36,7 @@
 onboarding_tests:
   extends: .base_job_onboarding_tests
   stage: single-step-instrumentation-tests
-  needs: [package-snapshot,package-snapshot-arm,package-oci-snapshot]
+  needs: [package-snapshot,package-arm-snapshot,package-oci-snapshot]
   allow_failure: false
   variables:
     TEST_LIBRARY: nodejs
