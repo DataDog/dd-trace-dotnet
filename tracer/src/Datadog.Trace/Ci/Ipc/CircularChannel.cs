@@ -121,7 +121,14 @@ internal class CircularChannel : IDisposable
         {
             foreach (var data in messagesToHandle)
             {
-                MessageReceived?.Invoke(this, data);
+                try
+                {
+                    MessageReceived?.Invoke(this, data);
+                }
+                catch (Exception ex)
+                {
+                    CIVisibility.Log.Error(ex, "Error during message event handling.");
+                }
             }
         }
     }
