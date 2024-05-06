@@ -3,11 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
@@ -45,12 +46,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 return CallTargetState.GetDefault();
             }
 
-            var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, null, out AwsKinesisTags tags);
-            tags.StreamName = request.StreamName;
+            var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, null, out var tags);
+            if (tags is not null)
+            {
+                tags.StreamName = request.StreamName;
+            }
 
             if (scope?.Span.Context != null)
             {
-                ContextPropagation.InjectTraceIntoRecords<TPutRecordsRequest>(request, scope.Span.Context);
+                ContextPropagation.InjectTraceIntoRecords(request, scope.Span.Context);
             }
 
             return new CallTargetState(scope);
@@ -66,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);

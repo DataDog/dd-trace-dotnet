@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
@@ -15,6 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         /// <summary>
         /// Gets or sets the Kinesis Records.
         /// </summary>
-        IList Records { get; set; }
+        IList? Records { get; set; }
     }
 }
