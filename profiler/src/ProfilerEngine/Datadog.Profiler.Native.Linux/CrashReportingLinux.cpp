@@ -160,11 +160,13 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
     std::vector<StackFrame> managedFrames;
 
-    if (resolved == 0)
+    if (resolved == 0 && numberOfManagedFrames > 0)
     {
+        managedFrames.reserve(numberOfManagedFrames);
+
         for (int i = 0; i < numberOfManagedFrames; i++)
         {
-            auto managedFrame = managedCallstack[i];
+            auto const& managedFrame = managedCallstack[i];
 
             StackFrame stackFrame;
             stackFrame.ip = managedFrame.ip;
@@ -174,7 +176,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             stackFrame.symbolAddress = managedFrame.symbolAddress;
             stackFrame.isSuspicious = managedFrame.isSuspicious;
 
-            managedFrames.push_back(stackFrame);
+            managedFrames.push_back(std::move(stackFrame));
         }
     }
 
@@ -235,7 +237,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
         // TODO: Check if the stacktrace is from the tracer or the profiler
         stackFrame.isSuspicious = false;
 
-        frames.push_back(stackFrame);
+        frames.push_back(std::move(stackFrame));
 
     } while (unw_step(&cursor) > 0);
 
@@ -247,6 +249,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 std::vector<StackFrame> CrashReportingLinux::MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames)
 {
     std::vector<StackFrame> result;
+    result.reserve(std::max(nativeFrames.size(), managedFrames.size()));
 
     size_t i = 0, j = 0;
     while (i < nativeFrames.size() && j < managedFrames.size())
