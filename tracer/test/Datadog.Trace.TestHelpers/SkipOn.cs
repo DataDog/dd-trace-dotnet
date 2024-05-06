@@ -62,9 +62,21 @@ public static class SkipOn
             (platform == PlatformValue.Windows && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) ||
             (platform == PlatformValue.MacOs && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)))
         {
-            if ((architecture == ArchitectureValue.X64 && RuntimeInformation.OSArchitecture == Architecture.X64) ||
-                (architecture == ArchitectureValue.X86 && RuntimeInformation.OSArchitecture == Architecture.X86) ||
-                (architecture == ArchitectureValue.ARM64 && RuntimeInformation.OSArchitecture == Architecture.Arm64))
+            if ((architecture == ArchitectureValue.X64 && RuntimeInformation.ProcessArchitecture == Architecture.X64) ||
+                (architecture == ArchitectureValue.X86 && RuntimeInformation.ProcessArchitecture == Architecture.X86) ||
+                (architecture == ArchitectureValue.ARM64 && RuntimeInformation.ProcessArchitecture == Architecture.Arm64))
+            {
+                throw new SkipException($"Platform '{platform}' with Architecture '{architecture}' is not supported by this test.");
+            }
+        }
+#else
+        if ((platform == PlatformValue.Linux && FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux) ||
+            (platform == PlatformValue.Windows && FrameworkDescription.Instance.OSPlatform == OSPlatformName.Windows) ||
+            (platform == PlatformValue.MacOs && FrameworkDescription.Instance.OSPlatform == OSPlatformName.MacOS))
+        {
+            if ((architecture == ArchitectureValue.X64 && FrameworkDescription.Instance.ProcessArchitecture == "x64") ||
+                (architecture == ArchitectureValue.X86 && FrameworkDescription.Instance.ProcessArchitecture == "x86") ||
+                (architecture == ArchitectureValue.ARM64 && FrameworkDescription.Instance.ProcessArchitecture == "arm64"))
             {
                 throw new SkipException($"Platform '{platform}' with Architecture '{architecture}' is not supported by this test.");
             }
@@ -78,6 +90,13 @@ public static class SkipOn
         if ((platform == PlatformValue.Linux && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) ||
             (platform == PlatformValue.Windows && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) ||
             (platform == PlatformValue.MacOs && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)))
+        {
+            throw new SkipException($"Platform '{platform}' is not supported by this test.");
+        }
+#else
+        if ((platform == PlatformValue.Linux && FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux) ||
+            (platform == PlatformValue.Windows && FrameworkDescription.Instance.OSPlatform == OSPlatformName.Windows) ||
+            (platform == PlatformValue.MacOs && FrameworkDescription.Instance.OSPlatform == OSPlatformName.MacOS))
         {
             throw new SkipException($"Platform '{platform}' is not supported by this test.");
         }

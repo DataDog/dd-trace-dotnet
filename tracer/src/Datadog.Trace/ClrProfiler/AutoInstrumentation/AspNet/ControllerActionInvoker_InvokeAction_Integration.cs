@@ -104,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                                 if (extractedObject is not null)
                                 {
                                     var inputData = new Dictionary<string, object> { { AddressesConstants.ResponseBody, extractedObject } };
-                                    securityTransport.CheckAndBlock(inputData);
+                                    securityTransport.BlockAndReport(inputData);
                                 }
                             }
                         }

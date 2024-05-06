@@ -42,11 +42,11 @@ namespace Datadog.Trace.Tools.Runner
             return DirectoryExists("Home", Path.Combine(runnerFolder, "..", "..", "..", "home"), Path.Combine(runnerFolder, "home"));
         }
 
-        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options, bool reducePathLength, CIVisibilityOptions ciVisibilityOptions)
+        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options, CIVisibilityOptions ciVisibilityOptions)
         {
             var tracerHomeFolder = options.TracerHome.GetValue(context);
 
-            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, tracerHomeFolder, reducePathLength, ciVisibilityOptions);
+            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, tracerHomeFolder, ciVisibilityOptions);
 
             var environment = options.Environment.GetValue(context);
 
@@ -79,9 +79,9 @@ namespace Datadog.Trace.Tools.Runner
             return envVars;
         }
 
-        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, LegacySettings options, bool reducePathLength, CIVisibilityOptions ciVisibilityOptions)
+        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, LegacySettings options, CIVisibilityOptions ciVisibilityOptions)
         {
-            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHomeFolderOption.GetValue(context), reducePathLength, ciVisibilityOptions);
+            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHomeFolderOption.GetValue(context), ciVisibilityOptions);
 
             var environment = options.EnvironmentOption.GetValue(context);
 
@@ -258,13 +258,13 @@ namespace Datadog.Trace.Tools.Runner
         {
             try
             {
-                using (Process childProcess = new Process())
-                {
-                    childProcess.StartInfo = startInfo;
-                    childProcess.EnableRaisingEvents = true;
-                    childProcess.Start();
+                using var childProcess = new Process();
+                childProcess.StartInfo = startInfo;
+                childProcess.EnableRaisingEvents = true;
+                childProcess.Start();
 
-                    using (cancellationToken.Register(() =>
+                using var ctr = cancellationToken.Register(
+                    () =>
                     {
                         try
                         {
@@ -274,12 +274,53 @@ namespace Datadog.Trace.Tools.Runner
                         {
                             // .
                         }
-                    }))
+                    });
+
+                childProcess.WaitForExit();
+                return cancellationToken.IsCancellationRequested ? 1 : childProcess.ExitCode;
+            }
+            catch (System.ComponentModel.Win32Exception win32Exception)
+            {
+                // https://github.com/dotnet/runtime/blob/d099f075e45d2aa6007a22b71b45a08758559f80/src/libraries/System.Diagnostics.Process/src/System/Diagnostics/Process.cs#L1750-L1755
+                // The file could not be found, let's try to find it using the where command and retry
+                if (!File.Exists(startInfo.FileName))
+                {
+                    if (FrameworkDescription.Instance.OSDescription == OSPlatformName.Linux)
                     {
-                        childProcess.WaitForExit();
-                        return cancellationToken.IsCancellationRequested ? 1 : childProcess.ExitCode;
+                        // In linux we need to use `whereis`
+                        // output example:
+                        // dotnet: /usr/bin/dotnet /usr/lib/dotnet /etc/dotnet
+                        var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("whereis", $"-b {startInfo.FileName}"));
+                        if (cmdResponse?.ExitCode == 0 &&
+                            cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                            outputLines[0] is { Length: > 0 } temporalOutput)
+                        {
+                            foreach (var path in ProcessHelpers.ParseWhereisOutput(temporalOutput))
+                            {
+                                if (File.Exists(path))
+                                {
+                                    startInfo.FileName = path;
+                                    return RunProcess(startInfo, cancellationToken);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Both windows and macos can use `where` instead
+                        var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", startInfo.FileName));
+                        if (cmdResponse?.ExitCode == 0 &&
+                            cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
+                            outputLines[0] is { Length: > 0 } processPath &&
+                            File.Exists(processPath))
+                        {
+                            startInfo.FileName = processPath;
+                            return RunProcess(startInfo, cancellationToken);
+                        }
                     }
                 }
+
+                AnsiConsole.WriteException(win32Exception);
             }
             catch (Exception ex)
             {
@@ -336,16 +377,17 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             var configurationSource = new CompositeConfigurationSourceInternal();
-            configurationSource.AddInternal(GlobalConfigurationSource.Instance);
             configurationSource.AddInternal(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
+            configurationSource.AddInternal(GlobalConfigurationSource.Instance);
 
             var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry());
             var settings = new ImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);
 
+            Log.Debug("Creating DiscoveryService for: {AgentUriInternal}", settings.ExporterInternal.AgentUriInternal);
             var discoveryService = DiscoveryService.Create(
                 settings.ExporterInternal,
                 tcpTimeout: TimeSpan.FromSeconds(5),
-                initialRetryDelayMs: 10,
+                initialRetryDelayMs: 200,
                 maxRetryDelayMs: 1000,
                 recheckIntervalMs: int.MaxValue);
 
@@ -411,7 +453,7 @@ namespace Datadog.Trace.Tools.Runner
             return false;
         }
 
-        private static Dictionary<string, string> GetBaseProfilerEnvironmentVariables(string runnerFolder, Platform platform, string tracerHomeFolder, bool reducePathLength, CIVisibilityOptions ciVisibilityOptions = null)
+        private static Dictionary<string, string> GetBaseProfilerEnvironmentVariables(string runnerFolder, Platform platform, string tracerHomeFolder, CIVisibilityOptions ciVisibilityOptions = null)
         {
             string tracerHome = null;
             if (!string.IsNullOrEmpty(tracerHomeFolder))
@@ -431,7 +473,7 @@ namespace Datadog.Trace.Tools.Runner
                 return null;
             }
 
-            if (reducePathLength)
+            if (ciVisibilityOptions?.ReducePathLength == true)
             {
                 // Due to:
                 // https://developercommunity.visualstudio.com/t/vsotasksetvariable-contains-logging-command-keywor/1249340#T-N1253996
@@ -611,6 +653,7 @@ namespace Datadog.Trace.Tools.Runner
 
             // We try to ensure Datadog.Trace.dll is installed in the gac for compatibility with .NET Framework fusion class loader
             // Let's find gacutil, because CI Visibility runs with the SDK / CI environments it's probable that's available.
+            // Because gacutil is only available in Windows we use `where` command to find it.
             var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", "gacutil"));
             if (cmdResponse?.ExitCode == 0 &&
                 cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
@@ -679,6 +722,7 @@ namespace Datadog.Trace.Tools.Runner
              */
 
             Log.Debug("EnsureNETFrameworkVSTestConsoleDevPathSupport: Looking for vstest.console");
+            // Because vstest.console is only available in windows we use `where` command to find it.
             var cmdResponse = ProcessHelpers.RunCommand(new ProcessHelpers.Command("where", "vstest.console"));
             if (cmdResponse?.ExitCode == 0 &&
                 cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
@@ -874,9 +918,9 @@ namespace Datadog.Trace.Tools.Runner
             }
         }
 
-        public record CIVisibilityOptions(bool EnableGacInstallation, bool EnableVsTestConsoleConfigModification)
+        public record CIVisibilityOptions(bool EnableGacInstallation, bool EnableVsTestConsoleConfigModification, bool ReducePathLength)
         {
-            public static CIVisibilityOptions None { get; } = new(false, false);
+            public static CIVisibilityOptions None { get; } = new(false, false, false);
         }
     }
 }

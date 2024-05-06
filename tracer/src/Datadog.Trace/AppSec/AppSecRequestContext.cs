@@ -1,11 +1,13 @@
-﻿// <copyright file="AppSecRequestContext.cs" company="Datadog">
+// <copyright file="AppSecRequestContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -13,10 +15,13 @@ namespace Datadog.Trace.AppSec;
 
 internal class AppSecRequestContext
 {
+    private const string StackKey = "_dd.stack";
+    private const string ExploitStackKey = "exploit";
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
+    private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces = null;
 
-    internal void CloseWebSpan(TraceTagCollection tags)
+    internal void CloseWebSpan(TraceTagCollection tags, Span span)
     {
         lock (_sync)
         {
@@ -24,6 +29,11 @@ internal class AppSecRequestContext
             {
                 var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
                 tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
+            }
+
+            if (_raspStackTraces?.Count > 0)
+            {
+                span.SetMetaStruct(StackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
             }
         }
     }
@@ -33,6 +43,25 @@ internal class AppSecRequestContext
         lock (_sync)
         {
             _wafSecurityEvents.AddRange(events);
+        }
+    }
+
+    internal void AddRaspStackTrace(Dictionary<string, object> stackTrace, int maxStackTraces)
+    {
+        lock (_sync)
+        {
+            _raspStackTraces ??= new();
+
+            if (!_raspStackTraces.ContainsKey(ExploitStackKey))
+            {
+                _raspStackTraces.Add(ExploitStackKey, new());
+            }
+            else if (_raspStackTraces[ExploitStackKey].Count >= maxStackTraces)
+            {
+                return;
+            }
+
+            _raspStackTraces[ExploitStackKey].Add(stackTrace);
         }
     }
 }

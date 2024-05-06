@@ -1,0 +1,51 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "this": {
+                "type": "PinnedLocal",
+                "value": "PinnedLocal"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "this": {
+                "type": "PinnedLocal",
+                "value": "PinnedLocal"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "MethodWithPinnedLocal",
+            "type": "Samples.Probes.TestRuns.SmokeTests.PinnedLocal"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodWithPinnedLocal",
+      "name": "Samples.Probes.TestRuns.SmokeTests.PinnedLocal",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

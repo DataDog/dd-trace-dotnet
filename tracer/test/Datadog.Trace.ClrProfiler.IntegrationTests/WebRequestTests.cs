@@ -87,10 +87,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
-                var allSpans = agent.WaitForSpans(expectedAllSpansCount).OrderBy(s => s.Start);
+                var allSpans = agent.WaitForSpans(expectedAllSpansCount).OrderBy(s => s.Start).ToList();
                 allSpans.Should().OnlyHaveUniqueItems(s => new { s.SpanId, s.TraceId });
 
-                var spans = allSpans.Where(s => s.Type == SpanTypes.Http);
+                var spans = allSpans.Where(s => s.Type == SpanTypes.Http).ToList();
                 spans.Should().HaveCount(expectedSpanCount);
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 

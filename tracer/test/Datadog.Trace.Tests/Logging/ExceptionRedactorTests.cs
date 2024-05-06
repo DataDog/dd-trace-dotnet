@@ -27,7 +27,8 @@ public class ExceptionRedactorTests
         var ex = (Exception)Activator.CreateInstance(exceptionType);
         var redacted = ExceptionRedactor.Redact(ex);
 
-        redacted.Should().Be(exceptionType.FullName);
+        // We don't necessarily _want_ the new line at the end, but it's fine
+        redacted.Should().Be(exceptionType.FullName + Environment.NewLine);
     }
 
     [Fact]
@@ -41,6 +42,29 @@ public class ExceptionRedactorTests
         // remove first line (exception) from redacted exception before comparing
         var redactedStackTrace = string.Join(Environment.NewLine, redacted.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Skip(1));
         HasExpectedFrames(new StackTrace(ex), redactedStackTrace);
+    }
+
+    [Fact]
+    public void Redact_IncludesInnerExceptionWhenHaveStackFrames()
+    {
+        var ex = InvokeInnerException();
+        var redacted = ExceptionRedactor.Redact(ex);
+
+        redacted.Should().StartWith("System.InvalidOperationException ---> System.Exception" + Environment.NewLine);
+
+        // split on the stack trace separator, and then remove the first line (exception types)
+        // from redacted exception before comparing
+        var stackTraces = redacted.Split(["   --- End of inner exception stack trace ---"], StringSplitOptions.RemoveEmptyEntries);
+        stackTraces.Should().HaveCount(2);
+        ex.InnerException.Should().NotBeNull();
+        ex.InnerException.InnerException.Should().BeNull();
+
+        // inner stack trace first
+        var redactedStackTrace = string.Join(Environment.NewLine, stackTraces[0].Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries).Skip(1));
+        HasExpectedFrames(new StackTrace(ex.InnerException), redactedStackTrace);
+
+        // outer stack trace
+        HasExpectedFrames(new StackTrace(ex), stackTraces[1]);
     }
 
     [Fact]
@@ -167,7 +191,31 @@ public class ExceptionRedactorTests
         }
     }
 
+    [MethodImpl(MethodImplOptions.NoOptimization | MethodImplOptions.NoInlining)]
+    private static Exception InvokeInnerException()
+    {
+        try
+        {
+            try
+            {
+                ThrowException();
+            }
+            catch (Exception inner)
+            {
+                ThrowInnerException(inner);
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            return ex;
+        }
+    }
+
     private static void ThrowException() => throw new Exception();
+
+    private static void ThrowInnerException(Exception inner) => throw new InvalidOperationException(null, inner);
 
     public static class TestData
     {

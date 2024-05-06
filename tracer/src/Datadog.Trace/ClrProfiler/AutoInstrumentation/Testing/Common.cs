@@ -8,7 +8,6 @@ using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 

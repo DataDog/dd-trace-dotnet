@@ -23,6 +23,8 @@ namespace Samples
         private static readonly Type TracerSettingsType = Type.GetType("Datadog.Trace.Configuration.TracerSettings, Datadog.Trace");
         private static readonly Type TracerConstantsType = Type.GetType("Datadog.Trace.TracerConstants, Datadog.Trace");
         private static readonly Type ProcessHelpersType = Type.GetType("Datadog.Trace.Util.ProcessHelpers, Datadog.Trace");
+        private static readonly Type UserDetailsType = Type.GetType("Datadog.Trace.UserDetails, Datadog.Trace");
+        private static readonly Type SpanExtensionsType = Type.GetType("Datadog.Trace.SpanExtensions, Datadog.Trace");
         private static readonly PropertyInfo GetTracerManagerProperty = TracerType?.GetProperty("TracerManager", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo GetNativeTracerVersionMethod = InstrumentationType?.GetMethod("GetNativeTracerVersion");
         private static readonly MethodInfo GetTracerInstance = TracerType?.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)?.GetMethod;
@@ -39,6 +41,7 @@ namespace Samples
         private static readonly MethodInfo SpanProperty = ScopeType?.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
         private static readonly MethodInfo SpanContextProperty = SpanType?.GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
         private static readonly MethodInfo CorrelationIdentifierTraceIdProperty = CorrelationIdentifierType?.GetProperty("TraceId", BindingFlags.Public | BindingFlags.Static)?.GetMethod;
+        private static readonly MethodInfo SetServiceNameProperty = SpanType?.GetProperty("ServiceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
         private static readonly MethodInfo SetResourceNameProperty = SpanType?.GetProperty("ResourceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
         private static readonly MethodInfo SetTagMethod = SpanType?.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -46,6 +49,12 @@ namespace Samples
         private static readonly MethodInfo SetServiceName = TracerSettingsType?.GetProperty("ServiceName")?.SetMethod;
         private static readonly MethodInfo GetMetricMethod = SpanType?.GetMethod("GetMetric", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo RunCommandMethod = ProcessHelpersType?.GetMethod("TestingOnly_RunCommand", BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo SetUserIdMethod = UserDetailsType?.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance)?.SetMethod;
+#if NETCOREAPP
+        private static readonly MethodInfo SetUserMethod = SpanExtensionsType?.GetMethod("SetUser", BindingFlags.Public | BindingFlags.Static | BindingFlags.DoNotWrapExceptions);
+#else
+        private static readonly MethodInfo SetUserMethod = SpanExtensionsType?.GetMethod("SetUser", BindingFlags.Public | BindingFlags.Static);
+#endif
         private static readonly FieldInfo TracerThreePartVersionField = TracerConstantsType?.GetField("ThreePartVersion");
 
 
@@ -266,6 +275,16 @@ namespace Samples
             }
         }
 
+        public static void TrySetServiceName(object scope, string serviceName)
+        {
+            if (SpanProperty == null || SetServiceNameProperty == null)
+            {
+                return;
+            }
+
+            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            SetServiceNameProperty.Invoke(span, new object[] { serviceName });
+        }
         public static void TrySetTag(object scope, string key, string value)
         {
             if (SpanProperty != null && SetTagMethod != null)
@@ -377,6 +396,39 @@ namespace Samples
                ?.Invoke(null, new[] { discoveryService });
 
             return result as Task ?? Task.CompletedTask;
+        }
+
+        public static void SetUser(string userId)
+        {
+            if (SpanProperty is null || SetUserMethod is null || SetUserIdMethod is null)
+            {
+                return;
+            }
+            
+            var scope = GetActiveScope();
+            if (scope is null)
+            {
+                return;
+            }
+
+            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            var userDetails = Activator.CreateInstance(UserDetailsType);
+            SetUserIdMethod.Invoke(userDetails, new object[] { userId });
+#if NETCOREAPP
+            SetUserMethod.Invoke(null, new object[] { span, userDetails });
+#else
+            try
+            {
+                // We rely on reflection to invoke Datadog.Trace, Unfortunately, in .NET Framework,
+                // the exception is thrown wrapped in a TargetInvocationException, which is not
+                // handled by the aspnet middleware pipeline, so we "manuallY" unwrap it 
+                SetUserMethod.Invoke(null, new object[] { span, userDetails });
+            }
+            catch(System.Reflection.TargetInvocationException ex) when (ex.InnerException != null)
+            {
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+            }
+#endif
         }
 
         public static void RunCommand(string cmd, string args = null)

@@ -7,19 +7,37 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
     [Collection(nameof(ConsoleTestsCollection))]
-    public class ConfigureCiCommandTests
+    public class ConfigureCiCommandTests(ITestOutputHelper output)
     {
-        [SkippableFact]
+        [SkippableTheory]
         [Trait("RunOnWindows", "True")]
-        public void ConfigureCi()
+        [InlineData("azp", @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+);\](?<value>.*)")]
+        [InlineData("jenkins", @"(?<name>[A-Z1-9_]+)=(?<value>.*)")]
+        [InlineData("github", @"(?<name>[A-Z1-9_]+)=(?<value>.*)", "GITHUB_ENV")]
+        public void ConfigureCi(string ciProviderName, string pattern, string envKeyWithFilePath = null)
         {
-            var commandLine = "ci configure azp --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url TestAgentUrl";
+            using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
+            var agentUrl = $"http://localhost:{agent.Port}";
+
+            var commandLine = $"ci configure {ciProviderName} --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
+
+            string envKeyWithFilePathOriginalValue = null;
+            string envKeyWithFilePathNewValue = null;
+            if (!string.IsNullOrEmpty(envKeyWithFilePath))
+            {
+                envKeyWithFilePathOriginalValue = EnvironmentHelpers.GetEnvironmentVariable(envKeyWithFilePath);
+                envKeyWithFilePathNewValue = Path.GetTempFileName();
+                EnvironmentHelpers.SetEnvironmentVariable(envKeyWithFilePath, envKeyWithFilePathNewValue);
+            }
 
             using var console = ConsoleHelper.Redirect();
 
@@ -29,11 +47,19 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             var environmentVariables = new Dictionary<string, string>();
 
-            foreach (var line in console.ReadLines())
+            IEnumerable<string> lines = Array.Empty<string>();
+            if (!string.IsNullOrEmpty(envKeyWithFilePathNewValue))
             {
-                // ##vso[task.setvariable variable=DD_DOTNET_TRACER_HOME]TestTracerHome
-                var match = Regex.Match(line, @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+);\](?<value>.*)");
+                lines = File.ReadAllLines(envKeyWithFilePathNewValue);
+            }
+            else
+            {
+                lines = console.ReadLines();
+            }
 
+            foreach (var line in lines)
+            {
+                var match = Regex.Match(line, pattern);
                 if (match.Success)
                 {
                     environmentVariables.Add(match.Groups["name"].Value, match.Groups["value"].Value);
@@ -44,12 +70,18 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().Contain("DD_SERVICE", "TestService");
             environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
             environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", Path.GetFullPath("TestTracerHome"));
-            environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", "TestAgentUrl");
+            environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", agentUrl);
+
+            if (!string.IsNullOrEmpty(envKeyWithFilePath))
+            {
+                EnvironmentHelpers.SetEnvironmentVariable(envKeyWithFilePath, envKeyWithFilePathOriginalValue);
+            }
         }
 
         [SkippableTheory]
         [Trait("RunOnWindows", "True")]
         [InlineData("TF_BUILD", "1", 0, "Detected CI AzurePipelines.")]
+        [InlineData("GITHUB_SHA", "1", 0, "Detected CI GithubActions.")]
         [InlineData("Nope", "0", 1, "Failed to autodetect CI.")]
         public void AutodetectCi(string key, string value, int expectedStatusCode, string expectedMessage)
         {
@@ -65,7 +97,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             {
                 Environment.SetEnvironmentVariable(key, value);
 
-                var commandLine = "ci configure --tracer-home tracerHome";
+                using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
+                var agentUrl = $"http://localhost:{agent.Port}";
+
+                var commandLine = $"ci configure --tracer-home tracerHome --agent-url {agentUrl}";
 
                 using var console = ConsoleHelper.Redirect();
 

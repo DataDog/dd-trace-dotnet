@@ -7,6 +7,8 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
@@ -64,6 +66,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         EnableRasp();
+        SetSecurity(true);
         EnableIast(enableIast);
         EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
         EnableEvidenceRedaction(false);
@@ -72,40 +75,45 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
         DisableObfuscationQueryString();
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, "rasp-rule-set.json");
 
         _iisFixture = iisFixture;
         _classicMode = classicMode;
         _enableIast = enableIast;
 
-        SetSecurity(true);
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
         SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
     }
 
+    [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
-    [Fact]
-    public async Task TestRaspIastPathTraversalRequest()
+    [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
+    [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
+    [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
+    [InlineData("/Iast/SsrfAttackNoCatch?host=127.0.0.1", "SSRF")]
+    public async Task TestRaspRequest(string url, string exploit)
     {
-        var filePath = "file.csv";
-        var filename = _enableIast ? "Rasp.PathTraversal.AspNetMvc5.IastEnabled" : "Rasp.PathTraversal.AspNetMvc5.IastDisabled";
-        var url = $"/Iast/GetFileContent?file={filePath}";
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl, null);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var agent = _iisFixture.Agent;
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseParameters(url, exploit);
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        var dateTime = DateTime.UtcNow;
+        var testName = _enableIast ? "RaspIast.AspNetMvc5" : "Rasp.AspNetMvc5";
+        testName += _classicMode ? ".Classic" : ".Integrated";
+        await SubmitRequest(url, null, "application/json");
+        var spans = agent.WaitForSpans(2, minDateTime: dateTime);
+        await VerifySpans(spans, settings, testName: testName, methodNameOverride: exploit);
     }
 
     public async Task InitializeAsync()
     {
         await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         SetHttpPort(_iisFixture.HttpPort);
+        // we need to have a first request to the home page to avoid the initialization metrics of the waf and sampling priority set to 2.0 because of that
+        var answer = await SubmitRequest("/", null, string.Empty);
+        // because of this we need to add a filter
+        _iisFixture.Agent.SpanFilters.Add(s => !s.Resource.Contains("home/index"));
     }
 
     public Task DisposeAsync() => Task.CompletedTask;

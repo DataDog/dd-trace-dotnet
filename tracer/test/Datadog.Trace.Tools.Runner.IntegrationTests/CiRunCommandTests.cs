@@ -9,6 +9,7 @@ using System.IO;
 using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Util;
@@ -64,10 +65,12 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             Program.CallbackForTests = (c, a, e) =>
             {
+                var session = DotnetCommon.CreateSession();
                 command = c;
                 arguments = a;
                 environmentVariables = e;
                 callbackInvoked = true;
+                DotnetCommon.FinalizeSession(session, 0, null);
             };
 
             // CI visibility mode checks if there's a running agent

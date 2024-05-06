@@ -14,6 +14,7 @@ using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
+using Xunit.Abstractions;
 using Xunit.Sdk;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
@@ -23,8 +24,9 @@ public class TelemetryHelperTests
     private readonly ApplicationTelemetryData _app;
     private readonly HostTelemetryData _host;
     private readonly TelemetryDataBuilder _dataBuilder = new();
+    private readonly ITestOutputHelper _output;
 
-    public TelemetryHelperTests()
+    public TelemetryHelperTests(ITestOutputHelper output)
     {
         _app = new ApplicationTelemetryData(
             "service",
@@ -38,6 +40,7 @@ public class TelemetryHelperTests
             commitSha: "testCommitSha",
             repositoryUrl: "testRepositoryUrl");
         _host = new HostTelemetryData("MY_HOST", "Windows", "x64");
+        _output = output;
     }
 
     [Fact]
@@ -122,6 +125,7 @@ public class TelemetryHelperTests
             { ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "1" },
             { ConfigurationKeys.TraceEnabled, "0" },
             { ConfigurationKeys.AppSec.Enabled, "1" },
+            { ConfigurationKeys.AppSec.ScaEnabled, "1" },
         });
 
         _ = new ImmutableTracerSettings(new TracerSettings(config, collector));
@@ -138,6 +142,8 @@ public class TelemetryHelperTests
         TelemetryHelper.AssertConfiguration(telemetryData, ConfigurationKeys.TraceEnabled, false);
         TelemetryHelper.AssertConfiguration(telemetryData, ConfigurationKeys.AppSec.Enabled);
         TelemetryHelper.AssertConfiguration(telemetryData, ConfigurationKeys.AppSec.Enabled, true);
+        TelemetryHelper.AssertConfiguration(telemetryData, ConfigurationKeys.AppSec.ScaEnabled);
+        TelemetryHelper.AssertConfiguration(telemetryData, ConfigurationKeys.AppSec.ScaEnabled, true);
     }
 
     private TelemetryData BuildTelemetryData(

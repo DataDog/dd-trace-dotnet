@@ -77,5 +77,8 @@ namespace Datadog.Trace.Configuration
         ReflectionInjection,
         Xss,
         NHibernate,
+        DotnetTest,
+        Selenium,
+        DirectoryListingLeak,
     }
 }

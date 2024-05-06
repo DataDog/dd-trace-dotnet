@@ -5,10 +5,12 @@
 #nullable enable
 
 using System;
+using System.Collections.Specialized;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Configuration
 {
@@ -50,13 +52,16 @@ namespace Datadog.Trace.Ci.Configuration
             GitUploadEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.GitUploadEnabled).AsBool();
 
             // Force evp proxy
-            ForceAgentsEvpProxy = config.WithKeys(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy).AsBool(false);
+            ForceAgentsEvpProxy = config.WithKeys(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy).AsString();
 
             // Check if Datadog.Trace should be installed in the GAC
             InstallDatadogTraceInGac = config.WithKeys(ConfigurationKeys.CIVisibility.InstallDatadogTraceInGac).AsBool(true);
 
             // Early flake detection
             EarlyFlakeDetectionEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled).AsBool();
+
+            // RUM flush milliseconds
+            RumFlushWaitMillis = config.WithKeys(ConfigurationKeys.CIVisibility.RumFlushWaitMillis).AsInt32(500);
         }
 
         /// <summary>
@@ -147,7 +152,7 @@ namespace Datadog.Trace.Ci.Configuration
         /// <summary>
         /// Gets a value indicating whether EVP Proxy must be used.
         /// </summary>
-        public bool ForceAgentsEvpProxy { get; }
+        public string? ForceAgentsEvpProxy { get; }
 
         /// <summary>
         /// Gets a value indicating whether we ensure Datadog.Trace GAC installation.
@@ -158,6 +163,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets a value indicating whether the Early flake detection feature is enabled.
         /// </summary>
         public bool? EarlyFlakeDetectionEnabled { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating the number of milliseconds to wait after flushing RUM data.
+        /// </summary>
+        public int RumFlushWaitMillis { get; }
 
         /// <summary>
         /// Gets the tracer settings
@@ -206,7 +216,22 @@ namespace Datadog.Trace.Ci.Configuration
 
         private TracerSettings InitializeTracerSettings()
         {
-            var tracerSettings = new TracerSettings(GlobalConfigurationSource.Instance, new ConfigurationTelemetry());
+            var source = GlobalConfigurationSource.CreateDefaultConfigurationSource();
+            var defaultExcludedUrlSubstrings = string.Empty;
+            if (((ITelemeteredConfigurationSource)source).GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings, NullConfigurationTelemetry.Instance, null, false)?.Result is { } substrings &&
+                !string.IsNullOrWhiteSpace(substrings))
+            {
+                defaultExcludedUrlSubstrings = substrings + ", ";
+            }
+
+            source.InsertInternal(0, new NameValueConfigurationSource(
+                                      new NameValueCollection
+                                      {
+                                          [ConfigurationKeys.HttpClientExcludedUrlSubstrings] = defaultExcludedUrlSubstrings + "/session/FakeSessionIdForPollingPurposes",
+                                      },
+                                      ConfigurationOrigins.Calculated));
+
+            var tracerSettings = new TracerSettings(source, new ConfigurationTelemetry());
 
             if (Logs)
             {

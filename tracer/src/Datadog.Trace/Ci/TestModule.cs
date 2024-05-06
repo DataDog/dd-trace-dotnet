@@ -172,7 +172,7 @@ public sealed class TestModule
 
         span.Type = SpanTypes.TestModule;
         span.ResourceName = name;
-        span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep);
+        span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
         span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
 
         tags.ModuleId = span.SpanId;
@@ -476,7 +476,7 @@ public sealed class TestModule
         span.Finish(duration.Value);
 
         // Record EventFinished telemetry metric
-        TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Module);
+        TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Module);
 
         Current = null;
         CIVisibility.Log.Debug("### Test Module Closed: {Name} | {Status}", Name, Tags.Status);

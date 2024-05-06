@@ -103,18 +103,22 @@ namespace Datadog.Trace.AppSec
                                       .AsBool(true);
 
             MaxStackTraces = config
-                            .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
-                            .AsInt32(defaultValue: 2, validator: val => val >= 0)
-                            .Value;
+                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraces)
+                                  .AsInt32(defaultValue: 2, validator: val => val >= 1)
+                                  .Value;
 
             MaxStackTraceDepth = config
                                   .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepth)
-                                  .AsInt32(defaultValue: 32, validator: val => val >= 0)
+                                  .AsInt32(defaultValue: 32, validator: val => val >= 1)
                                   .Value;
 
             WafDebugEnabled = config
                              .WithKeys(ConfigurationKeys.AppSec.WafDebugEnabled)
                              .AsBool(defaultValue: false);
+
+            ScaEnabled = config
+                             .WithKeys(ConfigurationKeys.AppSec.ScaEnabled)
+                             .AsBool();
         }
 
         public double ApiSecuritySampleDelay { get; set; }
@@ -199,6 +203,12 @@ namespace Datadog.Trace.AppSec
         /// Gets a value indicating whether or not api security is enabled, defaults to false.
         /// </summary>
         public bool ApiSecurityEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether or not SCA (Software Composition Analysis) is enabled, defaults to null.
+        /// It is not use locally, but ready by the backend.
+        /// </summary>
+        public bool? ScaEnabled { get; }
 
         public static SecuritySettings FromDefaultSources()
         {

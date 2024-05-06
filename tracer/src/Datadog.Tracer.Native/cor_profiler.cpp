@@ -82,8 +82,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                                                     is_ci_visibility_enabled) &&
             is_ci_visibility_enabled)
         {
-            if ((process_name == WStr("dotnet") || process_name == WStr("dotnet.exe")) && process_command_line.
-                find(WStr("testhost")) == WSTRING::npos)
+            const auto isDotNetProcess = process_name == WStr("dotnet") || process_name == WStr("dotnet.exe");
+            
+            if (isDotNetProcess &&
+                process_command_line.find(WStr("testhost")) == WSTRING::npos &&
+                process_command_line.find(WStr("dotnet test")) == WSTRING::npos &&
+                process_command_line.find(WStr("dotnet\" test")) == WSTRING::npos &&
+                process_command_line.find(WStr("dotnet' test")) == WSTRING::npos &&
+                process_command_line.find(WStr("dotnet.exe test")) == WSTRING::npos &&
+                process_command_line.find(WStr("dotnet.exe\" test")) == WSTRING::npos &&
+                process_command_line.find(WStr("dotnet.exe' test")) == WSTRING::npos &&
+                process_command_line.find(WStr("dotnet.dll test")) == WSTRING::npos &&
+                process_command_line.find(WStr("dotnet.dll\" test")) == WSTRING::npos &&
+                process_command_line.find(WStr("dotnet.dll' test")) == WSTRING::npos &&
+                process_command_line.find(WStr(" test ")) == WSTRING::npos)
             {
                 Logger::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility "
                     "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost'");
@@ -405,7 +417,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         }
 
         ComPtr<IUnknown> metadata_interfaces;
-        auto hr = this->info_->GetModuleMetaData(assembly_info.manifest_module_id, ofRead | ofWrite,
+        auto hr = this->info_->GetModuleMetaData(assembly_info.manifest_module_id, ofRead,
                                                  IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
 
         if (FAILED(hr))
@@ -748,7 +760,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         corlib_app_domain_id = app_domain_id;
 
         ComPtr<IUnknown> metadata_interfaces;
-        auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
+        auto hr = this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
                                                  metadata_interfaces.GetAddressOf());
 
         // Get the IMetaDataAssemblyImport interface to get metadata from the
@@ -974,7 +986,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             bool foundType = false;
 
             ComPtr<IUnknown> metadata_interfaces;
-            auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
+            auto hr = this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
                                                      metadata_interfaces.GetAddressOf());
 
             if (FAILED(hr))

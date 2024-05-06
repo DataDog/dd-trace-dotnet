@@ -177,8 +177,8 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
-        public void ForceAgentsEvpProxy(string value, bool expected)
+        [MemberData(nameof(StringTestCases))]
+        public void ForceAgentsEvpProxy(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, value));
             var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);

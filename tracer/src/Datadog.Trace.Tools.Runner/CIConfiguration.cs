@@ -5,7 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
@@ -41,6 +43,10 @@ namespace Datadog.Trace.Tools.Runner
                     Log.Information("Setting up the environment variables for auto-instrumentation in Jenkins.");
                     SetupJenkinsEnvironmentVariables(environmentVariables);
                     return true;
+                case CIName.GithubActions:
+                    Log.Information("Setting up the environment variables for auto-instrumentation in Github Actions.");
+                    SetupGithubActionsEnvironmentVariables(environmentVariables);
+                    return true;
             }
 
             Utils.WriteError($"Setting environment variable for '{ci}' CI is not supported.");
@@ -66,6 +72,26 @@ namespace Datadog.Trace.Tools.Runner
             foreach (var item in environmentVariables)
             {
                 Console.WriteLine($@"{item.Key}={item.Value}");
+            }
+        }
+
+        private static void SetupGithubActionsEnvironmentVariables(Dictionary<string, string> environmentVariables)
+        {
+            // https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
+            var environmentVariableFile = Utils.GetEnvironmentVariable("GITHUB_ENV");
+            if (string.IsNullOrEmpty(environmentVariableFile))
+            {
+                Utils.WriteError("Failed to get the environment variable file for Github Actions.");
+                return;
+            }
+
+            Utils.WriteInfo($"Writing environment variables to {environmentVariableFile}.");
+            using var fs = new FileStream(environmentVariableFile, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+            using var sw = new StreamWriter(fs, EncodingHelpers.Utf8NoBom);
+            foreach (var item in environmentVariables)
+            {
+                Utils.WriteInfo($"Writing: {item.Key}");
+                sw.WriteLine($@"{item.Key}={item.Value}");
             }
         }
 

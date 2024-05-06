@@ -41,7 +41,6 @@ internal static partial class IastModule
     private const string OperationNameHeaderInjection = "header_injection";
     private const string OperationNameXPathInjection = "xpath_injection";
     private const string OperationNameReflectionInjection = "reflection_injection";
-    private const string OperationInsecureAuthProtocol = "insecure_auth_protocol";
     private const string OperationNameXss = "xss";
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
@@ -390,6 +389,20 @@ internal static partial class IastModule
         return AddWebVulnerability(authHeader, integrationId, VulnerabilityTypeName.InsecureAuthProtocol, (VulnerabilityTypeName.InsecureAuthProtocol + ':' + authHeader).GetStaticHashCode());
     }
 
+    public static void OnDirectoryListingLeak(string methodName)
+    {
+        if (!Iast.Instance.Settings.Enabled) { return; }
+
+        var vulnerability = new Vulnerability(
+            VulnerabilityTypeName.DirectoryListingLeak,
+            VulnerabilityTypeName.DirectoryListingLeak.GetStaticHashCode(),
+            GetLocation(),
+            new Evidence($"Directory listing is configured with: {methodName}"),
+            IntegrationId.DirectoryListingLeak);
+
+        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
+    }
+
     public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId)
     {
         if (!Iast.Instance.Settings.Enabled)
@@ -579,17 +592,10 @@ internal static partial class IastModule
             }
         }
 
-        Location? location = null;
-
-        if (addLocation)
+        var location = addLocation ? GetLocation(externalStack, currentSpan?.SpanId) : null;
+        if (addLocation && location is null)
         {
-            var frameInfo = StackWalker.GetFrame(externalStack);
-            if (!frameInfo.IsValid)
-            {
-                return IastModuleResponse.Empty;
-            }
-
-            location = new Location(frameInfo.StackFrame, currentSpan?.SpanId);
+            return IastModuleResponse.Empty;
         }
 
         var vulnerability = (hash is null) ?
@@ -610,6 +616,17 @@ internal static partial class IastModule
         }
 
         return IastModuleResponse.Empty;
+    }
+
+    private static Location? GetLocation(StackTrace? externalStack = null, ulong? currentSpanId = null)
+    {
+        var frameInfo = StackWalker.GetFrame(externalStack);
+        if (!frameInfo.IsValid)
+        {
+            return null;
+        }
+
+        return new Location(frameInfo.StackFrame, currentSpanId);
     }
 
     private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, List<Vulnerability> vulnerabilities)

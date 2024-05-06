@@ -57,6 +57,8 @@ internal readonly partial struct SecurityCoordinator
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
 
+    public static HttpContext Context => HttpContext.Current;
+
     private static Action<IResult, HttpStatusCode, string, string>? CreateThrowHttpResponseExceptionDynMeth()
     {
         try
@@ -254,7 +256,7 @@ internal readonly partial struct SecurityCoordinator
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
-    internal void CheckAndBlock(Dictionary<string, object> args, bool lastWafCall = false)
+    internal void BlockAndReport(Dictionary<string, object> args, bool lastWafCall = false)
     {
         var result = RunWaf(args, lastWafCall);
         if (result is not null)
@@ -268,6 +270,29 @@ internal readonly partial struct SecurityCoordinator
 
             // here we assume if we haven't blocked we'll have collected the correct status elsewhere
             reporting(null, result.ShouldBlock);
+        }
+    }
+
+    internal void ReportAndBlock(IResult? result)
+    {
+        if (result is not null)
+        {
+            var reporting = MakeReportingFunction(result);
+            reporting(null, result.ShouldBlock);
+
+            if (result.ShouldBlock)
+            {
+                ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
+
+                // chooseBlockingMethodAndBlock doesn't throw for all non webapi contexts and just ends the request flow.
+                // For webapi we need to throw a HttpWebResponseException to block the flow. In the context of rasp instrumentations,
+                // we need to throw in any case to not only block the request but any code execution after the instrumentation points
+
+                if (result.BlockInfo is not null)
+                {
+                    throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo);
+                }
+            }
         }
     }
 

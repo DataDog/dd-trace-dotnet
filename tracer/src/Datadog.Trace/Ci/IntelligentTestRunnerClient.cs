@@ -632,15 +632,14 @@ internal class IntelligentTestRunnerClient
                 var request = _apiRequestFactory.Create(_packFileUrl);
                 SetRequestHeader(request);
 
-                var multipartRequest = (IMultipartApiRequest)request;
                 using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);
 
                 try
                 {
-                    using var response = await multipartRequest.PostAsync([
-                                                                    new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
-                                                                    new MultipartFormItem("packfile", "application/octet-stream", null, fileStream)])
-                                                               .ConfigureAwait(false);
+                    using var response = await request.PostAsync([
+                                                           new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
+                                                           new MultipartFormItem("packfile", "application/octet-stream", null, fileStream)])
+                                                      .ConfigureAwait(false);
                     var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
                     if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
                     {
@@ -1170,7 +1169,8 @@ internal class IntelligentTestRunnerClient
                                 _workingDirectory,
                                 outputEncoding: Encoding.Default,
                                 errorEncoding: Encoding.Default,
-                                inputEncoding: Encoding.Default),
+                                inputEncoding: Encoding.Default,
+                                useWhereIsIfFileNotFound: true),
                             input).ConfigureAwait(false);
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
         if (gitOutput is null)
