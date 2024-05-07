@@ -49,14 +49,16 @@ wait-single-step-snapshot-packages:
   image: registry.ddbuild.io/images/ci_docker_base
   tags: ["runner:docker"]
   when: delayed
-  start_in: 15 minutes 
+  start_in: 1 minutes 
   before_script:
     - export GH_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.gh_ghcr_token --with-decryption --query "Parameter.Value" --out text) 
   script: |
     #Create a directory to store the image
     target_dir=artifacts
     mkdir -p $target_dir
-    image="${DOCKER_BINARIES_IMAGE}:${CI_COMMIT_SHA}"
+    #TODO RMM
+    image="${DOCKER_BINARIES_IMAGE}:888e5de76640bc47a3c2ce4b0a5cadb82c88c900"
+    #image="${DOCKER_BINARIES_IMAGE}:${CI_COMMIT_SHA}"
 
     #Login to the ghcr registry to pull private images
     echo $GH_TOKEN|docker login ghcr.io -u publisher --password-stdin
@@ -91,14 +93,17 @@ compute-ci-package-snapshot-version:
       echo "Generating CI DEV configuration"
       if test -f "artifacts/PACKAGE_VERSION"; then
         #Set the version of the package
-        DOTNET_PACKAGE_DEV_VERSION=$(cat artifacts/PACKAGE_VERSION).dev.${CI_COMMIT_SHORT_SHA}
+        #TODO RMM
+        #DOTNET_PACKAGE_DEV_VERSION=$(cat artifacts/PACKAGE_VERSION).dev.${CI_COMMIT_SHORT_SHA}
+        DOTNET_PACKAGE_DEV_VERSION=$(cat artifacts/PACKAGE_VERSION).dev.2.52.0.dev.888e5de7
+        
         DOTNET_PACKAGE_MAJOR_VERSION=$(cat artifacts/PACKAGE_VERSION)
         echo "DOTNET_PACKAGE_DEV_VERSION=${DOTNET_PACKAGE_DEV_VERSION}"
         echo "DOTNET_PACKAGE_MAJOR_VERSION=${DOTNET_PACKAGE_MAJOR_VERSION}"
 
         #Set values in the gitlab-ci file
-        sed -i "s/DOTNET_PACKAGE_VERSION_DEV:/DOTNET_PACKAGE_VERSION_DEV: ${DOTNET_PACKAGE_DEV_VERSION}/g" gitlab-ci-snapshot-package-test.yml 
-        sed -i 's/description: "Used by the package stage when triggered manually"/##/g' gitlab-ci-snapshot-package-test.yml
+        sed -i "s/DOTNET_PACKAGE_DEV_VERSION:/DOTNET_PACKAGE_DEV_VERSION: ${DOTNET_PACKAGE_DEV_VERSION}/g" gitlab-ci-snapshot-package-test.yml 
+        sed -i 's/description: "Specific version for current build"/##/g' gitlab-ci-snapshot-package-test.yml
         sed -i "s/DOTNET_PACKAGE_MAJOR_VERSION:/DOTNET_PACKAGE_MAJOR_VERSION: ${DOTNET_PACKAGE_MAJOR_VERSION}/g" gitlab-ci-snapshot-package-test.yml 
         sed -i 's/description: "Major version. By default all builds are generated with the same major version"/##/g' gitlab-ci-snapshot-package-test.yml
       fi
