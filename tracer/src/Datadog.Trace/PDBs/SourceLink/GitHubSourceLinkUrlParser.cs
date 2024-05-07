@@ -23,17 +23,27 @@ internal class GitHubSourceLinkUrlParser : SourceLinkUrlParser
     /// </summary>
     internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
-        var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+        commitSha = null;
+        repositoryUrl = null;
 
-        if (uri.Host != "raw.githubusercontent.com" || segments.Length != 4 || !IsValidCommitSha(segments[2]))
+        try
         {
-            commitSha = null;
-            repositoryUrl = null;
-            return false;
+            var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (uri.Host != "raw.githubusercontent.com" || segments.Length != 4 || !IsValidCommitSha(segments[2]))
+            {
+                return false;
+            }
+
+            repositoryUrl = $"https://github.com/{segments[0]}/{segments[1]}";
+            commitSha = segments[2];
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while trying to parse GitHub SourceLink URL");
         }
 
-        repositoryUrl = $"https://github.com/{segments[0]}/{segments[1]}";
-        commitSha = segments[2];
-        return true;
+        return false;
     }
 }
