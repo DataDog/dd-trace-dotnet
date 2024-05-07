@@ -49,7 +49,7 @@ wait-single-step-snapshot-packages:
   image: registry.ddbuild.io/images/ci_docker_base
   tags: ["runner:docker"]
   when: delayed
-  start_in: 1 minutes 
+  start_in: 20 minutes 
   before_script:
     - export GH_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.gh_ghcr_token --with-decryption --query "Parameter.Value" --out text) 
   script: |
