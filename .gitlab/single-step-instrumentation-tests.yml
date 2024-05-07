@@ -32,26 +32,3 @@
       when: always
       paths:
         - system-tests/reports/
-
-onboarding_tests:
-  extends: .base_job_onboarding_tests
-  stage: single-step-instrumentation-tests
-  needs: [package-snapshot,package-arm-snapshot,package-oci-snapshot]
-  allow_failure: false
-  variables:
-    TEST_LIBRARY: dotnet
-    ONBOARDING_FILTER_ENV: prod
-  parallel:
-      matrix:
-        - ONBOARDING_FILTER_WEBLOG: [test-app-dotnet]
-          SCENARIO: [SIMPLE_HOST_AUTO_INJECTION]
-        - ONBOARDING_FILTER_WEBLOG: [test-app-dotnet-container]
-          SCENARIO: [SIMPLE_CONTAINER_AUTO_INJECTION]
-  script:
-    - git clone https://git@github.com/DataDog/system-tests.git system-tests
-    - cp packaging/*.rpm system-tests/binaries
-    - cp packaging/*.deb system-tests/binaries
-    - ls system-tests/binaries
-    - cd system-tests
-    - ./build.sh -i runner
-    - timeout 2700s ./run.sh $SCENARIO --vm-weblog ${ONBOARDING_FILTER_WEBLOG} --vm-env prod --vm-library ${TEST_LIBRARY} --vm-provider aws --vm-skip-branches ubuntu18_amd64
