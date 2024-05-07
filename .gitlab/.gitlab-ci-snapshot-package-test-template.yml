@@ -26,9 +26,7 @@ download-extract-binaries:
   script:
     - mkdir -p artifacts
     - echo $GH_TOKEN|docker login ghcr.io -u publisher --password-stdin
-    #TODO RMM.
-    #- .gitlab/extract_docker_image.sh ${DOCKER_BINARIES_IMAGE}:${CI_COMMIT_SHA} artifacts
-    - .gitlab/extract_docker_image.sh ${DOCKER_BINARIES_IMAGE}:888e5de76640bc47a3c2ce4b0a5cadb82c88c900 artifacts
+    - .gitlab/extract_docker_image.sh ${DOCKER_BINARIES_IMAGE}:${CI_COMMIT_SHA} artifacts
   artifacts:
     expire_in: 2 weeks
     paths:

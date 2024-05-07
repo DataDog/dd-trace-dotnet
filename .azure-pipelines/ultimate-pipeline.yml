@@ -51,8 +51,7 @@ trigger:
 pr:
   branches:
     include:
-      #- '*' # default
-      - 'balbalbla' # TODO RMM
+      - '*' # default
   paths:
     exclude:
       - .azure-pipelines/noop-pipeline.yml
