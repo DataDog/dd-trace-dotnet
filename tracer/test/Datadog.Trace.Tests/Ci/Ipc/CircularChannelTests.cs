@@ -6,9 +6,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Runtime.ExceptionServices;
+using System.Threading;
 using Datadog.Trace.Ci.Ipc;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Ci.Ipc;
@@ -37,19 +39,20 @@ public class CircularChannelTests
         using var channel = new CircularChannel(nameof(CircularChannelWriteTest));
         using var writer = channel.GetWriter();
 
-        // Message size + 2 bytes for the message size
-        var messageSize = value.Length + 2;
+        // Message size
+        var messageSize = writer.GetMessageSize(value);
 
         // Calculate how many messages we can write
         var messagesCount = AvailableBufferSize / messageSize;
 
+        using var scope = new AssertionScope();
         for (var i = 0; i < messagesCount; i++)
         {
-            writer.Write(value);
+            writer.TryWrite(value).Should().BeTrue();
         }
 
         // If we write one more message, we should get an exception
-        Assert.Throws<InvalidOperationException>(() => writer.Write(value));
+        writer.TryWrite(value).Should().BeFalse();
     }
 
     [Theory]
@@ -60,27 +63,47 @@ public class CircularChannelTests
         using var writer = channel.GetWriter();
         using var receiver = channel.GetReceiver();
 
-        // Message size + 2 bytes for the message size
-        var messageSize = value.Length + 2;
+        // Message size
+        var messageSize = writer.GetMessageSize(value);
 
         // Calculate how many messages we can write
         var messagesCount = AvailableBufferSize / messageSize;
 
-        var countdownEvent = new System.Threading.CountdownEvent(messagesCount);
+        // we duplicate the number of messages to test the circular buffer
+        messagesCount *= 2;
+
+        ExceptionDispatchInfo? exceptionDispatchInfo = null;
+        var countdownEvent = new CountdownEvent(messagesCount);
         receiver.MessageReceived += (sender, bytes) =>
         {
-            value.SequenceEqual(bytes).Should().BeTrue();
+            try
+            {
+                using var scope = new AssertionScope();
+                bytes.Should().HaveCount(value.Length);
+                bytes.Should().Equal(value);
+            }
+            catch (Exception ex)
+            {
+                exceptionDispatchInfo = ExceptionDispatchInfo.Capture(ex);
+            }
+
             countdownEvent.Signal();
         };
 
         for (var i = 0; i < messagesCount; i++)
         {
-            writer.Write(value);
+            if (!writer.TryWrite(value))
+            {
+                Thread.Sleep(500);
+                i--;
+            }
         }
 
-        if (!countdownEvent.Wait(10_000))
+        if (!countdownEvent.Wait(5_000))
         {
             throw new Exception("Timeout waiting for messages");
         }
+
+        exceptionDispatchInfo?.Throw();
     }
 }

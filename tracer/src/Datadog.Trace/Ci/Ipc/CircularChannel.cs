@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Threading;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci.Ipc;
 
@@ -16,9 +17,12 @@ internal class CircularChannel : IDisposable
 {
     private const int BufferSize = 65536;
     private const int HeaderSize = 4;
-    private const int MaxMessageSize = BufferSize - HeaderSize - 2;
+    private const int BufferBodySize = BufferSize - HeaderSize;
+
     private const int PollingInterval = 250;
     private const int MutexTimeout = 10000;
+
+    internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CircularChannel));
 
     private readonly MemoryMappedFile _mmf;
     private readonly MemoryMappedViewAccessor _accessor;
@@ -127,31 +131,37 @@ internal class CircularChannel : IDisposable
                 {
                     messagesToHandle ??= new List<byte[]>();
 
-                    var length = channel._accessor.ReadUInt16(HeaderSize + readPos);
+                    var absoluteReadPos = HeaderSize + readPos;
+                    if (BufferSize - absoluteReadPos < 2)
+                    {
+                        // Not space to read the length of the message, so we need to go back to 0
+                        readPos = 0;
+                        absoluteReadPos = HeaderSize;
+                    }
+
+                    var length = channel._accessor.ReadUInt16(absoluteReadPos);
+
                     // Simple sanity check
-                    if (length > MaxMessageSize)
+                    if (length + 2 > BufferBodySize)
                     {
                         // Handle error, reset pointers, or skip
                         break;
                     }
 
                     var data = new byte[length];
-                    var firstPartLength = Math.Min(length, MaxMessageSize - (HeaderSize + readPos + 2));
-                    var secondPartLength = length - firstPartLength;
 
                     // Read the first part of the data
-                    if (firstPartLength > 0)
-                    {
-                        channel._accessor.ReadArray(HeaderSize + readPos + 2, data, 0, firstPartLength);
-                    }
+                    var firstPartLength = Math.Min(length, BufferSize - absoluteReadPos - 2);
+                    channel._accessor.ReadArray(absoluteReadPos + 2, data, 0, firstPartLength);
 
                     // Read the second part of the data, if any, from the start of the buffer
+                    var secondPartLength = length - firstPartLength;
                     if (secondPartLength > 0)
                     {
                         channel._accessor.ReadArray(HeaderSize, data, firstPartLength, secondPartLength);
                     }
 
-                    var nextReadPos = (ushort)((readPos + length + 2) % MaxMessageSize);
+                    var nextReadPos = (ushort)((readPos + length + 2) % BufferBodySize);
                     channel._accessor.Write(2, nextReadPos); // Update read pointer
 
                     // We store all the messages before releasing the mutex to avoid blocking the producer for each event call
@@ -203,36 +213,51 @@ internal class CircularChannel : IDisposable
         private readonly CircularChannel _channel;
         private bool _disposed;
 
-        public Writer(CircularChannel channel)
+        internal Writer(CircularChannel channel)
         {
             _disposed = false;
             _channel = channel;
         }
 
-        public void Write(byte[] data)
+        internal int GetMessageSize(byte[] data) => data.Length + 2;
+
+        public bool TryWrite(byte[] data)
         {
             var channel = _channel;
             if (channel._disposed)
             {
-                return;
+                Log.Error("CircularChannel: Channel is disposed. Cannot write data.");
+                return false;
             }
 
-            if (data.Length > MaxMessageSize)
+            var dataSize = GetMessageSize(data);
+            if (dataSize > BufferBodySize)
             {
-                throw new ArgumentException("Data too large for the message buffer", nameof(data));
+                Log.Error("CircularChannel: Message size exceeds maximum allowed size.");
+                return false;
             }
 
             var hasHandle = channel._mutex.WaitOne(MutexTimeout);
             if (!hasHandle)
             {
-                throw new TimeoutException("Failed to acquire mutex within the time limit.");
+                Log.Error("CircularChannel: Failed to acquire mutex within the time limit.");
+                return false;
             }
 
             try
             {
                 var writePos = channel._accessor.ReadUInt16(0);
                 var readPos = channel._accessor.ReadUInt16(2);
-                var nextWritePos = (ushort)((writePos + data.Length + 2) % MaxMessageSize);
+
+                var absoluteWritePos = HeaderSize + writePos;
+                if (BufferSize - absoluteWritePos < 2)
+                {
+                    // Not space to write the length of the message, so we need to go back to 0
+                    writePos = 0;
+                    absoluteWritePos = HeaderSize;
+                }
+
+                var nextWritePos = (ushort)((writePos + dataSize) % BufferBodySize);
 
                 // Check for buffer overflow conditions to prevent data corruption:
                 // 1. When writePos is less than readPos:
@@ -250,13 +275,31 @@ internal class CircularChannel : IDisposable
                 if ((writePos < readPos && (nextWritePos >= readPos || nextWritePos < writePos)) ||
                     (writePos > readPos && nextWritePos < writePos && nextWritePos > readPos))
                 {
-                    throw new InvalidOperationException("Buffer overflow");
+                    Log.Warning("CircularChannel: Buffer overflow");
+                    return false;
                 }
 
-                channel._accessor.Write(HeaderSize + writePos, (ushort)data.Length);
-                channel._accessor.WriteArray(HeaderSize + writePos + 2, data, 0, data.Length);
+                // Write the first part of the data
+                var remainningSpace = BufferBodySize - writePos;
+                var firstPartLength = Math.Min(dataSize, remainningSpace) - 2;
+                channel._accessor.Write(absoluteWritePos, (ushort)data.Length);
+                channel._accessor.WriteArray(absoluteWritePos + 2, data, 0, firstPartLength);
+
+                // Write the second part of the data, if any, from the start of the buffer
+                var secondPartLength = data.Length - firstPartLength;
+                if (secondPartLength > 0)
+                {
+                    channel._accessor.WriteArray(HeaderSize, data, firstPartLength, secondPartLength);
+                }
+
                 channel._accessor.Write(0, nextWritePos); // Update write pointer
                 channel._accessor.Flush();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "CircularChannel: Error while writing data");
+                return false;
             }
             finally
             {
