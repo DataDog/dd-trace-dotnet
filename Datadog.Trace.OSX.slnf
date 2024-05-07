@@ -92,7 +92,6 @@
       "tracer\\test\\test-applications\\integrations\\Samples.GraphQL3\\Samples.GraphQL3.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.GraphQL4\\Samples.GraphQL4.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.GraphQL\\Samples.GraphQL.csproj",
-      "tracer\\test\\test-applications\\integrations\\Samples.GrpcDotNet\\Samples.GrpcDotNet.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.GrpcLegacy\\Samples.GrpcLegacy.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.HotChocolate\\Samples.HotChocolate.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.HttpMessageHandler\\Samples.HttpMessageHandler.csproj",
