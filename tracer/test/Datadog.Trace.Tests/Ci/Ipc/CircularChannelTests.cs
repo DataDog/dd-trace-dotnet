@@ -69,8 +69,8 @@ public class CircularChannelTests
         // Calculate how many messages we can write
         var messagesCount = AvailableBufferSize / messageSize;
 
-        // we duplicate the number of messages to test the circular buffer
-        messagesCount *= 2;
+        // we triplicate the number of messages to test the circular buffer
+        messagesCount *= 3;
 
         ExceptionDispatchInfo? exceptionDispatchInfo = null;
         var countdownEvent = new CountdownEvent(messagesCount);
