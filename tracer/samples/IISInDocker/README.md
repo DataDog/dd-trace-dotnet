@@ -5,8 +5,8 @@ This sample demonstrates how to build and deploy an ASP.NET Framework applicatio
 To build and run the application, open a terminal in this directory and run the following commands:
 
 ```console
-docker build -t iis .
-docker run -it --rm -p 8080:80 iis
+docker-compose up --build
 ```
-
+Example Trace:
+![Index Page Sampl Trace](image.png)
 Note: The application build is done entirely inside the Windows container, which means pulling the `dotnet/framework/sdk` image before starting the build. If you already have a .NET Framework SDK installed, you may want to instead build the application locally and copy the published binaries into the runtime container.

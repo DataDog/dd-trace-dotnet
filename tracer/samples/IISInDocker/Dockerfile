@@ -2,6 +2,12 @@
 FROM mcr.microsoft.com/dotnet/framework/sdk:4.8 AS build
 WORKDIR /app
 
+ENV COR_ENABLE_PROFILING="1"
+ENV COR_PROFILER="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+ 
+ENV CORECLR_ENABLE_PROFILING="1"
+ENV CORECLR_PROFILER=$COR_PROFILER
+
 # copy csproj and restore as distinct layers
 COPY *.sln .
 COPY src/*.csproj ./src/
@@ -35,4 +41,7 @@ RUN Write-Host 'Determining latest release' ;\
     Write-Host 'Datadog .NET Tracer installed, removing installer file' ;\
     Remove-Item 'datadog-apm.msi' ;
 
-ENTRYPOINT ["powershell.exe", ".\\startup.ps1"]
+ENTRYPOINT ["C:/ServiceMonitor.exe", "w3svc"]
+
+# Refer to startup.ps1 for use cases where it could be relevant to use it instead
+# ENTRYPOINT ["powershell.exe", ".\\startup.ps1"]
