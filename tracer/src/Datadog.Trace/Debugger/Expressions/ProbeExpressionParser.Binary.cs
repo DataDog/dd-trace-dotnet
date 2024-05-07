@@ -59,6 +59,11 @@ internal partial class ProbeExpressionParser<T>
                 return ReturnDefaultValueExpression();
             }
 
+            if (left.Type == typeof(string) && right.Type == typeof(string))
+            {
+                return StringLexicographicComparison(left, right, operand);
+            }
+
             HandleDurationBinaryOperation(ref left, ref right);
 
             switch (operand)
@@ -97,5 +102,29 @@ internal partial class ProbeExpressionParser<T>
         {
             left = ConvertToDouble(left);
         }
+    }
+
+    private Expression StringLexicographicComparison(Expression left, Expression right, string operand)
+    {
+        switch (operand)
+        {
+            case "==":
+                return Expression.Equal(left, right);
+            case "!=":
+                return Expression.NotEqual(left, right);
+        }
+
+        var compareOrdinal = Expression.Call(CompareOrdinalMethod(), new[] { left, right });
+        var zeroConstant = Expression.Constant(0);
+        return operand switch
+        {
+            ">" => Expression.GreaterThan(compareOrdinal, zeroConstant),
+            ">=" => Expression.GreaterThanOrEqual(compareOrdinal, zeroConstant),
+            "<" => Expression.LessThan(compareOrdinal, zeroConstant),
+            "<=" => Expression.LessThanOrEqual(compareOrdinal, zeroConstant),
+            _ => throw new ArgumentException("Unknown operand" + operand, nameof(operand))
+        };
+
+        System.Reflection.MethodInfo CompareOrdinalMethod() => ProbeExpressionParserHelper.GetMethodByReflection(typeof(string), "CompareOrdinal", new[] { typeof(string), typeof(string) });
     }
 }
