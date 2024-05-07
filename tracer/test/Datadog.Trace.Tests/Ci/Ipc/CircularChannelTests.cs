@@ -94,6 +94,7 @@ public class CircularChannelTests
         {
             if (!writer.TryWrite(value))
             {
+                // Wait for the receiver to process the messages before trying again
                 Thread.Sleep(500);
                 i--;
             }
