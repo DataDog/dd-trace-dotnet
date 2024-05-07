@@ -557,7 +557,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     rootSpan.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
-                    tags.HttpRoute = normalizedRoute;
+                    tags.HttpRoute = request.PathBase.ToUriComponent() + normalizedRoute;
                 }
 
                 CurrentSecurity.CheckPathParams(httpContext, rootSpan, routeValues);
