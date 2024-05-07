@@ -15,7 +15,7 @@ TMP_DIR=$(mktemp --dir)
 if [ -n "$DOTNET_PACKAGE_DEV_VERSION" ]; then
   echo "Generate packages using local binaries. Set dev version: $DOTNET_PACKAGE_DEV_VERSION"
   DOTNET_PACKAGE_VERSION=${DOTNET_PACKAGE_DEV_VERSION}
-  cp artifacts/$ARCH/datadog-dotnet-apm_${DOTNET_PACKAGE_MAJOR_VERSION}_$ARCH.deb $TMP_DIR/datadog-dotnet-apm.old
+  cp ../artifacts/$ARCH/datadog-dotnet-apm_${DOTNET_PACKAGE_MAJOR_VERSION}_$ARCH.deb $TMP_DIR/datadog-dotnet-apm.old
 else
   curl --location --fail \
   --output $TMP_DIR/datadog-dotnet-apm.old \

@@ -41,10 +41,6 @@ package-snapshot:
     - if: $DOTNET_PACKAGE_DEV_VERSION
       when: on_success
   script:
-    - pwd
-    - ls ../
-    - ls 
-    - ls artifacts/
     - ../.gitlab/build-deb-rpm.sh
   variables:
     ARCH: amd64
@@ -56,8 +52,6 @@ package-arm-snapshot:
     - if: $DOTNET_PACKAGE_DEV_VERSION
       when: on_success
   script:
-    - ls 
-    - ls artifacts/
     - ../.gitlab/build-deb-rpm.sh
   variables:
     ARCH: arm64
@@ -70,8 +64,6 @@ package-oci-snapshot:
     - if: $DOTNET_PACKAGE_DEV_VERSION
       when: on_success
   script:
-    - ls 
-    - ls artifacts/
     - ../.gitlab/build-oci.sh
   parallel:
     matrix:
