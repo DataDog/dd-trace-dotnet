@@ -6,7 +6,7 @@
 
 namespace trace
 {
-class FunctionControlWrapper : ICorProfilerFunctionControl, ICorProfilerInfo, IUnknown
+class FunctionControlWrapper : ICorProfilerFunctionControl, ICorProfilerInfo
     {
     protected:
         std::atomic<int> refCount;
@@ -16,11 +16,8 @@ class FunctionControlWrapper : ICorProfilerFunctionControl, ICorProfilerInfo, IU
         mdMethodDef m_methodId;
 
         bool m_isDirty;
-        LPCBYTE m_originalMethodBody;
-        ULONG m_originalBodyLen;
         LPCBYTE m_methodBody;
         ULONG m_bodyLen;
-        DWORD m_flags;
 
     public:
         FunctionControlWrapper(ICorProfilerInfo* profilerInfo, const ModuleID moduleId, const mdMethodDef methodId);
@@ -50,39 +47,53 @@ class FunctionControlWrapper : ICorProfilerFunctionControl, ICorProfilerInfo, IU
         HRESULT STDMETHODCALLTYPE SetILInstrumentedCodeMap(ULONG cILMapEntries, COR_IL_MAP rgILMapEntries[]) override;
 
     public: // ICorProfilerInfo
-        HRESULT STDMETHODCALLTYPE GetClassFromObject(ObjectID objectId, ClassID *pClassId);
-        HRESULT STDMETHODCALLTYPE GetClassFromToken(ModuleID moduleId, mdTypeDef typeDef, ClassID *pClassId);
-        HRESULT STDMETHODCALLTYPE GetCodeInfo(FunctionID functionId, LPCBYTE *pStart, ULONG *pcSize);
-        HRESULT STDMETHODCALLTYPE GetEventMask(DWORD *pdwEvents);
-        HRESULT STDMETHODCALLTYPE GetFunctionFromIP(LPCBYTE ip, FunctionID *pFunctionId);
-        HRESULT STDMETHODCALLTYPE GetFunctionFromToken(ModuleID moduleId, mdToken token, FunctionID *pFunctionId);
-        HRESULT STDMETHODCALLTYPE GetHandleFromThread(ThreadID threadId, HANDLE *phThread);
-        HRESULT STDMETHODCALLTYPE GetObjectSize(ObjectID objectId, ULONG *pcSize);
-        HRESULT STDMETHODCALLTYPE IsArrayClass(ClassID classId, CorElementType *pBaseElemType, ClassID *pBaseClassId, ULONG *pcRank);
-        HRESULT STDMETHODCALLTYPE GetThreadInfo(ThreadID threadId, DWORD *pdwWin32ThreadId);
-        HRESULT STDMETHODCALLTYPE GetCurrentThreadID(ThreadID *pThreadId);
-        HRESULT STDMETHODCALLTYPE GetClassIDInfo(ClassID classId, ModuleID *pModuleId, mdTypeDef *pTypeDefToken);
-        HRESULT STDMETHODCALLTYPE GetFunctionInfo(FunctionID functionId, ClassID *pClassId, ModuleID *pModuleId, mdToken *pToken);
-        HRESULT STDMETHODCALLTYPE SetEventMask(DWORD dwEvents);
-        HRESULT STDMETHODCALLTYPE SetEnterLeaveFunctionHooks(FunctionEnter *pFuncEnter, FunctionLeave *pFuncLeave, FunctionTailcall *pFuncTailcall);
-        HRESULT STDMETHODCALLTYPE SetFunctionIDMapper(FunctionIDMapper *pFunc);
-        HRESULT STDMETHODCALLTYPE GetTokenAndMetaDataFromFunction(FunctionID functionId, REFIID riid, IUnknown **ppImport, mdToken *pToken);
-        HRESULT STDMETHODCALLTYPE GetModuleInfo(ModuleID moduleId, LPCBYTE *ppBaseLoadAddress, ULONG cchName, ULONG *pcchName, WCHAR szName[], AssemblyID *pAssemblyId);
-        HRESULT STDMETHODCALLTYPE GetModuleMetaData(ModuleID moduleId, DWORD dwOpenFlags, REFIID riid, IUnknown **ppOut);
-        HRESULT STDMETHODCALLTYPE GetILFunctionBody(ModuleID moduleId, mdMethodDef methodId, LPCBYTE *ppMethodHeader, ULONG *pcbMethodSize);
-        HRESULT STDMETHODCALLTYPE GetILFunctionBodyAllocator(ModuleID moduleId, IMethodMalloc **ppMalloc);
-        HRESULT STDMETHODCALLTYPE SetILFunctionBody(ModuleID moduleId, mdMethodDef methodid, LPCBYTE pbNewILMethodHeader);
-        HRESULT STDMETHODCALLTYPE GetAppDomainInfo(AppDomainID appDomainId, ULONG cchName, ULONG *pcchName, WCHAR szName[], ProcessID *pProcessId);
-        HRESULT STDMETHODCALLTYPE GetAssemblyInfo(AssemblyID assemblyId, ULONG cchName, ULONG *pcchName, WCHAR szName[], AppDomainID *pAppDomainId, ModuleID *pModuleId);
-        HRESULT STDMETHODCALLTYPE SetFunctionReJIT(FunctionID functionId);
-        HRESULT STDMETHODCALLTYPE ForceGC( void);
-        HRESULT STDMETHODCALLTYPE SetILInstrumentedCodeMap(FunctionID functionId, BOOL fStartJit, ULONG cILMapEntries, COR_IL_MAP rgILMapEntries[  ]);
-        HRESULT STDMETHODCALLTYPE GetInprocInspectionInterface(IUnknown **ppicd);
-        HRESULT STDMETHODCALLTYPE GetInprocInspectionIThisThread(IUnknown **ppicd);
-        HRESULT STDMETHODCALLTYPE GetThreadContext(ThreadID threadId, ContextID *pContextId);
-        HRESULT STDMETHODCALLTYPE BeginInprocDebugging(BOOL fThisThreadOnly, DWORD *pdwProfilerContext);
-        HRESULT STDMETHODCALLTYPE EndInprocDebugging(DWORD dwProfilerContext);
-        HRESULT STDMETHODCALLTYPE GetILToNativeMapping(FunctionID functionId, ULONG32 cMap, ULONG32 *pcMap, COR_DEBUG_IL_TO_NATIVE_MAP map[  ]);
+        HRESULT STDMETHODCALLTYPE GetClassFromObject(ObjectID objectId, ClassID* pClassId) override;
+        HRESULT STDMETHODCALLTYPE GetClassFromToken(ModuleID moduleId, mdTypeDef typeDef, ClassID* pClassId) override;
+        HRESULT STDMETHODCALLTYPE GetCodeInfo(FunctionID functionId, LPCBYTE* pStart, ULONG* pcSize) override;
+        HRESULT STDMETHODCALLTYPE GetEventMask(DWORD* pdwEvents) override;
+        HRESULT STDMETHODCALLTYPE GetFunctionFromIP(LPCBYTE ip, FunctionID* pFunctionId) override;
+        HRESULT STDMETHODCALLTYPE GetFunctionFromToken(ModuleID moduleId, mdToken token,
+                                                       FunctionID* pFunctionId) override;
+        HRESULT STDMETHODCALLTYPE GetHandleFromThread(ThreadID threadId, HANDLE* phThread) override;
+        HRESULT STDMETHODCALLTYPE GetObjectSize(ObjectID objectId, ULONG* pcSize) override;
+        HRESULT STDMETHODCALLTYPE IsArrayClass(ClassID classId, CorElementType* pBaseElemType, ClassID* pBaseClassId,
+                                               ULONG* pcRank) override;
+        HRESULT STDMETHODCALLTYPE GetThreadInfo(ThreadID threadId, DWORD* pdwWin32ThreadId) override;
+        HRESULT STDMETHODCALLTYPE GetCurrentThreadID(ThreadID* pThreadId) override;
+        HRESULT STDMETHODCALLTYPE GetClassIDInfo(ClassID classId, ModuleID* pModuleId,
+                                                 mdTypeDef* pTypeDefToken) override;
+        HRESULT STDMETHODCALLTYPE GetFunctionInfo(FunctionID functionId, ClassID* pClassId, ModuleID* pModuleId,
+                                                  mdToken* pToken) override;
+        HRESULT STDMETHODCALLTYPE SetEventMask(DWORD dwEvents) override;
+        HRESULT STDMETHODCALLTYPE SetEnterLeaveFunctionHooks(FunctionEnter* pFuncEnter, FunctionLeave* pFuncLeave,
+                                                             FunctionTailcall* pFuncTailcall) override;
+        HRESULT STDMETHODCALLTYPE SetFunctionIDMapper(FunctionIDMapper* pFunc) override;
+        HRESULT STDMETHODCALLTYPE GetTokenAndMetaDataFromFunction(FunctionID functionId, REFIID riid,
+                                                                  IUnknown** ppImport, mdToken* pToken) override;
+        HRESULT STDMETHODCALLTYPE GetModuleInfo(ModuleID moduleId, LPCBYTE* ppBaseLoadAddress, ULONG cchName,
+                                                ULONG* pcchName, WCHAR szName[], AssemblyID* pAssemblyId) override;
+        HRESULT STDMETHODCALLTYPE GetModuleMetaData(ModuleID moduleId, DWORD dwOpenFlags, REFIID riid,
+                                                    IUnknown** ppOut) override;
+        HRESULT STDMETHODCALLTYPE GetILFunctionBody(ModuleID moduleId, mdMethodDef methodId, LPCBYTE* ppMethodHeader,
+                                                    ULONG* pcbMethodSize) override;
+        HRESULT STDMETHODCALLTYPE GetILFunctionBodyAllocator(ModuleID moduleId, IMethodMalloc** ppMalloc) override;
+        HRESULT STDMETHODCALLTYPE SetILFunctionBody(ModuleID moduleId, mdMethodDef methodid,
+                                                    LPCBYTE pbNewILMethodHeader) override;
+        HRESULT STDMETHODCALLTYPE GetAppDomainInfo(AppDomainID appDomainId, ULONG cchName, ULONG* pcchName,
+                                                   WCHAR szName[], ProcessID* pProcessId) override;
+        HRESULT STDMETHODCALLTYPE GetAssemblyInfo(AssemblyID assemblyId, ULONG cchName, ULONG* pcchName, WCHAR szName[],
+                                                  AppDomainID* pAppDomainId, ModuleID* pModuleId) override;
+        HRESULT STDMETHODCALLTYPE SetFunctionReJIT(FunctionID functionId) override;
+        HRESULT STDMETHODCALLTYPE ForceGC(void) override;
+        HRESULT STDMETHODCALLTYPE SetILInstrumentedCodeMap(FunctionID functionId, BOOL fStartJit, ULONG cILMapEntries,
+                                                           COR_IL_MAP rgILMapEntries[]) override;
+        HRESULT STDMETHODCALLTYPE GetInprocInspectionInterface(IUnknown** ppicd) override;
+        HRESULT STDMETHODCALLTYPE GetInprocInspectionIThisThread(IUnknown** ppicd) override;
+        HRESULT STDMETHODCALLTYPE GetThreadContext(ThreadID threadId, ContextID* pContextId) override;
+        HRESULT STDMETHODCALLTYPE BeginInprocDebugging(BOOL fThisThreadOnly, DWORD* pdwProfilerContext) override;
+        HRESULT STDMETHODCALLTYPE EndInprocDebugging(DWORD dwProfilerContext) override;
+        HRESULT STDMETHODCALLTYPE GetILToNativeMapping(FunctionID functionId, ULONG32 cMap, ULONG32* pcMap,
+                                                       COR_DEBUG_IL_TO_NATIVE_MAP map[]) override;
     };
 }
 

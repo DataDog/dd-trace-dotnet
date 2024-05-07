@@ -15,9 +15,7 @@ Rejitter::Rejitter(std::shared_ptr<RejitHandler> handler)
     handler->RegisterRejitter(this);
 }
 
-Rejitter::~Rejitter()
-{
-}
+Rejitter::~Rejitter() { }
 
 
 // RejitPreprocessor

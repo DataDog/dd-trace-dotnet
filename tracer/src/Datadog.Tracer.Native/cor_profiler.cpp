@@ -358,7 +358,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     if (isIastEnabled || isRaspEnabled)
     {
-        _dataflow = new iast::Dataflow(info_);
+        _dataflow = new iast::Dataflow(info_, rejit_handler);
         if (FAILED(_dataflow->Init()))
         {
             Logger::Error("Callsite Dataflow failed to initialize");
@@ -1297,13 +1297,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     // to prevent it from unloading while in use
     auto modules = module_ids.Get();
 
-    DEL(_dataflow)
-
     if (rejit_handler != nullptr)
     {
         rejit_handler->Shutdown();
         rejit_handler = nullptr;
     }
+
+    DEL(_dataflow);
 
     auto definitions = definitions_ids.Get();
 

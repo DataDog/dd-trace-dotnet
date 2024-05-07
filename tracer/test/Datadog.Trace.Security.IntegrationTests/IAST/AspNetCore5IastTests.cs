@@ -1015,7 +1015,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [Trait("RunOnWindows", "True")]
     public async Task TestIastCustomSpanRequestAttribute()
     {
-        Skip.If(IastEnabled, "Known bug. Custom Attribute Spans inhibit CallSite instrumentation");
+        // Skip.If(IastEnabled, "Known bug. Custom Attribute Spans inhibit CallSite instrumentation");
         var filename = "Iast.CustomAttribute.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/Iast/CustomAttribute?userName=Vicent";

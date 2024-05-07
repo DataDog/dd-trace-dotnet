@@ -120,9 +120,9 @@ namespace iast
         bool _isWritten = false;
 
         LPCBYTE _pOriginalMehodIL = nullptr;
-        DWORD _nOriginalMehodIL = 0;
+        ULONG _nOriginalMehodIL = 0;
         LPBYTE _pMethodIL = nullptr;
-        DWORD _nMethodIL = 0;
+        ULONG _nMethodIL = 0;
 
     protected:
         ILRewriter* _rewriter = nullptr;
@@ -145,8 +145,8 @@ namespace iast
         bool IsInlineEnabled();
         void DisableInlining();
 
-        HRESULT GetILRewriter(ILRewriter** rewriter);
-        HRESULT CommitILRewriter(const std::string& applyMessage = "");
+        HRESULT GetILRewriter(ILRewriter** rewriter, ICorProfilerInfo* pCorProfilerInfo = nullptr);
+        HRESULT CommitILRewriter(bool abort = false);
         HRESULT GetMethodIL(LPCBYTE* ppMehodIL, ULONG* pnSize, bool original = false);
         
         HRESULT SetMethodIL(ULONG nSize, LPCBYTE pMehodIL, ICorProfilerFunctionControl* pFunctionControl = nullptr);

@@ -310,14 +310,26 @@ namespace iast
         _disableInlining = true;
     }
 
-    HRESULT MethodInfo::GetILRewriter(ILRewriter** pRewriter)
+    HRESULT MethodInfo::GetILRewriter(ILRewriter** pRewriter, ICorProfilerInfo* pCorProfilerInfo)
     {
         HRESULT hr = S_FALSE;
         if (_rewriter == nullptr)
         {
             hr = S_OK;
             _rewriter = new ILRewriter(this);
-            hr = _rewriter->Import();
+            if (!pCorProfilerInfo)
+            {
+                hr = _rewriter->Import();
+            }
+            else
+            {
+                LPCBYTE pMethodIL = nullptr;
+                hr = pCorProfilerInfo->GetILFunctionBody(_module->_id, _id, &pMethodIL, nullptr);
+                if (SUCCEEDED(hr))
+                {
+                    hr = _rewriter->Import(pMethodIL);
+                }
+            }
             if (FAILED(hr))
             {
                 DEL(_rewriter);
@@ -326,12 +338,12 @@ namespace iast
         *pRewriter = _rewriter;
         return hr;
     }
-    HRESULT MethodInfo::CommitILRewriter(const std::string& applyMessage)
+    HRESULT MethodInfo::CommitILRewriter(bool abort)
     {
         HRESULT hr = S_FALSE;
-        if (_rewriter != nullptr)
+        if (_rewriter != nullptr && !abort)
         {
-            hr = _rewriter->Export(applyMessage);
+            hr = _rewriter->Export();
         }
         DEL(_rewriter);
         return hr;
@@ -392,12 +404,6 @@ namespace iast
         {
             trace::Logger::Debug("Same function body detected. Skipping SetMethodIL ", GetKey());
             return S_FALSE;
-        }
-
-        if (!isRejit && _module->ExcludeInChaining())
-        {
-            DEL_ARR(pMethodIL);
-            return S_OK;
         }
 
         bool correct = true;
@@ -471,8 +477,16 @@ namespace iast
         HRESULT hr = S_OK;
         if (pFunctionControl)
         {
-            hr = pFunctionControl->SetILFunctionBody(_nMethodIL, _pMethodIL);
-            trace::Logger::Debug("MethodInfo::ApplyFinalInstrumentation ReJIT from ", _nOriginalMehodIL, " to ", _nMethodIL, " on ", GetKey(), " hr=", Hex(hr));
+            if (HasChanged())
+            {
+                hr = pFunctionControl->SetILFunctionBody(_nMethodIL, _pMethodIL);
+                trace::Logger::Debug("MethodInfo::ApplyFinalInstrumentation ReJIT from ", _nOriginalMehodIL, " to ",
+                                     _nMethodIL, " on ", GetKey(), " hr=", Hex(hr));
+            }
+            else
+            {
+                trace::Logger::Debug("MethodInfo::ApplyFinalInstrumentation ReJIT SKIPPED (method did not change)");
+            }
         }
         else
         {
@@ -483,10 +497,6 @@ namespace iast
                     trace::Logger::Debug("MethodInfo::ApplyFinalInstrumentation WARNING, Reinstrumentation detected. Restore DISABLED ", GetKey());
                 }
                 return hr;
-            }
-            if (_module->ExcludeInChaining())
-            {
-                return S_FALSE;
             }
             if (!HasChanged())
             {

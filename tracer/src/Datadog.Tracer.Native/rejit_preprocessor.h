@@ -93,7 +93,7 @@ public:
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) override;
     void RemoveModule(ModuleID moduleId) override;
     void AddNGenInlinerModule(ModuleID moduleId) override;
-    HRESULT RejitMethod(FunctionControlWrapper& functionControl);
+    HRESULT RejitMethod(FunctionControlWrapper& functionControl) override;
 
     void EnqueueFaultTolerantMethods(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
                                     ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo,

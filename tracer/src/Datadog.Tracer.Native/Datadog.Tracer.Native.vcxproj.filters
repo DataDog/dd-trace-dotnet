@@ -67,7 +67,6 @@
       <Filter>FaultTolerant\Hooks</Filter>
     </ClCompile>
     <ClCompile Include="iast\method_analyzers.cpp" />
-    <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp" />
     <ClCompile Include="iast\method_analyzer.cpp" />
     <ClCompile Include="threadUtils.cpp" />
     <ClCompile Include="iast\dataflow.cpp">
@@ -114,6 +113,9 @@
       <Filter>Tracer</Filter>
     </ClCompile>
     <ClCompile Include="function_control_wrapper.cpp" />
+    <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -189,7 +191,6 @@
     <ClInclude Include="iast\aspect_filter.h" />
     <ClInclude Include="iast\method_analyzers.h" />
     <ClInclude Include="iast\method_analyzer.h" />
-    <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h" />
     <ClInclude Include="Synchronized.hpp" />
     <ClInclude Include="fault_tolerant_tracker.h">
       <Filter>FaultTolerant</Filter>
@@ -262,6 +263,9 @@
       <Filter>Tracer</Filter>
     </ClInclude>
     <ClInclude Include="function_control_wrapper.h" />
+    <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">

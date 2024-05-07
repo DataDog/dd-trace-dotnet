@@ -10,16 +10,13 @@ FunctionControlWrapper::FunctionControlWrapper(ICorProfilerInfo* profilerInfo, c
     m_methodId(methodId),
     m_methodBody(nullptr),
     m_bodyLen(0),
-    m_isDirty(false),
-    m_flags(0),
-    m_originalMethodBody(nullptr),
-    m_originalBodyLen(0)
+    m_isDirty(false)
 {
 }
 
 FunctionControlWrapper::~FunctionControlWrapper()
 {
-    if (m_methodBody && m_methodBody != m_originalMethodBody)
+    if (m_methodBody)
     {
         delete[] m_methodBody;
     }
@@ -47,7 +44,7 @@ HRESULT FunctionControlWrapper::QueryInterface(REFIID riid, void** ppvObject)
     if (riid == __uuidof(IUnknown))
     {
         AddRef();
-        *ppvObject = (IUnknown*) this;
+        *ppvObject = (ICorProfilerFunctionControl*) this;
         return S_OK;
     }
     else if (riid == __uuidof(ICorProfilerFunctionControl))
@@ -80,15 +77,19 @@ ULONG FunctionControlWrapper::Release()
 
 HRESULT FunctionControlWrapper::SetCodegenFlags(DWORD flags)
 {
-    m_flags = flags;
     return S_OK;
 }
 HRESULT FunctionControlWrapper::SetILFunctionBody(ULONG bodyLen, LPCBYTE pNewIL)
 {
+    if (bodyLen == 0)
+    {
+        return E_INVALIDARG;
+    }
+
     if (pNewIL != m_methodBody)
     {
         m_isDirty = true;
-        if (m_methodBody && m_methodBody != m_originalMethodBody)
+        if (m_methodBody)
         {
             delete[] m_methodBody;
         }
@@ -117,9 +118,7 @@ HRESULT FunctionControlWrapper::GetILFunctionBody(ModuleID moduleId, mdMethodDef
 
     if (!m_methodBody)
     {
-        hr = m_profilerInfo->GetILFunctionBody(moduleId, methodId, &m_originalMethodBody, &m_originalBodyLen);
-        m_methodBody = m_originalMethodBody;
-        m_bodyLen = m_originalBodyLen;
+        return m_profilerInfo->GetILFunctionBody(moduleId, methodId, ppMethodHeader, pcbMethodSize);
     }
 
     if (ppMethodHeader)
