@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tests.Ci.Ipc;
 
 public class CircularChannelTests
 {
-    private const int BufferSize = 65536;
+    private const int BufferSize = 32768;
     private const int HeaderSize = 4;
     private const int AvailableBufferSize = BufferSize - HeaderSize;
 
@@ -36,7 +36,7 @@ public class CircularChannelTests
     [MemberData(nameof(GetWriteData), DisableDiscoveryEnumeration = true)]
     public void CircularChannelWriteTest(byte[] value)
     {
-        using var channel = new CircularChannel(nameof(CircularChannelWriteTest));
+        using var channel = new CircularChannel(nameof(CircularChannelWriteTest), BufferSize);
         using var writer = channel.GetWriter();
 
         // Message size
@@ -59,7 +59,7 @@ public class CircularChannelTests
     [MemberData(nameof(GetWriteData), DisableDiscoveryEnumeration = true)]
     public void CircularChannelReadAndWriteTest(byte[] value)
     {
-        using var channel = new CircularChannel(nameof(CircularChannelReadAndWriteTest));
+        using var channel = new CircularChannel(nameof(CircularChannelReadAndWriteTest), BufferSize);
         using var writer = channel.GetWriter();
         using var receiver = channel.GetReceiver();
 

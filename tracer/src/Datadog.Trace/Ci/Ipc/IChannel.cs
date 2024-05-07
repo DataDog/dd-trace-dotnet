@@ -10,6 +10,8 @@ namespace Datadog.Trace.Ci.Ipc;
 
 internal interface IChannel : IDisposable
 {
+    int BufferBodySize { get; }
+
     IChannelReceiver GetReceiver();
 
     IChannelWriter GetWriter();
