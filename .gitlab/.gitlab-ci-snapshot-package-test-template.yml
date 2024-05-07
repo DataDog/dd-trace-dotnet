@@ -41,6 +41,8 @@ package-snapshot:
     - if: $DOTNET_PACKAGE_DEV_VERSION
       when: on_success
   script:
+    - pwd
+    - ls ../
     - ls 
     - ls artifacts/
     - ../.gitlab/build-deb-rpm.sh
