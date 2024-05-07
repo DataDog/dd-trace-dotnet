@@ -1,0 +1,234 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet_core.request,
+    Resource: POST /greet.tester.greeter/streamingbothways,
+    Service: Samples.GrpcDotNet,
+    Type: web,
+    ParentId: Id_3,
+    Tags: {
+      aspnet_core.endpoint: gRPC - /greet.tester.Greeter/StreamingBothWays,
+      aspnet_core.route: /greet.tester.greeter/streamingbothways,
+      component: aspnet_core,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.route: /greet.tester.greeter/streamingbothways,
+      http.status_code: 200,
+      http.url: http://localhost:00000/greet.tester.Greeter/StreamingBothWays,
+      http.useragent: grpc-dotnet/123,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.iast.enabled: 1,
+      _dd.iast.json:
+{
+  "vulnerabilities": [
+    {
+      "type": "COMMAND_INJECTION",
+      "hash": -967158725,
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "StreamingBothWays: "
+          },
+          {
+            "value": "GreeterClient0",
+            "source": 0
+          }
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "origin": "grpc.request.body",
+      "value": "GreeterClient0"
+    }
+  ]
+}
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: aspnet_core.request,
+    Resource: POST /greet.tester.greeter/streamingfromclient,
+    Service: Samples.GrpcDotNet,
+    Type: web,
+    ParentId: Id_5,
+    Tags: {
+      aspnet_core.endpoint: gRPC - /greet.tester.Greeter/StreamingFromClient,
+      aspnet_core.route: /greet.tester.greeter/streamingfromclient,
+      component: aspnet_core,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.route: /greet.tester.greeter/streamingfromclient,
+      http.status_code: 200,
+      http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromClient,
+      http.useragent: grpc-dotnet/123,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.iast.enabled: 1,
+      _dd.iast.json:
+{
+  "vulnerabilities": [
+    {
+      "type": "COMMAND_INJECTION",
+      "hash": 2127253400,
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "StreamingFromClient: "
+          },
+          {
+            "value": "GreeterClient0",
+            "source": 0
+          }
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "origin": "grpc.request.body",
+      "value": "GreeterClient0"
+    }
+  ]
+}
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_6,
+    Name: aspnet_core.request,
+    Resource: POST /greet.tester.greeter/streamingfromserver,
+    Service: Samples.GrpcDotNet,
+    Type: web,
+    ParentId: Id_7,
+    Tags: {
+      aspnet_core.endpoint: gRPC - /greet.tester.Greeter/StreamingFromServer,
+      aspnet_core.route: /greet.tester.greeter/streamingfromserver,
+      component: aspnet_core,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.route: /greet.tester.greeter/streamingfromserver,
+      http.status_code: 200,
+      http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromServer,
+      http.useragent: grpc-dotnet/123,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.iast.enabled: 1,
+      _dd.iast.json:
+{
+  "vulnerabilities": [
+    {
+      "type": "COMMAND_INJECTION",
+      "hash": 1601853376,
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "StreamingFromServer: "
+          },
+          {
+            "value": "GreeterClient",
+            "source": 0
+          }
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "origin": "grpc.request.body",
+      "value": "GreeterClient"
+    }
+  ]
+}
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_8,
+    Name: aspnet_core.request,
+    Resource: POST /greet.tester.greeter/unary,
+    Service: Samples.GrpcDotNet,
+    Type: web,
+    ParentId: Id_9,
+    Tags: {
+      aspnet_core.endpoint: gRPC - /greet.tester.Greeter/Unary,
+      aspnet_core.route: /greet.tester.greeter/unary,
+      component: aspnet_core,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.route: /greet.tester.greeter/unary,
+      http.status_code: 200,
+      http.url: http://localhost:00000/greet.tester.Greeter/Unary,
+      http.useragent: grpc-dotnet/123,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.iast.enabled: 1,
+      _dd.iast.json:
+{
+  "vulnerabilities": [
+    {
+      "type": "COMMAND_INJECTION",
+      "hash": -1349409566,
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "Unary: "
+          },
+          {
+            "value": "GreeterClient",
+            "source": 0
+          }
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "origin": "grpc.request.body",
+      "value": "GreeterClient"
+    }
+  ]
+}
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]
