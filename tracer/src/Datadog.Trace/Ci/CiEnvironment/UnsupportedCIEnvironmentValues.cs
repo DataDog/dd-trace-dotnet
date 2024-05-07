@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Pdb;
 
@@ -23,15 +24,22 @@ internal sealed class UnsupportedCIEnvironmentValues<TValueProvider>(TValueProvi
 
         if (string.IsNullOrEmpty(Commit) || string.IsNullOrEmpty(Repository))
         {
-            if (EntryAssemblyLocator.GetEntryAssembly() is { } assembly)
+            try
             {
-                Log.Information("CIEnvironmentValues: Commit or Repository is empty, trying to load from SourceLink");
-                if (SourceLinkInformationExtractor.TryGetSourceLinkInfo(assembly, out var commitSha, out var repositoryUrl))
+                if (EntryAssemblyLocator.GetEntryAssembly() is { } assembly)
                 {
-                    Log.Information("Found SourceLink information for assembly {Name}: commit {CommitSha} from {RepositoryUrl}", assembly.GetName().Name, commitSha, repositoryUrl);
-                    Commit = commitSha;
-                    Repository = repositoryUrl;
+                    Log.Information("CIEnvironmentValues: Commit or Repository is empty, trying to load from SourceLink");
+                    if (SourceLinkInformationExtractor.TryGetSourceLinkInfo(assembly, out var commitSha, out var repositoryUrl))
+                    {
+                        Log.Information("Found SourceLink information for assembly {Name}: commit {CommitSha} from {RepositoryUrl}", assembly.GetName().Name, commitSha, repositoryUrl);
+                        Commit ??= commitSha;
+                        Repository ??= repositoryUrl;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "CIEnvironmentValues: Error while trying to load SourceLink information");
             }
         }
     }
