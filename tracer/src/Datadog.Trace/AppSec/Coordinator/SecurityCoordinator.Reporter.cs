@@ -5,7 +5,6 @@
 
 #nullable enable
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
@@ -147,7 +146,6 @@ internal readonly partial struct SecurityCoordinator
             _localRootSpan.SetTag(Tags.AppSecRuleFileVersion, _security.WafRuleFileVersion);
             _localRootSpan.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             _localRootSpan.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
-
             headers ??= _httpTransport.GetRequestHeaders();
             AddHeaderTags(_localRootSpan, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
