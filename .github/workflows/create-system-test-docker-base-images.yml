@@ -54,7 +54,7 @@ jobs:
         lib_waf_version: "${{steps.versions.outputs.lib_waf_version}}"
         waf_rules_version: "${{steps.versions.outputs.waf_rules_version}}"
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        is_tracer_package: 'True'
+        is_tracer_package: "True"
 
     - uses: ./.github/actions/create-system-test-docker-base-images
       name: 'Create system test linux docker images'
@@ -63,7 +63,7 @@ jobs:
         package_version: "${{steps.versions.outputs.version}}"
         commit_sha: "${{github.event.inputs.commit_sha}}"
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        is_tracer_package: 'False'
+        is_tracer_package: "False"
 
     - name: Prune registry
       uses: vlaurin/action-ghcr-prune@0a539594d122b915e71c59733a5b115bfaaf5d52 #v0.5.0
