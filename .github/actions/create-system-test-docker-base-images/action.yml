@@ -53,8 +53,8 @@ runs:
       run: docker login -u publisher -p ${{ inputs.github_token }} ghcr.io
 
     - name: Docker Build tracer linux-x64 and linux-arm64 images
+      if: inputs.is_tracer_package == "True"
       uses: docker/build-push-action@v3
-      if: ${{ inputs.is_tracer_package == "True" }}
       with:
         push: true
         tags: ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot
@@ -69,8 +69,8 @@ runs:
           APPSEC_EVENT_RULES_VERSION=${{inputs.waf_rules_version}}
 
     - name: Docker Build docker base images for deb and rpm packages
+      if: inputs.is_tracer_package == "False"
       uses: docker/build-push-action@v3
-      if: ${{ inputs.is_tracer_package == "False" }}
       with:
         push: true
         tags: ghcr.io/datadog/dd-trace-dotnet/apm-library-dotnet:${{inputs.commit_sha}}
