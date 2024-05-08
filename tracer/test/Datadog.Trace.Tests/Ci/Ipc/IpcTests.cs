@@ -59,7 +59,7 @@ public class IpcTests
             }
         };
 
-        client.TrySendMessage(new TestMessage { Value = 0 });
+        client.TrySendMessage(new TestMessage(0));
 
         if (!endManualResetEvent.Wait(30_000))
         {
@@ -67,8 +67,8 @@ public class IpcTests
         }
     }
 
-    private class TestMessage
+    private class TestMessage(int value)
     {
-        public int Value { get; set; }
+        public int Value { get; set; } = value;
     }
 }

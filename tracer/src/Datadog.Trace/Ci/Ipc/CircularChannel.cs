@@ -17,7 +17,7 @@ internal partial class CircularChannel : IChannel
     private const int DefaultBufferSize = 65536;
     private const int HeaderSize = 4;
 
-    private const int PollingInterval = 10;
+    private const int PollingInterval = 25;
     private const int MutexTimeout = 5000;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CircularChannel));
