@@ -21,19 +21,18 @@ public class IpcTests
 
         var finalValue = 0;
         var endManualResetEvent = new ManualResetEventSlim();
-        server.MessageReceived += (sender, bytes) =>
+        server.MessageReceived += (sender, message) =>
         {
-            var value = BitConverter.ToInt32(bytes);
-            if (value < 100)
+            var value = (TestMessage)message;
+            if (value.Value < 100)
             {
-                value++;
-                var valueBytes = BitConverter.GetBytes(value);
-                while (!server.TrySendMessage(valueBytes))
+                value.Value++;
+                while (!server.TrySendMessage(value))
                 {
                     Thread.Sleep(100);
                 }
 
-                finalValue = value;
+                finalValue = value.Value;
             }
             else
             {
@@ -41,19 +40,18 @@ public class IpcTests
             }
         };
 
-        client.MessageReceived += (sender, bytes) =>
+        client.MessageReceived += (sender, message) =>
         {
-            var value = BitConverter.ToInt32(bytes);
-            if (value < 100)
+            var value = (TestMessage)message;
+            if (value.Value < 100)
             {
-                value++;
-                var valueBytes = BitConverter.GetBytes(value);
-                while (!client.TrySendMessage(valueBytes))
+                value.Value++;
+                while (!client.TrySendMessage(value))
                 {
                     Thread.Sleep(100);
                 }
 
-                finalValue = value;
+                finalValue = value.Value;
             }
             else
             {
@@ -61,11 +59,16 @@ public class IpcTests
             }
         };
 
-        client.TrySendMessage(BitConverter.GetBytes(0));
+        client.TrySendMessage(new TestMessage { Value = 0 });
 
         if (!endManualResetEvent.Wait(30_000))
         {
             throw new TimeoutException("Timeout waiting for messages. Value went up to: " + finalValue);
         }
+    }
+
+    private class TestMessage
+    {
+        public int Value { get; set; }
     }
 }

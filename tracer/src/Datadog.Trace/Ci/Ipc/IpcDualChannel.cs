@@ -5,6 +5,8 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.Ci.Ipc;
 
@@ -14,6 +16,7 @@ internal abstract class IpcDualChannel : IDisposable
     private readonly IChannelReceiver _recvChannelReceiver;
     private readonly IChannel _sendChannel;
     private readonly IChannelWriter _sendChannelWriter;
+    private readonly JsonSerializerSettings _serializerSettings;
 
     protected IpcDualChannel(string recvName, string sendName)
     {
@@ -23,18 +26,57 @@ internal abstract class IpcDualChannel : IDisposable
 
         _sendChannel = new CircularChannel(sendName);
         _sendChannelWriter = _sendChannel.GetWriter();
+
+        _serializerSettings = new JsonSerializerSettings()
+        {
+            TypeNameHandling = TypeNameHandling.All,
+            Formatting = Formatting.None,
+            NullValueHandling = NullValueHandling.Ignore,
+            SerializationBinder = new CustomSerializationBinder(),
+        };
     }
 
-    protected abstract void OnMessageReceived(object? sender, byte[] message);
+    public event EventHandler<object>? MessageReceived;
 
-    protected internal bool TrySendMessage(byte[] message)
+    private void OnMessageReceived(object? sender, byte[] data)
     {
-        return _sendChannelWriter.TryWrite(message);
+        var jsonMessage = Util.EncodingHelpers.Utf8NoBom.GetString(data);
+        var message = JsonConvert.DeserializeObject(jsonMessage, _serializerSettings);
+        if (message != null)
+        {
+            MessageReceived?.Invoke(sender, message);
+        }
+    }
+
+    public bool TrySendMessage<T>(T message)
+    {
+        var jsonMessage = JsonConvert.SerializeObject(message, _serializerSettings);
+        var bytes = Util.EncodingHelpers.Utf8NoBom.GetBytes(jsonMessage);
+        return _sendChannelWriter.TryWrite(bytes);
     }
 
     public void Dispose()
     {
         _recvChannel.Dispose();
         _sendChannel.Dispose();
+    }
+
+    private class CustomSerializationBinder : ISerializationBinder
+    {
+        public Type BindToType(string? assemblyName, string typeName)
+        {
+            // Let's protect ourselves from deserializing types that we don't want to
+            if (assemblyName?.StartsWith("Datadog.Trace") == true)
+            {
+                return DefaultSerializationBinder.Instance.BindToType(assemblyName, typeName);
+            }
+
+            return typeof(void);
+        }
+
+        public void BindToName(Type serializedType, out string? assemblyName, out string? typeName)
+        {
+            DefaultSerializationBinder.Instance.BindToName(serializedType, out assemblyName, out typeName);
+        }
     }
 }

@@ -14,11 +14,4 @@ internal class IpcClient : IpcDualChannel
         : base($"{name}.send", $"{name}.recv")
     {
     }
-
-    public event EventHandler<byte[]>? MessageReceived;
-
-    protected override void OnMessageReceived(object? sender, byte[] e)
-    {
-        MessageReceived?.Invoke(this, e);
-    }
 }

@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Ipc;
 
@@ -13,12 +14,5 @@ internal class IpcServer : IpcDualChannel
     public IpcServer(string name)
         : base($"{name}.recv", $"{name}.send")
     {
-    }
-
-    public event EventHandler<byte[]>? MessageReceived;
-
-    protected override void OnMessageReceived(object? sender, byte[] e)
-    {
-        MessageReceived?.Invoke(this, e);
     }
 }
