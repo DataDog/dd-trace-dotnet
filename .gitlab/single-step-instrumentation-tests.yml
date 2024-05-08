@@ -3,7 +3,7 @@
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/test-infra-definitions/runner:a58cc31c
   tags: ["arch:amd64"]
   before_script:
-    # Setup AWS Credentials for dd-trace-rb.
+    # Setup AWS Credentials
     - mkdir -p ~/.aws
     - aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.agent-qa-profile --with-decryption --query "Parameter.Value" --out text >> ~/.aws/config
     - export DD_API_KEY_ONBOARDING=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.dd-api-key-onboarding --with-decryption --query "Parameter.Value" --out text)

@@ -22,6 +22,10 @@ inputs:
     description: 'Github token for pushing images to ghcr.io Docker repository'
     required: true
 
+  is_tracer_package:
+    description: 'True if we are creating the docker base image for the tracer. otherwise, false, create docker base image for linux packages'
+    required: true
+
 runs:
   using: "composite"
   steps:
@@ -31,6 +35,7 @@ runs:
       run: |
         echo "OUTPUT ARTIFACT PATH: ${{inputs.artifacts_path}}"
         cp ./tracer/build/_build/docker/system-tests.dockerfile ${{inputs.artifacts_path}}
+        cp ./tracer/build/_build/docker/system-tests-linux.dockerfile ${{inputs.artifacts_path}}
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
@@ -43,8 +48,9 @@ runs:
       shell: bash
       run: docker login -u publisher -p ${{ inputs.github_token }} ghcr.io
 
-    - name: Docker Build linux-x64 and linux-arm64 images
+    - name: Docker Build tracer linux-x64 and linux-arm64 images
       uses: docker/build-push-action@v3
+      if: ${{ github.event.inputs.is_tracer_package == 'True' }}
       with:
         push: true
         tags: ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot
@@ -57,3 +63,15 @@ runs:
           LIBRARY_VERSION=${{inputs.package_version}}
           LIBDDWAF_VERSION=${{inputs.lib_waf_version}}
           APPSEC_EVENT_RULES_VERSION=${{inputs.waf_rules_version}}
+
+    - name: Docker Build docker base images for deb and rpm packages
+      uses: docker/build-push-action@v3
+      if: ${{ github.event.inputs.is_tracer_package == 'False' }}
+      with:
+        push: true
+        tags: ghcr.io/datadog/dd-trace-dotnet/apm-library-dotnet:${{inputs.commit_sha}}
+        platforms: 'linux/amd64'
+        context: ${{inputs.artifacts_path}}
+        file: ${{inputs.artifacts_path}}/system-tests-linux.dockerfile
+        build-args: |
+          PACKAGE_VERSION=${{inputs.package_version}}
