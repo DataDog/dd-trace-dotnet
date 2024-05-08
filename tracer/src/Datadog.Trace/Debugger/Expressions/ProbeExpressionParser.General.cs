@@ -174,7 +174,7 @@ internal partial class ProbeExpressionParser<T>
             Expression.Call(
                 ParseTree(reader, parameters, itParameter),
                 ProbeExpressionParserHelper.GetMethodByReflection(typeof(object), "GetType", Type.EmptyTypes)),
-            "FullName");
+            nameof(Type.FullName));
     }
 
     private Expression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
