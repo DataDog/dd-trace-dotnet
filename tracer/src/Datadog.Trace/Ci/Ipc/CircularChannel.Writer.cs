@@ -48,8 +48,9 @@ internal partial class CircularChannel
 
             try
             {
-                var writePos = channel._accessor.ReadUInt16(0);
-                var readPos = channel._accessor.ReadUInt16(2);
+                using var accessor = channel._mmf.CreateViewAccessor();
+                var writePos = accessor.ReadUInt16(0);
+                var readPos = accessor.ReadUInt16(2);
 
                 var absoluteWritePos = HeaderSize + writePos;
                 if (channel.BufferSize - absoluteWritePos < 2)
@@ -84,18 +85,17 @@ internal partial class CircularChannel
                 // Write the first part of the data
                 var remainningSpace = channel.BufferBodySize - writePos;
                 var firstPartLength = Math.Min(dataSize, remainningSpace) - 2;
-                channel._accessor.Write(absoluteWritePos, (ushort)data.Length);
-                channel._accessor.WriteArray(absoluteWritePos + 2, data, 0, firstPartLength);
+                accessor.Write(absoluteWritePos, (ushort)data.Length);
+                accessor.WriteArray(absoluteWritePos + 2, data, 0, firstPartLength);
 
                 // Write the second part of the data, if any, from the start of the buffer
                 var secondPartLength = data.Length - firstPartLength;
                 if (secondPartLength > 0)
                 {
-                    channel._accessor.WriteArray(HeaderSize, data, firstPartLength, secondPartLength);
+                    accessor.WriteArray(HeaderSize, data, firstPartLength, secondPartLength);
                 }
 
-                channel._accessor.Write(0, nextWritePos); // Update write pointer
-                channel._accessor.Flush();
+                accessor.Write(0, nextWritePos); // Update write pointer
                 return true;
             }
             catch (Exception ex)

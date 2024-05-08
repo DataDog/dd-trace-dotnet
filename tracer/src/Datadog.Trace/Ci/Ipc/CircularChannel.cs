@@ -17,13 +17,12 @@ internal partial class CircularChannel : IChannel
     private const int DefaultBufferSize = 65536;
     private const int HeaderSize = 4;
 
-    private const int PollingInterval = 250;
+    private const int PollingInterval = 10;
     private const int MutexTimeout = 5000;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CircularChannel));
 
     private readonly MemoryMappedFile _mmf;
-    private readonly MemoryMappedViewAccessor _accessor;
     private readonly Mutex _mutex;
     private readonly int _bufferSize;
     private bool _disposed;
@@ -64,7 +63,6 @@ internal partial class CircularChannel : IChannel
         }
 
         _mmf = MemoryMappedFile.CreateFromFile(fileName, FileMode.OpenOrCreate, null, _bufferSize);
-        _accessor = _mmf.CreateViewAccessor();
         _mutex = new Mutex(false, $"{Path.GetFileNameWithoutExtension(fileName)}.mutex");
         InitializeHeader();
     }
@@ -83,8 +81,9 @@ internal partial class CircularChannel : IChannel
 
         try
         {
-            _accessor.Write(0, (ushort)0); // Write pointer
-            _accessor.Write(2, (ushort)0); // Read pointer
+            using var accessor = _mmf.CreateViewAccessor();
+            accessor.Write(0, (ushort)0); // Write pointer
+            accessor.Write(2, (ushort)0); // Read pointer
         }
         finally
         {
@@ -111,7 +110,6 @@ internal partial class CircularChannel : IChannel
 
         _writer?.Dispose();
         _receiver?.Dispose();
-        _accessor.Dispose();
         _mmf.Dispose();
         _mutex.Dispose();
         _disposed = true;

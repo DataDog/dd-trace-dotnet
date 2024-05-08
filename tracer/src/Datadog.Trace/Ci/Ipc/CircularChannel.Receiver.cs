@@ -50,8 +50,9 @@ internal partial class CircularChannel
                 List<byte[]>? messagesToHandle = null;
                 try
                 {
-                    var writePos = channel._accessor.ReadUInt16(0);
-                    var readPos = channel._accessor.ReadUInt16(2);
+                    using var accessor = channel._mmf.CreateViewAccessor();
+                    var writePos = accessor.ReadUInt16(0);
+                    var readPos = accessor.ReadUInt16(2);
                     while (readPos != writePos)
                     {
                         messagesToHandle ??= new List<byte[]>();
@@ -64,7 +65,7 @@ internal partial class CircularChannel
                             absoluteReadPos = HeaderSize;
                         }
 
-                        var length = channel._accessor.ReadUInt16(absoluteReadPos);
+                        var length = accessor.ReadUInt16(absoluteReadPos);
 
                         // Simple sanity check
                         if (length + 2 > channel.BufferBodySize)
@@ -77,17 +78,17 @@ internal partial class CircularChannel
 
                         // Read the first part of the data
                         var firstPartLength = Math.Min(length, channel.BufferSize - absoluteReadPos - 2);
-                        channel._accessor.ReadArray(absoluteReadPos + 2, data, 0, firstPartLength);
+                        accessor.ReadArray(absoluteReadPos + 2, data, 0, firstPartLength);
 
                         // Read the second part of the data, if any, from the start of the buffer
                         var secondPartLength = length - firstPartLength;
                         if (secondPartLength > 0)
                         {
-                            channel._accessor.ReadArray(HeaderSize, data, firstPartLength, secondPartLength);
+                            accessor.ReadArray(HeaderSize, data, firstPartLength, secondPartLength);
                         }
 
                         var nextReadPos = (ushort)((readPos + length + 2) % channel.BufferBodySize);
-                        channel._accessor.Write(2, nextReadPos); // Update read pointer
+                        accessor.Write(2, nextReadPos); // Update read pointer
 
                         // We store all the messages before releasing the mutex to avoid blocking the producer for each event call
                         messagesToHandle.Add(data);

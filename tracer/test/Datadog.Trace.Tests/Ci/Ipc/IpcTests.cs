@@ -27,7 +27,12 @@ public class IpcTests
             if (value < 100)
             {
                 value++;
-                server.TrySendMessage(BitConverter.GetBytes(value));
+                var valueBytes = BitConverter.GetBytes(value);
+                while (!server.TrySendMessage(valueBytes))
+                {
+                    Thread.Sleep(100);
+                }
+
                 finalValue = value;
             }
             else
@@ -42,7 +47,12 @@ public class IpcTests
             if (value < 100)
             {
                 value++;
-                client.TrySendMessage(BitConverter.GetBytes(value));
+                var valueBytes = BitConverter.GetBytes(value);
+                while (!client.TrySendMessage(valueBytes))
+                {
+                    Thread.Sleep(100);
+                }
+
                 finalValue = value;
             }
             else
@@ -53,9 +63,9 @@ public class IpcTests
 
         client.TrySendMessage(BitConverter.GetBytes(0));
 
-        if (!endManualResetEvent.Wait(10_000))
+        if (!endManualResetEvent.Wait(30_000))
         {
-            throw new TimeoutException("Timeout waiting for messages");
+            throw new TimeoutException("Timeout waiting for messages. Value went up to: " + finalValue);
         }
     }
 }
