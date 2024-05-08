@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Sampling
 {
@@ -38,40 +37,46 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            Log.Debug("Using the default sampling logic");
-            float defaultRate;
+            var service = span.ServiceName;
+            var env = span.Context.TraceContext.Environment ?? string.Empty;
 
-            if (_sampleRates.Count == 0)
+            if (_sampleRates.Count > 0)
             {
-                // either we don't have sampling rate from the agent yet (cold start),
-                // or the only rate we received is for "service:,env:", which is not added to _sampleRates
-                defaultRate = _defaultSamplingRate ?? 1;
+                var key = new SampleRateKey(service, env);
 
-                // add the _dd.agent_psr tag even if we didn't use rates from the agent (to ease investigations)
+                if (_sampleRates.TryGetValue(key, out var matchingRate))
+                {
+                    // found a matching sampling rate by service/env
+                    Log.Debug(
+                        "Found agent sampling rate {Rate} for trace {TraceId} with service:{Service} and env:{Env}. ",
+                        matchingRate,
+                        span.Context.RawTraceId,
+                        service,
+                        env);
+
+                    SetSamplingRateTag(span, matchingRate);
+                    return matchingRate;
+                }
+            }
+
+            if (_defaultSamplingRate is { } defaultRate)
+            {
+                // no match by service/env, use default rate with key "service:,env:"
+                Log.Debug(
+                    "Using default agent sampling rate {Rate} for trace {TraceId} with service:{Service} and env:{Env}. ",
+                    defaultRate,
+                    span.Context.RawTraceId,
+                    service,
+                    env);
+
                 SetSamplingRateTag(span, defaultRate);
                 return defaultRate;
             }
 
-            var env = span.Context.TraceContext.Environment ?? string.Empty;
-            var service = span.ServiceName;
-
-            var key = new SampleRateKey(service, env);
-
-            if (_sampleRates.TryGetValue(key, out var sampleRate))
-            {
-                SetSamplingRateTag(span, sampleRate);
-                return sampleRate;
-            }
-
-            if (Log.IsEnabled(LogEventLevel.Debug))
-            {
-                Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {Rate}", span.Context.RawTraceId, _defaultSamplingRate);
-            }
-
-            // no match by service/env, you default rate
-            defaultRate = _defaultSamplingRate ?? 1;
-            SetSamplingRateTag(span, defaultRate);
-            return defaultRate;
+            // we don't have sampling rates from the agent yet (cold start),
+            // fallback to 100% sampling rate, don't add "_dd.agent_psr" numeric tag
+            Log.Debug("No sampling rate found. Using default sampling rate of 1.0.");
+            return 1;
 
             static void SetSamplingRateTag(Span span, float sampleRate)
             {
@@ -90,7 +95,7 @@ namespace Datadog.Trace.Sampling
         {
             if (sampleRates is not { Count: > 0 })
             {
-                Log.Debug("sampling rates received from the agent are empty");
+                Log.Debug("Sampling rates received from the agent are empty.");
                 return;
             }
 
@@ -111,7 +116,7 @@ namespace Datadog.Trace.Sampling
 
                 if (key == null)
                 {
-                    Log.Warning("Could not parse sample rate key {SampleRateKey}", pair.Key);
+                    Log.Warning("Could not parse sampling rate key {SampleRateKey}", pair.Key);
                     continue;
                 }
 
@@ -143,8 +148,7 @@ namespace Datadog.Trace.Sampling
 
             public static SampleRateKey? Parse(string key)
             {
-                // Expected format:
-                // service:{service},env:{env}
+                // Expected format: "service:{service},env:{env}"
                 var parts = key.Split(PartSeparator);
 
                 if (parts.Length != 2)
