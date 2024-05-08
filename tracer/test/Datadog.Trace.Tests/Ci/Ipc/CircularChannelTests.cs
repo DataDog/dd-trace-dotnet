@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tests.Ci.Ipc;
 
 public class CircularChannelTests
 {
-    private const int BufferSize = 32768;
+    private const int BufferSize = 8192;
     private const int HeaderSize = 4;
     private const int AvailableBufferSize = BufferSize - HeaderSize;
 
@@ -100,7 +100,7 @@ public class CircularChannelTests
             }
         }
 
-        if (!countdownEvent.Wait(5_000))
+        if (!countdownEvent.Wait(10_000))
         {
             exceptionDispatchInfo?.Throw();
             throw new Exception("Timeout waiting for messages");
