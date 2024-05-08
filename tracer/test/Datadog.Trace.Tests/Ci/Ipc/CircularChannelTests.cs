@@ -102,9 +102,8 @@ public class CircularChannelTests
 
         if (!countdownEvent.Wait(5_000))
         {
+            exceptionDispatchInfo?.Throw();
             throw new Exception("Timeout waiting for messages");
         }
-
-        exceptionDispatchInfo?.Throw();
     }
 }

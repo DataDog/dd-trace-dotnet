@@ -79,7 +79,7 @@ internal class CircularChannel : IChannel
         var hasHandle = _mutex.WaitOne(MutexTimeout);
         if (!hasHandle)
         {
-            throw new TimeoutException("Failed to acquire mutex within the time limit.");
+            throw new TimeoutException("CircularChannel: Failed to acquire mutex within the time limit.");
         }
 
         try
@@ -149,7 +149,7 @@ internal class CircularChannel : IChannel
                 var hasHandle = channel._mutex.WaitOne(MutexTimeout);
                 if (!hasHandle)
                 {
-                    CIVisibility.Log.Error("Failed to acquire mutex within the time limit.");
+                    CIVisibility.Log.Error("CircularChannel: Failed to acquire mutex within the time limit.");
                     return;
                 }
 
@@ -221,7 +221,7 @@ internal class CircularChannel : IChannel
                         }
                         catch (Exception ex)
                         {
-                            CIVisibility.Log.Error(ex, "Error during message event handling.");
+                            CIVisibility.Log.Error(ex, "CircularChannel: Error during message event handling.");
                         }
                     }
                 }
