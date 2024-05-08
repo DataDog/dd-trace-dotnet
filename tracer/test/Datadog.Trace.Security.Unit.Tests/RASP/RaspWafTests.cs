@@ -29,7 +29,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         var context = InitWaf(true, ruleFile, args, out var waf);
 
         var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, value } };
-        var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds);
+        var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
         resultEph.BlockInfo["status_code"].Should().Be("403");
         var jsonString = JsonConvert.SerializeObject(resultEph.Data);
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
@@ -44,8 +44,10 @@ public class RaspWafTests : WafLibraryRequiredTest
 
         context = waf.CreateContext();
         context.Run(args, TimeoutMicroSeconds);
-        var resultEphNew = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds);
+        var resultEphNew = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
         resultEphNew.BlockInfo["status_code"].Should().Be("500");
+        resultEphNew.AggregatedTotalRuntimeRasp.Should().BeGreaterThan(0);
+        resultEphNew.AggregatedTotalRuntimeWithBindingsRasp.Should().BeGreaterThan(0);
     }
 
     [Theory]
@@ -79,7 +81,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         var argsVulnerable = new Dictionary<string, object> { { address, value } };
         for (int i = 0; i < runNtimes; i++)
         {
-            var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds);
+            var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
             CheckResult(rule, expectedAction, resultEph, actionType);
         }
     }
