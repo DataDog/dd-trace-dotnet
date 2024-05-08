@@ -189,8 +189,8 @@ internal readonly partial struct SecurityCoordinator
 
     private void RaspMetricReport(IResult result, Span localRootSpan)
     {
-        // If RASP rules are not enabled, we don't want to fill the spans with not useful data
-        // We want to report even if there is no match
+        // We don't want to fill the spans with not useful data, so we only send it when RASP has been used
+        // We report always, even if there is no match
         if (result.AggregatedTotalRuntimeRasp > 0)
         {
             localRootSpan.Context.TraceContext.AddRaspMetrics(result.AggregatedTotalRuntimeRasp, result.AggregatedTotalRuntimeWithBindingsRasp);

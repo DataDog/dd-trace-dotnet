@@ -78,19 +78,19 @@ namespace Datadog.Trace.AppSec.Waf
         public ulong AggregatedTotalRuntimeWithBindings { get; }
 
         /// <summary>
-        /// Gets the total runtime in nanoseconds
+        /// Gets the total runtime in nanoseconds for RASP calls
         /// </summary>
         public ulong AggregatedTotalRuntimeRasp { get; }
 
         /// <summary>
-        /// Gets the total runtime in nanoseconds with parameter passing to the waf
+        /// Gets the total runtime in nanoseconds with parameter passing to the waf for RASP calls
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindingsRasp { get; }
 
         /// <summary>
-        /// Gets the number of times that a rule type is evaluated
+        /// Gets the number of times that a rule type is evaluated in RASP
         /// </summary>
-        public ulong RaspRuleEvaluations { get; }
+        public uint RaspRuleEvaluations { get; }
 
         public bool ShouldBlock { get; }
 

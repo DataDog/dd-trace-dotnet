@@ -16,26 +16,19 @@ internal class RaspTelemetryHelper
 {
     private ulong _raspWafDuration = 0;
     private ulong _raspWafAndBindingsDuration = 0;
-    private int _raspRuleEval = 0;
-    private object _metricsLock = new();
+    private uint _raspRuleEval = 0;
 
     public void AddRaspWafAndBindingsDuration(ulong duration, ulong durationWithBindings)
     {
-        lock (_metricsLock)
-        {
-            _raspWafDuration += duration;
-            _raspWafAndBindingsDuration += durationWithBindings;
-            _raspRuleEval++;
-        }
+        _raspWafDuration += duration;
+        _raspWafAndBindingsDuration += durationWithBindings;
+        _raspRuleEval++;
     }
 
     public void GenerateMetricTags(ITags tags)
     {
-        lock (_metricsLock)
-        {
-            tags.SetMetric(Metrics.RaspRuleEval, _raspRuleEval);
-            tags.SetMetric(Metrics.RaspWafDuration, _raspWafDuration);
-            tags.SetMetric(Metrics.RaspWafAndBindingsDuration, _raspWafAndBindingsDuration);
-        }
+        tags.SetMetric(Metrics.RaspRuleEval, _raspRuleEval);
+        tags.SetMetric(Metrics.RaspWafDuration, _raspWafDuration);
+        tags.SetMetric(Metrics.RaspWafAndBindingsDuration, _raspWafAndBindingsDuration);
     }
 }

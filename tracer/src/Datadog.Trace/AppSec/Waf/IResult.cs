@@ -37,7 +37,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         ulong AggregatedTotalRuntimeWithBindingsRasp { get; }
 
-        ulong RaspRuleEvaluations { get; }
+        uint RaspRuleEvaluations { get; }
 
         bool Timeout { get; }
 
