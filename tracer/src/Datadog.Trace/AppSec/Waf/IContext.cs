@@ -13,5 +13,5 @@ internal interface IContext : IDisposable
 {
     IResult? Run(IDictionary<string, object> addressData, ulong timeoutMicroSeconds);
 
-    IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds);
+    IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp);
 }
