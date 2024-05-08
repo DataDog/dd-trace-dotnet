@@ -85,23 +85,32 @@ publish:
 generate-tag-values:
   tags: ["arch:amd64"]
   stage: deploy
-  rules:
-    - if: '$POPULATE_CACHE'
-      when: never
-    # Don't deploy major/major.minor/latest on prerelease
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
-      when: always
-    - when: manual
-      allow_failure: true
   # Extract the vMajor.Minor and vMajor from the tag
   script:
-    - MAJOR_MINOR_VERSION="$(sed -nE 's/^(v[0-9]+\.[0-9]+)\.[0-9]+$/\1/p' <<< ${CI_COMMIT_TAG})"
-    - MAJOR_VERSION="$(sed -nE 's/^(v[0-9]+)\.[0-9]+\.[0-9]+$/\1/p' <<< ${CI_COMMIT_TAG})"
+    - FunkyTag=v2.53.4
+    - MAJOR_MINOR_VERSION="$(sed -nE 's/^(v[0-9]+\.[0-9]+)\.[0-9]+$/\1/p' <<< ${FunkyTag})"
+    - MAJOR_VERSION="$(sed -nE 's/^(v[0-9]+)\.[0-9]+\.[0-9]+$/\1/p' <<< ${FunkyTag})"
     - echo "MAJOR_MINOR_VERSION=${MAJOR_MINOR_VERSION}" >> build.env
     - echo "MAJOR_VERSION=${MAJOR_VERSION}" >> build.env
   artifacts:
     reports:
       dotenv: build.env
+
+generated-tag-test:
+  tags: ["arch:amd64"]
+  stage: deploy
+  script:
+    - echo $IMG_SOURCES
+    - echo $IMG_DESTINATIONS
+    - echo $MAJOR_MINOR_VERSION
+    - echo $MAJOR_VERSION
+  variables:
+    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA
+    IMG_DESTINATIONS: dd-lib-dotnet-init:$MAJOR_MINOR_VERSION
+    IMG_SIGNING: "false"
+  needs:
+    - job: generate-tag-values
+      artifacts: true
 
 deploy_to_docker_registries:
   stage: deploy
