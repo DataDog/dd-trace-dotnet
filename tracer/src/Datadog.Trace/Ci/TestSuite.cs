@@ -5,6 +5,8 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
@@ -21,6 +23,8 @@ namespace Datadog.Trace.Ci;
 public sealed class TestSuite
 {
     private static readonly AsyncLocal<TestSuite?> CurrentSuite = new();
+    private static readonly HashSet<TestSuite> OpenedTestSuites = new();
+
     private readonly Span _span;
     private int _finished;
 
@@ -45,6 +49,11 @@ public sealed class TestSuite
 
         _span = span;
         Current = this;
+        lock (OpenedTestSuites)
+        {
+            OpenedTestSuites.Add(this);
+        }
+
         CIVisibility.Log.Debug("###### New Test Suite Created: {Name} ({Module})", Name, Module.Name);
 
         if (startDate is null)
@@ -79,6 +88,20 @@ public sealed class TestSuite
     {
         get => CurrentSuite.Value;
         set => CurrentSuite.Value = value;
+    }
+
+    /// <summary>
+    /// Gets the active test suites
+    /// </summary>
+    internal static IReadOnlyCollection<TestSuite> ActiveTestSuites
+    {
+        get
+        {
+            lock (OpenedTestSuites)
+            {
+                return OpenedTestSuites.Count == 0 ? [] : OpenedTestSuites.ToArray();
+            }
+        }
     }
 
     internal TestSuiteSpanTags Tags => (TestSuiteSpanTags)_span.Tags;
@@ -178,6 +201,11 @@ public sealed class TestSuite
         TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Tags.Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Suite);
 
         Current = null;
+        lock (OpenedTestSuites)
+        {
+            OpenedTestSuites.Remove(this);
+        }
+
         Module.RemoveSuite(Name);
         CIVisibility.Log.Debug("###### Test Suite Closed: {Name} ({Module}) | {Status}", Name, Module.Name, Tags.Status);
     }

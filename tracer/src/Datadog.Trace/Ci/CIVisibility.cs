@@ -525,6 +525,49 @@ namespace Datadog.Trace.Ci
 
         private static async Task ShutdownAsync()
         {
+            // Let's close any opened test, suite, modules and sessions before shutting down to avoid loosing any data.
+            // But marking them as failed.
+
+            foreach (var test in Test.ActiveTests)
+            {
+                if (LifetimeManager.Instance.CurrentException is { } exception)
+                {
+                    test.SetErrorInfo(exception);
+                }
+
+                test.Close(TestStatus.Fail);
+            }
+
+            foreach (var testSuite in TestSuite.ActiveTestSuites)
+            {
+                if (LifetimeManager.Instance.CurrentException is { } exception)
+                {
+                    testSuite.SetErrorInfo(exception);
+                }
+
+                testSuite.Close();
+            }
+
+            foreach (var testModule in TestModule.ActiveTestModules)
+            {
+                if (LifetimeManager.Instance.CurrentException is { } exception)
+                {
+                    testModule.SetErrorInfo(exception);
+                }
+
+                await testModule.CloseAsync().ConfigureAwait(false);
+            }
+
+            foreach (var testSession in TestSession.ActiveTestSessions)
+            {
+                if (LifetimeManager.Instance.CurrentException is { } exception)
+                {
+                    testSession.SetErrorInfo(exception);
+                }
+
+                await testSession.CloseAsync(TestStatus.Fail).ConfigureAwait(false);
+            }
+
             await FlushAsync().ConfigureAwait(false);
             MethodSymbolResolver.Instance.Clear();
         }
