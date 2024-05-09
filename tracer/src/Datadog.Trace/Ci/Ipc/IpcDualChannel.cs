@@ -48,7 +48,7 @@ internal abstract class IpcDualChannel : IDisposable
         }
     }
 
-    public bool TrySendMessage<T>(T message)
+    public bool TrySendMessage(object message)
     {
         var jsonMessage = JsonConvert.SerializeObject(message, _serializerSettings);
         var bytes = Util.EncodingHelpers.Utf8NoBom.GetBytes(jsonMessage);

@@ -51,7 +51,7 @@ public class CircularChannelTests
             writer.TryWrite(value).Should().BeTrue();
         }
 
-        // If we write one more message, we should get an exception
+        // If we write one more message, we should get a false result
         writer.TryWrite(value).Should().BeFalse();
     }
 

@@ -40,6 +40,12 @@ internal partial class CircularChannel
                     return;
                 }
 
+                if (MessageReceived is null)
+                {
+                    // To avoid loosing messages we stop the polling if there are no subscribers
+                    return;
+                }
+
                 var hasHandle = channel._mutex.WaitOne(MutexTimeout);
                 if (!hasHandle)
                 {
