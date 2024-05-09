@@ -191,6 +191,12 @@
       <SHARED-LIB-INCLUDES>$(SHARED-LIB-PATH)fmt\include;$(SHARED-LIB-PATH)spdlog\include</SHARED-LIB-INCLUDES>
     </PropertyGroup>
 
+    <ItemDefinitionGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
+      <ClCompile>
+        <PreprocessorDefinitions>%(PreprocessorDefinitions);MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS=1</PreprocessorDefinitions>
+      </ClCompile>
+    </ItemDefinitionGroup>
+
 
     <PropertyGroup>
         <RdrctOutptMsgPrefix>Set Output Dirs</RdrctOutptMsgPrefix>
