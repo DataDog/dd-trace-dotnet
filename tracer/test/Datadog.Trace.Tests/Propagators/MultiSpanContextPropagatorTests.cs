@@ -532,29 +532,32 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData(false, true)]
         [InlineData(true, false)]
         [InlineData(true, true)]
-        public void W3C_ParentExtracted_WithSameTraceIdAndParentId(bool extractFirst, bool w3CHeaderFirst)
+        public void W3C_ParentExtracted_MatchingTraceIdDiffParentId_ValidP(bool extractFirst, bool w3CHeaderFirst)
         {
             // headers1 equivalent from system-tests
             var headers = new Mock<IHeadersCollection>();
 
             headers.Setup(h => h.GetValues("traceparent"))
-                   .Returns(new[] { "00-00000000000000000000000000000001-000000003ade68b1-01" });
+                   .Returns(new[] { "00-11111111111111110000000000000001-000000003ade68b1-01" });
             headers.Setup(h => h.GetValues("tracestate"))
-                   .Returns(new[] { "dd=s:2;o:rum;p:0123456789abcdef,foo=1" });
+                   .Returns(new[] { "dd=s:2;o:rum;p:0123456789abcdef;t.tid:1111111111111111,foo=1" });
             headers.Setup(h => h.GetValues("x-datadog-trace-id"))
-                   .Returns(new[] { "0000000000000001" });
+                   .Returns(new[] { "1" });
             headers.Setup(h => h.GetValues("x-datadog-parent-id"))
-                   .Returns(new[] { "987654321" });
+                   .Returns(new[] { "987654320" });
             headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
                    .Returns(new[] { "2" });
             headers.Setup(h => h.GetValues("x-datadog-origin"))
                    .Returns(new[] { "rum" });
+            headers.Setup(h => h.GetValues("x-datadog-tags"))
+                   .Returns(new[] { "_dd.p.tid=1111111111111111" });
 
             var result = GetPropagatorToTest(extractFirst, w3CHeaderFirst).Extract(headers.Object);
 
             TraceTagCollection propagatedTags = new(
                 new List<KeyValuePair<string, string>>
                 {
+                    new("_dd.p.tid", "1111111111111111"),
                 },
                 null);
 
@@ -564,11 +567,11 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId128 = new TraceId(0x0000000000000000, 1),
+                           TraceId128 = new TraceId(0x1111111111111111, 1),
                            TraceId = 1,
-                           SpanId = 987654321,
-                           RawTraceId = "00000000000000000000000000000001",
-                           RawSpanId = "000000003ade68b1",
+                           SpanId = (ulong)(w3CHeaderFirst ? 987654321 : 987654320),
+                           RawTraceId = "11111111111111110000000000000001",
+                           RawSpanId = w3CHeaderFirst ? "000000003ade68b1" : "000000003ade68b0",
                            SamplingPriority = SamplingPriorityValues.UserKeep,
                            PropagatedTags = propagatedTags,
                            Origin = "rum",
@@ -576,9 +579,8 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           // Since Trace ID and Span ID for the headers match this will be extracted.
-                           // Only when extract first and Datadog,tracecontext is defined will this _not_ be extracted.
-                           LastParentId = (extractFirst && !w3CHeaderFirst) ? null : "0123456789abcdef",
+                           // Since Trace ID and Span ID for the headers do _not_ match this will be extracted when Datadog is not the only header being evaluated.
+                           LastParentId = (!w3CHeaderFirst && extractFirst) ? null : "0123456789abcdef",
                        });
         }
 
@@ -635,9 +637,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           // Since Trace ID and Span ID for the headers match this will be extracted.
-                           // Only when extract first and Datadog,tracecontext is defined will this _not_ be extracted.
-                           LastParentId = (extractFirst && !w3CHeaderFirst) ? null : "0123456789abcdef",
+                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null,
                        });
         }
 
@@ -690,9 +690,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           // Since Trace ID and Span ID for the headers match this will be extracted.
-                           // Only when extract first and Datadog,tracecontext is defined will this _not_ be extracted.
-                           LastParentId = (extractFirst && !w3CHeaderFirst) ? null : "0123456789abcdef",
+                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null,
                        });
         }
 
@@ -745,8 +743,6 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           // If `p` is missing for Datadog,tracecontext we won't set the last parent to zero, same if extract first enabled
-                           // In all other cases it will be set to zero.
                            LastParentId = !w3CHeaderFirst ? null : ZeroLastParentId,
                        });
         }
@@ -800,8 +796,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           // Since the ParentIds differ between the headers we _don't_ set the LastParentId when we have Datadog,tracecontext.
-                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // If we have Datadog headers don't use p.
+                           LastParentId = (!w3CHeaderFirst && extractFirst) ? null : "0123456789abcdef",
                        });
         }
 
