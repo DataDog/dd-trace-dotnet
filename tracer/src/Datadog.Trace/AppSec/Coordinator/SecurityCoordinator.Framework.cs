@@ -45,11 +45,11 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal SecurityCoordinator(Security security, Span span)
+    internal SecurityCoordinator(Security security, Span span, HttpTransport? transport = null)
     {
         _security = security;
         _localRootSpan = TryGetRoot(span);
-        _httpTransport = new HttpTransport(HttpContext.Current);
+        _httpTransport = transport ?? new HttpTransport(HttpContext.Current);
     }
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
