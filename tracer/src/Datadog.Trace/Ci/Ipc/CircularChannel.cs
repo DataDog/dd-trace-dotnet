@@ -54,25 +54,8 @@ internal partial class CircularChannel : IChannel
         }
 
         _bufferSize = bufferSize;
-        var fileInfo = new FileInfo(fileName);
-        if (fileInfo.Exists && fileInfo.Length != _bufferSize)
-        {
-            // Resize file if it exists but is too small
-            using var stream = new FileStream(fileName, FileMode.Open, FileAccess.Write, FileShare.None);
-            stream.SetLength(_bufferSize);
-        }
-
-        _mmf = MemoryMappedFile.CreateFromFile(fileName, FileMode.OpenOrCreate, null, _bufferSize);
         _mutex = new Mutex(false, $"{Path.GetFileNameWithoutExtension(fileName)}.mutex");
-        InitializeHeader();
-    }
 
-    protected int BufferSize => _bufferSize;
-
-    public int BufferBodySize => _bufferSize - HeaderSize;
-
-    private void InitializeHeader()
-    {
         var hasHandle = _mutex.WaitOne(MutexTimeout);
         if (!hasHandle)
         {
@@ -81,6 +64,16 @@ internal partial class CircularChannel : IChannel
 
         try
         {
+            var fileInfo = new FileInfo(fileName);
+            if (fileInfo.Exists && fileInfo.Length != _bufferSize)
+            {
+                // Resize file if it exists but is too small
+                using var stream = new FileStream(fileName, FileMode.Open, FileAccess.Write, FileShare.None);
+                stream.SetLength(_bufferSize);
+            }
+
+            _mmf = MemoryMappedFile.CreateFromFile(fileName, FileMode.OpenOrCreate, null, _bufferSize);
+
             using var accessor = _mmf.CreateViewAccessor();
             accessor.Write(0, (ushort)0); // Write pointer
             accessor.Write(2, (ushort)0); // Read pointer
@@ -90,6 +83,10 @@ internal partial class CircularChannel : IChannel
             _mutex.ReleaseMutex();
         }
     }
+
+    protected int BufferSize => _bufferSize;
+
+    public int BufferBodySize => _bufferSize - HeaderSize;
 
     public IChannelReceiver GetReceiver()
     {

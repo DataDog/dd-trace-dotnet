@@ -5,7 +5,9 @@
 #nullable enable
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci.Ipc;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Ci.Ipc;
@@ -13,62 +15,74 @@ namespace Datadog.Trace.Tests.Ci.Ipc;
 public class IpcTests
 {
     [Fact]
-    public void IpcClientTest()
+    public async Task IpcClientTest()
     {
         var name = Guid.NewGuid().ToString("n");
         using var server = new IpcServer(name);
         using var client = new IpcClient(name);
 
-        var finalValue = 0;
-        var endManualResetEvent = new ManualResetEventSlim();
+        TestMessage? finalValue = null;
+        var serverTaskCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var clientTaskCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
         server.MessageReceived += (sender, message) =>
         {
             var value = (TestMessage)message;
-            if (value.Value < 100)
+            if (value.ServerValue < 100)
             {
-                value.Value++;
+                value.ServerValue++;
                 while (!server.TrySendMessage(value))
                 {
                     Thread.Sleep(100);
                 }
 
-                finalValue = value.Value;
+                Interlocked.Exchange(ref finalValue, value);
             }
-            else
+
+            if (value.ServerValue == 100)
             {
-                endManualResetEvent.Set();
+                serverTaskCompletion.TrySetResult(true);
             }
         };
 
         client.MessageReceived += (sender, message) =>
         {
             var value = (TestMessage)message;
-            if (value.Value < 100)
+            if (value.ClientValue < 100)
             {
-                value.Value++;
+                value.ClientValue++;
                 while (!client.TrySendMessage(value))
                 {
                     Thread.Sleep(100);
                 }
 
-                finalValue = value.Value;
+                Interlocked.Exchange(ref finalValue, value);
             }
-            else
+
+            if (value.ClientValue == 100)
             {
-                endManualResetEvent.Set();
+                clientTaskCompletion.TrySetResult(true);
             }
         };
 
-        client.TrySendMessage(new TestMessage(0));
+        client.TrySendMessage(new TestMessage(0, 0));
 
-        if (!endManualResetEvent.Wait(30_000))
+        var delayTask = Task.Delay(30_000);
+        var ipcTasks = Task.WhenAll(serverTaskCompletion.Task, clientTaskCompletion.Task);
+        if (await Task.WhenAny(ipcTasks, delayTask).ConfigureAwait(false) == delayTask)
         {
-            throw new TimeoutException("Timeout waiting for messages. Value went up to: " + finalValue);
+            throw new TimeoutException($"Timeout waiting for messages. Values went up to [{finalValue?.ServerValue}, {finalValue?.ClientValue}]");
         }
+
+        finalValue.Should().NotBeNull();
+        finalValue!.ServerValue.Should().Be(100);
+        finalValue.ClientValue.Should().Be(100);
     }
 
-    private class TestMessage(int value)
+    private class TestMessage(int serverValue, int clientValue)
     {
-        public int Value { get; set; } = value;
+        public int ServerValue { get; set; } = serverValue;
+
+        public int ClientValue { get; set; } = clientValue;
     }
 }
