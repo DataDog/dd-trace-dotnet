@@ -17,7 +17,7 @@ public class IpcTests
     [Fact]
     public async Task IpcClientTest()
     {
-        var name = Guid.NewGuid().ToString("n");
+        var name = nameof(IpcClientTest) + "-" + Guid.NewGuid().ToString("n");
         using var server = new IpcServer(name);
         using var client = new IpcClient(name);
 

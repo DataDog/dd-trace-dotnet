@@ -47,10 +47,23 @@ internal partial class CircularChannel
                     return;
                 }
 
-                var hasHandle = channel._mutex.WaitOne(MutexTimeout);
-                if (!hasHandle)
+                try
                 {
-                    CIVisibility.Log.Error("CircularChannel: Failed to acquire mutex within the time limit.");
+                    var hasHandle = channel._mutex.WaitOne(MutexTimeout);
+                    if (!hasHandle)
+                    {
+                        CIVisibility.Log.Error("CircularChannel: Failed to acquire mutex within the time limit.");
+                        return;
+                    }
+                }
+                catch (AbandonedMutexException ex)
+                {
+                    CIVisibility.Log.Error(ex, "CircularChannel: Mutex was abandoned.");
+                    return;
+                }
+                catch (ObjectDisposedException)
+                {
+                    // The mutex was disposed, nothing to do
                     return;
                 }
 

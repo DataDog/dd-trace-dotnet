@@ -36,7 +36,8 @@ public class CircularChannelTests
     [MemberData(nameof(GetWriteData), DisableDiscoveryEnumeration = true)]
     public void CircularChannelWriteTest(byte[] value)
     {
-        using var channel = new CircularChannel(nameof(CircularChannelWriteTest), BufferSize);
+        var name = nameof(CircularChannelWriteTest) + "-" + Guid.NewGuid().ToString("n");
+        using var channel = new CircularChannel(name, BufferSize);
         using var writer = channel.GetWriter();
 
         // Message size
@@ -59,7 +60,8 @@ public class CircularChannelTests
     [MemberData(nameof(GetWriteData), DisableDiscoveryEnumeration = true)]
     public void CircularChannelReadAndWriteTest(byte[] value)
     {
-        using var channel = new CircularChannel(nameof(CircularChannelReadAndWriteTest), BufferSize);
+        var name = nameof(CircularChannelReadAndWriteTest) + "-" + Guid.NewGuid().ToString("n");
+        using var channel = new CircularChannel(name, BufferSize);
         using var writer = channel.GetWriter();
         using var receiver = channel.GetReceiver();
 
