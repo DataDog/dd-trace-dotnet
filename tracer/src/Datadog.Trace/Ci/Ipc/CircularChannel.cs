@@ -64,16 +64,16 @@ internal partial class CircularChannel : IChannel
 
         try
         {
-            var fileInfo = new FileInfo(fileName);
-            if (fileInfo.Exists && fileInfo.Length != _bufferSize)
-            {
-                // Resize file if it exists but is too small
-                using var stream = new FileStream(fileName, FileMode.Open, FileAccess.Write, FileShare.None);
-                stream.SetLength(_bufferSize);
-            }
+            // Let's open or create the file we want to map
+            var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
 
-            _mmf = MemoryMappedFile.CreateFromFile(fileName, FileMode.OpenOrCreate, null, _bufferSize);
+            // Ensure we have the correct size
+            stream.SetLength(_bufferSize);
 
+            // Create the memory mapped file from the stream
+            _mmf = MemoryMappedFile.CreateFromFile(stream, null, _bufferSize, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, false);
+
+            // Initialize the write and read pointer
             using var accessor = _mmf.CreateViewAccessor();
             accessor.Write(0, (ushort)0); // Write pointer
             accessor.Write(2, (ushort)0); // Read pointer
