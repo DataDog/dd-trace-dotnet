@@ -156,8 +156,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // Run snapshot verification
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                await Verifier.Verify(orderedSpans, settings)
-                              .UseMethodName("_");
+                settings.UniqueForRuntime();
+                await Verifier.Verify(orderedSpans, settings);
             }
 
             telemetry?.Dispose();
