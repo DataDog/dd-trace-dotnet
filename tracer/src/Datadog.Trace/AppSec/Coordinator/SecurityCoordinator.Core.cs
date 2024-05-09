@@ -19,19 +19,14 @@ namespace Datadog.Trace.AppSec.Coordinator;
 
 internal readonly partial struct SecurityCoordinator
 {
-    private readonly HttpContext _context;
-
-    internal SecurityCoordinator(Security security, HttpContext context, Span span, HttpTransport? transport = null)
+    internal SecurityCoordinator(Security security, Span span, HttpTransport? transport = null)
     {
-        _context = context;
         _security = security;
         _localRootSpan = TryGetRoot(span);
-        _httpTransport = transport ?? new HttpTransport(context);
+        _httpTransport = transport ?? new HttpTransport(CoreHttpContextStore.Instance.Get());
     }
 
     private static bool CanAccessHeaders => true;
-
-    public static HttpContext Context => CoreHttpContextStore.Instance.Get();
 
     public static Dictionary<string, string[]> ExtractHeadersFromRequest(IHeaderDictionary headers)
     {
@@ -89,7 +84,7 @@ internal readonly partial struct SecurityCoordinator
 
     private Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
-        var request = _context.Request;
+        var request = _httpTransport.Context.Request;
         var headersDic = ExtractHeadersFromRequest(request.Headers);
 
         var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.Keys.Count);
@@ -100,7 +95,7 @@ internal readonly partial struct SecurityCoordinator
             var keyExists = cookiesDic.TryGetValue(currentKey, out var value);
             if (!keyExists)
             {
-                cookiesDic.Add(currentKey, new List<string> { cookie.Value ?? string.Empty });
+                cookiesDic.Add(currentKey, [cookie.Value ?? string.Empty]);
             }
             else
             {
@@ -150,31 +145,31 @@ internal readonly partial struct SecurityCoordinator
 
     internal class HttpTransport : HttpTransportBase
     {
-        private readonly HttpContext _context;
+        public HttpTransport(HttpContext context) => Context = context;
 
-        public HttpTransport(HttpContext context) => _context = context;
+        public override HttpContext Context { get; }
 
-        internal override bool IsBlocked => _context.Items[BlockingAction.BlockDefaultActionName] is true;
+        internal override bool IsBlocked => Context.Items[BlockingAction.BlockDefaultActionName] is true;
 
-        internal override int StatusCode => _context.Response.StatusCode;
+        internal override int StatusCode => Context.Response.StatusCode;
 
-        internal override IDictionary<string, object>? RouteData => _context.GetRouteData()?.Values;
+        internal override IDictionary<string, object>? RouteData => Context.GetRouteData()?.Values;
 
         internal override bool ReportedExternalWafsRequestHeaders
         {
-            get => _context.Items["ReportedExternalWafsRequestHeaders"] is true;
-            set => _context.Items["ReportedExternalWafsRequestHeaders"] = value;
+            get => Context.Items["ReportedExternalWafsRequestHeaders"] is true;
+            set => Context.Items["ReportedExternalWafsRequestHeaders"] = value;
         }
 
-        internal override void MarkBlocked() => _context.Items[BlockingAction.BlockDefaultActionName] = true;
+        internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;
 
-        internal override IContext GetAdditiveContext() => _context.Features.Get<IContext>();
+        internal override IContext GetAdditiveContext() => Context.Features.Get<IContext>();
 
-        internal override void SetAdditiveContext(IContext additiveContext) => _context.Features.Set(additiveContext);
+        internal override void SetAdditiveContext(IContext additiveContext) => Context.Features.Set(additiveContext);
 
-        internal override IHeadersCollection GetRequestHeaders() => new HeadersCollectionAdapter(_context.Request.Headers);
+        internal override IHeadersCollection GetRequestHeaders() => new HeadersCollectionAdapter(Context.Request.Headers);
 
-        internal override IHeadersCollection GetResponseHeaders() => new HeadersCollectionAdapter(_context.Response.Headers);
+        internal override IHeadersCollection GetResponseHeaders() => new HeadersCollectionAdapter(Context.Response.Headers);
     }
 }
 #endif
