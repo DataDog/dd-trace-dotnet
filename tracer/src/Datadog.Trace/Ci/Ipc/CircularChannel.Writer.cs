@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Threading;
 
 namespace Datadog.Trace.Ci.Ipc;
 
@@ -13,11 +14,11 @@ internal partial class CircularChannel
     private class Writer : IChannelWriter
     {
         private readonly CircularChannel _channel;
-        private bool _disposed;
+        private long _disposed;
 
         internal Writer(CircularChannel channel)
         {
-            _disposed = false;
+            _disposed = 0;
             _channel = channel;
         }
 
@@ -26,7 +27,7 @@ internal partial class CircularChannel
         public bool TryWrite(byte[] data)
         {
             var channel = _channel;
-            if (channel._disposed)
+            if (Interlocked.Read(ref _disposed) == 1 || Interlocked.Read(ref channel._disposed) == 1)
             {
                 Log.Error("CircularChannel: Channel is disposed. Cannot write data.");
                 return false;
@@ -105,18 +106,20 @@ internal partial class CircularChannel
             }
             finally
             {
-                channel._mutex.ReleaseMutex();
+                try
+                {
+                    channel._mutex.ReleaseMutex();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // The mutex was disposed, nothing to do
+                }
             }
         }
 
         public void Dispose()
         {
-            if (_disposed)
-            {
-                return;
-            }
-
-            _disposed = true;
+            Interlocked.Exchange(ref _disposed, 1);
         }
     }
 }

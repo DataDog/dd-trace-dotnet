@@ -25,7 +25,7 @@ internal partial class CircularChannel : IChannel
     private readonly MemoryMappedFile _mmf;
     private readonly Mutex _mutex;
     private readonly int _bufferSize;
-    private bool _disposed;
+    private long _disposed;
 
     private Writer? _writer;
     private Receiver? _receiver;
@@ -53,6 +53,7 @@ internal partial class CircularChannel : IChannel
             }
         }
 
+        _disposed = 0;
         _bufferSize = bufferSize;
         _mutex = new Mutex(false, $"{Path.GetFileNameWithoutExtension(fileName)}.mutex");
 
@@ -100,7 +101,7 @@ internal partial class CircularChannel : IChannel
 
     public void Dispose()
     {
-        if (_disposed)
+        if (Interlocked.Exchange(ref _disposed, 1) == 1)
         {
             return;
         }
@@ -109,6 +110,5 @@ internal partial class CircularChannel : IChannel
         _receiver?.Dispose();
         _mmf.Dispose();
         _mutex.Dispose();
-        _disposed = true;
     }
 }

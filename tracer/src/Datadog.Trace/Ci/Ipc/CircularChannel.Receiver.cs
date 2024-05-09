@@ -17,13 +17,13 @@ internal partial class CircularChannel
         private readonly Timer _pollingTimer;
         private readonly CircularChannel _channel;
         private readonly ManualResetEventSlim _pollingEventFinished;
-        private bool _disposed;
+        private long _disposed;
 
         public Receiver(CircularChannel channel)
         {
             _channel = channel;
             _pollingEventFinished = new ManualResetEventSlim(true);
-            _disposed = false;
+            _disposed = 0;
             _pollingTimer = new Timer(PollForMessages, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(PollingInterval));
         }
 
@@ -35,8 +35,9 @@ internal partial class CircularChannel
             try
             {
                 var channel = _channel;
-                if (channel._disposed)
+                if (Interlocked.Read(ref _disposed) == 1 || Interlocked.Read(ref channel._disposed) == 1)
                 {
+                    Log.Error("CircularChannel: Channel is disposed. Cannot read data.");
                     return;
                 }
 
@@ -108,7 +109,14 @@ internal partial class CircularChannel
                 }
                 finally
                 {
-                    channel._mutex.ReleaseMutex();
+                    try
+                    {
+                        channel._mutex.ReleaseMutex();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // The mutex was disposed, nothing to do
+                    }
                 }
 
                 // Once we have released the mutex, we can safely handle the messages
@@ -135,14 +143,13 @@ internal partial class CircularChannel
 
         public void Dispose()
         {
-            if (_disposed)
+            if (Interlocked.Exchange(ref _disposed, 1) == 1)
             {
                 return;
             }
 
-            _pollingEventFinished.Wait();
             _pollingTimer.Dispose();
-            _disposed = true;
+            _pollingEventFinished.Wait();
         }
     }
 }
