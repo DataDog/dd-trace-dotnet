@@ -67,7 +67,7 @@ internal partial class CircularChannel
                     return;
                 }
 
-                List<byte[]>? messagesToHandle = null;
+                object? messagesToHandle = null;
                 try
                 {
                     using var accessor = channel._mmf.CreateViewAccessor();
@@ -75,8 +75,6 @@ internal partial class CircularChannel
                     var readPos = accessor.ReadUInt16(2);
                     while (readPos != writePos)
                     {
-                        messagesToHandle ??= new List<byte[]>();
-
                         var absoluteReadPos = HeaderSize + readPos;
                         if (channel.BufferSize - absoluteReadPos < 2)
                         {
@@ -111,7 +109,18 @@ internal partial class CircularChannel
                         accessor.Write(2, nextReadPos); // Update read pointer
 
                         // We store all the messages before releasing the mutex to avoid blocking the producer for each event call
-                        messagesToHandle.Add(data);
+                        if (messagesToHandle is null)
+                        {
+                            messagesToHandle = data;
+                        }
+                        else if (messagesToHandle is byte[] prevItem)
+                        {
+                            messagesToHandle = new List<byte[]> { prevItem, data };
+                        }
+                        else if (messagesToHandle is List<byte[]> list)
+                        {
+                            list.Add(data);
+                        }
 
                         readPos = nextReadPos; // Update local readPos to continue reading if more data is available
                     }
@@ -133,18 +142,29 @@ internal partial class CircularChannel
                 }
 
                 // Once we have released the mutex, we can safely handle the messages
-                if (messagesToHandle is not null)
+                if (messagesToHandle is List<byte[]> messagesList)
                 {
-                    foreach (var data in messagesToHandle)
+                    foreach (var data in messagesList)
                     {
                         try
                         {
-                            MessageReceived?.Invoke(this, data);
+                            MessageReceived.Invoke(this, data);
                         }
                         catch (Exception ex)
                         {
                             CIVisibility.Log.Error(ex, "CircularChannel: Error during message event handling.");
                         }
+                    }
+                }
+                else if (messagesToHandle is byte[] data)
+                {
+                    try
+                    {
+                        MessageReceived.Invoke(this, data);
+                    }
+                    catch (Exception ex)
+                    {
+                        CIVisibility.Log.Error(ex, "CircularChannel: Error during message event handling.");
                     }
                 }
             }
