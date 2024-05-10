@@ -183,8 +183,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
                     // We need to stop the EFD feature off and set the session as a faulty.
                     // But session object is not available from the test host
-                    // TODO: Implement in another PR an IPC mechanism to communicate with the parent process with the test session instance
                     test.SetTag(EarlyFlakeDetectionTags.TestIsNew, (string)null);
+                    test.Suite?.Module?.TrySetSessionTag(EarlyFlakeDetectionTags.AbortReason, "faulty");
                     Log.Warning<long, long, int>("EFD: The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", nTestCases, tTestCases, faultySessionThreshold);
                 }
             }

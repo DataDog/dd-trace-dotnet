@@ -285,7 +285,9 @@ internal static class MsTestIntegration
                 }
 
                 Common.Log.Debug("Module: {Module}, Framework version: {Version}", assemblyName, frameworkVersion);
-                return TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
+                var newModule = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
+                newModule.EnableIpcClient();
+                return newModule;
             });
     }
 

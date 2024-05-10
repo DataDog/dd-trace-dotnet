@@ -14,6 +14,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Ipc;
+using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
@@ -41,6 +43,7 @@ public sealed class TestModule
     private readonly Span _span;
     private readonly Dictionary<string, TestSuite> _suites;
     private readonly TestSession? _fakeSession;
+    private IpcClient? _ipcClient = null;
     private int _finished;
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
@@ -494,6 +497,12 @@ public sealed class TestModule
             _fakeSession?.SetTag(CodeCoverageTags.Enabled, value);
         }
 
+        if (_ipcClient is not null)
+        {
+            _ipcClient.Dispose();
+            _ipcClient = null;
+        }
+
         span.Finish(duration.Value);
 
         // Record EventFinished telemetry metric
@@ -603,6 +612,73 @@ public sealed class TestModule
         lock (_suites)
         {
             _suites.Remove(name);
+        }
+    }
+
+    internal bool EnableIpcClient()
+    {
+        if (_fakeSession != null || Tags.SessionId == 0)
+        {
+            return false;
+        }
+
+        try
+        {
+            _ipcClient = new IpcClient($"session_{Tags.SessionId}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error enabling IPC client");
+            return false;
+        }
+    }
+
+    internal bool TrySetSessionTag(string name, string value)
+    {
+        if (_fakeSession is { } fakeSession)
+        {
+            fakeSession.SetTag(name, value);
+            return true;
+        }
+
+        if (_ipcClient is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return _ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error sending SetSessionTagMessage");
+            return false;
+        }
+    }
+
+    internal bool TrySetSessionTag(string name, double value)
+    {
+        if (_fakeSession is { } fakeSession)
+        {
+            fakeSession.SetTag(name, value);
+            return true;
+        }
+
+        if (_ipcClient is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return _ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error sending SetSessionTagMessage");
+            return false;
         }
     }
 }

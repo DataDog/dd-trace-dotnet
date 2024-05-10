@@ -26,11 +26,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         internal const IntegrationId DotnetTestIntegrationId = Configuration.IntegrationId.DotnetTest;
 
         internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
+        private static bool? _isDataCollectorDomainCache;
 
         internal static bool DotnetTestIntegrationEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
 
+        internal static bool IsDataCollectorDomain
+        {
+            get
+            {
+                if (_isDataCollectorDomainCache is { } value)
+                {
+                    return value;
+                }
+
+                return (_isDataCollectorDomainCache = DomainMetadata.Instance.AppDomainName.ToLowerInvariant().Contains("datacollector")).Value;
+            }
+        }
+
         internal static TestSession? CreateSession()
         {
+            // We create test session if not DataCollector
+            if (IsDataCollectorDomain)
+            {
+                return null;
+            }
+
             var ciVisibilitySettings = CIVisibility.Settings;
             var agentless = ciVisibilitySettings.Agentless;
             var isEvpProxy = CIVisibility.EventPlatformProxySupport != EventPlatformProxySupport.None;
@@ -54,6 +74,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 {
                     session.SetTag(IntelligentTestRunnerTags.TestsSkipped, "false");
                 }
+
+                // We enable the IPC server for the session
+                session.EnableIpcServer();
 
                 return session;
             }

@@ -64,7 +64,9 @@ public static class XUnitTestAssemblyRunnerRunAsyncIntegration
             }
 
             CIVisibility.WaitForSkippableTaskToFinish();
-            return new CallTargetState(null, TestModule.InternalCreate(testBundleString, CommonTags.TestingFrameworkNameXUnit, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty));
+            var module = TestModule.InternalCreate(testBundleString, CommonTags.TestingFrameworkNameXUnit, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty);
+            module.EnableIpcClient();
+            return new CallTargetState(null, module);
         }
 
         return CallTargetState.GetDefault();
