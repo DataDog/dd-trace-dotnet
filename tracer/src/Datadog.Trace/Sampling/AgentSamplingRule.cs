@@ -46,14 +46,6 @@ namespace Datadog.Trace.Sampling
 
                 if (_sampleRates.TryGetValue(key, out var matchingRate))
                 {
-                    // found a matching sampling rate by service/env
-                    Log.Debug(
-                        "Found agent sampling rate {Rate} for trace {TraceId} with service:{Service} and env:{Env}. ",
-                        matchingRate,
-                        span.Context.RawTraceId,
-                        service,
-                        env);
-
                     SetSamplingRateTag(span, matchingRate);
                     return matchingRate;
                 }
@@ -61,21 +53,12 @@ namespace Datadog.Trace.Sampling
 
             if (_defaultSamplingRate is { } defaultRate)
             {
-                // no match by service/env, use default rate with key "service:,env:"
-                Log.Debug(
-                    "Using default agent sampling rate {Rate} for trace {TraceId} with service:{Service} and env:{Env}. ",
-                    defaultRate,
-                    span.Context.RawTraceId,
-                    service,
-                    env);
-
                 SetSamplingRateTag(span, defaultRate);
                 return defaultRate;
             }
 
             // we don't have sampling rates from the agent yet (cold start),
             // fallback to 100% sampling rate, don't add "_dd.agent_psr" numeric tag
-            Log.Debug("No sampling rate found. Using default sampling rate of 1.0.");
             return 1;
 
             static void SetSamplingRateTag(Span span, float sampleRate)

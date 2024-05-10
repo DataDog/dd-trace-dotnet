@@ -32,33 +32,16 @@ namespace Datadog.Trace.Sampling
 
         public SamplingDecision MakeSamplingDecision(Span span)
         {
-            if (_rules.Count > 0)
+            foreach (var rule in _rules)
             {
-                foreach (var rule in _rules)
+                if (rule.IsMatch(span))
                 {
-                    if (rule.IsMatch(span))
-                    {
-                        var sampleRate = rule.GetSamplingRate(span);
-
-                        if (Log.IsEnabled(LogEventLevel.Debug))
-                        {
-                            Log.Debug(
-                                "Matched on rule {Rule}. Applying rate of {Rate} to trace id {TraceId}",
-                                rule,
-                                sampleRate,
-                                span.Context.RawTraceId);
-                        }
-
-                        return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
-                    }
+                    var sampleRate = rule.GetSamplingRate(span); // this can adds tags like "_dd.agent_psr" or "_dd.rule_psr"
+                    return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
                 }
             }
 
-            if (Log.IsEnabled(LogEventLevel.Debug))
-            {
-                Log.Debug("No rules matched for trace {TraceId}", span.Context.RawTraceId);
-            }
-
+            Log.Debug("No sampling rules matched for trace {TraceId}. Using default sampling decision.", span.Context.RawTraceId);
             return SamplingDecision.Default;
         }
 
