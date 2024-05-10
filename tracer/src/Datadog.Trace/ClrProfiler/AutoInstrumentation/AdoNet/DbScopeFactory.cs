@@ -6,8 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlTypes;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.Iast;
@@ -67,6 +70,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     IastModule.OnSqlQuery(commandText, integrationId);
                 }
 
+                RaspModule.OnSqlI(commandText, integrationId);
+
                 if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled
                     && command.CommandType != CommandType.StoredProcedure)
                 {
@@ -103,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not BlockException)
             {
                 Log.Error(ex, "Error creating or populating scope.");
             }

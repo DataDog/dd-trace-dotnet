@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Data.Common;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 
@@ -29,7 +30,9 @@ public class EntityCommandAspect
     {
         if (command is DbCommand dbCommand)
         {
-            IastModule.OnSqlQuery(dbCommand.CommandText, IntegrationId.SqlClient);
+            var commandText = dbCommand.CommandText;
+            IastModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
+            RaspModule.OnSqlI(commandText, IntegrationId.NHibernate);
         }
 
         return command;

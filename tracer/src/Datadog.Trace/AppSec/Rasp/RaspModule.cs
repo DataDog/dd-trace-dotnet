@@ -5,9 +5,11 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
@@ -16,6 +18,7 @@ namespace Datadog.Trace.AppSec.Rasp;
 
 internal static class RaspModule
 {
+    private const string GenericSqlDDBBType = "generic";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
 
     private static RaspRuleType? TryGetAddressRuleType(string address)
@@ -28,15 +31,35 @@ internal static class RaspModule
 
     internal static void OnLfi(string file)
     {
-        CheckVulnerability(AddressesConstants.FileAccess, file);
+        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.FileAccess] = file }, AddressesConstants.FileAccess);
     }
 
     internal static void OnSSRF(string url)
     {
-        CheckVulnerability(AddressesConstants.UrlAccess, url);
+        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.UrlAccess] = url }, AddressesConstants.UrlAccess);
     }
 
-    private static void CheckVulnerability(string address, string valueToCheck)
+    internal static void OnSqlI(string sql, IntegrationId id)
+    {
+        var ddbbType = SqlIntegrationIdToDDBBType(id);
+        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.DBStatement] = sql, [AddressesConstants.DBSystem] = ddbbType }, AddressesConstants.DBStatement);
+    }
+
+    private static string SqlIntegrationIdToDDBBType(IntegrationId id)
+    {
+        return id switch
+        {
+            IntegrationId.SqlClient => "sqlserver",
+            IntegrationId.MySql => "mysql",
+            IntegrationId.Npgsql => "postgresql",
+            IntegrationId.Oracle => "oracle",
+            IntegrationId.Sqlite => "sqlite",
+            IntegrationId.NHibernate => "nhibernate",
+            _ => GenericSqlDDBBType
+        };
+    }
+
+    private static void CheckVulnerability(Dictionary<string, object> arguments, string address)
     {
         var security = Security.Instance;
 
@@ -52,7 +75,6 @@ internal static class RaspModule
             return;
         }
 
-        var arguments = new Dictionary<string, object> { [address] = valueToCheck };
         RunWafRasp(arguments, rootSpan, address);
     }
 

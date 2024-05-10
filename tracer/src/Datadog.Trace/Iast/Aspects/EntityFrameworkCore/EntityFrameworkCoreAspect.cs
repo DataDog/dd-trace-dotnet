@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 
@@ -31,6 +32,7 @@ public class EntityFrameworkCoreAspect
     public static object ReviewSqlString(string sqlAsString)
     {
         IastModule.OnSqlQuery(sqlAsString, IntegrationId.SqlClient);
+        RaspModule.OnSqlI(sqlAsString, IntegrationId.SqlClient);
         return sqlAsString;
     }
 }

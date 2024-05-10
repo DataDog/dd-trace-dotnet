@@ -5,8 +5,10 @@
 
 #nullable enable
 
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
+using static Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Iast.Aspects.NHibernate;
 
@@ -26,6 +28,7 @@ public class ISessionAspect
     public static object AnalyzeQuery(string query)
     {
         IastModule.OnSqlQuery(query, IntegrationId.NHibernate);
+        RaspModule.OnSqlI(query, IntegrationId.NHibernate);
         return query;
     }
 }
