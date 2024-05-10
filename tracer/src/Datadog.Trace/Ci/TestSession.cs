@@ -558,19 +558,23 @@ public sealed class TestSession
 
         try
         {
-            _ipcServer = new IpcServer($"session_{Tags.SessionId}");
+            var name = $"session_{Tags.SessionId}";
+            CIVisibility.Log.Debug("TestSession.Enabling IPC server: {Name}", name);
+            _ipcServer = new IpcServer(name);
             _ipcServer.MessageReceived += OnIpcMessageReceived;
             return true;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error enabling IPC server");
+            CIVisibility.Log.Error(ex, "Error enabling IPC server");
             return false;
         }
     }
 
     private void OnIpcMessageReceived(object? sender, object message)
     {
+        CIVisibility.Log.Debug("TestSession.OnIpcMessageReceived: {Message}", message);
+
         // If the session is already finished, we ignore the message
         if (Interlocked.CompareExchange(ref _finished, 1, 1) == 1)
         {
@@ -582,18 +586,18 @@ public sealed class TestSession
         {
             if (tagMessage.Value is not null)
             {
-                Log.Information("Session.ReceiveMessage (meta): {Name}={Value}", tagMessage.Name, tagMessage.Value);
+                CIVisibility.Log.Information("TestSession.ReceiveMessage (meta): {Name}={Value}", tagMessage.Name, tagMessage.Value);
                 SetTag(tagMessage.Name, tagMessage.Value);
             }
             else if (tagMessage.NumberValue is not null)
             {
-                Log.Information("Session.ReceiveMessage (metric): {Name}={Value}", tagMessage.Name, tagMessage.NumberValue);
+                CIVisibility.Log.Information("TestSession.ReceiveMessage (metric): {Name}={Value}", tagMessage.Name, tagMessage.NumberValue);
                 SetTag(tagMessage.Name, tagMessage.NumberValue);
             }
         }
         else if (message is SessionCodeCoverageMessage { Value: >= 0.0 } codeCoverageMessage)
         {
-            Log.Information("Session.ReceiveMessage (code coverage): {Value}", codeCoverageMessage.Value);
+            CIVisibility.Log.Information("TestSession.ReceiveMessage (code coverage): {Value}", codeCoverageMessage.Value);
 
             // Adds the global code coverage percentage to the session
             SetTag(CodeCoverageTags.Enabled, "true");

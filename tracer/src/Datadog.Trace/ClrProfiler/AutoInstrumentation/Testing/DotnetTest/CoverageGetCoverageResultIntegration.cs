@@ -42,7 +42,8 @@ public class CoverageGetCoverageResultIntegration
         {
             var coverageSummary = Activator.CreateInstance(coverageSummaryType).DuckCast<ICoverageSummaryProxy>();
             var coverageDetails = coverageSummary!.CalculateLineCoverage(returnValue.Modules);
-            DotnetCommon.Log.Information("CoverageGetCoverageResult.Percentage: {Value}", coverageDetails.Percent);
+            var percentage = coverageDetails.Percent;
+            DotnetCommon.Log.Information("CoverageGetCoverageResult.Percentage: {Value}", percentage);
 
             // Extract session variables (from out of process sessions)
             if (SpanContextPropagator.Instance.Extract(
@@ -51,8 +52,11 @@ public class CoverageGetCoverageResultIntegration
             {
                 try
                 {
-                    using var ipcClient = new IpcClient($"session_{sessionContext.SpanId}");
-                    ipcClient.TrySendMessage(new SessionCodeCoverageMessage(coverageDetails.Percent));
+                    var name = $"session_{sessionContext.SpanId}";
+                    Common.Log.Debug("DataCollector.Enabling IPC client: {Name}", name);
+                    using var ipcClient = new IpcClient(name);
+                    Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", percentage);
+                    ipcClient.TrySendMessage(new SessionCodeCoverageMessage(percentage));
                 }
                 catch (Exception ex)
                 {

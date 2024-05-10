@@ -35,8 +35,6 @@ namespace Datadog.Trace.Ci;
 /// </summary>
 public sealed class TestModule
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestModule>();
-
     private static readonly AsyncLocal<TestModule?> CurrentModule = new();
     private static readonly HashSet<TestModule> OpenedTestModules = new();
 
@@ -150,7 +148,7 @@ public sealed class TestModule
             }
             else
             {
-                Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
+                CIVisibility.Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
                 _fakeSession = TestSession.InternalGetOrCreate(System.Environment.CommandLine, System.Environment.CurrentDirectory, null, startDate, false);
                 if (_fakeSession.Tags is { } fakeSessionTags)
                 {
@@ -624,12 +622,14 @@ public sealed class TestModule
 
         try
         {
-            _ipcClient = new IpcClient($"session_{Tags.SessionId}");
+            var name = $"session_{Tags.SessionId}";
+            CIVisibility.Log.Debug("TestModule.Enabling IPC client: {Name}", name);
+            _ipcClient = new IpcClient(name);
             return true;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error enabling IPC client");
+            CIVisibility.Log.Error(ex, "Error enabling IPC client");
             return false;
         }
     }
@@ -649,11 +649,12 @@ public sealed class TestModule
 
         try
         {
+            CIVisibility.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
             return _ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error sending SetSessionTagMessage");
+            CIVisibility.Log.Error(ex, "Error sending SetSessionTagMessage");
             return false;
         }
     }
@@ -673,11 +674,12 @@ public sealed class TestModule
 
         try
         {
+            CIVisibility.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
             return _ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error sending SetSessionTagMessage");
+            CIVisibility.Log.Error(ex, "Error sending SetSessionTagMessage");
             return false;
         }
     }
