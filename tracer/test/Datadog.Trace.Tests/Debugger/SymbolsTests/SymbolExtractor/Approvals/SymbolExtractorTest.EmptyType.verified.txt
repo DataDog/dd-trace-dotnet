@@ -32,7 +32,15 @@
                   "sanitized"
                 ],
                 "return_type": "System.Void"
-              }
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.EmptyType",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ]
             }
           ]
         }
