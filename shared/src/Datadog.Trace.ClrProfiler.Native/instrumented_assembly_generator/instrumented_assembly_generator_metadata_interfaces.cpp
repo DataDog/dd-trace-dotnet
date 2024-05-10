@@ -152,7 +152,7 @@ void MetadataInterfaces::WriteMetadataChange(const mdToken* pToken,
 
     shared::WSTRING fileNameString;
 
-#ifndef MACOS
+#if !defined(MACOS) && !defined(UNIVERSAL)
     shared::WSTRINGSTREAM fileNameStream;
     fileNameStream << mvid << FileNameSeparator << GetCleanedFileName(moduleName) << ModuleMembersFileExtension;
     fileNameString = fileNameStream.str();
@@ -162,7 +162,7 @@ void MetadataInterfaces::WriteMetadataChange(const mdToken* pToken,
 
     shared::WSTRING stringString;
 
-#ifndef MACOS
+#if !defined(MACOS) && !defined(UNIVERSAL)
     shared::WSTRINGSTREAM stringStream;
     // each line in the file is: "token=name"
     // TODO: handle empty token

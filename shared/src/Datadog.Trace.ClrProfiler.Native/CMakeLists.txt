@@ -54,6 +54,10 @@ if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     SET(BIT64 true)
 endif()
 
+option(UNIVERSAL "Build as Universal binary" OFF)
+
+message(STATUS "Building Native Loader as Univeral binary: " ${UNIVERSAL})
+
 # ******************************************************
 # Detect prerequisites
 # ******************************************************
@@ -102,14 +106,22 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 # ******************************************************
 
 # Sets compiler options
-add_compile_options(-std=c++20 -fPIC -fms-extensions -fvisibility=hidden -g)
+add_compile_options(-std=c++20 -fPIC -fms-extensions -g)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
-if (ISMACOS)
+
+if (UNIVERSAL)
+    add_compile_options(-stdlib=libc++ -DUNIVERSAL)
+elseif (ISMACOS)
     add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations)
-elseif(ISLINUX)
-    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+else()
+    add_compile_options(-stdlib=libstdc++)
 endif()
+
+if(ISLINUX)
+    add_compile_options(-DLINUX -Wno-pragmas)
+endif()
+
 if (BIT64)
     add_compile_options(-DBIT64 -DHOST_64BIT)
 else()
@@ -138,6 +150,8 @@ if (ISMACOS)
     SET(CMAKE_C_ARCHIVE_FINISH   "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
     SET(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
 endif()
+
+set(dd_profiling_linker_script "${CMAKE_CURRENT_SOURCE_DIR}/datadog_profiling.version")
 
 # ******************************************************
 # Define target
@@ -181,6 +195,8 @@ elseif(ISLINUX)
         coreclr
         spdlog-headers
         -Wl,--build-id
+        -Wl,--no-undefined
+        -Wl,-version-script=${dd_profiling_linker_script}
     )
 endif()
 
