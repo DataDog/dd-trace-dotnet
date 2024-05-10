@@ -71,7 +71,7 @@ internal static class EntryAssemblyLocator
     }
 
 #if NETFRAMEWORK
-    private static bool IsMicrosoftAssembly(Assembly assembly) => assembly.FullName!.StartsWith("Microsoft.") || assembly.FullName.StartsWith("System.");
+    private static bool IsMicrosoftAssembly(Assembly assembly) => assembly.FullName?.StartsWith("Microsoft.") == true || assembly.FullName?.StartsWith("System.") == true;
 
     /// <summary>
     /// ! This method should be called from within a try-catch block !

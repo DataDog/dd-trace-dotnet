@@ -50,5 +50,14 @@
       </PropertyGroup>
     </Otherwise>
   </Choose>
+
+  <!-- Fix C5105 Warning (warning C5105: macro expansion producing 'defined' has undefined behavior) due to a bug in the Windows SDK 10.0.19041.0
+       This can be removed when we upgrade the Windows SDK
+  -->
+  <ItemDefinitionGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
+    <ClCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS=1</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   
 </Project>

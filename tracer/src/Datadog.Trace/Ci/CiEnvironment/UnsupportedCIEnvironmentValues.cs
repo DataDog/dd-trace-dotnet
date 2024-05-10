@@ -4,6 +4,10 @@
 // </copyright>
 #nullable enable
 
+using System;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Pdb;
+
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class UnsupportedCIEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
@@ -17,5 +21,19 @@ internal sealed class UnsupportedCIEnvironmentValues<TValueProvider>(TValueProvi
         Repository = gitInfo.Repository;
         SourceRoot = gitInfo.SourceRoot;
         WorkspacePath = gitInfo.SourceRoot;
+
+        if (string.IsNullOrEmpty(Commit) || string.IsNullOrEmpty(Repository))
+        {
+            if (EntryAssemblyLocator.GetEntryAssembly() is { } assembly)
+            {
+                Log.Information("CIEnvironmentValues: Commit or Repository is empty, trying to load from SourceLink");
+                if (SourceLinkInformationExtractor.TryGetSourceLinkInfo(assembly, out var commitSha, out var repositoryUrl))
+                {
+                    Log.Information("Found SourceLink information for assembly {Name}: commit {CommitSha} from {RepositoryUrl}", assembly.GetName().Name, commitSha, repositoryUrl);
+                    Commit ??= commitSha;
+                    Repository ??= repositoryUrl;
+                }
+            }
+        }
     }
 }
