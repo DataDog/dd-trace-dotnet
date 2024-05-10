@@ -54,7 +54,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
         {
             for (int i = 0; i < trace.Count; i++)
             {
-                var span = trace.Array[i + trace.Offset];
+                var span = trace.Array![i + trace.Offset];
                 if (span.IsTopLevel || span.GetMetric(Tags.Measured) == 1.0 || span.GetMetric(Tags.PartialSnapshot) > 0)
                 {
                     UpdateSpan(span);
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
             for (int i = 0; i < trace.Count; i++)
             {
-                var span = trace.Array[i + trace.Offset];
+                var span = trace.Array![i + trace.Offset];
                 if (span.IsTopLevel || span.GetMetric(Tags.Measured) == 1.0 || span.GetMetric(Tags.PartialSnapshot) > 0)
                 {
                     // Follow agent implementation to mark and exit on first sampled span
