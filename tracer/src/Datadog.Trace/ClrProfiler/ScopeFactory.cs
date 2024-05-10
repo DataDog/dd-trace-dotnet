@@ -120,13 +120,6 @@ namespace Datadog.Trace.ClrProfiler
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
-
-                if (!addToTraceContext && span.Context.TraceContext.SamplingPriority == null)
-                {
-                    // If we don't add the span to the trace context, then we need to manually call the sampler
-                    var samplingDecision = tracer.CurrentTraceSettings.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
-                    span.Context.TraceContext.SetSamplingPriority(samplingDecision);
-                }
             }
             catch (Exception ex)
             {
