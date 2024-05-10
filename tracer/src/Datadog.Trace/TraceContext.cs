@@ -228,6 +228,7 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
+                GetOrMakeSamplingDecision();
                 RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
             }
@@ -246,6 +247,7 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
+                GetOrMakeSamplingDecision();
                 RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
             }
@@ -315,11 +317,12 @@ namespace Datadog.Trace
                 return;
             }
 
-            if (SamplingPriorityValues.IsDrop(SamplingPriority))
+            if (SamplingPriority is { } samplingPriority && SamplingPriorityValues.IsDrop(samplingPriority))
             {
                 for (int i = 0; i < spans.Count; i++)
                 {
-                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array![i + spans.Offset]);
+                    var span = spans.Array![i + spans.Offset];
+                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(span);
                 }
             }
         }
