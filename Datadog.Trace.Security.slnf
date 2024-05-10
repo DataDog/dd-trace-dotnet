@@ -18,7 +18,8 @@
       "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCoreBare\\Samples.Security.AspNetCoreBare.csproj",
       "tracer\\test\\test-applications\\security\\aspnet\\Samples.Security.AspNetMvc5\\Samples.Security.AspNetMvc5.csproj",
       "tracer\\test\\test-applications\\security\\aspnet\\Samples.Security.WebApi\\Samples.Security.WebApi.csproj",
-      "tracer\\test\\test-applications\\security\\aspnet\\Samples.Security.WebForms\\Samples.Security.WebForms.csproj"
+      "tracer\\test\\test-applications\\security\\aspnet\\Samples.Security.WebForms\\Samples.Security.WebForms.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.GrpcDotNet\\Samples.GrpcDotNet.csproj",
     ]
   }
 }

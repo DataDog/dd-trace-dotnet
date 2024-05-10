@@ -22,17 +22,27 @@ namespace Datadog.Trace.Pdb.SourceLink
         /// </summary>
         internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
         {
-            var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            if (!uri.OriginalString.StartsWith(@"https://api.bitbucket.org/2.0/repositories/") || segments.Length < 6 || !IsValidCommitSha(segments[5]))
+            repositoryUrl = null;
+            commitSha = null;
+
+            try
             {
-                repositoryUrl = null;
-                commitSha = null;
-                return false;
+                var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                if (!uri.OriginalString.StartsWith(@"https://api.bitbucket.org/2.0/repositories/") || segments.Length < 6 || !IsValidCommitSha(segments[5]))
+                {
+                    return false;
+                }
+
+                repositoryUrl = $"https://bitbucket.org/{segments[2]}/{segments[3]}";
+                commitSha = segments[5];
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while trying to parse BitBucket SourceLink URL");
             }
 
-            repositoryUrl = $"https://bitbucket.org/{segments[2]}/{segments[3]}";
-            commitSha = segments[5];
-            return true;
+            return false;
         }
     }
 }

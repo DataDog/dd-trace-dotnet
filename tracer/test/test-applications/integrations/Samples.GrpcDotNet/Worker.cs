@@ -60,12 +60,17 @@ public class Worker : BackgroundService
             await SendServerStreamingRequest(client, stoppingToken);
             await SendClientStreamingRequest(client, stoppingToken);
             await SendBothStreamingRequest(client, stoppingToken);
-            await SendErrorsAsync(client);
-            await SendVerySlowRequestAsync(client);
 
-            SendUnaryRequest(client);
-            SendErrors(client);
-            SendVerySlowRequest(client);
+            // Only run these tests if not a IAST Test
+            if (Environment.GetEnvironmentVariable("IAST_GRPC_SOURCE_TEST") == null)
+            {
+                await SendErrorsAsync(client);
+                await SendVerySlowRequestAsync(client);
+
+                SendUnaryRequest(client);
+                SendErrors(client);
+                SendVerySlowRequest(client);
+            }
         }
         catch (Exception ex)
         {

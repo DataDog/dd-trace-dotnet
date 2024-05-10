@@ -87,6 +87,7 @@ namespace Honeypot
             NugetPackages.Add("Grpc.AspNetCore.Server", new string[] { "Grpc.AspNetCore" });
             NugetPackages.Add("Grpc.Net.Client", new string[] { "Grpc.AspNetCore" });
             NugetPackages.Add("Grpc.Core", new string[] { "Grpc" });
+            NugetPackages.Add("Google.Protobuf", new string[] { "Google.Protobuf" });
             NugetPackages.Add("Microsoft.AspNetCore.Mvc.Core", new [] { "Microsoft.AspNetCore.Mvc.Core" });
             NugetPackages.Add("Microsoft.AspNetCore.Identity", new [] { "Microsoft.AspNetCore.Identity" });
             NugetPackages.Add("Microsoft.Extensions.Identity.Core", new [] { "Microsoft.Extensions.Identity.Core" });
