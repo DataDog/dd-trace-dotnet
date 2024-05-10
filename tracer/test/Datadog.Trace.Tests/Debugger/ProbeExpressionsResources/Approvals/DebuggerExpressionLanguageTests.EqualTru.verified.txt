@@ -1,18 +1,14 @@
 ﻿Condition:
 Json:
 {
-    "eq": [
-        {
-            "getmember": [
-                {
-                    "ref": "Nested"
-                },
-                "NestedString"
-            ]
-        },
-        "Hello from nested object"
-    ]
+  "eq": [
+    {
+      "ref": "BooleanValue"
+    },
+    tru
+  ]
 }
+
 Expression: (
     scopeMember,
     scopeMember,
@@ -20,6 +16,7 @@ Expression: (
     exception,
     scopeMemberArray) =>
 {
+    bool $dd_el_result;
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
     var @return = (string)scopeMember.Value;
     var @duration = (TimeSpan)scopeMember.Value;
@@ -37,8 +34,9 @@ Expression: (
     var StringArg = (string)scopeMemberArray[10].Value;
     var CollectionArg = (List<string>)scopeMemberArray[11].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[12].Value;
-    var $dd_el_result = this.Nested.NestedString == "Hello from nested object";
 
-    return $dd_el_result;
+    return true;
 }
 Result: True
+Errors:
+EvaluationError { Expression = BooleanValue == N/A, Message = Error parsing boolean value. Path 'eq[0]', line 7, position 7. }

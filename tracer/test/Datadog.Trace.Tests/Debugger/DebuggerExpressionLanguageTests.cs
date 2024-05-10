@@ -43,6 +43,7 @@ namespace Datadog.Trace.Tests.Debugger
                 IntNumber = 42,
                 DoubleNumber = 3.14159,
                 String = "Hello world!",
+                BooleanValue = true,
                 Null = null,
                 Nested = new TestStruct.NestedObject { NestedString = "Hello from nested object", Nested = new TestStruct.NestedObject { NestedString = "Hello from another nested object" } },
                 ChildNested = new TestStruct.ChildNestedObject(),
@@ -201,6 +202,7 @@ namespace Datadog.Trace.Tests.Debugger
             scope.AddMember(new ScopeMember("DictionaryLocal", TestObject.Dictionary.GetType(), TestObject.Dictionary, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("NestedObjectLocal", TestObject.Nested.GetType(), TestObject.Nested, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("NullLocal", TestObject.Nested.GetType(), TestObject.Null, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("BooleanValue", TestObject.BooleanValue.GetType(), TestObject.BooleanValue, ScopeMemberKind.Local));
 
             // Add arguments
             scope.AddMember(new ScopeMember("IntArg", TestObject.IntNumber.GetType(), TestObject.IntNumber, ScopeMemberKind.Argument));
@@ -333,6 +335,8 @@ namespace Datadog.Trace.Tests.Debugger
             public NestedObject ParentAsChildNested;
 
             public NestedObject Null;
+
+            public bool BooleanValue;
 
             internal class NestedObject
             {
