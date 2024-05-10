@@ -38,7 +38,20 @@ namespace Datadog.Trace.Ci
 
         public static bool Enabled => _enabledLazy.Value;
 
-        public static bool IsRunning => Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
+        public static bool IsRunning
+        {
+            get
+            {
+                // We try first the fast path, if the value is 0 we are running, so we can avoid the Interlocked operation.
+                if (_firstInitialization == 0)
+                {
+                    return true;
+                }
+
+                // If the value is not 0, maybe the value hasn't been updated yet, so we use the Interlocked operation to ensure the value is correct.
+                return Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
+            }
+        }
 
         public static CIVisibilitySettings Settings
         {
@@ -525,6 +538,51 @@ namespace Datadog.Trace.Ci
 
         private static async Task ShutdownAsync()
         {
+            // Let's close any opened test, suite, modules and sessions before shutting down to avoid losing any data.
+            // But marking them as failed.
+
+            var exception = LifetimeManager.Instance.CurrentException;
+
+            foreach (var test in Test.ActiveTests)
+            {
+                if (exception is not null)
+                {
+                    test.SetErrorInfo(exception);
+                }
+
+                test.Close(TestStatus.Fail);
+            }
+
+            foreach (var testSuite in TestSuite.ActiveTestSuites)
+            {
+                if (exception is not null)
+                {
+                    testSuite.SetErrorInfo(exception);
+                }
+
+                testSuite.Close();
+            }
+
+            foreach (var testModule in TestModule.ActiveTestModules)
+            {
+                if (exception is not null)
+                {
+                    testModule.SetErrorInfo(exception);
+                }
+
+                await testModule.CloseAsync().ConfigureAwait(false);
+            }
+
+            foreach (var testSession in TestSession.ActiveTestSessions)
+            {
+                if (exception is not null)
+                {
+                    testSession.SetErrorInfo(exception);
+                }
+
+                await testSession.CloseAsync(TestStatus.Fail).ConfigureAwait(false);
+            }
+
             await FlushAsync().ConfigureAwait(false);
             MethodSymbolResolver.Instance.Clear();
         }

@@ -119,5 +119,8 @@ namespace Datadog.Trace
             // so it can be converted automatically by the backend (only if a measurement facet is created for this tag)
             return span.SetTag(key, value?.ToString());
         }
+
+        internal static bool IsCiVisibilitySpan(this ISpan span)
+            => span.Type is SpanTypes.TestSession or SpanTypes.TestModule or SpanTypes.TestSuite or SpanTypes.Test or SpanTypes.Browser;
     }
 }

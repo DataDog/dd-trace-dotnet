@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci.CiEnvironment;
@@ -25,6 +26,8 @@ namespace Datadog.Trace.Ci;
 public sealed class Test
 {
     private static readonly AsyncLocal<Test?> CurrentTest = new();
+    private static readonly HashSet<Test> OpenedTests = new();
+
     private readonly Scope _scope;
     private int _finished;
     private List<Action<Test>>? _onCloseActions;
@@ -63,6 +66,11 @@ public sealed class Test
         }
 
         CurrentTest.Value = this;
+        lock (OpenedTests)
+        {
+            OpenedTests.Add(this);
+        }
+
         CIVisibility.Log.Debug("######### New Test Created: {Name} ({Suite} | {Module})", Name, Suite.Name, Suite.Module.Name);
 
         if (startDate is null)
@@ -104,6 +112,20 @@ public sealed class Test
     {
         get => CurrentTest.Value;
         set => CurrentTest.Value = value;
+    }
+
+    /// <summary>
+    /// Gets the active tests
+    /// </summary>
+    internal static IReadOnlyCollection<Test> ActiveTests
+    {
+        get
+        {
+            lock (OpenedTests)
+            {
+                return OpenedTests.Count == 0 ? [] : OpenedTests.ToArray();
+            }
+        }
     }
 
     /// <summary>
@@ -429,6 +451,11 @@ public sealed class Test
         }
 
         Current = null;
+        lock (OpenedTests)
+        {
+            OpenedTests.Remove(this);
+        }
+
         CIVisibility.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
     }
 
