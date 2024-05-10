@@ -1554,13 +1554,17 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
+        
+    # Not using chocolatey as we're getting 429 Too Many Requests
+    - template: steps/install-msi.yml
+      parameters:
+        url: "https://functionscdn.azureedge.net/public/artifacts/v4/latest/func-cli-x64.msi"
+        filename: "func-cli-x64.msi"
+        addToPath: "C:\\Program Files\\Microsoft\\Azure Functions Core Tools"
 
-    - script: |
-        $(runtimeInstall)
-        func
-      displayName: 'Install Azure Functions core tools'
+    - script: func
+      displayName: 'Display Azure Functions core tools'
       workingDirectory: $(Pipeline.Workspace)
-      retryCountOnTaskFailure: 5
 
     - script: |
         "%ProgramFiles(x86)%\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe" start
@@ -1596,13 +1600,6 @@ stages:
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
-
-    - script: |
-        $(runtimeUninstall)
-      displayName: 'Uninstall Azure Functions core tools'
-      workingDirectory: $(Pipeline.Workspace)
-      condition: succeededOrFailed()
-      continueOnError: true
 
 - stage: static_analysis_checks_tracer
   dependsOn: [merge_commit_id]
