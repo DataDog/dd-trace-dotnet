@@ -56,10 +56,10 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        // null/empty/whitespace
-        [InlineData(null, null, null, null, "dd=p:0000000000000002")]
-        [InlineData(null, "", "", "", "dd=p:0000000000000002")]
-        [InlineData(null, " ", " ", " ", "dd=p:0000000000000002")]
+        // null/empty/whitespace (sampling priority default is 1)
+        [InlineData(null, null, null, null, "dd=s:1;p:0000000000000002")]
+        [InlineData(null, "", "", "", "dd=s:1;p:0000000000000002")]
+        [InlineData(null, " ", " ", " ", "dd=s:1;p:0000000000000002")]
         // sampling priority only
         [InlineData(SamplingPriorityValues.UserReject, null, null, null, "dd=s:-1;p:0000000000000002")]
         [InlineData(SamplingPriorityValues.AutoReject, null, null, null, "dd=s:0;p:0000000000000002")]
@@ -68,19 +68,19 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData(3, null, null, null, "dd=s:3;p:0000000000000002")]
         [InlineData(-5, null, null, null, "dd=s:-5;p:0000000000000002")]
         // origin only
-        [InlineData(null, "abc", null, null, "dd=o:abc;p:0000000000000002")]
-        [InlineData(null, "synthetics~;,=web", null, null, "dd=o:synthetics___~web;p:0000000000000002")]
+        [InlineData(null, "abc", null, null, "dd=s:1;o:abc;p:0000000000000002")]
+        [InlineData(null, "synthetics~;,=web", null, null, "dd=s:1;o:synthetics___~web;p:0000000000000002")]
         // propagated tags only
-        [InlineData(null, null, "_dd.p.a=1", null, "dd=p:0000000000000002;t.a:1")]
-        [InlineData(null, null, "_dd.p.a=1,_dd.p.b=2", null, "dd=p:0000000000000002;t.a:1;t.b:2")]
-        [InlineData(null, null, "_dd.p.a=1,b=2", null, "dd=p:0000000000000002;t.a:1")]
-        [InlineData(null, null, "_dd.p.usr.id=MTIzNDU=", null, "dd=p:0000000000000002;t.usr.id:MTIzNDU~")] // convert '=' to '~'
+        [InlineData(null, null, "_dd.p.a=1", null, "dd=s:1;p:0000000000000002;t.a:1")]
+        [InlineData(null, null, "_dd.p.a=1,_dd.p.b=2", null, "dd=s:1;p:0000000000000002;t.a:1;t.b:2")]
+        [InlineData(null, null, "_dd.p.a=1,b=2", null, "dd=s:1;p:0000000000000002;t.a:1")]
+        [InlineData(null, null, "_dd.p.usr.id=MTIzNDU=", null, "dd=s:1;p:0000000000000002;t.usr.id:MTIzNDU~")] // convert '=' to '~'
         // additional state only
-        [InlineData(null, null, null, "key1=value1,key2=value2", "dd=p:0000000000000002,key1=value1,key2=value2")]
+        [InlineData(null, null, null, "key1=value1,key2=value2", "dd=s:1;p:0000000000000002,key1=value1,key2=value2")]
         // combined
         [InlineData(SamplingPriorityValues.UserKeep, "rum", null, "key1=value1", "dd=s:2;o:rum;p:0000000000000002,key1=value1")]
         [InlineData(SamplingPriorityValues.AutoReject, null, "_dd.p.a=b", "key1=value1", "dd=s:0;p:0000000000000002;t.a:b,key1=value1")]
-        [InlineData(null, "rum", "_dd.p.a=b", "key1=value1", "dd=o:rum;p:0000000000000002;t.a:b,key1=value1")]
+        [InlineData(null, "rum", "_dd.p.a=b", "key1=value1", "dd=s:1;o:rum;p:0000000000000002;t.a:b,key1=value1")]
         [InlineData(SamplingPriorityValues.AutoKeep, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1", "dd=s:1;o:rum;p:0000000000000002;t.dm:-4;t.usr.id:12345,key1=value1")]
         public void CreateTraceStateHeader(int? samplingPriority, string origin, string tags, string additionalState, string expected)
         {
