@@ -146,12 +146,6 @@ namespace Datadog.Trace
             if (Interlocked.CompareExchange(ref _rootSpan, span, null) == null)
             {
                 span.MarkSpanForExceptionDebugging();
-
-                // if we don't have a sampling priority yet, make a sampling decision now
-                if (_samplingPriority == null)
-                {
-                    SetSamplingPriority(CurrentTraceSettings?.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default);
-                }
             }
 
             lock (_rootSpan)
