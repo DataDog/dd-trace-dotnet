@@ -1654,7 +1654,8 @@ stages:
   condition: >
     and(
       succeeded(), 
-      eq(variables['isBenchmarksOnlyBuild'], 'False')
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
   dependsOn: [merge_commit_id, generate_variables]
   variables:
