@@ -204,7 +204,7 @@ namespace Datadog.Trace
                     _spans = default;
                     TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
                 }
-                else if (CIVisibility.IsRunning && span.Type is SpanTypes.TestSession or SpanTypes.TestModule or SpanTypes.TestSuite or SpanTypes.Test or SpanTypes.Browser)
+                else if (CIVisibility.IsRunning && span.IsCiVisibilitySpan())
                 {
                     // TestSession, TestModule, TestSuite, Test and Browser spans are part of CI Visibility
                     // all of them are known to be Root spans, so we can flush them as soon as they are closed

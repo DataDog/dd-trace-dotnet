@@ -541,9 +541,11 @@ namespace Datadog.Trace.Ci
             // Let's close any opened test, suite, modules and sessions before shutting down to avoid losing any data.
             // But marking them as failed.
 
+            var exception = LifetimeManager.Instance.CurrentException;
+
             foreach (var test in Test.ActiveTests)
             {
-                if (LifetimeManager.Instance.CurrentException is { } exception)
+                if (exception is not null)
                 {
                     test.SetErrorInfo(exception);
                 }
@@ -553,7 +555,7 @@ namespace Datadog.Trace.Ci
 
             foreach (var testSuite in TestSuite.ActiveTestSuites)
             {
-                if (LifetimeManager.Instance.CurrentException is { } exception)
+                if (exception is not null)
                 {
                     testSuite.SetErrorInfo(exception);
                 }
@@ -563,7 +565,7 @@ namespace Datadog.Trace.Ci
 
             foreach (var testModule in TestModule.ActiveTestModules)
             {
-                if (LifetimeManager.Instance.CurrentException is { } exception)
+                if (exception is not null)
                 {
                     testModule.SetErrorInfo(exception);
                 }
@@ -573,7 +575,7 @@ namespace Datadog.Trace.Ci
 
             foreach (var testSession in TestSession.ActiveTestSessions)
             {
-                if (LifetimeManager.Instance.CurrentException is { } exception)
+                if (exception is not null)
                 {
                     testSession.SetErrorInfo(exception);
                 }
