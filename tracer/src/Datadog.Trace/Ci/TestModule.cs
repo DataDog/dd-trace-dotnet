@@ -36,6 +36,8 @@ public sealed class TestModule
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestModule>();
 
     private static readonly AsyncLocal<TestModule?> CurrentModule = new();
+    private static readonly HashSet<TestModule> OpenedTestModules = new();
+
     private readonly Span _span;
     private readonly Dictionary<string, TestSuite> _suites;
     private readonly TestSession? _fakeSession;
@@ -179,6 +181,11 @@ public sealed class TestModule
 
         _span = span;
         Current = this;
+        lock (OpenedTestModules)
+        {
+            OpenedTestModules.Add(this);
+        }
+
         CIVisibility.Log.Debug("### Test Module Created: {Name}", name);
 
         if (startDate is null)
@@ -213,6 +220,20 @@ public sealed class TestModule
     {
         get => CurrentModule.Value;
         set => CurrentModule.Value = value;
+    }
+
+    /// <summary>
+    /// Gets the active test modules
+    /// </summary>
+    internal static IReadOnlyCollection<TestModule> ActiveTestModules
+    {
+        get
+        {
+            lock (OpenedTestModules)
+            {
+                return OpenedTestModules.Count == 0 ? [] : OpenedTestModules.ToArray();
+            }
+        }
     }
 
     internal TestModuleSpanTags Tags => (TestModuleSpanTags)_span.Tags;
@@ -479,6 +500,11 @@ public sealed class TestModule
         TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Module);
 
         Current = null;
+        lock (OpenedTestModules)
+        {
+            OpenedTestModules.Remove(this);
+        }
+
         CIVisibility.Log.Debug("### Test Module Closed: {Name} | {Status}", Name, Tags.Status);
 
         if (_fakeSession is { } fakeSession)

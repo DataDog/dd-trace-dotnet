@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
@@ -27,6 +28,8 @@ namespace Datadog.Trace.Ci;
 public sealed class TestSession
 {
     private static readonly AsyncLocal<TestSession?> CurrentSession = new();
+    private static readonly HashSet<TestSession> OpenedTestSessions = new();
+
     private readonly Span _span;
     private readonly Dictionary<string, string?>? _environmentVariablesToRestore = null;
     private int _finished;
@@ -81,6 +84,11 @@ public sealed class TestSession
         }
 
         Current = this;
+        lock (OpenedTestSessions)
+        {
+            OpenedTestSessions.Add(this);
+        }
+
         CIVisibility.Log.Debug("### Test Session Created: {Command}", command);
 
         if (startDate is null)
@@ -125,6 +133,20 @@ public sealed class TestSession
     {
         get => CurrentSession.Value;
         set => CurrentSession.Value = value;
+    }
+
+    /// <summary>
+    /// Gets the active test sessions
+    /// </summary>
+    internal static IReadOnlyCollection<TestSession> ActiveTestSessions
+    {
+        get
+        {
+            lock (OpenedTestSessions)
+            {
+                return OpenedTestSessions.Count == 0 ? [] : OpenedTestSessions.ToArray();
+            }
+        }
     }
 
     internal TestSessionSpanTags Tags => (TestSessionSpanTags)_span.Tags;
@@ -431,6 +453,11 @@ public sealed class TestSession
         }
 
         Current = null;
+        lock (OpenedTestSessions)
+        {
+            OpenedTestSessions.Remove(this);
+        }
+
         CIVisibility.Log.Debug("### Test Session Closed: {Command} | {Status}", Command, Tags.Status);
         return true;
     }
