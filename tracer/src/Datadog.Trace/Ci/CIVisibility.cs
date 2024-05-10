@@ -38,7 +38,20 @@ namespace Datadog.Trace.Ci
 
         public static bool Enabled => _enabledLazy.Value;
 
-        public static bool IsRunning => Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
+        public static bool IsRunning
+        {
+            get
+            {
+                // We try first the fast path, if the value is 0 we are running, so we can avoid the Interlocked operation.
+                if (_firstInitialization == 0)
+                {
+                    return true;
+                }
+
+                // If the value is not 0, maybe the value hasn't been updated yet, so we use the Interlocked operation to ensure the value is correct.
+                return Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
+            }
+        }
 
         public static CIVisibilitySettings Settings
         {
