@@ -3,11 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
-using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 #nullable enable
 namespace Datadog.Trace.AppSec.Rasp;
@@ -18,7 +14,7 @@ internal class RaspTelemetryHelper
     private ulong _raspWafAndBindingsDuration = 0;
     private uint _raspRuleEval = 0;
 
-    public void AddRaspWafAndBindingsDuration(ulong duration, ulong durationWithBindings)
+    public void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings)
     {
         _raspWafDuration += duration;
         _raspWafAndBindingsDuration += durationWithBindings;

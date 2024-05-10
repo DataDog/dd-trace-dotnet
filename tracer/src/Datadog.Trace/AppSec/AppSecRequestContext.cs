@@ -45,7 +45,7 @@ internal class AppSecRequestContext
     {
         lock (_sync)
         {
-            _raspTelemetryHelper?.AddRaspWafAndBindingsDuration(duration, durationWithBindings);
+            _raspTelemetryHelper?.AddRaspSpanMetrics(duration, durationWithBindings);
         }
     }
 
