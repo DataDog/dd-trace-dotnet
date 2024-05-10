@@ -1675,20 +1675,14 @@ stages:
     timeoutInMinutes: 60 #default value
 
     steps:
-    - powershell: |
-        # Required to reload environment apparently
-        Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
-        choco install cppcheck -y --version 2.12
-        $errorCode = $LASTEXITCODE
-        if ($errorCode -ne 0)
-        {
-          # something went wrong. Let's retry
-          exit 1
-        }
-        Write-Host "##vso[task.setvariable variable=PATH;]${env:PATH};C:\Program Files\Cppcheck";
-        refreshenv
-      displayName: Install CppCheck
-      retryCountOnTaskFailure: 3
+    # Based on https://community.chocolatey.org/packages/cppcheck#files
+    # Not using chocolatey as we're getting 429 Too Many Requests
+    - template: steps/install-msi.yml
+      parameters:
+        url: "https://github.com/danmar/cppcheck/releases/download/2.12.0/cppcheck-2.12.0-x64-Setup.msi"
+        filename: "cppcheck.msi"
+        addToPath: "C:\\Program Files\\Cppcheck"
+        msiParams: "ADDLOCAL=CppcheckCore,CLI,GUI,Translations,ConfigFiles,PlatformFiles,PythonAddons,CRT"
 
     - template: steps/clone-repo.yml
       parameters:
