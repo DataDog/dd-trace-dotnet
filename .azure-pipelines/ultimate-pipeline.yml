@@ -348,11 +348,13 @@ stages:
           managedBaseImage: debian
           useNativeSdkVersion: true
           artifactSuffix: linux-x64
+          targetAlpine: "false"
         alpine:
           nativeBaseImage: alpine
           managedBaseImage: alpine
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
+          targetAlpine: "true"
     pool:
       name: azure-linux-scale-set-2
 
@@ -379,6 +381,19 @@ stages:
         command: "BuildNativeTracerHome BuildNativeLoader CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests"
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    # set the version from the package name
+    - bash: sudo rm -rf $(System.DefaultWorkingDirectory)/obj
+      displayName: Delete obj folder
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: "universal"
+        useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "BuildNativeLoader --IsAlpine $(targetAlpine)"
+        retryCountForRunCommand: 1
 
     - template: steps/run-in-docker.yml
       parameters:

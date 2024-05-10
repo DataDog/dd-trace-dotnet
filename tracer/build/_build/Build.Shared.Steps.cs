@@ -13,6 +13,7 @@ using Logger = Serilog.Log;
 using Nuke.Common.Tools.NuGet;
 using static PrepareRelease.SetAllVersions;
 using System.Runtime.InteropServices;
+using System.Collections;
 
 partial class Build
 {
@@ -95,8 +96,18 @@ partial class Build
         {
             EnsureExistingDirectory(NativeBuildDirectory);
 
+            var additionalArgs = string.Empty;
+            if (!IsArm64)
+            {
+                additionalArgs += "-DCMAKE_TOOLCHAIN_FILE=/project/build/cmake/Toolchain -DUNIVERSAL=ON";
+            }
+
+            var entries = Environment.GetEnvironmentVariables().Cast<DictionaryEntry>();
+            var env = entries.ToDictionary(e => (string)e.Key, e => (string)e.Value);
+            env.Add("IsAlpine", "true");
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} {additionalArgs}",
+                environmentVariables: env);
             CMake.Value(
                 arguments: $"--build . --parallel {Environment.ProcessorCount} --target native-loader",
                 workingDirectory: NativeBuildDirectory);
@@ -251,6 +262,11 @@ partial class Build
             source = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{ext}";
             dest = MonitoringHomeDirectory / arch;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+            if (!IsArm64)
+            {
+                PatchElf.Value.Invoke($"--remove-needed libc.musl-x86_64.so.1 {dest / source.Name} --remove-rpath");
+            }
         });
 
     Target PublishNativeLoaderOsx => _ => _
