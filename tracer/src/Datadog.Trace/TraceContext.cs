@@ -251,9 +251,33 @@ namespace Datadog.Trace
             }
         }
 
-        public void SetSamplingPriority(SamplingDecision decision, bool notifyDistributedTracer = true)
+        public int GetOrMakeSamplingDecision()
         {
-            SetSamplingPriority(decision.Priority, decision.Mechanism, notifyDistributedTracer);
+            if (_samplingPriority is { } samplingPriority)
+            {
+                // common case: we already have a sampling decision
+                return samplingPriority;
+            }
+
+            return GetOrMakeSamplingDecisionSlow();
+        }
+
+        private int GetOrMakeSamplingDecisionSlow()
+        {
+            if (_rootSpan is null)
+            {
+                // we can't make a sampling decision without a root span because:
+                // - we need a trace id, and for now trace id lives in SpanContext, not in TraceContext
+                // - we need to apply sampling rules to the root span
+                return SamplingPriorityValues.Default;
+            }
+
+            var samplingDecision = CurrentTraceSettings?.TraceSampler is { } sampler
+                                       ? sampler.MakeSamplingDecision(_rootSpan)
+                                       : SamplingDecision.Default;
+
+            SetSamplingPriority(samplingDecision.Priority, samplingDecision.Mechanism);
+            return samplingDecision.Priority;
         }
 
         public void SetSamplingPriority(int? priority, int? mechanism = null, bool notifyDistributedTracer = true)
