@@ -36,11 +36,14 @@ namespace Datadog.Trace.Sampling
             {
                 if (rule.IsMatch(span))
                 {
-                    var sampleRate = rule.GetSamplingRate(span); // this can adds tags like "_dd.agent_psr" or "_dd.rule_psr"
+                    // Note: GetSamplingRate() can adds tags like "_dd.agent_psr" or "_dd.rule_psr"
+                    var sampleRate = rule.GetSamplingRate(span);
                     return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
                 }
             }
 
+            // this code is normally unreachable because there should always be a AgentSamplingRule
+            // (even before we receive rates from the agent)
             Log.Debug("No sampling rules matched for trace {TraceId}. Using default sampling decision.", span.Context.RawTraceId);
             return SamplingDecision.Default;
         }
