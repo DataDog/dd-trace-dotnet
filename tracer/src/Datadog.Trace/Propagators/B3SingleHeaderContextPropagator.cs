@@ -139,10 +139,7 @@ namespace Datadog.Trace.Propagators
 
         internal static string CreateHeader(SpanContext context)
         {
-            // BUG: we should fall back to SamplingPriorityValues.AutoKeep
-            var samplingPriority = context.TraceContext?.SamplingPriority ??
-                                   context.SamplingPriority; // should never happen in production, but some tests rely on this
-
+            var samplingPriority = context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default;
             var sampled = SamplingPriorityValues.IsKeep(samplingPriority) ? "1" : "0";
 
 #if NET6_0_OR_GREATER
