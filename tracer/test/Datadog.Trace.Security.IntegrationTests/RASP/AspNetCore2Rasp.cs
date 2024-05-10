@@ -92,5 +92,22 @@ public abstract class AspNetCore2Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         settings.AddIastScrubbing();
         await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
     }
+
+    [SkippableTheory]
+    [InlineData("/Iast/ExecuteQueryFromBodyQueryData", "SqlI", "{\"UserName\": \"' or '1'='1\"}")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestRaspRequestBody(string url, string exploit, string body = null)
+    {
+        var testName = IastEnabled ? "RaspIast.AspNetCore2" : "Rasp.AspNetCore2";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, url, body, 1, 1, string.Empty, "application/json", null);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseParameters(url, exploit, body);
+        settings.AddIastScrubbing();
+        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
+    }
 }
 #endif

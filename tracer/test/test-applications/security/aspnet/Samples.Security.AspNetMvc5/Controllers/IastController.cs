@@ -29,6 +29,8 @@ namespace Samples.Security.AspNetCore5.Controllers
         public string[] StringArrayArguments { get; set; }
 
         public QueryData InnerQuery { get; set; }
+
+        public string UserName { get; set; }
     }
 
     public class XContentTypeOptionsAttribute : ActionFilterAttribute
@@ -91,7 +93,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                     return Content($"Result: " + rname);
                 }
             }
-            catch (Exception ex)
+            catch (SQLiteException ex)
             {
                 return Content(IastControllerHelper.ToFormattedString(ex));
             }
@@ -182,7 +184,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
                 return Query(queryInstance);
             }
-            catch (Exception ex)
+            catch (SQLiteException ex)
             {
                 return Content(IastControllerHelper.ToFormattedString(ex));
             }
@@ -193,6 +195,11 @@ namespace Samples.Security.AspNetCore5.Controllers
             if (!string.IsNullOrEmpty(query?.Query))
             {
                 return ExecuteQuery(query.Query);
+            }
+
+            if (!string.IsNullOrEmpty(query?.UserName))
+            {
+                return ExecuteQuery("SELECT Surname from Persons where name = '" + query?.UserName + "'");
             }
 
             if (query?.Arguments != null)
