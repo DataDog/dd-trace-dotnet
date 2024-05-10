@@ -538,7 +538,7 @@ namespace Datadog.Trace.Ci
 
         private static async Task ShutdownAsync()
         {
-            // Let's close any opened test, suite, modules and sessions before shutting down to avoid loosing any data.
+            // Let's close any opened test, suite, modules and sessions before shutting down to avoid losing any data.
             // But marking them as failed.
 
             foreach (var test in Test.ActiveTests)
