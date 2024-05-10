@@ -8,7 +8,6 @@
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Sampling
 {
@@ -18,11 +17,11 @@ namespace Datadog.Trace.Sampling
 
         private readonly IRateLimiter _limiter;
         private readonly AgentSamplingRule _defaultRule = new();
-        private readonly List<ISamplingRule> _rules = new();
+        private readonly List<ISamplingRule> _rules = [];
 
         public TraceSampler(IRateLimiter limiter)
         {
-            _limiter = limiter ?? new TracerRateLimiter(null);
+            _limiter = limiter;
             RegisterRule(_defaultRule);
         }
 
