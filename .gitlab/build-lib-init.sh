@@ -65,6 +65,7 @@ else
   echo "This tag: $CI_COMMIT_TAG"
   echo "Latest repository tag: $LATEST_TAG"
   echo "Latest repository tag for this major: $LATEST_MAJOR_TAG"
+  echo ""
   
   is_greater_than_or_equal() {
     # GNU sort -C (silent) reports via exit code whether
@@ -88,11 +89,13 @@ else
 fi
 
 # print everything for debugging purposes
+echo "Calculated values:"
 echo "MAJOR_MINOR_VERSION=${MAJOR_MINOR_VERSION}"
 echo "MAJOR_VERSION=${MAJOR_VERSION}"
 echo "IS_LATEST_TAG=${IS_LATEST_TAG}"
 echo "IS_LATEST_MAJOR_TAG=${IS_LATEST_MAJOR_TAG}"
 echo "IS_PRERELEASE=${IS_PRERELEASE}"
+echo ""
 
 # Final check that everything is ok
 # if this is non-prerelease, we should have a major_minor version
@@ -130,11 +133,11 @@ EOF
 
 add_all_stages() {
   SUFFIX="$1"
-  STAGE_SUFFIX="${SUFFIX:+_$SUFFIX}"
+  STAGE_SUFFIX="${SUFFIX:+$SUFFIX_}"
   TAG_SUFFIX="${SUFFIX:+-$SUFFIX}"
   
   # We always add this tag, regardless of the version 
-  add_stage "major_minor_patch$STAGE_SUFFIX" $CI_COMMIT_TAG $TAG_SUFFIX
+  add_stage "${STAGE_SUFFIX}major_minor_patch" $CI_COMMIT_TAG $TAG_SUFFIX
   
   # If this is a pre-release version, we don't add the other stages
   if [ "$IS_PRERELEASE" -eq 1 ]; then
@@ -142,16 +145,16 @@ add_all_stages() {
   fi
 
   # All non-prerelease stages get the major_minor tag
-  add_stage "major_minor$STAGE_SUFFIX" $MAJOR_MINOR_VERSION $TAG_SUFFIX
+  add_stage "${STAGE_SUFFIX}major_minor" $MAJOR_MINOR_VERSION $TAG_SUFFIX
 
   # Only latest-major releases get the major tag
   if [ "$IS_LATEST_MAJOR_TAG" -eq 1 ]; then
-    add_stage "major$STAGE_SUFFIX" $MAJOR_VERSION $TAG_SUFFIX
+    add_stage "${STAGE_SUFFIX}major" $MAJOR_VERSION $TAG_SUFFIX
   fi
   
   # Only latest releases get the latest tag
   if [ "$IS_LATEST_TAG" -eq 1 ]; then
-    add_stage "major$STAGE_SUFFIX" "latest" $TAG_SUFFIX
+    add_stage "${STAGE_SUFFIX}latest" "latest" $TAG_SUFFIX
   fi
 }
 
