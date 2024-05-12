@@ -38,7 +38,19 @@ namespace Samples.Security.AspNetCore5
                 DatabaseHelper.CreateAndFeedDatabase(Configuration.GetConnectionString("DefaultConnection"));
             }
 
-            services.AddSession();
+            if (int.TryParse(Environment.GetEnvironmentVariable("IAST_TEST_SESSION_IDLE_TIMEOUT"), out var parsed))
+            {
+                services.AddSession(
+                    options =>
+                    {
+                        options.IdleTimeout = TimeSpan.FromMinutes(parsed);
+                    });
+            }
+            else
+            {
+                services.AddSession();
+            }
+
             services.AddRazorPages();
             var identityBuilder = services.AddIdentity<IdentityUser, IdentityRole>(
                 o =>

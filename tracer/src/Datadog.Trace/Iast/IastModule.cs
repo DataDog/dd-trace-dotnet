@@ -42,6 +42,7 @@ internal static partial class IastModule
     private const string OperationNameXPathInjection = "xpath_injection";
     private const string OperationNameReflectionInjection = "reflection_injection";
     private const string OperationNameXss = "xss";
+    private const string OperationNameSessionTimeout = "session_timeout";
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -401,6 +402,23 @@ internal static partial class IastModule
             IntegrationId.DirectoryListingLeak);
 
         AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
+    }
+
+    public static void OnSessionTimeout(string methodName, TimeSpan value)
+    {
+        if (!Iast.Instance.Settings.Enabled) { return; }
+
+        // Not a vulnerability if the timeout is less than 30 minutes
+        if (value.TotalMinutes < 30) { return; }
+
+        var vulnerability = new Vulnerability(
+            VulnerabilityTypeName.SessionTimeout,
+            (VulnerabilityTypeName.SessionTimeout + ':' + methodName + ':' + value.TotalMinutes).GetStaticHashCode(),
+            GetLocation(),
+            new Evidence($"Session idle timeout is configured with: {methodName}, with a value of {value.TotalMinutes} minutes"),
+            IntegrationId.SessionTimeout);
+
+        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.SessionTimeout, OperationNameSessionTimeout, vulnerability).SingleSpan?.Dispose();
     }
 
     public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId)

@@ -107,6 +107,7 @@ namespace Honeypot
             NugetPackages.Add("WebDriver", new[] { "Selenium.WebDriver" });
             NugetPackages.Add("Microsoft.AspNetCore.StaticFiles", new [] { "Microsoft.AspNetCore.StaticFiles" });
             NugetPackages.Add("coverlet.core", Array.Empty<string>());
+            NugetPackages.Add("Microsoft.AspNetCore.Session", new [] { "Microsoft.AspNetCore.Session" });
         }
 
         private IntegrationMap()
