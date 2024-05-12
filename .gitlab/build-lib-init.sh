@@ -13,28 +13,9 @@ if [ -z "$CI_COMMIT_SHA" ]; then
   exit 1
 fi
 
-if [ -z "$IMG_SOURCES_BASE" ]; then
-  echo "Error: IMG_SOURCES_BASE. This should be set to the full source docker image, excluding the tag name, e.g. ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init"
-  exit 1
-fi
-
 if [ -z "$IMG_DESTINATION_BASE" ]; then
   echo "Error: IMG_DESTINATION_BASE. This should be set to the destination docker image, excluding the tag name, e.g. dd-lib-dotnet-init"
   exit 1
-fi
-
-if [ -z "$PUBLIC_IMAGES_PIPELINE_PROJECT" ]; then
-  echo "Error: PUBLIC_IMAGES_PIPELINE_PROJECT. This should be set to the public-images repo, DataDog/public-images, unless you're testing"
-  exit 1
-fi
-
-if [ -z "$INCLUDE_MUSL" ]; then
-  INCLUDE_MUSL=0
-else
-  if [ "$INCLUDE_MUSL" -ne 0 ] && [ "$INCLUDE_MUSL" -ne 1 ]; then
-    echo "Error: INCLUDE_MUSL should be set to 0 or 1"
-    exit 1
-  fi
 fi
 
 # If this is a pre-release release, we skip all the additional checks 
@@ -105,69 +86,42 @@ if [ "$IS_LATEST_MAJOR_TAG" -eq 1 ] && [ -z "$MAJOR_VERSION" ]; then
   exit 1
 fi
 
-# Helper functions for building the script
-add_stage() {
-  STAGE_NAME="$1"
-  DEST_TAG="$2"
-  TAG_SUFFIX="$3"
-  
-  cat << EOF >> generated-config.yml
-deploy_${STAGE_NAME}_docker:
-  stage: trigger-public-images
-  trigger:
-    project: $PUBLIC_IMAGES_PIPELINE_PROJECT
-    branch: main
-    strategy: depend
-  variables:
-    IMG_SOURCES: $IMG_SOURCES_BASE:$CI_COMMIT_SHA$TAG_SUFFIX
-    IMG_DESTINATIONS: $IMG_DESTINATION_BASE:$DEST_TAG$TAG_SUFFIX
-    IMG_SIGNING: "false"
-    
-EOF
-}
-
-add_all_stages() {
+# Generate the final variables, and save them into build.env so they can be read by the trigger job  
+set_image_tags() {
   SUFFIX="$1"
-  STAGE_PREFIX="${SUFFIX:+${SUFFIX}_}"
-  TAG_SUFFIX="${SUFFIX:+-$SUFFIX}"
+  VARIABLE_SUFFIX="${SUFFIX:+_$SUFFIX}" # add a '_' prefix
+  TAG_SUFFIX="${SUFFIX:+-$SUFFIX}" # add a '-' prefix
   
   # We always add this tag, regardless of the version 
-  add_stage "${STAGE_PREFIX}major_minor_patch" $CI_COMMIT_TAG $TAG_SUFFIX
+  DESTINATIONS="${IMG_DESTINATION_BASE}:${CI_COMMIT_TAG}${TAG_SUFFIX}"
   
   # If this is a pre-release version, we never add any other stages
-  if [ "$IS_PRERELEASE" -eq 1 ]; then
-    return
-  fi
+  if [ "$IS_PRERELEASE" -eq 0 ]; then
 
-  # All non-prerelease stages get the major_minor tag
-  add_stage "${STAGE_PREFIX}major_minor" $MAJOR_MINOR_VERSION $TAG_SUFFIX
-
-  # Only latest-major releases get the major tag
-  if [ "$IS_LATEST_MAJOR_TAG" -eq 1 ]; then
-    add_stage "${STAGE_PREFIX}major" $MAJOR_VERSION $TAG_SUFFIX
+    # All non-prerelease stages get the major_minor tag
+    DESTINATIONS="${DESTINATIONS},${IMG_DESTINATION_BASE}:${MAJOR_MINOR_VERSION}${TAG_SUFFIX}"
+    
+    # Only latest-major releases get the major tag
+    if [ "$IS_LATEST_MAJOR_TAG" -eq 1 ]; then
+      DESTINATIONS="${DESTINATIONS},${IMG_DESTINATION_BASE}:${MAJOR_VERSION}${TAG_SUFFIX}"
+    fi
+    
+    # Only latest releases get the latest tag
+    if [ "$IS_LATEST_TAG" -eq 1 ]; then
+      DESTINATIONS="${DESTINATIONS},${IMG_DESTINATION_BASE}:latest${TAG_SUFFIX}"
+    fi
   fi
   
-  # Only latest releases get the latest tag
-  if [ "$IS_LATEST_TAG" -eq 1 ]; then
-    add_stage "${STAGE_PREFIX}latest" "latest" $TAG_SUFFIX
-  fi
+  # Save the value to the build.env file
+  echo "IMG_DESTINATIONS${VARIABLE_SUFFIX}=${DESTINATIONS}"
+  echo "IMG_DESTINATIONS${VARIABLE_SUFFIX}=${DESTINATIONS}" >> build.env
 }
 
-# Generate the pipeline for triggering child jobs
-cat << EOF > generated-config.yml
-stages:
-  - trigger-public-images
+# Calculate the non-suffixed tags
+set_image_tags
 
-EOF
-
-# Append the non-suffixed stages
-add_all_stages
-
-if [ "$INCLUDE_MUSL" -eq 1 ]; then
-  # Append the musl stages if requested
-  add_all_stages "musl"
-fi
-
-# All finished - print the generated yaml for debugging purposes
-echo "Generated pipeline:"
-cat generated-config.yml
+# For each suffix, calculate the tags 
+for ADDITIONAL_TAG_SUFFIX in ${ADDITIONAL_TAG_SUFFIXES//,/ }
+do
+    set_image_tags "$ADDITIONAL_TAG_SUFFIX"
+done
