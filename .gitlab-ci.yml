@@ -1,10 +1,10 @@
 
 stages:
+  - gitlab_test
   - build
   - package
   - publish
   - deploy
-  - gitlab_test
 
 include:
   - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
