@@ -39,7 +39,7 @@ fi
 
 # If this is a pre-release release, we skip all the additional checks 
 if echo "$CI_COMMIT_TAG" | grep -q "-" > /dev/null; then
-  echo "This is a pre-release release version"
+  echo "This is a pre-release version: $CI_COMMIT_TAG"
   IS_PRERELEASE=1
   MAJOR_MINOR_VERSION=""
   MAJOR_VERSION=""
@@ -65,7 +65,7 @@ else
   echo "This tag: $CI_COMMIT_TAG"
   echo "Latest repository tag: $LATEST_TAG"
   echo "Latest repository tag for this major: $LATEST_MAJOR_TAG"
-  echo ""
+  echo "---------"
   
   is_greater_than_or_equal() {
     # GNU sort -C (silent) reports via exit code whether
@@ -95,7 +95,7 @@ echo "MAJOR_VERSION=${MAJOR_VERSION}"
 echo "IS_LATEST_TAG=${IS_LATEST_TAG}"
 echo "IS_LATEST_MAJOR_TAG=${IS_LATEST_MAJOR_TAG}"
 echo "IS_PRERELEASE=${IS_PRERELEASE}"
-echo ""
+echo "---------"
 
 # Final check that everything is ok
 # if this is non-prerelease, we should have a major_minor version
