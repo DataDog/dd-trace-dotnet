@@ -125,7 +125,8 @@ generate-tag-values_test:
       add_stage() {
         STAGE_NAME="$1"
         DEST_TAG="$2"
-      
+        TAG_SUFFIX="$3"
+        
         cat << EOF >> generated-config.yml
       deploy_${STAGE_NAME}_docker:
         stage: trigger-public-images
@@ -135,36 +136,36 @@ generate-tag-values_test:
           strategy: depend
         variables:
           IMG_SOURCES: $IMG_SOURCES_BASE:$CI_COMMIT_SHA
-          IMG_DESTINATIONS: $IMG_DESTINATION_BASE:$DEST_TAG
+          IMG_DESTINATIONS: $IMG_DESTINATION_BASE:$DEST_TAG$TAG_SUFFIX
           IMG_SIGNING: "false"
-      
-      EOF
+        
+        EOF
       }
-      
-      add_all_stages() {
+        
+        add_all_stages() {
         SUFFIX="$1"
         STAGE_SUFFIX="${SUFFIX:+_$SUFFIX}"
         TAG_SUFFIX="${SUFFIX:+-$SUFFIX}"
-      
+        
         # We always add this tag, regardless of the version 
-        add_stage "major_minor_patch$STAGE_SUFFIX" "$CI_COMMIT_TAG$TAG_SUFFIX"
-      
+        add_stage "major_minor_patch$STAGE_SUFFIX" $CI_COMMIT_TAG $TAG_SUFFIX
+        
         # If this is a pre-release version, we don't add the other stages
         if [ "$IS_PRERELEASE" -eq 1 ]; then
-          return
+        return
         fi
       
         # All non-prerelease stages get the major_minor tag
-        add_stage "major_minor$STAGE_SUFFIX" "$MAJOR_MINOR_VERSION$TAG_SUFFIX"
+        add_stage "major_minor$STAGE_SUFFIX" $MAJOR_MINOR_VERSION $TAG_SUFFIX
       
         # Only latest-major releases get the major tag
         if [ "$IS_LATEST_MAJOR_TAG" -eq 1 ]; then
-          add_stage "major$STAGE_SUFFIX" "$MAJOR_VERSION$TAG_SUFFIX"
+        add_stage "major$STAGE_SUFFIX" $MAJOR_VERSION $TAG_SUFFIX
         fi
-      
+        
         # Only latest releases get the latest tag
         if [ "$IS_LATEST_TAG" -eq 1 ]; then
-          add_stage "major$STAGE_SUFFIX" "$MAJOR_VERSION$TAG_SUFFIX"
+        add_stage "major$STAGE_SUFFIX" "latest" $TAG_SUFFIX
         fi
       }
       
