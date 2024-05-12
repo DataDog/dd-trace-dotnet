@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Safety checks to make sure we have required values
 if [ -z "$CI_COMMIT_TAG" ]; then
   echo "Error: CI_COMMIT_TAG was not provided"
