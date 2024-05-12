@@ -85,7 +85,8 @@ publish:
 generate-tag-values_test:
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/ci/auto_inject/gitlab:current
-  stage: gitlab_test
+  stage: deploy
+  needs: []
   variables:
     IMG_SOURCES_BASE: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init
     IMG_DESTINATION_BASE: dd-lib-dotnet-init
@@ -100,7 +101,7 @@ generate-tag-values_test:
       - generated-config.yml
 
 deploy_trigger_test:
-  stage: gitlab_test
+  stage: deploy
   needs:
     - generate-tag-values_test
   trigger:
