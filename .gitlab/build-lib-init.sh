@@ -48,11 +48,6 @@ if echo "$CI_COMMIT_TAG" | grep -q "-" > /dev/null; then
 else
   IS_PRERELEASE=0
 
-  # There are other ways we could get all tags (e.g. git tag) which are arguably preferable,
-  # but can't guarantee we're running a checked out git repo (apparently)
-  $allTags=
-
-
   # We need to determine whether this is is the latest tag and whether it's the latest major or not
   # So we fetch all tags from GitHub and sort them to find both the latest, and the latest in this major.
   # sort actually gets prerelease versions in technically the wrong order here
