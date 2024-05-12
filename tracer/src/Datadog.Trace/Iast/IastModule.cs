@@ -461,7 +461,7 @@ internal static partial class IastModule
             }
 
             OnExecutedSinkTelemetry(IastInstrumentedSinks.Xss);
-            return GetScope(text!, IntegrationId.Xss, VulnerabilityTypeName.Xss, OperationNameXss, Always, exclusionMark: Mark.Xss);
+            return GetScope(text!, IntegrationId.Xss, VulnerabilityTypeName.Xss, OperationNameXss, Always, exclusionSecureMarks: SecureMarks.Xss);
         }
         catch (Exception ex)
         {
@@ -555,7 +555,7 @@ internal static partial class IastModule
         return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
     }
 
-    private static IastModuleResponse GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null, bool addLocation = true, int? hash = null, StackTrace? externalStack = null, Mark exclusionMark = Mark.None)
+    private static IastModuleResponse GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null, bool addLocation = true, int? hash = null, StackTrace? externalStack = null, SecureMarks exclusionSecureMarks = SecureMarks.None)
     {
         var tracer = Tracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
@@ -593,7 +593,7 @@ internal static partial class IastModule
         }
 
         // Check for marked (excluded) ranges
-        if (Ranges.RangesMarked(tainted?.Ranges, exclusionMark))
+        if (Ranges.RangesMarked(tainted?.Ranges, exclusionSecureMarks))
         {
             return IastModuleResponse.Empty;
         }

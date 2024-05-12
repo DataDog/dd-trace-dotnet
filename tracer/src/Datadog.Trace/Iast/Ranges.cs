@@ -136,7 +136,7 @@ internal static class Ranges
 
                 if (newLength > 0)
                 {
-                    newRanges[newRangeIndex] = new Range(newStart, newLength, range.Source, range.Mark);
+                    newRanges[newRangeIndex] = new Range(newStart, newLength, range.Source, range.SecureMarks);
                 }
             }
         }
@@ -186,36 +186,36 @@ internal static class Ranges
                 newEnd = endAfterRemoveArea ? ranges[i].Start + ranges[i].Length - (endIndex - beginIndex) : beginIndex;
             }
 
-            var newRange = new Range(newStart, newEnd - newStart, ranges[i].Source, ranges[i].Mark);
+            var newRange = new Range(newStart, newEnd - newStart, ranges[i].Source, ranges[i].SecureMarks);
             newRanges.Add(newRange);
         }
 
         return newRanges.ToArray();
     }
 
-    internal static Range[] CopyWithMark(Range[] ranges, Mark mark)
+    internal static Range[] CopyWithMark(Range[] ranges, SecureMarks secureMarks)
     {
         var newRanges = new List<Range>();
 
         foreach (var range in ranges)
         {
-            var newRange = new Range(range.Start, range.Length, range.Source, mark);
+            var newRange = new Range(range.Start, range.Length, range.Source, secureMarks);
             newRanges.Add(newRange);
         }
 
         return newRanges.ToArray();
     }
 
-    internal static bool RangesMarked(IEnumerable<Range>? ranges, Mark mark)
+    internal static bool RangesMarked(IEnumerable<Range>? ranges, SecureMarks secureMarks)
     {
-        if (ranges is null || mark == Mark.None)
+        if (ranges is null || secureMarks == SecureMarks.None)
         {
             return false;
         }
 
         foreach (var range in ranges)
         {
-            if (range.IsMarked(mark))
+            if (range.IsMarked(secureMarks))
             {
                 return true;
             }

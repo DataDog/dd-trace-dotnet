@@ -45,7 +45,7 @@ internal static partial class IastModule
             }
 
             // Add the mark (exclusion) to the tainted ranges
-            tainted.Ranges = Ranges.CopyWithMark(tainted.Ranges, Mark.Xss);
+            tainted.Ranges = Ranges.CopyWithMark(tainted.Ranges, SecureMarks.Xss);
         }
         catch (Exception ex)
         {
