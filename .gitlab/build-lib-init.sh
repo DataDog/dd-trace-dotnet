@@ -48,12 +48,18 @@ if echo "$CI_COMMIT_TAG" | grep -q "-" > /dev/null; then
 else
   IS_PRERELEASE=0
 
+  # Calculate the tags we use for floating major and minor versions
+  MAJOR_MINOR_VERSION="$(sed -nE 's/^(v[0-9]+\.[0-9]+)\.[0-9]+$/\1/p' <<< ${CI_COMMIT_TAG})"
+  MAJOR_VERSION="$(sed -nE 's/^(v[0-9]+)\.[0-9]+\.[0-9]+$/\1/p' <<< ${CI_COMMIT_TAG})"
+  
+  # Make sure we have all the tags
+  git fetch --tags
+
   # We need to determine whether this is is the latest tag and whether it's the latest major or not
   # So we fetch all tags from GitHub and sort them to find both the latest, and the latest in this major.
   # sort actually gets prerelease versions in technically the wrong order here
   # but we explicitly include them anyway, as we don't want to add any of the floating tags
   # to prerelease versions.
-
   LATEST_TAG="$(git tag | grep -v '-' | sort -V -r | head -n 1)"
   LATEST_MAJOR_TAG="$(git tag -l "$MAJOR_VERSION.*" | grep -v '-' | sort -V -r | head -n 1)"
   echo "This tag: $CI_COMMIT_TAG"
@@ -79,10 +85,6 @@ else
   else
     IS_LATEST_MAJOR_TAG=0
   fi
-  
-  # Calculate the tags we use for floating major and minor versions
-  MAJOR_MINOR_VERSION="$(sed -nE 's/^(v[0-9]+\.[0-9]+)\.[0-9]+$/\1/p' <<< ${CI_COMMIT_TAG})"
-  MAJOR_VERSION="$(sed -nE 's/^(v[0-9]+)\.[0-9]+\.[0-9]+$/\1/p' <<< ${CI_COMMIT_TAG})"
 fi
 
 # print everything for debugging purposes
