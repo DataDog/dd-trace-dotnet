@@ -89,106 +89,12 @@ generate-tag-values_test:
   variables:
     IMG_SOURCES_BASE: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init
     IMG_DESTINATION_BASE: dd-lib-dotnet-init
+    PUBLIC_IMAGES_PIPELINE_PROJECT: DataDog/dd-trace-dotnet-gitlab-test # change this to DataDog/public-images once done with testing
+    # PUBLIC_IMAGES_PIPELINE_PROJECT: DataDog/public-images
     INCLUDE_MUSL: 1
+    CI_COMMIT_TAG: "v2.53.4-prerelease" # testing purposes
   script:
-    - CI_COMMIT_TAG="v2.53.4"
-    - |
-      echo "This is a pre-release release version"
-      IS_PRERELEASE=1
-      MAJOR_MINOR_VERSION=""
-      MAJOR_VERSION=""
-      IS_LATEST_TAG=0
-      IS_LATEST_MAJOR_TAG=0
-      
-      # print everything for debugging purposes
-      echo "MAJOR_MINOR_VERSION=${MAJOR_MINOR_VERSION}"
-      echo "MAJOR_VERSION=${MAJOR_VERSION}"
-      echo "IS_LATEST_TAG=${IS_LATEST_TAG}"
-      echo "IS_LATEST_MAJOR_TAG=${IS_LATEST_MAJOR_TAG}"
-      echo "IS_PRERELEASE=${IS_PRERELEASE}"
-      
-      # Final check that everything is ok
-      # if this is non-prerelease, we should have a major_minor version
-      if [ "$IS_PRERELEASE" -eq 0 ] && [ -z "$MAJOR_MINOR_VERSION" ]; then
-        echo "Error: Could not determine major_minor version for stable release, this should not happen"
-        exit 1
-      fi
-      
-      # if this is a latest major tag, we should have a major version
-      if [ "$IS_LATEST_MAJOR_TAG" -eq 1 ] && [ -z "$MAJOR_VERSION" ]; then
-        echo "Error: Could not determine major version for latest major release, this should not happen"
-        exit 1
-      fi
- 
-      # TODO: Rename dd-trace-dotnet-gitlab-test to public-images
-      # Helper functions for building the script
-      add_stage() {
-        STAGE_NAME="$1"
-        DEST_TAG="$2"
-        TAG_SUFFIX="$3"
-        
-        cat << EOF >> generated-config.yml
-      deploy_${STAGE_NAME}_docker:
-        stage: trigger-public-images
-        trigger:
-          project: DataDog/dd-trace-dotnet-gitlab-test
-          branch: main
-          strategy: depend
-        variables:
-          IMG_SOURCES: $IMG_SOURCES_BASE:$CI_COMMIT_SHA
-          IMG_DESTINATIONS: $IMG_DESTINATION_BASE:$DEST_TAG$TAG_SUFFIX
-          IMG_SIGNING: "false"
-        
-        EOF
-      }
-        
-        add_all_stages() {
-        SUFFIX="$1"
-        STAGE_SUFFIX="${SUFFIX:+_$SUFFIX}"
-        TAG_SUFFIX="${SUFFIX:+-$SUFFIX}"
-        
-        # We always add this tag, regardless of the version 
-        add_stage "major_minor_patch$STAGE_SUFFIX" $CI_COMMIT_TAG $TAG_SUFFIX
-        
-        # If this is a pre-release version, we don't add the other stages
-        if [ "$IS_PRERELEASE" -eq 1 ]; then
-        return
-        fi
-      
-        # All non-prerelease stages get the major_minor tag
-        add_stage "major_minor$STAGE_SUFFIX" $MAJOR_MINOR_VERSION $TAG_SUFFIX
-      
-        # Only latest-major releases get the major tag
-        if [ "$IS_LATEST_MAJOR_TAG" -eq 1 ]; then
-        add_stage "major$STAGE_SUFFIX" $MAJOR_VERSION $TAG_SUFFIX
-        fi
-        
-        # Only latest releases get the latest tag
-        if [ "$IS_LATEST_TAG" -eq 1 ]; then
-        add_stage "major$STAGE_SUFFIX" "latest" $TAG_SUFFIX
-        fi
-      }
-      
-      # Build the script
-      
-      
-      # Generate the pipeline for triggering child jobs
-      cat << EOF > generated-config.yml
-      stages:
-        - trigger-public-images
-      
-      EOF
-      
-      # Append the non-suffixed stages
-      add_all_stages
-      
-      if [ "$INCLUDE_MUSL" -eq 1 ]; then
-        add_all_stages "musl"
-      fi
-      
-      # All finished - print the generated yaml for debugging purposes
-      echo "Generated pipeline:"
-      cat generated-config.yml
+    - ./.gitlab/build-lib-init.sh
   artifacts:
     paths:
       - generated-config.yml
