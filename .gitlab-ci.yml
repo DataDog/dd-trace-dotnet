@@ -127,7 +127,7 @@ generate-tag-values_test:
         DEST_TAG="$2"
       
         cat << EOF >> generated-config.yml
-      deploy_$STAGE_NAME_docker:
+      deploy_${STAGE_NAME}_docker:
         stage: trigger-public-images
         trigger:
           project: DataDog/dd-trace-dotnet-gitlab-test
