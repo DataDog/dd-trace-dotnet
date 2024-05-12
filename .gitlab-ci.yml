@@ -5,6 +5,7 @@ stages:
   - publish
   - deploy
   - benchmarks
+  - gitlab_test
 
 include:
   - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
@@ -80,6 +81,29 @@ publish:
               Start-Sleep -Milliseconds 100
           }
       } while ($i -lt 3)
+
+# ------------------------Testing------------------------
+deploy_trigger_test:
+  stage: gitlab_test
+  trigger:
+    project: DataDog/dd-trace-dotnet-gitlab-test
+    branch: main
+    strategy: depend
+  variables:
+    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA
+    IMG_DESTINATIONS: dd-lib-dotnet-init:latest
+    IMG_SIGNING: "false"
+
+
+
+
+
+
+
+
+# ------------------------Testing------------------------
+
+
 
 # The 9 jobs below, do not depend on the packaging stage. So they are ran always, even if package stage can fail.
 generate-tag-values:
