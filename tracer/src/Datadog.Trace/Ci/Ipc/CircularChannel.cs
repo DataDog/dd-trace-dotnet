@@ -28,7 +28,7 @@ internal partial class CircularChannel : IChannel
     private long _disposed;
 
     private Writer? _writer;
-    private Receiver? _receiver;
+    private Reader? _reader;
 
     public CircularChannel(string fileName)
         : this(fileName, DefaultBufferSize)
@@ -89,9 +89,9 @@ internal partial class CircularChannel : IChannel
 
     public int BufferBodySize => _bufferSize - HeaderSize;
 
-    public IChannelReceiver GetReceiver()
+    public IChannelReader GetReader()
     {
-        return _receiver ??= new Receiver(this);
+        return _reader ??= new Reader(this);
     }
 
     public IChannelWriter GetWriter()
@@ -107,7 +107,7 @@ internal partial class CircularChannel : IChannel
         }
 
         _writer?.Dispose();
-        _receiver?.Dispose();
+        _reader?.Dispose();
         _mmf.Dispose();
         _mutex.Dispose();
     }

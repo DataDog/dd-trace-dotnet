@@ -1,4 +1,4 @@
-// <copyright file="CircularChannel.Receiver.cs" company="Datadog">
+// <copyright file="CircularChannel.Reader.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,14 +12,14 @@ namespace Datadog.Trace.Ci.Ipc;
 
 internal partial class CircularChannel
 {
-    private class Receiver : IChannelReceiver
+    private class Reader : IChannelReader
     {
         private readonly Timer _pollingTimer;
         private readonly CircularChannel _channel;
         private readonly ManualResetEventSlim _pollingEventFinished;
         private long _disposed;
 
-        public Receiver(CircularChannel channel)
+        public Reader(CircularChannel channel)
         {
             _channel = channel;
             _pollingEventFinished = new ManualResetEventSlim(true);

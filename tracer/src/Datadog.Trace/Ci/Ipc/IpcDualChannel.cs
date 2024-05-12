@@ -13,7 +13,7 @@ namespace Datadog.Trace.Ci.Ipc;
 internal abstract class IpcDualChannel : IDisposable
 {
     private readonly IChannel _recvChannel;
-    private readonly IChannelReceiver _recvChannelReceiver;
+    private readonly IChannelReader _recvChannelReader;
     private readonly IChannel _sendChannel;
     private readonly IChannelWriter _sendChannelWriter;
     private readonly JsonSerializerSettings _serializerSettings;
@@ -21,8 +21,8 @@ internal abstract class IpcDualChannel : IDisposable
     protected IpcDualChannel(string recvName, string sendName)
     {
         _recvChannel = new CircularChannel(recvName);
-        _recvChannelReceiver = _recvChannel.GetReceiver();
-        _recvChannelReceiver.MessageReceived += OnMessageReceived;
+        _recvChannelReader = _recvChannel.GetReader();
+        _recvChannelReader.MessageReceived += OnMessageReceived;
 
         _sendChannel = new CircularChannel(sendName);
         _sendChannelWriter = _sendChannel.GetWriter();

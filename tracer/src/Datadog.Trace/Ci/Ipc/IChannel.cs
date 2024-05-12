@@ -12,7 +12,7 @@ internal interface IChannel : IDisposable
 {
     int BufferBodySize { get; }
 
-    IChannelReceiver GetReceiver();
+    IChannelReader GetReader();
 
     IChannelWriter GetWriter();
 }

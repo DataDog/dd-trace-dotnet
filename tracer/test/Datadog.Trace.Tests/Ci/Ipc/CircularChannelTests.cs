@@ -63,7 +63,7 @@ public class CircularChannelTests
         var name = nameof(CircularChannelReadAndWriteTest) + "-" + Guid.NewGuid().ToString("n");
         using var channel = new CircularChannel(name, BufferSize);
         using var writer = channel.GetWriter();
-        using var receiver = channel.GetReceiver();
+        using var reader = channel.GetReader();
 
         // Message size
         var messageSize = writer.GetMessageSize(value);
@@ -76,7 +76,7 @@ public class CircularChannelTests
 
         ExceptionDispatchInfo? exceptionDispatchInfo = null;
         var countdownEvent = new CountdownEvent(messagesCount);
-        receiver.MessageReceived += (sender, bytes) =>
+        reader.MessageReceived += (sender, bytes) =>
         {
             try
             {
