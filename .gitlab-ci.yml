@@ -91,6 +91,7 @@ generate-tag-values_test:
     INCLUDE_MUSL: 1
   script:
     - CI_COMMIT_TAG="v2.53.4"
+    - apt install git -y
     - git --version
     - |
       # Safety checks to make sure we have required values
