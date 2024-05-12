@@ -72,7 +72,7 @@ internal partial class CircularChannel : IChannel
             stream.SetLength(_bufferSize);
 
             // Create the memory mapped file from the stream
-            _mmf = MemoryMappedFile.CreateFromFile(stream, null, _bufferSize, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, false);
+            _mmf = MemoryMappedFile.CreateFromFile(stream, mapName: null, _bufferSize, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, leaveOpen: false);
 
             // Initialize the write and read pointer
             using var accessor = _mmf.CreateViewAccessor();
