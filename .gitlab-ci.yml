@@ -84,6 +84,7 @@ publish:
 # ------------------------Testing------------------------
 generate-tag-values_test:
   tags: ["arch:amd64"]
+  image: registry.ddbuild.io/images/mirror/ubuntu:22.04
   stage: gitlab_test
   variables:
     IMG_SOURCES_BASE: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init
