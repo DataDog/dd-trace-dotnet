@@ -89,11 +89,8 @@ generate-tag-values_test:
     IMG_SOURCES_BASE: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init
     IMG_DESTINATION_BASE: dd-lib-dotnet-init
     INCLUDE_MUSL: 1
-  before_script:
-    - sudo apt install git -y
   script:
     - CI_COMMIT_TAG="v2.53.4"
-    - git --version
     - |
       # Safety checks to make sure we have required values
       if [ -z "$CI_COMMIT_TAG" ]; then
