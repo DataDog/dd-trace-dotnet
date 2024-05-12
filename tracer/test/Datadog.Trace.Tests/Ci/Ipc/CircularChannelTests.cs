@@ -47,8 +47,10 @@ public class CircularChannelTests
         using var channel = new CircularChannel(name, BufferSize);
         using var writer = channel.GetWriter();
 
+        var valueSegment = new ArraySegment<byte>(value);
+
         // Message size
-        var messageSize = writer.GetMessageSize(value);
+        var messageSize = writer.GetMessageSize(in valueSegment);
 
         // Calculate how many messages we can write
         var messagesCount = AvailableBufferSize / messageSize;
@@ -56,11 +58,11 @@ public class CircularChannelTests
         using var scope = new AssertionScope();
         for (var i = 0; i < messagesCount; i++)
         {
-            writer.TryWrite(value).Should().BeTrue();
+            writer.TryWrite(in valueSegment).Should().BeTrue();
         }
 
         // If we write one more message, we should get a false result
-        writer.TryWrite(value).Should().BeFalse();
+        writer.TryWrite(in valueSegment).Should().BeFalse();
     }
 
     [Theory]
@@ -72,8 +74,10 @@ public class CircularChannelTests
         using var writer = channel.GetWriter();
         using var reader = channel.GetReader();
 
+        var valueSegment = new ArraySegment<byte>(value);
+
         // Message size
-        var messageSize = writer.GetMessageSize(value);
+        var messageSize = writer.GetMessageSize(in valueSegment);
 
         // Calculate how many messages we can write
         var messagesCount = AvailableBufferSize / messageSize;
@@ -99,7 +103,6 @@ public class CircularChannelTests
             countdownEvent.Signal();
         };
 
-        var valueSegment = new ArraySegment<byte>(value);
         for (var i = 0; i < messagesCount; i++)
         {
             if (!writer.TryWrite(in valueSegment))
