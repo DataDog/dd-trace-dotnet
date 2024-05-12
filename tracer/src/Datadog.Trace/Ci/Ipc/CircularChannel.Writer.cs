@@ -63,21 +63,20 @@ internal partial class CircularChannel
 
                 var nextWritePos = (ushort)((writePos + dataSize) % channel.BufferBodySize);
 
-                // Check for buffer overflow conditions to prevent data corruption:
-                // 1. When writePos is less than readPos:
-                //    - nextWritePos must not be greater than or equal to readPos, which would mean it has
-                //      overwritten unread data that readPos has not yet reached.
-                //    - nextWritePos must also not wrap around and end up less than writePos. This would
-                //      indicate that it has circled back and started overwriting the beginning of the buffer,
-                //      potentially corrupting data that may not have been read yet.
-                // 2. When writePos is greater than readPos:
-                //    - nextWritePos wrapping around and ending up between readPos and writePos would also
-                //      indicate an overflow, as it would overwrite unread data between these positions.
-                //
-                // These conditions collectively ensure that new data does not overwrite unread data in the circular buffer,
-                // maintaining the integrity of the data in scenarios where the buffer wraps or is close to wrapping.
-                if ((writePos < readPos && (nextWritePos >= readPos || nextWritePos < writePos)) ||
-                    (writePos > readPos && nextWritePos < writePos && nextWritePos > readPos))
+                /*
+                 Check for buffer overflow conditions to prevent data corruption:
+                    For writePos < readPos (1 indicates written but not read data)
+                        |1111111111|0000000000000000|11111111|
+                                writePos         readPos
+                    For writePos > readPos (1 indicates written but not read data)
+                        |0000000000|1111111111111111|00000000|
+                                readPos          writePos
+                 */
+
+                var spaceAvailable = writePos < readPos
+                                         ? readPos - writePos
+                                         : channel.BufferBodySize - (writePos - readPos);
+                if (spaceAvailable < dataSize)
                 {
                     Log.Warning("CircularChannel: Buffer overflow");
                     return false;
