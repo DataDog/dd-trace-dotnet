@@ -15,7 +15,7 @@ namespace Datadog.Trace.Ci.Ipc;
 internal partial class CircularChannel : IChannel
 {
     private const int DefaultBufferSize = 65536;
-    private const int HeaderSize = 4;
+    private const int HeaderSize = 2 * sizeof(ushort); // 1 read pointer + 1 write pointer
 
     private const int PollingInterval = 25;
     private const int MutexTimeout = 5000;

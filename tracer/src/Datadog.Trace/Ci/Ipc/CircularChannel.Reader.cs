@@ -34,8 +34,7 @@ internal partial class CircularChannel
             _pollingEventFinished.Reset();
             try
             {
-                var channel = _channel;
-                if (Interlocked.Read(ref _disposed) == 1 || Interlocked.Read(ref channel._disposed) == 1)
+                if (Interlocked.Read(ref _disposed) == 1 || Interlocked.Read(ref _channel._disposed) == 1)
                 {
                     Log.Error("CircularChannel: Channel is disposed. Cannot read data.");
                     return;
@@ -43,13 +42,13 @@ internal partial class CircularChannel
 
                 if (MessageReceived is null)
                 {
-                    // To avoid loosing messages we stop the polling if there are no subscribers
+                    // To avoid losing messages, we stop the polling if there are no subscribers
                     return;
                 }
 
                 try
                 {
-                    var hasHandle = channel._mutex.WaitOne(MutexTimeout);
+                    var hasHandle = _channel._mutex.WaitOne(MutexTimeout);
                     if (!hasHandle)
                     {
                         CIVisibility.Log.Error("CircularChannel: Failed to acquire mutex within the time limit.");
@@ -70,13 +69,13 @@ internal partial class CircularChannel
                 object? messagesToHandle = null;
                 try
                 {
-                    using var accessor = channel._mmf.CreateViewAccessor();
+                    using var accessor = _channel._mmf.CreateViewAccessor();
                     var writePos = accessor.ReadUInt16(0);
                     var readPos = accessor.ReadUInt16(2);
                     while (readPos != writePos)
                     {
                         var absoluteReadPos = HeaderSize + readPos;
-                        if (channel.BufferSize - absoluteReadPos < 2)
+                        if (_channel.BufferSize - absoluteReadPos < 2)
                         {
                             // Not space to read the length of the message, so we need to go back to 0
                             readPos = 0;
@@ -86,7 +85,7 @@ internal partial class CircularChannel
                         var length = accessor.ReadUInt16(absoluteReadPos);
 
                         // Simple sanity check
-                        if (length + 2 > channel.BufferBodySize)
+                        if (length + 2 > _channel.BufferBodySize)
                         {
                             // Handle error, reset pointers, or skip
                             break;
@@ -95,7 +94,7 @@ internal partial class CircularChannel
                         var data = new byte[length];
 
                         // Read the first part of the data
-                        var firstPartLength = Math.Min(length, channel.BufferSize - absoluteReadPos - 2);
+                        var firstPartLength = Math.Min(length, _channel.BufferSize - absoluteReadPos - 2);
                         accessor.ReadArray(absoluteReadPos + 2, data, 0, firstPartLength);
 
                         // Read the second part of the data, if any, from the start of the buffer
@@ -105,7 +104,7 @@ internal partial class CircularChannel
                             accessor.ReadArray(HeaderSize, data, firstPartLength, secondPartLength);
                         }
 
-                        var nextReadPos = (ushort)((readPos + length + 2) % channel.BufferBodySize);
+                        var nextReadPos = (ushort)((readPos + length + 2) % _channel.BufferBodySize);
                         accessor.Write(2, nextReadPos); // Update read pointer
 
                         // We store all the messages before releasing the mutex to avoid blocking the producer for each event call
@@ -133,7 +132,7 @@ internal partial class CircularChannel
                 {
                     try
                     {
-                        channel._mutex.ReleaseMutex();
+                        _channel._mutex.ReleaseMutex();
                     }
                     catch (ObjectDisposedException)
                     {
