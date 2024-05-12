@@ -84,6 +84,8 @@ publish:
 # ------------------------Testing------------------------
 deploy_trigger_test:
   stage: gitlab_test
+  rules:
+    - when: always
   trigger:
     project: DataDog/dd-trace-dotnet-gitlab-test
     branch: main
