@@ -14,7 +14,7 @@ namespace Datadog.Trace.Ci.Ipc;
 
 internal partial class CircularChannel : IChannel
 {
-    private const int DefaultBufferSize = 65536;
+    private const int DefaultBufferSize = ushort.MaxValue;
     private const int HeaderSize = 2 * sizeof(ushort); // 1 read pointer + 1 write pointer
 
     private const int PollingInterval = 25;
@@ -64,7 +64,7 @@ internal partial class CircularChannel : IChannel
 
         _disposed = 0;
         _bufferSize = bufferSize;
-        _mutex = new Mutex(false, $"{Path.GetFileNameWithoutExtension(fileName)}.mutex");
+        _mutex = new Mutex(initiallyOwned: false, $"{Path.GetFileNameWithoutExtension(fileName)}.mutex");
 
         var hasHandle = _mutex.WaitOne(MutexTimeout);
         if (!hasHandle)
