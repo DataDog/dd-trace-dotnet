@@ -133,7 +133,7 @@ EOF
 
 add_all_stages() {
   SUFFIX="$1"
-  STAGE_SUFFIX="${SUFFIX:+$SUFFIX_}"
+  STAGE_SUFFIX="${SUFFIX:+${SUFFIX}_}"
   TAG_SUFFIX="${SUFFIX:+-$SUFFIX}"
   
   # We always add this tag, regardless of the version 
