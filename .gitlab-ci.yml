@@ -81,193 +81,39 @@ publish:
           }
       } while ($i -lt 3)
 
-# The 9 jobs below, do not depend on the packaging stage. So they are ran always, even if package stage can fail.
-generate-tag-values:
+# The 2 jobs below, do not depend on the packaging stage. So they are always run, even if package stage can fail.
+generate-lib-init-tag-values:
   tags: ["arch:amd64"]
+  image: registry.ddbuild.io/ci/auto_inject/gitlab:current
   stage: deploy
   rules:
     - if: '$POPULATE_CACHE'
       when: never
-    # Don't deploy major/major.minor/latest on prerelease
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
       when: always
     - when: manual
       allow_failure: true
-  # Extract the vMajor.Minor and vMajor from the tag
+  variables:
+    IMG_SOURCES_BASE: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init
+    IMG_DESTINATION_BASE: dd-lib-dotnet-init
+    # PUBLIC_IMAGES_PIPELINE_PROJECT: DataDog/dd-trace-dotnet-gitlab-test # can be used for testing
+    PUBLIC_IMAGES_PIPELINE_PROJECT: DataDog/public-images
+    INCLUDE_MUSL: 1
   script:
-    - MAJOR_MINOR_VERSION="$(sed -nE 's/^(v[0-9]+\.[0-9]+)\.[0-9]+$/\1/p' <<< ${CI_COMMIT_TAG})"
-    - MAJOR_VERSION="$(sed -nE 's/^(v[0-9]+)\.[0-9]+\.[0-9]+$/\1/p' <<< ${CI_COMMIT_TAG})"
-    - echo "MAJOR_MINOR_VERSION=${MAJOR_MINOR_VERSION}" >> build.env
-    - echo "MAJOR_VERSION=${MAJOR_VERSION}" >> build.env
+    - ./.gitlab/build-lib-init.sh
   artifacts:
-    reports:
-      dotenv: build.env
+    paths:
+      - generated-config.yml
 
-deploy_to_docker_registries:
+deploy-lib-init-trigger:
   stage: deploy
-  rules:
-    - if: '$POPULATE_CACHE'
-      when: never
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
-      when: always
-    - when: manual
-      allow_failure: true
-  trigger:
-    project: DataDog/public-images
-    branch: main
-    strategy: depend
-  variables:
-    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA
-    IMG_DESTINATIONS: dd-lib-dotnet-init:$CI_COMMIT_TAG
-    IMG_SIGNING: "false"
-
-deploy_musl_tag_to_docker_registries:
-  stage: deploy
-  rules:
-    - if: '$POPULATE_CACHE'
-      when: never
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
-      when: always
-    - when: manual
-      allow_failure: true
-  trigger:
-    project: DataDog/public-images
-    branch: main
-    strategy: depend
-  variables:
-    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA-musl
-    IMG_DESTINATIONS: dd-lib-dotnet-init:$CI_COMMIT_TAG-musl
-    IMG_SIGNING: "false"
-
-deploy_major_tag_to_docker_registries:
-  stage: deploy
-  rules:
-    - if: '$POPULATE_CACHE'
-      when: never
-    # Don't deploy major tag if prerelease
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-      when: always
-    - when: manual
-      allow_failure: true
-  trigger:
-    project: DataDog/public-images
-    branch: main
-    strategy: depend
-  variables:
-    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA
-    IMG_DESTINATIONS: dd-lib-dotnet-init:$MAJOR_VERSION
-    IMG_SIGNING: "false"
-  # needs the version from the generate-tag-values job
   needs:
-    - job: generate-tag-values
-      artifacts: true
-
-deploy_major_musl_tag_to_docker_registries:
-  stage: deploy
-  rules:
-    - if: '$POPULATE_CACHE'
-      when: never
-      # Don't deploy major tag if prerelease
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-      when: always
-    - when: manual
-      allow_failure: true
+    - generate-lib-init-tag-values
   trigger:
-    project: DataDog/public-images
-    branch: main
+    include:
+      - artifact: generated-config.yml
+        job: generate-lib-init-tag-values
     strategy: depend
-  variables:
-    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA-musl
-    IMG_DESTINATIONS: dd-lib-dotnet-init:$MAJOR_VERSION-musl
-    IMG_SIGNING: "false"
-  # needs the version from the generate-tag-values job
-  needs:
-    - job: generate-tag-values
-      artifacts: true
-
-deploy_major_minor_tag_to_docker_registries:
-  stage: deploy
-  rules:
-    - if: '$POPULATE_CACHE'
-      when: never
-    # Don't deploy major minor tag if prerelease
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-      when: always
-    - when: manual
-      allow_failure: true
-  trigger:
-    project: DataDog/public-images
-    branch: main
-    strategy: depend
-  variables:
-    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA
-    IMG_DESTINATIONS: dd-lib-dotnet-init:$MAJOR_MINOR_VERSION
-    IMG_SIGNING: "false"
-  # needs the version from the generate-tag-values job
-  needs:
-    - job: generate-tag-values
-      artifacts: true
-
-deploy_major_minor_musl_tag_to_docker_registries:
-  stage: deploy
-  rules:
-    - if: '$POPULATE_CACHE'
-      when: never
-      # Don't deploy major minor tag if prerelease
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-      when: always
-    - when: manual
-      allow_failure: true
-  trigger:
-    project: DataDog/public-images
-    branch: main
-    strategy: depend
-  variables:
-    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA-musl
-    IMG_DESTINATIONS: dd-lib-dotnet-init:$MAJOR_MINOR_VERSION-musl
-    IMG_SIGNING: "false"
-  # needs the version from the generate-tag-values job
-  needs:
-    - job: generate-tag-values
-      artifacts: true
-
-deploy_latest_tag_to_docker_registries:
-  stage: deploy
-  rules:
-    - if: '$POPULATE_CACHE'
-      when: never
-    # Don't deploy latest tag if prerelease
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-      when: always
-    - when: manual
-      allow_failure: true
-  trigger:
-    project: DataDog/public-images
-    branch: main
-    strategy: depend
-  variables:
-    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA
-    IMG_DESTINATIONS: dd-lib-dotnet-init:latest
-    IMG_SIGNING: "false"
-
-deploy_latest_musl_tag_to_docker_registries:
-  stage: deploy
-  rules:
-    - if: '$POPULATE_CACHE'
-      when: never
-      # Don't deploy latest tag if prerelease
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-      when: always
-    - when: manual
-      allow_failure: true
-  trigger:
-    project: DataDog/public-images
-    branch: main
-    strategy: depend
-  variables:
-    IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA-musl
-    IMG_DESTINATIONS: dd-lib-dotnet-init:latest-musl
-    IMG_SIGNING: "false"
 
 package:
   extends: .package
