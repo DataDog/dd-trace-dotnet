@@ -82,20 +82,33 @@ publish:
       } while ($i -lt 3)
 
 # ------------------------Testing------------------------
+generate-tag-values_test:
+  tags: ["arch:amd64"]
+  stage: gitlab_test
+  # Extract the vMajor.Minor and vMajor from the tag
+  script:
+    - CI_COMMIT_TAG="v2.53.4"
+    - MAJOR_MINOR_VERSION="$(sed -nE 's/^(v[0-9]+\.[0-9]+)\.[0-9]+$/\1/p' <<< ${CI_COMMIT_TAG})"
+    - MAJOR_VERSION="$(sed -nE 's/^(v[0-9]+)\.[0-9]+\.[0-9]+$/\1/p' <<< ${CI_COMMIT_TAG})"
+    - echo "MAJOR_MINOR_VERSION=${MAJOR_MINOR_VERSION}" >> build.env
+    - echo "MAJOR_VERSION=${MAJOR_VERSION}" >> build.env
+  artifacts:
+    reports:
+      dotenv: build.env
+
 deploy_trigger_test:
   stage: gitlab_test
-  rules:
-    - when: always
   trigger:
     project: DataDog/dd-trace-dotnet-gitlab-test
     branch: main
     strategy: depend
   variables:
     IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:$CI_COMMIT_SHA
-    IMG_DESTINATIONS: dd-lib-dotnet-init:latest
+    IMG_DESTINATIONS: dd-lib-dotnet-init:$MAJOR_VERSION
     IMG_SIGNING: "false"
-
-
+  needs:
+    - job: generate-tag-values_test
+      artifacts: true
 
 
 
