@@ -124,7 +124,7 @@ deploy_${STAGE_NAME}_docker:
     branch: main
     strategy: depend
   variables:
-    IMG_SOURCES: $IMG_SOURCES_BASE:$CI_COMMIT_SHA
+    IMG_SOURCES: $IMG_SOURCES_BASE:$CI_COMMIT_SHA$TAG_SUFFIX
     IMG_DESTINATIONS: $IMG_DESTINATION_BASE:$DEST_TAG$TAG_SUFFIX
     IMG_SIGNING: "false"
     
