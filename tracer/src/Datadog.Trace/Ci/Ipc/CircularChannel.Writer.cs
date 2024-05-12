@@ -53,10 +53,35 @@ internal partial class CircularChannel
                 var writePos = accessor.ReadUInt16(0);
                 var readPos = accessor.ReadUInt16(2);
 
+                // Check if we had to use a virtual write position outside the buffer to avoid blocking the read position
+                // condition for read is: writepos != readpos
+                // So if we detect that we have a writepos > buffersize, we use the modulus to check if is the same to the readpos
+                // and detect the buffer overflow.
+                if (writePos >= channel.BufferBodySize)
+                {
+                    if (writePos % channel.BufferBodySize == readPos)
+                    {
+                        Log.Warning("CircularChannel: Buffer overflow");
+                        return false;
+                    }
+                    else
+                    {
+                        // This means that the read position moved to the next buffer, so we need to reset the write position
+                        writePos = (ushort)(writePos % channel.BufferBodySize);
+                    }
+                }
+
                 var absoluteWritePos = HeaderSize + writePos;
                 if (channel.BufferSize - absoluteWritePos < 2)
                 {
-                    // Not space to write the length of the message, so we need to go back to 0
+                    // Not space to write the length of the message, so we need to go back to 0,
+                    // but we need to check first if the read position is at the start of the buffer
+                    if (readPos == 0)
+                    {
+                        Log.Warning("CircularChannel: Buffer overflow");
+                        return false;
+                    }
+
                     writePos = 0;
                     absoluteWritePos = HeaderSize;
                 }
@@ -86,13 +111,22 @@ internal partial class CircularChannel
                 var remainningSpace = channel.BufferBodySize - writePos;
                 var firstPartLength = Math.Min(dataSize, remainningSpace) - 2;
                 accessor.Write(absoluteWritePos, (ushort)data.Count);
-                accessor.WriteArray(absoluteWritePos + 2, data.Array!, data.Offset, firstPartLength);
+                if (firstPartLength > 0)
+                {
+                    accessor.WriteArray(absoluteWritePos + 2, data.Array!, data.Offset, firstPartLength);
+                }
 
                 // Write the second part of the data, if any, from the start of the buffer
                 var secondPartLength = data.Count - firstPartLength;
                 if (secondPartLength > 0)
                 {
                     accessor.WriteArray(HeaderSize, data.Array!, firstPartLength, secondPartLength);
+                }
+
+                if (nextWritePos == readPos)
+                {
+                    // This means that we will overwrite the data in the next write, so we need to virtually use a position outside the buffer
+                    nextWritePos = (ushort)(channel.BufferBodySize + nextWritePos);
                 }
 
                 accessor.Write(0, nextWritePos); // Update write pointer

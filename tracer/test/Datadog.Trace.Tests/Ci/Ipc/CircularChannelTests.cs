@@ -30,6 +30,13 @@ public class CircularChannelTests
             random.NextBytes(bytes);
             yield return [bytes];
         }
+
+        foreach (var edgeCase in (int[])[0, 1, 2, 3, 4, 8190, 8191, 8192, 8193])
+        {
+            var bytes = new byte[edgeCase];
+            random.NextBytes(bytes);
+            yield return [bytes];
+        }
     }
 
     [Theory]

@@ -91,11 +91,14 @@ internal partial class CircularChannel
                             break;
                         }
 
-                        var data = new byte[length];
+                        var data = length == 0 ? [] : new byte[length];
 
                         // Read the first part of the data
                         var firstPartLength = Math.Min(length, _channel.BufferSize - absoluteReadPos - 2);
-                        accessor.ReadArray(absoluteReadPos + 2, data, 0, firstPartLength);
+                        if (firstPartLength > 0)
+                        {
+                            accessor.ReadArray(absoluteReadPos + 2, data, 0, firstPartLength);
+                        }
 
                         // Read the second part of the data, if any, from the start of the buffer
                         var secondPartLength = length - firstPartLength;
