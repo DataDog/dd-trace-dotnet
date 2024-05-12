@@ -86,16 +86,11 @@ generate-lib-init-tag-values:
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/ci/auto_inject/gitlab:current
   stage: deploy
-  rules:
-    - if: '$POPULATE_CACHE'
-      when: never
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
-      when: always
-    - when: manual
-      allow_failure: true
+  needs: []
   variables:
     IMG_DESTINATION_BASE: dd-lib-dotnet-init
     ADDITIONAL_TAG_SUFFIXES: musl # comma separated list of additional tag suffixes
+    CI_COMMIT_TAG: v1.30.2
   script:
     - ./.gitlab/build-lib-init.sh
   artifacts:
@@ -105,8 +100,8 @@ generate-lib-init-tag-values:
 deploy-lib-init-trigger:
   stage: deploy
   trigger:
-#    project: DataDog/dd-trace-dotnet-gitlab-test # can be used for testing
-    project: DataDog/public-images
+    project: DataDog/dd-trace-dotnet-gitlab-test # can be used for testing
+#    project: DataDog/public-images
     branch: main
     strategy: depend
   variables:
@@ -121,8 +116,8 @@ deploy-lib-init-trigger:
 deploy-musl-lib-init-trigger:
   stage: deploy
   trigger:
-#    project: DataDog/dd-trace-dotnet-gitlab-test # can be used for testing
-    project: DataDog/public-images
+    project: DataDog/dd-trace-dotnet-gitlab-test # can be used for testing
+#    project: DataDog/public-images
     branch: main
     strategy: depend
   variables:
