@@ -135,7 +135,7 @@ generate-tag-values_test:
           strategy: depend
         variables:
           IMG_SOURCES: $IMG_SOURCES_BASE:$CI_COMMIT_SHA
-          IMG_DESTINATIONS: $IMG_DESTINATION_BASE:$CI_COMMIT_TAG
+          IMG_DESTINATIONS: $IMG_DESTINATION_BASE:$DEST_TAG
           IMG_SIGNING: "false"
       
       EOF
