@@ -196,7 +196,7 @@ deploy_trigger_test:
   stage: gitlab_test
   trigger:
     include:
-      - artifact: child-pipeline-gitlab-ci.yml
+      - artifact: generated-config.yml
         job: generate-tag-values_test
     strategy: depend
 
