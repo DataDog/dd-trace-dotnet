@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-// #nullable enable
-
 #if !NETFRAMEWORK
 
 #pragma warning disable SA1400
@@ -20,7 +18,7 @@ internal class IEnumerableWrapper<T> : IEnumerable<T>
 {
     private readonly Func<IEnumerable<T>> _target;
 
-    internal IEnumerableWrapper(Func<IEnumerable<T>> target = null, Action<T> taint = null)
+    internal IEnumerableWrapper(Func<IEnumerable<T>> target = null)
     {
         _target = target ?? OnTargetEnumerable;
     }

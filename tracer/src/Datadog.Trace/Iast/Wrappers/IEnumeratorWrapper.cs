@@ -18,7 +18,7 @@ internal class IEnumeratorWrapper : IEnumerator
 {
     private readonly Func<IEnumerator> _target;
 
-    public IEnumeratorWrapper(Func<IEnumerator> target, Action<object> taint = null)
+    public IEnumeratorWrapper(Func<IEnumerator> target)
     {
         _target = target;
     }
@@ -54,7 +54,7 @@ internal class IEnumeratorWrapper<T> : IEnumerator<T>
 {
     private readonly IEnumerator<T> _target;
 
-    internal IEnumeratorWrapper(IEnumerator<T> target, Action<T> taint = null)
+    internal IEnumeratorWrapper(IEnumerator<T> target)
     {
         _target = target;
     }

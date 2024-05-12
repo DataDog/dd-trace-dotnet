@@ -17,6 +17,7 @@ namespace Datadog.Trace.Iast.Wrappers;
 internal class HttpResponseHeadersWrapper : ICollectionWrapper<KeyValuePair<string, StringValues>>, IHeaderDictionary
 {
     internal HttpResponseHeadersWrapper(IHeaderDictionary originalHeaders)
+        : base(() => originalHeaders)
     {
         Target = originalHeaders;
     }

@@ -26,21 +26,30 @@
   "vulnerabilities": [
     {
       "type": "HEADER_INJECTION",
-      "hash": 1318805211,
+      "hash": -1621401893,
       "evidence": {
         "valueParts": [
           {
-            "value": "Set-Cookie: "
+            "value": "set-cookie",
+            "source": 0
+          },
+          {
+            "value": ": "
           },
           {
             "value": "token=glpat-eFynewhuKJFGdfGDFGdw;max-age=31536000;Secure;HttpOnly;SameSite=Strict",
-            "source": 0
+            "source": 1
           }
         ]
       }
     }
   ],
   "sources": [
+    {
+      "origin": "http.request.header",
+      "name": "name",
+      "value": "set-cookie"
+    },
     {
       "origin": "http.request.header",
       "name": "value",

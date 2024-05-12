@@ -26,21 +26,30 @@
   "vulnerabilities": [
     {
       "type": "HEADER_INJECTION",
-      "hash": 1129315861,
+      "hash": 371652405,
       "evidence": {
         "valueParts": [
           {
-            "value": "Access-Control-Allow-Origin: "
+            "value": "access-control-allow-origin",
+            "source": 0
+          },
+          {
+            "value": ": "
           },
           {
             "value": "https://example.com",
-            "source": 0
+            "source": 1
           }
         ]
       }
     }
   ],
   "sources": [
+    {
+      "origin": "http.request.header",
+      "name": "name",
+      "value": "access-control-allow-origin"
+    },
     {
       "origin": "http.request.header",
       "name": "value",

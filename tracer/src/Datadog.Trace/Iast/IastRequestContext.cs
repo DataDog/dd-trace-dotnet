@@ -298,6 +298,17 @@ internal class IastRequestContext
         }
     }
 
+    private void AddRequestCookies(IRequestCookieCollection? cookies)
+    {
+        if (cookies is not null)
+        {
+            foreach (var cookie in cookies)
+            {
+                AddCookieData(cookie.Key, cookie.Value);
+            }
+        }
+    }
+
     private void AddRequestHeaders(Microsoft.AspNetCore.Http.IHeaderDictionary? headers)
     {
         if (headers is not null)
@@ -319,16 +330,6 @@ internal class IastRequestContext
         }
     }
 
-    private void AddRequestCookies(IRequestCookieCollection? cookies)
-    {
-        if (cookies is not null)
-        {
-            foreach (var cookie in cookies)
-            {
-                AddCookieData(cookie.Key, cookie.Value);
-            }
-        }
-    }
 #endif
 
     private void AddCookieData(string name, string value)

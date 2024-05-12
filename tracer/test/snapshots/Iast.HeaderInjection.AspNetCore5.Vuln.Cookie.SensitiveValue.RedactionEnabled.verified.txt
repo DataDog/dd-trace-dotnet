@@ -30,18 +30,27 @@
       "evidence": {
         "valueParts": [
           {
-            "value": "Set-Cookie: "
+            "value": "set-cookie",
+            "source": 0
+          },
+          {
+            "value": ": "
           },
           {
             "redacted": true,
             "pattern": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrs",
-            "source": 0
+            "source": 1
           }
         ]
       }
     }
   ],
   "sources": [
+    {
+      "origin": "http.request.header",
+      "name": "name",
+      "value": "set-cookie"
+    },
     {
       "origin": "http.request.header",
       "name": "value",
