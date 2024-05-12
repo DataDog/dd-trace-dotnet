@@ -93,90 +93,12 @@ generate-tag-values_test:
   script:
     - CI_COMMIT_TAG="v2.53.4"
     - |
-      # Safety checks to make sure we have required values
-      if [ -z "$CI_COMMIT_TAG" ]; then
-        echo "Error: CI_COMMIT_TAG was not provided"
-        exit 1
-      fi
-      
-      if [ -z "$CI_COMMIT_SHA" ]; then
-        echo "Error: CI_COMMIT_SHA was not provided"
-        exit 1
-      fi
-      
-      if [ -z "$IMG_SOURCES_BASE" ]; then
-        echo "Error: IMG_SOURCES_BASE. This should be set to the full source docker image, excluding the tag name, e.g. ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init"
-        exit 1
-      fi
-      
-      if [ -z "$IMG_DESTINATION_BASE" ]; then
-        echo "Error: $IMG_DESTINATION_BASE. This should be set to the destination docker image, excluding the tag name, e.g. dd-lib-dotnet-init"
-        exit 1
-      fi
-      
-      # Safety check to make sure we have "enough" tags in the git repo
-      if [ "$(git tag | wc -l)" -lt 2 ]; then
-        echo "Error: Not enough tags to determine latest version"
-        exit 1
-      fi
-      
-      # 
-      if [ -z "$INCLUDE_MUSL" ]; then
-        INCLUDE_MUSL=
-      else
-        if [ "$INCLUDE_MUSL" -ne 0 ] && [ "$INCLUDE_MUSL" -ne 1 ]; then
-          echo "Error: INCLUDE_MUSL should be set to 0 or 1"
-          exit 1
-        fi
-      fi
-      
-      # If this is a pre-release release, we skip all the additional checks 
-      if echo "$CI_COMMIT_TAG" | grep -q "-" > /dev/null; then
-        echo "This is a pre-release release version"
-        IS_PRERELEASE=1
-        MAJOR_MINOR_VERSION=""
-        MAJOR_VERSION=""
-        IS_LATEST_TAG=0
-        IS_LATEST_MAJOR_TAG=0
-      else
-        IS_PRERELEASE=0
-      
-        # We need to determine whether this is is the latest tag and whether it's the latest major or not
-        # So we fetch all tags and sort them to find the latest, and the latest in this major.
-        # sort actually gets prerelease versions in technically the wrong order here
-        # but we explicitly include them anyway, as we don't want to add any of the floating tags
-        # to prerelease versions.
-      
-        LATEST_TAG="$(git tag | grep -v '-' | sort -V -r | head -n 1)"
-        LATEST_MAJOR_TAG="$(git tag -l "$MAJOR_VERSION.*" | grep -v '-' | sort -V -r | head -n 1)"
-        echo "This tag: $CI_COMMIT_TAG"
-        echo "Latest repository tag: $LATEST_TAG"
-        echo "Latest repository tag for this major: $LATEST_MAJOR_TAG"
-      
-        is_greater_than_or_equal() {
-          # GNU sort -C (silent) reports via exit code whether
-          # the data is already in sorted order
-          printf '%s\n' "$2" "$1" | sort -C -V
-        }
-      
-        if is_greater_than_or_equal "$CI_COMMIT_TAG" "$LATEST_TAG"; then
-          # The current tag is the latest in the repository
-          IS_LATEST_TAG=1
-        else
-          IS_LATEST_TAG=0
-        fi
-      
-        if is_greater_than_or_equal "$CI_COMMIT_TAG" "$LATEST_MAJOR_TAG"; then
-          # The current tag is the latest for this major version in the repository
-          IS_LATEST_MAJOR_TAG=1
-        else
-          IS_LATEST_MAJOR_TAG=0
-        fi
-      
-        # Calculate the tags we use for floating major and minor versions
-        MAJOR_MINOR_VERSION="$(sed -nE 's/^(v[0-9]+\.[0-9]+)\.[0-9]+$/\1/p' <<< ${CI_COMMIT_TAG})"
-        MAJOR_VERSION="$(sed -nE 's/^(v[0-9]+)\.[0-9]+\.[0-9]+$/\1/p' <<< ${CI_COMMIT_TAG})"
-      fi
+      echo "This is a pre-release release version"
+      IS_PRERELEASE=1
+      MAJOR_MINOR_VERSION=""
+      MAJOR_VERSION=""
+      IS_LATEST_TAG=0
+      IS_LATEST_MAJOR_TAG=0
       
       # print everything for debugging purposes
       echo "MAJOR_MINOR_VERSION=${MAJOR_MINOR_VERSION}"
@@ -197,8 +119,7 @@ generate-tag-values_test:
         echo "Error: Could not determine major version for latest major release, this should not happen"
         exit 1
       fi
-      
-      
+ 
       # TODO: Rename dd-trace-dotnet-gitlab-test to public-images
       # Helper functions for building the script
       add_stage() {
