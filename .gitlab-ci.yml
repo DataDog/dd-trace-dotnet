@@ -93,7 +93,7 @@ generate-tag-values_test:
     PUBLIC_IMAGES_PIPELINE_PROJECT: DataDog/dd-trace-dotnet-gitlab-test # change this to DataDog/public-images once done with testing
     # PUBLIC_IMAGES_PIPELINE_PROJECT: DataDog/public-images
     INCLUDE_MUSL: 1
-    CI_COMMIT_TAG: "v1.30.1" # testing purposes
+    CI_COMMIT_TAG: "v1.32.0" # testing purposes
   script:
     - ./.gitlab/build-lib-init.sh
   artifacts:
