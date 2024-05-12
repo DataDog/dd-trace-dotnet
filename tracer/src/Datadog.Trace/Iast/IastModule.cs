@@ -592,8 +592,8 @@ internal static partial class IastModule
             }
         }
 
-        // Check for marked (excluded) ranges
-        if (Ranges.RangesMarked(tainted?.Ranges, exclusionSecureMarks))
+        // Contains at least one range that is not not safe (when analyzing a vulnerability that can have secure marks)
+        if (exclusionSecureMarks != SecureMarks.None && !Ranges.ContainsUnsafeRange(tainted?.Ranges))
         {
             return IastModuleResponse.Empty;
         }
@@ -604,9 +604,10 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
+        var unsafeRanges = Ranges.UnsafeRanges(tainted?.Ranges, exclusionSecureMarks);
         var vulnerability = (hash is null) ?
-            new Vulnerability(vulnerabilityType, location, new Evidence(evidenceValue, tainted?.Ranges), integrationId) :
-            new Vulnerability(vulnerabilityType, (int)hash, location, new Evidence(evidenceValue, tainted?.Ranges), integrationId);
+            new Vulnerability(vulnerabilityType, location, new Evidence(evidenceValue, unsafeRanges), integrationId) :
+            new Vulnerability(vulnerabilityType, (int)hash, location, new Evidence(evidenceValue, unsafeRanges), integrationId);
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {

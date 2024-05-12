@@ -206,21 +206,57 @@ internal static class Ranges
         return newRanges.ToArray();
     }
 
-    internal static bool RangesMarked(IEnumerable<Range>? ranges, SecureMarks secureMarks)
+    internal static bool ContainsUnsafeRange(IEnumerable<Range>? ranges)
     {
-        if (ranges is null || secureMarks == SecureMarks.None)
+        if (ranges is null)
         {
             return false;
         }
 
         foreach (var range in ranges)
         {
-            if (range.IsMarked(secureMarks))
+            if (range.SecureMarks == SecureMarks.None)
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Returns an array of ranges without ranges that are marked with the given marks.
+    /// </summary>
+    internal static Range[]? UnsafeRanges(Range[]? ranges, SecureMarks secureMarks)
+    {
+        if (ranges is null || secureMarks == SecureMarks.None)
+        {
+            return ranges;
+        }
+
+        var newRanges = new Range[ranges.Length];
+
+        var length = 0;
+        for (var i = 0; i < ranges.Length; i++)
+        {
+            // Keep the vulnerable range if not marked with the given marks
+            if (!ranges[i].IsMarked(secureMarks))
+            {
+                newRanges[length++] = ranges[i];
+            }
+        }
+
+        if (length == 0)
+        {
+            return null;
+        }
+
+#if NETCOREAPP
+        return new ArraySegment<Range>(newRanges, 0, length).ToArray();
+#else
+        var result = new Range[length];
+        Array.Copy(newRanges, 0, result, 0, length);
+        return result;
+#endif
     }
 }

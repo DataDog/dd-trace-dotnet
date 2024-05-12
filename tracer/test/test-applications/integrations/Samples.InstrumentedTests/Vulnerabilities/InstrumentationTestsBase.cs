@@ -34,7 +34,7 @@ public class InstrumentationTestsBase : IDisposable
     private static readonly Type _spanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
     private static readonly Type _traceContextType = Type.GetType("Datadog.Trace.TraceContext, Datadog.Trace");
     private static readonly Type _sourceType = Type.GetType("Datadog.Trace.Iast.Source, Datadog.Trace");
-    private static readonly Type _markType = Type.GetType("Datadog.Trace.Iast.Mark, Datadog.Trace");
+    private static readonly Type _markType = Type.GetType("Datadog.Trace.Iast.SecureMarks, Datadog.Trace");
     private static readonly Type _vulnerabilityType = Type.GetType("Datadog.Trace.Iast.Vulnerability, Datadog.Trace");
     private static readonly Type _rangeType = Type.GetType("Datadog.Trace.Iast.Range, Datadog.Trace");
     private static readonly Type _vulnerabilityBatchType = Type.GetType("Datadog.Trace.Iast.VulnerabilityBatch, Datadog.Trace");
