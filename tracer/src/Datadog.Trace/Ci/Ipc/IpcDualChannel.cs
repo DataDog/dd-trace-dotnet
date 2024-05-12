@@ -5,6 +5,8 @@
 #nullable enable
 
 using System;
+using System.IO;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
@@ -16,7 +18,7 @@ internal abstract class IpcDualChannel : IDisposable
     private readonly IChannelReader _recvChannelReader;
     private readonly IChannel _sendChannel;
     private readonly IChannelWriter _sendChannelWriter;
-    private readonly JsonSerializerSettings _serializerSettings;
+    private readonly JsonSerializer _jsonSerializer;
 
     protected IpcDualChannel(string recvName, string sendName)
     {
@@ -27,21 +29,23 @@ internal abstract class IpcDualChannel : IDisposable
         _sendChannel = new CircularChannel(sendName);
         _sendChannelWriter = _sendChannel.GetWriter();
 
-        _serializerSettings = new JsonSerializerSettings()
+        _jsonSerializer = JsonSerializer.Create(new JsonSerializerSettings()
         {
             TypeNameHandling = TypeNameHandling.All,
             Formatting = Formatting.None,
             NullValueHandling = NullValueHandling.Ignore,
             SerializationBinder = new CustomSerializationBinder(),
-        };
+        });
     }
 
     public event EventHandler<object>? MessageReceived;
 
     private void OnMessageReceived(object? sender, byte[] data)
     {
-        var jsonMessage = Util.EncodingHelpers.Utf8NoBom.GetString(data);
-        var message = JsonConvert.DeserializeObject(jsonMessage, _serializerSettings);
+        using var memoryStream = new MemoryStream(data);
+        using var reader = new StreamReader(memoryStream, Util.EncodingHelpers.Utf8NoBom);
+        using var jsonReader = new JsonTextReader(reader);
+        var message = _jsonSerializer.Deserialize(jsonReader);
         if (message != null)
         {
             MessageReceived?.Invoke(sender, message);
@@ -50,9 +54,23 @@ internal abstract class IpcDualChannel : IDisposable
 
     public bool TrySendMessage(object message)
     {
-        var jsonMessage = JsonConvert.SerializeObject(message, _serializerSettings);
-        var bytes = Util.EncodingHelpers.Utf8NoBom.GetBytes(jsonMessage);
-        return _sendChannelWriter.TryWrite(bytes);
+        var rentedArray = ArrayPool<byte>.Shared.Rent(_sendChannel.BufferBodySize);
+        try
+        {
+            using var memoryStream = new MemoryStream();
+            using (var writer = new StreamWriter(memoryStream, Util.EncodingHelpers.Utf8NoBom))
+            {
+                using var jsonWriter = new JsonTextWriter(writer);
+                _jsonSerializer.Serialize(jsonWriter, message);
+            }
+
+            memoryStream.TryGetBuffer(out var memoryBuffer);
+            return _sendChannelWriter.TryWrite(in memoryBuffer);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(rentedArray);
+        }
     }
 
     public void Dispose()

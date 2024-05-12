@@ -92,9 +92,10 @@ public class CircularChannelTests
             countdownEvent.Signal();
         };
 
+        var valueSegment = new ArraySegment<byte>(value);
         for (var i = 0; i < messagesCount; i++)
         {
-            if (!writer.TryWrite(value))
+            if (!writer.TryWrite(in valueSegment))
             {
                 // Wait for the receiver to process the messages before trying again
                 Thread.Sleep(500);

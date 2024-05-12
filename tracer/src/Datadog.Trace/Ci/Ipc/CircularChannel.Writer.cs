@@ -22,9 +22,9 @@ internal partial class CircularChannel
             _channel = channel;
         }
 
-        public int GetMessageSize(byte[] data) => data.Length + 2;
+        public int GetMessageSize(in ArraySegment<byte> data) => data.Count + 2;
 
-        public bool TryWrite(byte[] data)
+        public bool TryWrite(in ArraySegment<byte> data)
         {
             var channel = _channel;
             if (Interlocked.Read(ref _disposed) == 1 || Interlocked.Read(ref channel._disposed) == 1)
@@ -33,7 +33,7 @@ internal partial class CircularChannel
                 return false;
             }
 
-            var dataSize = GetMessageSize(data);
+            var dataSize = GetMessageSize(in data);
             if (dataSize > channel.BufferBodySize)
             {
                 Log.Error("CircularChannel: Message size exceeds maximum allowed size.");
@@ -86,14 +86,14 @@ internal partial class CircularChannel
                 // Write the first part of the data
                 var remainningSpace = channel.BufferBodySize - writePos;
                 var firstPartLength = Math.Min(dataSize, remainningSpace) - 2;
-                accessor.Write(absoluteWritePos, (ushort)data.Length);
-                accessor.WriteArray(absoluteWritePos + 2, data, 0, firstPartLength);
+                accessor.Write(absoluteWritePos, (ushort)data.Count);
+                accessor.WriteArray(absoluteWritePos + 2, data.Array!, data.Offset, firstPartLength);
 
                 // Write the second part of the data, if any, from the start of the buffer
-                var secondPartLength = data.Length - firstPartLength;
+                var secondPartLength = data.Count - firstPartLength;
                 if (secondPartLength > 0)
                 {
-                    accessor.WriteArray(HeaderSize, data, firstPartLength, secondPartLength);
+                    accessor.WriteArray(HeaderSize, data.Array!, firstPartLength, secondPartLength);
                 }
 
                 accessor.Write(0, nextWritePos); // Update write pointer

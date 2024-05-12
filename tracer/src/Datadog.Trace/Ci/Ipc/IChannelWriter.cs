@@ -10,7 +10,7 @@ namespace Datadog.Trace.Ci.Ipc;
 
 internal interface IChannelWriter : IDisposable
 {
-    int GetMessageSize(byte[] data);
+    int GetMessageSize(in ArraySegment<byte> data);
 
-    bool TryWrite(byte[] data);
+    bool TryWrite(in ArraySegment<byte> data);
 }
