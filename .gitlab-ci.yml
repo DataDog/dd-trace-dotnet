@@ -194,6 +194,8 @@ generate-tag-values_test:
 
 deploy_trigger_test:
   stage: gitlab_test
+  needs:
+    - generate-tag-values_test
   trigger:
     include:
       - artifact: generated-config.yml
