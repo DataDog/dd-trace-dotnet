@@ -103,10 +103,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var codeCoverageReceived = new StrongBox<bool>(false);
             var name = $"session_{sessionId}";
             using var ipcServer = new IpcServer(name);
-            ipcServer.MessageReceived += (sender, o) =>
+            ipcServer.SetMessageReceivedCallback(o =>
             {
                 codeCoverageReceived.Value = codeCoverageReceived.Value || o is SessionCodeCoverageMessage;
-            };
+            });
 
             string[] messages = null;
             try
