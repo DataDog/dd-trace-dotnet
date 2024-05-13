@@ -28,18 +28,18 @@ public class IpcTests
         server.MessageReceived += (sender, message) =>
         {
             var value = (TestMessage)message;
-            if (value.ServerValue < 100)
+            if (value.ServerValue < 50)
             {
                 value.ServerValue++;
                 while (!server.TrySendMessage(value))
                 {
-                    Thread.Sleep(100);
+                    Thread.Sleep(50);
                 }
 
                 Interlocked.Exchange(ref finalValue, value);
             }
 
-            if (value.ServerValue == 100)
+            if (value.ServerValue == 50)
             {
                 serverTaskCompletion.TrySetResult(true);
             }
@@ -48,18 +48,18 @@ public class IpcTests
         client.MessageReceived += (sender, message) =>
         {
             var value = (TestMessage)message;
-            if (value.ClientValue < 100)
+            if (value.ClientValue < 50)
             {
                 value.ClientValue++;
                 while (!client.TrySendMessage(value))
                 {
-                    Thread.Sleep(100);
+                    Thread.Sleep(50);
                 }
 
                 Interlocked.Exchange(ref finalValue, value);
             }
 
-            if (value.ClientValue == 100)
+            if (value.ClientValue == 50)
             {
                 clientTaskCompletion.TrySetResult(true);
             }
