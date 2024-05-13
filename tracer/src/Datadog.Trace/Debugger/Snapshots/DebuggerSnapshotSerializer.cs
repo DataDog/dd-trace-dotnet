@@ -410,12 +410,12 @@ namespace Datadog.Trace.Debugger.Snapshots
                         {
                             if (field.FieldType.ContainsGenericParameters ||
                                 field.DeclaringType?.ContainsGenericParameters == true ||
-                                field.ReflectedType?.ContainsGenericParameters == true)
+                                field.ReflectedType?.ContainsGenericParameters == true ||
+                                field is System.Reflection.Emit.FieldBuilder)
                             {
                                 return false;
                             }
 
-                            type = field.FieldType;
                             if (source != null || field.IsStatic)
                             {
                                 value = field.GetValue(source);
@@ -427,10 +427,22 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                     case PropertyInfo property:
                         {
-                            type = property.PropertyType;
+                            if (property.PropertyType.ContainsGenericParameters ||
+                                property.DeclaringType?.ContainsGenericParameters == true ||
+                                property.ReflectedType?.ContainsGenericParameters == true)
+                            {
+                                return false;
+                            }
+
                             if (source != null || property.GetMethod?.IsStatic == true)
                             {
-                                value = property.GetMethod.Invoke(source, Array.Empty<object>());
+                                var getMethod = property.GetGetMethod(true);
+                                if (getMethod == null || getMethod is System.Reflection.Emit.MethodBuilder)
+                                {
+                                    return false;
+                                }
+
+                                value = property.GetMethod?.Invoke(source, Array.Empty<object>());
                                 return true;
                             }
 
@@ -439,17 +451,39 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                     default:
                         {
-                            Log.Error(nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue) + ": Can't get value of {Name}. Unsupported member info {Type}", fieldOrProp.Name, fieldOrProp.GetType());
+                            Log.Error(nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue) + ": Can't get value of {Member} from {Source}. Unsupported member info.", GetMemberInfo(fieldOrProp), source?.GetType().FullName);
                             break;
                         }
                 }
             }
             catch (Exception e)
             {
-                Log.Error(e, nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue));
+                Log.Error(e, nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue) + "Can't get value of {Member} from {Source}", GetMemberInfo(fieldOrProp), source?.GetType().FullName);
             }
 
             return false;
+
+            string GetMemberInfo(MemberInfo memberInfo)
+            {
+                try
+                {
+                    if (memberInfo is FieldInfo field)
+                    {
+                        return $"Type: {field.FieldType.FullName}, Name: {field.Name}, Attributes: {field.Attributes.ToString()}";
+                    }
+
+                    if (memberInfo is PropertyInfo property)
+                    {
+                        return $"Type: {property.PropertyType.FullName}, Name: {property.Name}, Attributes: {property.Attributes.ToString()}";
+                    }
+
+                    return $"Type: {memberInfo.MemberType}, Name: {memberInfo.Name}";
+                }
+                catch
+                {
+                    return "Unknown";
+                }
+            }
         }
 
         private static CancellationTokenSource CreateCancellationTimeout()
