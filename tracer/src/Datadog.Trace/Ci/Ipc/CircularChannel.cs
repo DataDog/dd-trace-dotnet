@@ -75,7 +75,9 @@ internal partial class CircularChannel : IChannel
 
         _disposed = 0;
         _bufferSize = bufferSize;
-        _mutex = new Mutex(initiallyOwned: false, $"{Path.GetFileNameWithoutExtension(fileName)}.mutex");
+        _mutex = new Mutex(
+            initiallyOwned: false,
+            FrameworkDescription.Instance.IsWindows() ? @$"Global\{Path.GetFileNameWithoutExtension(fileName)}" : $"{Path.GetFileNameWithoutExtension(fileName)}");
 
         var hasHandle = _mutex.WaitOne(MutexTimeout);
         if (!hasHandle)

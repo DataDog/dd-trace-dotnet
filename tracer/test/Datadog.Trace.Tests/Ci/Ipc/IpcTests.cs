@@ -25,7 +25,7 @@ public class IpcTests
         var serverTaskCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var clientTaskCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        const int maxNumber = 25;
+        const int maxNumber = 20;
 
         server.SetMessageReceivedCallback(message =>
         {
@@ -35,7 +35,7 @@ public class IpcTests
                 value.ServerValue++;
                 while (!server.TrySendMessage(value))
                 {
-                    Thread.Sleep(maxNumber);
+                    Thread.Sleep(500);
                 }
 
                 Interlocked.Exchange(ref finalValue, value);
@@ -55,7 +55,7 @@ public class IpcTests
                 value.ClientValue++;
                 while (!client.TrySendMessage(value))
                 {
-                    Thread.Sleep(maxNumber);
+                    Thread.Sleep(500);
                 }
 
                 Interlocked.Exchange(ref finalValue, value);

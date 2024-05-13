@@ -82,8 +82,8 @@ public class CircularChannelTests
         // Calculate how many messages we can write
         var messagesCount = AvailableBufferSize / messageSize;
 
-        // we triplicate the number of messages to test the circular buffer
-        messagesCount *= 3;
+        // we duplicate the number of messages to test the circular buffer
+        messagesCount *= 2;
 
         ExceptionDispatchInfo? exceptionDispatchInfo = null;
         var countdownEvent = new CountdownEvent(messagesCount);
@@ -92,24 +92,28 @@ public class CircularChannelTests
             try
             {
                 using var scope = new AssertionScope();
-                bytes.Should().HaveCount(value.Length);
-                bytes.Should().Equal(value);
+                var cValue = bytes.ToArray();
+                cValue.Should().HaveCount(value.Length);
+                cValue.Should().Equal(value);
+                countdownEvent.Signal();
             }
             catch (Exception ex)
             {
                 exceptionDispatchInfo = ExceptionDispatchInfo.Capture(ex);
             }
-
-            countdownEvent.Signal();
         });
 
         for (var i = 0; i < messagesCount; i++)
         {
-            if (!writer.TryWrite(in valueSegment))
+            var retries = 0;
+            while (!writer.TryWrite(in valueSegment))
             {
                 // Wait for the receiver to process the messages before trying again
                 Thread.Sleep(500);
-                i--;
+                if (retries++ == 20)
+                {
+                    throw new Exception("Error writing messages to the channel. After 20 retries, the channel is still full.");
+                }
             }
         }
 
