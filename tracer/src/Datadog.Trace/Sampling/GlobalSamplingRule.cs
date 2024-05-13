@@ -21,7 +21,7 @@ namespace Datadog.Trace.Sampling
         /// </summary>
         public int Priority => 0;
 
-        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.TraceSamplingRule;
+        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.LocalTraceSamplingRule;
 
         public bool IsMatch(Span span) => true;
 

@@ -42,7 +42,7 @@ internal static class SamplingMechanism
     /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
     /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
-    public const int TraceSamplingRule = 3;
+    public const int LocalTraceSamplingRule = 3;
 
     /// <summary>
     /// A sampling decision was made manually by the user.
@@ -115,7 +115,7 @@ internal static class SamplingMechanism
             Default => "-0",
             AgentRate => "-1",
             // RemoteRateAuto => "-2",
-            TraceSamplingRule => "-3",
+            LocalTraceSamplingRule => "-3",
             Manual => "-4",
             Asm => "-5",
             // RemoteRateUser => "-6",

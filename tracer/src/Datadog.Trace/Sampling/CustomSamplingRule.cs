@@ -59,7 +59,7 @@ namespace Datadog.Trace.Sampling
 
         public int SamplingMechanism => _provenance switch
         {
-            SamplingRuleProvenance.Local => Datadog.Trace.Sampling.SamplingMechanism.TraceSamplingRule,
+            SamplingRuleProvenance.Local => Datadog.Trace.Sampling.SamplingMechanism.LocalTraceSamplingRule,
             SamplingRuleProvenance.RemoteCustomer => Datadog.Trace.Sampling.SamplingMechanism.RemoteUserSamplingRule,
             SamplingRuleProvenance.RemoteDynamic => Datadog.Trace.Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule,
             _ => Datadog.Trace.Sampling.SamplingMechanism.Default
