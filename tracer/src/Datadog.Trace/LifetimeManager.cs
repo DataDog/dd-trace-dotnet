@@ -62,14 +62,12 @@ namespace Datadog.Trace
 
         public TimeSpan TaskTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
-        public Exception? CurrentException { get; private set; }
-
-        public void AddShutdownTask(Action action)
+        public void AddShutdownTask(Action<Exception?> action)
         {
             _shutdownHooks.Enqueue(action);
         }
 
-        public void AddAsyncShutdownTask(Func<Task> func)
+        public void AddAsyncShutdownTask(Func<Exception?, Task> func)
         {
             _shutdownHooks.Enqueue(func);
         }
@@ -83,8 +81,7 @@ namespace Datadog.Trace
         private void CurrentDomain_UnhandledException(object? sender, UnhandledExceptionEventArgs e)
         {
             Log.Warning("Application threw an unhandled exception: {Exception}", e.ExceptionObject);
-            CurrentException = e.ExceptionObject as Exception;
-            RunShutdownTasks();
+            RunShutdownTasks(e.ExceptionObject as Exception);
             AppDomain.CurrentDomain.UnhandledException -= CurrentDomain_UnhandledException;
         }
 
@@ -100,7 +97,7 @@ namespace Datadog.Trace
             AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
         }
 
-        public void RunShutdownTasks()
+        public void RunShutdownTasks(Exception? exception = null)
         {
             var current = SynchronizationContext.Current;
             try
@@ -112,17 +109,17 @@ namespace Datadog.Trace
 
                 while (_shutdownHooks.TryDequeue(out var actionOrFunc))
                 {
-                    if (actionOrFunc is Action action)
+                    if (actionOrFunc is Action<Exception?> action)
                     {
-                        action();
+                        action(exception);
                     }
-                    else if (actionOrFunc is Func<Task> func)
+                    else if (actionOrFunc is Func<Exception?, Task> func)
                     {
-                        AsyncUtil.RunSync(func, (int)TaskTimeout.TotalMilliseconds);
+                        AsyncUtil.RunSync(func, exception, (int)TaskTimeout.TotalMilliseconds);
                     }
                     else
                     {
-                        Log.Error("Hooks must be of Action or Func<Task> types.");
+                        Log.Error("Hooks must be of Action<Exception> or Func<Task> types.");
                     }
                 }
             }
