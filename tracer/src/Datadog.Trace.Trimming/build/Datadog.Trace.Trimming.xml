@@ -1014,6 +1014,7 @@
       <type fullname="System.Threading.Tasks.TaskExtensions" />
    </assembly>
    <assembly fullname="System.Threading.Thread">
+      <type fullname="System.Threading.ParameterizedThreadStart" />
       <type fullname="System.Threading.Thread" />
       <type fullname="System.Threading.ThreadAbortException" />
    </assembly>
