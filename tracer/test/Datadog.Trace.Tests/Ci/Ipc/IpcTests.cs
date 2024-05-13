@@ -25,21 +25,23 @@ public class IpcTests
         var serverTaskCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var clientTaskCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        const int maxNumber = 50;
+
         server.MessageReceived += (sender, message) =>
         {
             var value = (TestMessage)message;
-            if (value.ServerValue < 50)
+            if (value.ServerValue < maxNumber)
             {
                 value.ServerValue++;
                 while (!server.TrySendMessage(value))
                 {
-                    Thread.Sleep(50);
+                    Thread.Sleep(maxNumber);
                 }
 
                 Interlocked.Exchange(ref finalValue, value);
             }
 
-            if (value.ServerValue == 50)
+            if (value.ServerValue == maxNumber)
             {
                 serverTaskCompletion.TrySetResult(true);
             }
@@ -48,18 +50,18 @@ public class IpcTests
         client.MessageReceived += (sender, message) =>
         {
             var value = (TestMessage)message;
-            if (value.ClientValue < 50)
+            if (value.ClientValue < maxNumber)
             {
                 value.ClientValue++;
                 while (!client.TrySendMessage(value))
                 {
-                    Thread.Sleep(50);
+                    Thread.Sleep(maxNumber);
                 }
 
                 Interlocked.Exchange(ref finalValue, value);
             }
 
-            if (value.ClientValue == 50)
+            if (value.ClientValue == maxNumber)
             {
                 clientTaskCompletion.TrySetResult(true);
             }
@@ -75,8 +77,8 @@ public class IpcTests
         }
 
         finalValue.Should().NotBeNull();
-        finalValue!.ServerValue.Should().Be(100);
-        finalValue.ClientValue.Should().Be(100);
+        finalValue!.ServerValue.Should().Be(maxNumber);
+        finalValue.ClientValue.Should().Be(maxNumber);
     }
 
     private class TestMessage(int serverValue, int clientValue)
