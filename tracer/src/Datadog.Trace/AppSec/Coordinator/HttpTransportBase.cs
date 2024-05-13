@@ -7,13 +7,16 @@
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
+#if !NETFRAMEWORK
+using Microsoft.AspNetCore.Http;
+#else
+using System.Web;
+#endif
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
 internal abstract class HttpTransportBase
 {
-    internal const string AsmApiSecurity = "asm.apisecurity";
-
     internal abstract bool IsBlocked { get; }
 
     internal abstract int StatusCode { get; }
@@ -21,6 +24,8 @@ internal abstract class HttpTransportBase
     internal abstract IDictionary<string, object>? RouteData { get; }
 
     internal abstract bool ReportedExternalWafsRequestHeaders { get; set; }
+
+    public abstract HttpContext Context { get; }
 
     internal abstract IContext? GetAdditiveContext();
 
