@@ -21,16 +21,26 @@ internal class GitLabSourceLinkUrlParser : SourceLinkUrlParser
     /// </summary>
     internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
-        var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length != 5 || segments[2] != "raw" || segments[4] != "*" || !IsValidCommitSha(segments[3]))
+        commitSha = null;
+        repositoryUrl = null;
+
+        try
         {
-            commitSha = null;
-            repositoryUrl = null;
-            return false;
+            var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length != 5 || segments[2] != "raw" || segments[4] != "*" || !IsValidCommitSha(segments[3]))
+            {
+                return false;
+            }
+
+            repositoryUrl = $"{uri.Scheme}://{uri.Authority}/{segments[0]}/{segments[1]}";
+            commitSha = segments[3];
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while trying to parse GitLab SourceLink URL");
         }
 
-        repositoryUrl = $"{uri.Scheme}://{uri.Authority}/{segments[0]}/{segments[1]}";
-        commitSha = segments[3];
-        return true;
+        return false;
     }
 }
