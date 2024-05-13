@@ -477,22 +477,45 @@ public sealed class TestModule
         if (CIVisibility.Settings.TestsSkippingEnabled.HasValue)
         {
             span.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, CIVisibility.Settings.TestsSkippingEnabled.Value ? "true" : "false");
+            if (CIVisibility.Settings.TestsSkippingEnabled.Value)
+            {
+                // If we detect a module with tests skipping enabled, we ensure we also have the session tag set
+                TrySetSessionTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true");
+            }
         }
 
         if (Tags.IntelligentTestRunnerSkippingCount.HasValue)
         {
             span.SetTag(IntelligentTestRunnerTags.TestsSkipped, "true");
+            // If we detect a module with tests being skipped, we ensure we also have the session tag set
+            // if not we don't affect the session tag (other modules could have skipped tests)
+            TrySetSessionTag(IntelligentTestRunnerTags.TestsSkipped, "true");
         }
         else
         {
             span.SetTag(IntelligentTestRunnerTags.TestsSkipped, CIVisibility.HasSkippableTests() ? "true" : "false");
+            if (CIVisibility.HasSkippableTests())
+            {
+                // If we detect a module with tests being skipped, we ensure we also have the session tag set
+                // if not we don't affect the session tag (other modules could have skipped tests)
+                TrySetSessionTag(IntelligentTestRunnerTags.TestsSkipped, "true");
+            }
         }
 
         if (CIVisibility.Settings.CodeCoverageEnabled.HasValue)
         {
             var value = CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false";
             span.SetTag(CodeCoverageTags.Enabled, value);
-            _fakeSession?.SetTag(CodeCoverageTags.Enabled, value);
+            if (CIVisibility.Settings.CodeCoverageEnabled.Value)
+            {
+                // If we confirm that a module has code coverage enabled, we ensure we also have the session tag set
+                // if not we leave the tag as is (other modules could have code coverage enabled)
+                TrySetSessionTag(CodeCoverageTags.Enabled, "true");
+            }
+            else
+            {
+                _fakeSession?.SetTag(CodeCoverageTags.Enabled, value);
+            }
         }
 
         if (_ipcClient is not null)
