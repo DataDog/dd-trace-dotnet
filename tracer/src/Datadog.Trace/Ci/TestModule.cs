@@ -643,17 +643,26 @@ public sealed class TestModule
             return false;
         }
 
-        try
+        // Span is created in the .ctor so we can use it here for synchronization
+        lock (_span)
         {
-            var name = $"session_{Tags.SessionId}";
-            CIVisibility.Log.Debug("TestModule.Enabling IPC client: {Name}", name);
-            _ipcClient = new IpcClient(name);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            CIVisibility.Log.Error(ex, "Error enabling IPC client");
-            return false;
+            if (_ipcClient is not null)
+            {
+                return true;
+            }
+
+            try
+            {
+                var name = $"session_{Tags.SessionId}";
+                CIVisibility.Log.Debug("TestModule.Enabling IPC client: {Name}", name);
+                _ipcClient = new IpcClient(name);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                CIVisibility.Log.Error(ex, "Error enabling IPC client");
+                return false;
+            }
         }
     }
 
@@ -665,21 +674,20 @@ public sealed class TestModule
             return true;
         }
 
-        if (_ipcClient is null)
+        if (_ipcClient is { } ipcClient)
         {
-            return false;
+            try
+            {
+                CIVisibility.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
+                return ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
+            }
+            catch (Exception ex)
+            {
+                CIVisibility.Log.Error(ex, "Error sending SetSessionTagMessage");
+            }
         }
 
-        try
-        {
-            CIVisibility.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
-            return _ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
-        }
-        catch (Exception ex)
-        {
-            CIVisibility.Log.Error(ex, "Error sending SetSessionTagMessage");
-            return false;
-        }
+        return false;
     }
 
     internal bool TrySetSessionTag(string name, double value)
@@ -690,20 +698,19 @@ public sealed class TestModule
             return true;
         }
 
-        if (_ipcClient is null)
+        if (_ipcClient is { } ipcClient)
         {
-            return false;
+            try
+            {
+                CIVisibility.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
+                return ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
+            }
+            catch (Exception ex)
+            {
+                CIVisibility.Log.Error(ex, "Error sending SetSessionTagMessage");
+            }
         }
 
-        try
-        {
-            CIVisibility.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
-            return _ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
-        }
-        catch (Exception ex)
-        {
-            CIVisibility.Log.Error(ex, "Error sending SetSessionTagMessage");
-            return false;
-        }
+        return false;
     }
 }
