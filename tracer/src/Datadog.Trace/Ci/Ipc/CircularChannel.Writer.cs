@@ -29,21 +29,21 @@ internal partial class CircularChannel
             var channel = _channel;
             if (Interlocked.Read(ref _disposed) == 1 || Interlocked.Read(ref channel._disposed) == 1)
             {
-                Log.Error("CircularChannel: Channel is disposed. Cannot write data.");
+                Log.Error("CircularChannel.Writer: Channel is disposed. Cannot write data.");
                 return false;
             }
 
             var dataSize = GetMessageSize(in data);
             if (dataSize > channel.BufferBodySize)
             {
-                Log.Error("CircularChannel: Message size exceeds maximum allowed size.");
+                Log.Error("CircularChannel.Writer: Message size exceeds maximum allowed size.");
                 return false;
             }
 
-            var hasHandle = channel._mutex.WaitOne(MutexTimeout);
+            var hasHandle = channel._mutex.WaitOne(_channel._settings.MutexTimeout);
             if (!hasHandle)
             {
-                Log.Error("CircularChannel: Failed to acquire mutex within the time limit.");
+                Log.Error("CircularChannel.Writer: Failed to acquire mutex within the time limit.");
                 return false;
             }
 
@@ -61,7 +61,7 @@ internal partial class CircularChannel
                 {
                     if (writePos % channel.BufferBodySize == readPos)
                     {
-                        Log.Warning("CircularChannel: Buffer overflow");
+                        Log.Warning("CircularChannel.Writer: Buffer overflow");
                         return false;
                     }
                     else
@@ -78,7 +78,7 @@ internal partial class CircularChannel
                     // but we need to check first if the read position is at the start of the buffer
                     if (readPos == 0)
                     {
-                        Log.Warning("CircularChannel: Buffer overflow");
+                        Log.Warning("CircularChannel.Writer: Buffer overflow");
                         return false;
                     }
 
@@ -103,7 +103,7 @@ internal partial class CircularChannel
                                          : channel.BufferBodySize - (writePos - readPos);
                 if (spaceAvailable < dataSize)
                 {
-                    Log.Warning("CircularChannel: Buffer overflow");
+                    Log.Warning("CircularChannel.Writer: Buffer overflow");
                     return false;
                 }
 
@@ -134,7 +134,7 @@ internal partial class CircularChannel
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "CircularChannel: Error while writing data");
+                Log.Error(ex, "CircularChannel.Writer: Error while writing data");
                 return false;
             }
             finally

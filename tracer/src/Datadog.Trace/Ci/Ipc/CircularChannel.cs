@@ -14,29 +14,27 @@ namespace Datadog.Trace.Ci.Ipc;
 
 internal partial class CircularChannel : IChannel
 {
-    private const int DefaultBufferSize = ushort.MaxValue;
     private const int HeaderSize = 2 * sizeof(ushort); // 1 read pointer + 1 write pointer
-
-    private const int PollingInterval = 25;
-    private const int MutexTimeout = 5000;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CircularChannel));
 
     private readonly MemoryMappedFile _mmf;
     private readonly Mutex _mutex;
-    private readonly int _bufferSize;
-    private long _disposed;
+    private readonly CircularChannelSettings _settings;
 
+    private long _disposed;
     private Writer? _writer;
     private Reader? _reader;
 
     public CircularChannel(string fileName)
-        : this(fileName, DefaultBufferSize)
+        : this(fileName, new CircularChannelSettings())
     {
     }
 
-    public CircularChannel(string fileName, int bufferSize)
+    public CircularChannel(string fileName, CircularChannelSettings settings)
     {
+        _settings = settings;
+
         // Check if the file name is an absolute path, if not let's use a temporary directory
         if (!Path.IsPathRooted(fileName))
         {
@@ -74,12 +72,11 @@ internal partial class CircularChannel : IChannel
         }
 
         _disposed = 0;
-        _bufferSize = bufferSize;
         _mutex = new Mutex(
             initiallyOwned: false,
             FrameworkDescription.Instance.IsWindows() ? @$"Global\{Path.GetFileNameWithoutExtension(fileName)}" : $"{Path.GetFileNameWithoutExtension(fileName)}");
 
-        var hasHandle = _mutex.WaitOne(MutexTimeout);
+        var hasHandle = _mutex.WaitOne(_settings.MutexTimeout);
         if (!hasHandle)
         {
             throw new TimeoutException("CircularChannel: Failed to acquire mutex within the time limit.");
@@ -91,10 +88,10 @@ internal partial class CircularChannel : IChannel
             var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
 
             // Ensure we have the correct size
-            stream.SetLength(_bufferSize);
+            stream.SetLength(_settings.BufferSize);
 
             // Create the memory mapped file from the stream
-            _mmf = MemoryMappedFile.CreateFromFile(stream, mapName: null, _bufferSize, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, leaveOpen: false);
+            _mmf = MemoryMappedFile.CreateFromFile(stream, mapName: null, _settings.BufferSize, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, leaveOpen: false);
 
             // Initialize the write and read pointer
             using var accessor = _mmf.CreateViewAccessor();
@@ -107,9 +104,9 @@ internal partial class CircularChannel : IChannel
         }
     }
 
-    protected int BufferSize => _bufferSize;
+    protected int BufferSize => _settings.BufferSize;
 
-    public int BufferBodySize => _bufferSize - HeaderSize;
+    public int BufferBodySize => _settings.BufferSize - HeaderSize;
 
     public IChannelReader GetReader()
     {

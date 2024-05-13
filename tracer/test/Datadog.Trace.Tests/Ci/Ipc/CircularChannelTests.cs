@@ -44,7 +44,7 @@ public class CircularChannelTests
     public void CircularChannelWriteTest(byte[] value)
     {
         var name = nameof(CircularChannelWriteTest) + "-" + Guid.NewGuid().ToString("n");
-        using var channel = new CircularChannel(name, BufferSize);
+        using var channel = new CircularChannel(name, new CircularChannelSettings { BufferSize = BufferSize });
         using var writer = channel.GetWriter();
 
         var valueSegment = new ArraySegment<byte>(value);
@@ -70,7 +70,7 @@ public class CircularChannelTests
     public void CircularChannelReadAndWriteTest(byte[] value)
     {
         var name = nameof(CircularChannelReadAndWriteTest) + "-" + Guid.NewGuid().ToString("n");
-        using var channel = new CircularChannel(name, BufferSize);
+        using var channel = new CircularChannel(name, new CircularChannelSettings { BufferSize = BufferSize, PollingInterval = 100 });
         using var writer = channel.GetWriter();
         using var reader = channel.GetReader();
 
