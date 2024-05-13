@@ -10,11 +10,15 @@ namespace Datadog.Trace.Ci.Ipc.Messages;
 
 internal class SessionCodeCoverageMessage
 {
+    public SessionCodeCoverageMessage()
+    {
+    }
+
     public SessionCodeCoverageMessage(double value)
     {
         Value = value;
     }
 
     [JsonProperty("value")]
-    public double Value { get; }
+    public double Value { get; set; }
 }

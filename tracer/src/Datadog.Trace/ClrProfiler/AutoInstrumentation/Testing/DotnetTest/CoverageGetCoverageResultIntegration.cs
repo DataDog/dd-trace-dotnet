@@ -38,10 +38,11 @@ public class CoverageGetCoverageResultIntegration
     {
         if (DotnetCommon.IsDataCollectorDomain &&
             instance?.GetType().Assembly() is { } assembly &&
-            assembly.GetType("Coverlet.Core.CoverageSummary") is { } coverageSummaryType)
+            assembly.GetType("Coverlet.Core.CoverageSummary") is { } coverageSummaryType &&
+            returnValue.Modules is { } modules)
         {
             var coverageSummary = Activator.CreateInstance(coverageSummaryType).DuckCast<ICoverageSummaryProxy>();
-            var coverageDetails = coverageSummary!.CalculateLineCoverage(returnValue.Modules);
+            var coverageDetails = coverageSummary!.CalculateLineCoverage(modules);
             var percentage = coverageDetails.Percent;
             DotnetCommon.Log.Information("CoverageGetCoverageResult.Percentage: {Value}", percentage);
 
@@ -70,7 +71,7 @@ public class CoverageGetCoverageResultIntegration
 
     internal interface ICoverageResultProxy : IDuckType
     {
-        object Modules { get; set; }
+        object? Modules { get; set; }
     }
 
     internal interface ICoverageSummaryProxy : IDuckType

@@ -10,6 +10,11 @@ namespace Datadog.Trace.Ci.Ipc.Messages;
 
 internal class SetSessionTagMessage
 {
+    public SetSessionTagMessage()
+    {
+        Name = string.Empty;
+    }
+
     public SetSessionTagMessage(string name, string value)
     {
         Name = name;
@@ -23,11 +28,11 @@ internal class SetSessionTagMessage
     }
 
     [JsonProperty("name")]
-    public string Name { get; }
+    public string Name { get; set; }
 
     [JsonProperty("value")]
-    public string? Value { get; }
+    public string? Value { get; set; }
 
     [JsonProperty("nvalue")]
-    public double? NumberValue { get; }
+    public double? NumberValue { get; set; }
 }
