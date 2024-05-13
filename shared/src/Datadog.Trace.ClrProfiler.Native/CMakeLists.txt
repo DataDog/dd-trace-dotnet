@@ -200,7 +200,7 @@ elseif(ISLINUX)
     )
 endif()
 
-add_dependencies("Datadog.Trace.ClrProfiler.Native.static" coreclr spdlog-headers)
+add_dependencies("Datadog.Trace.ClrProfiler.Native.static" coreclr spdlog-headers glibc-compat)
 
 # ******************************************************
 # Define shared target
@@ -213,4 +213,4 @@ add_library("Datadog.Trace.ClrProfiler.Native" SHARED
 set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 
 # Define linker libraries
-target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static")
+target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static" glibc-compat)
