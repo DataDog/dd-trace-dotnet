@@ -135,7 +135,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _snapshotSink.Add(probeId, snapshot);
         }
 
-        public static void Dispose()
+        public static void Dispose(Exception? ex)
         {
             ExceptionTrackManager.Dispose();
             _uploader?.Dispose();

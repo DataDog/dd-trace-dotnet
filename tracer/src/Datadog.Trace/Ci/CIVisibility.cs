@@ -157,14 +157,14 @@ namespace Datadog.Trace.Ci
                 {
                     Log.Information("ITR: Update and uploading git tree metadata and getting skippable tests.");
                     _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
-                    LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
+                    LifetimeManager.Instance.AddAsyncShutdownTask(ex => _skippableTestsTask);
                 }
                 else if (settings.GitUploadEnabled != false)
                 {
                     // Update and upload git tree metadata.
                     Log.Information("ITR: Update and uploading git tree metadata.");
                     var tskItrUpdate = UploadGitMetadataAsync();
-                    LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+                    LifetimeManager.Instance.AddAsyncShutdownTask(ex => tskItrUpdate);
                 }
             }
             else if (settings.IntelligentTestRunnerEnabled)
@@ -536,12 +536,10 @@ namespace Datadog.Trace.Ci
             _skippableTestsBySuiteAndName = null;
         }
 
-        private static async Task ShutdownAsync()
+        private static async Task ShutdownAsync(Exception? exception)
         {
             // Let's close any opened test, suite, modules and sessions before shutting down to avoid losing any data.
             // But marking them as failed.
-
-            var exception = LifetimeManager.Instance.CurrentException;
 
             foreach (var test in Test.ActiveTests)
             {
@@ -850,7 +848,7 @@ namespace Datadog.Trace.Ci
             public DiscoveryAgentConfigurationCallback(IDiscoveryService discoveryService)
             {
                 _manualResetEventSlim = new ManualResetEventSlim();
-                LifetimeManager.Instance.AddShutdownTask(() => _manualResetEventSlim.Set());
+                LifetimeManager.Instance.AddShutdownTask(ex => _manualResetEventSlim.Set());
                 _discoveryService = discoveryService;
                 _callback = CallBack;
                 _agentConfiguration = null;

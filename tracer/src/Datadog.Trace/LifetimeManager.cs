@@ -56,7 +56,7 @@ namespace Datadog.Trace
         {
             get
             {
-                return LazyInitializer.EnsureInitialized(ref _instance);
+                return LazyInitializer.EnsureInitialized(ref _instance)!;
             }
         }
 
