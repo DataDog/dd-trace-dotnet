@@ -12,6 +12,7 @@
 #include <dlfcn.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #if defined(__aarch64__)
 // Extracted from https://git.musl-libc.org/cgit/musl/tree/src/math/aarch64/ceilf.c
@@ -77,6 +78,32 @@ static float ceilf_local(float x)
         return u.f;
 }
 #endif
+
+int stat(const char *restrict path, void *restrict buf) {
+    int __xstat(int, const char*, void*);
+    return  __xstat(0, path, buf);
+}
+
+int fstat(int fd, void *buf) {
+    int __fxstat(int, int, void*);
+    return __fxstat(0, fd, buf);
+}
+
+int lstat (const char *file, void *buf)
+{
+    int __lxstat(int, const char*, void*);
+  return __lxstat (0, file, buf);
+}
+
+double ceil(double x) {
+    double result;
+    __asm__(
+        "roundsd $0x0A, %[x], %[result]"
+        : [result] "=x" (result)
+        : [x] "x" (x)
+    );
+    return result;
+}
 
 #define unlikely(x)    __builtin_expect(!!(x), 0)
 

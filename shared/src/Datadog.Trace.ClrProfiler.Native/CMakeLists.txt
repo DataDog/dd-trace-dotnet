@@ -106,7 +106,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 # ******************************************************
 
 # Sets compiler options
-add_compile_options(-std=c++20 -fPIC -fms-extensions -g)
+add_compile_options(-std=c++20 -fPIC -fms-extensions -g -O3)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 
@@ -197,6 +197,8 @@ elseif(ISLINUX)
         -Wl,--build-id
         -Wl,--no-undefined
         -Wl,-version-script=${dd_profiling_linker_script}
+        -lm
+        -lc
     )
 endif()
 
@@ -212,15 +214,20 @@ add_library("Datadog.Trace.ClrProfiler.Native" SHARED
   
 set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 
+find_library(LIBPTHREAD pthread)
+
 # Define linker libraries
 target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static"
     glibc-compat
     -flto
     -static-libgcc
     -static-libstdc++
+    $<$<BOOL:${LIBPTHREAD}>:pthread>
     ${CMAKE_DL_LIBS}
     coreclr
     spdlog-headers
     -Wl,--build-id
     -Wl,--no-undefined
-    -Wl,-version-script=${dd_profiling_linker_script})
+    -Wl,-version-script=${dd_profiling_linker_script}
+    -lm
+    -lc)
