@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -19,7 +21,7 @@ namespace Datadog.Trace
     internal class LifetimeManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LifetimeManager>();
-        private static LifetimeManager _instance;
+        private static LifetimeManager? _instance;
         private readonly ConcurrentQueue<object> _shutdownHooks = new();
 
         public LifetimeManager()
@@ -60,7 +62,7 @@ namespace Datadog.Trace
 
         public TimeSpan TaskTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
-        public Exception CurrentException { get; private set; }
+        public Exception? CurrentException { get; private set; }
 
         public void AddShutdownTask(Action action)
         {
@@ -72,13 +74,13 @@ namespace Datadog.Trace
             _shutdownHooks.Enqueue(func);
         }
 
-        private void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        private void CurrentDomain_ProcessExit(object? sender, EventArgs e)
         {
             RunShutdownTasks();
             AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
         }
 
-        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        private void CurrentDomain_UnhandledException(object? sender, UnhandledExceptionEventArgs e)
         {
             Log.Warning("Application threw an unhandled exception: {Exception}", e.ExceptionObject);
             CurrentException = e.ExceptionObject as Exception;
@@ -86,13 +88,13 @@ namespace Datadog.Trace
             AppDomain.CurrentDomain.UnhandledException -= CurrentDomain_UnhandledException;
         }
 
-        private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        private void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {
             RunShutdownTasks();
             Console.CancelKeyPress -= Console_CancelKeyPress;
         }
 
-        private void CurrentDomain_DomainUnload(object sender, EventArgs e)
+        private void CurrentDomain_DomainUnload(object? sender, EventArgs e)
         {
             RunShutdownTasks();
             AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
@@ -138,7 +140,7 @@ namespace Datadog.Trace
                 DatadogLogging.CloseAndFlush();
             }
 
-            static void SetSynchronizationContext(SynchronizationContext context)
+            static void SetSynchronizationContext(SynchronizationContext? context)
             {
                 if (!AppDomain.CurrentDomain.IsFullyTrusted)
                 {
