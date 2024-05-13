@@ -397,6 +397,15 @@ stages:
 
     - template: steps/run-in-docker.yml
       parameters:
+        build: true
+        target: builder
+        baseImage: "universal"
+        useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "BuildNativeLoader --IsAlpine $(targetAlpine)"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
         target: builder
         baseImage: $(managedBaseImage)
         command: "BuildManagedTracerHome ExtractDebugInfoLinux"
