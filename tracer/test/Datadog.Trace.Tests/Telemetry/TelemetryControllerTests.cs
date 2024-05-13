@@ -126,10 +126,11 @@ public class TelemetryControllerTests
         var repo = "testRepositoryUrl";
         controller.RecordGitMetadata(new GitMetadata(sha, repo));
 
+        // wait for second heartbeat, incase of race condition
         transport.Clear();
-        data = await WaitFor(transport, _timeout, "app-heartbeat");
-        data.FirstOrDefault().Application.CommitSha.Should().Be(sha);
-        data.FirstOrDefault().Application.RepositoryUrl.Should().Be(repo);
+        data = await WaitFor(transport, _timeout, "app-heartbeat", x => x.Application.CommitSha != null && x.Application.RepositoryUrl != null);
+
+        data.Should().Contain(x => x.Application.CommitSha == sha && x.Application.RepositoryUrl == repo);
 
         await controller.DisposeAsync();
     }
@@ -406,7 +407,7 @@ public class TelemetryControllerTests
     private Task<List<TelemetryData>> WaitForRequestStarted(TestTelemetryTransport transport, TimeSpan timeout)
         => WaitFor(transport, timeout, TelemetryRequestTypes.AppStarted);
 
-    private async Task<List<TelemetryData>> WaitFor(TestTelemetryTransport transport, TimeSpan timeout, string requestType)
+    private async Task<List<TelemetryData>> WaitFor(TestTelemetryTransport transport, TimeSpan timeout, string requestType, Func<TelemetryData, bool> predicate = null)
     {
         var deadline = DateTimeOffset.UtcNow.Add(timeout);
         // The Task.Delay happens to give back control after the deadline so the test can fail randomly
@@ -417,7 +418,7 @@ public class TelemetryControllerTests
             nbTries++;
             var data = transport.GetData();
 
-            if (data.Any(x => ContainsMessage(x, requestType)))
+            if (data.Any(x => ContainsMessage(x, requestType) && (predicate is null || predicate(x))))
             {
                 return data;
             }
@@ -425,7 +426,7 @@ public class TelemetryControllerTests
             await Task.Delay(_flushInterval);
         }
 
-        throw new TimeoutException($"Transport did not receive required data before the timeout {timeout.TotalMilliseconds}ms");
+        throw new TimeoutException($"Transport did not receive required data before the timeout {timeout.TotalMilliseconds}ms. Received: {JsonConvert.SerializeObject(transport.GetData())}");
     }
 
     private bool ContainsMessage(TelemetryData data, string requestType)

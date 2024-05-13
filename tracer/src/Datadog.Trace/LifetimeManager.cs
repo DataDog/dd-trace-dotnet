@@ -60,6 +60,8 @@ namespace Datadog.Trace
 
         public TimeSpan TaskTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
+        public Exception CurrentException { get; private set; }
+
         public void AddShutdownTask(Action action)
         {
             _shutdownHooks.Enqueue(action);
@@ -79,6 +81,7 @@ namespace Datadog.Trace
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Log.Warning("Application threw an unhandled exception: {Exception}", e.ExceptionObject);
+            CurrentException = e.ExceptionObject as Exception;
             RunShutdownTasks();
             AppDomain.CurrentDomain.UnhandledException -= CurrentDomain_UnhandledException;
         }
