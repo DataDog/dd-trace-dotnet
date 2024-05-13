@@ -60,8 +60,8 @@ namespace Datadog.Trace.Sampling
         public int SamplingMechanism => _provenance switch
         {
             SamplingRuleProvenance.Local => Datadog.Trace.Sampling.SamplingMechanism.TraceSamplingRule,
-            SamplingRuleProvenance.Remote => Datadog.Trace.Sampling.SamplingMechanism.RemoteUserSamplingRule,
-            SamplingRuleProvenance.Automatic => Datadog.Trace.Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule,
+            SamplingRuleProvenance.RemoteCustomer => Datadog.Trace.Sampling.SamplingMechanism.RemoteUserSamplingRule,
+            SamplingRuleProvenance.RemoteDynamic => Datadog.Trace.Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule,
             _ => Datadog.Trace.Sampling.SamplingMechanism.Default
         };
 
@@ -70,9 +70,10 @@ namespace Datadog.Trace.Sampling
         /// </summary>
         public int Priority => _provenance switch
         {
+            // TODO: fix the order of these, larger values mean higher priority
             SamplingRuleProvenance.Local => 1,
-            SamplingRuleProvenance.Remote => 2,
-            SamplingRuleProvenance.Automatic => 3,
+            SamplingRuleProvenance.RemoteCustomer => 2,
+            SamplingRuleProvenance.RemoteDynamic => 3,
             _ => 0
         };
 
@@ -149,8 +150,8 @@ namespace Datadog.Trace.Sampling
             return _provenance switch
             {
                 SamplingRuleProvenance.Local => "LocalSamplingRule",
-                SamplingRuleProvenance.Remote => "RemoteUserSamplingRule",
-                SamplingRuleProvenance.Automatic => "RemoteAdaptiveSamplingRule",
+                SamplingRuleProvenance.RemoteCustomer => "RemoteUserSamplingRule",
+                SamplingRuleProvenance.RemoteDynamic => "RemoteAdaptiveSamplingRule",
                 _ => "UnknownSamplingRule"
             };
         }

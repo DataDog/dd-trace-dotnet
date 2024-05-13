@@ -22,11 +22,11 @@ internal static class SamplingRuleProvenance
     /// Sampling rule is a manual user override
     /// sent via remote configuration (RCM).
     /// </summary>
-    public const string Remote = "customer";
+    public const string RemoteCustomer = "customer";
 
     /// <summary>
     /// Sampling rule was automatically computed by Datadog
     /// and sent via remote configuration (RCM).
     /// </summary>
-    public const string Automatic = "dynamic";
+    public const string RemoteDynamic = "dynamic";
 }
