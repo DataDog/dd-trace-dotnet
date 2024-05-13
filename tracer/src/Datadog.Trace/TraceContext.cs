@@ -131,14 +131,14 @@ namespace Datadog.Trace
             _appSecRequestContext!.AddRaspStackTrace(stack, maxStackTraces);
         }
 
-        internal void AddRaspMetrics(ulong duration, ulong durationWithBindings)
+        internal void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings)
         {
             if (Volatile.Read(ref _appSecRequestContext) is null)
             {
                 Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
             }
 
-            _appSecRequestContext!.AddRaspMetrics(duration, durationWithBindings);
+            _appSecRequestContext!.AddRaspSpanMetrics(duration, durationWithBindings);
         }
 
         internal void EnableIastInRequest()

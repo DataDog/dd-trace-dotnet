@@ -37,11 +37,11 @@ internal class AppSecRequestContext
                 span.SetMetaStruct(StackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
             }
 
-            _raspTelemetryHelper?.GenerateMetricTags(span.Tags);
+            _raspTelemetryHelper?.GenerateRaspSpanMetricTags(span.Tags);
         }
     }
 
-    internal void AddRaspMetrics(ulong duration, ulong durationWithBindings)
+    internal void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings)
     {
         lock (_sync)
         {
