@@ -440,7 +440,6 @@ public sealed class TestSession
 
         if (_ipcServer is not null)
         {
-            _ipcServer.MessageReceived -= OnIpcMessageReceived;
             _ipcServer.Dispose();
             _ipcServer = null;
         }
@@ -561,7 +560,7 @@ public sealed class TestSession
             var name = $"session_{Tags.SessionId}";
             CIVisibility.Log.Debug("TestSession.Enabling IPC server: {Name}", name);
             _ipcServer = new IpcServer(name);
-            _ipcServer.MessageReceived += OnIpcMessageReceived;
+            _ipcServer.SetMessageReceivedCallback(OnIpcMessageReceived);
             return true;
         }
         catch (Exception ex)
@@ -571,7 +570,7 @@ public sealed class TestSession
         }
     }
 
-    private void OnIpcMessageReceived(object? sender, object message)
+    private void OnIpcMessageReceived(object message)
     {
         CIVisibility.Log.Debug("TestSession.OnIpcMessageReceived: {Message}", message);
 
