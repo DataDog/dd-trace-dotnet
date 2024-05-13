@@ -33,7 +33,7 @@ public class IpcTests : TestingFrameworkEvpTest
 
         var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var ipcServer = new IpcServer(sessionId);
-        ipcServer.MessageReceived += (sender, message) =>
+        ipcServer.SetMessageReceivedCallback(message =>
         {
             Output.WriteLine(@"IpcServer.Message Received: " + message);
             if ((string)message == "ACK: 🥹")
@@ -43,7 +43,7 @@ public class IpcTests : TestingFrameworkEvpTest
             }
 
             ipcServer.TrySendMessage("🥹");
-        };
+        });
 
         using var processResult = await RunSampleAndWaitForExit(agent).ConfigureAwait(false);
         var tskDelay = Task.Delay(30_000);

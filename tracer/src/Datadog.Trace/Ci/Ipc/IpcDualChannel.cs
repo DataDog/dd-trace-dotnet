@@ -19,12 +19,12 @@ internal abstract class IpcDualChannel : IDisposable
     private readonly IChannel _sendChannel;
     private readonly IChannelWriter _sendChannelWriter;
     private readonly JsonSerializer _jsonSerializer;
+    private Action<object>? _callback;
 
     protected IpcDualChannel(string recvName, string sendName)
     {
         _recvChannel = new CircularChannel(recvName);
         _recvChannelReader = _recvChannel.GetReader();
-        _recvChannelReader.MessageReceived += OnMessageReceived;
 
         _sendChannel = new CircularChannel(sendName);
         _sendChannelWriter = _sendChannel.GetWriter();
@@ -38,9 +38,16 @@ internal abstract class IpcDualChannel : IDisposable
         });
     }
 
-    public event EventHandler<object>? MessageReceived;
+    public void SetMessageReceivedCallback(Action<object> callback)
+    {
+        _callback = callback;
+        if (_callback is not null)
+        {
+            _recvChannelReader.SetCallback(OnMessageReceived);
+        }
+    }
 
-    private void OnMessageReceived(object? sender, byte[] data)
+    private void OnMessageReceived(byte[] data)
     {
         using var memoryStream = new MemoryStream(data);
         using var reader = new StreamReader(memoryStream, Util.EncodingHelpers.Utf8NoBom);
@@ -48,7 +55,7 @@ internal abstract class IpcDualChannel : IDisposable
         var message = _jsonSerializer.Deserialize(jsonReader);
         if (message != null)
         {
-            MessageReceived?.Invoke(sender, message);
+            _callback?.Invoke(message);
         }
     }
 
@@ -77,6 +84,7 @@ internal abstract class IpcDualChannel : IDisposable
     {
         _recvChannel.Dispose();
         _sendChannel.Dispose();
+        _callback = null;
     }
 
     private class CustomSerializationBinder : ISerializationBinder

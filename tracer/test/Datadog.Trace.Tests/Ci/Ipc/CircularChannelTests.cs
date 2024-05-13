@@ -87,7 +87,7 @@ public class CircularChannelTests
 
         ExceptionDispatchInfo? exceptionDispatchInfo = null;
         var countdownEvent = new CountdownEvent(messagesCount);
-        reader.MessageReceived += (sender, bytes) =>
+        reader.SetCallback(bytes =>
         {
             try
             {
@@ -101,7 +101,7 @@ public class CircularChannelTests
             }
 
             countdownEvent.Signal();
-        };
+        });
 
         for (var i = 0; i < messagesCount; i++)
         {

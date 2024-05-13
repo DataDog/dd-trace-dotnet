@@ -27,7 +27,7 @@ public class IpcTests
 
         const int maxNumber = 50;
 
-        server.MessageReceived += (sender, message) =>
+        server.SetMessageReceivedCallback(message =>
         {
             var value = (TestMessage)message;
             if (value.ServerValue < maxNumber)
@@ -45,9 +45,9 @@ public class IpcTests
             {
                 serverTaskCompletion.TrySetResult(true);
             }
-        };
+        });
 
-        client.MessageReceived += (sender, message) =>
+        client.SetMessageReceivedCallback(message =>
         {
             var value = (TestMessage)message;
             if (value.ClientValue < maxNumber)
@@ -65,7 +65,7 @@ public class IpcTests
             {
                 clientTaskCompletion.TrySetResult(true);
             }
-        };
+        });
 
         client.TrySendMessage(new TestMessage(0, 0));
 

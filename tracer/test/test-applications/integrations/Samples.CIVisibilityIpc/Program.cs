@@ -13,23 +13,28 @@ class Program
         Console.WriteLine(@"Using SessionId: " + sessionId);
 
         var ipcClientType = typeof(Datadog.Trace.Tracer).Assembly.GetType("Datadog.Trace.Ci.Ipc.IpcClient")!;
-        var messageReceivedEvent = ipcClientType.GetEvent("MessageReceived");
+        var setMessageReceivedCallbackMethod = ipcClientType.GetMethod("SetMessageReceivedCallback");
         var trySendMessageMethod = ipcClientType.GetMethod("TrySendMessage");
-        using var ipcClient = (IDisposable)Activator.CreateInstance(ipcClientType, sessionId);
+        using var ipcClient = (IDisposable)Activator.CreateInstance(ipcClientType, sessionId)!;
 
         var responseManualResetEvent = new ManualResetEventSlim();
         
         void SendMessage(object message)
         {
-            trySendMessageMethod?.Invoke(ipcClient, [message]);
+            trySendMessageMethod!.Invoke(ipcClient, [message]);
         }
-        
-        messageReceivedEvent?.AddEventHandler(ipcClient, new EventHandler<object>((sender, message) =>
-        {
-            Console.WriteLine(@"IpcClient.Message Received: " + message);
-            SendMessage("ACK: " + message);
-            responseManualResetEvent.Set();
-        }));
+
+        setMessageReceivedCallbackMethod!.Invoke(
+            ipcClient,
+            [
+                new Action<object>(
+                    message =>
+                    {
+                        Console.WriteLine(@"IpcClient.Message Received: " + message);
+                        SendMessage("ACK: " + message);
+                        responseManualResetEvent.Set();
+                    })
+            ]);
 
         SendMessage("Hello from CI Visibility Ipc Sample!");
         if (!responseManualResetEvent.Wait(30_000))

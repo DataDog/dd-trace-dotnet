@@ -17,17 +17,17 @@ internal partial class CircularChannel
         private readonly Timer _pollingTimer;
         private readonly CircularChannel _channel;
         private readonly ManualResetEventSlim _pollingEventFinished;
+        private Action<byte[]>? _callback;
         private long _disposed;
 
         public Reader(CircularChannel channel)
         {
             _channel = channel;
             _pollingEventFinished = new ManualResetEventSlim(true);
+            _callback = null;
             _disposed = 0;
             _pollingTimer = new Timer(PollForMessages, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(PollingInterval));
         }
-
-        public event EventHandler<byte[]>? MessageReceived;
 
         private void PollForMessages(object? state)
         {
@@ -40,7 +40,7 @@ internal partial class CircularChannel
                     return;
                 }
 
-                if (MessageReceived is null)
+                if (_callback is null)
                 {
                     // To avoid losing messages, we stop the polling if there are no subscribers
                     return;
@@ -150,7 +150,7 @@ internal partial class CircularChannel
                     {
                         try
                         {
-                            MessageReceived.Invoke(this, data);
+                            _callback(data);
                         }
                         catch (Exception ex)
                         {
@@ -162,7 +162,7 @@ internal partial class CircularChannel
                 {
                     try
                     {
-                        MessageReceived.Invoke(this, data);
+                        _callback(data);
                     }
                     catch (Exception ex)
                     {
@@ -176,6 +176,11 @@ internal partial class CircularChannel
             }
         }
 
+        public void SetCallback(Action<byte[]> callback)
+        {
+            _callback = callback;
+        }
+
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) == 1)
@@ -185,6 +190,7 @@ internal partial class CircularChannel
 
             _pollingTimer.Dispose();
             _pollingEventFinished.Wait();
+            _callback = null;
         }
     }
 }
