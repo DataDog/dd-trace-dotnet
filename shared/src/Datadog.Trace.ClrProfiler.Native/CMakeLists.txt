@@ -213,4 +213,14 @@ add_library("Datadog.Trace.ClrProfiler.Native" SHARED
 set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 
 # Define linker libraries
-target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static" glibc-compat)
+target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static"
+    glibc-compat
+    -flto
+    -static-libgcc
+    -static-libstdc++
+    ${CMAKE_DL_LIBS}
+    coreclr
+    spdlog-headers
+    -Wl,--build-id
+    -Wl,--no-undefined
+    -Wl,-version-script=${dd_profiling_linker_script})
