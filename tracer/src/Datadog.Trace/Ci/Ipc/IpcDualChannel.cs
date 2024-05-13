@@ -47,9 +47,9 @@ internal abstract class IpcDualChannel : IDisposable
         }
     }
 
-    private void OnMessageReceived(byte[] data)
+    private void OnMessageReceived(ArraySegment<byte> data)
     {
-        using var memoryStream = new MemoryStream(data);
+        using var memoryStream = new MemoryStream(data.Array!, data.Offset, data.Count);
         using var reader = new StreamReader(memoryStream, Util.EncodingHelpers.Utf8NoBom);
         using var jsonReader = new JsonTextReader(reader);
         var message = _jsonSerializer.Deserialize(jsonReader);

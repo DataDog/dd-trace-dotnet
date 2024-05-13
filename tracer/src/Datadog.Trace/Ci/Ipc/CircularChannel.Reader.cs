@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Ci.Ipc;
 
@@ -17,7 +18,7 @@ internal partial class CircularChannel
         private readonly Timer _pollingTimer;
         private readonly CircularChannel _channel;
         private readonly ManualResetEventSlim _pollingEventFinished;
-        private Action<byte[]>? _callback;
+        private Action<ArraySegment<byte>>? _callback;
         private long _disposed;
 
         public Reader(CircularChannel channel)
@@ -91,7 +92,7 @@ internal partial class CircularChannel
                             break;
                         }
 
-                        var data = length == 0 ? [] : new byte[length];
+                        var data = ArrayPool<byte>.Shared.Rent(length);
 
                         // Read the first part of the data
                         var firstPartLength = Math.Min(length, _channel.BufferSize - absoluteReadPos - 2);
@@ -111,17 +112,18 @@ internal partial class CircularChannel
                         accessor.Write(2, nextReadPos); // Update read pointer
 
                         // We store all the messages before releasing the mutex to avoid blocking the producer for each event call
+                        var dataSegment = new ArraySegment<byte>(data, 0, length);
                         if (messagesToHandle is null)
                         {
-                            messagesToHandle = data;
+                            messagesToHandle = dataSegment;
                         }
-                        else if (messagesToHandle is byte[] prevItem)
+                        else if (messagesToHandle is ArraySegment<byte> prevItem)
                         {
-                            messagesToHandle = new List<byte[]> { prevItem, data };
+                            messagesToHandle = new List<ArraySegment<byte>> { prevItem, dataSegment };
                         }
-                        else if (messagesToHandle is List<byte[]> list)
+                        else if (messagesToHandle is List<ArraySegment<byte>> list)
                         {
-                            list.Add(data);
+                            list.Add(dataSegment);
                         }
 
                         readPos = nextReadPos; // Update local readPos to continue reading if more data is available
@@ -144,7 +146,7 @@ internal partial class CircularChannel
                 }
 
                 // Once we have released the mutex, we can safely handle the messages
-                if (messagesToHandle is List<byte[]> messagesList)
+                if (messagesToHandle is List<ArraySegment<byte>> messagesList)
                 {
                     foreach (var data in messagesList)
                     {
@@ -156,9 +158,13 @@ internal partial class CircularChannel
                         {
                             CIVisibility.Log.Error(ex, "CircularChannel: Error during message event handling.");
                         }
+                        finally
+                        {
+                            ArrayPool<byte>.Shared.Return(data.Array!);
+                        }
                     }
                 }
-                else if (messagesToHandle is byte[] data)
+                else if (messagesToHandle is ArraySegment<byte> data)
                 {
                     try
                     {
@@ -168,6 +174,10 @@ internal partial class CircularChannel
                     {
                         CIVisibility.Log.Error(ex, "CircularChannel: Error during message event handling.");
                     }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(data.Array!);
+                    }
                 }
             }
             finally
@@ -176,7 +186,7 @@ internal partial class CircularChannel
             }
         }
 
-        public void SetCallback(Action<byte[]> callback)
+        public void SetCallback(Action<ArraySegment<byte>> callback)
         {
             _callback = callback;
         }

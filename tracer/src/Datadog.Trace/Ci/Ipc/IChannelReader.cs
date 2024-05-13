@@ -10,5 +10,5 @@ namespace Datadog.Trace.Ci.Ipc;
 
 internal interface IChannelReader : IDisposable
 {
-    void SetCallback(Action<byte[]> callback);
+    void SetCallback(Action<ArraySegment<byte>> callback);
 }

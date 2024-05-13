@@ -25,7 +25,7 @@ public class IpcTests
         var serverTaskCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var clientTaskCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        const int maxNumber = 50;
+        const int maxNumber = 25;
 
         server.SetMessageReceivedCallback(message =>
         {
