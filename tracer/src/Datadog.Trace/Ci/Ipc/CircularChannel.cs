@@ -54,11 +54,22 @@ internal partial class CircularChannel : IChannel
                 }
                 catch (Exception ex)
                 {
-                    Log.Warning(ex, "Failed to create temporary directory for memory mapped file. Switch to use th default temp path.");
+                    Log.Warning(ex, "Failed to create temporary directory for memory mapped file. Switch to use the default temp path.");
                     folder = Path.GetTempPath();
                 }
 
                 fileName = Path.Combine(folder, Path.GetFileName(fileName));
+            }
+        }
+        else if (Path.GetDirectoryName(fileName) is { } directoryName)
+        {
+            try
+            {
+                Directory.CreateDirectory(directoryName);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to create temporary directory for memory mapped file.");
             }
         }
 
