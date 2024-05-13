@@ -157,14 +157,14 @@ namespace Datadog.Trace.Ci
                 {
                     Log.Information("ITR: Update and uploading git tree metadata and getting skippable tests.");
                     _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
-                    LifetimeManager.Instance.AddAsyncShutdownTask(ex => _skippableTestsTask);
+                    LifetimeManager.Instance.AddAsyncShutdownTask(_ => _skippableTestsTask);
                 }
                 else if (settings.GitUploadEnabled != false)
                 {
                     // Update and upload git tree metadata.
                     Log.Information("ITR: Update and uploading git tree metadata.");
                     var tskItrUpdate = UploadGitMetadataAsync();
-                    LifetimeManager.Instance.AddAsyncShutdownTask(ex => tskItrUpdate);
+                    LifetimeManager.Instance.AddAsyncShutdownTask(_ => tskItrUpdate);
                 }
             }
             else if (settings.IntelligentTestRunnerEnabled)
@@ -848,7 +848,7 @@ namespace Datadog.Trace.Ci
             public DiscoveryAgentConfigurationCallback(IDiscoveryService discoveryService)
             {
                 _manualResetEventSlim = new ManualResetEventSlim();
-                LifetimeManager.Instance.AddShutdownTask(ex => _manualResetEventSlim.Set());
+                LifetimeManager.Instance.AddShutdownTask(_ => _manualResetEventSlim.Set());
                 _discoveryService = discoveryService;
                 _callback = CallBack;
                 _agentConfiguration = null;
