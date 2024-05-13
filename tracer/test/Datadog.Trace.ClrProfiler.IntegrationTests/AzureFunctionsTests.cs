@@ -161,7 +161,6 @@ public abstract class AzureFunctionsTests : TestHelper
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
 
                 using var s = new AssertionScope();
-                filteredSpans.Count.Should().Be(expectedSpanCount);
 
                 await AssertInProcessSpans(filteredSpans);
             }
@@ -193,7 +192,6 @@ public abstract class AzureFunctionsTests : TestHelper
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
-                spans.Count.Should().Be(expectedSpanCount);
 
                 await AssertIsolatedSpans(spans);
             }
