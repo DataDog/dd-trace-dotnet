@@ -92,7 +92,8 @@ public class CircularChannelTests
             try
             {
                 using var scope = new AssertionScope();
-                var cValue = bytes.ToArray();
+                var cValue = new byte[bytes.Count];
+                Array.Copy(bytes.Array!, bytes.Offset, cValue, 0, bytes.Count);
                 cValue.Should().HaveCount(value.Length);
                 cValue.Should().Equal(value);
                 countdownEvent.Signal();
