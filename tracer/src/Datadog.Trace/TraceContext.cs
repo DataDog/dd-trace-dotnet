@@ -32,7 +32,6 @@ namespace Datadog.Trace
 
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
-        private int? _samplingPriority;
 
         // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
@@ -82,10 +81,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the trace's sampling priority.
         /// </summary>
-        public int? SamplingPriority
-        {
-            get => _samplingPriority;
-        }
+        public int? SamplingPriority { get; private set; }
 
         public string? Environment { get; set; }
 
@@ -253,7 +249,7 @@ namespace Datadog.Trace
 
         public int GetOrMakeSamplingDecision()
         {
-            if (_samplingPriority is { } samplingPriority)
+            if (SamplingPriority is { } samplingPriority)
             {
                 // common case: we already have a sampling decision
                 return samplingPriority;
@@ -292,7 +288,7 @@ namespace Datadog.Trace
                 return;
             }
 
-            _samplingPriority = priority;
+            SamplingPriority = priority;
 
             const string tagName = Trace.Tags.Propagated.DecisionMaker;
 
