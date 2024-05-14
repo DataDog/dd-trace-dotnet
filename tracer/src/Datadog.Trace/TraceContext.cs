@@ -47,7 +47,7 @@ namespace Datadog.Trace
         {
             CurrentTraceSettings = tracer.PerTraceSettings;
 
-            // TODO: Environment, ServiceVersion, GitCommitSha, and GitRepositoryUrl are stored on the TraceContext
+            // TODO: Environment and ServiceVersion are stored on the TraceContext
             // even though they likely won't change for the lifetime of the process. We should consider moving them
             // elsewhere to reduce the memory usage.
             if (tracer.Settings is { } settings)
