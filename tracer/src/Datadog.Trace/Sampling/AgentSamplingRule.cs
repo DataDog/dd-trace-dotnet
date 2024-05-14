@@ -135,14 +135,14 @@ namespace Datadog.Trace.Sampling
 
                 var serviceParts = parts[0].Split(ValueSeparator, 2);
 
-                if (serviceParts.Length != 2)
+                if (serviceParts.Length != 2 || serviceParts[0] != "service")
                 {
                     return null;
                 }
 
                 var envParts = parts[1].Split(ValueSeparator, 2);
 
-                if (envParts.Length != 2)
+                if (envParts.Length != 2 || envParts[0] != "env")
                 {
                     return null;
                 }
