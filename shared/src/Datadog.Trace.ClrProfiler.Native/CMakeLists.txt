@@ -1,6 +1,17 @@
 cmake_minimum_required (VERSION 3.8..3.19)
 cmake_policy(SET CMP0015 NEW)
 
+option(UNIVERSAL "Build as Universal binary" OFF)
+
+message(STATUS "Building Native Loader as Univeral binary: " ${UNIVERSAL})
+
+if (UNIVERSAL)
+   include ("${CMAKE_SOURCE_DIR}/build/cmake/Toolchain")
+   find_package(GlibcCompat REQUIRED)
+   message(STATUS "Glibc Compat objects")
+
+endif()
+
 # ******************************************************
 # Project definition
 # ******************************************************
@@ -54,9 +65,6 @@ if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     SET(BIT64 true)
 endif()
 
-option(UNIVERSAL "Build as Universal binary" OFF)
-
-message(STATUS "Building Native Loader as Univeral binary: " ${UNIVERSAL})
 
 # ******************************************************
 # Detect prerequisites
@@ -202,7 +210,11 @@ elseif(ISLINUX)
     )
 endif()
 
-add_dependencies("Datadog.Trace.ClrProfiler.Native.static" coreclr spdlog-headers glibc-compat)
+add_dependencies("Datadog.Trace.ClrProfiler.Native.static" coreclr spdlog-headers)
+
+if (UNIVERSAL)
+   add_dependencies("Datadog.Trace.ClrProfiler.Native.static" glibc-compat)
+endif()
 
 # ******************************************************
 # Define shared target
@@ -218,8 +230,6 @@ find_library(LIBPTHREAD pthread)
 
 # Define linker libraries
 target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static"
-    glibc-compat
-    -flto
     -static-libgcc
     -static-libstdc++
     $<$<BOOL:${LIBPTHREAD}>:pthread>
@@ -231,3 +241,10 @@ target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfi
     -Wl,-version-script=${dd_profiling_linker_script}
     -lm
     -lc)
+
+if (UNIVERSAL)
+    target_link_libraries("Datadog.Trace.ClrProfiler.Native"
+        glibc-compat
+        -flto
+        )
+endif()
