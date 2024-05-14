@@ -4,6 +4,7 @@
 
 #include "windows.h"
 #include <process.h>
+#include <shellapi.h>
 
 #else
 
@@ -169,6 +170,64 @@ inline WSTRING GetCurrentProcessCommandLine()
 #endif
 
     return EmptyWStr;
+}
+
+inline WSTRING* GetCurrentProcessCommandLineArguments(int* argCount)
+{
+#ifdef _WIN32
+    const auto arguments = CommandLineToArgvW(GetCommandLine(), argCount);
+    const auto args = new WSTRING[*argCount];
+    for (int i = 0; i < *argCount; i++)
+    {
+        args[i] = Trim(arguments[i]);
+    }
+    return args;
+#elif MACOS
+    argCount = _NSGetArgc();
+    char** arguments = *_NSGetArgv();
+
+    const auto args = new WSTRING[argCount];
+    for (int i = 0; i < argCount; ++i)
+    {
+        args[i] = Trim(ToWSTRING(std::string(arguments[i])));
+    }
+
+    return args;
+#else
+    std::string cmdline;
+    char buf[1024];
+    size_t len;
+    FILE* fp = fopen("/proc/self/cmdline", "rb");
+    argCount = 0;
+    if (fp)
+    {
+        while ((len = fread(buf, 1, sizeof(buf), fp)) > 0)
+        {
+            cmdline.append(buf, len);
+            for(int i = 0; i < len; i++){
+                if(buf[i] == '\0'){
+                    argCount++;
+                }
+            }
+        }
+    }
+
+    const auto args = new WSTRING[argCount];
+    std::stringstream tokens(cmdline);
+    std::string tmp;
+    int i = 0;
+    while (getline(tokens, tmp, '\0'))
+    {
+        if (i < argCount)
+        {
+            args[i] = Trim(ToWSTRING(tmp));
+            i++;
+        }
+        // else means something has gone wrong
+    }
+
+    return args;
+#endif
 }
 
 inline int GetPID()
