@@ -305,8 +305,7 @@ namespace Datadog.Trace.Coverage.Collector
             // Is not part of the spec but useful for support tickets.
             // If we instrument at least 1 assembly we extract session variables (from out of process sessions)
             // and try to send a message to the IPC server for setting the test.code_coverage.injected tag.
-            if (numAssemblies > 0 &&
-                SpanContextPropagator.Instance.Extract(
+            if (SpanContextPropagator.Instance.Extract(
                     EnvironmentHelpers.GetEnvironmentVariables(),
                     new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor)) is { } sessionContext)
             {
@@ -315,7 +314,7 @@ namespace Datadog.Trace.Coverage.Collector
                     var name = $"session_{sessionContext.SpanId}";
                     _logger?.Debug($"CoverageCollector.Enabling IPC client: {name} and sending injection tags");
                     using var ipcClient = new IpcClient(name);
-                    ipcClient.TrySendMessage(new SetSessionTagMessage(CodeCoverageTags.Instrumented, "true"));
+                    ipcClient.TrySendMessage(new SetSessionTagMessage(CodeCoverageTags.Instrumented, numAssemblies > 0 ? "true" : "false"));
                 }
                 catch (Exception ex)
                 {
