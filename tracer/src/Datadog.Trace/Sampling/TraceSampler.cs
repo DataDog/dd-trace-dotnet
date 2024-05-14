@@ -37,7 +37,6 @@ namespace Datadog.Trace.Sampling
             {
                 if (rule.IsMatch(span))
                 {
-                    // Note: GetSamplingRate() can adds tags like "_dd.agent_psr" or "_dd.rule_psr"
                     var sampleRate = rule.GetSamplingRate(span);
                     return MakeSamplingDecision(span, rule.SamplingMechanism, sampleRate);
                 }
