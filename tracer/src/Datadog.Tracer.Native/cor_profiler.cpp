@@ -95,7 +95,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                 process_command_line.find(WStr("dotnet.dll test")) == WSTRING::npos &&
                 process_command_line.find(WStr("dotnet.dll\" test")) == WSTRING::npos &&
                 process_command_line.find(WStr("dotnet.dll' test")) == WSTRING::npos &&
-                process_command_line.find(WStr(" test ")) == WSTRING::npos)
+                process_command_line.find(WStr(" test ")) == WSTRING::npos &&
+                process_command_line.find(WStr("datacollector")) == WSTRING::npos)
             {
                 Logger::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility "
                     "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost'");
