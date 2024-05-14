@@ -7,6 +7,7 @@ using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Spectre.Console;
 
@@ -48,6 +49,13 @@ namespace Datadog.Trace.Tools.Runner
             // Final command to execute
             var arguments = Utils.GetArgumentsAsString(initResults.Arguments);
             var command = $"{program} {arguments}".Trim();
+
+            // Propagate original test command and working directory
+            if (initResults.ProfilerEnvironmentVariables is { } profilerEnvironmentVariables)
+            {
+                profilerEnvironmentVariables[TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable] = Environment.CommandLine;
+                profilerEnvironmentVariables[TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable] = Environment.CurrentDirectory;
+            }
 
             // Run child process
             AnsiConsole.WriteLine("Running: " + command);
