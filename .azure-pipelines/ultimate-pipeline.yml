@@ -2459,6 +2459,15 @@ stages:
       parameters:
         build: true
         target: builder
+        baseImage: "universal"
+        useNativeSdkVersion: true
+        command: "BuildNativeLoader --IsAlpine False"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
         baseImage: centos7
         useNativeSdkVersion: true
         command: "BuildProfilerAsanTest -Framework net7.0"
@@ -2541,6 +2550,15 @@ stages:
         targetBranch: $(targetBranch)
 
     - template: steps/install-latest-dotnet-sdk.yml
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: "universal"
+        useNativeSdkVersion: true
+        command: "BuildNativeLoader --IsAlpine False"
+        retryCountForRunCommand: 1
 
     - template: steps/run-in-docker.yml
       parameters:
