@@ -19,4 +19,9 @@ internal static class CodeCoverageTags
     /// Code coverage global percentage value
     /// </summary>
     public const string PercentageOfTotalLines = "test.code_coverage.lines_pct";
+
+    /// <summary>
+    /// Test Session Code Coverage is instrumented flag
+    /// </summary>
+    public const string Instrumented = "test.code_coverage.instrumented";
 }
