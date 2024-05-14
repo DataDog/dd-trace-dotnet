@@ -8,7 +8,6 @@
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Sampling
 {
@@ -18,11 +17,11 @@ namespace Datadog.Trace.Sampling
 
         private readonly IRateLimiter _limiter;
         private readonly AgentSamplingRule _defaultRule = new();
-        private readonly List<ISamplingRule> _rules = new();
+        private readonly List<ISamplingRule> _rules = [];
 
         public TraceSampler(IRateLimiter limiter)
         {
-            _limiter = limiter ?? new TracerRateLimiter(null);
+            _limiter = limiter;
             RegisterRule(_defaultRule);
         }
 
@@ -33,33 +32,19 @@ namespace Datadog.Trace.Sampling
 
         public SamplingDecision MakeSamplingDecision(Span span)
         {
-            if (_rules.Count > 0)
+            foreach (var rule in _rules)
             {
-                foreach (var rule in _rules)
+                if (rule.IsMatch(span))
                 {
-                    if (rule.IsMatch(span))
-                    {
-                        var sampleRate = rule.GetSamplingRate(span);
-
-                        if (Log.IsEnabled(LogEventLevel.Debug))
-                        {
-                            Log.Debug(
-                                "Matched on rule {Rule}. Applying rate of {Rate} to trace id {TraceId}",
-                                rule,
-                                sampleRate,
-                                span.Context.RawTraceId);
-                        }
-
-                        return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
-                    }
+                    // Note: GetSamplingRate() can adds tags like "_dd.agent_psr" or "_dd.rule_psr"
+                    var sampleRate = rule.GetSamplingRate(span);
+                    return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
                 }
             }
 
-            if (Log.IsEnabled(LogEventLevel.Debug))
-            {
-                Log.Debug("No rules matched for trace {TraceId}", span.Context.RawTraceId);
-            }
-
+            // this code is normally unreachable because there should always be a AgentSamplingRule
+            // (even before we receive rates from the agent)
+            Log.Debug("No sampling rules matched for trace {TraceId}. Using default sampling decision.", span.Context.RawTraceId);
             return SamplingDecision.Default;
         }
 

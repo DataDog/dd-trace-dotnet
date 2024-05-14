@@ -5,14 +5,10 @@
 
 #nullable enable
 
-using Datadog.Trace.Logging;
-
 namespace Datadog.Trace.Sampling
 {
     internal class GlobalSamplingRule : ISamplingRule
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<GlobalSamplingRule>();
-
         private readonly float _globalRate;
 
         public GlobalSamplingRule(float rate)
@@ -31,8 +27,6 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            Log.Debug("Using the global sampling rate: {Rate}", _globalRate);
-
             span.SetMetric(Metrics.SamplingRuleDecision, _globalRate);
             return _globalRate;
         }

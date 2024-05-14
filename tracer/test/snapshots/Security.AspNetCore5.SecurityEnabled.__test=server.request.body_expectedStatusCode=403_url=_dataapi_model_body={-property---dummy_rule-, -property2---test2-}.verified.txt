@@ -37,7 +37,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
       _dd.appsec.waf.duration: 0.0,
       _dd.appsec.waf.duration_ext: 0.0,
@@ -84,7 +83,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
       _dd.appsec.waf.duration: 0.0,
       _dd.appsec.waf.duration_ext: 0.0,
@@ -131,7 +129,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
       _dd.appsec.waf.duration: 0.0,
       _dd.appsec.waf.duration_ext: 0.0,
@@ -178,7 +175,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
       _dd.appsec.waf.duration: 0.0,
       _dd.appsec.waf.duration_ext: 0.0,
@@ -225,7 +221,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
       _dd.appsec.waf.duration: 0.0,
       _dd.appsec.waf.duration_ext: 0.0,
