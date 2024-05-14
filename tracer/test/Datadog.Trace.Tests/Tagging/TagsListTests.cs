@@ -267,9 +267,6 @@ namespace Datadog.Trace.Tests.Tagging
             // Those numbers are picked to test the variable-size header of MessagePack
             // The header is resized when there are 16 or more elements in the collection
             // Neither common or additional tags have enough elements, but put together they will cause to use a bigger header
-            var tags = (CommonTags)span.Tags;
-            tags.SamplingLimitDecision = 0.5;
-
             span.Context.TraceContext.Environment = "Test";
 
             // Override the properties
