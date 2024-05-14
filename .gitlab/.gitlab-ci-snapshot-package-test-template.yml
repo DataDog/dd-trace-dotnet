@@ -7,7 +7,7 @@ stages:
 
 include:
   - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
-  - local: ".gitlab/single-step-instrumentation-tests.yml"
+  - remote: https://gitlab-templates.ddbuild.io/libdatadog/include/single-step-instrumentation-tests.yml
 
 variables:
   GIT_PROFILER_REF: master
