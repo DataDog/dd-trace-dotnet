@@ -300,7 +300,7 @@ namespace Datadog.Trace.Coverage.Collector
 
             _logger?.Warning($"Processed {numAssemblies} assemblies in folder: {folder}");
 
-            // The following is just a best effor approach to indicate the test session that
+            // The following is just a best effort approach to indicate in the test session that
             // we sucessfully instrumented all assemblies to collect code coverage.
             // Is not part of the spec but useful for support tickets.
             // If we instrument at least 1 assembly we extract session variables (from out of process sessions)
