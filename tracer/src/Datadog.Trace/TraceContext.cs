@@ -293,17 +293,15 @@ namespace Datadog.Trace
 
             SamplingPriority = priority;
 
-            const string tagName = Trace.Tags.Propagated.DecisionMaker;
-
             if (priority > 0 && mechanism != null)
             {
                 // add the tag once, but never overwrite an existing tag
-                Tags.TryAddTag(tagName, SamplingMechanism.GetTagValue(mechanism.Value));
+                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(mechanism.Value));
             }
             else if (priority <= 0)
             {
                 // remove tag if priority is AUTO_DROP (0) or USER_DROP (-1)
-                Tags.RemoveTag(tagName);
+                Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
             if (notifyDistributedTracer)
