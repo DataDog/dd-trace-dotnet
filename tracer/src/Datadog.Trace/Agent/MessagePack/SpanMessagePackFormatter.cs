@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
@@ -82,6 +83,14 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
 
         private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
+
+        private readonly byte[] _agentSamplingRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingAgentDecision);
+
+        private readonly byte[] _ruleSamplingRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingRuleDecision);
+
+        private readonly byte[] _limitSamplingRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingLimitDecision);
+
+        private readonly byte[] _keepRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.TracesKeepRate);
 
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ProcessId);
 
@@ -800,14 +809,54 @@ namespace Datadog.Trace.Agent.MessagePack
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            // add "process_id" tag to local root span (if present)
-            var processId = DomainMetadata.Instance.ProcessId;
-
-            if (processId != 0 && model.IsLocalRoot)
+            if (model.IsLocalRoot)
             {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
-                offset += MessagePackBinary.WriteDouble(ref bytes, offset, processId);
+                // add "process_id" tag to local root span if available
+                var processId = DomainMetadata.Instance.ProcessId;
+
+                if (processId != 0)
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
+                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, processId);
+                }
+
+                // add agent or rule sampling rate to local root span if available
+                if (model.TraceChunk.InitialSamplingRate is { } samplingRate)
+                {
+                    var tagNameBytes = model.TraceChunk.InitialSamplingMechanism switch
+                    {
+                        // agent sampling rate (matched) or default agent sampling rate (no match) or default fallback (1.0)
+                        SamplingMechanism.AgentRate or SamplingMechanism.Default => _agentSamplingRateNameBytes,
+                        // sampling rule or global sampling rate
+                        SamplingMechanism.TraceSamplingRule => _ruleSamplingRateNameBytes,
+                        // unknown sampling rate source
+                        _ => null
+                    };
+
+                    if (tagNameBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, tagNameBytes);
+                        offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingRate);
+                    }
+                }
+
+                // add limit sampling rate to local root span if available
+                if (model.TraceChunk.LimitSamplingRate is { } limitSamplingRate)
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _limitSamplingRateNameBytes);
+                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, limitSamplingRate);
+                }
+
+                // add rate limit to local root span if available
+                if (model.TraceChunk.TracesKeepRate is { } keepRate)
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _keepRateNameBytes);
+                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, keepRate);
+                }
             }
 
             // add the "apm.enabled" tag with a value of 0
@@ -837,6 +886,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
             }
 
+            // add "_dd.top_level" to top-level spans (aka service-entry spans)
             var testOptimization = Ci.TestOptimization.Instance;
             if (span.IsTopLevel && (!testOptimization.IsRunning || !testOptimization.Settings.Agentless))
             {
