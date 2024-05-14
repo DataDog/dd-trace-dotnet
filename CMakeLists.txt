@@ -86,9 +86,6 @@ message(STATUS "GoogleTest library")
 find_package(PPDB REQUIRED)
 message(STATUS "PPDB library")
 
-find_package(GlibcCompat REQUIRED)
-message(STATUS "Glibc Compat objects")
-
 add_subdirectory(tracer)
 
 # profiler cannot be built on MacOS (yet)
