@@ -159,14 +159,14 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterAgentSamplingRule(new AgentSamplingRule());
 
             // if there are no other rules, and before we have agent rates, mechanism is "Default"
-            var (_, mechanism1) = sampler.MakeSamplingDecision(span);
+            var (_, mechanism1, _, _) = sampler.MakeSamplingDecision(span);
             mechanism1.Should().Be(SamplingMechanism.Default);
 
             // add agent rates
             sampler.SetDefaultSampleRates(MockAgentRates);
 
             // after we have agent rates, mechanism is "AgentRate"
-            var (_, mechanism2) = sampler.MakeSamplingDecision(span);
+            var (_, mechanism2, _, _) = sampler.MakeSamplingDecision(span);
             mechanism2.Should().Be(SamplingMechanism.AgentRate);
         }
 
