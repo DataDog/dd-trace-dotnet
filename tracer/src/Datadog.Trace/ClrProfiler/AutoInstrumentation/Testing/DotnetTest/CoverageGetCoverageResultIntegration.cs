@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
     MethodName = "GetCoverageResult",
     ReturnTypeName = "Coverlet.Core.CoverageResult",
     ParameterTypeNames = [],
-    MinimumVersion = "6.0.0",
+    MinimumVersion = "3.0.0",
     MaximumVersion = "6.*.*",
     IntegrationName = DotnetCommon.DotnetTestIntegrationName)]
 [Browsable(false)]
@@ -34,12 +34,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 public class CoverageGetCoverageResultIntegration
 {
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
-        where TReturn : ICoverageResultProxy
     {
-        if (DotnetCommon.IsDataCollectorDomain &&
+        if (!DotnetCommon.IsDataCollectorDomain)
+        {
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+
+        object? modules = null;
+        if (returnValue.TryDuckCast<ICoverageResultProxy>(out var coverageResultProxy))
+        {
+            modules = coverageResultProxy.Modules;
+        }
+        else if (returnValue.TryDuckCast<ICoverageResultProxyV3>(out var coverageResultProxyV3))
+        {
+            modules = coverageResultProxyV3.Modules;
+        }
+        else
+        {
+            Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not cast to ICoverageResultProxy or ICoverageResultProxyV3");
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+
+        if (modules is not null &&
             instance?.GetType().Assembly() is { } assembly &&
-            assembly.GetType("Coverlet.Core.CoverageSummary") is { } coverageSummaryType &&
-            returnValue.Modules is { } modules)
+            assembly.GetType("Coverlet.Core.CoverageSummary") is { } coverageSummaryType)
         {
             var coverageSummary = Activator.CreateInstance(coverageSummaryType).DuckCast<ICoverageSummaryProxy>();
             var coverageDetails = coverageSummary!.CalculateLineCoverage(modules);
@@ -71,6 +89,12 @@ public class CoverageGetCoverageResultIntegration
 
     internal interface ICoverageResultProxy : IDuckType
     {
+        object? Modules { get; set; }
+    }
+
+    internal interface ICoverageResultProxyV3 : IDuckType
+    {
+        [DuckField]
         object? Modules { get; set; }
     }
 
