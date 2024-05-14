@@ -392,7 +392,9 @@ stages:
         target: builder
         baseImage: "universal"
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildNativeLoader --IsAlpine $(targetAlpine)"
+        # Since we do not run in an alpine container, we need to tell to Nuke where to publish
+        # the binary
+        command: "BuildNativeLoader --AsUniversal true --IsAlpine $(targetAlpine)"
         retryCountForRunCommand: 1
 
     - template: steps/run-in-docker.yml
@@ -2461,7 +2463,7 @@ stages:
         target: builder
         baseImage: "universal"
         useNativeSdkVersion: true
-        command: "BuildNativeLoader --IsAlpine False"
+        command: "BuildNativeLoader"
         retryCountForRunCommand: 1
 
     - template: steps/run-in-docker.yml
@@ -2557,7 +2559,7 @@ stages:
         target: builder
         baseImage: "universal"
         useNativeSdkVersion: true
-        command: "BuildNativeLoader --IsAlpine False"
+        command: "BuildNativeLoader"
         retryCountForRunCommand: 1
 
     - template: steps/run-in-docker.yml

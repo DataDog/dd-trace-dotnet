@@ -100,7 +100,7 @@ partial class Build
             var env = entries.ToDictionary(e => (string)e.Key, e => (string)e.Value);
             var additionalArgs = string.Empty;
 
-            if (!IsArm64)
+            if (AsUniversal)
             {
                 additionalArgs += "-DUNIVERSAL=ON";
                 env.Add("IsAlpine", "true");
@@ -264,7 +264,7 @@ partial class Build
             dest = MonitoringHomeDirectory / arch;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-            if (!IsArm64)
+            if (AsUniversal)
             {
                 PatchElf.Value.Invoke($"--remove-needed libc.musl-x86_64.so.1 {dest / source.Name} --remove-rpath");
             }
