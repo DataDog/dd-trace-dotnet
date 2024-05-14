@@ -181,7 +181,16 @@ namespace Datadog.Trace.Tests.Agent
 
             var expectedDroppedP0Traces = 1;
             var expectedDroppedP0Spans = 2;
-            api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => EqualSegments(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.Is<long>(i => i == expectedDroppedP0Traces), It.Is<long>(i => i == expectedDroppedP0Spans), It.IsAny<bool>()), Times.Once);
+
+            // expecting a single trace, but there should have been two spans
+            api.Verify(
+                x => x.SendTracesAsync(
+                    It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)),
+                    It.Is<int>(i => i == 1),
+                    It.IsAny<bool>(),
+                    It.Is<long>(i => i == expectedDroppedP0Traces),
+                    It.Is<long>(i => i == expectedDroppedP0Spans)),
+                Times.Once);
 
             await _agentWriter.FlushAndCloseAsync();
         }
