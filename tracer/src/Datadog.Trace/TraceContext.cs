@@ -265,6 +265,9 @@ namespace Datadog.Trace
                 // we can't make a sampling decision without a root span because:
                 // - we need a trace id, and for now trace id lives in SpanContext, not in TraceContext
                 // - we need to apply sampling rules to the root span
+
+                // note we do not set SamplingDecision
+                // so it remains null and we can try again later
                 return SamplingPriorityValues.Default;
             }
 
