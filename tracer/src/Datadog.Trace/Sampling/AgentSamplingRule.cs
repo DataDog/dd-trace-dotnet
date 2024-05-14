@@ -32,11 +32,10 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            var service = span.ServiceName;
-            var env = span.Context.TraceContext.Environment ?? string.Empty;
-
             if (_sampleRates.Count > 0)
             {
+                var service = span.ServiceName;
+                var env = span.Context.TraceContext.Environment ?? string.Empty;
                 var key = new SampleRateKey(service, env);
 
                 if (_sampleRates.TryGetValue(key, out var matchingRate))
