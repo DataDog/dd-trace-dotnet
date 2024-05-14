@@ -303,7 +303,7 @@ namespace Datadog.Trace.Coverage.Collector
             // The following is just a best effort approach to indicate in the test session that
             // we sucessfully instrumented all assemblies to collect code coverage.
             // Is not part of the spec but useful for support tickets.
-            // If we instrument at least 1 assembly we extract session variables (from out of process sessions)
+            // We try to extract session variables (from out of process sessions)
             // and try to send a message to the IPC server for setting the test.code_coverage.injected tag.
             if (SpanContextPropagator.Instance.Extract(
                     EnvironmentHelpers.GetEnvironmentVariables(),
