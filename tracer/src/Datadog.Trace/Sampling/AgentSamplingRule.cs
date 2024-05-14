@@ -40,32 +40,18 @@ namespace Datadog.Trace.Sampling
 
                 if (_sampleRates.TryGetValue(key, out var matchingRate))
                 {
-                    SetSamplingRateTag(span, matchingRate);
                     return matchingRate;
                 }
             }
 
             if (_defaultSamplingRate is { } defaultRate)
             {
-                SetSamplingRateTag(span, defaultRate);
                 return defaultRate;
             }
 
             // we don't have sampling rates from the agent yet (cold start),
             // fallback to 100% sampling rate, don't add "_dd.agent_psr" numeric tag
             return 1;
-
-            static void SetSamplingRateTag(Span span, float sampleRate)
-            {
-                if (span.Tags is CommonTags commonTags)
-                {
-                    commonTags.SamplingAgentDecision = sampleRate;
-                }
-                else
-                {
-                    span.SetMetric(Metrics.SamplingAgentDecision, sampleRate);
-                }
-            }
         }
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
