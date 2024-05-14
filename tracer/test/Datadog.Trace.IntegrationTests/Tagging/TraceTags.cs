@@ -37,7 +37,7 @@ public class TraceTags
     [InlineData(SamplingMechanism.LocalTraceSamplingRule)]
     [InlineData(SamplingMechanism.Manual)]
     [InlineData(SamplingMechanism.Asm)]
-    public async Task SerializeSamplingMechanismTag(int samplingMechanism)
+    public async Task SerializeSamplingMechanismTag(string samplingMechanism)
     {
         using (var scope = _tracer.StartActiveInternal("root"))
         {
@@ -48,6 +48,6 @@ public class TraceTags
         await _tracer.FlushAsync();
         var traceChunks = _testApi.Wait(TimeSpan.FromSeconds(3));
         var deserializedSpan = traceChunks.Single().Single();
-        deserializedSpan.Tags.Should().Contain("_dd.p.dm", $"-{samplingMechanism}");
+        deserializedSpan.Tags.Should().Contain("_dd.p.dm", samplingMechanism);
     }
 }
