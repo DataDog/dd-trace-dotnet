@@ -14,7 +14,6 @@
 #include <libunwind-ptrace.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
-#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <map>
@@ -268,8 +267,8 @@ std::vector<StackFrame> CrashReportingLinux::MergeFrames(const std::vector<Stack
         { // frames[i].sp == managedFrames[j].sp
             // Prefer managedFrame when sp values are the same
             result.push_back(managedFrames.at(j));
-            ++i; // Skip the frame from frames
-            ++j; // Move to next managedFrame
+            ++i;
+            ++j;
         }
     }
 

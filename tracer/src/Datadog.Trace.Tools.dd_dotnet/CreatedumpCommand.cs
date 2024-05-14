@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tools.dd_dotnet;
 
 internal class CreatedumpCommand : Command
 {
-    private const int MethodNameMaxLength = 1024;
+    private const int SymbolNameMaxLength = 1024;
 
     private static readonly List<string> Errors = new();
     private static ClrRuntime? _runtime;
@@ -231,6 +231,8 @@ internal class CreatedumpCommand : Command
                 resolvedFrame->Ip = frame.InstructionPointer;
                 resolvedFrame->Sp = frame.StackPointer;
 
+                string symbolName;
+
                 if (frame.Method != null)
                 {
                     resolvedFrame->SymbolAddress = frame.Method.NativeCode;
@@ -239,16 +241,20 @@ internal class CreatedumpCommand : Command
 
                     var assemblyName = frame.Method.Type.Module.AssemblyName;
                     var methodName = ShouldRedactFrame(assemblyName) ? "REDACTED" : $"{frame.Method.Type}.{frame.Method.Name}";
-                    var name = $"{Path.GetFileName(assemblyName)}!{methodName}";
-
-                    var length = Math.Min(Encoding.ASCII.GetByteCount(name), MethodNameMaxLength - 1); // -1 to save space for the null terminator
-
-                    var destination = new Span<byte>(resolvedFrame->Name, MethodNameMaxLength);
-
-                    Encoding.ASCII.GetBytes(name, destination);
-
-                    destination[length] = (byte)'\0';
+                    symbolName = $"{Path.GetFileName(assemblyName)}!{methodName}";
                 }
+                else
+                {
+                    resolvedFrame->SymbolAddress = 0;
+                    resolvedFrame->ModuleAddress = 0;
+                    resolvedFrame->IsSuspicious = false;
+                    symbolName = frame.FrameName ?? "<unknown>";
+                }
+
+                var length = Math.Min(Encoding.ASCII.GetByteCount(symbolName), SymbolNameMaxLength - 1); // -1 to save space for the null terminator
+                var destination = new Span<byte>(resolvedFrame->Name, SymbolNameMaxLength);
+                Encoding.ASCII.GetBytes(symbolName, destination);
+                destination[length] = (byte)'\0';
             }
 
             *numberOfFrames = frames.Count;
@@ -722,6 +728,6 @@ internal class CreatedumpCommand : Command
         public ulong Ip;
         public ulong Sp;
         public bool IsSuspicious;
-        public fixed byte Name[MethodNameMaxLength];
+        public fixed byte Name[SymbolNameMaxLength];
     }
 }

@@ -51,7 +51,6 @@ int32_t CrashReporting::Initialize()
 
     _crashInfo = crashInfoResult.ok;
 
-    /*
     auto result = ddog_crashinfo_set_timestamp_to_now(&_crashInfo);
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
@@ -59,9 +58,8 @@ int32_t CrashReporting::Initialize()
         SetLastError(result.err);
         return 1;
     }
-    */
 
-    return 0;
+    return AddTag("severity", "crash");
 }
 
 void CrashReporting::SetLastError(ddog_Error error)
@@ -284,10 +282,9 @@ int32_t CrashReporting::Send()
     }
 
     config.endpoint = ddog_prof_Endpoint_agent(libdatadog::FfiHelper::StringToCharSlice(shared::ToString(agentUrl)));
-    config.path_to_receiver_binary = libdatadog::FfiHelper::StringToCharSlice(std::string_view("FIXME - point me to receiver binary path"));
-    config.timeout_secs = 30;
+    config.timeout_secs = 10;
 
-    auto result = ddog_crashinfo_upload_to_telemetry(&_crashInfo, config);
+    auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, config);
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {
@@ -300,9 +297,12 @@ int32_t CrashReporting::Send()
 
 int32_t CrashReporting::WriteToFile(const char* url)
 {
-    auto endpoint = ddog_Endpoint_file(libdatadog::FfiHelper::StringToCharSlice(std::string_view(url)));
+    ddog_prof_CrashtrackerConfiguration config{};
 
-    auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, endpoint, 30);
+    config.endpoint = ddog_Endpoint_file(libdatadog::FfiHelper::StringToCharSlice(std::string_view(url)));
+    config.timeout_secs = 10;
+
+    auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, config);
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {
