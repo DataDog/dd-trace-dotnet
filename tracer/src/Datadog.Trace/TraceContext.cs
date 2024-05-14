@@ -286,21 +286,21 @@ namespace Datadog.Trace
 
         public void SetSamplingPriority(int? priority, int? mechanism = null, bool notifyDistributedTracer = true)
         {
-            if (priority == null)
+            if (priority is not { } p)
             {
                 return;
             }
 
-            SamplingPriority = priority;
+            SamplingPriority = p;
 
-            if (priority > 0 && mechanism != null)
+            if (SamplingPriorityValues.IsKeep(p) && mechanism is { } m)
             {
-                // add the tag once, but never overwrite an existing tag
-                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(mechanism.Value));
+                // add the tag once if trace is sampled, but never overwrite an existing tag
+                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(m));
             }
-            else if (priority <= 0)
+            else if (SamplingPriorityValues.IsDrop(p))
             {
-                // remove tag if priority is AUTO_DROP (0) or USER_DROP (-1)
+                // remove tag if trace is not sampled
                 Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
