@@ -46,7 +46,7 @@ public class TraceTags
         }
 
         await _tracer.FlushAsync();
-        var traceChunks = _testApi.Wait();
+        var traceChunks = _testApi.Wait(TimeSpan.FromSeconds(3));
         var deserializedSpan = traceChunks.Single().Single();
         deserializedSpan.Tags.Should().Contain("_dd.p.dm", $"-{samplingMechanism}");
     }
