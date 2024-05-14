@@ -24,7 +24,7 @@ namespace Datadog.Trace.Sampling
 
         // if there are no rules, this normally means we haven't sent any payloads to the Agent yet (aka cold start), so the mechanism is "Default".
         // if there are rules, there should always be at least one match (the fallback "service:,env:") and the mechanism is "AgentRate".
-        public int SamplingMechanism => _sampleRates.Count == 0 && _defaultSamplingRate == null ?
+        public string SamplingMechanism => _sampleRates.Count == 0 && _defaultSamplingRate == null ?
                                             Datadog.Trace.Sampling.SamplingMechanism.Default :
                                             Datadog.Trace.Sampling.SamplingMechanism.AgentRate;
 
