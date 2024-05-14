@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.Agent
             var spanContext = new SpanContext(null, traceContext, "service");
             var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             traceContext.AddSpan(span);
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+            traceContext.SetSamplingPriority(new SamplingDecision(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null));
             span.Finish(); // triggers the span sampler to run
             var traceChunk = new ArraySegment<Span>(new[] { span });
 
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tests.Agent
             var spanContext = new SpanContext(null, traceContext, "service");
             var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             traceContext.AddSpan(span);
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+            traceContext.SetSamplingPriority(new SamplingDecision(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null));
             span.Finish();
             var traceChunk = new ArraySegment<Span>(new[] { span });
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
@@ -108,7 +108,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+            traceContext.SetSamplingPriority(new SamplingDecision(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null));
             var rootSpanContext = new SpanContext(null, traceContext, "service");
             var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             var keptChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "operation" };
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+            traceContext.SetSamplingPriority(new SamplingDecision(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null));
             var rootSpanContext = new SpanContext(null, traceContext, "testhost");
             var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             var droppedChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "testhost"), DateTimeOffset.UtcNow) { OperationName = "drop_me" };
