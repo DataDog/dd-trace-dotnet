@@ -77,13 +77,15 @@ namespace Datadog.Trace.Sampling
             }
         }
 
-        public abstract void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval);
+        protected abstract void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval);
 
-        public virtual void OnRefresh(int intervalMs, int checksInLastInterval, int allowedInLastInterval)
+        protected virtual void OnRefresh(int intervalMs, int checksInLastInterval, int allowedInLastInterval)
         {
         }
 
-        public abstract void OnFinally(Span span);
+        protected virtual void OnFinally(Span span)
+        {
+        }
 
         public float GetEffectiveRate()
         {
