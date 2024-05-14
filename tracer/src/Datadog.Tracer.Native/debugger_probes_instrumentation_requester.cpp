@@ -608,7 +608,6 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(
 
     // We offload the actual `RequestRejit` & `RequestRevert` to a separate thread because they are not permitted
     // to be called from managed land.
-
     if (!revertRequests.empty())
     {
         Logger::Info("About to RequestRevert for ", revertRequests.size(), " methods.");
@@ -618,7 +617,7 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(
         std::copy(revertRequests.begin(), revertRequests.end(), requests.begin());
         auto promise = std::make_shared<std::promise<void>>();
         std::future<void> future = promise->get_future();
-        m_debugger_rejit_preprocessor->EnqueueRequestRevert(requests, promise);
+        m_debugger_rejit_preprocessor->EnqueueRequestRejit(requests, promise);
         // wait and get the value from the future<void>
         future.get();
     }

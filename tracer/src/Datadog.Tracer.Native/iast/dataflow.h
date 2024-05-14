@@ -72,8 +72,6 @@ namespace iast
         std::vector<WSTRING> _methodAttributeIncludeFilters;
         std::vector<WSTRING> _methodAttributeExcludeFilters;
 
-        bool _traceJitMethods = false;
-
     protected:
         bool _initialized = false;
         bool _loaded = false;
@@ -86,7 +84,7 @@ namespace iast
         MethodInfo* JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl = nullptr);
 
         std::vector<DataflowAspectReference*> GetAspects(ModuleInfo* module);
-        static void InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects);
+        static bool InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects);
 
     public:
         bool IsInitialized();

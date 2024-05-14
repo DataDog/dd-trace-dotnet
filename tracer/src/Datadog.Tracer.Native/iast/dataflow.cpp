@@ -153,7 +153,7 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 //--------------------
 
 Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler) :
-    Rejitter(rejitHandler)
+    Rejitter(rejitHandler, RejitterPriority::Low)
 {
     HRESULT hr = profiler->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &_profiler);
     if (_profiler != nullptr)
@@ -584,11 +584,7 @@ bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
     }
 
     auto method = JITProcessMethod(moduleId, methodId);
-    if (method && method->HasChanged())
-    {
-        return SUCCEEDED(method->ApplyFinalInstrumentation());
-    }
-    return true;
+    return method != nullptr;
 }
 MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl)
 {
@@ -604,16 +600,10 @@ MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trac
         method = module->GetMethodInfo(methodId);
         if (method && !method->IsExcluded())
         {
-            auto type = method->GetTypeInfo();
             if (pFunctionControl || !method->IsProcessed())
             {
                 method->SetProcessed();
-                if (_traceJitMethods)
-                {
-                    trace::Logger::Debug("JITProcessMethod       -> Processing ", method->GetFullName());
-                }
                 RewriteMethod(method, pFunctionControl);
-                return method;
             }
         }
     }
@@ -642,6 +632,7 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
         auto moduleAspectRefs = GetAspects(module);
         if (moduleAspectRefs.size() > 0)
         {
+            bool written = false;
             ILRewriter* rewriter;
             hr = method->GetILRewriter(&rewriter, (ICorProfilerInfo*) pFunctionControl);
             if (SUCCEEDED(hr))
@@ -653,19 +644,32 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
                     if (IsCandidate(context.instruction->m_opcode))
                     {
                         // Instrument instruction
-                        InstrumentInstruction(context, moduleAspectRefs);
+                        written |= InstrumentInstruction(context, moduleAspectRefs);
+                        if (!pFunctionControl && written)
+                        {
+                            context.aborted = true;
+                        }
                         if (context.aborted)
                         {
                             break;
                         }
                     }
                 }
-                hr = method->CommitILRewriter(context.aborted);
+                method->CommitILRewriter(context.aborted);
             }
 
-            if (SUCCEEDED(hr) && pFunctionControl)
+            if (written)
             {
-                hr = method->ApplyFinalInstrumentation((ICorProfilerFunctionControl*)pFunctionControl);
+                if (pFunctionControl)
+                {
+                    hr = method->ApplyFinalInstrumentation((ICorProfilerFunctionControl*) pFunctionControl);
+                }
+                else
+                {
+                    std::vector<ModuleID> modulesVector = {module->_id};
+                    std::vector<mdMethodDef> methodsVector = {method->GetMemberId()}; // methodId
+                    m_rejitHandler->RequestRejit(modulesVector, methodsVector);
+                }
             }
         }
     }
@@ -688,15 +692,16 @@ std::vector<DataflowAspectReference*> Dataflow::GetAspects(ModuleInfo* module)
     return res->_aspects;
 }
 
-void Dataflow::InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects)
+bool Dataflow::InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects)
 {
     for (auto aspect : aspects)
     {
         if (aspect->Apply(context))
         {
-            return;
+            return true;
         }
     }
+    return false;
 }
 
 void Dataflow::Shutdown()

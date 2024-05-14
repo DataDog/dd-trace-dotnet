@@ -527,11 +527,6 @@ namespace iast
         }
 
         FreeBuffer(); //To save memory
-
-        if (_applyMessage.size() > 0)
-        {
-            trace::Logger::Info(" --> ", _applyMessage, " <-- ");
-        }
         return hr;
     }
 

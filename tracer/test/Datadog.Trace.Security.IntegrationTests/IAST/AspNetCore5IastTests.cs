@@ -1027,6 +1027,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
+        settings.AddRegexScrubber(new Regex(@"_dd.agent_psr: .{1,3},"), string.Empty);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();

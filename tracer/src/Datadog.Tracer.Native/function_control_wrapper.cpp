@@ -19,6 +19,7 @@ FunctionControlWrapper::~FunctionControlWrapper()
     if (m_methodBody)
     {
         delete[] m_methodBody;
+        m_methodBody = nullptr;
     }
 }
 

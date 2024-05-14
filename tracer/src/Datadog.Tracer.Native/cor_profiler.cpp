@@ -1821,19 +1821,6 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             {
                 integration_definitions_.push_back(integration);
             }
-
-            Logger::Info("Total number of modules to analyze: ", modules->size());
-            if (rejit_handler != nullptr)
-            {
-                auto promise = std::make_shared<std::promise<ULONG>>();
-                std::future<ULONG> future = promise->get_future();
-                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(),
-                    integrationDefinitions, promise);
-
-                // wait and get the value from the future<int>
-                const auto& numReJITs = future.get();
-                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
-            }
         }
         else
         {
@@ -1848,19 +1835,19 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                     integration_definitions_.push_back(integration);
                 }
             }
+        }
 
-            Logger::Info("Total number of modules to analyze: ", modules->size());
-            if (rejit_handler != nullptr)
-            {
-                auto promise = std::make_shared<std::promise<ULONG>>();
-                std::future<ULONG> future = promise->get_future();
-                tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(modules.Ref(),
-                    integrationDefinitions, promise);
+        Logger::Info("Total number of modules to analyze: ", modules->size());
+        if (rejit_handler != nullptr)
+        {
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions,
+                                                                                 promise);
 
-                // wait and get the value from the future<int>
-                const auto& numReJITs = future.get();
-                Logger::Debug("Total number of Revert Requested: ", numReJITs);
-            }
+            // wait and get the value from the future<int>
+            const auto& numReJITs = future.get();
+            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
 
         Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
@@ -2016,8 +2003,7 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
             auto modules = module_ids.Get();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(modules.Ref(), affectedDefinitions,
-                                                                                  promise);
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions, promise);
 
             // wait and get the value from the future<int>
             numReverts = future.get();

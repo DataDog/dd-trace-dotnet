@@ -88,13 +88,17 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
 
     auto tracerMethodHandler = static_cast<TracerRejitHandlerModuleMethod*>(methodHandler);
-
     if (tracerMethodHandler->GetIntegrationDefinition() == nullptr)
     {
         Logger::Warn("TracerMethodRewriter::Rewrite: IntegrationDefinition is missing for "
                      "MethodDef: ",
                      methodHandler->GetMethodDef());
 
+        return S_FALSE;
+    }
+
+    if (!tracerMethodHandler->GetIntegrationDefinition()->GetEnabled())
+    {
         return S_FALSE;
     }
 

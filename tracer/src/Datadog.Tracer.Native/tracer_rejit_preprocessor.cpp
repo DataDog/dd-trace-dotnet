@@ -10,6 +10,11 @@
 namespace trace
 {
 // TracerRejitPreprocessor
+TracerRejitPreprocessor::TracerRejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler,
+                                                 std::shared_ptr<RejitWorkOffloader> work_offloader) : 
+    RejitPreprocessor(corProfiler, rejit_handler, work_offloader, RejitterPriority::Normal)
+{
+}
 
 const MethodReference& TracerRejitPreprocessor::GetTargetMethod(const IntegrationDefinition& integrationDefinition)
 {
@@ -48,6 +53,15 @@ TracerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerM
 {
     return std::make_unique<TracerRejitHandlerModuleMethod>(methodDef, module, functionInfo, integrationDefinition,
                                                             std::make_unique<TracerMethodRewriter>(m_corProfiler));
+}
+
+void TracerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* method, const IntegrationDefinition& definition)
+{
+    auto tracerMethodHandler = static_cast<TracerRejitHandlerModuleMethod*>(method);
+    if (tracerMethodHandler != nullptr)
+    {
+        tracerMethodHandler->GetIntegrationDefinition()->Update(definition);
+    }
 }
 
 bool TracerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo,

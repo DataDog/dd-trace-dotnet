@@ -126,16 +126,9 @@ public:
     bool GetEnableCallTargetStateByRef();
     bool GetEnableByRefInstrumentation();
 
-    void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef,
-                         std::shared_ptr<std::promise<void>> promise = nullptr);
     void RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
-    void RequestRevert(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
-    void EnqueueForRevert(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef,
-                          std::shared_ptr<std::promise<void>> promise = nullptr);
-
+    void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef, std::shared_ptr<std::promise<void>> promise = nullptr);
     void EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::shared_ptr<std::promise<void>> promise);
-    void EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests,
-                              std::shared_ptr<std::promise<void>> promise);
 
     void Shutdown();
     bool IsShutdownRequested();

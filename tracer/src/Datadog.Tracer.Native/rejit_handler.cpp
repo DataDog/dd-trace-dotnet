@@ -282,36 +282,6 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
     }
 }
 
-void RejitHandler::RequestRevert(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef)
-{
-    if (IsShutdownRequested())
-    {
-        return;
-    }
-
-    HRESULT hr;
-
-    if (!modulesVector.empty())
-    {
-        // *************************************
-        // Request Revert
-        // *************************************
-
-        HRESULT* status = nullptr;
-        hr = m_profilerInfo->RequestRevert((ULONG) modulesVector.size(), &modulesVector[0], &modulesMethodDef[0],
-                                           status);
-
-        if (SUCCEEDED(hr))
-        {
-            Logger::Info("Request Revert done for ", modulesVector.size(), " methods");
-        }
-        else
-        {
-            Logger::Warn("Error requesting Revert for ", modulesVector.size(), " methods");
-        }
-    }
-}
-
 void RejitHandler::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests,
                                        std::shared_ptr<std::promise<void>> promise)
 {
@@ -325,21 +295,6 @@ void RejitHandler::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitReque
     }
 
     EnqueueForRejit(modulesVector, methodsVector, promise);
-}
-
-void RejitHandler::EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests,
-                                        std::shared_ptr<std::promise<void>> promise)
-{
-    std::vector<ModuleID> modulesVector;
-    std::vector<mdMethodDef> methodsVector;
-
-    for (const auto& request : revertRequests)
-    {
-        modulesVector.push_back(request.moduleId);
-        methodsVector.push_back(request.methodToken);
-    }
-
-    EnqueueForRevert(modulesVector, methodsVector, promise);
 }
 
 RejitHandler::RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader) :
@@ -383,37 +338,6 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
     m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
 }
 
-void RejitHandler::EnqueueForRevert(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef,
-                                    std::shared_ptr<std::promise<void>> promise)
-{
-    if (IsShutdownRequested() || modulesVector.size() == 0 || modulesMethodDef.size() == 0)
-    {
-        if (promise != nullptr)
-        {
-            promise->set_value();
-        }
-
-        return;
-    }
-
-    Logger::Debug("RejitHandler::EnqueueForRevert");
-
-    std::function<void()> action = [=, modules = std::move(modulesVector), methods = std::move(modulesMethodDef),
-                                    localPromise = promise]() mutable {
-        // Request Revert
-        RequestRevert(modules, methods);
-
-        // Resolve promise
-        if (localPromise != nullptr)
-        {
-            localPromise->set_value();
-        }
-    };
-
-    // Enqueue
-    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
-}
-
 void RejitHandler::Shutdown()
 {
     Logger::Debug("RejitHandler::Shutdown");
@@ -421,9 +345,6 @@ void RejitHandler::Shutdown()
     // Wait for exiting the thread
     m_work_offloader->Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
     m_work_offloader->WaitForTermination();
-
-    // std::lock_guard<std::mutex> moduleGuard(m_modules_lock);
-    // std::lock_guard<std::mutex> ngenModuleGuard(m_ngenInlinersModules_lock);
 
     WriteLock w_lock(m_shutdown_lock);
     m_shutdown.store(true);
@@ -433,7 +354,6 @@ void RejitHandler::Shutdown()
         rejitter->Shutdown();
     }
 
-    // m_modules.clear();
     m_profilerInfo = nullptr;
     m_profilerInfo10 = nullptr;
 }
@@ -446,7 +366,22 @@ bool RejitHandler::IsShutdownRequested()
 
 void RejitHandler::RegisterRejitter(Rejitter* rejitter)
 {
-    m_rejitters.push_back(rejitter);
+    if (m_rejitters.size() == 0)
+    {
+        m_rejitters.push_back(rejitter);
+    }
+    else
+    {
+        auto it = m_rejitters.begin();
+        for (; it < m_rejitters.end(); it++)
+        {
+            if ((*it)->GetPriority() > rejitter->GetPriority())
+            {
+                break;
+            }
+        }
+        m_rejitters.insert(it, rejitter);
+    }
 }
 
 HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId, ICorProfilerFunctionControl* pFunctionControl)

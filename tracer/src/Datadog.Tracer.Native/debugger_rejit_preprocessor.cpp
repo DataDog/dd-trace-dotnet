@@ -11,6 +11,13 @@ namespace debugger
 
 // DebuggerRejitPreprocessor
 
+DebuggerRejitPreprocessor::DebuggerRejitPreprocessor(CorProfiler* corProfiler,
+                                                     std::shared_ptr<RejitHandler> rejit_handler,
+                                                     std::shared_ptr<RejitWorkOffloader> work_offloader) :
+    RejitPreprocessor(corProfiler, rejit_handler, work_offloader, RejitterPriority::Critical)
+{
+}
+
 ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
     const std::vector<ModuleID>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
     std::vector<MethodIdentifier>& rejitRequests)

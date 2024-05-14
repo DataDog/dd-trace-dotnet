@@ -17,12 +17,25 @@ class RejitHandlerModule;
 class FunctionControlWrapper;
 struct FunctionInfo;
 
+enum class RejitterPriority
+{
+    Critical = 0,
+    High = 1,
+    Normal = 2,
+    Low = 3
+};
+
 class Rejitter
 {
+protected:
+    std::shared_ptr<RejitHandler> m_rejitHandler;
+    RejitterPriority m_priority;
+
 public:
-    Rejitter(std::shared_ptr<RejitHandler> handler);
+    Rejitter(std::shared_ptr<RejitHandler> handler, RejitterPriority priority);
     virtual ~Rejitter();
 
+    inline RejitterPriority GetPriority(){ return m_priority; }
     virtual void Shutdown() = 0;
     virtual RejitHandlerModule* GetOrAddModule(ModuleID moduleId) = 0;
     virtual bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) = 0;
@@ -77,7 +90,7 @@ protected:
 
     ULONG PreprocessRejitRequests(const std::vector<ModuleID>& modules,
                                   const std::vector<RejitRequestDefinition>& definitions,
-                                  std::vector<MethodIdentifier>& rejitRequests, bool isRevert);
+                                  std::vector<MethodIdentifier>& rejitRequests);
 
 protected:
     std::mutex m_modules_lock;
@@ -86,7 +99,8 @@ protected:
     std::vector<ModuleID> m_ngenInlinersModules;
 
 public:
-    RejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler, std::shared_ptr<RejitWorkOffloader> work_offloader);
+    RejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler,
+                      std::shared_ptr<RejitWorkOffloader> work_offloader, RejitterPriority priority);
 
     void Shutdown() override;
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId) override;
@@ -101,31 +115,18 @@ public:
                                     std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef,
                                     const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler);
 
+    void RequestRejit(std::vector<MethodIdentifier>& rejitRequests, bool enqueueInSameThread = false);
     ULONG RequestRejitForLoadedModules(const std::vector<ModuleID>& modules,
                                        const std::vector<RejitRequestDefinition>& requests,
                                        bool enqueueInSameThread = false);
-
-    ULONG RequestRevertForLoadedModules(const std::vector<ModuleID>& modules,
-                                       const std::vector<RejitRequestDefinition>& requests,
-                                       bool enqueueInSameThread = false);
-
+    void EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::shared_ptr<std::promise<void>> promise);
     void EnqueueRequestRejitForLoadedModules(const std::vector<ModuleID>& modulesVector,
                                              const std::vector<RejitRequestDefinition>& requests,
                                              std::shared_ptr<std::promise<ULONG>> promise);
-
-    void EnqueueRequestRevertForLoadedModules(const std::vector<ModuleID>& modulesVector,
-                                             const std::vector<RejitRequestDefinition>& requests,
-                                             std::shared_ptr<std::promise<ULONG>> promise);
-
     void EnqueuePreprocessRejitRequests(const std::vector<ModuleID>& modules,
                                   const std::vector<RejitRequestDefinition>& definitions,
                                   std::shared_ptr<std::promise<std::vector<MethodIdentifier>>> promise);
 
-    void RequestRejit(std::vector<MethodIdentifier>& rejitRequests, bool enqueueInSameThread = false);
-    void RequestRevert(std::vector<MethodIdentifier>& revertRequests, bool enqueueInSameThread = false);
-
-    void EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::shared_ptr<std::promise<void>> promise);
-    void EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests, std::shared_ptr<std::promise<void>> promise);
 };
 
 } // namespace trace

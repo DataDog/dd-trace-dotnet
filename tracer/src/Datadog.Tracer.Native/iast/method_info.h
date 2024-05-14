@@ -126,7 +126,6 @@ namespace iast
 
     protected:
         ILRewriter* _rewriter = nullptr;
-        std::string _applyMessage = "";
     private:
         void FreeBuffer();
     public:

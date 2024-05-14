@@ -78,6 +78,11 @@ public:
         }
         return GetEnabled();
     }
+
+    void Update(const IntegrationDefinition& other)
+    {
+        enabled_categories = other.enabled_categories;
+    }
 };
 
 std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(const TypeReference& integration_type, const shared::WSTRING& configuration_string);
