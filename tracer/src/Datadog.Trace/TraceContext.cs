@@ -282,6 +282,11 @@ namespace Datadog.Trace
             return samplingDecision.Priority;
         }
 
+        public void SetSamplingPriority(SamplingDecision decision, bool notifyDistributedTracer = true)
+        {
+            SetSamplingPriority(decision.Priority, decision.Mechanism, notifyDistributedTracer);
+        }
+
         public void SetSamplingPriority(int? priority, int? mechanism = null, bool notifyDistributedTracer = true)
         {
             if (priority == null)
