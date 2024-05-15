@@ -55,7 +55,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
 
         private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
-        private readonly byte[][] _samplingPriorityValueBytes;
+        private readonly byte[] _samplingPriorityValueBytes = MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserKeep);
 
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
         private readonly byte[] _processIdValueBytes;
@@ -64,16 +64,6 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         {
             double processId = DomainMetadata.Instance.ProcessId;
             _processIdValueBytes = processId > 0 ? MessagePackSerializer.Serialize(processId) : null;
-
-            // values begin at -1, so they are shifted by 1 from their array index: [-1, 0, 1, 2]
-            // these must serialized as msgpack float64 (Double in .NET).
-            _samplingPriorityValueBytes =
-            [
-                MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserReject),
-                MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoReject),
-                MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoKeep),
-                MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserKeep)
-            ];
         }
 
         public int Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
@@ -356,23 +346,10 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, _processIdValueBytes);
                 }
 
-                // add "_sampling_priority_v1" tag
-                if (span.Context.TraceContext.SamplingPriority is { } samplingPriority)
-                {
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);
-
-                    if (samplingPriority is >= -1 and <= 2)
-                    {
-                        // values begin at -1, so they are shifted by 1 from their array index: [-1, 0, 1, 2]
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, _samplingPriorityValueBytes[samplingPriority + 1]);
-                    }
-                    else
-                    {
-                        // fallback to support unknown future values that are not cached
-                        offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
-                    }
-                }
+                // add "_sampling_priority_v1" tag, always MANUAL_KEEP (2)
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, _samplingPriorityValueBytes);
             }
 
             if (count > 0)
