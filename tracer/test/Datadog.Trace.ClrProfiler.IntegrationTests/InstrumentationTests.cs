@@ -8,6 +8,7 @@
 #if NET8_0
 using System;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -73,7 +74,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // this _should_ be instrumented so we expect managed data.
             // we also expect telemetry, but we end the app so quickly there's a risk of flake
             logDir = await RunDotnet("run");
-            Directory.GetFiles(logDir).Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-instrumentation_test-"));
+
+            using var scope = new AssertionScope();
+            var allFiles = Directory.GetFiles(logDir);
+            AddFilesAsReportable(logDir, scope, allFiles);
+            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-instrumentation_test-"));
             agent.Telemetry.Should().NotBeEmpty();
 
             return;
@@ -99,7 +104,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // this _should_ be instrumented so we expect managed data.
             // we also expect telemetry, but we end the app so quickly there's a risk of flake
             logDir = await RunDotnet("test");
-            Directory.GetFiles(logDir).Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-testhost-"));
+
+            using var scope = new AssertionScope();
+            var allFiles = Directory.GetFiles(logDir);
+            AddFilesAsReportable(logDir, scope, allFiles);
+            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-testhost-"));
             agent.Telemetry.Should().NotBeEmpty();
 
             return;
@@ -135,9 +144,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // should have bailed out, but we still write logs to the native loader log
             // _and_ the native tracer/profiler (because they're initialized), so important
             // point is we don't have managed logs, and no spans or telemetry
-            Directory.GetFiles(logDir).Should().NotContain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-dotnet-"));
+            using var scope = new AssertionScope();
+            var allFiles = Directory.GetFiles(logDir);
+            AddFilesAsReportable(logDir, scope, allFiles);
+
+            allFiles.Should().NotContain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-dotnet-"));
             mockTracerAgent.Spans.Should().BeEmpty();
             mockTracerAgent.Telemetry.Should().BeEmpty();
+        }
+
+        private void AddFilesAsReportable(string logDir, AssertionScope scope, string[] allFiles)
+        {
+            scope.AddReportable(
+                $"Log files in {logDir}",
+                () =>
+                {
+                    var sb = new StringBuilder();
+                    foreach (var filename in allFiles)
+                    {
+                        sb.Append("File: ").AppendLine(filename);
+                        sb.AppendLine("-----------------------");
+                        sb.AppendLine(File.ReadAllText(filename));
+                    }
+
+                    return sb.ToString();
+                });
         }
     }
 }
