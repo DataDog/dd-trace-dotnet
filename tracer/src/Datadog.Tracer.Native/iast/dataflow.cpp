@@ -626,7 +626,10 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
     {
         CSGUARD(_cs);
 
-        MethodAnalyzers::ProcessMethod(method);
+        if (!pFunctionControl)
+        {
+            MethodAnalyzers::ProcessMethod(method);
+        }
 
         auto module = method->GetModuleInfo();
         auto moduleAspectRefs = GetAspects(module);
