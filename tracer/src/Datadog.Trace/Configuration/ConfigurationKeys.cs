@@ -68,6 +68,13 @@ namespace Datadog.Trace.Configuration
         public const string TraceEnabled = "DD_TRACE_ENABLED";
 
         /// <summary>
+        /// Configuration key for enabling or disabling APM Tracing.
+        /// Default is value is true (enabled).
+        /// </summary>
+        /// <seealso cref="TracerSettings.ApmTracingEnabled"/>
+        public const string ApmTracingEnabled = "DD_APM_TRACING_ENABLED";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.
         /// Default is value is false (disabled).
         /// </summary>
