@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -62,7 +62,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -128,7 +128,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -191,7 +191,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -254,7 +254,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -320,7 +320,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -386,7 +386,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -452,7 +452,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -518,7 +518,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -584,7 +584,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -650,7 +650,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -712,7 +712,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -776,7 +776,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -839,7 +839,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -906,7 +906,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -973,7 +973,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1040,7 +1040,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1106,7 +1106,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1170,7 +1170,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1234,7 +1234,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1298,7 +1298,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1360,7 +1360,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1424,7 +1424,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1489,7 +1489,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1554,7 +1554,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1619,7 +1619,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1683,7 +1683,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1750,7 +1750,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1813,7 +1813,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1878,7 +1878,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -1940,7 +1940,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -2002,7 +2002,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -2068,7 +2068,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {
@@ -2130,7 +2130,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   }
 ]
