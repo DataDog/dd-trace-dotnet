@@ -1,4 +1,4 @@
 {
-  global: GetNativeProfilerIsReadyPtr; GetPointerToNativeTraceContext; Profiler_Version; SetApplicationInfoForAppDomain; SetEndpointForTrace; SetGitMetadataForApplication; ThreadsCpuManager_Map; DllGetClassObject; DllCanUnloadNow; FlushProfile;
+  global: CreateCrashReport; GetNativeProfilerIsReadyPtr; GetPointerToNativeTraceContext; Profiler_Version; SetApplicationInfoForAppDomain; SetEndpointForTrace; SetGitMetadataForApplication; ThreadsCpuManager_Map; DllGetClassObject; DllCanUnloadNow; FlushProfile;
   local: *;
 };

@@ -205,6 +205,47 @@ int32_t GetProcessorCount()
     return get_nprocs();
 }
 
+std::vector<int32_t> GetProcessThreads(int32_t pid)
+{
+    DIR* proc_dir;
+    char dirname[100];
+    std::string pidPath = (pid == -1) ? "self" : std::to_string(pid);
+
+    snprintf(dirname, sizeof(dirname), "/proc/%s/task", pidPath.c_str());
+
+    proc_dir = opendir(dirname);
+
+    std::vector<int32_t> threads;
+
+    if (proc_dir != nullptr)
+    {
+        on_leave{ closedir(proc_dir); };
+        threads.reserve(512);
+
+        /* /proc available, iterate through tasks... */
+        struct dirent* entry;
+        while ((entry = readdir(proc_dir)) != nullptr)
+        {
+            if (entry->d_name[0] == '.')
+                continue;
+            auto threadId = atoi(entry->d_name);
+            threads.push_back(threadId);
+        }
+    }
+    else
+    {
+        static bool alreadyLogged = false;
+        if (!alreadyLogged)
+        {
+            alreadyLogged = true;
+            auto errorNumber = errno;
+            Log::Error("Failed at opendir ", dirname, " error: ", strerror(errorNumber));
+        }
+    }
+
+    return threads;
+}
+
 std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
 {
     DIR* proc_dir;

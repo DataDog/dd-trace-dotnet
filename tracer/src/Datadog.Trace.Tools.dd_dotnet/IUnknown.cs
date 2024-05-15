@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS;
+namespace Datadog.Trace.Tools.dd_dotnet;
 
 [NativeObject]
 internal interface IUnknown : IDisposable
