@@ -60,10 +60,10 @@ namespace Datadog.Trace.TestHelpers
 
         public static VerifySettings GetSpanVerifierSettings(params object[] parameters) => GetSpanVerifierSettings(null, parameters);
 
-        public static VerifySettings GetCiVisibilitySpanVerifierSettings(params object[] parameters) => GetCiVisibilitySpanVerifierSettings(null, parameters);
-
         public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
             => GetSpanVerifierSettings(scrubbers, parameters, ScrubStringTags, apmNumericTagsScrubber: null, ciVisStringTagsScrubber: null, ciVisNumericTagsScrubber: null);
+
+        public static VerifySettings GetCiVisibilitySpanVerifierSettings(params object[] parameters) => GetCiVisibilitySpanVerifierSettings(null, parameters);
 
         public static VerifySettings GetCiVisibilitySpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
             => GetSpanVerifierSettings(scrubbers, parameters, ScrubCIVisibilityTags, ScrubCIVisibilityMetrics, ScrubCIVisibilityTags, ScrubCIVisibilityMetrics);
