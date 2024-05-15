@@ -158,9 +158,7 @@ namespace datadog::shared::nativeloader
             // We don't want to instrument _build_ processes in dotnet by default, as they generally
             // don't give useful information, add latency, and risk triggering bugs in the runtime,
             // particularly around shutdown, like this one: https://github.com/dotnet/runtime/issues/55441
-            const auto command_line = GetCurrentProcessCommandLine();
-            const auto process_command_line = std::get<0>(command_line);
-            const auto command_line_arguments = std::get<1>(command_line);
+           const auto [command_line , process_command_line]  = GetCurrentProcessCommandLine();
             Log::Info("Process CommandLine: ", process_command_line);
 
             if (!process_command_line.empty())

@@ -71,9 +71,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     const auto process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
-    const auto command_line = GetCurrentProcessCommandLine();
-    const auto process_command_line = std::get<0>(command_line);
-    const auto command_line_arguments = std::get<1>(command_line);
+    const auto [process_command_line , command_line_arguments ] = GetCurrentProcessCommandLine();
     Logger::Info("Process CommandLine: ", process_command_line);
 
     // CI visibility checks
