@@ -61,7 +61,7 @@ namespace Datadog.Trace.TestHelpers
         public static VerifySettings GetSpanVerifierSettings(params object[] parameters) => GetSpanVerifierSettings(null, parameters);
 
         public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
-            => GetSpanVerifierSettings(scrubbers, parameters, ScrubStringTags, apmNumericTagsScrubber: null, ciVisStringTagsScrubber: null, ciVisNumericTagsScrubber: null);
+            => GetSpanVerifierSettings(scrubbers, parameters, ScrubStringTags, ScrubNumericTags, ciVisStringTagsScrubber: null, ciVisNumericTagsScrubber: null);
 
         public static VerifySettings GetCiVisibilitySpanVerifierSettings(params object[] parameters) => GetCiVisibilitySpanVerifierSettings(null, parameters);
 
@@ -211,6 +211,20 @@ namespace Datadog.Trace.TestHelpers
                   .ToDictionary(x => x.Key, x => x.Value);
         }
 
+        public static Dictionary<string, double> ScrubNumericTags(MockSpan span, Dictionary<string, double> tags)
+        {
+            string[] ignoreKeys =
+            [
+                Metrics.SamplingAgentDecision,
+                // more coming soon
+            ];
+
+            return tags
+                  .Where(kvp => !ignoreKeys.Contains(kvp.Key))
+                  .OrderBy(x => x.Key)
+                  .ToDictionary(x => x.Key, x => x.Value);
+        }
+
         public static Dictionary<string, string> ScrubCIVisibilityTags(MockSpan span, Dictionary<string, string> tags) => ScrubCIVisibilityTags(tags);
 
         public static Dictionary<string, string> ScrubCIVisibilityTags(MockCIVisibilityTest span, Dictionary<string, string> tags) => ScrubCIVisibilityTags(tags);
@@ -269,6 +283,7 @@ namespace Datadog.Trace.TestHelpers
         public static Dictionary<string, double> ScrubCIVisibilityMetrics(Dictionary<string, double> metrics)
         {
             return metrics
+                  .Where(kvp => kvp.Key != Metrics.SamplingAgentDecision)
                   .Select(
                        kvp => kvp.Key switch
                        {
