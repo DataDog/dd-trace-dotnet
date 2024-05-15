@@ -71,7 +71,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     const auto process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
-    const auto [process_command_line , command_line_arguments ] = GetCurrentProcessCommandLine();
+    const auto [process_command_line , tokenized_command_line ] = GetCurrentProcessCommandLine();
     Logger::Info("Process CommandLine: ", process_command_line);
 
     // CI visibility checks
@@ -83,10 +83,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             is_ci_visibility_enabled)
         {
             const auto isDotNetProcess = process_name == WStr("dotnet") || process_name == WStr("dotnet.exe");
-            const auto arg_count = command_line_arguments.size();
+            const auto token_count = tokenized_command_line.size();
             if (isDotNetProcess &&
-                arg_count > 1 &&
-                command_line_arguments[1] != WStr("test") &&
+                token_count > 1 &&
+                tokenized_command_line[1] != WStr("test") &&
                 // these are executed with exec, so we could check for that, but the
                 // below check is more conservative, so leaving at that
                 process_command_line.find(WStr("testhost")) == WSTRING::npos &&

@@ -158,14 +158,14 @@ namespace datadog::shared::nativeloader
             // We don't want to instrument _build_ processes in dotnet by default, as they generally
             // don't give useful information, add latency, and risk triggering bugs in the runtime,
             // particularly around shutdown, like this one: https://github.com/dotnet/runtime/issues/55441
-           const auto [command_line , process_command_line]  = GetCurrentProcessCommandLine();
+           const auto [process_command_line , tokenized_command_line]  = GetCurrentProcessCommandLine();
             Log::Info("Process CommandLine: ", process_command_line);
 
             if (!process_command_line.empty())
             {
                 const auto isDotNetProcess = process_name == WStr("dotnet") || process_name == WStr("dotnet.exe");
-                const auto arg_count = command_line_arguments.size();
-                if (isDotNetProcess && arg_count > 1)
+                const auto token_count = tokenized_command_line.size();
+                if (isDotNetProcess && token_count > 1)
                 {
                     // Exclude:
                     // - dotnet build, dotnet build myproject.csproj etc  
@@ -187,39 +187,39 @@ namespace datadog::shared::nativeloader
                     // i.e. dotnet vstest
                     // i.e. dotnet exec (except specific commands)
                     bool is_ignored_command = false;
-                    const auto arg1 = command_line_arguments[1];
-                    if(arg1 == WStr("exec"))
+                    const auto token1 = tokenized_command_line[1];
+                    if(token1 == WStr("exec"))
                     {
                         // compiler is invoked with arguments something like this:
                         // dotnet exec /usr/share/dotnet/sdk/6.0.400/Roslyn/bincore/csc.dll /noconfig @/tmp/tmp8895f601306443a6a54388ecc6dcfc44.rsp
                         // so we check the arguments to see if any of them are an invocation of one of the dlls we want to ignore.
                         // We don't just check the second argument because the command could set additional flags
                         // for the exec function
-                        for (int i = 2; i < arg_count; ++i)
+                        for (int i = 2; i < token_count; ++i)
                         {
-                            const auto current_arg = command_line_arguments[i];
-                            if(!current_arg.empty() &&
-                                (current_arg.ends_with(WStr("csc.dll"))
-                                    || current_arg.ends_with(WStr("VBCSCompiler.dll"))))
+                            const auto current_token = tokenized_command_line[i];
+                            if(!current_token.empty() &&
+                                (current_token.ends_with(WStr("csc.dll"))
+                                    || current_token.ends_with(WStr("VBCSCompiler.dll"))))
                             {
                                 is_ignored_command = true;
                                 break;
                             }
                         }
                     }
-                    else if(!arg1.empty())
+                    else if(!token1.empty())
                     {
                         is_ignored_command =
-                            arg1 == WStr("build") ||
-                            arg1 == WStr("build-server") ||
-                            arg1 == WStr("clean") ||
-                            arg1 == WStr("msbuild") ||
-                            arg1 == WStr("new") ||
-                            arg1 == WStr("nuget") ||
-                            arg1 == WStr("pack") ||
-                            arg1 == WStr("publish") ||
-                            arg1 == WStr("restore") ||
-                            arg1 == WStr("tool");
+                            token1 == WStr("build") ||
+                            token1 == WStr("build-server") ||
+                            token1 == WStr("clean") ||
+                            token1 == WStr("msbuild") ||
+                            token1 == WStr("new") ||
+                            token1 == WStr("nuget") ||
+                            token1 == WStr("pack") ||
+                            token1 == WStr("publish") ||
+                            token1 == WStr("restore") ||
+                            token1 == WStr("tool");
                     }
 
                     if (is_ignored_command)

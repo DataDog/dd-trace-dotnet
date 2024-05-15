@@ -169,11 +169,11 @@ inline std::tuple<WSTRING, std::vector<WSTRING>> GetCurrentProcessCommandLine()
             cmdline.append(buf, len);
         }
     }
+    fclose(fp);
 
     std::string name;
     std::stringstream tokens(cmdline);
     std::string tmp;
-    int i = 0;
     while (getline(tokens, tmp, '\0'))
     {
         name = name + " " + tmp;
