@@ -55,9 +55,7 @@ namespace Datadog.Trace.TestHelpers
         {
             VerifierSettings.DerivePathInfo(
                 (sourceFile, projectDirectory, type, method) =>
-                {
-                    return new(directory: Path.Combine(projectDirectory, "..", "snapshots"));
-                });
+                    new PathInfo(directory: Path.Combine(projectDirectory, "..", "snapshots")));
         }
 
         public static VerifySettings GetSpanVerifierSettings(params object[] parameters) => GetSpanVerifierSettings(null, parameters);
