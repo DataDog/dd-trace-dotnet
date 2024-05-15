@@ -65,7 +65,7 @@ namespace Datadog.Trace.TestHelpers
         public static VerifySettings GetCIVisibilitySpanVerifierSettings(params object[] parameters) => GetCIVisibilitySpanVerifierSettings(null, parameters);
 
         public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
-            => GetSpanVerifierSettings(scrubbers, parameters, ScrubTags, null);
+            => GetSpanVerifierSettings(scrubbers, parameters, ScrubStringTags, null);
 
         public static VerifySettings GetCIVisibilitySpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
             => GetSpanVerifierSettings(scrubbers, parameters, ScrubCIVisibilityTags, ScrubCIVisibilityTags, ScrubCIVisibilityMetrics, ScrubCIVisibilityMetrics);
@@ -73,10 +73,10 @@ namespace Datadog.Trace.TestHelpers
         public static VerifySettings GetSpanVerifierSettings(
             IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers,
             object[] parameters,
-            ConvertMember<MockSpan, Dictionary<string, string>> tagsScrubber,
-            ConvertMember<MockCIVisibilityTest, Dictionary<string, string>> metaScrubber = null,
-            ConvertMember<MockSpan, Dictionary<string, double>> metricsSpanScrubber = null,
-            ConvertMember<MockCIVisibilityTest, Dictionary<string, double>> metricsScrubber = null)
+            ConvertMember<MockSpan, Dictionary<string, string>> apmStringTagsScrubber,
+            ConvertMember<MockCIVisibilityTest, Dictionary<string, string>> ciVisStringTagsScrubber = null,
+            ConvertMember<MockSpan, Dictionary<string, double>> apmNumericTagsScrubber = null,
+            ConvertMember<MockCIVisibilityTest, Dictionary<string, double>> ciVisNumericTagsScrubber = null)
         {
             var settings = new VerifySettings();
 
@@ -91,22 +91,28 @@ namespace Datadog.Trace.TestHelpers
             {
                 _.IgnoreMember<MockSpan>(s => s.Duration);
                 _.IgnoreMember<MockSpan>(s => s.Start);
-                _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, tagsScrubber);
-                if (metricsSpanScrubber is not null)
+
+                if (apmStringTagsScrubber is not null)
                 {
-                    _.MemberConverter<MockSpan, Dictionary<string, double>>(x => x.Metrics, metricsSpanScrubber);
+                    _.MemberConverter(x => x.Tags, apmStringTagsScrubber);
+                }
+
+                if (apmNumericTagsScrubber is not null)
+                {
+                    _.MemberConverter(x => x.Metrics, apmNumericTagsScrubber);
                 }
 
                 _.IgnoreMember<MockCIVisibilityTest>(s => s.Duration);
                 _.IgnoreMember<MockCIVisibilityTest>(s => s.Start);
-                if (metaScrubber is not null)
+
+                if (ciVisStringTagsScrubber is not null)
                 {
-                    _.MemberConverter<MockCIVisibilityTest, Dictionary<string, string>>(x => x.Meta, metaScrubber);
+                    _.MemberConverter(x => x.Meta, ciVisStringTagsScrubber);
                 }
 
-                if (metricsScrubber is not null)
+                if (ciVisNumericTagsScrubber is not null)
                 {
-                    _.MemberConverter<MockCIVisibilityTest, Dictionary<string, double>>(x => x.Metrics, metricsScrubber);
+                    _.MemberConverter(x => x.Metrics, ciVisNumericTagsScrubber);
                 }
             });
 
@@ -187,7 +193,7 @@ namespace Datadog.Trace.TestHelpers
             settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
         }
 
-        public static Dictionary<string, string> ScrubTags(MockSpan span, Dictionary<string, string> tags)
+        public static Dictionary<string, string> ScrubStringTags(MockSpan span, Dictionary<string, string> tags)
         {
             return tags
                   // remove propagated tags because their positions in the snapshots are not stable
