@@ -156,7 +156,7 @@ inline std::tuple<WSTRING, std::vector<WSTRING>> GetCurrentProcessCommandLine()
         name = name + " " + currentArg;
     }
 
-    return { cmdLine, args };
+    return { name, args };
 #else
     std::string cmdline;
     char buf[1024];
