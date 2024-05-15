@@ -65,7 +65,7 @@ namespace Datadog.Trace.TestHelpers
         public static VerifySettings GetCIVisibilitySpanVerifierSettings(params object[] parameters) => GetCIVisibilitySpanVerifierSettings(null, parameters);
 
         public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
-            => GetSpanVerifierSettings(scrubbers, parameters, ScrubStringTags, null);
+            => GetSpanVerifierSettings(scrubbers, parameters, ScrubStringTags, apmNumericTagsScrubber: null, ciVisStringTagsScrubber: null, ciVisNumericTagsScrubber: null);
 
         public static VerifySettings GetCIVisibilitySpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
             => GetSpanVerifierSettings(scrubbers, parameters, ScrubCIVisibilityTags, ScrubCIVisibilityMetrics, ScrubCIVisibilityTags, ScrubCIVisibilityMetrics);
@@ -74,9 +74,9 @@ namespace Datadog.Trace.TestHelpers
             IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers,
             object[] parameters,
             ConvertMember<MockSpan, Dictionary<string, string>> apmStringTagsScrubber,
-            ConvertMember<MockSpan, Dictionary<string, double>> apmNumericTagsScrubber = null,
-            ConvertMember<MockCIVisibilityTest, Dictionary<string, string>> ciVisStringTagsScrubber = null,
-            ConvertMember<MockCIVisibilityTest, Dictionary<string, double>> ciVisNumericTagsScrubber = null)
+            ConvertMember<MockSpan, Dictionary<string, double>> apmNumericTagsScrubber,
+            ConvertMember<MockCIVisibilityTest, Dictionary<string, string>> ciVisStringTagsScrubber,
+            ConvertMember<MockCIVisibilityTest, Dictionary<string, double>> ciVisNumericTagsScrubber)
         {
             var settings = new VerifySettings();
 
