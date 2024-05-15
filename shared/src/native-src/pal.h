@@ -130,20 +130,33 @@ inline WSTRING GetCurrentProcessName()
 #endif
 }
 
-inline WSTRING GetCurrentProcessCommandLine()
+inline std::tuple<WSTRING, std::vector<WSTRING>> GetCurrentProcessCommandLine()
 {
+    std::vector<WSTRING> args;
 #ifdef _WIN32
-    return WSTRING(GetCommandLine());
+    const auto cmdLine = GetCommandLine();
+    int argCount;
+    const auto arguments = CommandLineToArgvW(cmdLine, &argCount);
+
+    for (int i = 0; i < argCount; i++)
+    {
+        args.push_back(Trim(arguments[i]));
+    }
+
+    return { cmdLine, args };
 #elif MACOS
     std::string name;
     int argCount = *_NSGetArgc();
     char** arguments = *_NSGetArgv();
-    for (int i = 0; i < argCount; i++)
+
+    for (int i = 0; i < *argCount; i++)
     {
-        char* currentArg = arguments[i];
-        name = name + " " + std::string(currentArg);
+        const auto currentArg = std::string(arguments[i]);
+        args.push_back(Trim(ToWSTRING(currentArg)));
+        name = name + " " + currentArg;
     }
-    return Trim(ToWSTRING(name));
+
+    return { cmdLine, args };
 #else
     std::string cmdline;
     char buf[1024];
@@ -158,76 +171,20 @@ inline WSTRING GetCurrentProcessCommandLine()
     }
 
     std::string name;
-    std::stringstream tokens(cmdline);
-    std::string tmp;
-    while (getline(tokens, tmp, '\0'))
-    {
-        name = name + " " + tmp;
-    }
-    fclose(fp);
-
-    return Trim(ToWSTRING(name));
-#endif
-
-    return EmptyWStr;
-}
-
-inline WSTRING* GetCurrentProcessCommandLineArguments(int* argCount)
-{
-#ifdef _WIN32
-    const auto arguments = CommandLineToArgvW(GetCommandLine(), argCount);
-    const auto args = new WSTRING[*argCount];
-    for (int i = 0; i < *argCount; i++)
-    {
-        args[i] = Trim(arguments[i]);
-    }
-    return args;
-#elif MACOS
-    argCount = _NSGetArgc();
-    char** arguments = *_NSGetArgv();
-
-    const auto args = new WSTRING[argCount];
-    for (int i = 0; i < argCount; ++i)
-    {
-        args[i] = Trim(ToWSTRING(std::string(arguments[i])));
-    }
-
-    return args;
-#else
-    std::string cmdline;
-    char buf[1024];
-    size_t len;
-    FILE* fp = fopen("/proc/self/cmdline", "rb");
-    argCount = 0;
-    if (fp)
-    {
-        while ((len = fread(buf, 1, sizeof(buf), fp)) > 0)
-        {
-            cmdline.append(buf, len);
-            for(int i = 0; i < len; i++){
-                if(buf[i] == '\0'){
-                    argCount++;
-                }
-            }
-        }
-    }
-
-    const auto args = new WSTRING[argCount];
     std::stringstream tokens(cmdline);
     std::string tmp;
     int i = 0;
     while (getline(tokens, tmp, '\0'))
     {
-        if (i < argCount)
-        {
-            args[i] = Trim(ToWSTRING(tmp));
-            i++;
-        }
-        // else means something has gone wrong
+        name = name + " " + tmp;
+        args.push_back(Trim(ToWSTRING(tmp)));
     }
 
-    return args;
+    return { Trim(ToWSTRING(name)), args };
+
 #endif
+
+    return {EmptyWStr, args};
 }
 
 inline int GetPID()
