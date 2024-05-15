@@ -107,7 +107,7 @@ partial class Build
             }
 
             CMake.Value(
-                arguments: $"-B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} {additionalArgs}",
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} {additionalArgs}",
                 environmentVariables: env);
             CMake.Value(
                 arguments: $"--build . --parallel {Environment.ProcessorCount} --target native-loader",
