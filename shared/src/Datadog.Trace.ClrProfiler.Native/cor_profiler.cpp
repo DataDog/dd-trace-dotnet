@@ -199,8 +199,8 @@ namespace datadog::shared::nativeloader
                         {
                             const auto current_token = tokenized_command_line[i];
                             if(!current_token.empty() &&
-                                (current_token.ends_with(WStr("csc.dll"))
-                                    || current_token.ends_with(WStr("VBCSCompiler.dll"))))
+                                (EndsWith(current_token, WStr("csc.dll"))
+                                    || EndsWith(current_token, WStr("VBCSCompiler.dll"))))
                             {
                                 is_ignored_command = true;
                                 break;

@@ -149,7 +149,7 @@ inline std::tuple<WSTRING, std::vector<WSTRING>> GetCurrentProcessCommandLine()
     int argCount = *_NSGetArgc();
     char** arguments = *_NSGetArgv();
 
-    for (int i = 0; i < argCount; i++)
+    for (int i = 0; i < *argCount; i++)
     {
         const auto currentArg = std::string(arguments[i]);
         args.push_back(Trim(ToWSTRING(currentArg)));
