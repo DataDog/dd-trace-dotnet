@@ -2461,19 +2461,19 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: "universal"
+        baseImage: centos7
         useNativeSdkVersion: true
-        command: "BuildNativeLoader"
-        retryCountForRunCommand: 1
+        command: "BuildProfilerAsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
-        baseImage: centos7
+        baseImage: "universal"
         useNativeSdkVersion: true
-        command: "BuildProfilerAsanTest -Framework net7.0"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        command: "BuildNativeLoader"
+        retryCountForRunCommand: 1
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2557,19 +2557,19 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: "universal"
+        baseImage: centos7
         useNativeSdkVersion: true
-        command: "BuildNativeLoader"
-        retryCountForRunCommand: 1
+        command: "BuildProfilerUbsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
-        baseImage: centos7
+        baseImage: "universal"
         useNativeSdkVersion: true
-        command: "BuildProfilerUbsanTest -Framework net7.0"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        command: "BuildNativeLoader"
+        retryCountForRunCommand: 1
 
     - template: steps/run-in-docker.yml
       parameters:
