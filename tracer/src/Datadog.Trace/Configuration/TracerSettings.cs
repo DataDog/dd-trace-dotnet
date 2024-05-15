@@ -153,6 +153,10 @@ namespace Datadog.Trace.Configuration
                                   .AsBoolResult()
                                   .OverrideWith(in otelTraceEnabled, defaultValue: true);
 
+            ApmTracingEnabledInternal = config
+                          .WithKeys(ConfigurationKeys.ApmTracingEnabled)
+                          .AsBool(defaultValue: true);
+
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
                 TraceEnabledInternal = false;
@@ -559,6 +563,16 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_TraceEnabled_Set)]
         [ConfigKey(ConfigurationKeys.TraceEnabled)]
         internal bool TraceEnabledInternal { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether APM tracing is enabled
+        /// Default is <c>true</c>.
+        /// </summary>
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_ApmTracingEnabled_Get,
+            PublicApiUsage.TracerSettings_ApmTracingEnabled_Set)]
+        [ConfigKey(ConfigurationKeys.ApmTracingEnabled)]
+        internal bool ApmTracingEnabledInternal { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether profiling is enabled.

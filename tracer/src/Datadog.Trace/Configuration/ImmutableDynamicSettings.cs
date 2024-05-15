@@ -14,6 +14,8 @@ namespace Datadog.Trace.Configuration
     {
         public bool? TraceEnabled { get; init; }
 
+        public bool? ApmTracingEnabled { get; init; }
+
         public bool? RuntimeMetricsEnabled { get; init; }
 
         public bool? DataStreamsMonitoringEnabled { get; init; }

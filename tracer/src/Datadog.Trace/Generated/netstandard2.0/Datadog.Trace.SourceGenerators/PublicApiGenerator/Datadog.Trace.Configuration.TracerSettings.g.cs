@@ -98,6 +98,27 @@ partial class TracerSettings
     }
 
         /// <summary>
+        /// Gets a value indicating whether APM tracing is enabled
+        /// Default is <c>true</c>.
+        /// </summary>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public bool ApmTracingEnabled
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)132);
+            return ApmTracingEnabledInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)133);
+            ApmTracingEnabledInternal = value;
+        }
+    }
+
+        /// <summary>
         /// Gets or sets the names of disabled integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
@@ -314,13 +335,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)132);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)134);
             return TracerMetricsEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)133);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)135);
             TracerMetricsEnabledInternal = value;
         }
     }

@@ -35,6 +35,11 @@ namespace Datadog.Trace
         public const string Version = "version";
 
         /// <summary>
+        /// A boolean indicating whether APM tracing is disabled when set to 0.
+        /// </summary>
+        public const string ApmEnabled = "_dd.apm.enabled";
+
+        /// <summary>
         /// The name of the integration that generated the span.
         /// Use OpenTracing tag "component"
         /// </summary>
