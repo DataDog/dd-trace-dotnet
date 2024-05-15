@@ -73,6 +73,30 @@ internal static class AsyncUtil
     }
 
     /// <summary>
+    /// Executes an async Task method which has a void return value synchronously
+    /// USAGE: AsyncUtil.RunSync(ex => AsyncMethod(ex), new Exception(), millisecondsTimeout);
+    /// </summary>
+    /// <param name="task">Task method to execute</param>
+    /// <param name="state">State that is passed to the running function</param>
+    /// <param name="millisecondsTimeout">Timeout in milliseconds</param>
+    public static void RunSync<T>(Func<T, Task> task, T state, int millisecondsTimeout)
+    {
+        _taskFactory
+           .StartNew(TaskWithTimeoutAsync)
+           .Unwrap()
+           .GetAwaiter()
+           .GetResult();
+
+        Task TaskWithTimeoutAsync()
+        {
+            var runTask = task(state);
+            return runTask.IsCompleted
+                       ? runTask
+                       : runTask.WaitAsync(TimeSpan.FromMilliseconds(millisecondsTimeout));
+        }
+    }
+
+    /// <summary>
     /// Executes an async Task[T] method which has a T return type synchronously
     /// USAGE: T result = AsyncUtil.RunSync(() => AsyncMethod[T]());
     /// </summary>

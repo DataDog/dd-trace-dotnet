@@ -484,7 +484,7 @@ namespace Datadog.Trace.AppSec
 
         internal IContext? CreateAdditiveContext() => _waf?.CreateContext();
 
-        private void RunShutdown()
+        private void RunShutdown(Exception? ex)
         {
             if (_rcmSubscription != null)
             {

@@ -662,7 +662,7 @@ namespace Datadog.Trace
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
         }
 
-        private static Task RunShutdownTasksAsync() => RunShutdownTasksAsync(_instance, _heartbeatTimer);
+        private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
 
         private static async Task RunShutdownTasksAsync(TracerManager instance, Timer heartbeatTimer)
         {

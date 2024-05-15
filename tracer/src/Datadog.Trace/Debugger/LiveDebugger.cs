@@ -182,7 +182,7 @@ namespace Datadog.Trace.Debugger
                 return _snapshotUploader.StartFlushingAsync();
             }
 
-            void ShutdownTask()
+            void ShutdownTask(Exception ex)
             {
                 _discoveryService.RemoveSubscription(DiscoveryCallback);
                 _snapshotUploader.Dispose();
