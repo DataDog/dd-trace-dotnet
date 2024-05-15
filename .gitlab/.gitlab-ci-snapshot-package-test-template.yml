@@ -70,7 +70,7 @@ package-oci-snapshot:
         - amd64
 
 onboarding_tests:
-  extends: .base_job_onboarding_tests
+  extends: .base_job_onboarding
   stage: single-step-instrumentation-tests
   needs: [package-snapshot,package-arm-snapshot,package-oci-snapshot]
   allow_failure: false
