@@ -307,7 +307,7 @@ namespace Datadog.Trace
             }
 
             // priority (keep/drop) can change (manually, ASM, etc)
-            _samplingPriority = priority;
+            SamplingPriority = priority;
 
             // report only the original rates, do not override
             InitialSamplingRate ??= rate;
