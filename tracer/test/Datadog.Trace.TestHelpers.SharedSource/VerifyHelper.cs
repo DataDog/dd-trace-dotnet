@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable  enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -58,23 +60,23 @@ namespace Datadog.Trace.TestHelpers
                     new PathInfo(directory: Path.Combine(projectDirectory, "..", "snapshots")));
         }
 
-        public static VerifySettings GetSpanVerifierSettings(params object[] parameters) => GetSpanVerifierSettings(null, parameters);
+        public static VerifySettings GetSpanVerifierSettings(params object[] parameters) => GetSpanVerifierSettings(scrubbers: null, parameters);
 
-        public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
+        public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)>? scrubbers, object[] parameters)
             => GetSpanVerifierSettings(scrubbers, parameters, ScrubStringTags, ScrubNumericTags, ciVisStringTagsScrubber: null, ciVisNumericTagsScrubber: null);
 
-        public static VerifySettings GetCIVisibilitySpanVerifierSettings(params object[] parameters) => GetCIVisibilitySpanVerifierSettings(null, parameters);
+        public static VerifySettings GetCIVisibilitySpanVerifierSettings(params object[] parameters) => GetCIVisibilitySpanVerifierSettings(scrubbers: null, parameters);
 
-        public static VerifySettings GetCIVisibilitySpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
+        public static VerifySettings GetCIVisibilitySpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)>? scrubbers, object[] parameters)
             => GetSpanVerifierSettings(scrubbers, parameters, ScrubCIVisibilityTags, ScrubCIVisibilityMetrics, ScrubCIVisibilityTags, ScrubCIVisibilityMetrics);
 
         public static VerifySettings GetSpanVerifierSettings(
-            IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers,
+            IEnumerable<(Regex RegexPattern, string Replacement)>? scrubbers,
             object[] parameters,
-            ConvertMember<MockSpan, Dictionary<string, string>> apmStringTagsScrubber,
-            ConvertMember<MockSpan, Dictionary<string, double>> apmNumericTagsScrubber,
-            ConvertMember<MockCIVisibilityTest, Dictionary<string, string>> ciVisStringTagsScrubber,
-            ConvertMember<MockCIVisibilityTest, Dictionary<string, double>> ciVisNumericTagsScrubber)
+            ConvertMember<MockSpan, Dictionary<string, string>?> apmStringTagsScrubber,
+            ConvertMember<MockSpan, Dictionary<string, double>?> apmNumericTagsScrubber,
+            ConvertMember<MockCIVisibilityTest, Dictionary<string, string>?>? ciVisStringTagsScrubber,
+            ConvertMember<MockCIVisibilityTest, Dictionary<string, double>?>? ciVisNumericTagsScrubber)
         {
             var settings = new VerifySettings();
 
@@ -127,7 +129,7 @@ namespace Datadog.Trace.TestHelpers
         public static SettingsTask VerifySpans(
             IReadOnlyCollection<MockSpan> spans,
             VerifySettings settings,
-            Func<IReadOnlyCollection<MockSpan>, IOrderedEnumerable<MockSpan>> orderSpans = null)
+            Func<IReadOnlyCollection<MockSpan>, IOrderedEnumerable<MockSpan>>? orderSpans = null)
         {
             // Ensure a static ordering for the spans
             var orderedSpans = orderSpans?.Invoke(spans) ??
@@ -191,7 +193,7 @@ namespace Datadog.Trace.TestHelpers
             settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
         }
 
-        public static Dictionary<string, string> ScrubStringTags(MockSpan span, Dictionary<string, string> tags)
+        public static Dictionary<string, string>? ScrubStringTags(MockSpan span, Dictionary<string, string>? tags)
         {
             return tags
                   // remove propagated tags because their positions in the snapshots are not stable
@@ -211,7 +213,7 @@ namespace Datadog.Trace.TestHelpers
                   .ToDictionary(x => x.Key, x => x.Value);
         }
 
-        public static Dictionary<string, double> ScrubNumericTags(MockSpan span, Dictionary<string, double> tags)
+        public static Dictionary<string, double>? ScrubNumericTags(MockSpan span, Dictionary<string, double>? tags)
         {
             string[] ignoreKeys =
             [
@@ -225,11 +227,11 @@ namespace Datadog.Trace.TestHelpers
                   .ToDictionary(x => x.Key, x => x.Value);
         }
 
-        public static Dictionary<string, string> ScrubCIVisibilityTags(MockSpan span, Dictionary<string, string> tags) => ScrubCIVisibilityTags(tags);
+        public static Dictionary<string, string>? ScrubCIVisibilityTags(MockSpan span, Dictionary<string, string>? tags) => ScrubCIVisibilityTags(tags);
 
-        public static Dictionary<string, string> ScrubCIVisibilityTags(MockCIVisibilityTest span, Dictionary<string, string> tags) => ScrubCIVisibilityTags(tags);
+        public static Dictionary<string, string>? ScrubCIVisibilityTags(MockCIVisibilityTest span, Dictionary<string, string>? tags) => ScrubCIVisibilityTags(tags);
 
-        public static Dictionary<string, string> ScrubCIVisibilityTags(Dictionary<string, string> tags)
+        public static Dictionary<string, string>? ScrubCIVisibilityTags(Dictionary<string, string>? tags)
         {
             return tags
                   // remove propagated tags because their positions in the snapshots are not stable
@@ -276,11 +278,11 @@ namespace Datadog.Trace.TestHelpers
                   .ToDictionary(x => x.Key, x => x.Value);
         }
 
-        public static Dictionary<string, double> ScrubCIVisibilityMetrics(MockSpan span, Dictionary<string, double> metrics) => ScrubCIVisibilityMetrics(metrics);
+        public static Dictionary<string, double>? ScrubCIVisibilityMetrics(MockSpan span, Dictionary<string, double>? metrics) => ScrubCIVisibilityMetrics(metrics);
 
-        public static Dictionary<string, double> ScrubCIVisibilityMetrics(MockCIVisibilityTest span, Dictionary<string, double> metrics) => ScrubCIVisibilityMetrics(metrics);
+        public static Dictionary<string, double>? ScrubCIVisibilityMetrics(MockCIVisibilityTest span, Dictionary<string, double>? metrics) => ScrubCIVisibilityMetrics(metrics);
 
-        public static Dictionary<string, double> ScrubCIVisibilityMetrics(Dictionary<string, double> metrics)
+        public static Dictionary<string, double>? ScrubCIVisibilityMetrics(Dictionary<string, double>? metrics)
         {
             return metrics
                   .Where(kvp => kvp.Key != Metrics.SamplingAgentDecision)
