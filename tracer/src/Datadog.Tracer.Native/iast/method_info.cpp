@@ -378,29 +378,6 @@ namespace iast
         return hr;
     }
 
-    void MethodInfo::DumpIL(const std::string message, ULONG pnMethodIL, LPCBYTE pMethodIL)
-    {
-        if (!pMethodIL)
-        {
-            GetMethodIL(&pMethodIL, &pnMethodIL);
-        }
-        ILRewriter ilRewriter(this);
-        if (FAILED(ilRewriter.Import(pMethodIL)))
-        {
-            trace::Logger::Info("Dumping IL ", message, " : ", GetFullName(), " IL Verification FAILED ( Error on ILImport ) !!!");
-            return;
-        }
-
-        ILAnalysis analysis(&ilRewriter);
-        auto correct = analysis.IsStackValid();
-        auto verificationFail = analysis.GetError();
-        analysis.Dump(message);
-        if (!correct)
-        {
-            trace::Logger::Info("Dumping IL ", message, " : ", GetFullName(), " IL Verification FAILED ( ", verificationFail, " ) !!!");
-        }
-    }
-
     HRESULT MethodInfo::SetMethodIL(ULONG nSize, LPCBYTE pMethodIL, ICorProfilerFunctionControl* pFunctionControl)
     {
         bool isRejit = pFunctionControl != nullptr;

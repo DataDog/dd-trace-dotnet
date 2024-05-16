@@ -157,8 +157,6 @@ namespace iast
         void ReJITCompilationStarted();
         void ReJITCompilationFinished();
 
-        void DumpIL(std::string message = "", ULONG pnMethodIL = 0, LPCBYTE pMethodIL = nullptr);
-
         bool IsPropertyAccessor();
         std::vector<WSTRING> GetCustomAttributes() override;
     };
