@@ -168,8 +168,9 @@ inline std::tuple<WSTRING, std::vector<WSTRING>> GetCurrentProcessCommandLine()
         {
             cmdline.append(buf, len);
         }
+
+        fclose(fp);
     }
-    fclose(fp);
 
     std::string name;
     std::stringstream tokens(cmdline);
