@@ -177,6 +177,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             capabilities[14].Should().BeTrue(); // APM_TRACING_HTTP_HEADER_TAGS
             capabilities[15].Should().BeTrue(); // APM_TRACING_CUSTOM_TAGS
             capabilities[19].Should().BeTrue(); // APM_TRACING_TRACING_ENABLED
+            capabilities[29].Should().BeTrue(); // APM_TRACING_SAMPLE_RULES
 
             request.Client.State.ConfigStates.Should().ContainSingle(f => f.Id == fileId)
                .Subject.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
@@ -353,8 +354,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             [JsonProperty("tracing_sampling_rate")]
             public double? TraceSampleRate { get; init; }
 
-            // [JsonProperty("tracing_sampling_rules")]
-            // public string CustomSamplingRules { get; init; }
+            [JsonProperty("tracing_sampling_rules")]
+            public string CustomSamplingRules { get; init; }
 
             // [JsonProperty("span_sampling_rules")]
             // public string SpanSamplingRules { get; init; }
