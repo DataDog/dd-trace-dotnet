@@ -135,12 +135,9 @@ namespace Datadog.Trace.Tests.Agent
         public async Task SpanSampling_ShouldSend_MultipleMatchedSpans_WhenStatsDropsOne()
         {
             var api = new Mock<IApi>();
-            var statsAggregator = new Mock<IStatsAggregator>();
-            statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
-            statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
-            statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
+            var statsAggregator = new NullStatsAggregator();
             var settings = SpanSamplingRule("*", "operation");
-            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var agent = new AgentWriter(api.Object, statsAggregator, statsd: null, automaticFlush: false);
             var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
