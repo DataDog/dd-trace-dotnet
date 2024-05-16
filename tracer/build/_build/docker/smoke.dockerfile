@@ -46,7 +46,7 @@ ENV ASPNETCORE_URLS=http://localhost:5000
 # Capture dumps
 ENV COMPlus_DbgEnableMiniDump=1
 ENV COMPlus_DbgMiniDumpType=4
-ENV DOTNET_DbgMiniDumpName=/dumps/chiseled_%t.coredump.%p
+ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
 
 # Copy the app across
 COPY --from=builder /src/publish /app/.

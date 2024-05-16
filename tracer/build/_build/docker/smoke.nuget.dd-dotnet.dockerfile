@@ -38,6 +38,6 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 # Capture dumps
 ENV COMPlus_DbgEnableMiniDump=1
 ENV COMPlus_DbgMiniDumpType=4
-ENV DOTNET_DbgMiniDumpName=/dumps/chiseled_%t.coredump.%p
+ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
 
 ENTRYPOINT ["/app/datadog/dd-dotnet.sh", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--",  "dotnet", "/app/AspNetCoreSmokeTest.dll"]

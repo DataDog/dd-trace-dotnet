@@ -44,7 +44,7 @@ steps:
       mkdir -p tracer/build_data/snapshots
       mkdir -p tracer/build_data/logs
       mkdir -p tracer/build_data/dumps
-      # make sur that the container have enough rights to write in this folder
+      # make sure that the container have enough rights to write in this folder
       sudo chmod -R 777 tracer/build_data/ || true
     displayName: create test data directories
 - ${{ else }}:
