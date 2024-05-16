@@ -118,7 +118,7 @@ namespace Datadog.Trace.Tests.Agent
             rootSpan.Finish();
             keptChildSpan.Finish();
 
-            var expectedChunk = new ArraySegment<Span>(new[] { rootSpan, keptChildSpan });
+            var expectedChunk = new ArraySegment<Span>([rootSpan, keptChildSpan]);
             var size = ComputeSize(expectedChunk);
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
-            traceContext.SetSamplingPriority(new SamplingDecision(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null));
+            traceContext.SetSamplingPriority(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null);
             var rootSpanContext = new SpanContext(null, traceContext, "testhost");
             var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             var droppedChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "testhost"), DateTimeOffset.UtcNow) { OperationName = "drop_me" };
@@ -164,17 +164,13 @@ namespace Datadog.Trace.Tests.Agent
             // create a trace chunk so that our array has an offset
             var unusedSpans = CreateTraceChunk(5, 10);
             var spanList = new List<Span>();
-            spanList.AddRange(unusedSpans.Array);
+            spanList.AddRange(unusedSpans.Array!);
             spanList.AddRange(new[] { rootSpan, droppedChildSpan, droppedChildSpan2, keptChildSpan });
             var spans = spanList.ToArray();
 
             var traceChunk = new ArraySegment<Span>(spans, 5, 4);
             var expectedChunk = new ArraySegment<Span>(new[] { rootSpan, keptChildSpan });
-            var tempBuffer = new byte[8192];
-            var spanBuffer = new SpanBuffer(64 * 1024, SpanFormatterResolver.Instance);
-            spanBuffer.TryWrite(expectedChunk, ref tempBuffer, samplingPriority: SamplingPriorityValues.UserKeep).Should().Be(SpanBuffer.WriteStatus.Success);
-            spanBuffer.Lock();
-            var expectedData1 = spanBuffer.Data;
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
             agent.WriteTrace(traceChunk);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
