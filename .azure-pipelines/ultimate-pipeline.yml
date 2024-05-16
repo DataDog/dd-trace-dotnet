@@ -4775,16 +4775,6 @@ stages:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
-<<<<<<< HEAD
-=======
-        - script: |
-            mkdir -p tracer/build_data/snapshots
-            mkdir -p tracer/build_data/logs
-            mkdir -p tracer/build_data/dumps
-            chmod -R 777 tracer/build_data/dumps
-          displayName: create test data directories
-        
->>>>>>> 9f089d555 (Let's investigate)
         # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p $(DockerComposeProjectName) build \
@@ -4821,11 +4811,6 @@ stages:
           parameters:
             target: 'dd-dotnet-chiseled-smoke-tests'
             snapshotPrefix: "smoke_test"
-
-        - script: |
-            chmod -R 777 tracer/build_data/dumps
-          condition: succeededOrFailed()
-          displayName: update rights
 
         - publish: tracer/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)

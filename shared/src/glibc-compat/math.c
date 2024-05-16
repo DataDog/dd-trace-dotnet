@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #if defined(__aarch64__)
 // Extracted from https://git.musl-libc.org/cgit/musl/tree/src/math/aarch64/ceilf.c
@@ -78,6 +79,21 @@ static float ceilf_local(float x)
         return u.f;
 }
 #endif
+
+int strerror_r(int errnum, char *buf, size_t buflen)
+{
+    char *msg = strerror(errnum);
+	size_t l = strlen(msg);
+	if (l >= buflen) {
+		if (buflen) {
+			memcpy(buf, msg, buflen-1);
+			buf[buflen-1] = 0;
+		}
+		return 34; // ERANGE
+	}
+	memcpy(buf, msg, l+1);
+	return 0;
+}
 
 int stat(const char *restrict path, void *restrict buf) {
     int __xstat(int, const char*, void*);
