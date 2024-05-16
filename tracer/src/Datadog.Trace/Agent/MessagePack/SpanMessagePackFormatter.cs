@@ -811,18 +811,18 @@ namespace Datadog.Trace.Agent.MessagePack
 
             if (model.IsLocalRoot)
             {
-                // add "process_id" tag to local root span if available
+                // add process id
                 var processId = DomainMetadata.Instance.ProcessId;
 
                 if (processId != 0)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes); // "process_id"
                     offset += MessagePackBinary.WriteDouble(ref bytes, offset, processId);
                 }
 
-                // add agent or rule sampling rate to local root span if available
-                if (model.TraceChunk.InitialSamplingRate is { } samplingRate)
+                // add agent or rule sampling rate
+                if (model.TraceChunk.AppliedSamplingRate is { } samplingRate)
                 {
                     var samplingRateTagNameBytes = model.TraceChunk.InitialSamplingMechanism switch
                     {
@@ -839,19 +839,19 @@ namespace Datadog.Trace.Agent.MessagePack
                     }
                 }
 
-                // add limit sampling rate to local root span if available
-                if (model.TraceChunk.LimitSamplingRate is { } limitSamplingRate)
+                // add rate limiter rate
+                if (model.TraceChunk.RateLimiterRate is { } limitSamplingRate)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _limitSamplingRateNameBytes);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _limitSamplingRateNameBytes); // "_dd.limit_psr"
                     offset += MessagePackBinary.WriteDouble(ref bytes, offset, limitSamplingRate);
                 }
 
-                // add rate limit to local root span if available
+                // add keep rate
                 if (model.TraceChunk.TracesKeepRate is { } keepRate)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _keepRateNameBytes);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _keepRateNameBytes); // "_dd.keep_rate"
                     offset += MessagePackBinary.WriteDouble(ref bytes, offset, keepRate);
                 }
             }
