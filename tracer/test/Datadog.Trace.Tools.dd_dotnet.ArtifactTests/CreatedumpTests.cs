@@ -71,7 +71,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         (string, string)[] args = [LdPreloadConfig, ..CreatedumpConfig, ("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", passthrough), ..CrashReportConfig(reportFile)];
 
-        using var helper = await StartConsoleWithArgs("crash-datadog", args);
+        using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
 
         await helper.Task;
 
@@ -108,7 +108,7 @@ public class CreatedumpTests : ConsoleTestHelper
             args = [..args, ..CreatedumpConfig];
         }
 
-        using var helper = await StartConsoleWithArgs("crash-datadog", args);
+        using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
 
         await helper.Task;
 
@@ -149,7 +149,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         args = [..args, ("DD_INSTRUMENTATION_TELEMETRY_ENABLED", telemetryEnabled ? "1" : "0")];
 
-        using var helper = await StartConsoleWithArgs("crash-datadog", args);
+        using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
 
         await helper.Task;
 
@@ -187,6 +187,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
+                               false,
                                [LdPreloadConfig, ..CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -212,6 +213,29 @@ public class CreatedumpTests : ConsoleTestHelper
     }
 
     [SkippableFact]
+    public async Task NativeCrash()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash-native",
+                               true,
+                               [LdPreloadConfig, ..CrashReportConfig(reportFile)]);
+
+        await helper.Task;
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+
+        File.Exists(reportFile.Path).Should().BeTrue();
+    }
+
+    [SkippableFact]
     public async Task IgnoreNonDatadogCrashes()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
@@ -220,6 +244,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash",
+                               false,
                                [LdPreloadConfig, ..CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -240,6 +265,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
+                               false,
                                [LdPreloadConfig, ..CrashReportConfig(reportFile)]);
 
         await helper.Task;

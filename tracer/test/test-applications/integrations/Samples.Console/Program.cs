@@ -1,9 +1,11 @@
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,6 +18,11 @@ namespace Samples.Console_
             if (args.Length > 0 && args[0].StartsWith("crash"))
             {
                 Ready();
+
+                if (args[0] == "crash-native")
+                {
+                    NativeCrash();
+                }
 
                 var exception = args[0] == "crash-datadog" ? (Exception)new BadImageFormatException("Expected") : new InvalidOperationException("Expected");
 
@@ -102,6 +109,43 @@ namespace Samples.Console_
         {
             Console.WriteLine($"Waiting - PID: {Process.GetCurrentProcess().Id} - Profiler attached: {SampleHelpers.IsProfilerAttached()}");
         }
+
+        private static unsafe void NativeCrash()
+        {
+            var iunknown = Environment.OSVersion.Platform == PlatformID.Win32NT ? CreateCrashReportWindows(0) : CreateCrashReportLinux(0);
+
+            // Read the vtable
+            var vtable = *(IntPtr**)iunknown;
+            var queryInterfacePtr = *vtable;
+            var queryInterface = (delegate* unmanaged[Stdcall]<IntPtr, Guid*, IntPtr*, int>)queryInterfacePtr;
+
+            var guid = new Guid("3B3BA8A9-F807-43BF-A3A9-55E369C0C532");
+            var crashReport = IntPtr.Zero;
+            var result = queryInterface(iunknown, &guid, &crashReport);
+
+            if (result != 0)
+            {
+                throw new Win32Exception(result, "Failed to get ICrashReport");
+            }
+
+            var crashReportVtable = *(IntPtr**)crashReport;
+            var crashProcessPtr = *(crashReportVtable + 11);
+            var crashProcess = (delegate* unmanaged[Stdcall]<IntPtr, int>)crashProcessPtr;
+
+            Console.WriteLine("Crashing... (native)");
+
+            // Here comes nothing
+            result = crashProcess(crashReport);
+
+            // We're not supposed to be alive :(
+            throw new Exception("Failed to fail: " + result);
+        }
+
+        [DllImport("Datadog.Profiler.Native.so", EntryPoint = "CreateCrashReport")]
+        private static extern IntPtr CreateCrashReportLinux(int pid);
+
+        [DllImport("Datadog.Profiler.Native.dll", EntryPoint = "CreateCrashReport")]
+        private static extern IntPtr CreateCrashReportWindows(int pid);
 
         private class DummySynchronizationContext : SynchronizationContext
         {

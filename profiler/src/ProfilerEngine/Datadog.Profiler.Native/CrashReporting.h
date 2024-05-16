@@ -68,6 +68,7 @@ public:
     virtual int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) = 0;
     virtual int32_t STDMETHODCALLTYPE Send() = 0;
     virtual int32_t STDMETHODCALLTYPE WriteToFile(const char* url) = 0;
+    virtual int32_t STDMETHODCALLTYPE CrashProcess() = 0;
 };
 
 class CrashReporting : public ICrashReporting 
@@ -89,6 +90,7 @@ public:
     int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) override;
     int32_t STDMETHODCALLTYPE Send() override;
     int32_t STDMETHODCALLTYPE WriteToFile(const char* url) override;
+    int32_t STDMETHODCALLTYPE CrashProcess() override;
 
 protected:
     int32_t _pid;
