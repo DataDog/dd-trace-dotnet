@@ -1822,7 +1822,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Test, DockerTest]
+      jobs: [Test, DockerTest, Serverless]
 
   - job: Test
     timeoutInMinutes: 60 #default value
