@@ -47,13 +47,12 @@ public class JsonDocumentAspects
     }
 
     /// <summary>
-    /// GetString and GetRawText method aspect
+    /// GetString method aspect
     /// Taint the string result when the parent is tainted
     /// </summary>
     /// <param name="target">the JsonElement instance</param>
     /// <returns>the string result</returns>
     [AspectMethodReplace("System.Text.Json.JsonElement::GetString()", [0], [true])]
-    [AspectMethodReplace("System.Text.Json.JsonElement::GetRawText()", [0], [true])]
     public static string? GetString(object target)
     {
         IJsonElement? element;
@@ -81,6 +80,45 @@ public class JsonDocumentAspects
         catch (Exception ex)
         {
             Log.Warning(ex, "Error tainting JsonElement.GetString result");
+        }
+
+        return str;
+    }
+
+    /// <summary>
+    /// GetRawText method aspect
+    /// Taint the raw string result when the parent is tainted
+    /// </summary>
+    /// <param name="target">the JsonElement instance</param>
+    /// <returns>the raw string result</returns>
+    [AspectMethodReplace("System.Text.Json.JsonElement::GetRawText()", [0], [true])]
+    public static string? GetRawText(object target)
+    {
+        IJsonElement? element;
+        try
+        {
+            element = target.DuckCast<IJsonElement>();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error casting to IJsonElement");
+            return null;
+        }
+
+        var str = element.GetRawText();
+
+        try
+        {
+            var taintedObjects = IastModule.GetIastContext()?.GetTaintedObjects();
+            var taintedTarget = taintedObjects?.Get(element.Parent);
+            if (taintedObjects is not null && taintedTarget is not null)
+            {
+                taintedObjects.Taint(str, [new Range(0, str.Length)]);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error tainting JsonElement.GetRawText result");
         }
 
         return str;
