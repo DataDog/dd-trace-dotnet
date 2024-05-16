@@ -347,8 +347,8 @@ namespace Datadog.Trace.TestHelpers
             // keep the message + the first (scrubbed) location
             var sb = new StringBuilder();
             using StringReader reader = new(Scrubbers.ScrubStackTrace(stackTrace)!);
-            string? line;
-            while ((line = reader.ReadLine()) is not null)
+
+            while (reader.ReadLine() is { } line)
             {
                 if (line.StartsWith("at "))
                 {
@@ -357,9 +357,8 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                sb
-                   .Append(line)
-                   .Append('\n');
+                sb.Append(line)
+                  .Append('\n');
             }
 
             return sb.ToString();
