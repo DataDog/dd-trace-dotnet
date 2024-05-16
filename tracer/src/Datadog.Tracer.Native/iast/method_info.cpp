@@ -266,7 +266,7 @@ namespace iast
         {
             methodKeyBuilder << " Processed ";
         }
-        if (HasChanged())
+        if (HasChanges())
         {
             methodKeyBuilder << " Changed ";
         }
@@ -289,7 +289,15 @@ namespace iast
     {
         _isProcessed = true;
     }
-    bool MethodInfo::HasChanged()
+    void MethodInfo::SetInstrumented(bool instrumented)
+    {
+        _isInstrumented = instrumented;
+    }
+    bool MethodInfo::IsInstrumented()
+    {
+        return _isInstrumented;
+    }
+    bool MethodInfo::HasChanges()
     {
         return _pMethodIL;
     }
@@ -303,7 +311,7 @@ namespace iast
     }
     bool MethodInfo::IsInlineEnabled()
     {
-        return _module->IsInlineEnabled() && !_disableInlining && !HasChanged();
+        return _module->IsInlineEnabled() && !_disableInlining && !IsInstrumented();
     }
     void MethodInfo::DisableInlining()
     {
@@ -477,7 +485,7 @@ namespace iast
         HRESULT hr = S_OK;
         if (pFunctionControl)
         {
-            if (HasChanged())
+            if (HasChanges())
             {
                 hr = pFunctionControl->SetILFunctionBody(_nMethodIL, _pMethodIL);
                 trace::Logger::Debug("MethodInfo::ApplyFinalInstrumentation ReJIT from ", _nOriginalMehodIL, " to ",
@@ -498,7 +506,7 @@ namespace iast
                 }
                 return hr;
             }
-            if (!HasChanged())
+            if (!HasChanges())
             {
                 trace::Logger::Error("ERROR: MethodInfo::ApplyFinalInstrumentation should only be called if a method body has been set for this function");
                 return E_FAIL;

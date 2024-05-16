@@ -118,6 +118,7 @@ namespace iast
         bool _allowRestoreOnSecondJit = false;
         bool _disableInlining = false;
         bool _isWritten = false;
+        bool _isInstrumented = false;
 
         LPCBYTE _pOriginalMehodIL = nullptr;
         ULONG _nOriginalMehodIL = 0;
@@ -138,7 +139,9 @@ namespace iast
         bool IsExcluded();
         bool IsProcessed();
         void SetProcessed();
-        bool HasChanged();
+        bool IsInstrumented();
+        void SetInstrumented(bool instrumented);
+        bool HasChanges();
         bool IsWritten();
         void DisableRestoreOnSecondJit();
         bool IsInlineEnabled();

@@ -622,64 +622,60 @@ HRESULT SetILFunctionBody(MethodInfo* method, ICorProfilerFunctionControl* pFunc
 HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrapper* pFunctionControl)
 {
     HRESULT hr = S_OK;
-    try
+
+    CSGUARD(_cs);
+
+    if (!pFunctionControl)
     {
-        CSGUARD(_cs);
+        MethodAnalyzers::ProcessMethod(method);
+    }
 
-        if (!pFunctionControl)
+    auto module = method->GetModuleInfo();
+    auto moduleAspectRefs = GetAspects(module);
+    if (moduleAspectRefs.size() > 0)
+    {
+        bool written = false;
+        ILRewriter* rewriter;
+        hr = method->GetILRewriter(&rewriter, (ICorProfilerInfo*) pFunctionControl);
+        if (SUCCEEDED(hr))
         {
-            MethodAnalyzers::ProcessMethod(method);
-        }
+            DataflowContext context = {rewriter, rewriter->GetILList()->m_pNext, false};
 
-        auto module = method->GetModuleInfo();
-        auto moduleAspectRefs = GetAspects(module);
-        if (moduleAspectRefs.size() > 0)
-        {
-            bool written = false;
-            ILRewriter* rewriter;
-            hr = method->GetILRewriter(&rewriter, (ICorProfilerInfo*) pFunctionControl);
-            if (SUCCEEDED(hr))
+            for (; context.instruction != rewriter->GetILList(); context.instruction = context.instruction->m_pNext)
             {
-                DataflowContext context = {rewriter, rewriter->GetILList()->m_pNext, false};
-
-                for (; context.instruction != rewriter->GetILList(); context.instruction = context.instruction->m_pNext)
+                if (IsCandidate(context.instruction->m_opcode))
                 {
-                    if (IsCandidate(context.instruction->m_opcode))
+                    // Instrument instruction
+                    written |= InstrumentInstruction(context, moduleAspectRefs);
+                    if (context.aborted)
                     {
-                        // Instrument instruction
-                        written |= InstrumentInstruction(context, moduleAspectRefs);
-                        if (!pFunctionControl && written)
-                        {
-                            context.aborted = true;
-                        }
-                        if (context.aborted)
-                        {
-                            break;
-                        }
+                        break;
                     }
                 }
-                method->CommitILRewriter(context.aborted);
             }
-
-            if (written)
+            if (!pFunctionControl && written)
             {
-                if (pFunctionControl)
-                {
-                    hr = method->ApplyFinalInstrumentation((ICorProfilerFunctionControl*) pFunctionControl);
-                }
-                else
-                {
-                    std::vector<ModuleID> modulesVector = {module->_id};
-                    std::vector<mdMethodDef> methodsVector = {method->GetMemberId()}; // methodId
-                    m_rejitHandler->RequestRejit(modulesVector, methodsVector);
-                }
+                context.aborted = true;
+            }
+            method->SetInstrumented(written);
+            method->CommitILRewriter(context.aborted);
+        }
+
+        if (written)
+        {
+            if (pFunctionControl)
+            {
+                hr = method->ApplyFinalInstrumentation((ICorProfilerFunctionControl*) pFunctionControl);
+            }
+            else
+            {
+                std::vector<ModuleID> modulesVector = {module->_id};
+                std::vector<mdMethodDef> methodsVector = {method->GetMemberId()}; // methodId
+                m_rejitHandler->RequestRejit(modulesVector, methodsVector);
             }
         }
     }
-    catch (std::exception& err)
-    {
-        trace::Logger::Error("ERROR: ", err.what());
-    }
+
     return hr;
 }
 
