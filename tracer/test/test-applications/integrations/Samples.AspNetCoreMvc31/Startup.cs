@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Samples.AspNetCoreMvc.Shared;
+using WebService.Services;
 
 namespace Samples.AspNetCoreMvc
 {
@@ -23,6 +24,10 @@ namespace Samples.AspNetCoreMvc
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+            
+            services.AddSingleton<ICourseService>(new CourseService(Configuration));
+            services.AddSingleton<IRoomService>(new RoomService(Configuration));
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -64,6 +69,8 @@ namespace Samples.AspNetCoreMvc
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
             });
+            
+            
         }
     }
 }

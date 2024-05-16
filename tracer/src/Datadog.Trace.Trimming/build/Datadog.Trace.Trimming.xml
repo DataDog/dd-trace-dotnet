@@ -164,6 +164,9 @@
       <type fullname="System.Collections.Specialized.NameValueCollection" />
       <type fullname="System.Collections.Specialized.OrderedDictionary" />
    </assembly>
+   <assembly fullname="System.ComponentModel">
+      <type fullname="System.IServiceProvider" />
+   </assembly>
    <assembly fullname="System.ComponentModel.Primitives">
       <type fullname="System.ComponentModel.BrowsableAttribute" />
       <type fullname="System.ComponentModel.DescriptionAttribute" />

@@ -5,6 +5,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Activity.Handlers;
@@ -12,13 +14,22 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.PInvoke;
+using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.TimeTravel;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.dnlib.DotNet;
+using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -30,6 +41,8 @@ namespace Datadog.Trace
     {
         private static readonly object GlobalInstanceLock = new();
 
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
+        
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.
         /// This is used in the heartbeat metrics to estimate the number of
@@ -514,6 +527,15 @@ namespace Datadog.Trace
                 OperationName = operationName,
             };
 
+            try
+            {
+                SpanOriginResolution(span);
+            }
+            catch(Exception e)
+            {
+                Log.Warning(e, "SpanOriginResolution - failed to resolve span origin");
+            }
+            
             // Apply any global tags
             if (Settings.GlobalTagsInternal.Count > 0)
             {
@@ -542,6 +564,140 @@ namespace Datadog.Trace
         internal Task FlushAsync()
         {
             return TracerManager.AgentWriter.FlushTracesAsync();
+        }
+
+        private static void SpanOriginResolution(Span span)
+        {
+            // Deal with pending snapshot
+            // if (!string.IsNullOrEmpty(ProbeProcessor.NextSnapshot.Value))
+            // {
+            //     var nextSnapshotToBeUploaded = ProbeProcessor.NextSnapshot.Value;
+            //
+            //     nextSnapshotToBeUploaded = nextSnapshotToBeUploaded.Replace("TO_BE_ADDED_SPAN_ID", span.SpanId.ToString())
+            //                                                        .Replace("TO_BE_ADDED_TRACE_ID", span.TraceId.ToString());
+
+            Log.Information("SpanOriginResolution - started for span {0} {1}", span.OperationName, span.ResourceName);
+            if (LocalSpanOriginMethod(out var nonUserMethod, out var userMethod))
+            {
+                Log.Information("SpanOriginResolution - failed to find local span origin method");
+                return;
+            }
+
+            Log.Information("SpanOriginResolution - found local span origin method {0} {1}", userMethod.DeclaringType?.FullName, userMethod.Name);
+
+            var userModule = ModuleDefMD.Load(userMethod.Module.Assembly.ManifestModule);
+            var userRid = MDToken.ToRID(userMethod.MetadataToken);
+            var userMdMethod = userModule.ResolveMethod(userRid);
+
+            if (!userMdMethod.Body.HasInstructions)
+            {
+                Log.Warning("SpanOriginResolution - Method {0} has no instructions", userMdMethod.FullName);
+                return;
+            }
+
+            var nonUserModule = ModuleDefMD.Load(nonUserMethod.Module.Assembly.ManifestModule);
+            var nonUserRid = MDToken.ToRID(nonUserMethod.MetadataToken);
+            var nonUserMdMethod = nonUserModule.ResolveMethod(nonUserRid);
+
+            // We have to assign the module context to be able to resolve memberRef to memberdef.
+            userModule.Context = ModuleDef.CreateModuleContext();
+            var nonUserMethodFullName = nonUserMdMethod.Name;
+
+            var callsToInstrument = userMdMethod.Body.Instructions.Where(
+                instruction => instruction.OpCode.FlowControl == FlowControl.Call &&
+                               (instruction.Operand as IMethod != null &&
+                                (instruction.Operand as IMethod)!.Name == nonUserMethodFullName));
+
+
+            Instruction matchingCall = callsToInstrument.FirstOrDefault(); // this doesn't work in all cases, doesn't work for async methods with weird compiler generated names, doesn't take into account virtual methods, etc.
+            if (matchingCall == null)
+            {
+                Log.Warning("SpanOriginResolution - No calls to {0} found in {1}. Taking first sequence point instead, this is buggy and wrong", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
+                matchingCall = userMdMethod.Body.Instructions.FirstOrDefault(i => i?.SequencePoint?.StartLine != 0);
+                if (matchingCall == null)
+                {
+                    Log.Warning("SpanOriginResolution - no sequence points found in {0}", userMdMethod);
+                    return;
+                }
+            }
+
+            uint offsetOfSpanOrigin = matchingCall.Offset;
+            var instructions = TimeTravelInitiator.FindMethod((MethodInfo)userMethod).Body.Instructions;
+            var sequencePoint = instructions.Reverse().First(instruction => instruction.SequencePoint != null &&
+                                                                            instruction.Offset <= offsetOfSpanOrigin).SequencePoint;            
+
+            span.Tags.SetTag("_dd.exit_location.file", sequencePoint.Document.Url);
+            span.Tags.SetTag("_dd.exit_location.line", sequencePoint.StartLine.ToString());
+            span.Tags.SetTag("_dd.exit_location.snapshot_id", DebuggerSnapshotCreator.LastSnapshotId.ToString());
+            Log.Information("SpanOriginResolution - success - {0} {1} {2}", sequencePoint.Document.Url, sequencePoint.StartLine, DebuggerSnapshotCreator.LastSnapshotId);
+            
+            FakeProbeCreator.CreateAndInstallLineProbe("SpanExit", new NativeLineProbeDefinition(
+                $"{userMethod.DeclaringType?.FullName}_{userMethod.Name}",
+                userMethod.Module.ModuleVersionId,
+                userMethod.MetadataToken,
+                (int)offsetOfSpanOrigin,
+                sequencePoint.StartLine,
+                sequencePoint.Document.Url));
+
+        }
+
+        private static bool LocalSpanOriginMethod(out MethodBase nonUserMethod, out MethodBase userMethod)
+        {
+            var stackFrames = new System.Diagnostics.StackTrace();
+
+            var encounteredUserCode = false;
+            System.Reflection.MethodBase firstNonUserCodeMethod = null;
+            System.Reflection.MethodBase firstUserCodeMethod = null;
+
+            foreach (var frame in stackFrames.GetFrames()!)
+            {
+                var method = frame.GetMethod();
+                if (method?.DeclaringType == null)
+                {
+                    continue;
+                }
+
+                Log.Information("SpanOriginResolution - frame {0}", $"{method.DeclaringType?.FullName} {method.Name}- file {frame.GetFileName()} line {frame.GetFileLineNumber()}");
+
+                static bool IsUserCode(string methodFullName) // Not Comprehensive Enough
+                {
+                    if (methodFullName.StartsWith("Microsoft") && !methodFullName.Contains("eShop"))
+                    {
+                        return false;
+                    }
+
+                    return !(methodFullName.StartsWith("System") ||
+                             methodFullName.StartsWith("Datadog.Trace") ||
+                             methodFullName.StartsWith("Serilog") ||
+                             methodFullName.StartsWith("NHibernate") ||
+                             methodFullName.StartsWith("Swashbuckle") ||
+                             methodFullName.StartsWith("MySql.Data"));
+                }
+
+                if (IsUserCode(method.DeclaringType.FullName))
+                {
+                    encounteredUserCode = true;
+                    firstUserCodeMethod = method;
+                    break;
+                }
+
+                if (!encounteredUserCode)
+                {
+                    firstNonUserCodeMethod = method;
+                }
+            }
+
+            if (firstNonUserCodeMethod == null || firstUserCodeMethod == null)
+            {
+                // TODO LOG
+                nonUserMethod = null;
+                userMethod = null;
+                return true;
+            }
+
+            nonUserMethod = firstNonUserCodeMethod;
+            userMethod = firstUserCodeMethod;
+            return false;
         }
     }
 }

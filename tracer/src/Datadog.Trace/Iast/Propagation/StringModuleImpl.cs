@@ -61,20 +61,28 @@ internal static class StringModuleImpl
             }
 
             var newRanges1 = taintedTarget != null ? Ranges.ForRemove(index, target.Length, taintedTarget.Ranges) : null;
-            var newRanges1Length = newRanges1?.Length ?? 0;
-
             var newRanges2 = taintedValue?.Ranges;
-            var newRanges2Length = newRanges2?.Length ?? 0;
-
             var newRanges3 = taintedTarget != null ? Ranges.ForRemove(0, index, taintedTarget.Ranges) : null;
-            var newRanges3Length = newRanges3?.Length ?? 0;
 
-            var ranges = new RangeList(newRanges1Length + newRanges2Length + newRanges3Length);
-            ranges.Add(newRanges1, newRanges1Length, 0);
-            ranges.Add(newRanges2, newRanges2Length, index);
-            ranges.Add(newRanges3, newRanges3Length, index + value.Length);
+            var rangesTotal = (newRanges1?.Length ?? 0) + (newRanges2?.Length ?? 0) + (newRanges3?.Length ?? 0);
+            var rangesResult = new Range[rangesTotal];
 
-            taintedObjects.Taint(result, ranges.ToArray());
+            if (newRanges1 != null)
+            {
+                Ranges.CopyShift(newRanges1, rangesResult, 0, 0);
+            }
+
+            if (newRanges2 != null)
+            {
+                Ranges.CopyShift(newRanges2, rangesResult, (newRanges1?.Length ?? 0), index);
+            }
+
+            if (newRanges3 != null)
+            {
+                Ranges.CopyShift(newRanges3, rangesResult, (newRanges1?.Length ?? 0) + (newRanges2?.Length ?? 0), index + value.Length);
+            }
+
+            taintedObjects.Taint(result, rangesResult);
         }
         catch (Exception err)
         {
@@ -442,7 +450,7 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            var taintedObjects = iastContext.GetTaintedObjects();
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
 
             Range[]? ranges = null;
             int length = 0;
@@ -512,7 +520,7 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            var taintedObjects = iastContext.GetTaintedObjects();
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
 
             Range[]? ranges = null;
             int length = 0;

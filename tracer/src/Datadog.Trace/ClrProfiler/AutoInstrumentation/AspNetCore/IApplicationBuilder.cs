@@ -24,6 +24,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// </summary>
         [DuckField(Name = "_components")]
         IList<Func<RequestDelegate, RequestDelegate>> Components { get; }
+
+        /// <summary>
+        /// Gets ss
+        /// </summary>
+        IServiceProvider ApplicationServices { get; }
     }
 }
 #endif

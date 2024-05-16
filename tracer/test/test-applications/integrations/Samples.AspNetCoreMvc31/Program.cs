@@ -7,6 +7,11 @@ namespace Samples.AspNetCoreMvc
     {
         public static void Main(string[] args)
         {
+            while (!System.Diagnostics.Debugger.IsAttached)
+            {
+                System.Console.WriteLine("Waiting for debugger to attach...");
+                System.Threading.Thread.Sleep(1000);
+            }
             CreateHostBuilder(args).Build().Run();
         }
 

@@ -26,11 +26,8 @@ internal class SourceConverter : JsonConverter<Source>
     // When redacted output is:
     // { "origin": "http.request.parameter.name", "name": "name", "redacted": true }
 
-    private int _maxValueLength;
-
-    public SourceConverter(int maxValueLength)
+    public SourceConverter()
     {
-        _maxValueLength = maxValueLength;
     }
 
     public override bool CanRead => true;
@@ -66,13 +63,13 @@ internal class SourceConverter : JsonConverter<Source>
                 if (source.RedactedValue != null)
                 {
                     writer.WritePropertyName("pattern");
-                    writer.WriteTruncatableValue(source.RedactedValue, _maxValueLength);
+                    writer.WriteValue(source.RedactedValue);
                 }
             }
             else if (source.Value != null)
             {
                 writer.WritePropertyName("value");
-                writer.WriteTruncatableValue(source.Value, _maxValueLength);
+                writer.WriteValue(source.Value);
             }
 
             writer.WriteEndObject();

@@ -384,6 +384,8 @@ src/Datadog.Trace/Debugger/Snapshots/SnapshotPruner.cs
 src/Datadog.Trace/Debugger/Snapshots/SnapshotSerializerFieldsAndPropsSelector.cs
 src/Datadog.Trace/Debugger/Snapshots/SnapshotSummary.cs
 src/Datadog.Trace/Debugger/Snapshots/TaskSnapshotSerializerFieldsAndPropsSelector.cs
+src/Datadog.Trace/Debugger/TimeTravel/TimeTravelInitiator.cs
+src/Datadog.Trace/Debugger/TimeTravel/TimeTravelStateManager.cs
 src/Datadog.Trace/Headers/Ip/ExtractedHeadersAndIpInfos.cs
 src/Datadog.Trace/Headers/Ip/IpExtractor.cs
 src/Datadog.Trace/Headers/Ip/IpInfo.cs
@@ -502,6 +504,7 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/BindingSourceValueP
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/CompositeValueProvider.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/DefaultModelBindingContext.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/DefaultModelBindingContext_SetResult_Integration.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/FakeProbeCreator.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/ModelBindingResult.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/MvcOptionsIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/AwsConstants.cs

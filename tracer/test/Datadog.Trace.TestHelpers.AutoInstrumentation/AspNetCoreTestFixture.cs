@@ -120,7 +120,7 @@ namespace Datadog.Trace.TestHelpers
                 Process.BeginOutputReadLine();
                 Process.BeginErrorReadLine();
 
-                if (!mutex.Wait(TimeSpan.FromSeconds(60)))
+                if (!mutex.Wait(TimeSpan.FromSeconds(6000)))
                 {
                     WriteToOutput("Timeout while waiting for the proces to start");
                 }

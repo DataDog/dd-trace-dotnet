@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
@@ -16,6 +17,8 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Debugger.TimeTravel;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
@@ -68,7 +71,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             get
             {
-                _snapshotId ??= Guid.NewGuid().ToString();
+                _snapshotId ??= LastSnapshotId = Guid.NewGuid().ToString();
                 return _snapshotId;
             }
         }
@@ -92,6 +95,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 _captureBehaviour = value;
             }
         }
+
+        public static string LastSnapshotId { get; set; }
 
         internal void StartSampling()
         {
@@ -322,7 +327,15 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal DebuggerSnapshotCreator EndSnapshot()
         {
             _jsonWriter.WritePropertyName("id");
-            _jsonWriter.WriteValue(SnapshotId);
+            _jsonWriter.WriteValue(_snapshotId);
+
+            var parent = TimeTravelStateManager.GetParentSnapshotMetadata();
+
+            if (parent != null)
+            {
+                _jsonWriter.WritePropertyName("parent_id");
+                _jsonWriter.WriteValue(parent.SnapshotId);
+            }
 
             _jsonWriter.WritePropertyName("timestamp");
             _jsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
@@ -390,6 +403,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void CaptureEntryMethodStartMarker<T>(ref CaptureInfo<T> info)
         {
+            //TimeTravelStateManager.StartMethod(_snapshotId,null, null);
             StartEntry();
             CaptureStaticFields(ref info);
         }
@@ -680,21 +694,31 @@ namespace Datadog.Trace.Debugger.Snapshots
                         info.LineCaptureInfo.ProbeFilePath);
 
                 var snapshot = GetSnapshotJson();
+                WriteSnapshotJsonToDisk(probeId, snapshot);
                 return snapshot;
             }
+        }
+
+        private static string GetSnapshotsDirectory()
+        {
+            var directory = Path.Combine(Path.GetTempPath(), "snapshots", Process.GetCurrentProcess().Id.ToString());
+            Directory.CreateDirectory(directory);
+            return directory;
         }
 
         internal string FinalizeMethodSnapshot<T>(string probeId, int probeVersion, ref CaptureInfo<T> info)
         {
             using (this)
             {
-                var methodName = info.MethodState == MethodState.ExitEndAsync
-                                     ? info.AsyncCaptureInfo.KickoffMethod?.Name
-                                     : info.Method?.Name;
-
+                var method = info.MethodState == MethodState.ExitEndAsync
+                                  ? info.AsyncCaptureInfo.KickoffMethod
+                                  : info.Method;
+                var methodName = method?.Name;
                 var typeFullName = info.MethodState == MethodState.ExitEndAsync
                                        ? info.AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
                                        : info.InvocationTargetType?.FullName;
+
+
                 AddEvaluationErrors()
                    .AddProbeInfo(
                         probeId,
@@ -706,9 +730,92 @@ namespace Datadog.Trace.Debugger.Snapshots
                         typeFullName,
                         null);
 
+                var activeSpan = Tracer.Instance.InternalActiveScope?.Span;
+                if (activeSpan != null && probeId.StartsWith("SpanEntry"))
+                {
+                    activeSpan.Tags.SetTag("_dd.entry_location.snapshot_id", _snapshotId.ToString());
+                    activeSpan.Tags.SetTag("_dd.entry_location.type", typeFullName);
+                    activeSpan.Tags.SetTag("_dd.entry_location.method", methodName);
+                    var methodLocation = ExtractFilePathAndLineNumbersFromPdb(method);
+                    if (methodLocation != null)
+                    {
+                        activeSpan.Tags.SetTag("_dd.entry_location.file", methodLocation.FilePath);
+                        activeSpan.Tags.SetTag("_dd.entry_location.start_line", methodLocation.MethodBeginLineNumber);
+                        activeSpan.Tags.SetTag("_dd.entry_location.end_line", methodLocation.MethodEndLineNumber);
+                    }
+                }
+
                 var snapshot = GetSnapshotJson();
+                WriteSnapshotJsonToDisk(probeId, snapshot);
+                TimeTravelStateManager.EndMethod();
                 return snapshot;
+                
             }
+        }
+
+        private void WriteSnapshotJsonToDisk(string probeId, string snapshot)
+        {
+            try
+            {
+                File.WriteAllText(Path.Combine(GetSnapshotsDirectory(), $"{probeId}_{_snapshotId}.json"), JsonPrettify(snapshot));
+                Console.WriteLine($@"Snapshot written to {GetSnapshotsDirectory()}: {probeId}.json");
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+
+        private static string JsonPrettify(string json)
+        {
+            using var stringReader = new StringReader(json);
+            using var stringWriter = new StringWriter();
+            var jsonReader = new JsonTextReader(stringReader);
+            var jsonWriter = new JsonTextWriter(stringWriter) { Formatting = Formatting.Indented };
+            jsonWriter.WriteToken(jsonReader);
+            return stringWriter.ToString();
+        }
+
+
+        private static MethodLocation ExtractFilePathAndLineNumbersFromPdb(MethodBase method)
+        {
+            if (method == null)
+            {
+                throw new ArgumentNullException(nameof(method));
+            }
+
+            if (method.Module == null)
+            {
+                throw new InvalidOperationException("Method's module is null for method " + method.Name);
+            }
+
+            if (method.Module.Assembly == null)
+            {
+                throw new InvalidOperationException("Method's module assembly is null for module " + method.Module.Name);
+            }
+
+            var pdbReader = DatadogMetadataReader.CreatePdbReader(method.Module.Assembly);
+            if (pdbReader == null)
+            {
+                throw new InvalidOperationException("Failed to create PDB reader.");
+            }
+
+            var sequencePoints = pdbReader.GetMethodSequencePoints((int)method.MetadataToken);
+            if (sequencePoints == null)
+            {
+                throw new InvalidOperationException("Failed to get method sequence points.");
+            }
+
+            if (sequencePoints != null && sequencePoints.Any())
+            {
+                var filePath = sequencePoints.First().URL;
+                var methodBeginLineNumber = sequencePoints.First().StartLine.ToString();
+                var methodEndLineNumber = sequencePoints.Last().EndLine.ToString();
+                return new MethodLocation(filePath, methodBeginLineNumber, methodEndLineNumber);
+            }
+
+            return null;
         }
 
         internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath)
@@ -909,6 +1016,20 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 // ignored
             }
+        }
+    }
+
+    internal class MethodLocation 
+    {
+        public string FilePath { get; }
+        public string MethodBeginLineNumber { get; }
+        public string MethodEndLineNumber { get; }
+
+        public MethodLocation(string filePath, string methodBeginLineNumber, string methodEndLineNumber)
+        {
+            FilePath = filePath;
+            MethodBeginLineNumber = methodBeginLineNumber;
+            MethodEndLineNumber = methodEndLineNumber;
         }
     }
 }

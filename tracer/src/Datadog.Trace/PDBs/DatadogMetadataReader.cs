@@ -37,7 +37,7 @@ namespace Datadog.Trace.Pdb
         private static readonly Guid EncLocalSlotMap = new("755F52A8-91C5-45BE-B4B8-209571E552BD");
         private static readonly Guid StateMachineHoistedLocalScopes = new("6DA9A61E-F8C7-4874-BE62-68BC5630DF71");
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogMetadataReader>();
-        private readonly PEReader _peReader;
+        public PEReader PeReader { get; }
         private readonly bool _isDnlibPdbReader;
         private bool _disposed;
 
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Pdb
         {
             MetadataReader = metadataReader;
             PdbReader = pdbReader;
-            _peReader = peReader;
+            PeReader = peReader;
             _dnlibModule = dnlibModule;
             DnlibPdbReader = dnlibPdbReader;
             PdbFullPath = pdbFullPath;
@@ -145,7 +145,7 @@ namespace Datadog.Trace.Pdb
 
         internal StandaloneSignature? GetLocalSignature(MethodDefinition method)
         {
-            var methodBodyBlock = _peReader?.GetMethodBody(method.RelativeVirtualAddress);
+            var methodBodyBlock = PeReader?.GetMethodBody(method.RelativeVirtualAddress);
             if (methodBodyBlock == null || methodBodyBlock.LocalSignature.IsNil)
             {
                 return null;
@@ -829,7 +829,7 @@ namespace Datadog.Trace.Pdb
                 return false;
             }
 
-            MethodBodyBlock methodBody = _peReader.GetMethodBody(method.RelativeVirtualAddress);
+            MethodBodyBlock methodBody = PeReader.GetMethodBody(method.RelativeVirtualAddress);
             return methodBody.Size > 1;
         }
 
@@ -846,7 +846,7 @@ namespace Datadog.Trace.Pdb
             }
 
             DnlibPdbReader?.Dispose();
-            _peReader?.Dispose();
+            PeReader?.Dispose();
             _dnlibModule?.Dispose();
             _disposed = true;
             GC.SuppressFinalize(this);
