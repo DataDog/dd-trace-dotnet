@@ -198,7 +198,7 @@ namespace Datadog.Trace.TestHelpers
             return tags
                   // remove propagated tags because their positions in the snapshots are not stable
                   // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
-                  .Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
+                 ?.Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
                   // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
                   // no matter what. That means we have unstable snapshot results.
                   .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha)
@@ -222,7 +222,7 @@ namespace Datadog.Trace.TestHelpers
             ];
 
             return tags
-                  .Where(kvp => !ignoreKeys.Contains(kvp.Key))
+                 ?.Where(kvp => !ignoreKeys.Contains(kvp.Key))
                   .OrderBy(x => x.Key)
                   .ToDictionary(x => x.Key, x => x.Value);
         }
@@ -236,7 +236,7 @@ namespace Datadog.Trace.TestHelpers
             return tags
                   // remove propagated tags because their positions in the snapshots are not stable
                   // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
-                  .Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
+                 ?.Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
                   // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
                   // no matter what. That means we have unstable snapshot results.
                   .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha)
@@ -285,7 +285,7 @@ namespace Datadog.Trace.TestHelpers
         public static Dictionary<string, double>? ScrubCIVisibilityMetrics(Dictionary<string, double>? metrics)
         {
             return metrics
-                  .Where(kvp => kvp.Key != Metrics.SamplingAgentDecision)
+                 ?.Where(kvp => kvp.Key != Metrics.SamplingAgentDecision)
                   .Select(
                        kvp => kvp.Key switch
                        {
