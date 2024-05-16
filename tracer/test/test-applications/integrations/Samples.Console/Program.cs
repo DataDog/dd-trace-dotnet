@@ -114,11 +114,12 @@ namespace Samples.Console_
         {
             var iunknown = Environment.OSVersion.Platform == PlatformID.Win32NT ? CreateCrashReportWindows(0) : CreateCrashReportLinux(0);
 
-            // Read the vtable
+            // Get the QueryInterface method
             var vtable = *(IntPtr**)iunknown;
             var queryInterfacePtr = *vtable;
             var queryInterface = (delegate* unmanaged[Stdcall]<IntPtr, Guid*, IntPtr*, int>)queryInterfacePtr;
 
+            // Fetch the ICrashReport interface
             var guid = new Guid("3B3BA8A9-F807-43BF-A3A9-55E369C0C532");
             var crashReport = IntPtr.Zero;
             var result = queryInterface(iunknown, &guid, &crashReport);
@@ -128,6 +129,7 @@ namespace Samples.Console_
                 throw new Win32Exception(result, "Failed to get ICrashReport");
             }
 
+            // Get the CrashProcess method
             var crashReportVtable = *(IntPtr**)crashReport;
             var crashProcessPtr = *(crashReportVtable + 11);
             var crashProcess = (delegate* unmanaged[Stdcall]<IntPtr, int>)crashProcessPtr;
