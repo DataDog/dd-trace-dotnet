@@ -73,10 +73,12 @@ internal readonly struct TraceChunkModel
     private TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext, int? samplingPriority)
         : this(spans, traceContext?.RootSpan)
     {
+        // sampling decision override takes precedence over TraceContext.SamplingPriority
         SamplingPriority = samplingPriority;
 
         if (traceContext is not null)
         {
+            // only use TraceContext.SamplingPriority if there was  no override value
             SamplingPriority ??= traceContext.SamplingPriority;
 
             Environment = traceContext.Environment;

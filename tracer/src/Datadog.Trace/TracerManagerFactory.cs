@@ -284,7 +284,7 @@ namespace Datadog.Trace
         {
             if (string.IsNullOrWhiteSpace(settings.SpanSamplingRules))
             {
-                return new SpanSampler(Enumerable.Empty<ISpanSamplingRule>());
+                return new SpanSampler([]);
             }
 
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));

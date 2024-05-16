@@ -27,14 +27,11 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
 
-        private readonly TraceClock _clock;
-
         private IastRequestContext? _iastRequestContext;
         private AppSecRequestContext? _appSecRequestContext;
 
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
-        private int? _samplingPriority;
 
         // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
@@ -50,7 +47,7 @@ namespace Datadog.Trace
         {
             CurrentTraceSettings = tracer.PerTraceSettings;
 
-            // TODO: Environment, ServiceVersion, GitCommitSha, and GitRepositoryUrl are stored on the TraceContext
+            // TODO: Environment and ServiceVersion are stored on the TraceContext
             // even though they likely won't change for the lifetime of the process. We should consider moving them
             // elsewhere to reduce the memory usage.
             if (tracer.Settings is { } settings)
@@ -62,7 +59,7 @@ namespace Datadog.Trace
 
             Tracer = tracer;
             Tags = tags ?? new TraceTagCollection();
-            _clock = TraceClock.Instance;
+            Clock = TraceClock.Instance;
         }
 
         public Span? RootSpan
@@ -70,7 +67,7 @@ namespace Datadog.Trace
             get => _rootSpan;
         }
 
-        public TraceClock Clock => _clock;
+        public TraceClock Clock { get; }
 
         public IDatadogTracer Tracer { get; }
 
@@ -84,10 +81,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the trace's sampling priority.
         /// </summary>
-        public int? SamplingPriority
-        {
-            get => _samplingPriority;
-        }
+        public int? SamplingPriority { get; private set; }
 
         public string? Environment { get; set; }
 
@@ -146,12 +140,6 @@ namespace Datadog.Trace
             if (Interlocked.CompareExchange(ref _rootSpan, span, null) == null)
             {
                 span.MarkSpanForExceptionDebugging();
-
-                // if we don't have a sampling priority yet, make a sampling decision now
-                if (_samplingPriority == null)
-                {
-                    SetSamplingPriority(CurrentTraceSettings?.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default);
-                }
             }
 
             lock (_rootSpan)
@@ -234,6 +222,7 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
+                GetOrMakeSamplingDecision();
                 RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
             }
@@ -252,9 +241,42 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
+                GetOrMakeSamplingDecision();
                 RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
             }
+        }
+
+        public int GetOrMakeSamplingDecision()
+        {
+            if (SamplingPriority is { } samplingPriority)
+            {
+                // common case: we already have a sampling decision
+                return samplingPriority;
+            }
+
+            return GetOrMakeSamplingDecisionSlow();
+        }
+
+        private int GetOrMakeSamplingDecisionSlow()
+        {
+            if (_rootSpan is null)
+            {
+                // we can't make a sampling decision without a root span because:
+                // - we need a trace id, and for now trace id lives in SpanContext, not in TraceContext
+                // - we need to apply sampling rules to the root span
+
+                // note we do not set SamplingDecision
+                // so it remains null and we can try again later
+                return SamplingPriorityValues.Default;
+            }
+
+            var samplingDecision = CurrentTraceSettings?.TraceSampler is { } sampler
+                                       ? sampler.MakeSamplingDecision(_rootSpan)
+                                       : SamplingDecision.Default;
+
+            SetSamplingPriority(samplingDecision.Priority, samplingDecision.Mechanism);
+            return samplingDecision.Priority;
         }
 
         public void SetSamplingPriority(SamplingDecision decision, bool notifyDistributedTracer = true)
@@ -264,24 +286,22 @@ namespace Datadog.Trace
 
         public void SetSamplingPriority(int? priority, int? mechanism = null, bool notifyDistributedTracer = true)
         {
-            if (priority == null)
+            if (priority is not { } p)
             {
                 return;
             }
 
-            _samplingPriority = priority;
+            SamplingPriority = p;
 
-            const string tagName = Trace.Tags.Propagated.DecisionMaker;
-
-            if (priority > 0 && mechanism != null)
+            if (SamplingPriorityValues.IsKeep(p) && mechanism is { } m)
             {
-                // add the tag once, but never overwrite an existing tag
-                Tags.TryAddTag(tagName, SamplingMechanism.GetTagValue(mechanism.Value));
+                // add the tag once if trace is sampled, but never overwrite an existing tag
+                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(m));
             }
-            else if (priority <= 0)
+            else if (SamplingPriorityValues.IsDrop(p))
             {
-                // remove tag if priority is AUTO_DROP (0) or USER_DROP (-1)
-                Tags.RemoveTag(tagName);
+                // remove tag if trace is not sampled
+                Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
             if (notifyDistributedTracer)
@@ -297,11 +317,12 @@ namespace Datadog.Trace
                 return;
             }
 
-            if (SamplingPriorityValues.IsDrop(SamplingPriority))
+            if (SamplingPriority is { } samplingPriority && SamplingPriorityValues.IsDrop(samplingPriority))
             {
                 for (int i = 0; i < spans.Count; i++)
                 {
-                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array![i + spans.Offset]);
+                    var span = spans.Array![i + spans.Offset];
+                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(span);
                 }
             }
         }
