@@ -66,6 +66,7 @@ public class DelaySamplingDecisionTests
 
         var tracer = new Tracer(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
         TraceContext traceContext;
+        int samplingPriority;
 
         using (var scope1 = (Scope)tracer.StartActive("operation"))
         {
@@ -81,11 +82,13 @@ public class DelaySamplingDecisionTests
             // sampling decision IS taken before propagating
             sampler.Verify(s => s.MakeSamplingDecision(It.IsAny<Span>()), Times.Once);
             traceContext.SamplingPriority.Should().NotBeNull();
-            headers["x-datadog-sampling-priority"].Should().Be(traceContext.SamplingPriority.ToString());
+            headers["x-datadog-sampling-priority"].Should().Be(SamplingPriorityValues.ToString(traceContext.SamplingPriority));
+
+            samplingPriority = traceContext.SamplingPriority!.Value;
         }
 
-        // sampling decision is still there and is NOT taken again when first span ends
+        // sampling decision hasn't changed and is NOT taken again when first span ends
         sampler.Verify(s => s.MakeSamplingDecision(It.IsAny<Span>()), Times.Once);
-        traceContext.SamplingPriority.Should().NotBeNull();
+        traceContext.SamplingPriority.Should().Be(samplingPriority);
     }
 }
