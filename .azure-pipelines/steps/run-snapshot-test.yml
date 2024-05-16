@@ -120,3 +120,9 @@ steps:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   condition: succeededOrFailed()
   continueOnError: true
+
+- ${{ if eq(parameters.isLinux, true) }}:
+    - script: |
+        sudo chmod -R 644 tracer/build_data/dumps/* || true
+      displayName: Make dumps uploadable to AzDo
+      condition: succeededOrFailed()
