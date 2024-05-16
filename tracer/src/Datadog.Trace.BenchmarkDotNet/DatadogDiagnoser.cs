@@ -6,6 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using BenchmarkDotNet.Analysers;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Engines;
@@ -67,7 +69,7 @@ public class DatadogDiagnoser : IDiagnoser
     public IEnumerable<IAnalyser> Analysers { get; } = Array.Empty<IAnalyser>();
 
     /// <inheritdoc />
-    public RunMode GetRunMode(BenchmarkCase benchmarkCase) => _enableProfiler ? RunMode.ExtraRun : RunMode.NoOverhead;
+    public RunMode GetRunMode(BenchmarkCase benchmarkCase) => _enableProfiler && !ShouldIgnoreProfiler(benchmarkCase) ? RunMode.ExtraRun : RunMode.NoOverhead;
 
     /// <inheritdoc />
     public bool RequiresBlockingAcknowledgments(BenchmarkCase benchmarkCase) => false;
@@ -84,7 +86,7 @@ public class DatadogDiagnoser : IDiagnoser
             case HostSignal.BeforeProcessStart:
                 BenchmarkMetadata.SetStartTime(parameters.BenchmarkCase.Descriptor.Type.Assembly, utcNow);
                 BenchmarkMetadata.SetStartTime(parameters.BenchmarkCase.Descriptor.Type, utcNow);
-                if (_enableProfiler)
+                if (_enableProfiler && !ShouldIgnoreProfiler(parameters.BenchmarkCase))
                 {
                     // Use Datadog's Profiler
                     EnsureAndFillProfilerPathVariables(parameters);
@@ -309,7 +311,10 @@ public class DatadogDiagnoser : IDiagnoser
         environment["DD_PROFILING_FRAMES_NATIVE_ENABLED "] = "1";
 
         // Tags
-        var tagsList = new List<string>();
+        var tagsList = new List<string>
+        {
+            { $"origin:{TestTags.CIAppTestOriginName}" },
+        };
 
         // Git data
         if (CIEnvironmentValues.Instance is { } ciEnv)
@@ -384,5 +389,23 @@ public class DatadogDiagnoser : IDiagnoser
         {
             throw new FileNotFoundException(null, _loaderConfig);
         }
+    }
+
+    private bool ShouldIgnoreProfiler(BenchmarkCase benchmarkCase)
+    {
+        if (benchmarkCase?.Descriptor is { } descriptor)
+        {
+            var attributes = descriptor.Type?.GetCustomAttributes() ?? [];
+            attributes = attributes.Concat(descriptor.WorkloadMethod?.GetCustomAttributes() ?? []);
+            foreach (var attribute in attributes)
+            {
+                if (attribute is IgnoreProfileAttribute)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
