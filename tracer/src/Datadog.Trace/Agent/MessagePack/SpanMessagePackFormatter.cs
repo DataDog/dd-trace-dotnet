@@ -824,20 +824,17 @@ namespace Datadog.Trace.Agent.MessagePack
                 // add agent or rule sampling rate to local root span if available
                 if (model.TraceChunk.InitialSamplingRate is { } samplingRate)
                 {
-                    var tagNameBytes = model.TraceChunk.InitialSamplingMechanism switch
+                    var samplingRateTagNameBytes = model.TraceChunk.InitialSamplingMechanism switch
                     {
-                        // agent sampling rate (matched) or default agent sampling rate (no match) or default fallback (1.0)
-                        SamplingMechanism.AgentRate or SamplingMechanism.Default => _agentSamplingRateNameBytes,
-                        // sampling rule or global sampling rate
-                        SamplingMechanism.TraceSamplingRule => _ruleSamplingRateNameBytes,
-                        // unknown sampling rate source
+                        SamplingMechanism.AgentRate => _agentSamplingRateNameBytes, // "_dd.agent_psr"
+                        SamplingMechanism.TraceSamplingRule => _ruleSamplingRateNameBytes, // "_dd.rule_psr"
                         _ => null
                     };
 
-                    if (tagNameBytes is not null)
+                    if (samplingRateTagNameBytes is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, tagNameBytes);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, samplingRateTagNameBytes);
                         offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingRate);
                     }
                 }
