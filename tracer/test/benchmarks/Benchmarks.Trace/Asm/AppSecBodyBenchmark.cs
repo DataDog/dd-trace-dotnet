@@ -10,6 +10,7 @@ using Datadog.Trace.AppSec.Waf;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
 using SecurityCoordinator = Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
 #if NETFRAMEWORK
@@ -25,6 +26,7 @@ namespace Benchmarks.Trace.Asm
     [MemoryDiagnoser]
     [BenchmarkAgent7]
     [BenchmarkCategory(Constants.AppSecCategory)]
+    [IgnoreProfile]
     public class AppSecBodyBenchmark
     {
         private static readonly Security _security;
