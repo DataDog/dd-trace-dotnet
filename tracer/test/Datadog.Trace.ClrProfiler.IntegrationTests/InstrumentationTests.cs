@@ -31,7 +31,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task DoesNotInstrumentDotnetBuild()
         {
-            // run the azure function
             var workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
             Directory.CreateDirectory(workingDir);
 
@@ -60,7 +59,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task InstrumentsDotNetRun()
         {
-            // run the azure function
             var workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
             Directory.CreateDirectory(workingDir);
 
@@ -90,7 +88,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task InstrumentsDotNetTest()
         {
-            // run the azure function
             var workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
             Directory.CreateDirectory(workingDir);
 
@@ -108,7 +105,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var scope = new AssertionScope();
             var allFiles = Directory.GetFiles(logDir);
             AddFilesAsReportable(logDir, scope, allFiles);
-            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-testhost-"));
+
+            // dotnet test might either of the following, so process name could be testhost or dotnet:
+            // - "C:\Users\andrew.lock\AppData\Local\Temp\upo3di0x\bin\Debug\net8.0\testhost.exe"  --runtimeconfig "C:\Users\andrew.lock\AppData\Local\Temp\upo3di0x\bin\Debug\net8.0\instrumentation_test.runtimeconfig.json" --depsfile "C:\Users\andrew.lock\AppData\Local\Temp\upo3di0x\bin\Debug\net8.0\instrumentation_test.deps.json" --port 56961 --endpoint 127.0.0.1:056961 --role client --parentprocessid 71908 --telemetryoptedin false
+            // - /usr/share/dotnet/dotnet exec --runtimeconfig /tmp/yei4siaw/bin/Debug/net8.0/instrumentation_test.runtimeconfig.json --depsfile /tmp/yei4siaw/bin/Debug/net8.0/instrumentation_test.deps.json /tmp/yei4siaw/bin/Debug/net8.0/testhost.dll --port 44167 --endpoint 127.0.0.1:044167 --role client --parentprocessid 11522 --telemetryoptedin false
+            allFiles.Should()
+                    .Contain(
+                         filename =>
+                             Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-testhost-")
+                          || Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-dotnet-"));
             agent.Telemetry.Should().NotBeEmpty();
 
             return;
