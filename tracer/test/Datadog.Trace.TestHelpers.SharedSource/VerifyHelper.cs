@@ -55,28 +55,26 @@ namespace Datadog.Trace.TestHelpers
         {
             VerifierSettings.DerivePathInfo(
                 (sourceFile, projectDirectory, type, method) =>
-                {
-                    return new(directory: Path.Combine(projectDirectory, "..", "snapshots"));
-                });
+                    new PathInfo(directory: Path.Combine(projectDirectory, "..", "snapshots")));
         }
 
         public static VerifySettings GetSpanVerifierSettings(params object[] parameters) => GetSpanVerifierSettings(null, parameters);
 
+        public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
+            => GetSpanVerifierSettings(scrubbers, parameters, ScrubStringTags, ScrubNumericTags, ciVisStringTagsScrubber: null, ciVisNumericTagsScrubber: null);
+
         public static VerifySettings GetCIVisibilitySpanVerifierSettings(params object[] parameters) => GetCIVisibilitySpanVerifierSettings(null, parameters);
 
-        public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
-            => GetSpanVerifierSettings(scrubbers, parameters, ScrubTags, null);
-
         public static VerifySettings GetCIVisibilitySpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
-            => GetSpanVerifierSettings(scrubbers, parameters, ScrubCIVisibilityTags, ScrubCIVisibilityTags, ScrubCIVisibilityMetrics, ScrubCIVisibilityMetrics);
+            => GetSpanVerifierSettings(scrubbers, parameters, ScrubCIVisibilityTags, ScrubCIVisibilityMetrics, ScrubCIVisibilityTags, ScrubCIVisibilityMetrics);
 
         public static VerifySettings GetSpanVerifierSettings(
             IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers,
             object[] parameters,
-            ConvertMember<MockSpan, Dictionary<string, string>> tagsScrubber,
-            ConvertMember<MockCIVisibilityTest, Dictionary<string, string>> metaScrubber = null,
-            ConvertMember<MockSpan, Dictionary<string, double>> metricsSpanScrubber = null,
-            ConvertMember<MockCIVisibilityTest, Dictionary<string, double>> metricsScrubber = null)
+            ConvertMember<MockSpan, Dictionary<string, string>> apmStringTagsScrubber,
+            ConvertMember<MockSpan, Dictionary<string, double>> apmNumericTagsScrubber,
+            ConvertMember<MockCIVisibilityTest, Dictionary<string, string>> ciVisStringTagsScrubber,
+            ConvertMember<MockCIVisibilityTest, Dictionary<string, double>> ciVisNumericTagsScrubber)
         {
             var settings = new VerifySettings();
 
@@ -91,22 +89,28 @@ namespace Datadog.Trace.TestHelpers
             {
                 _.IgnoreMember<MockSpan>(s => s.Duration);
                 _.IgnoreMember<MockSpan>(s => s.Start);
-                _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, tagsScrubber);
-                if (metricsSpanScrubber is not null)
+
+                if (apmStringTagsScrubber is not null)
                 {
-                    _.MemberConverter<MockSpan, Dictionary<string, double>>(x => x.Metrics, metricsSpanScrubber);
+                    _.MemberConverter(x => x.Tags, apmStringTagsScrubber);
+                }
+
+                if (apmNumericTagsScrubber is not null)
+                {
+                    _.MemberConverter(x => x.Metrics, apmNumericTagsScrubber);
                 }
 
                 _.IgnoreMember<MockCIVisibilityTest>(s => s.Duration);
                 _.IgnoreMember<MockCIVisibilityTest>(s => s.Start);
-                if (metaScrubber is not null)
+
+                if (ciVisStringTagsScrubber is not null)
                 {
-                    _.MemberConverter<MockCIVisibilityTest, Dictionary<string, string>>(x => x.Meta, metaScrubber);
+                    _.MemberConverter(x => x.Meta, ciVisStringTagsScrubber);
                 }
 
-                if (metricsScrubber is not null)
+                if (ciVisNumericTagsScrubber is not null)
                 {
-                    _.MemberConverter<MockCIVisibilityTest, Dictionary<string, double>>(x => x.Metrics, metricsScrubber);
+                    _.MemberConverter(x => x.Metrics, ciVisNumericTagsScrubber);
                 }
             });
 
@@ -187,7 +191,7 @@ namespace Datadog.Trace.TestHelpers
             settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
         }
 
-        public static Dictionary<string, string> ScrubTags(MockSpan span, Dictionary<string, string> tags)
+        public static Dictionary<string, string> ScrubStringTags(MockSpan span, Dictionary<string, string> tags)
         {
             return tags
                   // remove propagated tags because their positions in the snapshots are not stable
@@ -203,6 +207,20 @@ namespace Datadog.Trace.TestHelpers
                            Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
                            _ => kvp
                        })
+                  .OrderBy(x => x.Key)
+                  .ToDictionary(x => x.Key, x => x.Value);
+        }
+
+        public static Dictionary<string, double> ScrubNumericTags(MockSpan span, Dictionary<string, double> tags)
+        {
+            string[] ignoreKeys =
+            [
+                Metrics.SamplingAgentDecision,
+                // more coming soon
+            ];
+
+            return tags
+                  .Where(kvp => !ignoreKeys.Contains(kvp.Key))
                   .OrderBy(x => x.Key)
                   .ToDictionary(x => x.Key, x => x.Value);
         }
@@ -265,6 +283,7 @@ namespace Datadog.Trace.TestHelpers
         public static Dictionary<string, double> ScrubCIVisibilityMetrics(Dictionary<string, double> metrics)
         {
             return metrics
+                  .Where(kvp => kvp.Key != Metrics.SamplingAgentDecision)
                   .Select(
                        kvp => kvp.Key switch
                        {
