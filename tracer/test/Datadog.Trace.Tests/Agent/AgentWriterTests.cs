@@ -13,6 +13,7 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
@@ -134,11 +135,11 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task SpanSampling_ShouldSend_MultipleMatchedSpans_WhenStatsDropsOne()
         {
-            var api = new Mock<IApi>();
+            var api = new MockApi();
             var statsAggregator = new NullStatsAggregator();
             var settings = SpanSamplingRule("*", "operation");
-            var agent = new AgentWriter(api.Object, statsAggregator, statsd: null, automaticFlush: false);
-            var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
+            var agentWriter = new AgentWriter(api, statsAggregator, statsd: null, automaticFlush: false);
+            var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null);
@@ -166,24 +167,18 @@ namespace Datadog.Trace.Tests.Agent
             var spans = spanList.ToArray();
 
             var traceChunk = new ArraySegment<Span>(spans, 5, 4);
-            var expectedChunk = new ArraySegment<Span>(new[] { rootSpan, keptChildSpan });
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
+            // var expectedChunk = new ArraySegment<Span>([rootSpan, keptChildSpan]);
+            // var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
-            agent.WriteTrace(traceChunk);
-            await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
-
-            var expectedDroppedP0Traces = 1;
-            var expectedDroppedP0Spans = 2;
+            agentWriter.WriteTrace(traceChunk);
+            await agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             // expecting a single trace, but there should have been two spans
-            api.Verify(
-                x => x.SendTracesAsync(
-                    It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)),
-                    It.Is<int>(i => i == 1),
-                    It.IsAny<bool>(),
-                    It.Is<long>(i => i == expectedDroppedP0Traces),
-                    It.Is<long>(i => i == expectedDroppedP0Spans)),
-                Times.Once);
+            api.DroppedP0TracesCount.Should().Be(1);
+            api.DroppedP0SpansCount.Should().Be(2);
+
+            api.Traces.Should().HaveCount(1);
+            api.Traces[0].Should().HaveCount(2);
 
             await _agentWriter.FlushAndCloseAsync();
         }
