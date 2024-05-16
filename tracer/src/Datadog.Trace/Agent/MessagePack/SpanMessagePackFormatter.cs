@@ -887,6 +887,7 @@ namespace Datadog.Trace.Agent.MessagePack
             var testOptimization = Ci.TestOptimization.Instance;
             if (span.IsTopLevel && (!testOptimization.IsRunning || !testOptimization.Settings.Agentless))
             {
+                // TODO: don't use WriteMetric()?
                 count++;
                 WriteMetric(ref bytes, ref offset, Trace.Metrics.TopLevelSpan, 1.0, tagProcessors);
             }
