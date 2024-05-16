@@ -96,7 +96,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                     "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost'");
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
-                
         }
     }
 
