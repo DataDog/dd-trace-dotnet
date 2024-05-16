@@ -62,6 +62,9 @@ ENV LD_PRELOAD=/opt/datadog/continuousprofiler/Datadog.Linux.ApiWrapper.x64.so
 ENV DD_PROFILING_ENABLED=1
 ENV DD_APPSEC_ENABLED=1
 ENV DD_TRACE_DEBUG=1
+ENV COMPlus_DbgEnableMiniDump=1
+ENV COMPlus_DbgMiniDumpType=4
+ENV DOTNET_DbgMiniDumpName=/dumps/chiseled_%t.coredump.%p
 
 ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
 
