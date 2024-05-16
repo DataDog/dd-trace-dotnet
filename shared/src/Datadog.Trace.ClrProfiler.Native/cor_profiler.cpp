@@ -153,6 +153,83 @@ namespace datadog::shared::nativeloader
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                 }
             }
+
+            // If we weren't on the explicit include list, then try to filter out `dotnet build` etc.
+            // We don't want to instrument _build_ processes in dotnet by default, as they generally
+            // don't give useful information, add latency, and risk triggering bugs in the runtime,
+            // particularly around shutdown, like this one: https://github.com/dotnet/runtime/issues/55441
+           const auto [process_command_line , tokenized_command_line]  = GetCurrentProcessCommandLine();
+            Log::Info("Process CommandLine: ", process_command_line);
+
+            if (!process_command_line.empty())
+            {
+                const auto isDotNetProcess = process_name == WStr("dotnet") || process_name == WStr("dotnet.exe");
+                const auto token_count = tokenized_command_line.size();
+                if (isDotNetProcess && token_count > 1)
+                {
+                    // Exclude:
+                    // - dotnet build, dotnet build myproject.csproj etc  
+                    // - dotnet build-server
+                    // - (... dotnet COMMAND commands listed below)
+                    // - dotnet tool ...
+                    // - dotnet new ...
+                    //
+                    // There are other commands we're choosing not to check because they
+                    // wouldn't normally be called on a build or production server, just locally
+                    // - dotnet add package, dotnet add reference
+                    // - dotnet sln
+                    // - dotnet workload
+                    // - etc
+                    //
+                    // There are some commands that we explicitly DO want to instrument
+                    // i.e. dotnet run
+                    // i.e. dotnet test
+                    // i.e. dotnet vstest
+                    // i.e. dotnet exec (except specific commands)
+                    bool is_ignored_command = false;
+                    const auto token1 = tokenized_command_line[1];
+                    if(token1 == WStr("exec"))
+                    {
+                        // compiler is invoked with arguments something like this:
+                        // dotnet exec /usr/share/dotnet/sdk/6.0.400/Roslyn/bincore/csc.dll /noconfig @/tmp/tmp8895f601306443a6a54388ecc6dcfc44.rsp
+                        // so we check the arguments to see if any of them are an invocation of one of the dlls we want to ignore.
+                        // We don't just check the second argument because the command could set additional flags
+                        // for the exec function
+                        for (int i = 2; i < token_count; ++i)
+                        {
+                            const auto current_token = tokenized_command_line[i];
+                            if(!current_token.empty() &&
+                                (EndsWith(current_token, WStr("csc.dll"))
+                                    || EndsWith(current_token, WStr("VBCSCompiler.dll"))))
+                            {
+                                is_ignored_command = true;
+                                break;
+                            }
+                        }
+                    }
+                    else if(!token1.empty())
+                    {
+                        is_ignored_command =
+                            token1 == WStr("build") ||
+                            token1 == WStr("build-server") ||
+                            token1 == WStr("clean") ||
+                            token1 == WStr("msbuild") ||
+                            token1 == WStr("new") ||
+                            token1 == WStr("nuget") ||
+                            token1 == WStr("pack") ||
+                            token1 == WStr("publish") ||
+                            token1 == WStr("restore") ||
+                            token1 == WStr("tool");
+                    }
+
+                    if (is_ignored_command)
+                    {
+                        Log::Info("The Tracer Profiler has been disabled because the process is 'dotnet' "
+                            "but an unsupported command was detected");
+                        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                    }
+                }
+            }
         }
 
         //

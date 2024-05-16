@@ -4,6 +4,7 @@
 
 #include "windows.h"
 #include <process.h>
+#include <shellapi.h>
 
 #else
 
@@ -129,20 +130,33 @@ inline WSTRING GetCurrentProcessName()
 #endif
 }
 
-inline WSTRING GetCurrentProcessCommandLine()
+inline std::tuple<WSTRING, std::vector<WSTRING>> GetCurrentProcessCommandLine()
 {
+    std::vector<WSTRING> args;
 #ifdef _WIN32
-    return WSTRING(GetCommandLine());
+    const auto cmdLine = GetCommandLine();
+    int argCount;
+    const auto arguments = CommandLineToArgvW(cmdLine, &argCount);
+
+    for (int i = 0; i < argCount; i++)
+    {
+        args.push_back(Trim(arguments[i]));
+    }
+
+    return { cmdLine, args };
 #elif MACOS
     std::string name;
     int argCount = *_NSGetArgc();
     char** arguments = *_NSGetArgv();
+
     for (int i = 0; i < argCount; i++)
     {
-        char* currentArg = arguments[i];
-        name = name + " " + std::string(currentArg);
+        const auto currentArg = std::string(arguments[i]);
+        args.push_back(Trim(ToWSTRING(currentArg)));
+        name = name + " " + currentArg;
     }
-    return Trim(ToWSTRING(name));
+
+    return { Trim(ToWSTRING(name)), args };
 #else
     std::string cmdline;
     char buf[1024];
@@ -154,6 +168,8 @@ inline WSTRING GetCurrentProcessCommandLine()
         {
             cmdline.append(buf, len);
         }
+
+        fclose(fp);
     }
 
     std::string name;
@@ -162,13 +178,14 @@ inline WSTRING GetCurrentProcessCommandLine()
     while (getline(tokens, tmp, '\0'))
     {
         name = name + " " + tmp;
+        args.push_back(Trim(ToWSTRING(tmp)));
     }
-    fclose(fp);
 
-    return Trim(ToWSTRING(name));
+    return { Trim(ToWSTRING(name)), args };
+
 #endif
 
-    return EmptyWStr;
+    return {EmptyWStr, args};
 }
 
 inline int GetPID()
