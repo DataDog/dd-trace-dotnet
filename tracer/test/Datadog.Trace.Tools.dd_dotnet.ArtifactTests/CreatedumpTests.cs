@@ -69,7 +69,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig, ..CreatedumpConfig, ("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", passthrough), ..CrashReportConfig(reportFile)];
+        (string, string)[] args = [LdPreloadConfig, ..CreatedumpConfig, ("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", passthrough), CrashReportConfig(reportFile)];
 
         using var helper = await StartConsoleWithArgs("crash-datadog", args);
 
@@ -101,7 +101,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig];
+        (string, string)[] args = [LdPreloadConfig, ("DD_TRACE_CRASH_HANDLER_ENABLED", "0")];
 
         if (enableCrashDumps)
         {
@@ -140,7 +140,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig, ..CrashReportConfig(reportFile)];
+        (string, string)[] args = [LdPreloadConfig, CrashReportConfig(reportFile)];
 
         if (crashdumpEnabled)
         {
@@ -187,7 +187,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               [LdPreloadConfig, ..CrashReportConfig(reportFile)]);
+                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
 
@@ -220,7 +220,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash",
-                               [LdPreloadConfig, ..CrashReportConfig(reportFile)]);
+                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
 
@@ -240,7 +240,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               [LdPreloadConfig, ..CrashReportConfig(reportFile)]);
+                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
 
@@ -303,20 +303,9 @@ public class CreatedumpTests : ConsoleTestHelper
         }
     }
 
-    private static (string Key, string Value)[] CrashReportConfig(TemporaryFile reportFile)
+    private static (string Key, string Value) CrashReportConfig(TemporaryFile reportFile)
     {
-        var ddDotnetPath = Utils.GetDdDotnetPath();
-
-        if (!File.Exists(ddDotnetPath))
-        {
-            throw new FileNotFoundException($"dd-dotnet not found at path {ddDotnetPath}");
-        }
-
-        return
-        [
-            ("DD_TRACE_CRASH_HANDLER", ddDotnetPath),
-            ("DD_TRACE_CRASH_OUTPUT", reportFile.Url)
-        ];
+        return ("DD_TRACE_CRASH_OUTPUT", reportFile.Url);
     }
 
     private class TemporaryFile : IDisposable
