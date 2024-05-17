@@ -25,7 +25,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
-[UsesVerify]
 public class VersionMismatchTests : TestingFrameworkEvpTest
 {
     public VersionMismatchTests(ITestOutputHelper output)
@@ -126,15 +125,15 @@ public class VersionMismatchTests : TestingFrameworkEvpTest
                                           agent,
                                           arguments: "--collect:\"XPlat Code Coverage\"");
 
-            Assert.Equal(0, processResult.ExitCode);
+            processResult.ExitCode.Should().Be(0);
 
             // Check the tests, suites and modules count
-            Assert.Single(tests);
-            Assert.Single(testSuites);
-            Assert.Single(testModules);
+            tests.Should().ContainSingle();
+            testSuites.Should().ContainSingle();
+            testModules.Should().ContainSingle();
 
             // Check the custom spans count comming from mismatched version of Datadog.Trace
-            Assert.Single(customSpans);
+            customSpans.Should().ContainSingle();
 
             // check if we received code coverage information at session level
             codeCoverageReceived.Value.Should().BeTrue();
