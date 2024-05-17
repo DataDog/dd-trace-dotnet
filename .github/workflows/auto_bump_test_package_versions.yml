@@ -44,3 +44,15 @@ jobs:
           reviewers: "DataDog/apm-dotnet"
           body: |
             Updates the package versions for integration tests.
+            
+      - name: Send Slack notification about generating failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          # This data can be any valid JSON from a previous step in the GitHub Action
+          payload: |
+            {
+              "github_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBOOK_URL_GENERATEPACKAGEVERSIONS }}
