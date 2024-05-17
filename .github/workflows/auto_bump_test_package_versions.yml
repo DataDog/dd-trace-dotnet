@@ -1,13 +1,15 @@
 name: Auto bump test package versions
 
 on:
+  schedule:
+    - cron: '0 0 * * 0' # Every Sunday at midnight
   pull_request_target:
     branches: [master, main]
   workflow_dispatch:
 
 jobs:
   bump_package_versions:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.pull_request.head.ref, 'dependabot/nuget/tracer/dependabot/') == true
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || startsWith(github.event.pull_request.head.ref, 'dependabot/nuget/tracer/dependabot/') == true
     runs-on: windows-latest
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
@@ -42,3 +44,15 @@ jobs:
           reviewers: "DataDog/apm-dotnet"
           body: |
             Updates the package versions for integration tests.
+            
+      - name: Send Slack notification about generating failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          # This data can be any valid JSON from a previous step in the GitHub Action
+          payload: |
+            {
+              "github_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBOOK_URL_GENERATEPACKAGEVERSIONS }}
