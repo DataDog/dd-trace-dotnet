@@ -260,12 +260,18 @@ namespace datadog::shared::nativeloader
                 // We could use runtime_information, but I don't know how reliable the values we get from that are?
                 if (S_OK == pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**) &tstVerProfilerInfo))
                 {
+                    // .NET Core 3.1+, but is it _too_ high?
+                    if(runtimeInformation.major_version > 8)
+                    {
+                        unsupportedFramework = ".NET 9 or higher";
+                    }
+
                     // supported
                     tstVerProfilerInfo->Release();
                 }
                 else
                 {
-                    unsupportedFramework = ".NET Core 3.0";
+                    unsupportedFramework = ".NET Core 3.0 or lower";
                 }
             }
             else
@@ -278,7 +284,7 @@ namespace datadog::shared::nativeloader
                 }
                 else
                 {
-                    unsupportedFramework = ".NET Framework 4.6.0";
+                    unsupportedFramework = ".NET Framework 4.6.0 or lower";
                 }
             }
 
@@ -294,14 +300,17 @@ namespace datadog::shared::nativeloader
                     Log::Info(
                         "CorProfiler::Initialize: Unsupported framework version '",
                         unsupportedFramework,
-                        "' detected. Forcing instrumentation with single-step instrumentation due to DD_TRACE_ALLOW_EOL_RUNTIME");
+                        "' detected. Forcing instrumentation with single-step instrumentation due to ",
+                        EnvironmentVariables::ForceEolInstrumentation);
                 }
                 else
                 {
                     Log::Warn(
                         "CorProfiler::Initialize: Single-step instrumentation is not supported in '",
                         unsupportedFramework,
-                        "' or lower. Set DD_TRACE_ALLOW_EOL_RUNTIME to override this check and force instrumentation");
+                        "'. Set ",
+                        EnvironmentVariables::ForceEolInstrumentation,
+                        " to override this check and force instrumentation");
                     info4->Release();
                     return E_FAIL;
                 }
