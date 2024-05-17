@@ -83,7 +83,11 @@ const char* getLibraryPath()
 
 int isAlpine()
 {
-    // TODO
+    if (access("/etc/alpine-release", F_OK) == 0)
+    {
+        return 1;
+    }
+
     return 0;
 }
 
