@@ -108,6 +108,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.StaticFiles", new [] { "Microsoft.AspNetCore.StaticFiles" });
             NugetPackages.Add("coverlet.core", Array.Empty<string>());
             NugetPackages.Add("Microsoft.AspNetCore.Session", new [] { "Microsoft.AspNetCore.Session" });
+            NugetPackages.Add("TestPlatformAssemblyResolver", Array.Empty<string>());
         }
 
         private IntegrationMap()
