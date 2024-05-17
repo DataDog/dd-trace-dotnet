@@ -49,6 +49,21 @@ public class CreatedumpTests : ConsoleTestHelper
         }
     }
 
+    private static (string Key, string Value) LdPreloadConfigAlt
+    {
+        get
+        {
+            var path = Path.Combine(EnvironmentHelper.GetMonitoringHomePath(), "continuousprofiler", "Datadog.Linux.ApiWrapper.x64.so");
+
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException($"LD wrapper not found at path {path}. Ensure you have built the profiler home directory using BuildProfilerHome");
+            }
+
+            return ("LD_PRELOAD", path);
+        }
+    }
+
     private static (string Key, string Value)[] CreatedumpConfig => [("COMPlus_DbgEnableMiniDump", "1"), ("COMPlus_DbgMiniDumpName", "/dev/null")];
 
     [SkippableTheory]
@@ -209,6 +224,30 @@ public class CreatedumpTests : ConsoleTestHelper
 
         exception.Should().NotBeNull().And.StartWith("exception:Type: System.BadImageFormatException\nMessage: Expected\nStack Trace:\n");
         report["siginfo"]!["signum"]!.Value<string>().Should().Be("6");
+    }
+
+    [SkippableFact]
+    public async Task WorksFromContinuousprofiler()
+    {
+        // Check that we're still able to locate dd-dotnet when LD_PRELOAD points to the continuousprofiler folder
+
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash-datadog",
+                               [LdPreloadConfigAlt, CrashReportConfig(reportFile)]);
+
+        await helper.Task;
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+
+        File.Exists(reportFile.Path).Should().BeTrue();
     }
 
     [SkippableFact]
