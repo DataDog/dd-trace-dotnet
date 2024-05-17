@@ -17,7 +17,7 @@ internal static partial class IastInstrumentedSinksExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 25;
+    public const int Length = 26;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks"/> value.
@@ -55,6 +55,7 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureAuthProtocol => "vulnerability_type:insecure_auth_protocol",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss => "vulnerability_type:xss",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.DirectoryListingLeak => "vulnerability_type:directory_listing_leak",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SessionTimeout => "vulnerability_type:session_timeout",
             _ => value.ToString(),
         };
 
@@ -93,6 +94,7 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureAuthProtocol,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.DirectoryListingLeak,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SessionTimeout,
         };
 
     /// <summary>
@@ -131,6 +133,7 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureAuthProtocol),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.DirectoryListingLeak),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SessionTimeout),
         };
 
     /// <summary>
@@ -169,5 +172,6 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:insecure_auth_protocol",
             "vulnerability_type:xss",
             "vulnerability_type:directory_listing_leak",
+            "vulnerability_type:session_timeout",
         };
 }

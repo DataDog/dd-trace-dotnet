@@ -246,6 +246,47 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         newFixture.Dispose();
         newFixture.SetOutput(null);
     }
+
+    [SkippableTheory]
+    [InlineData(31)]
+    [InlineData(120)]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestSessionTimeoutVulnerability(int timeoutMinutes)
+    {
+        SetEnvironmentVariable("IAST_TEST_SESSION_IDLE_TIMEOUT", timeoutMinutes.ToString());
+
+        var filename = "Iast.SessionIdleTimeout.AspNetCore5.IastEnabled";
+        var newFixture = new AspNetCoreTestFixture();
+        newFixture.SetOutput(Output);
+
+        var datetimeOffset = DateTimeOffset.UtcNow; // Catch vulnerability at the startup of the app
+        await TryStartApp(newFixture);
+
+        var agent = newFixture.Agent;
+        var spans = agent.WaitForSpans(1, minDateTime: datetimeOffset);
+
+        // Add a scrubber for "Session idle timeout is configured with: options.IdleTimeout, with a value of x minutes" and also for the hash value
+        (Regex RegexPattern, string Replacement) sessionIdleTimeoutRegex = (new Regex(@"Session idle timeout is configured with: options.IdleTimeout, with a value of \d+ minutes"), "Session idle timeout is configured with: options.IdleTimeout, with a value of XXX minutes");
+        (Regex RegexPattern, string Replacement) hashRegex = (new Regex(@"""hash"": -?\d+"), @"""hash"": XXX");
+
+        // Only for net5.0: path and method are different
+        (Regex RegexPattern, string Replacement) pathRegex = (new Regex(@"""path"": ""Samples.Security.AspNetCore5.Program"""), @"""path"": ""Samples.Security.AspNetCore5.Startup+<>c__DisplayClass4_0""");
+        (Regex RegexPattern, string Replacement) methodRegex = (new Regex(@"""method"": ""Main"""), @"""method"": ""<ConfigureServices>b__0""");
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        settings.AddRegexScrubber(sessionIdleTimeoutRegex);
+        settings.AddRegexScrubber(hashRegex);
+        settings.AddRegexScrubber(pathRegex);
+        settings.AddRegexScrubber(methodRegex);
+
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+
+        newFixture.Dispose();
+        newFixture.SetOutput(null);
+    }
 }
 
 public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsFullSampling

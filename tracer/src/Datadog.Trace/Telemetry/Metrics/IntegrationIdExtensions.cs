@@ -81,6 +81,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.DotnetTest => MetricTags.IntegrationName.DotnetTest,
             IntegrationId.Selenium => MetricTags.IntegrationName.Selenium,
             IntegrationId.DirectoryListingLeak => MetricTags.IntegrationName.DirectoryListingLeak,
+            IntegrationId.SessionTimeout => MetricTags.IntegrationName.SessionTimeout,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }
