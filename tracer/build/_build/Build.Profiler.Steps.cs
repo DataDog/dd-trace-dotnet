@@ -448,7 +448,6 @@ partial class Build
     Target BuildProfilerAsanTest => _ => _
         .Unlisted()
         .Description("Compile the profiler with Clang Address sanitizer")
-        .DependsOn(BuildNativeLoader)
         .DependsOn(CompileProfilerWithAsanLinux)
         .DependsOn(CompileProfilerWithAsanWindows)
         .DependsOn(PublishProfiler);
@@ -592,7 +591,6 @@ partial class Build
         .Unlisted()
         .Description("Compile the profiler with Clang Undefined-behavior sanitizer")
         .OnlyWhenStatic(() => IsLinux)
-        .DependsOn(BuildNativeLoader)
         .DependsOn(CompileProfilerWithUbsanLinux)
         .DependsOn(PublishProfiler);
 

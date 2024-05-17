@@ -356,6 +356,15 @@ stages:
         target: builder
         baseImage: $(nativeBaseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "BuildNativeLoader"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(nativeBaseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildNativeTracerHome"
         retryCountForRunCommand: 1
 
@@ -521,12 +530,21 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: debian
         command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "BuildNativeLoader"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
@@ -2519,6 +2537,15 @@ stages:
       parameters:
         build: true
         target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "BuildNativeLoader"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
         baseImage: debian
         command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -2600,6 +2627,15 @@ stages:
         baseImage: centos7
         useNativeSdkVersion: true
         command: "BuildProfilerUbsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "BuildNativeLoader"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml

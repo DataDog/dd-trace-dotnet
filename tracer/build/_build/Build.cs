@@ -163,7 +163,6 @@ partial class Build : NukeBuild
         .After(Clean, CompileManagedLoader)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(CompileNativeSrc)
-        .DependsOn(BuildNativeLoader)
         .DependsOn(PublishNativeTracer);
 
 
