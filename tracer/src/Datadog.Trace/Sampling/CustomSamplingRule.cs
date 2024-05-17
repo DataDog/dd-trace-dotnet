@@ -91,7 +91,7 @@ namespace Datadog.Trace.Sampling
                         samplingRules.Add(
                             new CustomSamplingRule(
                                 rate: r.SampleRate,
-                                provenance: r.Provenance,
+                                provenance: r.Provenance ?? SamplingRuleProvenance.Local,
                                 patternFormat: patternFormat,
                                 serviceNamePattern: r.Service,
                                 operationNamePattern: r.OperationName,
@@ -159,9 +159,8 @@ namespace Datadog.Trace.Sampling
         // ReSharper disable once ClassNeverInstantiated.Local
         private class CustomRuleConfig
         {
-            [JsonRequired]
             [JsonProperty(PropertyName = "provenance")]
-            public string Provenance { get; set; } = SamplingRuleProvenance.Local;
+            public string? Provenance { get; set; }
 
             [JsonRequired]
             [JsonProperty(PropertyName = "sample_rate")]
