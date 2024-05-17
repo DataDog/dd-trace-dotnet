@@ -236,7 +236,6 @@ namespace Datadog.Trace.Tests.Agent
             // Also, it should free the faulty buffer
             var api = new Mock<IApi>();
             var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, automaticFlush: false);
-            var mutex = new ManualResetEventSlim();
 
             api.Setup(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()))
                .Returns(() => throw new InvalidOperationException());
