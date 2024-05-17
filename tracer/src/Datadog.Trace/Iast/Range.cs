@@ -13,11 +13,14 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Range : IComparable<Range>
 {
-    public Range(int start, int length, Source? source = null)
+    private static readonly SecureMarks NotMarked = SecureMarks.None;
+
+    public Range(int start, int length, Source? source = null, SecureMarks secureMarks = SecureMarks.None)
     {
         this.Start = start;
         this.Length = length;
         this.Source = source;
+        this.SecureMarks = secureMarks;
     }
 
     public int Start { get; }
@@ -25,6 +28,8 @@ internal readonly struct Range : IComparable<Range>
     public int Length { get; }
 
     public Source? Source { get; }
+
+    public SecureMarks SecureMarks { get; }
 
     public bool IsEmpty()
     {
@@ -43,12 +48,17 @@ internal readonly struct Range : IComparable<Range>
             return this;
         }
 
-        return new Range(Start + offset, Length, Source);
+        return new Range(Start + offset, Length, Source, SecureMarks);
     }
 
     public int CompareTo([AllowNull] Range other)
     {
         return this.Start.CompareTo(other.Start);
+    }
+
+    public bool IsMarked(SecureMarks marks)
+    {
+        return (SecureMarks & marks) != NotMarked;
     }
 
     internal bool IsBefore(Range? range)
@@ -102,14 +112,14 @@ internal readonly struct Range : IComparable<Range>
             List<Range> res = new List<Range>(3);
             if (range.Start > Start)
             {
-                res.Add(new Range(Start, range.Start - Start, Source));
+                res.Add(new Range(Start, range.Start - Start, Source, SecureMarks));
             }
 
             int end = Start + Length;
             int rangeEnd = range.Start + range.Length;
             if (rangeEnd < end)
             {
-                res.Add(new Range(rangeEnd, (end - rangeEnd), Source));
+                res.Add(new Range(rangeEnd, (end - rangeEnd), Source, SecureMarks));
             }
 
             return res;
