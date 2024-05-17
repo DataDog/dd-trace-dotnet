@@ -86,7 +86,7 @@ public class JsonDocumentTests : InstrumentationTestsBase
         var value = element.GetProperty("key");
         var str = value.GetRawText();
 
-        Assert.Equal("value", str);
+        Assert.Equal("\"value\"", str);
         AssertTainted(str);
     }
 
