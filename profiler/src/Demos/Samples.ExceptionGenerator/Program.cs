@@ -19,6 +19,7 @@ namespace Samples.ExceptionGenerator
         GenericExceptions = 4,
         TimeItExceptions = 5,
         MeasureExceptions = 6,
+        Unhandled = 7
     }
 
     public class Program
@@ -89,6 +90,10 @@ namespace Samples.ExceptionGenerator
                                     new MeasureExceptionsScenario().Run();
                                     Console.WriteLine(" ########### Measuring exceptions...");
                                     break;
+
+                                case Scenario.Unhandled:
+                                    Console.WriteLine(" ########### Crashing...");
+                                    throw new InvalidOperationException("Task failed successfully.");
 
                                 default:
                                     Console.WriteLine($" ########### Unknown scenario: {scenario}.");

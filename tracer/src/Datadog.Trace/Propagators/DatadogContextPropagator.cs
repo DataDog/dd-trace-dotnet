@@ -36,10 +36,7 @@ namespace Datadog.Trace.Propagators
                 carrierSetter.Set(carrier, HttpHeaderNames.Origin, context.Origin);
             }
 
-            var samplingPriority = context.TraceContext?.SamplingPriority ??
-                                   context.SamplingPriority; // should never happen in production, but some tests rely on this
-
-            if (samplingPriority != null)
+            if (context.GetOrMakeSamplingDecision() is { } samplingPriority)
             {
                 var samplingPriorityString = SamplingPriorityValues.ToString(samplingPriority);
                 carrierSetter.Set(carrier, HttpHeaderNames.SamplingPriority, samplingPriorityString);

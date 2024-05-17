@@ -11,7 +11,6 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -285,7 +284,7 @@ namespace Datadog.Trace
         {
             if (string.IsNullOrWhiteSpace(settings.SpanSamplingRules))
             {
-                return new SpanSampler(Enumerable.Empty<ISpanSamplingRule>());
+                return new SpanSampler([]);
             }
 
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));

@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -40,9 +39,7 @@ internal abstract class LambdaCommon
         if (samplingPriority == null)
         {
             Log("samplingPriority not found");
-
-            var samplingDecision = tracer.CurrentTraceSettings.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
-            span.Context.TraceContext?.SetSamplingPriority(samplingDecision);
+            _ = span.Context.TraceContext?.GetOrMakeSamplingDecision();
         }
         else
         {

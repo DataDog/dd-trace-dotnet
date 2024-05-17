@@ -26,11 +26,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         internal const IntegrationId DotnetTestIntegrationId = Configuration.IntegrationId.DotnetTest;
 
         internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
+        private static bool? _isDataCollectorDomainCache;
 
         internal static bool DotnetTestIntegrationEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
 
+        internal static bool IsDataCollectorDomain
+        {
+            get
+            {
+                if (_isDataCollectorDomainCache is { } value)
+                {
+                    return value;
+                }
+
+                return (_isDataCollectorDomainCache = DomainMetadata.Instance.AppDomainName.ToLowerInvariant().Contains("datacollector")).Value;
+            }
+        }
+
         internal static TestSession? CreateSession()
         {
+            // We create test session if not DataCollector
+            if (IsDataCollectorDomain)
+            {
+                return null;
+            }
+
             var ciVisibilitySettings = CIVisibility.Settings;
             var agentless = ciVisibilitySettings.Agentless;
             var isEvpProxy = CIVisibility.EventPlatformProxySupport != EventPlatformProxySupport.None;
@@ -40,7 +60,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             // We create a test session if the flag is turned on (agentless or evp proxy)
             if (agentless || isEvpProxy)
             {
-                var session = TestSession.InternalGetOrCreate(Environment.CommandLine, null, null, null, true);
+                // Try to load the command line propagated from the dd-trace ci run command
+                if (EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable) is not { Length: > 0 } commandLine)
+                {
+                    commandLine = Environment.CommandLine;
+                }
+
+                // Try to load the working directory propagated from the dd-trace ci run command
+                if (EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable) is not { Length: > 0 } workingDirectory)
+                {
+                    workingDirectory = Environment.CurrentDirectory;
+                }
+
+                var session = TestSession.InternalGetOrCreate(commandLine, workingDirectory, null, null, true);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, ciVisibilitySettings.TestsSkippingEnabled == true ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, ciVisibilitySettings.CodeCoverageEnabled == true ? "true" : "false");
                 if (ciVisibilitySettings.EarlyFlakeDetectionEnabled == true)
@@ -54,6 +86,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 {
                     session.SetTag(IntelligentTestRunnerTags.TestsSkipped, "false");
                 }
+
+                // We enable the IPC server for the session
+                session.EnableIpcServer();
 
                 return session;
             }

@@ -59,8 +59,8 @@ namespace Datadog.Trace
             };
         }
 
-        internal static bool IsKeep(int? samplingPriority) => samplingPriority > 0;
+        internal static bool IsKeep(int samplingPriority) => samplingPriority > 0;
 
-        internal static bool IsDrop(int? samplingPriority) => samplingPriority <= 0;
+        internal static bool IsDrop(int samplingPriority) => samplingPriority <= 0;
     }
 }

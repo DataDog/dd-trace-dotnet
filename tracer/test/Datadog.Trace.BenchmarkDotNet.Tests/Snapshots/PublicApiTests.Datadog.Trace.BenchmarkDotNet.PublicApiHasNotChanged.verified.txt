@@ -26,4 +26,9 @@ namespace Datadog.Trace.BenchmarkDotNet
     {
         public static BenchmarkDotNet.Configs.IConfig WithDatadog(this BenchmarkDotNet.Configs.IConfig config) { }
     }
+    [System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Method | System.AttributeTargets.All)]
+    public class IgnoreProfileAttribute : System.Attribute
+    {
+        public IgnoreProfileAttribute() { }
+    }
 }

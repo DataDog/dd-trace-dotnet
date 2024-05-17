@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Version>2.52.0</Version>
@@ -56,6 +56,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Datadog.Trace\TracerConstants.cs" Link="TracerConstants.cs" />
     <Compile Include="..\Datadog.Trace\Agent\TracesTransportType.cs" Link="TracesTransportType.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\ConfigurationKeys.cs" Link="ConfigurationKeys.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\ConfigurationKeys.Exporter.cs" Link="ConfigurationKeys.Exporter.cs" />
@@ -64,6 +65,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="3.2.525301" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageReference Include="Spectre.Console" Version="0.43.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />

@@ -17,7 +17,6 @@ src/Datadog.Trace/IScopeRawAccess.cs
 src/Datadog.Trace/ISpan.cs
 src/Datadog.Trace/ISpanContext.cs
 src/Datadog.Trace/ITracer.cs
-src/Datadog.Trace/LifetimeManager.cs
 src/Datadog.Trace/Metrics.cs
 src/Datadog.Trace/NativeLoader.cs
 src/Datadog.Trace/OSPlatformName.cs

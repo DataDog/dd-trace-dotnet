@@ -7,7 +7,6 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -26,7 +25,7 @@ internal static class SecurityCoordinatorHelpers
             var transport = new SecurityCoordinator.HttpTransport(context);
             if (!transport.IsBlocked)
             {
-                var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
+                var securityCoordinator = new SecurityCoordinator(security, span, transport);
                 var result = securityCoordinator.Scan();
                 securityCoordinator.BlockAndReport(result);
             }
@@ -42,7 +41,7 @@ internal static class SecurityCoordinatorHelpers
                 var transport = new SecurityCoordinator.HttpTransport(httpContext);
                 if (!transport.IsBlocked)
                 {
-                    var securityCoordinator = new SecurityCoordinator(security, httpContext, span, transport);
+                    var securityCoordinator = new SecurityCoordinator(security, span, transport);
                     var args = new Dictionary<string, object>
                     {
                         {
@@ -74,7 +73,7 @@ internal static class SecurityCoordinatorHelpers
             var transport = new SecurityCoordinator.HttpTransport(context);
             if (!transport.IsBlocked)
             {
-                var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
+                var securityCoordinator = new SecurityCoordinator(security, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
                 var result = securityCoordinator.RunWaf(args);
                 securityCoordinator.BlockAndReport(result);
@@ -89,7 +88,7 @@ internal static class SecurityCoordinatorHelpers
             var transport = new SecurityCoordinator.HttpTransport(context);
             if (!transport.IsBlocked)
             {
-                var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
+                var securityCoordinator = new SecurityCoordinator(security, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.UserId, userId } };
                 var result = securityCoordinator.RunWaf(args);
                 securityCoordinator.BlockAndReport(result);
@@ -104,7 +103,7 @@ internal static class SecurityCoordinatorHelpers
             var transport = new SecurityCoordinator.HttpTransport(context);
             if (!transport.IsBlocked)
             {
-                var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
+                var securityCoordinator = new SecurityCoordinator(security, span, transport);
                 var pathParams = new Dictionary<string, object>(actionPathParams.Count);
                 for (var i = 0; i < actionPathParams.Count; i++)
                 {
@@ -132,7 +131,7 @@ internal static class SecurityCoordinatorHelpers
         var transport = new SecurityCoordinator.HttpTransport(context);
         if (!transport.IsBlocked)
         {
-            var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
+            var securityCoordinator = new SecurityCoordinator(security, span, transport);
             var keysAndValues = ObjectExtractor.Extract(body);
 
             if (keysAndValues is not null)

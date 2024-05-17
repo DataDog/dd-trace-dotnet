@@ -104,17 +104,16 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
-            deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, $"-{SamplingMechanism.Default.ToString()}");
+            deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(SamplingMechanism.Default));
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Should().HaveCount(customTagCount + 5);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingPriority, 1);
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
-            deserializedSpan.Metrics.Should().Contain(Metrics.SamplingAgentDecision, 1);
             deserializedSpan.Metrics.Should().Contain(Metrics.TopLevelSpan, 1);
             deserializedSpan.Metrics.Should().Contain(Metrics.ProcessId, DomainMetadata.Instance.ProcessId);
             deserializedSpan.Metrics.Should().ContainKey(Metrics.TracesKeepRate);
-            deserializedSpan.Metrics.Should().HaveCount(customTagCount + 6);
+            deserializedSpan.Metrics.Should().HaveCount(customTagCount + 5);
 
             for (int i = 0; i < customTagCount; i++)
             {

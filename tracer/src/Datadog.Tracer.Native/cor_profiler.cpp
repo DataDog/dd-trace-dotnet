@@ -71,7 +71,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     const auto process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
-    const auto process_command_line = shared::GetCurrentProcessCommandLine();
+    const auto [process_command_line , tokenized_command_line ] = GetCurrentProcessCommandLine();
     Logger::Info("Process CommandLine: ", process_command_line);
 
     // CI visibility checks
@@ -83,19 +83,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             is_ci_visibility_enabled)
         {
             const auto isDotNetProcess = process_name == WStr("dotnet") || process_name == WStr("dotnet.exe");
-            
+            const auto token_count = tokenized_command_line.size();
             if (isDotNetProcess &&
+                token_count > 1 &&
+                tokenized_command_line[1] != WStr("test") &&
+                // these are executed with exec, so we could check for that, but the
+                // below check is more conservative, so leaving at that
                 process_command_line.find(WStr("testhost")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet\" test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet' test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet.exe test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet.exe\" test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet.exe' test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet.dll test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet.dll\" test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet.dll' test")) == WSTRING::npos &&
-                process_command_line.find(WStr(" test ")) == WSTRING::npos)
+                process_command_line.find(WStr("datacollector")) == WSTRING::npos)
             {
                 Logger::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility "
                     "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost'");

@@ -17,7 +17,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 68;
+    public const int Length = 69;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -98,6 +98,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.DotnetTest => nameof(Datadog.Trace.Configuration.IntegrationId.DotnetTest),
             Datadog.Trace.Configuration.IntegrationId.Selenium => nameof(Datadog.Trace.Configuration.IntegrationId.Selenium),
             Datadog.Trace.Configuration.IntegrationId.DirectoryListingLeak => nameof(Datadog.Trace.Configuration.IntegrationId.DirectoryListingLeak),
+            Datadog.Trace.Configuration.IntegrationId.SessionTimeout => nameof(Datadog.Trace.Configuration.IntegrationId.SessionTimeout),
             _ => value.ToString(),
         };
 
@@ -179,6 +180,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.DotnetTest,
             Datadog.Trace.Configuration.IntegrationId.Selenium,
             Datadog.Trace.Configuration.IntegrationId.DirectoryListingLeak,
+            Datadog.Trace.Configuration.IntegrationId.SessionTimeout,
         };
 
     /// <summary>
@@ -260,5 +262,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.DotnetTest),
             nameof(Datadog.Trace.Configuration.IntegrationId.Selenium),
             nameof(Datadog.Trace.Configuration.IntegrationId.DirectoryListingLeak),
+            nameof(Datadog.Trace.Configuration.IntegrationId.SessionTimeout),
         };
 }

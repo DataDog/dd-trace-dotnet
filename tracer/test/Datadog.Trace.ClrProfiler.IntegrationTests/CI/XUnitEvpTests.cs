@@ -7,9 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Ci.Ipc;
+using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -97,6 +100,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
             SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
 
+            var codeCoverageReceived = new StrongBox<bool>(false);
+            var name = $"session_{sessionId}";
+            using var ipcServer = new IpcServer(name);
+            ipcServer.SetMessageReceivedCallback(o =>
+            {
+                codeCoverageReceived.Value = codeCoverageReceived.Value || o is SessionCodeCoverageMessage;
+            });
+
             string[] messages = null;
             try
             {
@@ -154,204 +165,209 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                     };
 
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
+                    using var processResult = await RunDotnetTestSampleAndWaitForExit(
+                                                  agent,
+                                                  arguments: "--collect:\"XPlat Code Coverage\"",
+                                                  packageVersion: packageVersion);
+
+                    var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
+                    settings.UseTextForParameters("packageVersion=all");
+                    settings.DisableRequireUniquePrefix();
+                    await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
+
+                    // Check the tests, suites and modules count
+                    Assert.Equal(ExpectedTestCount, tests.Count);
+                    Assert.Equal(2, testSuites.Count);
+                    Assert.Single(testModules);
+
+                    var testSuite = testSuites.First(suite => suite.Resource == TestSuiteName);
+                    var unskippableTestSuite = testSuites.First(suite => suite.Resource == UnSkippableSuiteName);
+                    var testModule = testModules[0];
+
+                    // Check Suite
+                    Assert.True(tests.All(t => t.TestSuiteId == testSuite.TestSuiteId || t.TestSuiteId == unskippableTestSuite.TestSuiteId));
+                    testSuite.TestModuleId.Should().Be(testModule.TestModuleId);
+                    unskippableTestSuite.TestModuleId.Should().Be(testModule.TestModuleId);
+
+                    // ITR tags inside the test suite
+                    testSuite.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
+
+                    // Check Module
+                    Assert.True(tests.All(t => t.TestModuleId == testSuite.TestModuleId));
+
+                    // ITR tags inside the test module
+                    testModule.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
+                    testModule.Meta.Should().Contain(IntelligentTestRunnerTags.SkippingType, IntelligentTestRunnerTags.SkippingTypeTest);
+                    testModule.Meta.Should().Contain(IntelligentTestRunnerTags.TestsSkipped, "true");
+
+                    // Check Session
+                    tests.Should().OnlyContain(t => t.TestSessionId == testSuite.TestSessionId);
+                    testSuite.TestSessionId.Should().Be(testModule.TestSessionId);
+                    unskippableTestSuite.TestSessionId.Should().Be(testModule.TestSessionId);
+                    testModule.TestSessionId.Should().Be(sessionId);
+
+                    // ***************************************************************************
+
+                    foreach (var targetTest in tests)
                     {
-                        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
-                        settings.UseTextForParameters("packageVersion=all");
-                        settings.DisableRequireUniquePrefix();
-                        await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
+                        // Remove decision maker tag (not used by the backend for civisibility)
+                        targetTest.Meta.Remove(Tags.Propagated.DecisionMaker);
 
-                        // Check the tests, suites and modules count
-                        Assert.Equal(ExpectedTestCount, tests.Count);
-                        Assert.Equal(2, testSuites.Count);
-                        Assert.Single(testModules);
+                        // Remove EFD tags
+                        targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
+                        targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
 
-                        var testSuite = testSuites.First(suite => suite.Resource == TestSuiteName);
-                        var unskippableTestSuite = testSuites.First(suite => suite.Resource == UnSkippableSuiteName);
-                        var testModule = testModules[0];
+                        // check the name
+                        Assert.Equal("xunit.test", targetTest.Name);
 
-                        // Check Suite
-                        Assert.True(tests.All(t => t.TestSuiteId == testSuite.TestSuiteId || t.TestSuiteId == unskippableTestSuite.TestSuiteId));
-                        testSuite.TestModuleId.Should().Be(testModule.TestModuleId);
-                        unskippableTestSuite.TestModuleId.Should().Be(testModule.TestModuleId);
+                        // check correlationId
+                        Assert.Equal(correlationId, targetTest.CorrelationId);
 
-                        // ITR tags inside the test suite
-                        testSuite.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
+                        // check the CIEnvironmentValues decoration.
+                        CheckCIEnvironmentValuesDecoration(targetTest, gitRepositoryUrl, gitBranch, gitCommitSha);
 
-                        // Check Module
-                        Assert.True(tests.All(t => t.TestModuleId == testSuite.TestModuleId));
+                        // check the runtime values
+                        CheckRuntimeValues(targetTest);
 
-                        // ITR tags inside the test module
-                        testModule.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
-                        testModule.Meta.Should().Contain(IntelligentTestRunnerTags.SkippingType, IntelligentTestRunnerTags.SkippingTypeTest);
-                        testModule.Meta.Should().Contain(IntelligentTestRunnerTags.TestsSkipped, "true");
+                        // check the bundle name
+                        AssertTargetSpanEqual(targetTest, TestTags.Bundle, TestBundleName);
+                        AssertTargetSpanEqual(targetTest, TestTags.Module, TestBundleName);
 
-                        // Check Session
-                        tests.Should().OnlyContain(t => t.TestSessionId == testSuite.TestSessionId);
-                        testSuite.TestSessionId.Should().Be(testModule.TestSessionId);
-                        unskippableTestSuite.TestSessionId.Should().Be(testModule.TestSessionId);
-                        testModule.TestSessionId.Should().Be(sessionId);
+                        // check the suite name
+                        AssertTargetSpanAnyOf(targetTest, TestTags.Suite, TestSuiteName, UnSkippableSuiteName);
 
-                        // ***************************************************************************
+                        // check the test type
+                        AssertTargetSpanEqual(targetTest, TestTags.Type, TestTags.TypeTest);
 
-                        foreach (var targetTest in tests)
+                        // check the test framework
+                        AssertTargetSpanContains(targetTest, TestTags.Framework, "xUnit");
+                        Assert.True(targetTest.Meta.Remove(TestTags.FrameworkVersion));
+
+                        // check the version
+                        AssertTargetSpanEqual(targetTest, "version", "1.0.0");
+
+                        // checks the origin tag
+                        CheckOriginTag(targetTest);
+
+                        // checks the source tags
+                        AssertTargetSpanExists(targetTest, TestTags.SourceFile);
+
+                        // checks code owners
+                        AssertTargetSpanExists(targetTest, TestTags.CodeOwners);
+
+                        // Check the Environment
+                        AssertTargetSpanEqual(targetTest, Tags.Env, "integration_tests");
+
+                        // Language
+                        AssertTargetSpanEqual(targetTest, Tags.Language, TracerConstants.Language);
+
+                        // CI Library Language
+                        AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+
+                        // Check Session data
+                        AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);
+                        AssertTargetSpanEqual(targetTest, TestTags.CommandWorkingDirectory, sessionWorkingDirectory);
+
+                        // Unskippable data
+                        if (targetTest.Meta[TestTags.Name] != "UnskippableTest")
                         {
-                            // Remove decision maker tag (not used by the backend for civisibility)
-                            targetTest.Meta.Remove(Tags.Propagated.DecisionMaker);
-
-                            // Remove EFD tags
-                            targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
-                            targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
-
-                            // check the name
-                            Assert.Equal("xunit.test", targetTest.Name);
-
-                            // check correlationId
-                            Assert.Equal(correlationId, targetTest.CorrelationId);
-
-                            // check the CIEnvironmentValues decoration.
-                            CheckCIEnvironmentValuesDecoration(targetTest, gitRepositoryUrl, gitBranch, gitCommitSha);
-
-                            // check the runtime values
-                            CheckRuntimeValues(targetTest);
-
-                            // check the bundle name
-                            AssertTargetSpanEqual(targetTest, TestTags.Bundle, TestBundleName);
-                            AssertTargetSpanEqual(targetTest, TestTags.Module, TestBundleName);
-
-                            // check the suite name
-                            AssertTargetSpanAnyOf(targetTest, TestTags.Suite, TestSuiteName, UnSkippableSuiteName);
-
-                            // check the test type
-                            AssertTargetSpanEqual(targetTest, TestTags.Type, TestTags.TypeTest);
-
-                            // check the test framework
-                            AssertTargetSpanContains(targetTest, TestTags.Framework, "xUnit");
-                            Assert.True(targetTest.Meta.Remove(TestTags.FrameworkVersion));
-
-                            // check the version
-                            AssertTargetSpanEqual(targetTest, "version", "1.0.0");
-
-                            // checks the origin tag
-                            CheckOriginTag(targetTest);
-
-                            // checks the source tags
-                            AssertTargetSpanExists(targetTest, TestTags.SourceFile);
-
-                            // checks code owners
-                            AssertTargetSpanExists(targetTest, TestTags.CodeOwners);
-
-                            // Check the Environment
-                            AssertTargetSpanEqual(targetTest, Tags.Env, "integration_tests");
-
-                            // Language
-                            AssertTargetSpanEqual(targetTest, Tags.Language, TracerConstants.Language);
-
-                            // CI Library Language
-                            AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
-
-                            // Check Session data
-                            AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);
-                            AssertTargetSpanEqual(targetTest, TestTags.CommandWorkingDirectory, sessionWorkingDirectory);
-
-                            // Unskippable data
-                            if (targetTest.Meta[TestTags.Name] != "UnskippableTest")
-                            {
-                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "false");
-                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
-                            }
-
-                            // check specific test span
-                            switch (targetTest.Meta[TestTags.Name])
-                            {
-                                case "SimplePassTest":
-                                    CheckSimpleTestSpan(targetTest);
-                                    break;
-
-                                case "SimpleSkipFromAttributeTest":
-                                    CheckSimpleSkipFromAttributeTest(targetTest);
-                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.SkippedBy, "false");
-                                    break;
-
-                                case "SkipByITRSimulation":
-                                    AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusSkip);
-                                    AssertTargetSpanEqual(targetTest, TestTags.SkipReason, IntelligentTestRunnerTags.SkippedByReason);
-                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.SkippedBy, "true");
-                                    break;
-
-                                case "SimpleErrorTest":
-                                    CheckSimpleErrorTest(targetTest);
-                                    break;
-
-                                case "TraitPassTest":
-                                    CheckSimpleTestSpan(targetTest);
-                                    CheckTraitsValues(targetTest);
-                                    break;
-
-                                case "TraitSkipFromAttributeTest":
-                                    CheckSimpleSkipFromAttributeTest(targetTest);
-                                    CheckTraitsValues(targetTest);
-                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.SkippedBy, "false");
-                                    break;
-
-                                case "TraitErrorTest":
-                                    CheckSimpleErrorTest(targetTest);
-                                    CheckTraitsValues(targetTest);
-                                    break;
-
-                                case "SimpleParameterizedTest":
-                                    CheckSimpleTestSpan(targetTest);
-                                    AssertTargetSpanAnyOf(
-                                        targetTest,
-                                        TestTags.Parameters,
-                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
-                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
-                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}",
-                                        "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
-                                        "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
-                                        "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}");
-                                    break;
-
-                                case "SimpleSkipParameterizedTest":
-                                    CheckSimpleSkipFromAttributeTest(targetTest);
-                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.SkippedBy, "false");
-                                    break;
-
-                                case "SimpleErrorParameterizedTest":
-                                    CheckSimpleErrorTest(targetTest);
-                                    AssertTargetSpanAnyOf(
-                                        targetTest,
-                                        TestTags.Parameters,
-                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
-                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
-                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}",
-                                        "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
-                                        "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
-                                        "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}");
-                                    break;
-
-                                case "UnskippableTest":
-                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "true");
-                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
-                                    CheckSimpleTestSpan(targetTest);
-                                    break;
-                            }
-
-                            // check remaining tag (only the name)
-                            Assert.Single(targetTest.Meta);
+                            AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "false");
+                            AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
                         }
 
-                        // ***************************************************************************
-                        // Check logs
-                        messages = logsIntake.Logs.Select(i => i.Message).Where(m => m.StartsWith("Test:")).ToArray();
+                        // check specific test span
+                        switch (targetTest.Meta[TestTags.Name])
+                        {
+                            case "SimplePassTest":
+                                CheckSimpleTestSpan(targetTest);
+                                break;
 
-                        Assert.Contains(messages, m => m.StartsWith("Test:SimplePassTest"));
-                        Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorTest"));
-                        Assert.Contains(messages, m => m.StartsWith("Test:TraitPassTest"));
-                        Assert.Contains(messages, m => m.StartsWith("Test:TraitErrorTest"));
-                        Assert.Contains(messages, m => m.StartsWith("Test:SimpleParameterizedTest"));
-                        Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorParameterizedTest"));
+                            case "SimpleSkipFromAttributeTest":
+                                CheckSimpleSkipFromAttributeTest(targetTest);
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.SkippedBy, "false");
+                                break;
+
+                            case "SkipByITRSimulation":
+                                AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusSkip);
+                                AssertTargetSpanEqual(targetTest, TestTags.SkipReason, IntelligentTestRunnerTags.SkippedByReason);
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.SkippedBy, "true");
+                                break;
+
+                            case "SimpleErrorTest":
+                                CheckSimpleErrorTest(targetTest);
+                                break;
+
+                            case "TraitPassTest":
+                                CheckSimpleTestSpan(targetTest);
+                                CheckTraitsValues(targetTest);
+                                break;
+
+                            case "TraitSkipFromAttributeTest":
+                                CheckSimpleSkipFromAttributeTest(targetTest);
+                                CheckTraitsValues(targetTest);
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.SkippedBy, "false");
+                                break;
+
+                            case "TraitErrorTest":
+                                CheckSimpleErrorTest(targetTest);
+                                CheckTraitsValues(targetTest);
+                                break;
+
+                            case "SimpleParameterizedTest":
+                                CheckSimpleTestSpan(targetTest);
+                                AssertTargetSpanAnyOf(
+                                    targetTest,
+                                    TestTags.Parameters,
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}",
+                                    "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
+                                    "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
+                                    "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}");
+                                break;
+
+                            case "SimpleSkipParameterizedTest":
+                                CheckSimpleSkipFromAttributeTest(targetTest);
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.SkippedBy, "false");
+                                break;
+
+                            case "SimpleErrorParameterizedTest":
+                                CheckSimpleErrorTest(targetTest);
+                                AssertTargetSpanAnyOf(
+                                    targetTest,
+                                    TestTags.Parameters,
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
+                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}",
+                                    "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
+                                    "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
+                                    "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}");
+                                break;
+
+                            case "UnskippableTest":
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "true");
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                                CheckSimpleTestSpan(targetTest);
+                                break;
+                        }
+
+                        // check remaining tag (only the name)
+                        Assert.Single(targetTest.Meta);
+
+                        // check if we received code coverage information at session level
+                        codeCoverageReceived.Value.Should().BeTrue();
                     }
+
+                    // ***************************************************************************
+                    // Check logs
+                    messages = logsIntake.Logs.Select(i => i.Message).Where(m => m.StartsWith("Test:")).ToArray();
+
+                    Assert.Contains(messages, m => m.StartsWith("Test:SimplePassTest"));
+                    Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorTest"));
+                    Assert.Contains(messages, m => m.StartsWith("Test:TraitPassTest"));
+                    Assert.Contains(messages, m => m.StartsWith("Test:TraitErrorTest"));
+                    Assert.Contains(messages, m => m.StartsWith("Test:SimpleParameterizedTest"));
+                    Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorParameterizedTest"));
                 }
             }
             catch

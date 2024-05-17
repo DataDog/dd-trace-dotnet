@@ -1,0 +1,44 @@
+parameters:
+  - name: url
+    type: string
+
+  - name: filename
+    type: string
+
+  - name: msiParams
+    type: string
+    default: ''
+
+  - name: addToPath
+    type: string
+    default: ''
+    
+  - name: retries
+    type: number
+    default: 3
+
+steps:
+  - powershell: |
+      $ErrorActionPreference = 'Stop'
+
+      $url = "${{ parameters.url }}";
+      $file = "$(Agent.TempDirectory)\${{ parameters.filename }}"
+      Write-Host "Downloading from $url to $file";
+      Invoke-WebRequest -Uri $url -OutFile $file
+      
+      $installArgs = "/i $file ${{ parameters.msiParams }} /norestart"
+      Write-Host "Installing using msiexec $installArgs";
+      Start-Process msiexec $installArgs -Wait
+      Write-Host "Installed";
+
+      if("${{ parameters.addToPath }}") {
+        Write-Host "Adding to PATH";
+        Write-Host "##vso[task.setvariable variable=PATH;]${env:PATH};${{ parameters.addToPath }}";
+      }
+      
+      Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
+      refreshenv
+    displayName: Installing ${{ parameters.filename }}
+    condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT')) # TODO: error on non-windows? 
+    retryCountOnTaskFailure: ${{ parameters.retries }}
+    timeoutInMinutes: 10

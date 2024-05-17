@@ -165,18 +165,11 @@ partial class Build : NukeBuild
             }
             void GenerateIntegrationTestsWindowsAzureFunctionsMatrix()
             {
-                // TODO: test on both x86 and x64?
-                // .NET Core 3.1 tests are disabled in CI because they currently fail for unknown reasons
-                // const string v3Install = @"choco install azure-functions-core-tools-3 --params ""'/x64'""";
-                // const string v3Uninstall = @"choco uninstall azure-functions-core-tools-3";
-                const string v4Install = @"choco install azure-functions-core-tools --params ""'/x64'""";
-                const string v4Uninstall = @"choco uninstall azure-functions-core-tools";
-
                 var combos = new []
                 {
                     // new {framework = TargetFramework.NETCOREAPP3_1, runtimeInstall = v3Install, runtimeUninstall = v3Uninstall },
-                    new {framework = TargetFramework.NET6_0, runtimeInstall = v4Install, runtimeUninstall = v4Uninstall },
-                    new {framework = TargetFramework.NET7_0, runtimeInstall = v4Install, runtimeUninstall = v4Uninstall },
+                    new {framework = TargetFramework.NET6_0 },
+                    new {framework = TargetFramework.NET7_0 },
                 };
 
                 var matrix = new Dictionary<string, object>();

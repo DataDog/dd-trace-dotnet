@@ -2,11 +2,12 @@
   "profiles": {
     "Datadog.Trace.Tools.Runner": {
       "commandName": "Project",
-      "commandLineArgs": "ci run --tracer-home /Users/tony.redondo/repos/github/Datadog/dd-trace-dotnet/shared/bin/monitoring-home -- dotnet test -f net7.0 test/Npgsql.Tests",
-      "workingDirectory": "/tmp/github/npgsql",
+      "commandLineArgs": "ci run --tracer-home /Users/tony.redondo/repos/github/Datadog/dd-trace-dotnet/shared/bin/monitoring-home -- dotnet test --collect:\"XPlat Code Coverage\"",
+      "workingDirectory": "/Users/tony.redondo/RiderProjects/TestProject3",
       "nativeDebugging": true,
       "environmentVariables": {
-        "DD_ENV" : "ci"
+        "DD_ENV" : "ci",
+        "DD_TRACE_DEBUG" : "1"
       }
     }
   }

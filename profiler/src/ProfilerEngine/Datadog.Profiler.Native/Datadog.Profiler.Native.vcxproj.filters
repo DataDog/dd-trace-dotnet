@@ -440,6 +440,9 @@
     <ClInclude Include="CallstackPool.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
+    <ClInclude Include="CrashReporting.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -660,6 +663,9 @@
     </ClCompile>
     <ClCompile Include="CallstackPool.cpp">
       <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="CrashReporting.cpp">
+      <Filter>libdatadog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

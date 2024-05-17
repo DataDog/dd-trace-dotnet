@@ -10,6 +10,7 @@
    <assembly fullname="Azure.Messaging.ServiceBus" />
    <assembly fullname="Confluent.Kafka" />
    <assembly fullname="Couchbase.NetClient" />
+   <assembly fullname="coverlet.core" />
    <assembly fullname="Datadog.Trace" />
    <assembly fullname="dotnet" />
    <assembly fullname="Elasticsearch.Net" />
@@ -76,6 +77,7 @@
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Server.IIS" />
    <assembly fullname="Microsoft.AspNetCore.Server.Kestrel.Core" />
+   <assembly fullname="Microsoft.AspNetCore.Session" />
    <assembly fullname="Microsoft.AspNetCore.StaticFiles" />
    <assembly fullname="Microsoft.Azure.Cosmos.Client" />
    <assembly fullname="Microsoft.Azure.Functions.Worker.Core" />
@@ -1014,6 +1016,7 @@
       <type fullname="System.Threading.Tasks.TaskExtensions" />
    </assembly>
    <assembly fullname="System.Threading.Thread">
+      <type fullname="System.Threading.ParameterizedThreadStart" />
       <type fullname="System.Threading.Thread" />
       <type fullname="System.Threading.ThreadAbortException" />
    </assembly>

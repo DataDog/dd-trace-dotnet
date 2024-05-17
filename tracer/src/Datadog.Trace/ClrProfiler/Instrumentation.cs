@@ -234,7 +234,7 @@ namespace Datadog.Trace.ClrProfiler
             Log.Debug("Legacy Initialization finished.");
         }
 
-        private static void RunShutdown()
+        private static void RunShutdown(Exception ex)
         {
             InstrumentationDefinitions.Dispose();
             NativeCallTargetUnmanagedMemoryHelper.Free();
@@ -533,7 +533,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             // Stop waiting if we're shutting down
-            LifetimeManager.Instance.AddShutdownTask(() => tc.TrySetResult(false));
+            LifetimeManager.Instance.AddShutdownTask(_ => tc.TrySetResult(false));
 
             discoveryService.SubscribeToChanges(Callback);
             return await tc.Task.ConfigureAwait(false);
