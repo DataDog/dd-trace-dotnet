@@ -201,6 +201,8 @@ public class CreatedumpTests : ConsoleTestHelper
 
         var report = JObject.Parse(reportFile.GetContent());
 
+        report["tags"]["is_crash"].Value<string>().Should().Be("true");
+
         var metadataTags = (JArray)report["metadata"]!["tags"];
 
         var exception = metadataTags
