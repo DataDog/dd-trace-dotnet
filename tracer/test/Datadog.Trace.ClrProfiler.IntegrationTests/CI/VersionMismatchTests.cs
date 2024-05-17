@@ -25,6 +25,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+#if NET6_0_OR_GREATER
 public class VersionMismatchTests : TestingFrameworkEvpTest
 {
     public VersionMismatchTests(ITestOutputHelper output)
@@ -145,3 +146,4 @@ public class VersionMismatchTests : TestingFrameworkEvpTest
         }
     }
 }
+#endif
