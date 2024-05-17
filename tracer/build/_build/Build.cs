@@ -190,6 +190,12 @@ partial class Build : NukeBuild
         .DependsOn(CompileProfilerNativeSrc)
         .DependsOn(PublishProfiler);
 
+    Target BuildWrapperLibrary => _ => _
+        .Description("Buids the LD_PRELOAD'd library")
+        .After(Clean)
+        .DependsOn(CompileWrapperLibrary)
+        .DependsOn(PublishWrapperLibrary);
+
     Target BuildNativeLoader => _ => _
         .Description("Builds the Native Loader, and publishes to the monitoring home directory")
         .After(Clean)
@@ -214,7 +220,7 @@ partial class Build : NukeBuild
 
     Target BuildAndRunNativeUnitTests => _ => _
         .Description("Builds the native unit tests and runs them")
-        .After(Clean, BuildTracerHome, BuildProfilerHome)
+        .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader, BuildWrapperLibrary)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(CompileNativeTests)
         .DependsOn(RunNativeTests);

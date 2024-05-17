@@ -425,7 +425,25 @@ stages:
         target: builder
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
+        command: "Clean BuildProfilerHome"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "BuildWrapperLibrary"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
@@ -581,12 +599,29 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
+        command: "Clean BuildProfilerHome"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "BuildWrapperLibrary"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
@@ -2539,6 +2574,15 @@ stages:
         target: builder
         baseImage: centos7
         useNativeSdkVersion: true
+        command: "BuildWrapperLibrary"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
         command: "BuildNativeLoader"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -2628,6 +2672,15 @@ stages:
         useNativeSdkVersion: true
         command: "BuildProfilerUbsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "BuildWrapperLibrary"
+        retryCountForRunCommand: 1
 
     - template: steps/run-in-docker.yml
       parameters:

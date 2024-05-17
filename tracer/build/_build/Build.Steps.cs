@@ -1095,7 +1095,8 @@ partial class Build
         .DependsOn(RunNativeLoaderTestsWindows)
         .DependsOn(RunNativeLoaderTestsLinux)
         .DependsOn(RunProfilerNativeUnitTestsWindows)
-        .DependsOn(RunProfilerNativeUnitTestsLinux);
+        .DependsOn(RunProfilerNativeUnitTestsLinux)
+        .DependsOn(RunWrapperLibraryUnitTestsLinux);
 
     Target CompileDependencyLibs => _ => _
         .Unlisted()

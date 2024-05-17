@@ -95,7 +95,15 @@ partial class Build
         .Executes(() =>
         {
             RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None);
+        });
 
+    Target RunWrapperLibraryUnitTestsLinux => _ => _
+        .Unlisted()
+        .Description("Run profiler native unit tests")
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileWrapperLibrary)
+        .Executes(() =>
+        {
             // LD_PRELOAD must be set for this test library to validate that it works correctly.
             var (arch, _) = GetUnixArchitectureAndExtension();
             var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / LinuxApiWrapperLibrary}" };
@@ -154,18 +162,7 @@ partial class Build
         .After(CompileProfilerNativeSrc)
         .Executes(() =>
         {
-            var (arch, ext) = GetUnixArchitectureAndExtension();
-            var sourceDir = ProfilerDeployDirectory / arch;
-            EnsureExistingDirectory(MonitoringHomeDirectory / arch);
-            EnsureExistingDirectory(SymbolsDirectory / arch);
-
-            var files = new[] { "Datadog.Profiler.Native.so", LinuxApiWrapperLibrary };
-            foreach (var file in files)
-            {
-                var source = sourceDir / file;
-                var dest = MonitoringHomeDirectory / arch / file;
-                CopyFile(source, dest, FileExistsPolicy.Overwrite);
-            }
+            PublishNativeLibrary("Datadog.Profiler.Native.so");
         });
 
     Target PublishProfilerWindows => _ => _
@@ -784,5 +781,48 @@ partial class Build
         var testsResultFile = ProfilerBuildDataDirectory / $"{testLibrary}.Results.{Platform}.{configuration}.{platform}.xml";
         var testExe = ToolResolver.GetLocalTool(exePath);
         testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory, environmentVariables: envVars);
+    }
+
+    Target CompileWrapperLibrary => _ => _
+        .Unlisted()
+        .Description("Compile the native wrapper library")
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(NativeBuildDirectory);
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-wrapper");
+
+            if (IsAlpine)
+            {
+                // On Alpine, we do not have permission to access the file libunwind-prefix/src/libunwind/config/config.guess
+                // Make the whole folder and its content accessible by everyone to make sure the upload process does not fail
+                Chmod.Value.Invoke(" -R 777 " + NativeBuildDirectory);
+            }
+        });
+
+    Target PublishWrapperLibrary => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileWrapperLibrary)
+        .Executes(() =>
+        {
+            PublishNativeLibrary(LinuxApiWrapperLibrary);
+        });
+
+    void PublishNativeLibrary(string library)
+    {
+        var (arch, _) = GetUnixArchitectureAndExtension();
+        var sourceDir = ProfilerDeployDirectory / arch;
+        EnsureExistingDirectory(MonitoringHomeDirectory / arch);
+        EnsureExistingDirectory(SymbolsDirectory / arch);
+
+        var source = sourceDir / library;
+        var dest = MonitoringHomeDirectory / arch / library;
+        CopyFile(source, dest, FileExistsPolicy.Overwrite);
     }
 }
