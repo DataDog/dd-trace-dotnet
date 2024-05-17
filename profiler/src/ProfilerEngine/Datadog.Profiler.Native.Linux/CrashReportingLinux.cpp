@@ -243,7 +243,9 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
         {
             const auto moduleFilename = modulePath.filename().string();
 
-            if (moduleFilename.length() >= 7 && moduleFilename.substr(0, 7) == "Datadog")
+            if ((moduleFilename.length() >= 7 && moduleFilename.substr(0, 7) == "Datadog")
+                || (moduleFileName == "libdatadog.so" || moduleFileName == "datadog.dll")
+                || (moduleFileName == "libddwaf.so" || moduleFileName = "ddwaf.dll"))
             {
                 stackFrame.isSuspicious = true;
             }
