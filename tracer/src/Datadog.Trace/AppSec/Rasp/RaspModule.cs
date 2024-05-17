@@ -82,7 +82,7 @@ internal static class RaspModule
     private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, rootSpan);
-        var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
+        var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
 
         if (result is not null)
         {

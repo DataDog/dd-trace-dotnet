@@ -33,6 +33,12 @@ namespace Datadog.Trace.AppSec.Waf
 
         ulong AggregatedTotalRuntimeWithBindings { get; }
 
+        ulong AggregatedTotalRuntimeRasp { get; }
+
+        ulong AggregatedTotalRuntimeWithBindingsRasp { get; }
+
+        uint RaspRuleEvaluations { get; }
+
         bool Timeout { get; }
 
         Dictionary<string, object?> Derivatives { get; }

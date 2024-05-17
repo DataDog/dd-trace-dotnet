@@ -67,7 +67,7 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args, lastTime);
     }
 
-    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false)
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
     {
         LogAddressIfDebugEnabled(args);
         IResult? result = null;
@@ -92,7 +92,7 @@ internal readonly partial struct SecurityCoordinator
                 // run the WAF and execute the results
                 if (runWithEphemeral)
                 {
-                    result = additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds);
+                    result = additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp);
                 }
                 else
                 {

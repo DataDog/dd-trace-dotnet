@@ -155,6 +155,8 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
+        AddRaspSpanMetrics(result, _localRootSpan);
+
         if (result.ShouldReportSchema)
         {
             foreach (var derivative in result.Derivatives)
@@ -180,6 +182,16 @@ internal readonly partial struct SecurityCoordinator
                     }
                 }
             }
+        }
+    }
+
+    private void AddRaspSpanMetrics(IResult result, Span localRootSpan)
+    {
+        // We don't want to fill the spans with not useful data, so we only send it when RASP has been used
+        // We report always, even if there is no match
+        if (result.AggregatedTotalRuntimeRasp > 0)
+        {
+            localRootSpan.Context.TraceContext.AddRaspSpanMetrics(result.AggregatedTotalRuntimeRasp, result.AggregatedTotalRuntimeWithBindingsRasp);
         }
     }
 

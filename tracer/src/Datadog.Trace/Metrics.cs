@@ -83,6 +83,21 @@ namespace Datadog.Trace
         public const string AppSecWafAndBindingsDuration = "_dd.appsec.waf.duration_ext";
 
         /// <summary>
+        /// Total cumulative waf duration for RASP calls across spans for one request
+        /// </summary>
+        public const string RaspWafDuration = "_dd.appsec.rasp.duration";
+
+        /// <summary>
+        /// Total cumulative waf duration for RASP calls across spans for one request, including parameters encoding, bindings, for non managed waf
+        /// </summary>
+        public const string RaspWafAndBindingsDuration = "_dd.appsec.rasp.duration_ext";
+
+        /// <summary>
+        /// Counts the number of times a rule type is evaluated.
+        /// </summary>
+        public const string RaspRuleEval = "_dd.appsec.rasp.rule.eval";
+
+        /// <summary>
         /// Float representing the number of rules loaded successfully
         /// </summary>
         public const string AppSecWafInitRulesLoaded = "_dd.appsec.event_rules.loaded";
