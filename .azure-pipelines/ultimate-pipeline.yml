@@ -4793,11 +4793,6 @@ stages:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
-        - script: |
-            mkdir -p tracer/build_data/snapshots
-            mkdir -p tracer/build_data/logs
-          displayName: create test data directories
-        
         # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
@@ -5255,11 +5250,6 @@ stages:
           inputs:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
-
-        - script: |
-            mkdir -p tracer/build_data/snapshots
-            mkdir -p tracer/build_data/logs
-          displayName: create test data directories
 
         # Run the "normal" installer smoke tests 
         - script: |

@@ -863,6 +863,7 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -884,6 +885,7 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -905,6 +907,7 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -924,6 +927,7 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -944,6 +948,7 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -963,6 +968,7 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -983,6 +989,7 @@ services:
     volumes:
       - ./:/project
       - ./tracer/build_data/logs:/var/log/datadog/dotnet
+      - ./tracer/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1003,6 +1010,7 @@ services:
     volumes:
       - ./:/project
       - ./tracer/build_data/logs:/var/log/datadog/dotnet
+      - ./tracer/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1024,6 +1032,7 @@ services:
     volumes:
       - ./:/project
       - ./tracer/build_data/logs:/var/log/datadog/dotnet
+      - ./tracer/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1045,6 +1054,7 @@ services:
     volumes:
       - ./:/project
       - ./tracer/build_data/logs:/var/log/datadog/dotnet
+      - ./tracer/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
