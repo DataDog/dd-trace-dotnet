@@ -116,13 +116,11 @@ namespace Samples.Console_
 
             // Get the QueryInterface method
             var vtable = *(IntPtr**)iunknown;
-            var queryInterfacePtr = *vtable;
-            var queryInterface = (delegate* unmanaged[Stdcall]<IntPtr, Guid*, IntPtr*, int>)queryInterfacePtr;
+            var queryInterface = (delegate* unmanaged[Stdcall]<IntPtr, in Guid, out IntPtr, int>)*vtable;
 
             // Fetch the ICrashReport interface
             var guid = new Guid("3B3BA8A9-F807-43BF-A3A9-55E369C0C532");
-            var crashReport = IntPtr.Zero;
-            var result = queryInterface(iunknown, &guid, &crashReport);
+            var result = queryInterface(iunknown, guid, out var crashReport);
 
             if (result != 0)
             {
@@ -131,8 +129,7 @@ namespace Samples.Console_
 
             // Get the CrashProcess method
             var crashReportVtable = *(IntPtr**)crashReport;
-            var crashProcessPtr = *(crashReportVtable + 11);
-            var crashProcess = (delegate* unmanaged[Stdcall]<IntPtr, int>)crashProcessPtr;
+            var crashProcess = (delegate* unmanaged[Stdcall]<IntPtr, int>)*(crashReportVtable + 11);
 
             Console.WriteLine("Crashing... (native)");
 
