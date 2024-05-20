@@ -747,7 +747,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                 var snapshot = GetSnapshotJson();
                 WriteSnapshotJsonToDisk(probeId, snapshot);
-                TimeTravelStateManager.EndMethod();
+                //TimeTravelStateManager.EndMethod();
                 return snapshot;
                 
             }

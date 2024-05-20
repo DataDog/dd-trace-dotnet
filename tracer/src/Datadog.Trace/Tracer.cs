@@ -610,6 +610,22 @@ namespace Datadog.Trace
 
 
             Instruction matchingCall = callsToInstrument.FirstOrDefault(); // this doesn't work in all cases, doesn't work for async methods with weird compiler generated names, doesn't take into account virtual methods, etc.
+
+            if (matchingCall == null && nonUserMethodFullName == "SendAsync")
+            {
+                // GetAsync gets substitutes with StartAsync. Warrant further investigation.
+                nonUserMethodFullName = "GetAsync";
+            }
+
+            callsToInstrument = userMdMethod.Body.Instructions.Where(
+                instruction => instruction.OpCode.FlowControl == FlowControl.Call &&
+                               (instruction.Operand as IMethod != null &&
+                                (instruction.Operand as IMethod)!.Name == nonUserMethodFullName));
+
+
+            matchingCall = callsToInstrument.FirstOrDefault(); // this doesn't work in all cases, doesn't work for async methods with weird compiler generated names, doesn't take into account virtual methods, etc.
+
+
             if (matchingCall == null)
             {
                 Log.Warning("SpanOriginResolution - No calls to {0} found in {1}. Taking first sequence point instead, this is buggy and wrong", nonUserMethodFullName, userMethod.Module.Assembly.FullName);
@@ -628,7 +644,12 @@ namespace Datadog.Trace
 
             span.Tags.SetTag("_dd.exit_location.file", sequencePoint.Document.Url);
             span.Tags.SetTag("_dd.exit_location.line", sequencePoint.StartLine.ToString());
-            span.Tags.SetTag("_dd.exit_location.snapshot_id", DebuggerSnapshotCreator.LastSnapshotId.ToString());
+
+            if (DebuggerSnapshotCreator.LastSnapshotId != null)
+            {
+                span.Tags.SetTag("_dd.exit_location.snapshot_id", DebuggerSnapshotCreator.LastSnapshotId.ToString());
+            }
+
             Log.Information("SpanOriginResolution - success - {0} {1} {2}", sequencePoint.Document.Url, sequencePoint.StartLine, DebuggerSnapshotCreator.LastSnapshotId);
             
             FakeProbeCreator.CreateAndInstallLineProbe("SpanExit", new NativeLineProbeDefinition(
