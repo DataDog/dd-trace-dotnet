@@ -822,19 +822,19 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
 
                 // add agent or rule sampling rate
-                if (model.TraceChunk.AppliedSamplingRate is { } samplingRate)
+                if (model.TraceChunk is { AppliedSamplingRate: { } samplingRate, InitialSamplingMechanism: { } samplingMechanism })
                 {
-                    var samplingRateTagNameBytes = model.TraceChunk.InitialSamplingMechanism switch
+                    var samplingRateTagName = samplingMechanism switch
                     {
                         SamplingMechanism.AgentRate => _agentSamplingRateNameBytes, // "_dd.agent_psr"
                         SamplingMechanism.TraceSamplingRule => _ruleSamplingRateNameBytes, // "_dd.rule_psr"
                         _ => null
                     };
 
-                    if (samplingRateTagNameBytes is not null)
+                    if (samplingRateTagName is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, samplingRateTagNameBytes);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, samplingRateTagName);
                         offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingRate);
                     }
                 }
@@ -874,7 +874,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // add "_sampling_priority_v1" tag to all "chunk orphans"
             // (spans whose parents are not found in the same chunk)
-            if (model.IsChunkOrphan && model.TraceChunk.SamplingPriority is { } samplingPriority)
+            if (model is { IsChunkOrphan: true, TraceChunk.SamplingPriority: { } samplingPriority })
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);
