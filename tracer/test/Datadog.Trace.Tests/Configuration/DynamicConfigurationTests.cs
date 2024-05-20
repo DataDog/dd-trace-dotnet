@@ -104,6 +104,20 @@ namespace Datadog.Trace.Tests.Configuration
             TracerManager.Instance.Settings.TraceEnabled.Should().BeTrue();
         }
 
+        [Fact]
+        public void SetSamplingRules()
+        {
+            var tracerSettings = new TracerSettings();
+            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
+
+            // sampling rules is null by default
+            TracerManager.Instance.Settings.RemoteSamplingRules.Should().BeNull();
+
+            // set sampling rules "remotely"
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_sampling_rules", "test")));
+            TracerManager.Instance.Settings.RemoteSamplingRules.Should().Be("test");
+        }
+
         private static ConfigurationBuilder CreateConfig(params (string Key, object Value)[] settings)
         {
             using var stringWriter = new StringWriter();
