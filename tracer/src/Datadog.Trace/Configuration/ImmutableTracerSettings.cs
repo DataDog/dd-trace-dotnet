@@ -302,7 +302,7 @@ namespace Datadog.Trace.Configuration
         /// Gets the trace sampling rules from remote config.
         /// These will be merged with local sampling rules.
         /// </summary>
-        internal string? RemoteSamplingRules => DynamicSettings.CustomSamplingRules;
+        internal string? RemoteSamplingRules => DynamicSettings.SamplingRules;
 
         /// <summary>
         /// Gets a value indicating the format for custom sampling rules ("regex" or "glob").
