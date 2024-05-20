@@ -166,7 +166,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
             // set the "run me anyway, dammit" flag
-            SetEnvironmentVariable("DD_TRACE_ALLOW_EOL_RUNTIME", "true");
+            SetEnvironmentVariable("DD_TRACE_ALLOW_UNSUPPORTED_SSI_RUNTIMES", "true");
 
             var logDir = Path.Combine(LogDirectory, nameof(InstrumentRunsOnEolFrameworkInSSIWithOverride));
             Directory.CreateDirectory(logDir);
