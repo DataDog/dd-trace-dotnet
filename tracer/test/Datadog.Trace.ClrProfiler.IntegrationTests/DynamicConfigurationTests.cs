@@ -355,7 +355,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             public double? TraceSampleRate { get; init; }
 
             [JsonProperty("tracing_sampling_rules")]
-            public string CustomSamplingRules { get; init; }
+            public string SamplingRules { get; init; }
 
             // [JsonProperty("span_sampling_rules")]
             // public string SpanSamplingRules { get; init; }
