@@ -251,6 +251,7 @@ namespace datadog::shared::nativeloader
         const auto isSingleStepVariable = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
         if(!isSingleStepVariable.empty())
         {
+            Log::Debug("CorProfiler::Initialize: Single step instrumentation detected, checking for EOL environment");
             // We're doing single-step instrumentation, check if we're in an EOL environment
             IUnknown* tstVerProfilerInfo;
             const char* unsupportedFramework = nullptr;
@@ -314,6 +315,10 @@ namespace datadog::shared::nativeloader
                     info4->Release();
                     return E_FAIL;
                 }
+            }
+            else
+            {
+                Log::Debug("CorProfiler::Initialize: Supported framework version detected, continuing with single-step instrumentation");
             }
         }
 
