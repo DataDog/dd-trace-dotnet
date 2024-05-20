@@ -122,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 #endif
 
-#if !NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP && !NETCOREAPP3_1_OR_GREATER
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public async Task InstrumentRunsOnEolFramework()
