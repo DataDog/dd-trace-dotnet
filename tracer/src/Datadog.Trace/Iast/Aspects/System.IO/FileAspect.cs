@@ -11,7 +11,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> File class aspects </summary>
-[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.Sink, VulnerabilityType.PathTraversal)]
+[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.RaspIastSink, VulnerabilityType.PathTraversal)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class FileAspect
