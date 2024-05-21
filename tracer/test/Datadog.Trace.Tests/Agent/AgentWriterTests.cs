@@ -230,28 +230,25 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public Task FaultyApi()
+        public async Task FaultyApi()
         {
             // The flush thread should be able to recover from an error when calling the API
             // Also, it should free the faulty buffer
             var api = new Mock<IApi>();
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null);
-            var mutex = new ManualResetEventSlim();
-
-            agent.Flushed += () => mutex.Set();
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, automaticFlush: false);
 
             api.Setup(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()))
                .Returns(() => throw new InvalidOperationException());
 
             agent.WriteTrace(CreateTraceChunk(1));
 
-            mutex.Wait();
+            await agent.FlushTracesAsync();
 
             agent.ActiveBuffer.Should().BeSameAs(agent.FrontBuffer);
             agent.FrontBuffer.IsEmpty.Should().BeTrue();
             agent.BackBuffer.IsEmpty.Should().BeTrue();
 
-            return agent.FlushAndCloseAsync();
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]
