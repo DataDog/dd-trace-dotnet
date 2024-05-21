@@ -851,6 +851,11 @@ partial class Build
             // in the linux packages, as customers may have environment variables pointing to them
             // we do this work in the temp folder to avoid "messing" with the artifacts directory
             var (arch, ext) = GetUnixArchitectureAndExtension();
+
+            // On x64 we package the linux-musl-x64 target as well, to simplify onboarding
+            var (muslArch, _) = GetUnixArchitectureAndExtension(isOsx: false, isAlpine: true);
+            var needsMuslLink = !IsAlpine && !IsArm64;
+
             var assetsDirectory = TemporaryDirectory / arch;
             EnsureCleanDirectory(assetsDirectory);
             CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
@@ -862,11 +867,25 @@ partial class Build
             var linkLocation = assetsDirectory / $"{FileNames.NativeLoader}.{ext}";
             HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
 
+            if (needsMuslLink)
+            {
+                var muslLinkLocation = assetsDirectory / muslArch / $"{FileNames.NativeLoader}.{ext}";
+                DeleteFile(muslLinkLocation); // remove the original file and replace it with a link
+                HardLinkUtil.Value($"-v {archSpecificFile} {muslLinkLocation}");
+            }
+
             // For back-compat reasons, we have to keep the libddwaf.so file in the root folder
             // because the way AppSec probes the paths won't find the linux-musl-x64 target currently
             archSpecificFile = assetsDirectory / arch / FileNames.AppSecLinuxWaf;
             linkLocation = assetsDirectory / FileNames.AppSecLinuxWaf;
             HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+
+            if (needsMuslLink)
+            {
+                var muslLinkLocation = assetsDirectory / muslArch / FileNames.AppSecLinuxWaf;
+                DeleteFile(muslLinkLocation);
+                HardLinkUtil.Value($"-v {archSpecificFile} {muslLinkLocation}");
+            }
 
             // we must always have the Datadog.Linux.ApiWrapper.x64.so file in the continuousprofiler subfolder
             // as it's set in the LD_PRELOAD env var
@@ -875,6 +894,13 @@ partial class Build
             archSpecificFile = assetsDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
             linkLocation = continuousProfilerDir / FileNames.ProfilerLinuxApiWrapper;
             HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+
+            if (needsMuslLink)
+            {
+                var muslLinkLocation = assetsDirectory / muslArch / FileNames.ProfilerLinuxApiWrapper;
+                DeleteFile(muslLinkLocation);
+                HardLinkUtil.Value($"-v {archSpecificFile} {muslLinkLocation}");
+            }
 
             // Copy the loader.conf to the root folder, this is required for when the "root" native loader is used,
             // It needs to include the architecture in the paths to the native dlls
@@ -941,6 +967,12 @@ partial class Build
                     "loader.conf",
                     $"{arch}/",
                 };
+
+                // on x64, we also include the musl assets in the glibc package  
+                if (!IsAlpine && !IsArm64)
+                {
+                    args.Add("linux-musl-x64/");
+                }
 
                 var arguments = string.Join(" ", args);
                 fpm(arguments, workingDirectory: workingDirectory);
@@ -2780,8 +2812,9 @@ partial class Build
             (false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
         };
 
-    private (string Arch, string Ext) GetUnixArchitectureAndExtension() =>
-        (IsOsx, IsAlpine) switch
+    private (string Arch, string Ext) GetUnixArchitectureAndExtension() => GetUnixArchitectureAndExtension(IsOsx, IsAlpine);
+    private (string Arch, string Ext) GetUnixArchitectureAndExtension(bool isOsx, bool isAlpine) =>
+        (isOsx, isAlpine) switch
         {
             (true, _) => ($"osx-{UnixArchitectureIdentifier}", "dylib"),
             (false, false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
