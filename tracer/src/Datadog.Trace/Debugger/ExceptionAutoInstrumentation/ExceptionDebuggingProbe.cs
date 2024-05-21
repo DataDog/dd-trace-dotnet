@@ -6,12 +6,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink.Models;
+using Datadog.Trace.Debugger.TimeTravel;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
@@ -122,6 +124,31 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     if (!ProbeExpressionsProcessor.Instance.TryAddProbeProcessor(ProbeId, ExceptionDebuggingProcessor))
                     {
                         Log.Error("Could not add ExceptionDebuggingProcessor. Method: {TypeName}.{MethodName}", Method.Method.DeclaringType?.Name, Method.Method.Name);
+                    }
+
+                    try
+                    {
+                        var instructions = TimeTravelInitiator.FindMethod((MethodInfo)Method.Method).Body.Instructions;
+
+                        foreach (var instr in instructions)
+                        {
+                            if (instr.SequencePoint == null || instr.SequencePoint.StartLine == 0x00feefee || instr.SequencePoint.StartLine == 0xfeefee)
+                            {
+                                continue;
+                            }
+
+                            FakeProbeCreator.CreateAndInstallPureLineProbe("PureLineProbe", new NativeLineProbeDefinition(
+                                                                               $"{instr.SequencePoint.StartLine}_{instr.SequencePoint.EndLine}_{Method.Method.DeclaringType?.FullName}_{Method.Method.Name}",
+                                                                               Method.Method.Module.ModuleVersionId,
+                                                                               Method.Method.MetadataToken,
+                                                                               (int)instr.Offset,
+                                                                               instr.SequencePoint.StartLine,
+                                                                               instr.SequencePoint.Document.Url));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Failed to apply bytecode->line instrumentation mapper.");
                     }
 
                     InstrumentationRequester.Instrument(ProbeId!, Method.Method);

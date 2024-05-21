@@ -27,7 +27,7 @@ public class TimeTravelInitiator
         {
             FakeProbeCreator.CreateAndInstallLineProbe("TimeTravelLine", lineProbe);
         }
-        
+
         // use dnlib to find all the methods that are directly called by this method,
         // and create probes for them, and then call this method recursively
         var calledMethods = GetCalleesWithDnlib(method);
@@ -60,7 +60,7 @@ public class TimeTravelInitiator
                             {
                                 MethodDef resolvedMethod = calledMethod.ResolveMethodDefThrow();
                                 // Convert the dnlib MethodDef to a Reflection MethodInfo
-                                var resolvedMethodInfo = (MethodInfo) methodInfo.DeclaringType.Assembly.ManifestModule.ResolveMethod(resolvedMethod.MDToken.ToInt32());
+                                var resolvedMethodInfo = (MethodInfo)methodInfo.DeclaringType.Assembly.ManifestModule.ResolveMethod(resolvedMethod.MDToken.ToInt32());
                                 result.Add(resolvedMethodInfo);
                             }
                         }
@@ -75,7 +75,7 @@ public class TimeTravelInitiator
         return result;
     }
 
-    
+
     private static NativeLineProbeDefinition[] GetLineProbeLocationsWithDnlib(MethodInfo methodInfo)
     {
         var targetMethod = FindMethod(methodInfo);
@@ -87,11 +87,11 @@ public class TimeTravelInitiator
                                .Where(i => i.SequencePoint?.StartLine is not null && i.SequencePoint?.StartLine != 0)
                                .GroupBy(i => i.SequencePoint?.StartLine)
                                .Select(g => new NativeLineProbeDefinition(
-                                           $"{methodInfo.Name}, line {g.Key.Value}", 
-                                                mvid, 
-                                                methodInfo.MetadataToken, 
-                                                (int)g.Min(i => i.Offset), 
-                                                g.Key.Value, 
+                                           $"{methodInfo.Name}, line {g.Key.Value}",
+                                                mvid,
+                                                methodInfo.MetadataToken,
+                                                (int)g.Min(i => i.Offset),
+                                                g.Key.Value,
                                                 g.First().SequencePoint.Document.Url))
                                .ToArray();
         }
@@ -102,7 +102,7 @@ public class TimeTravelInitiator
     internal static MethodDef FindMethod(MethodInfo methodInfo)
     {
         ModuleDefMD module = ModuleDefMD.Load(methodInfo.DeclaringType.Assembly.Location);
-        
+
         // Resolve the method you're interested in
         MethodDef targetMethod = null;
         foreach (TypeDef type in module.GetTypes())

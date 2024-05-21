@@ -651,7 +651,7 @@ namespace Datadog.Trace
             }
 
             Log.Information("SpanOriginResolution - success - {0} {1} {2}", sequencePoint.Document.Url, sequencePoint.StartLine, DebuggerSnapshotCreator.LastSnapshotId);
-            
+
             FakeProbeCreator.CreateAndInstallLineProbe("SpanExit", new NativeLineProbeDefinition(
                 $"{userMethod.DeclaringType?.FullName}_{userMethod.Name}",
                 userMethod.Module.ModuleVersionId,
@@ -659,7 +659,6 @@ namespace Datadog.Trace
                 (int)offsetOfSpanOrigin,
                 sequencePoint.StartLine,
                 sequencePoint.Document.Url));
-
         }
 
         private static bool LocalSpanOriginMethod(out MethodBase nonUserMethod, out MethodBase userMethod)

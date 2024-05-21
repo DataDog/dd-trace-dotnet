@@ -19,6 +19,7 @@ internal class ExceptionStackNodeRecord
         MethodInfo = MethodMetadataCollection.Instance.Get(node.MethodMetadataIndex);
         Snapshot = node.Snapshot;
         SnapshotId = node.SnapshotId;
+        Node = node;
     }
 
     public int Level { get; }
@@ -30,4 +31,6 @@ internal class ExceptionStackNodeRecord
     public string Snapshot { get; }
 
     public string SnapshotId { get; }
+
+    public TrackedStackFrameNode Node { get; }
 }

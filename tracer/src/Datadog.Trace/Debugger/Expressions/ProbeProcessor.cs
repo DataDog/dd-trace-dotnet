@@ -584,7 +584,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         snapshotCreator.CaptureEndLine(ref info);
                     }
 
-                    var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, ref info);
+                    var snapshot = snapshotCreator.FinalizeLineSnapshot(ProbeInfo.ProbeId, ProbeInfo.ProbeVersion, info.LineCaptureInfo.LineNumber, ref info);
                     LiveDebugger.Instance.AddSnapshot(ProbeInfo, snapshot);
                     snapshotCreator.Stop();
                     break;

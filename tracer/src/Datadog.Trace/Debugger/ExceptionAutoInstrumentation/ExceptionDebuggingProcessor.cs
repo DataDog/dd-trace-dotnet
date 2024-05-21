@@ -82,6 +82,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         }
 
                         var enteredNode = shadowStack.Enter(info.Method, isInvalidPath: !shouldProcess);
+
+                        // See also: `SpanOriginDebuggingProcessor.Process` for further explanation.
+                        if (shadowStack.LineNumberWorkaroundStorage.Value > 0)
+                        {
+                            enteredNode.LastExecutedLineNumber = shadowStack.LineNumberWorkaroundStorage.Value;
+                            shadowStack.LineNumberWorkaroundStorage.Value = 0;
+                        }
+
                         snapshotCreator.TrackedStackFrameNode = enteredNode;
                         return true;
                     case MethodState.ExitStart:

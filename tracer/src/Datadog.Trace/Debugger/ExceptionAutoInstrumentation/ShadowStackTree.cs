@@ -40,6 +40,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public bool IsInRequestContext { get; set; }
 
+        public AsyncLocal<int> LineNumberWorkaroundStorage { get; } = new();
+
         public TrackedStackFrameNode Enter(MethodBase method, bool isInvalidPath = false)
         {
             _trackedStackFrameActiveNode.Value = new TrackedStackFrameNode(_trackedStackFrameActiveNode.Value, method, isInvalidPath);

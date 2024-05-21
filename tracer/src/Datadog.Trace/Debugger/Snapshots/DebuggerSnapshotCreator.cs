@@ -670,7 +670,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         }
 
         // Finalize snapshot
-        internal string FinalizeLineSnapshot<T>(string probeId, int probeVersion, ref CaptureInfo<T> info)
+        internal string FinalizeLineSnapshot<T>(string probeId, int probeVersion, int realLineNumber, ref CaptureInfo<T> info)
         {
             using (this)
             {
@@ -691,7 +691,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                    .FinalizeSnapshot(
                         methodName,
                         typeFullName,
-                        info.LineCaptureInfo.ProbeFilePath);
+                        info.LineCaptureInfo.ProbeFilePath,
+                        realLineNumber);
 
                 var snapshot = GetSnapshotJson();
                 WriteSnapshotJsonToDisk(probeId, snapshot);
@@ -818,7 +819,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return null;
         }
 
-        internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath)
+        internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath, int realLineNumber = -1)
         {
             var activeScope = Tracer.Instance.InternalActiveScope;
 
@@ -826,7 +827,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             var traceId = activeScope?.Span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture);
             var spanId = activeScope?.Span.SpanId.ToString(CultureInfo.InvariantCulture);
 
-            AddStackInfo()
+            AddStackInfo(realLineNumber)
             .EndSnapshot()
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
@@ -902,7 +903,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return string.IsNullOrEmpty(probeFilePath) ? null : probeFilePath.Replace('\\', '/');
         }
 
-        private DebuggerSnapshotCreator AddStackInfo()
+        private DebuggerSnapshotCreator AddStackInfo(int realLineNumber)
         {
             if (!_isFullSnapshot)
             {
@@ -914,13 +915,13 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             _jsonWriter.WritePropertyName("stack");
             _jsonWriter.WriteStartArray();
-            AddFrames(stackFrames);
+            AddFrames(stackFrames, realLineNumber);
             _jsonWriter.WriteEndArray();
 
             return this;
         }
 
-        private void AddFrames(StackFrame[] frames)
+        private void AddFrames(StackFrame[] frames, int realLineNumber = -1)
         {
             foreach (var frame in frames)
             {
@@ -937,7 +938,17 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
 
                 _jsonWriter.WritePropertyName("lineNumber");
-                _jsonWriter.WriteValue(frame.GetFileLineNumber());
+
+                if (realLineNumber > -1)
+                {
+                    _jsonWriter.WriteValue(realLineNumber);
+                    realLineNumber = -1;
+                }
+                else
+                {
+                    _jsonWriter.WriteValue(frame.GetFileLineNumber());
+                }
+
                 _jsonWriter.WriteEndObject();
             }
         }

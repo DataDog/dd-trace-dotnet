@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.PInvoke;
-
+using Datadog.Trace.Debugger.RateLimiting;
+using Datadog.Trace.Debugger.SpanOrigin;
+using Datadog.Trace.Vendors.Serilog;
 
 public static class FakeProbeCreator
 {
@@ -34,25 +37,43 @@ public static class FakeProbeCreator
 
     public static void CreateAndInstallLineProbe(string displayName, NativeLineProbeDefinition lineProbeDefinition)
     {
+        CreateAndInstallLineProbeInternal(pureSequencePoint: false, displayName, lineProbeDefinition);
+    }
+
+    public static void CreateAndInstallPureLineProbe(string displayName, NativeLineProbeDefinition lineProbeDefinition)
+    {
+        CreateAndInstallLineProbeInternal(pureSequencePoint: true, displayName, lineProbeDefinition);
+    }
+
+    private static void CreateAndInstallLineProbeInternal(bool pureSequencePoint, string displayName, NativeLineProbeDefinition lineProbeDefinition)
+    {
         var probeName = $"{displayName}_{lineProbeDefinition.ProbeId}";
         if (!CreatedProbes.Add(probeName))
         {
             return; // Probe was already created
         }
-        
-        var where = new Where { SourceFile = lineProbeDefinition.ProbeFilePath, Lines = new[] { lineProbeDefinition.LineNumber.ToString() } };
-        
-        CreateProbeProcessor(probeName, where, lineProbeDefinition.ProbeId);
-        
+
+        if (!pureSequencePoint)
+        {
+            var where = new Where { SourceFile = lineProbeDefinition.ProbeFilePath, Lines = new[] { lineProbeDefinition.LineNumber.ToString() } };
+            CreateProbeProcessor(probeName, where, lineProbeDefinition.ProbeId);
+        }
+        else
+        {
+            ProbeRateLimiter.Instance.TryAddSampler(lineProbeDefinition.ProbeId, NopAdaptiveSampler.Instance);
+            var processor = new SpanOriginDebuggingProcessor(lineProbeDefinition.ProbeId);
+            if (!ProbeExpressionsProcessor.Instance.TryAddProbeProcessor(lineProbeDefinition.ProbeId, processor))
+            {
+                Log.Error("Could not add SpanOriginDebuggingProcessor.");
+            }
+        }
+
         DebuggerNativeMethods.InstrumentProbes(
             Array.Empty<NativeMethodProbeDefinition>(),
             new[] { lineProbeDefinition },
             Array.Empty<NativeSpanProbeDefinition>(),
             Array.Empty<NativeRemoveProbeRequest>());
     }
-        
-    
-    
 
     private static void CreateProbeProcessor(string probeName, Where where, string probeId)
     {

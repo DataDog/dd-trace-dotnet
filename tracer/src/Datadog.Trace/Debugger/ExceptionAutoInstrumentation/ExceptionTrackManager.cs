@@ -9,6 +9,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Expressions;
@@ -119,6 +122,109 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 ExceptionProcessQueue.Enqueue(exception);
                 WorkAvailable.Release();
             }
+        }
+
+        public static void RewriteExceptionLineNumbersIfNeeded(Span rootSpan, string exceptionString, IList<ExceptionStackNodeRecord> frames)
+        {
+            Dictionary<string, int> methodLineNumberMap = null;
+            foreach (var frame in frames)
+            {
+                if (frame.Node.LastExecutedLineNumber > 0)
+                {
+                    methodLineNumberMap ??= new Dictionary<string, int>();
+                    var methodName = frame.Node.Method.GetFullyQualifiedName();
+                    methodName = GetMethodFullName(frame.Node.Method);
+                    methodLineNumberMap[methodName] = frame.Node.LastExecutedLineNumber;
+                }
+            }
+
+            if (methodLineNumberMap == null)
+            {
+                return;
+            }
+
+            var regex = new Regex(@"^\s*at\s+(?<method>.+?)(?:\s+\((?<params>.+?)\))?(?:\s+in\s+(?<file>.+?):line\s+(?<line>\d+))?$", RegexOptions.Multiline);
+
+            var newExceptionString = new StringBuilder();
+
+            var lines = exceptionString.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            foreach (var line in lines)
+            {
+                var match = regex.Match(line);
+                if (match.Success)
+                {
+                    var methodWithParams = match.Groups["method"].Value;
+                    var lineNumGroup = match.Groups["line"];
+                    var lineNum = lineNumGroup.Success ? lineNumGroup.Value : null;
+                    var file = match.Groups["file"].Value;
+
+                    var methodName = StripParameters(methodWithParams);
+
+                    if (methodLineNumberMap.TryGetValue(methodName, out var realLineNumber) && lineNum != null)
+                    {
+                        var newLine = file != string.Empty
+                                          ? line.Replace($":line {lineNum}", $":line {realLineNumber}")
+                                          : line.Replace(lineNum, realLineNumber.ToString());
+                        newExceptionString.AppendLine(newLine);
+                    }
+                    else
+                    {
+                        newExceptionString.AppendLine(line);
+                    }
+                }
+                else
+                {
+                    newExceptionString.AppendLine(line);
+                }
+            }
+
+            var newExceptionToString = newExceptionString.ToString();
+            rootSpan.SetTag(Trace.Tags.ErrorStack, newExceptionToString);
+        }
+
+        private static string StripParameters(string methodWithParams)
+        {
+            int paramIndex = methodWithParams.IndexOf('(');
+            if (paramIndex > 0)
+            {
+                return methodWithParams.Substring(0, paramIndex);
+            }
+            return methodWithParams;
+        }
+
+        private static string GetMethodFullName(MethodBase method)
+        {
+            if (method == null) throw new ArgumentNullException(nameof(method));
+
+            var sb = new StringBuilder();
+
+            if (method.DeclaringType != null)
+            {
+                sb.Append(method.DeclaringType.FullName);
+                sb.Append(".");
+            }
+
+            sb.Append(method.Name);
+
+            if (method.IsGenericMethod)
+            {
+                sb.Append("<");
+                sb.Append(string.Join(", ", method.GetGenericArguments().Select(t => t.Name)));
+                sb.Append(">");
+            }
+
+            if (method.DeclaringType != null && method.DeclaringType.GetCustomAttribute<CompilerGeneratedAttribute>() != null)
+            {
+                var originalMethod = method.DeclaringType.DeclaringType?.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                                           .FirstOrDefault(m => m.GetCustomAttribute<AsyncStateMachineAttribute>()?.StateMachineType == method.DeclaringType);
+
+                if (originalMethod != null)
+                {
+                    return GetMethodFullName(originalMethod);
+                }
+            }
+
+            return sb.ToString();
         }
 
         private static void ProcessException(Exception exception, ErrorOriginKind errorOrigin, Span? rootSpan)
@@ -254,6 +360,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         Log.Warning("The RootSpan is null in the branch of extracing snapshots. Should not happen. Exception: {Exception}", exception.ToString());
                         return;
                     }
+
+                    RewriteExceptionLineNumbersIfNeeded(rootSpan, exception.ToString(), resultCallStackTree.Frames);
 
                     // Attach tags to the root span
                     var debugErrorPrefix = "_dd.debug.error";

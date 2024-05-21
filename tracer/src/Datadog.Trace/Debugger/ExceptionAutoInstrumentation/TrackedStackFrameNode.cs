@@ -113,6 +113,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal int NumOfChildren { get; private set; }
 
+        internal int LastExecutedLineNumber { get; set; }
+
         public void MarkAsUnwound()
         {
             IsFrameUnwound = true;
