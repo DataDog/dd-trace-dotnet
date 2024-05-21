@@ -624,7 +624,7 @@ void ProfileExporter::CreateTelemetryMetricsWorker(std::string runtimeId, Applic
     // create the worker and assign it to the application info
     auto agentUrl = BuildAgentEndpoint(_configuration);
     auto languageVersion = _runtimeInfo->GetClrString();
-    pInfo->Worker = std::make_unique<libdatadog::TelemetryMetricsWorker>();
+    pInfo->Worker = std::make_shared<libdatadog::TelemetryMetricsWorker>();
     bool success = pInfo->Worker->Start(
         _configuration,
         pInfo->ServiceName,
@@ -635,6 +635,7 @@ void ProfileExporter::CreateTelemetryMetricsWorker(std::string runtimeId, Applic
         agentUrl,
         runtimeId,
         pInfo->Environment);
+
     if (!success)
     {
         Log::Error("Failed to start the telemetry worker for ", pInfo->ServiceName);
