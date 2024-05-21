@@ -13,9 +13,6 @@
 class IConfiguration;
 class ISsiLifetime;
 
-// TODO: try to find a way to enable SetLifetimeDuration only for tests (works for Windows but not for Linux)
-#define DD_TEST
-
 class SsiManager : public ISsiManager
 {
 public:
@@ -26,7 +23,10 @@ public:
 
 #ifdef DD_TEST
 public:
-    void SetLifetimeDuration(int duration);
+    void SetLifetimeDuration(int duration)
+    {
+        _lifetimeDuration = duration;
+    }
 #endif
 
 public:
@@ -53,7 +53,7 @@ private:
     bool _hasSpan = false;
     bool _isLongLived = false;
     bool _isSsiDeployed = false;
-    Timer _timer;
+    std::unique_ptr<Timer> _timer;
 
 #ifdef DD_TEST
 private:

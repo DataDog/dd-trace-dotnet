@@ -5,26 +5,17 @@
 #include "IConfiguration.h"
 #include "IProfilerTelemetry.h"
 #include "ISsiLifetime.h"
-#include "OsSpecificApi.h"
 #include "OpSysTools.h"
+#include "OsSpecificApi.h"
 
-
-SsiManager::SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTelemetry, ISsiLifetime* pSsiLifetime)
-    :
+SsiManager::SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTelemetry, ISsiLifetime* pSsiLifetime) :
     _pConfiguration(pConfiguration),
     _pTelemetry(pTelemetry),
-    _pSsiLifetime(pSsiLifetime),
-    _timer([this] { OnShortLivedEnds(); }, std::chrono::milliseconds(_pConfiguration->SsiShortLivedThreshold()*1000))
+    _pSsiLifetime(pSsiLifetime)
 {
     _isSsiDeployed = pConfiguration->IsSsiDeployed();
+    _timer = std::make_unique<Timer>([this] { OnShortLivedEnds(); }, std::chrono::milliseconds(_pConfiguration->SsiShortLivedThreshold() * 1000));
 }
-
-#ifdef DD_TEST
-    void SsiManager::SetLifetimeDuration(int duration)
-    {
-        _lifetimeDuration = duration;
-    }
-#endif
 
 void SsiManager::OnShortLivedEnds()
 {
@@ -34,7 +25,6 @@ void SsiManager::OnShortLivedEnds()
         _pSsiLifetime->OnStartDelayedProfiling();
     }
 }
-
 
 void SsiManager::OnSpanCreated()
 {
@@ -86,7 +76,6 @@ bool SsiManager::IsProfilerEnabled()
     return false;
 }
 
-
 // the profiler is activated either if:
 //     - the profiler is enabled in the configuration
 //  or - is enabled via SSI + runs for more than 30 seconds + has at least one span
@@ -110,8 +99,15 @@ void SsiManager::ProcessStart()
 {
     _pTelemetry->ProcessStart(_isSsiDeployed ? DeploymentMode::SingleStepInstrumentation : DeploymentMode::Manual);
 
-    // start the lifetime timer to detect when the process is not more short lived
-    _timer.Start();
+    // This timer *must* be created only AND only if it's a SSI deployment
+    // we have to check if this is what we want. In CorProfilerCallback.cpp l.1239, we start the service
+    // if the profiler is enabled (SII or not SSI).
+    // For the moment we just enable the timer only in pure SSI
+    if (_isSsiDeployed && !_pConfiguration->IsProfilerEnabled())
+    {
+        // start the lifetime timer to detect when the process is not more short lived
+        _timer->Start();
+    }
 }
 
 void SsiManager::ProcessEnd()
@@ -168,4 +164,3 @@ SkipProfileHeuristicType SsiManager::GetSkipProfileHeuristic()
 
     return heuristics;
 }
-

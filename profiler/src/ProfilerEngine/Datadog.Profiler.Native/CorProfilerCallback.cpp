@@ -457,7 +457,9 @@ void CorProfilerCallback::InitializeServices()
         _pSsiManager.get(),
         _pAllocationsRecorder.get()
         );
+
     _pProfilerTelemetry->SetExporter(_pExporter.get());
+
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
         _pCpuTimeProvider != nullptr &&
         _pRuntimeInfo->GetDotnetMajorVersion() >= 5)
@@ -560,6 +562,12 @@ void CorProfilerCallback::OnStartDelayedProfiling()
 {
     // check race conditions for shutdown
     if (!_isInitialized.load())
+    {
+        return;
+    }
+
+    // if not enable by SSI only, just get out
+    if (!_pConfiguration->IsSsiEnabled())
     {
         return;
     }
@@ -1004,6 +1012,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     PrintEnvironmentVariables();
 
     _pProfilerTelemetry = std::make_unique<ProfilerTelemetry>(_pConfiguration.get());
+
     _pSsiManager = std::make_unique<SsiManager>(_pConfiguration.get(), _pProfilerTelemetry.get(), this);
     _pSsiManager->ProcessStart();
 
@@ -1213,6 +1222,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         }
     }
 
+    // TODO/FIX : shouldn't this be moved avec the check on the profiler enabled ?
     // the Tracer needs to know that the Profiler is here to enable code hotspots
     _isInitialized.store(true);
     ProfilerEngineStatus::WriteIsProfilerEngineActive(true);

@@ -15,9 +15,11 @@ extern "C"
 
 namespace libdatadog {
 
-TelemetryMetricsWorker::TelemetryMetricsWorker()
+TelemetryMetricsWorker::TelemetryMetricsWorker() :
+    _serviceName{},
+    _pHandle{nullptr},
+    _numberOfProfilesKey{}
 {
-    _pHandle = nullptr;
 }
 
 TelemetryMetricsWorker::~TelemetryMetricsWorker()

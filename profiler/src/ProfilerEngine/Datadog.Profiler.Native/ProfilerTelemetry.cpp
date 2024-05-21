@@ -134,12 +134,33 @@ void ProfilerTelemetry::SendMetrics(
     ddog_CharSlice metric_name = DDOG_CHARSLICE_C_BARE("ssi_heuristic.number_of_profiles");
     auto enablementChoice = GetDeploymentModeTag();
     ddog_Vec_Tag tags = ddog_Vec_Tag_new();
-    ddog_Vec_Tag_push(&tags,
+    auto res = ddog_Vec_Tag_push(&tags,
         libdatadog::FfiHelper::StringToCharSlice(std::string("enablement_choice")),
         libdatadog::FfiHelper::StringToCharSlice(enablementChoice)
         );
-    ddog_Vec_Tag_push(&tags, DDOG_CHARSLICE_C_BARE("has_sent_profiles"), DDOG_CHARSLICE_C_BARE("???"));
-    ddog_Vec_Tag_push(&tags, DDOG_CHARSLICE_C_BARE("heuristic_hypothetical_decision"), DDOG_CHARSLICE_C_BARE("???"));
+
+    if (res.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
+    {
+        auto error = libdatadog::make_error(res.err);
+        Log::Debug("Failed to add label 'enablement_choice' with value '", enablementChoice, "'. Reason: ", error.message());
+    }
+
+    res = ddog_Vec_Tag_push(&tags, DDOG_CHARSLICE_C_BARE("has_sent_profiles"), DDOG_CHARSLICE_C_BARE("???"));
+
+    if (res.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
+    {
+        auto error = libdatadog::make_error(res.err);
+        Log::Debug("Failed to add label 'has_sent_profiles' with value '???'. Reason: ", error.message());
+    }
+
+    res = ddog_Vec_Tag_push(&tags, DDOG_CHARSLICE_C_BARE("heuristic_hypothetical_decision"), DDOG_CHARSLICE_C_BARE("???"));
+
+    if (res.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
+    {
+        auto error = libdatadog::make_error(res.err);
+        Log::Debug("Failed to add label 'heuristic_hypothetical_decision' with value '???'. Reason: ", error.message());
+    }
+
     // tags is consummed
     struct ddog_ContextKey test_temetry = ddog_telemetry_handle_register_metric_context(
         handle, metric_name, DDOG_METRIC_TYPE_COUNT, tags, true, DDOG_METRIC_NAMESPACE_PROFILERS);
