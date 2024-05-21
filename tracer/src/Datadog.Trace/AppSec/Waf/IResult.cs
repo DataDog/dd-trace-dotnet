@@ -5,7 +5,6 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -25,7 +24,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public Dictionary<string, object?>? SendStackInfo { get; }
 
-        IReadOnlyCollection<object>? Data { get; }
+        List<object>? Data { get; }
 
         Dictionary<string, object?>? Actions { get; }
 
