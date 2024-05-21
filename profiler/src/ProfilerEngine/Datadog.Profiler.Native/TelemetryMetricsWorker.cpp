@@ -151,10 +151,16 @@ bool TelemetryMetricsWorker::Start(
     // telemetry metrics are supposed to be emitted only if deployed via SSI
     // --> should always be "ssi"
     std::string installationTagValue = (pConfiguration->IsSsiDeployed()) ? std::string("ssi") : std::string("manual");
-    ddog_Vec_Tag_push(&tags,
+    auto res = ddog_Vec_Tag_push(&tags,
         libdatadog::FfiHelper::StringToCharSlice(std::string("installation")),
         libdatadog::FfiHelper::StringToCharSlice(installationTagValue)
     );
+
+    if (res.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
+    {
+        auto error = make_error(res.err);
+        Log::Debug("Failed to add label 'installation' with value '", installationTagValue, "'. Reason: ", error.message());
+    }
 
     std::string enablementTagValue =
         (pConfiguration->IsProfilerEnabled())
@@ -162,10 +168,17 @@ bool TelemetryMetricsWorker::Start(
         (pConfiguration->IsSsiEnabled())
             ? std::string("ssi_enabled") :
         std::string("not_enabled");
-    ddog_Vec_Tag_push(&tags,
+
+    res = ddog_Vec_Tag_push(&tags,
         libdatadog::FfiHelper::StringToCharSlice(std::string("enablement_choice")),
         libdatadog::FfiHelper::StringToCharSlice(enablementTagValue)
     );
+
+    if (res.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
+    {
+        auto error = make_error(res.err);
+        Log::Debug("Failed to add label 'enablement_choice' with value '", enablementTagValue, "'. Reason: ", error.message());
+    }
 
     // tags is consummed
     _numberOfProfilesKey = ddog_telemetry_handle_register_metric_context(
@@ -185,9 +198,15 @@ bool TelemetryMetricsWorker::AddPoint(double value, bool hasSentProfiles, SkipPr
     }
 
     ddog_Vec_Tag tags = ddog_Vec_Tag_new();
-    ddog_Vec_Tag_push(&tags,
+    auto res = ddog_Vec_Tag_push(&tags,
         libdatadog::FfiHelper::StringToCharSlice(std::string("has_sent_profiles")),
         libdatadog::FfiHelper::StringToCharSlice(hasSentProfiles ? std::string("true") : std::string("false")));
+
+    if (res.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
+    {
+        auto error = make_error(res.err);
+        Log::Debug("Failed to add label 'has_sent_profiles' with value '", std::boolalpha, hasSentProfiles, "'. Reason: ", error.message());
+    }
 
     std::string heuristicTag;
     if (heuristics == SkipProfileHeuristicType::AllTriggered)
@@ -211,9 +230,15 @@ bool TelemetryMetricsWorker::AddPoint(double value, bool hasSentProfiles, SkipPr
             heuristicTag = "short_lived";
         }
     }
-    ddog_Vec_Tag_push(&tags,
+    res = ddog_Vec_Tag_push(&tags,
         libdatadog::FfiHelper::StringToCharSlice(std::string("heuristic_hypothetical_decision")),
         libdatadog::FfiHelper::StringToCharSlice(heuristicTag));
+
+    if (res.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
+    {
+        auto error = make_error(res.err);
+        Log::Debug("Failed to add label 'heuristic_hypothetical_decision' with value '", heuristicTag, "'. Reason: ", error.message());
+    }
 
     auto result = ddog_telemetry_handle_add_point_with_tags(_pHandle, &_numberOfProfilesKey, value, tags);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)

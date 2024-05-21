@@ -544,11 +544,18 @@ bool ProfileExporter::Export()
         {
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
 
-            applicationInfo.Worker->AddPoint(1, false, heuristicTag);
+            if (applicationInfo.Worker != nullptr)
+            {
+                applicationInfo.Worker->AddPoint(1, false, heuristicTag);
+            }
 
             continue;
         }
-        applicationInfo.Worker->AddPoint(1, true, heuristicTag);
+
+        if (applicationInfo.Worker != nullptr)
+        {
+            applicationInfo.Worker->AddPoint(1, true, heuristicTag);
+        }
 
         if (_exporter == nullptr)
         {
