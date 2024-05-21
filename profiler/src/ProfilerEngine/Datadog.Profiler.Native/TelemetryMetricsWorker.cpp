@@ -41,7 +41,7 @@ void TelemetryMetricsWorker::Stop()
     ddog_MaybeError result = ddog_telemetry_handle_stop(_pHandle);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Error("Failed to stop telemetry worker for (", _serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+        Log::Debug("Failed to stop telemetry worker for (", _serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
         return;
     }
 
@@ -66,7 +66,7 @@ bool TelemetryMetricsWorker::Start(
     {
         assert(false);
 
-        Log::Error("It is not allowed to start telemetry worker for (", serviceName, ") more than once.");
+        Log::Debug("It is not allowed to start telemetry worker for (", serviceName, ") more than once.");
         return false;
     }
 
@@ -74,7 +74,7 @@ bool TelemetryMetricsWorker::Start(
 
     if (!pConfiguration->IsSsiDeployed())
     {
-        Log::Error("No telemetry worker for (", serviceName, ") should be started if not deployed via Single Step Instrumentation");
+        Log::Debug("No telemetry worker for (", serviceName, ") should be started if not deployed via Single Step Instrumentation");
         return false;
     }
 
@@ -97,7 +97,7 @@ bool TelemetryMetricsWorker::Start(
     result = ddog_telemetry_builder_with_endpoint_config_endpoint(builder, endpoint);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Error("Failed to configure telemetry builder agent endpoint: ", std::string((char*)result.some.message.ptr, result.some.message.len));
+        Log::Debug("Failed to configure telemetry builder agent endpoint: ", std::string((char*)result.some.message.ptr, result.some.message.len));
         return false;
     }
     ddog_endpoint_drop(endpoint);
@@ -107,7 +107,7 @@ bool TelemetryMetricsWorker::Start(
     result = ddog_telemetry_builder_with_str_runtime_id(builder, runtime_id);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Error("Failed to set telemetry builder runtime ID for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+        Log::Debug("Failed to set telemetry builder runtime ID for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
         return false;
     }
 
@@ -118,7 +118,7 @@ bool TelemetryMetricsWorker::Start(
         result = ddog_telemetry_builder_with_str_application_service_version(builder, service_version);
         if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
         {
-            Log::Error("Failed to set telemetry builder service version for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+            Log::Debug("Failed to set telemetry builder service version for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
             return false;
         }
     }
@@ -128,7 +128,7 @@ bool TelemetryMetricsWorker::Start(
         result = ddog_telemetry_builder_with_str_application_env(builder, env);
         if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
         {
-            Log::Error("Failed to set telemetry builder environment for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+            Log::Debug("Failed to set telemetry builder environment for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
             return false;
         }
     }
@@ -138,7 +138,7 @@ bool TelemetryMetricsWorker::Start(
     result = ddog_telemetry_handle_start(_pHandle);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Error("Failed to start telemetry for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+        Log::Debug("Failed to start telemetry for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
         return false;
     }
 
