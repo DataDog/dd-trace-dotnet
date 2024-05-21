@@ -72,18 +72,18 @@ partial record ImmutableTracerSettings
     }
 
         /// <summary>
-        /// Gets a value indicating whether APM tracing is enabled.
+        /// Gets a value indicating whether Appsec standalone billing is enabled.
         /// Default is <c>true</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
+        /// <seealso cref="ConfigurationKeys.ExperimentalAppsecStandaloneEnabled"/>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public bool ApmTracingEnabled
+    public bool ExperimentalAppsecStandaloneEnabled
     {
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)161);
-            return ApmTracingEnabledInternal;
+            return ExperimentalAppsecStandaloneEnabledInternal;
         }
     }
 
