@@ -645,7 +645,7 @@ void ProfileExporter::CreateTelemetryMetricsWorker(std::string runtimeId, Applic
 
     if (!success)
     {
-        Log::Error("Failed to start the telemetry worker for ", pInfo->ServiceName);
+        Log::Debug("Failed to start the telemetry worker for ", pInfo->ServiceName);
         pInfo->Worker = nullptr;
     }
 }
