@@ -259,7 +259,7 @@ namespace Datadog.Trace
             //   - remote
             //   - local = DD_TRACE_SAMPLE_RATE
             // - agent sampling rates (as a single rule)
-            if (!settings.ApmTracingEnabledInternal)
+            if (!settings.ExperimentalAppsecStandaloneEnabledInternal)
             {
                 return new TraceSampler(new TracerRateLimiter(1, 60_000));
             }

@@ -98,23 +98,24 @@ partial class TracerSettings
     }
 
         /// <summary>
-        /// Gets a value indicating whether APM tracing is enabled
-        /// Default is <c>true</c>.
+        /// Gets a value indicating whether Appsec standalone is enabled.
+        /// Default is <c>false</c>.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.ExperimentalAppsecStandaloneEnabled"/>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public bool ApmTracingEnabled
+    public bool ExperimentalAppSecStandaloneEnabled
     {
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)132);
-            return ApmTracingEnabledInternal;
+            return ExperimentalAppSecStandaloneEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)133);
-            ApmTracingEnabledInternal = value;
+            ExperimentalAppSecStandaloneEnabledInternal = value;
         }
     }
 

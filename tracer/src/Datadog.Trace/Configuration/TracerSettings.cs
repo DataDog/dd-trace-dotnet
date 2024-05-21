@@ -153,9 +153,9 @@ namespace Datadog.Trace.Configuration
                                   .AsBoolResult()
                                   .OverrideWith(in otelTraceEnabled, defaultValue: true);
 
-            ApmTracingEnabledInternal = config
-                          .WithKeys(ConfigurationKeys.ApmTracingEnabled)
-                          .AsBool(defaultValue: true);
+            ExperimentalAppSecStandaloneEnabledInternal = config
+                          .WithKeys(ConfigurationKeys.ExperimentalAppsecStandaloneEnabled)
+                          .AsBool(defaultValue: false);
 
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
@@ -565,14 +565,15 @@ namespace Datadog.Trace.Configuration
         internal bool TraceEnabledInternal { get; private set; }
 
         /// <summary>
-        /// Gets a value indicating whether APM tracing is enabled
-        /// Default is <c>true</c>.
+        /// Gets a value indicating whether Appsec standalone is enabled.
+        /// Default is <c>false</c>.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.ExperimentalAppsecStandaloneEnabled"/>
         [GeneratePublicApi(
-            PublicApiUsage.TracerSettings_ApmTracingEnabled_Get,
-            PublicApiUsage.TracerSettings_ApmTracingEnabled_Set)]
-        [ConfigKey(ConfigurationKeys.ApmTracingEnabled)]
-        internal bool ApmTracingEnabledInternal { get; private set; }
+            PublicApiUsage.TracerSettings_ExperimentalAppSecStandaloneEnabled_Get,
+            PublicApiUsage.TracerSettings_ExperimentalAppSecStandaloneEnabled_Set)]
+        [ConfigKey(ConfigurationKeys.ExperimentalAppsecStandaloneEnabled)]
+        internal bool ExperimentalAppSecStandaloneEnabledInternal { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether profiling is enabled.

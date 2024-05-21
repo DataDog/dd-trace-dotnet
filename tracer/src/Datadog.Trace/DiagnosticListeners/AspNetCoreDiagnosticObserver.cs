@@ -412,7 +412,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnHostingHttpRequestInStart(object arg)
         {
             var tracer = CurrentTracer;
-            if (!tracer.Settings.ApmTracingEnabledInternal)
+            if (tracer.Settings.ExperimentalAppsecStandaloneEnabledInternal)
             {
                 return;
             }
@@ -447,7 +447,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.ApmTracingEnabledInternal ||
+            if (tracer.Settings.ExperimentalAppsecStandaloneEnabledInternal ||
                  !tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
                  !tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
@@ -577,7 +577,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnMvcBeforeAction(object arg)
         {
             var tracer = CurrentTracer;
-            if (!tracer.Settings.ApmTracingEnabledInternal)
+            if (tracer.Settings.ExperimentalAppsecStandaloneEnabledInternal)
             {
                 return;
             }
@@ -630,7 +630,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.ApmTracingEnabledInternal ||
+            if (tracer.Settings.ExperimentalAppsecStandaloneEnabledInternal ||
                 !tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
@@ -671,7 +671,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.ApmTracingEnabledInternal ||
+            if (tracer.Settings.ExperimentalAppsecStandaloneEnabledInternal ||
                 !tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
@@ -690,7 +690,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.ApmTracingEnabledInternal ||
+            if (tracer.Settings.ExperimentalAppsecStandaloneEnabledInternal ||
                 !tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
