@@ -24,3 +24,5 @@ EXPORTS
     ShouldHeal
     ReportSuccessfulInstrumentation
     GetUserStrings
+    InitGeneratedCallTargetDefinitions
+    InitGeneratedCallSiteDefinitions

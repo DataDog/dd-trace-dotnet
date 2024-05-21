@@ -3,12 +3,20 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
 namespace Datadog.Trace.SourceGenerators.Tests
 {
     public class AspectsDefinitionsGeneratorTests
     {
+        private static AdditionalText[] _additionalTextFiles = { new MyAdditionalText() };
+
         [Fact]
         public void DoesNotGenerateDefinitionsIfThereAreNone()
         {
@@ -44,6 +52,7 @@ namespace Datadog.Trace.ClrProfiler
 """;
 
             var (diagnostics, output) = TestHelpers.GetGeneratedOutput<AspectsDefinitionsGenerator>(
+                _additionalTextFiles,
                 SourceHelper.AspectAttributes,
                 input);
 
@@ -101,6 +110,7 @@ namespace Datadog.Trace.ClrProfiler
 """";
 
             var (diagnostics, output) = TestHelpers.GetGeneratedOutput<AspectsDefinitionsGenerator>(
+                _additionalTextFiles,
                 SourceHelper.AspectAttributes,
                 input);
             Assert.Equal(expected, output);
@@ -801,6 +811,35 @@ internal enum VulnerabilityType
 }
 }               
 """;
+        }
+
+        private class MyAdditionalText : AdditionalText
+        {
+            private static string _path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase).Replace(@"file:\", string.Empty), "Generated\\placeholder.json");
+            private static Source _source = new Source();
+
+            public override string Path => _path;
+
+            public override SourceText GetText(CancellationToken cancellationToken = default)
+            {
+                return _source;
+            }
+
+            private class Source : SourceText
+            {
+                private static string _content = "AdditionalText Test File";
+
+                public override Encoding Encoding => Encoding.UTF8;
+
+                public override int Length => _content.Length;
+
+                public override char this[int position] => _content[position];
+
+                public override void CopyTo(int sourceIndex, char[] destination, int destinationIndex, int count)
+                {
+                    _content.CopyTo(sourceIndex, destination, destinationIndex, count);
+                }
+            }
         }
     }
 }

@@ -116,6 +116,9 @@
     <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp">
       <Filter>Iast</Filter>
     </ClCompile>
+    <ClCompile Include="generated_definitions.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -266,6 +269,9 @@
     <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h">
       <Filter>Iast</Filter>
     </ClInclude>
+    <ClInclude Include="generated_definitions.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">
@@ -285,6 +291,9 @@
     </Filter>
     <Filter Include="Tracer">
       <UniqueIdentifier>{981bc011-a78e-4f39-b0b2-429340f384cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Generated">
+      <UniqueIdentifier>{e28536f2-0112-42e4-aee7-d11cb6b38cfe}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
