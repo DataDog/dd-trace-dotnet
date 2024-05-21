@@ -707,8 +707,6 @@
     <ClCompile Include="TelemetryMetricsWorker.cpp">
       <Filter>libdatadog</Filter>
     </ClCompile>
-<<<<<<< HEAD
-=======
     <ClCompile Include="Callstack.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
@@ -721,7 +719,6 @@
     <ClCompile Include="SsiManager.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
->>>>>>> b89121d5e (First version with telemetry)
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

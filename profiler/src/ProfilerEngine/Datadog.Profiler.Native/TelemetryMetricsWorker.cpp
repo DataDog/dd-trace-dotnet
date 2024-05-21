@@ -39,9 +39,9 @@ void TelemetryMetricsWorker::Stop()
     }
 
     ddog_MaybeError result = ddog_telemetry_handle_stop(_pHandle);
-    if (result.tag == DDOG_OPTION_VEC_U8_SOME_VEC_U8)
+    if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Error("Failed to stop telemetry worker for (", _serviceName, "): ", std::string((char*)result.some.ptr, result.some.len));
+        Log::Error("Failed to stop telemetry worker for (", _serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
         return;
     }
 
@@ -85,9 +85,9 @@ bool TelemetryMetricsWorker::Start(
     ddog_CharSlice tracer_version = FfiHelper::StringToCharSlice(libraryVersion);   // ProfileExporter::LibraryVersion
 
     ddog_MaybeError result = ddog_telemetry_builder_instantiate(&builder, service, lang, lang_version, tracer_version);
-    if (result.tag == DDOG_OPTION_VEC_U8_SOME_VEC_U8)  // TODO: create a macro for these similar repeated check/log
+    if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)  // TODO: create a macro for these similar repeated check/log
     {
-        Log::Error("Failed to instantiate telemetry builder for (", serviceName, "): ", std::string((char*)result.some.ptr, result.some.len));
+        Log::Error("Failed to instantiate telemetry builder for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
         return false;
     }
 
@@ -95,9 +95,9 @@ bool TelemetryMetricsWorker::Start(
     ddog_CharSlice endpoint_char = FfiHelper::StringToCharSlice(agentEndpoint);
     struct ddog_Endpoint* endpoint = ddog_endpoint_from_url(endpoint_char);
     result = ddog_telemetry_builder_with_endpoint_config_endpoint(builder, endpoint);
-    if (result.tag == DDOG_OPTION_VEC_U8_SOME_VEC_U8)
+    if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Error("Failed to configure telemetry builder agent endpoint: ", std::string((char*)result.some.ptr, result.some.len));
+        Log::Error("Failed to configure telemetry builder agent endpoint: ", std::string((char*)result.some.message.ptr, result.some.message.len));
         return false;
     }
     ddog_endpoint_drop(endpoint);
@@ -105,9 +105,9 @@ bool TelemetryMetricsWorker::Start(
     // other builder configuration
     ddog_CharSlice runtime_id = FfiHelper::StringToCharSlice(runtimeId);
     result = ddog_telemetry_builder_with_str_runtime_id(builder, runtime_id);
-    if (result.tag == DDOG_OPTION_VEC_U8_SOME_VEC_U8)
+    if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Error("Failed to set telemetry builder runtime ID for (", serviceName, "): ", std::string((char*)result.some.ptr, result.some.len));
+        Log::Error("Failed to set telemetry builder runtime ID for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
         return false;
     }
 
@@ -116,9 +116,9 @@ bool TelemetryMetricsWorker::Start(
     {
         ddog_CharSlice service_version = FfiHelper::StringToCharSlice(serviceVersion);
         result = ddog_telemetry_builder_with_str_application_service_version(builder, service_version);
-        if (result.tag == DDOG_OPTION_VEC_U8_SOME_VEC_U8)
+        if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
         {
-            Log::Error("Failed to set telemetry builder service version for (", serviceName, "): ", std::string((char*)result.some.ptr, result.some.len));
+            Log::Error("Failed to set telemetry builder service version for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
             return false;
         }
     }
@@ -126,9 +126,9 @@ bool TelemetryMetricsWorker::Start(
     {
         ddog_CharSlice env = FfiHelper::StringToCharSlice(environment);
         result = ddog_telemetry_builder_with_str_application_env(builder, env);
-        if (result.tag == DDOG_OPTION_VEC_U8_SOME_VEC_U8)
+        if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
         {
-            Log::Error("Failed to set telemetry builder environment for (", serviceName, "): ", std::string((char*)result.some.ptr, result.some.len));
+            Log::Error("Failed to set telemetry builder environment for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
             return false;
         }
     }
@@ -136,9 +136,9 @@ bool TelemetryMetricsWorker::Start(
     // start the worker
     // NOTE: builder is consummed after the call so no need to drop it
     result = ddog_telemetry_handle_start(_pHandle);
-    if (result.tag == DDOG_OPTION_VEC_U8_SOME_VEC_U8)
+    if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Error("Failed to start telemetry for (", serviceName, "): ", std::string((char*)result.some.ptr, result.some.len));
+        Log::Error("Failed to start telemetry for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
         return false;
     }
 
@@ -216,7 +216,7 @@ bool TelemetryMetricsWorker::AddPoint(double value, bool hasSentProfiles, SkipPr
         libdatadog::FfiHelper::StringToCharSlice(heuristicTag));
 
     auto result = ddog_telemetry_handle_add_point_with_tags(_pHandle, &_numberOfProfilesKey, value, tags);
-    if (result.tag == DDOG_OPTION_VEC_U8_SOME_VEC_U8)
+    if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
         Log::Debug("Failed to add telemetry point");
 

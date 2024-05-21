@@ -83,8 +83,8 @@ void ProfilerTelemetry::ProcessEnd(uint64_t duration, uint64_t sentProfiles, Ski
 #define TRY(expr)                                                                                  \
   {                                                                                                \
     ddog_MaybeError err = expr;                                                                    \
-    if (err.tag == DDOG_OPTION_VEC_U8_SOME_VEC_U8) {                                               \
-      fprintf(stderr, "ERROR: %.*s", (int)err.some.len, (char *)err.some.ptr);                     \
+    if (err.tag == DDOG_OPTION_ERROR_SOME_ERROR) {                                               \
+      fprintf(stderr, "ERROR: %.*s", (int)err.some.message.len, (char *)err.some.message.ptr);                     \
       return;                                                                                    \
     }                                                                                              \
   }

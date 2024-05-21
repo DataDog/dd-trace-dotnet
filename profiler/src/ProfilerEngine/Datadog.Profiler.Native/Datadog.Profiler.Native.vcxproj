@@ -252,8 +252,6 @@
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
     <ClInclude Include="ISsiLifetime.h" />
-    <ClInclude Include="ISsiManager.h" />
-    <ClInclude Include="ProfilerTelemetry.h" />
     <ClInclude Include="LinkedList.hpp" />
     <ClInclude Include="MemoryResourceManager.h" />
     <ClInclude Include="ISsiManager.h" />
