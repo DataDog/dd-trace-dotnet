@@ -20,6 +20,11 @@ namespace AspNetCoreSmokeTest
                 Console.WriteLine("Error: Profiler is required and is not loaded.");
                 return 1;
             }
+
+            if(Environment.GetEnvironmentVariable("CRASH_APP_ON_STARTUP") == "1")
+            {
+                throw new BadImageFormatException("Expected");
+            }
             
             Console.WriteLine("Process details: ");
             Console.WriteLine($"Framework: {RuntimeInformation.FrameworkDescription}");
@@ -38,7 +43,7 @@ namespace AspNetCoreSmokeTest
                 .ConfigureServices(ConfigureServices)
                 .ConfigureWebHostDefaults(webBuilder => webBuilder.Configure(Configure));
 
-        private static void ConfigureServices(IServiceCollection services)
+        private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
         {
             services.AddControllers()
                     .AddApplicationPart(typeof(ValuesController).Assembly);
