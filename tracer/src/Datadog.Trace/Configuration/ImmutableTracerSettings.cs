@@ -29,7 +29,7 @@ namespace Datadog.Trace.Configuration
     public partial record ImmutableTracerSettings
     {
         private readonly bool _traceEnabled;
-        private readonly bool _apmTracingEnabled;
+        private readonly bool _experimentalAppsecStandaloneEnabled;
         private readonly DomainMetadata _domainMetadata;
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly bool _logsInjectionEnabled;
@@ -95,7 +95,7 @@ namespace Datadog.Trace.Configuration
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
             _traceEnabled = settings.TraceEnabledInternal;
-            _apmTracingEnabled = settings.ApmTracingEnabledInternal;
+            _experimentalAppsecStandaloneEnabled = settings.ExperimentalAppSecStandaloneEnabledInternal;
             ExporterInternal = new ImmutableExporterSettings(settings.ExporterInternal, true);
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
@@ -261,12 +261,12 @@ namespace Datadog.Trace.Configuration
         internal bool TraceEnabledInternal => DynamicSettings.TraceEnabled ?? _traceEnabled;
 
         /// <summary>
-        /// Gets a value indicating whether APM tracing is enabled.
+        /// Gets a value indicating whether Appsec standalone billing is enabled.
         /// Default is <c>true</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_ApmTracingEnabled_Get)]
-        internal bool ApmTracingEnabledInternal => DynamicSettings.ApmTracingEnabled ?? _apmTracingEnabled;
+        /// <seealso cref="ConfigurationKeys.ExperimentalAppsecStandaloneEnabled"/>
+        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_ExperimentalAppSecStandaloneEnabled_Get)]
+        internal bool ExperimentalAppsecStandaloneEnabledInternal => DynamicSettings.ExperimentalAppsecStandaloneEnabled ?? _experimentalAppsecStandaloneEnabled;
 
         /// <summary>
         /// Gets the exporter settings that dictate how the tracer exports data.
