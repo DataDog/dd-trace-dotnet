@@ -9,6 +9,7 @@
 #include "cor_profiler.h"
 #include "logger.h"
 #include "iast/hardcoded_secrets_method_analyzer.h"
+#include "generated_definitions.h"
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -246,6 +247,17 @@ EXTERN_C BOOL STDAPICALLTYPE ShouldHeal(ModuleID moduleId, int methodToken, WCHA
 
     return trace::profiler->ShouldHeal(moduleId, methodToken, instrumentationId, products);
 }
+
+EXTERN_C long InitGeneratedCallTargetDefinitions(WCHAR* platform)
+{
+    return trace::GeneratedDefinitions::GetCallTargets(platform).size();
+}
+
+EXTERN_C long InitGeneratedCallSiteDefinitions(WCHAR* platform)
+{
+    return trace::GeneratedDefinitions::GetCallSites(platform).size();
+}
+
 
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)

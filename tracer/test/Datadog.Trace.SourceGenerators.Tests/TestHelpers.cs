@@ -25,6 +25,13 @@ namespace Datadog.Trace.SourceGenerators.Tests
             return (diagnostics, trees.LastOrDefault() ?? string.Empty);
         }
 
+        public static (ImmutableArray<Diagnostic> Diagnostics, string Output) GetGeneratedOutput<T>(IEnumerable<AdditionalText> additionalTexts, params string[] source)
+            where T : IIncrementalGenerator, new()
+        {
+            var (diagnostics, trees) = GetGeneratedTrees<T, TrackingNames>(additionalTexts, source);
+            return (diagnostics, trees.LastOrDefault() ?? string.Empty);
+        }
+
         public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<TGenerator>(params string[] source)
             where TGenerator : IIncrementalGenerator, new()
             => GetGeneratedTrees<TGenerator, TrackingNames>(source);
@@ -37,7 +44,11 @@ namespace Datadog.Trace.SourceGenerators.Tests
             where TGenerator : IIncrementalGenerator, new()
             => GetGeneratedTrees<TGenerator, TTrackingNames>(sources, assertOutput: true);
 
-        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<TGenerator, TTrackingNames>(string[] sources, bool assertOutput)
+        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<TGenerator, TTrackingNames>(IEnumerable<AdditionalText> additionalTexts, params string[] sources)
+            where TGenerator : IIncrementalGenerator, new()
+            => GetGeneratedTrees<TGenerator, TTrackingNames>(sources, assertOutput: true, additionalTexts: additionalTexts);
+
+        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<TGenerator, TTrackingNames>(string[] sources, bool assertOutput, IEnumerable<AdditionalText> additionalTexts = null)
             where TGenerator : IIncrementalGenerator, new()
         {
             // get all the const string fields
@@ -48,10 +59,10 @@ namespace Datadog.Trace.SourceGenerators.Tests
                                .Where(x => !string.IsNullOrEmpty(x))
                                .ToArray();
 
-            return GetGeneratedTrees<TGenerator>(sources, trackingNames, assertOutput);
+            return GetGeneratedTrees<TGenerator>(sources, trackingNames, assertOutput, additionalTexts);
         }
 
-        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<T>(string[] source, string[] stages, bool assertOutput = true)
+        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<T>(string[] source, string[] stages, bool assertOutput = true, IEnumerable<AdditionalText> additionalText = null)
             where T : IIncrementalGenerator, new()
         {
             IEnumerable<SyntaxTree> syntaxTrees = source.Select(static x => CSharpSyntaxTree.ParseText(x));
@@ -66,12 +77,12 @@ namespace Datadog.Trace.SourceGenerators.Tests
                 references,
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-            GeneratorDriverRunResult runResult = RunGeneratorAndAssertOutput<T>(compilation, stages, assertOutput);
+            GeneratorDriverRunResult runResult = RunGeneratorAndAssertOutput<T>(compilation, stages, assertOutput, additionalText);
 
             return (runResult.Diagnostics, runResult.GeneratedTrees.Select(x => x.ToString()).ToArray());
         }
 
-        private static GeneratorDriverRunResult RunGeneratorAndAssertOutput<T>(CSharpCompilation compilation, string[] trackingNames, bool assertOutput = true)
+        private static GeneratorDriverRunResult RunGeneratorAndAssertOutput<T>(CSharpCompilation compilation, string[] trackingNames, bool assertOutput = true, IEnumerable<AdditionalText> additionalText = null)
             where T : IIncrementalGenerator, new()
         {
             ISourceGenerator generator = new T().AsSourceGenerator();
@@ -80,7 +91,7 @@ namespace Datadog.Trace.SourceGenerators.Tests
                 disabledOutputs: IncrementalGeneratorOutputKind.None,
                 trackIncrementalGeneratorSteps: true);
 
-            GeneratorDriver driver = CSharpGeneratorDriver.Create([generator], driverOptions: opts);
+            GeneratorDriver driver = CSharpGeneratorDriver.Create([generator], additionalTexts: additionalText, driverOptions: opts);
 
             var clone = compilation.Clone();
             // Run twice, once with a clone of the compilation
