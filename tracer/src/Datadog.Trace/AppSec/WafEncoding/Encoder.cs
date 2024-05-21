@@ -90,8 +90,6 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
         private static unsafe DdwafObjectStruct Encode<TInstance>(ref EncoderContext context, int remainingDepth, string? key, TInstance? o)
         {
-            // pool ??= Pool;
-
             DdwafObjectStruct ddwafObjectStruct;
 
             switch (o)
@@ -481,7 +479,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 {
                     var element = enumerableDic.ElementAt(i);
                     var elementKey = getKey(element);
-                    if (string.IsNullOrEmpty(key))
+                    if (string.IsNullOrEmpty(elementKey))
                     {
                         childrenCount--;
                         if (Log.IsEnabled(LogEventLevel.Debug))
@@ -512,10 +510,10 @@ namespace Datadog.Trace.AppSec.WafEncoding
             var maxChildrenCount = childrenCount;
             for (var i = 0; i < maxChildrenCount; i++)
             {
-                var originalKeyValue = dic.ElementAt(i);
-                var keyValue = VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<KeyValuePair<TKey, TValue>, KeyValuePair<TKey, TValue>>(ref originalKeyValue);
-                var key = getKey(keyValue);
-                if (string.IsNullOrEmpty(key))
+                var originalElement = dic.ElementAt(i);
+                var element = VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<KeyValuePair<TKey, TValue>, KeyValuePair<TKey, TValue>>(ref originalElement);
+                var elementKey = getKey(element);
+                if (string.IsNullOrEmpty(elementKey))
                 {
                     childrenCount--;
                     if (Log.IsEnabled(LogEventLevel.Debug))
@@ -526,7 +524,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     continue;
                 }
 
-                *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, key, getValue(keyValue!));
+                *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, elementKey, getValue(element!));
                 itemData += ObjectStructSize;
             }
         }
