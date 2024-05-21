@@ -226,12 +226,14 @@ public class CreatedumpTests : ConsoleTestHelper
         report["siginfo"]!["signum"]!.Value<string>().Should().Be("6");
     }
 
+#if !NETFRAMEWORK
     [SkippableFact]
     public async Task WorksFromContinuousprofiler()
     {
         // Check that we're still able to locate dd-dotnet when LD_PRELOAD points to the continuousprofiler folder
 
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
         using var reportFile = new TemporaryFile();
 
@@ -249,6 +251,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         File.Exists(reportFile.Path).Should().BeTrue();
     }
+#endif
 
     [SkippableFact]
     public async Task IgnoreNonDatadogCrashes()
