@@ -6,6 +6,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -155,13 +156,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 telemetry?.AssertConfiguration("DD_TRACE_METHODS"); // normalised to trace_methods in the backend
 
                 // Run snapshot verification
-                var settings = VerifyHelper.GetSpanVerifierSettings();
+                var settings = VerifyHelper.GetSpanVerifierSettings(
+                    scrubbers: null,
+                    parameters: [],
+                    apmStringTagsScrubber: VerifyHelper.ScrubStringTags, // remove "_dd.agent_psr" to prevent flake
+                    apmNumericTagsScrubber: ApmNumericTagsScrubber,
+                    ciVisStringTagsScrubber: null,
+                    ciVisNumericTagsScrubber: null);
+
                 await Verifier.Verify(orderedSpans, settings)
                               .UniqueForRuntime()
                               .UseMethodName("_");
             }
 
             telemetry?.Dispose();
+            return;
+
+            // remove "_dd.agent_psr"
+            static Dictionary<string, double> ApmNumericTagsScrubber(MockSpan target, Dictionary<string, double> tags)
+            {
+                return tags
+                     ?.Where(kvp => !string.Equals(kvp.Key, Metrics.SamplingAgentDecision))
+                      .OrderBy(x => x.Key)
+                      .ToDictionary(x => x.Key, x => x.Value);
+            }
         }
 
         [SkippableFact]
