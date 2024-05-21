@@ -233,6 +233,96 @@ namespace datadog::shared::nativeloader
         }
 
         //
+        // Get Profiler interface ICorProfilerInfo4
+        //
+        ICorProfilerInfo4* info4 = nullptr;
+        HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &info4);
+        if (FAILED(hr))
+        {
+            Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
+            return E_FAIL;
+        }
+        const auto runtimeInformation = GetRuntimeVersion(info4);
+
+        //
+        // Check if we're running in Single Step, and if so, whether we should bail out
+        //
+        // This variable is non-empty when we're in single step
+        const auto isSingleStepVariable = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
+        if(!isSingleStepVariable.empty())
+        {
+            Log::Debug("CorProfiler::Initialize: Single step instrumentation detected, checking for EOL environment");
+            // We're doing single-step instrumentation, check if we're in an EOL environment
+            IUnknown* tstVerProfilerInfo;
+            const char* unsupportedFramework = nullptr;
+            if (runtimeInformation.is_core())
+            {
+                // For .NET Core, we require .NET Core 3.1 or higher
+                // We could use runtime_information, but I don't know how reliable the values we get from that are?
+                if (S_OK == pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**) &tstVerProfilerInfo))
+                {
+                    // .NET Core 3.1+, but is it _too_ high?
+                    if(runtimeInformation.major_version > 8)
+                    {
+                        unsupportedFramework = ".NET 9 or higher";
+                    }
+
+                    // supported
+                    tstVerProfilerInfo->Release();
+                }
+                else
+                {
+                    unsupportedFramework = ".NET Core 3.0 or lower";
+                }
+            }
+            else
+            {
+                // For .NET Framework, we require .NET Framework 4.6.1 or higher
+                if (S_OK == pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo7), (void**) &tstVerProfilerInfo))
+                {
+                    // supported
+                    tstVerProfilerInfo->Release();
+                }
+                else
+                {
+                    unsupportedFramework = ".NET Framework 4.6.0 or lower";
+                }
+            }
+
+            if(unsupportedFramework != nullptr)
+            {
+                // Are we supposed to override the EOL check?
+                const auto forceEolInstrumentationVariable = GetEnvironmentValue(EnvironmentVariables::ForceEolInstrumentation);
+                bool forceEolInstrumentation;
+                if(!forceEolInstrumentationVariable.empty()
+                    && TryParseBooleanEnvironmentValue(forceEolInstrumentationVariable, forceEolInstrumentation)
+                    && forceEolInstrumentation)
+                {
+                    Log::Info(
+                        "CorProfiler::Initialize: Unsupported framework version '",
+                        unsupportedFramework,
+                        "' detected. Forcing instrumentation with single-step instrumentation due to ",
+                        EnvironmentVariables::ForceEolInstrumentation);
+                }
+                else
+                {
+                    Log::Warn(
+                        "CorProfiler::Initialize: Single-step instrumentation is not supported in '",
+                        unsupportedFramework,
+                        "'. Set ",
+                        EnvironmentVariables::ForceEolInstrumentation,
+                        " to override this check and force instrumentation");
+                    info4->Release();
+                    return E_FAIL;
+                }
+            }
+            else
+            {
+                Log::Debug("CorProfiler::Initialize: Supported framework version detected, continuing with single-step instrumentation");
+            }
+        }
+
+        //
         // Get and set profiler pointers
         //
         if (m_dispatcher == nullptr)
@@ -274,18 +364,6 @@ namespace datadog::shared::nativeloader
         // 5. Repeat the steps 2,3,4 for other target profilers.
         // 6. Use the ICorProfilerInfo4 or ICorProfilerInfo5 instance to set the final `mask_low` and `mask_hi`.
         // *******************************************************************************************************
-
-        //
-        // Get Profiler interface ICorProfilerInfo4 and ICorProfilerInfo5
-        //
-        ICorProfilerInfo4* info4 = nullptr;
-        HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &info4);
-        if (FAILED(hr))
-        {
-            Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
-            return E_FAIL;
-        }
-        InspectRuntimeVersion(info4);
 
         ICorProfilerInfo5* info5 = nullptr;
         hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &info5);
@@ -1097,7 +1175,7 @@ namespace datadog::shared::nativeloader
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.2 or later.");
+            Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.1 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), (void**) &tstVerProfilerInfo))
@@ -1149,7 +1227,7 @@ namespace datadog::shared::nativeloader
         }
     }
 
-    void CorProfiler::InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo)
+    RuntimeInformation CorProfiler::GetRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo)
     {
         USHORT clrInstanceId;
         COR_PRF_RUNTIME_TYPE runtimeType;
@@ -1166,6 +1244,7 @@ namespace datadog::shared::nativeloader
             std::ostringstream hex;
             hex << std::hex << hrGRI;
             Log::Info("Initializing the Profiler: Exact runtime version could not be obtained (0x", hex.str(), ")");
+            return {};
         }
         else
         {
@@ -1177,6 +1256,7 @@ namespace datadog::shared::nativeloader
                       : (std::string("unknown(") + std::to_string(runtimeType) + std::string(")"))),
                  ",", " majorVersion: ", majorVersion, ", minorVersion: ", minorVersion,
                  ", buildNumber: ", buildNumber, ", qfeVersion: ", qfeVersion, " }.");
+            return {runtimeType, majorVersion, minorVersion, buildNumber, qfeVersion};
         }
     }
 
