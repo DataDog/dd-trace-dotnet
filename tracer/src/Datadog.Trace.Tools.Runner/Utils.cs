@@ -42,6 +42,26 @@ namespace Datadog.Trace.Tools.Runner
             return DirectoryExists("Home", Path.Combine(runnerFolder, "..", "..", "..", "home"), Path.Combine(runnerFolder, "home"));
         }
 
+        public static string GetDdDotnetPath(ApplicationContext applicationContext)
+        {
+            var tracerHome = GetHomePath(applicationContext.RunnerFolder);
+
+            // pick the right one depending on the platform
+            var ddDotnet = (platform: applicationContext.Platform, arch: RuntimeInformation.OSArchitecture, musl: IsAlpine()) switch
+            {
+                (Platform.Windows, Architecture.X64, _) => Path.Combine(tracerHome, "win-x64", "dd-dotnet.exe"),
+                (Platform.Windows, Architecture.X86, _) => Path.Combine(tracerHome, "win-x64", "dd-dotnet.exe"),
+                (Platform.Linux, Architecture.X64, false) => Path.Combine(tracerHome, "linux-x64", "dd-dotnet"),
+                (Platform.Linux, Architecture.X64, true) => Path.Combine(tracerHome, "linux-musl-x64", "dd-dotnet"),
+                (Platform.Linux, Architecture.Arm64, false) => Path.Combine(tracerHome, "linux-arm64", "dd-dotnet"),
+                (Platform.Linux, Architecture.Arm64, true) => Path.Combine(tracerHome, "linux-musl-arm64", "dd-dotnet"),
+                var other => throw new NotSupportedException(
+                    $"Unsupported platform/architecture combination: ({other.platform}{(other.musl ? " musl" : string.Empty)}/{other.arch})")
+            };
+
+            return ddDotnet;
+        }
+
         public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options, CIVisibilityOptions ciVisibilityOptions)
         {
             var tracerHomeFolder = options.TracerHome.GetValue(context);
