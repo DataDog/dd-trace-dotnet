@@ -91,13 +91,13 @@ namespace Datadog.Trace
 
         public string? Origin { get; set; }
 
-        public string? InitialSamplingMechanism { get; set; }
+        public string? SamplingMechanism { get; set; }
 
-        public double? InitialSamplingRate { get; set; }
+        public double? AppliedSamplingRate { get; set; }
+
+        public double? RateLimiterRate { get; set; }
 
         public double? TracesKeepRate { get; set; }
-
-        public double? LimiterSamplingRate { get; set; }
 
         /// <summary>
         /// Gets or sets additional key/value pairs from upstream "tracestate" header that we will propagate downstream.
@@ -310,20 +310,20 @@ namespace Datadog.Trace
             SamplingPriority = priority;
 
             // report only the original rates, do not override
-            InitialSamplingRate ??= rate;
-            LimiterSamplingRate ??= limiterRate;
+            AppliedSamplingRate ??= rate;
+            RateLimiterRate ??= limiterRate;
 
             if (SamplingPriorityValues.IsKeep(p) && mechanism != null)
             {
                 // report sampling mechanism only if decision is to keep the trace.
                 // report only the original sampling mechanism, do not override.
-                InitialSamplingMechanism ??= mechanism;
+                SamplingMechanism ??= mechanism;
                 Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, mechanism);
             }
             else if (SamplingPriorityValues.IsDrop(p))
             {
                 // remove sampling mechanism if decision is to drop the trace
-                InitialSamplingMechanism = null;
+                SamplingMechanism = null;
                 Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
