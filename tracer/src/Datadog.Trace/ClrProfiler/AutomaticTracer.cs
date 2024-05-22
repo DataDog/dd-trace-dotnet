@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -15,14 +17,14 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal class AutomaticTracer : CommonTracer, IAutomaticTracer, IDistributedTracer
     {
-        private static readonly AsyncLocal<IReadOnlyDictionary<string, string>> DistributedTrace = new();
+        private static readonly AsyncLocal<IReadOnlyDictionary<string, string>?> DistributedTrace = new();
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AutomaticTracer));
 
-        private ICommonTracer _child;
+        private ICommonTracer? _child;
 
         bool IDistributedTracer.IsChildTracer => false;
 
-        IReadOnlyDictionary<string, string> IDistributedTracer.GetSpanContextRaw()
+        IReadOnlyDictionary<string, string>? IDistributedTracer.GetSpanContextRaw()
         {
             if (_child is null)
             {
@@ -34,13 +36,13 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        IScope IDistributedTracer.GetActiveScope()
+        IScope? IDistributedTracer.GetActiveScope()
         {
             // The automatic tracer doesn't need to get the manual active trace
             return null;
         }
 
-        SpanContext IDistributedTracer.GetSpanContext()
+        SpanContext? IDistributedTracer.GetSpanContext()
         {
             if (_child is null)
             {
@@ -49,15 +51,15 @@ namespace Datadog.Trace.ClrProfiler
 
             var value = DistributedTrace.Value;
 
-            if (value is SpanContext spanContext)
+            return value switch
             {
-                return spanContext;
-            }
-
-            return SpanContextPropagator.Instance.Extract(value);
+                null => null,
+                SpanContext spanContext => spanContext,
+                _ => SpanContextPropagator.Instance.Extract(value!)
+            };
         }
 
-        void IDistributedTracer.SetSpanContext(IReadOnlyDictionary<string, string> value)
+        void IDistributedTracer.SetSpanContext(IReadOnlyDictionary<string, string>? value)
         {
             // This is a performance optimization. See comment in GetDistributedTrace() about potential race condition
             if (_child != null)
@@ -78,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler
 
         string IDistributedTracer.GetRuntimeId() => GetAutomaticRuntimeId();
 
-        public object GetAutomaticActiveScope()
+        public object? GetAutomaticActiveScope()
         {
             return Tracer.Instance.InternalActiveScope;
         }
@@ -87,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler
         /// Gets the internal distributed trace object
         /// </summary>
         /// <returns>Shared distributed trace object instance</returns>
-        public IReadOnlyDictionary<string, string> GetDistributedTrace()
+        public IReadOnlyDictionary<string, string>? GetDistributedTrace()
         {
             // There is a subtle race condition:
             // in a server application, the automated instrumentation can be loaded first (to process the incoming request)
@@ -104,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler
         /// Sets the internal distributed trace object
         /// </summary>
         /// <param name="value">Shared distributed trace object instance</param>
-        public void SetDistributedTrace(IReadOnlyDictionary<string, string> value)
+        public void SetDistributedTrace(IReadOnlyDictionary<string, string>? value)
         {
             if (_child != null)
             {
