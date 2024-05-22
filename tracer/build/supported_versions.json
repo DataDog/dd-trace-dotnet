@@ -158,6 +158,23 @@
   },
   {
     "integrationName": "AspNetCore",
+    "assemblyName": "Microsoft.AspNetCore.Session",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.AspNetCore.Session",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "2.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "2.2.0",
+        "maxVersionAvailableInclusive": "2.2.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "AspNetCore",
     "assemblyName": "Microsoft.AspNetCore.StaticFiles",
     "minAssemblyVersionInclusive": "2.0.0",
     "maxAssemblyVersionInclusive": "8.65535.65535",
@@ -225,9 +242,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.5.3",
-        "maxVersionSupportedInclusive": "3.7.303.7",
-        "maxVersionAvailableInclusive": "3.7.303.7",
-        "maxVersionTestedInclusive": "3.7.303.7"
+        "maxVersionSupportedInclusive": "3.7.303.9",
+        "maxVersionAvailableInclusive": "3.7.303.9",
+        "maxVersionTestedInclusive": "3.7.303.9"
       }
     ]
   },
@@ -242,9 +259,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.3.5",
-        "maxVersionSupportedInclusive": "3.7.301.85",
-        "maxVersionAvailableInclusive": "3.7.301.85",
-        "maxVersionTestedInclusive": "3.7.301.85"
+        "maxVersionSupportedInclusive": "3.7.301.86",
+        "maxVersionAvailableInclusive": "3.7.301.86",
+        "maxVersionTestedInclusive": "3.7.301.86"
       }
     ]
   },
@@ -276,8 +293,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.7.304.2",
-        "maxVersionAvailableInclusive": "3.7.304.2",
+        "maxVersionSupportedInclusive": "3.7.304.3",
+        "maxVersionAvailableInclusive": "3.7.304.3",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -293,9 +310,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.2.1",
-        "maxVersionSupportedInclusive": "3.7.301.40",
-        "maxVersionAvailableInclusive": "3.7.301.40",
-        "maxVersionTestedInclusive": "3.7.301.40"
+        "maxVersionSupportedInclusive": "3.7.301.41",
+        "maxVersionAvailableInclusive": "3.7.301.41",
+        "maxVersionTestedInclusive": "3.7.301.41"
       }
     ]
   },
@@ -310,9 +327,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.0.13",
-        "maxVersionSupportedInclusive": "3.7.301.5",
-        "maxVersionAvailableInclusive": "3.7.301.5",
-        "maxVersionTestedInclusive": "3.7.301.5"
+        "maxVersionSupportedInclusive": "3.7.301.6",
+        "maxVersionAvailableInclusive": "3.7.301.6",
+        "maxVersionTestedInclusive": "3.7.301.6"
       }
     ]
   },
@@ -382,9 +399,9 @@
         "minVersionAvailableInclusive": "3.0.0",
         "minVersionSupportedInclusive": "3.6.0",
         "minVersionTestedInclusive": "3.6.0",
-        "maxVersionSupportedInclusive": "3.39.1",
-        "maxVersionAvailableInclusive": "3.39.1",
-        "maxVersionTestedInclusive": "3.39.1"
+        "maxVersionSupportedInclusive": "3.40.0",
+        "maxVersionAvailableInclusive": "3.40.0",
+        "maxVersionTestedInclusive": "3.40.0"
       }
     ]
   },
@@ -864,7 +881,7 @@
         "name": "Npgsql",
         "minVersionAvailableInclusive": "2.0.11",
         "minVersionSupportedInclusive": "4.0.0",
-        "minVersionTestedInclusive": "4.1.13",
+        "minVersionTestedInclusive": "4.1.14",
         "maxVersionSupportedInclusive": "8.0.3",
         "maxVersionAvailableInclusive": "8.0.3",
         "maxVersionTestedInclusive": "8.0.3"
@@ -1156,20 +1173,10 @@
   },
   {
     "integrationName": "TestPlatformAssemblyResolver",
-    "assemblyName": "Microsoft.VisualStudio.TestPlatform.Common",
+    "assemblyName": "Microsoft.TestPlatform.PlatformAbstractions",
     "minAssemblyVersionInclusive": "15.0.0",
     "maxAssemblyVersionInclusive": "15.65535.65535",
-    "packages": [
-      {
-        "name": "Microsoft.VisualStudio.TestPlatform",
-        "minVersionAvailableInclusive": "14.0.0",
-        "minVersionSupportedInclusive": "14.0.0",
-        "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "14.0.0.1",
-        "maxVersionAvailableInclusive": "14.0.0.1",
-        "maxVersionTestedInclusive": null
-      }
-    ]
+    "packages": []
   },
   {
     "integrationName": "Wcf",
