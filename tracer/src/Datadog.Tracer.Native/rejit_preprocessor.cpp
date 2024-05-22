@@ -463,7 +463,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::RequestRejit(std::vector<MethodIdentifier>& rejitRequests,
-                                                             bool enqueueInSameThread)
+                                                             bool enqueueInSameThread, bool callRevertExplicitly)
 {
     if (!rejitRequests.empty())
     {
@@ -482,18 +482,19 @@ void RejitPreprocessor<RejitRequestDefinition>::RequestRejit(std::vector<MethodI
 
         if (enqueueInSameThread)
         {
-            m_rejit_handler->RequestRejit(vtModules, vtMethodDefs);
+            m_rejit_handler->RequestRejit(vtModules, vtMethodDefs, callRevertExplicitly);
         }
         else
         {
-            m_rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
+            m_rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs, nullptr, callRevertExplicitly);
         }
     }
 }
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests,
-                                                                    std::shared_ptr<std::promise<void>> promise)
+                                                                    std::shared_ptr<std::promise<void>> promise,
+                                                                    bool callRevertExplicitly)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -512,9 +513,9 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
 
     Logger::Debug("RejitHandler::EnqueueRequestRejit");
 
-    std::function<void()> action = [=, requests = std::move(rejitRequests), localPromise = promise]() mutable {
+    std::function<void()> action = [=, requests = std::move(rejitRequests), localPromise = promise, callRevertExplicitly = callRevertExplicitly]() mutable {
         // Process modules for rejit
-        RequestRejit(requests, true);
+        RequestRejit(requests, true, callRevertExplicitly);
 
         // Resolve promise
         if (localPromise != nullptr)

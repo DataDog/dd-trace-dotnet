@@ -617,7 +617,7 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(
         std::copy(revertRequests.begin(), revertRequests.end(), requests.begin());
         auto promise = std::make_shared<std::promise<void>>();
         std::future<void> future = promise->get_future();
-        m_debugger_rejit_preprocessor->EnqueueRequestRejit(requests, promise);
+        m_debugger_rejit_preprocessor->EnqueueRequestRejit(requests, promise, true);
         // wait and get the value from the future<void>
         future.get();
     }

@@ -5,7 +5,7 @@ void fault_tolerant::FaultTolerantTracker::RequestRejit(ModuleID moduleId, mdMet
     std::vector<MethodIdentifier> requests = {{moduleId, methodId}};
     auto promise = std::make_shared<std::promise<void>>();
     auto future = promise->get_future();
-    rejit_handler->EnqueueRequestRejit(requests, promise);
+    rejit_handler->EnqueueRequestRejit(requests, promise, true);
     future.get();
 }
 

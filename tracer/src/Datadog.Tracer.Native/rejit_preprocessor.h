@@ -115,11 +115,11 @@ public:
                                     std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef,
                                     const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler);
 
-    void RequestRejit(std::vector<MethodIdentifier>& rejitRequests, bool enqueueInSameThread = false);
+    void RequestRejit(std::vector<MethodIdentifier>& rejitRequests, bool enqueueInSameThread = false, bool callRevertExplicitly = false);
     ULONG RequestRejitForLoadedModules(const std::vector<ModuleID>& modules,
                                        const std::vector<RejitRequestDefinition>& requests,
                                        bool enqueueInSameThread = false);
-    void EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::shared_ptr<std::promise<void>> promise);
+    void EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::shared_ptr<std::promise<void>> promise, bool callRevertExplicitly = false);
     void EnqueueRequestRejitForLoadedModules(const std::vector<ModuleID>& modulesVector,
                                              const std::vector<RejitRequestDefinition>& requests,
                                              std::shared_ptr<std::promise<ULONG>> promise);

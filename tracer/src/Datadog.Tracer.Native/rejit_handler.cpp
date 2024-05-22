@@ -234,7 +234,7 @@ void RejitHandlerModule::RequestRejitForInlinersInModule(ModuleID moduleId)
 // RejitHandler
 //
 
-void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef)
+void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef, bool callRevertExplicitly)
 {
     if (IsShutdownRequested())
     {
@@ -249,6 +249,12 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
         // *************************************
         // Request ReJIT
         // *************************************
+
+        if (callRevertExplicitly)
+        {
+            HRESULT* status = nullptr;
+            m_profilerInfo->RequestRevert((ULONG) modulesVector.size(), &modulesVector[0], &modulesMethodDef[0], status);
+        }
 
         if (m_profilerInfo10 != nullptr)
         {
@@ -283,7 +289,8 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
 }
 
 void RejitHandler::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests,
-                                       std::shared_ptr<std::promise<void>> promise)
+                                       std::shared_ptr<std::promise<void>> promise, 
+                                       bool callRevertExplicitly)
 {
     std::vector<ModuleID> modulesVector;
     std::vector<mdMethodDef> methodsVector;
@@ -294,7 +301,7 @@ void RejitHandler::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitReque
         methodsVector.push_back(request.methodToken);
     }
 
-    EnqueueForRejit(modulesVector, methodsVector, promise);
+    EnqueueForRejit(modulesVector, methodsVector, promise, callRevertExplicitly);
 }
 
 RejitHandler::RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader) :
@@ -308,7 +315,7 @@ RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkO
 }
 
 void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef,
-                                   std::shared_ptr<std::promise<void>> promise)
+                                   std::shared_ptr<std::promise<void>> promise, bool callRevertExplicitly)
 {
     if (IsShutdownRequested() || modulesVector.size() == 0 || modulesMethodDef.size() == 0)
     {
@@ -323,9 +330,9 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
     Logger::Debug("RejitHandler::EnqueueForRejit");
 
     std::function<void()> action = [=, modules = std::move(modulesVector), methods = std::move(modulesMethodDef),
-                                    localPromise = promise]() mutable {
+                                    localPromise = promise, callRevertExplicitly = callRevertExplicitly]() mutable {
         // Request ReJIT
-        RequestRejit(modules, methods);
+        RequestRejit(modules, methods, callRevertExplicitly);
 
         // Resolve promise
         if (localPromise != nullptr)
