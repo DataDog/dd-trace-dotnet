@@ -508,7 +508,7 @@ namespace Datadog.Trace
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directly instead.
         /// </remarks>
-        internal Span StartSpan(string operationName, ITags? tags = null, ISpanContext? parent = null, string? serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string? rawTraceId = null, string? rawSpanId = null, bool addToTraceContext = true)
+        internal Span StartSpan(string? operationName, ITags? tags = null, ISpanContext? parent = null, string? serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string? rawTraceId = null, string? rawSpanId = null, bool addToTraceContext = true)
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
 
