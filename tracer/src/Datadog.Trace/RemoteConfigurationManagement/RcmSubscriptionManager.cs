@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
@@ -15,7 +14,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
@@ -35,7 +33,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
     /// </summary>
     private readonly Dictionary<string, RemoteConfigurationCache> _appliedConfigurations = new();
 
-    private readonly string _id;
+    private readonly string _id = Guid.NewGuid().ToString();
 
     // Ideally this would be an ImmutableArray but that's not available in net461
     private IReadOnlyList<ISubscription> _subscriptions = [];
@@ -44,11 +42,6 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
     private int _targetsVersion;
     private BigInteger _capabilities;
     private string? _lastPollError;
-
-    public RcmSubscriptionManager()
-    {
-        _id = Guid.NewGuid().ToString();
-    }
 
     public bool HasAnySubscription => _subscriptions.Count > 0;
 
@@ -156,7 +149,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
     {
         // capabilitiesArray needs to be big endian
 #if NETCOREAPP
-        var capabilitiesArray = _capabilities.ToByteArray(true, true);
+        var capabilitiesArray = _capabilities.ToByteArray(isUnsigned: true, isBigEndian: true);
 #else
         var capabilitiesArray = _capabilities.ToByteArray();
         Array.Reverse(capabilitiesArray);
