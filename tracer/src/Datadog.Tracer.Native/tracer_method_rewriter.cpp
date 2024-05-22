@@ -4,7 +4,7 @@
 #include "integration.h"
 #include "logger.h"
 #include "stats.h"
-#include "version.h"
+#include "../../../shared/src/native-src/version.h"
 #include "environment_variables_util.h"
 #include "dd_profiler_constants.h"
 #include "tracer_handler_module_method.h"
