@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ContinuousProfiler;
@@ -12,15 +14,15 @@ namespace Datadog.Trace
 {
     internal class AsyncLocalScopeManager : IScopeManager, IScopeRawAccess
     {
-        private readonly AsyncLocal<Scope> _activeScope = CreateScope();
+        private readonly AsyncLocal<Scope?> _activeScope = CreateScope();
 
-        public Scope Active
+        public Scope? Active
         {
             get => _activeScope.Value;
             private set => _activeScope.Value = value;
         }
 
-        Scope IScopeRawAccess.Active
+        Scope? IScopeRawAccess.Active
         {
             get => Active;
             set => Active = value;
@@ -55,17 +57,17 @@ namespace Datadog.Trace
             DistributedTracer.Instance.SetSpanContext(scope.Span.Context.ParentInternal as SpanContext);
         }
 
-        private static AsyncLocal<Scope> CreateScope()
+        private static AsyncLocal<Scope?> CreateScope()
         {
             if (Profiler.Instance.ContextTracker.IsEnabled)
             {
-                return new AsyncLocal<Scope>(OnScopeChanged);
+                return new AsyncLocal<Scope?>(OnScopeChanged);
             }
 
-            return new AsyncLocal<Scope>();
+            return new AsyncLocal<Scope?>();
         }
 
-        private static void OnScopeChanged(AsyncLocalValueChangedArgs<Scope> obj)
+        private static void OnScopeChanged(AsyncLocalValueChangedArgs<Scope?> obj)
         {
             if (obj.CurrentValue == null)
             {

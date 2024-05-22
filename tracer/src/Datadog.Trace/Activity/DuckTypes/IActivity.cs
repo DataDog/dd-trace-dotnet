@@ -29,7 +29,7 @@ namespace Datadog.Trace.Activity.DuckTypes
 
         TimeSpan Duration { get; }
 
-        string? OperationName { get; }
+        string OperationName { get; }
 
         IActivity? Parent { get; }
 

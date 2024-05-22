@@ -26,7 +26,7 @@ internal class ActionResponseFilter : IActionFilter
         if (security.Enabled
             && context.Result.TryDuckCast<ObjectResult>(out var result)
             && result.Value is not null
-            && Tracer.Instance.ActiveScope.Span is Span currentSpan)
+            && Tracer.Instance.ActiveScope?.Span is Span currentSpan)
         {
             security.CheckBody(context.HttpContext, currentSpan, result.Value, response: true);
         }

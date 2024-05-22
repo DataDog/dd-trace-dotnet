@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -37,10 +39,10 @@ namespace Datadog.Trace
         /// </summary>
         private static int _liveTracerCount;
 
-        private static Tracer _instance;
+        private static Tracer? _instance;
         private static volatile bool _globalInstanceInitialized;
 
-        private readonly TracerManager _tracerManager;
+        private readonly TracerManager? _tracerManager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Tracer"/> class with default settings. Replaces the
@@ -72,7 +74,7 @@ namespace Datadog.Trace
                   "If you were using this API to configure the global Tracer.Instance in code, use the static "
                 + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
         [PublicApi]
-        public Tracer(TracerSettings settings)
+        public Tracer(TracerSettings? settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor_Settings);
             // Don't call Configure because it will call Start on the TracerManager
@@ -89,7 +91,7 @@ namespace Datadog.Trace
         /// Note that this API does NOT replace the global Tracer instance.
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
-        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
+        internal Tracer(TracerSettings? settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController? telemetry = null, IDiscoveryService? discoveryService = null)
             : this(TracerManagerFactory.Instance.CreateTracerManager(settings is null ? null : new ImmutableTracerSettings(settings, true), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null))
         {
         }
@@ -100,7 +102,7 @@ namespace Datadog.Trace
         /// If non-null the provided <see cref="TracerManager"/> will be tied to this TracerInstance (for testing purposes only)
         /// If null, the global <see cref="TracerManager"/> will be fetched or created, but will not be modified.
         /// </summary>
-        private protected Tracer(TracerManager tracerManager)
+        private protected Tracer(TracerManager? tracerManager)
         {
             _tracerManager = tracerManager;
             if (tracerManager is null)
@@ -134,7 +136,7 @@ namespace Datadog.Trace
             {
                 if (_globalInstanceInitialized)
                 {
-                    return _instance;
+                    return _instance!;
                 }
 
                 Tracer instance;
@@ -142,7 +144,7 @@ namespace Datadog.Trace
                 {
                     if (_globalInstanceInitialized)
                     {
-                        return _instance;
+                        return _instance!;
                     }
 
                     instance = new Tracer(tracerManager: null); // don't replace settings, use existing
@@ -186,7 +188,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active scope
         /// </summary>
-        public IScope ActiveScope
+        public IScope? ActiveScope
         {
             get
             {
@@ -197,12 +199,12 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active span context dictionary by consulting DistributedTracer.Instance
         /// </summary>
-        internal IReadOnlyDictionary<string, string> DistributedSpanContext => DistributedTracer.Instance.GetSpanContextRaw() ?? InternalActiveScope?.Span?.Context;
+        internal IReadOnlyDictionary<string, string>? DistributedSpanContext => DistributedTracer.Instance.GetSpanContextRaw() ?? InternalActiveScope?.Span?.Context;
 
         /// <summary>
         /// Gets the active scope
         /// </summary>
-        internal Scope InternalActiveScope => TracerManager.ScopeManager.Active;
+        internal Scope? InternalActiveScope => TracerManager.ScopeManager.Active;
 
         /// <summary>
         /// Gets the tracer's scope manager, which determines which span is currently active, if any.
@@ -232,7 +234,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active scope
         /// </summary>
-        IScope ITracer.ActiveScope => ActiveScope;
+        IScope? ITracer.ActiveScope => ActiveScope;
 
         /// <summary>
         /// Gets this tracer's settings.
@@ -271,7 +273,7 @@ namespace Datadog.Trace
             ConfigureInternal(settings is null ? null : new ImmutableTracerSettings(settings, true));
         }
 
-        internal static void ConfigureInternal(ImmutableTracerSettings settings)
+        internal static void ConfigureInternal(ImmutableTracerSettings? settings)
         {
             TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
             Tracer.Instance.TracerManager.Start();
@@ -404,11 +406,11 @@ namespace Datadog.Trace
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
+        internal SpanContext CreateSpanContext(ISpanContext? parent = null, string? serviceName = null, TraceId traceId = default, ulong spanId = 0, string? rawTraceId = null, string? rawSpanId = null)
         {
             // null parent means use the currently active span
             parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
-            string lastParentId = null;
+            string? lastParentId = null;
             TraceContext traceContext;
 
             if (parent is SpanContext parentSpanContext)
@@ -493,7 +495,7 @@ namespace Datadog.Trace
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directory instead.
         /// </remarks>
-        internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)
+        internal Scope StartActiveInternal(string operationName, ISpanContext? parent = null, string? serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags? tags = null)
         {
             var span = StartSpan(operationName, tags, parent, serviceName, startTime);
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
@@ -505,7 +507,7 @@ namespace Datadog.Trace
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directly instead.
         /// </remarks>
-        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
+        internal Span StartSpan(string operationName, ITags? tags = null, ISpanContext? parent = null, string? serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string? rawTraceId = null, string? rawSpanId = null, bool addToTraceContext = true)
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
 
