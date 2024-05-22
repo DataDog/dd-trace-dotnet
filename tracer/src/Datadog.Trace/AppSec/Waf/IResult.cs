@@ -24,7 +24,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public Dictionary<string, object?>? SendStackInfo { get; }
 
-        List<object>? Data { get; }
+        IReadOnlyCollection<object>? Data { get; }
 
         Dictionary<string, object?>? Actions { get; }
 
