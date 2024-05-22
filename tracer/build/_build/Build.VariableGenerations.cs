@@ -579,9 +579,9 @@ partial class Build : NukeBuild
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-focal", runCrashTest: false),
                         },
                         installer: "datadog-dotnet-apm_*_arm64.deb",
                         installCmd: "dpkg -i ./datadog-dotnet-apm_*_arm64.deb",
@@ -597,7 +597,7 @@ partial class Build : NukeBuild
                         {
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
-                            new (publishFramework: TargetFramework.NET5_0, "35-5.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "35-5.0", runCrashTest: false),
                         },
                         installer: "datadog-dotnet-apm*-1.aarch64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.aarch64.rpm",
@@ -615,7 +615,7 @@ partial class Build : NukeBuild
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
                         },
                         installer: "datadog-dotnet-apm_*_arm64.deb", // we advise customers to install the .deb in this case
                         installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.arm64.tar.gz",
@@ -677,6 +677,7 @@ partial class Build : NukeBuild
                                 dockerTag = dockerTag,
                                 publishFramework = image.PublishFramework,
                                 linuxArtifacts = linuxArtifacts,
+                                runCrashTest = image.RunCrashTest ? "true" : "false",
                                 runtimeImage = $"{dockerName}:{image.RuntimeTag}"
                             });
                     }
@@ -792,9 +793,9 @@ partial class Build : NukeBuild
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-focal", runCrashTest: false),
                         },
                         relativeProfilerPath: "datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
                         relativeApiWrapperPath: "datadog/linux-arm64/Datadog.Linux.ApiWrapper.x64.so",
@@ -826,6 +827,7 @@ partial class Build : NukeBuild
                                 publishFramework = image.PublishFramework,
                                 relativeProfilerPath = relativeProfilerPath,
                                 relativeApiWrapperPath = relativeApiWrapperPath,
+                                runCrashTest = image.RunCrashTest ? "true" : "false",
                                 runtimeImage = $"{dockerName}:{image.RuntimeTag}"
                             });
                     }
@@ -936,9 +938,9 @@ partial class Build : NukeBuild
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
-                            new (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-focal", runCrashTest: false),
                         },
                         platformSuffix: "linux-arm64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
@@ -1006,6 +1008,7 @@ partial class Build : NukeBuild
                                 dockerTag = dockerTag,
                                 publishFramework = image.PublishFramework,
                                 platformSuffix = platformSuffix,
+                                runCrashTest = image.RunCrashTest ? "true" : "false",
                                 runtimeImage = $"{dockerName}:{image.RuntimeTag}"
                             });
                     }
@@ -1308,13 +1311,15 @@ partial class Build : NukeBuild
 
     class SmokeTestImage
     {
-        public SmokeTestImage(string publishFramework, string runtimeTag)
+        public SmokeTestImage(string publishFramework, string runtimeTag, bool runCrashTest = true)
         {
             PublishFramework = publishFramework;
             RuntimeTag = runtimeTag;
+            RunCrashTest = runCrashTest;
         }
 
         public string PublishFramework { get; init; }
         public string RuntimeTag { get; init; }
+        public bool RunCrashTest { get; init; }
     }
 }
