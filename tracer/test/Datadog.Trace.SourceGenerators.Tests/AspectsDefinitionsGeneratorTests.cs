@@ -815,7 +815,9 @@ internal enum VulnerabilityType
 
         private class MyAdditionalText : AdditionalText
         {
+#pragma warning disable SYSLIB0012 // Assembly.CodeBase is obsolete
             private static string _path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase).Replace(@"file:\", string.Empty), "Generated\\placeholder.json");
+#pragma warning restore SYSLIB0012 // Assembly.CodeBase is obsolete
             private static Source _source = new Source();
 
             public override string Path => _path;

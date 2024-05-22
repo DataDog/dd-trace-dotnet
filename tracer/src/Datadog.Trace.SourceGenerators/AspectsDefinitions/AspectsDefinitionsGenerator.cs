@@ -15,18 +15,20 @@ using System.Threading;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.SourceGenerators.Helpers;
+using Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
+using Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 /// <inheritdoc />
 [Generator]
-public class AspectsDefinitionsGenerator : IIncrementalGenerator
+public class AspectsDefinitionsGenerator : IncrementalGeneratorBase
 {
     private const string NullLiteral = "null";
 
     /// <inheritdoc />
-    public void Initialize(IncrementalGeneratorInitializationContext context)
+    public override void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // RegisterSource(context, "AspectAttribute");
         // RegisterSource(context, "AspectClassAttribute");
@@ -35,16 +37,11 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
         // RegisterSource(context, "AspectMethodInsertBeforeAttribute");
         // RegisterSource(context, "AspectMethodReplaceAttribute");
 
-        var placeholderFile = context.AdditionalTextsProvider
-            .Where(a => a.Path.EndsWith("placeholder.json"))
-            .Select((a, c) => Path.GetDirectoryName(a.Path));
+        // Get path of the compiling project using the placeholder additional file
+        var placeholderFile = RegisterPlaceholder(context);
 
-        var tfmToGenerate = context.SyntaxProvider
-                    .ForAttributeWithMetadataName(
-                        "Datadog.Trace.Telemetry.TargetFrameworkMonikerAttribute",
-                        predicate: (node, _) => node is ClassDeclarationSyntax,
-                        transform: GetTfm)
-                    .Where(static m => m is not null);
+        // Get the TFM from the TargetFrameworkMonikerAttribute
+        var tfm = RegisterTfm(context);
 
         IncrementalValuesProvider<Result<(ClassAspects Aspects, bool IsValid)>> aspectsClassesToGenerate =
             context.SyntaxProvider
@@ -61,8 +58,6 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
                .SelectMany(static (x, _) => x.Errors)
                .WithTrackingName(TrackingNames.Diagnostics));
 
-        var tfm = tfmToGenerate.Select(static (x, _) => x.Value);
-
         IncrementalValuesProvider<ClassAspects> validClassesToGenerate =
             aspectsClassesToGenerate
                .Where(static m => m.Value.IsValid)
@@ -75,11 +70,12 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
                .WithTrackingName(TrackingNames.Collected);
 
         context.RegisterSourceOutput(
-            tfm.Collect().Combine(placeholderFile.Collect()).Combine(allClassesToGenerate),
-            static (spc, classToGenerate) => Execute(in classToGenerate, spc));
+            tfm.Collect().Combine(placeholderFile.Collect())
+            .Combine(allClassesToGenerate),
+            static (spc, classToGenerate) => Execute(in classToGenerate.Left, in classToGenerate.Right, spc));
     }
 
-    private static void Execute(in ((ImmutableArray<string> Tfm, ImmutableArray<string> Placeholders) Dest, ImmutableArray<ClassAspects> AspectClasses) data, SourceProductionContext context)
+    private static void Execute(in (ImmutableArray<string> Tfm, ImmutableArray<string> Placeholders) dest, in ImmutableArray<ClassAspects> aspectClasses, SourceProductionContext context)
     {
         var sb = new StringBuilder();
         sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeader);
@@ -96,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler
         public static string[] GetAspects() => new string[] {
 """);
 
-        foreach (var aspectClass in data.AspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal))
+        foreach (var aspectClass in aspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal))
         {
             sb.AppendLine(FormatLine(aspectClass.AspectClass));
             foreach (var aspect in aspectClass.Aspects)
@@ -114,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler
         public static string[] GetRaspAspects() => new string[] {
 """);
 
-        foreach (var aspectClass in data.AspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal))
+        foreach (var aspectClass in aspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal))
         {
             if (aspectClass.AspectClass.Contains(",RaspIastSink,"))
             {
@@ -134,9 +130,9 @@ namespace Datadog.Trace.ClrProfiler
 
         context.AddSource("AspectsDefinitions.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
 
-        if (data.Dest.Tfm.Length > 0 && data.Dest.Placeholders.Length > 0)
+        if (dest.Tfm.Length > 0 && dest.Placeholders.Length > 0)
         {
-            GenerateNative(data.Dest.Tfm[0], data.Dest.Placeholders[0], data.AspectClasses, context);
+            GenerateNative(dest.Tfm[0], dest.Placeholders[0], aspectClasses, context);
         }
 
         string FormatLine(string line)
@@ -155,58 +151,22 @@ namespace Datadog.Trace.ClrProfiler
 
 namespace trace
 {
+
 """);
-        sb.AppendLine(GetFunctionName());
+        GenerateCallSites(aspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal));
+        sb.AppendLine();
+        GenerateCallSites(aspectClasses.Where(p => p.AspectClass.Contains(",RaspIastSink,")).OrderBy(p => p.AspectClass, StringComparer.Ordinal), "_Rasp");
         sb.AppendLine("""
-{
-    return {
-""");
-
-        foreach (var aspectClass in aspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal))
-        {
-            sb.AppendLine(FormatLine(aspectClass.AspectClass));
-            foreach (var aspect in aspectClass.Aspects)
-            {
-                sb.AppendLine(FormatLine(aspect));
-            }
-        }
-
-        sb.AppendLine("""
-        };
-}
-""");
-
-        sb.AppendLine(GetFunctionName("_Rasp"));
-        sb.AppendLine("""
-{
-    return {
-""");
-
-        foreach (var aspectClass in aspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal))
-        {
-            if (aspectClass.AspectClass.Contains(",RaspIastSink,"))
-            {
-                sb.AppendLine(FormatLine(aspectClass.AspectClass));
-                foreach (var aspect in aspectClass.Aspects)
-                {
-                    sb.AppendLine(FormatLine(aspect));
-                }
-            }
-        }
-
-        sb.AppendLine("""
-        };
-    }
 }
 """);
 
         _ = Directory.CreateDirectory(destFolder);
-        var filePath = Path.Combine(destFolder, $"Generated\\generated_{GetTFMName()}.h");
+        var filePath = Path.Combine(destFolder, $"Generated\\generated_callsites_{GetTFMName()}.h");
         File.WriteAllText(filePath, sb.ToString());
 
         string FormatLine(string line)
         {
-            return $"WStr(\"{line.Replace("\"", "\\\"").Replace("RaspIastSink", "Sink")}\"),";
+            return $"(WCHAR*)WStr(\"{line.Replace("\"", "\\\"").Replace("RaspIastSink", "Sink")}\"),";
         }
 
         string GetTFMName()
@@ -214,35 +174,26 @@ namespace trace
             return tfm.Replace(".", "_");
         }
 
-        string GetFunctionName(string suffix = "")
+        string GetFieldName(string suffix = "")
         {
-            return $"std::vector<WSTRING> GetCallSites_{GetTFMName() + suffix}()";
-        }
-    }
-
-    private static Result<string> GetTfm(GeneratorAttributeSyntaxContext context, CancellationToken ct)
-    {
-        INamedTypeSymbol? classSymbol = context.TargetSymbol as INamedTypeSymbol;
-        if (classSymbol is null)
-        {
-            return new Result<string>("ERROR", default);
+            return $"std::vector<WCHAR*> g_callSites_{GetTFMName() + suffix}=";
         }
 
-        ct.ThrowIfCancellationRequested();
-
-        var tfm = "ERROR";
-
-        foreach (AttributeData attribute in classSymbol.GetAttributes())
+        void GenerateCallSites(IEnumerable<ClassAspects> aspectClasses, string suffix = "")
         {
-            if (attribute.AttributeClass is null) { continue; }
-            if (attribute.AttributeClass.Name == "TargetFrameworkMonikerAttribute")
+            sb.AppendLine($"{GetFieldName(suffix)}");
+            sb.AppendLine("{");
+            foreach (var aspectClass in aspectClasses)
             {
-                tfm = attribute.ConstructorArguments[0].Value?.ToString() ?? "ERROR";
-                break;
+                sb.AppendLine(FormatLine(aspectClass.AspectClass));
+                foreach (var aspect in aspectClass.Aspects)
+                {
+                    sb.AppendLine(FormatLine(aspect));
+                }
             }
-        }
 
-        return new Result<string>(tfm, default);
+            sb.AppendLine("};");
+        }
     }
 
     private static Result<(ClassAspects Aspects, bool IsValid)> GetAspectsToGenerate(GeneratorAttributeSyntaxContext context, CancellationToken ct)

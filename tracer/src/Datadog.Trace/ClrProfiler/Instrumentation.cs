@@ -115,7 +115,8 @@ namespace Datadog.Trace.ClrProfiler
                         enabledCategories |= InstrumentationCategory.AppSec;
                     }
 
-                    var defs = NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
+                    // var defs = NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
+                    var defs = NativeMethods.InitEmbeddedCallTargetDefinitions(ConfigTelemetryData.ManagedTracerTfmValue, (uint)enabledCategories);
                     Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
                     TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
 
@@ -583,16 +584,17 @@ namespace Datadog.Trace.ClrProfiler
 
             if (isIast || raspEnabled)
             {
-                string[] inputAspects = null;
-
-                inputAspects = isIast ? AspectDefinitions.GetAspects() : AspectDefinitions.GetRaspAspects();
-
-                if (inputAspects != null)
+                string platform = ConfigTelemetryData.ManagedTracerTfmValue;
+                if (!isIast) { platform += "_Rasp"; }
+                // string[] inputAspects = isIast ? AspectDefinitions.GetAspects() : AspectDefinitions.GetRaspAspects();
+                // if (inputAspects != null)
                 {
                     var debugMsg = (isIast && raspEnabled) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
                     Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
 
-                    var aspects = NativeMethods.RegisterIastAspects(inputAspects);
+                    // var aspects = NativeMethods.RegisterIastAspects(inputAspects);
+                    var aspects = NativeMethods.InitEmbeddedCallSiteDefinitions(platform, (uint)0xFFFFFFFF);
+
                     Log.Information<int, string>("{Aspects} {DebugMsg} Callsite Dataflow Aspects added to the profiler.", aspects, debugMsg);
 
                     if (isIast)

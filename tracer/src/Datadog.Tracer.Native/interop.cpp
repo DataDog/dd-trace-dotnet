@@ -10,6 +10,7 @@
 #include "logger.h"
 #include "iast/hardcoded_secrets_method_analyzer.h"
 #include "generated_definitions.h"
+#include <vector>
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -248,14 +249,16 @@ EXTERN_C BOOL STDAPICALLTYPE ShouldHeal(ModuleID moduleId, int methodToken, WCHA
     return trace::profiler->ShouldHeal(moduleId, methodToken, instrumentationId, products);
 }
 
-EXTERN_C long InitGeneratedCallTargetDefinitions(WCHAR* platform)
+EXTERN_C int InitEmbeddedCallTargetDefinitions(WCHAR* platform, UINT32 enabledCategories)
 {
-    return trace::GeneratedDefinitions::GetCallTargets(platform).size();
+    auto targets = trace::GeneratedDefinitions::GetCallTargets(platform);
+    return trace::profiler->RegisterCallTargetDefinitions((WCHAR*) WStr("Tracing"), targets.data(), targets.size(), enabledCategories);
 }
 
-EXTERN_C long InitGeneratedCallSiteDefinitions(WCHAR* platform)
+EXTERN_C int InitEmbeddedCallSiteDefinitions(WCHAR* platform, UINT32 enabledCategories)
 {
-    return trace::GeneratedDefinitions::GetCallSites(platform).size();
+    auto targets = trace::GeneratedDefinitions::GetCallSites(platform);
+    return trace::profiler->RegisterIastAspects((WCHAR**)targets.data(), targets.size());
 }
 
 
