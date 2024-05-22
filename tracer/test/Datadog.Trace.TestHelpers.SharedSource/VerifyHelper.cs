@@ -215,16 +215,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Dictionary<string, double>? ScrubNumericTags(MockSpan span, Dictionary<string, double>? tags)
         {
-            string[] ignoreKeys =
-            [
-                Metrics.SamplingAgentDecision,
-                // more coming soon
-            ];
-
-            return tags
-                 ?.Where(kvp => !ignoreKeys.Contains(kvp.Key))
-                  .OrderBy(x => x.Key)
-                  .ToDictionary(x => x.Key, x => x.Value);
+            return tags; // no-op
         }
 
         public static Dictionary<string, string>? ScrubCIVisibilityTags(MockSpan span, Dictionary<string, string>? tags) => ScrubCIVisibilityTags(tags);
