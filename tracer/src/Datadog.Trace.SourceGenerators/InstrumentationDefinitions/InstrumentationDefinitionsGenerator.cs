@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -15,21 +16,29 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.SourceGenerators.Helpers;
 using Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
 using Datadog.Trace.SourceGenerators.InstrumentationDefinitions.Diagnostics;
+using Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using static AspectsDefinitionsGenerator;
 
 /// <inheritdoc />
 [Generator]
-public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
+public class InstrumentationDefinitionsGenerator : IncrementalGeneratorBase
 {
     private const string InstrumentedMethodAttribute = "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute";
     private const string AdoNetInstrumentAttribute = "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute";
     private const string AdoNetTargetSignatureAttribute = AdoNetInstrumentAttribute + ".AdoNetTargetSignatureAttribute";
 
     /// <inheritdoc />
-    public void Initialize(IncrementalGeneratorInitializationContext context)
+    public override void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        // Get path of the compiling project using the placeholder additional file
+        var placeholderFile = RegisterPlaceholder(context);
+
+        // Get the TFM from the TargetFrameworkMonikerAttribute
+        var tfm = RegisterTfm(context);
+
         // Get all the [InstrumentMethod] instances on classes
         IncrementalValuesProvider<Result<EquatableArray<CallTargetDefinitionSource>>> callTargetDefinitions =
             context.SyntaxProvider.ForAttributeWithMetadataName(
@@ -103,9 +112,10 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                .Collect();
 
         context.RegisterSourceOutput(
-            allCallTargetDefinitions.Combine(allAdoNetDefinitions),
+            tfm.Collect().Combine(placeholderFile.Collect())
+            .Combine(allCallTargetDefinitions.Combine(allAdoNetDefinitions)),
             static (spc, source) =>
-                Execute(source.Left, source.Right, spc));
+                Execute(source.Left, source.Right.Left, source.Right.Right, spc));
     }
 
     private static Result<EquatableArray<CallTargetDefinitionSource>> GetCallTargetDefinitionSources(
@@ -716,8 +726,9 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
     }
 
     private static void Execute(
-        ImmutableArray<CallTargetDefinitionSource> definitions,
-        ImmutableArray<CallTargetDefinitionSource> adoNetDefinitions,
+        in (ImmutableArray<string> Tfm, ImmutableArray<string> Placeholders) dest,
+        in ImmutableArray<CallTargetDefinitionSource> definitions,
+        in ImmutableArray<CallTargetDefinitionSource> adoNetDefinitions,
         SourceProductionContext context)
     {
         if (definitions.IsDefaultOrEmpty && adoNetDefinitions.IsDefaultOrEmpty)
@@ -731,6 +742,118 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
 
         string source = Sources.CreateCallTargetDefinitions(allDefinitions);
         context.AddSource("InstrumentationDefinitions.g.cs", SourceText.From(source, Encoding.UTF8));
+
+        if (dest.Tfm.Length > 0 && dest.Placeholders.Length > 0)
+        {
+            GenerateNative(dest.Tfm[0], dest.Placeholders[0], in allDefinitions, context);
+        }
+    }
+
+    private static void GenerateNative(string tfm, in string destFolder, in ImmutableArray<CallTargetDefinitionSource> definitions, SourceProductionContext context)
+    {
+        var sb = new StringBuilder();
+        sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeaderCpp);
+        sb.AppendLine("""
+#pragma once
+#include "../../Datadog.Tracer.Native/generated_definitions.h"
+
+namespace trace
+{
+extern WCHAR* assemblyName;
+
+""");
+        var ordered = definitions.OrderBy(p => p.AssemblyName, StringComparer.Ordinal).ThenBy(p => p.TargetTypeName, StringComparer.Ordinal).ThenBy(p => p.TargetMethodName, StringComparer.Ordinal);
+        GenerateSignatures(ordered);
+        GenerateCallTargets(ordered);
+        sb.AppendLine("""
+}
+""");
+
+        _ = Directory.CreateDirectory(destFolder);
+        var filePath = Path.Combine(destFolder, $"Generated\\generated_calltargets_{GetTFMName()}.h");
+        File.WriteAllText(filePath, sb.ToString());
+
+        string GetTFMName()
+        {
+            return tfm.Replace(".", "_");
+        }
+
+        string GetFieldName()
+        {
+            return $"std::vector<CallTargetDefinition2> g_callTargets_{GetTFMName()}=";
+        }
+
+        string GetSignatureName(int index)
+        {
+            return $"g_callTargets_{GetTFMName()}_Sig_{index}";
+        }
+
+        string GetSignatureField(CallTargetDefinitionSource definition, int index)
+        {
+            string sig = $"(WCHAR*)WStr(\"{definition.TargetReturnType}\"),";
+            foreach (var arg in definition.TargetParameterTypes)
+            {
+                sig += $"(WCHAR*)WStr(\"{arg}\"),";
+            }
+
+            return $"WCHAR* {GetSignatureName(index)}[]={{{sig}}};";
+        }
+
+        string GetCallTarget(CallTargetDefinitionSource definition, int index, string suffix = "")
+        {
+            var min = definition.MinimumVersion;
+            var max = definition.MaximumVersion;
+
+            var typ = $"(WCHAR*)WStr(\"{definition.AssemblyName}\"),(WCHAR*)WStr(\"{definition.TargetTypeName}\"),(WCHAR*)WStr(\"{definition.TargetMethodName}\"),";
+            var sig = $"{GetSignatureName(index)},{definition.TargetParameterTypes.Count + 1},";
+            var ver = $"{min.Major},{min.Minor},{min.Patch},{max.Major},{max.Minor},{max.Patch},";
+            var asy = $"assemblyName,(WCHAR*)WStr(\"{definition.InstrumentationTypeName}\"),{GetCallTargetKind(definition.IntegrationKind)},{(int)definition.InstrumentationCategory}";
+
+            return $"{{{typ}{sig}{ver}{asy}}},";
+        }
+
+        string GetCallTargetKind(int kind)
+        {
+            /*
+             enum class CallTargetKind : UINT8
+            {
+                Default = 0,
+                Derived = 1,
+                Interface = 2
+            };
+             */
+            return kind switch
+            {
+                0 => "CallTargetKind::Default",
+                1 => "CallTargetKind::Derived",
+                2 => "CallTargetKind::Interface",
+                _ => "ERROR"
+            };
+        }
+
+        void GenerateSignatures(IEnumerable<CallTargetDefinitionSource> definitions)
+        {
+            int x = 0;
+            foreach (var definition in definitions)
+            {
+                sb.AppendLine(GetSignatureField(definition, x++));
+            }
+
+            sb.AppendLine();
+        }
+
+        void GenerateCallTargets(IEnumerable<CallTargetDefinitionSource> definitions)
+        {
+            sb.AppendLine($"{GetFieldName()}");
+            sb.AppendLine("{");
+            int x = 0;
+            foreach (var definition in definitions)
+            {
+                sb.AppendLine(GetCallTarget(definition, x++));
+            }
+
+            sb.AppendLine("};");
+        }
     }
 
     private static bool TryGetVersion(string version, ushort defaultValue, out (ushort Major, ushort Minor, ushort Patch) parsedVersion)
