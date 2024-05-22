@@ -2,7 +2,6 @@ src/Datadog.Trace/AgentHttpHeaderNames.cs
 src/Datadog.Trace/AgentProcessManager.cs
 src/Datadog.Trace/AspNetCoreAvailabilityChecker.cs
 src/Datadog.Trace/AssemblyInfo.cs
-src/Datadog.Trace/AsyncLocalScopeManager.cs
 src/Datadog.Trace/CorrelationIdentifier.cs
 src/Datadog.Trace/FrameworkDescription.cs
 src/Datadog.Trace/FrameworkDescription.NetCore.cs
@@ -11,7 +10,6 @@ src/Datadog.Trace/HttpHeaderNames.cs
 src/Datadog.Trace/IDatadogOpenTracingTracer.cs
 src/Datadog.Trace/IDatadogTracer.cs
 src/Datadog.Trace/ILockedTracer.cs
-src/Datadog.Trace/IScopeManager.cs
 src/Datadog.Trace/IScopeRawAccess.cs
 src/Datadog.Trace/Metrics.cs
 src/Datadog.Trace/NativeLoader.cs
@@ -32,9 +30,7 @@ src/Datadog.Trace/TaggingUtils.cs
 src/Datadog.Trace/Tags.AppSec.cs
 src/Datadog.Trace/Tags.cs
 src/Datadog.Trace/TimeConstants.cs
-src/Datadog.Trace/Tracer.cs
 src/Datadog.Trace/TracerConstants.cs
-src/Datadog.Trace/TracerManager.cs
 src/Datadog.Trace/TracerManagerFactory.cs
 src/Datadog.Trace/Activity/ActivityEventConverter.cs
 src/Datadog.Trace/Agent/AgentWriter.cs
@@ -74,19 +70,15 @@ src/Datadog.Trace/Ci/CITracerManagerFactory.cs
 src/Datadog.Trace/Ci/CodeOwners.cs
 src/Datadog.Trace/Ci/GitInfo.cs
 src/Datadog.Trace/Ci/IEvent.cs
-src/Datadog.Trace/ClrProfiler/AutomaticTracer.cs
 src/Datadog.Trace/ClrProfiler/CallTargetKind.cs
 src/Datadog.Trace/ClrProfiler/ClrNames.cs
-src/Datadog.Trace/ClrProfiler/DistributedTracer.cs
 src/Datadog.Trace/ClrProfiler/IAutomaticTracer.cs
 src/Datadog.Trace/ClrProfiler/ICommonTracer.cs
-src/Datadog.Trace/ClrProfiler/IDistributedTracer.cs
 src/Datadog.Trace/ClrProfiler/Instrumentation.cs
 src/Datadog.Trace/ClrProfiler/InstrumentationCategory.cs
 src/Datadog.Trace/ClrProfiler/InstrumentationDefinitions.cs
 src/Datadog.Trace/ClrProfiler/InstrumentMethodAttribute.cs
 src/Datadog.Trace/ClrProfiler/IntegrationVersionRange.cs
-src/Datadog.Trace/ClrProfiler/ManualTracer.cs
 src/Datadog.Trace/ClrProfiler/NativeCallTargetDefinition.cs
 src/Datadog.Trace/ClrProfiler/NativeCallTargetDefinition2.cs
 src/Datadog.Trace/ClrProfiler/NativeCallTargetUnmanagedMemoryHelper.cs

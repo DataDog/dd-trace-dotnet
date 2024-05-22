@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -44,9 +46,9 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerManager>();
 
         private static volatile bool _firstInitialization = true;
-        private static Timer _heartbeatTimer;
+        private static Timer? _heartbeatTimer;
 
-        private static TracerManager _instance;
+        private static TracerManager? _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
@@ -69,7 +71,7 @@ namespace Datadog.Trace
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
-            ITraceProcessor[] traceProcessors = null)
+            ITraceProcessor[]? traceProcessors = null)
         {
             Settings = settings;
             AgentWriter = agentWriter;
@@ -114,7 +116,7 @@ namespace Datadog.Trace
                     ref _instance,
                     ref _globalInstanceInitialized,
                     ref _globalInstanceLock,
-                    () => CreateInitializedTracer(settings: null, TracerManagerFactory.Instance));
+                    () => CreateInitializedTracer(settings: null, TracerManagerFactory.Instance))!;
             }
         }
 
@@ -170,9 +172,9 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="settings">The settings to use </param>
         /// <param name="factory">The factory to use to create the <see cref="TracerManager"/></param>
-        public static void ReplaceGlobalManager(ImmutableTracerSettings settings, TracerManagerFactory factory)
+        public static void ReplaceGlobalManager(ImmutableTracerSettings? settings, TracerManagerFactory factory)
         {
-            TracerManager oldManager;
+            TracerManager? oldManager;
             TracerManager newManager;
             lock (_globalInstanceLock)
             {
@@ -307,7 +309,7 @@ namespace Datadog.Trace
                     return;
                 }
 
-                string agentError = null;
+                string? agentError = null;
                 var instanceSettings = instance.Settings;
 
                 // In AAS, the trace agent is deployed alongside the tracer and managed by the tracer
@@ -634,7 +636,7 @@ namespace Datadog.Trace
         }
 
         // should only be called inside a global lock, i.e. by TracerManager.Instance or ReplaceGlobalManager
-        private static TracerManager CreateInitializedTracer(ImmutableTracerSettings settings, TracerManagerFactory factory)
+        private static TracerManager CreateInitializedTracer(ImmutableTracerSettings? settings, TracerManagerFactory factory)
         {
             if (_instance is ILockedTracer)
             {
@@ -666,9 +668,9 @@ namespace Datadog.Trace
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
         }
 
-        private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
+        private static Task RunShutdownTasksAsync(Exception? ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
 
-        private static async Task RunShutdownTasksAsync(TracerManager instance, Timer heartbeatTimer)
+        private static async Task RunShutdownTasksAsync(TracerManager? instance, Timer? heartbeatTimer)
         {
             try
             {
@@ -724,7 +726,7 @@ namespace Datadog.Trace
             }
         }
 
-        private static void HeartbeatCallback(object state)
+        private static void HeartbeatCallback(object? state)
         {
             // use the count of Tracer instances as the heartbeat value
             // to estimate the number of "live" Tracers than can potentially

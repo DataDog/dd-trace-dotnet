@@ -152,7 +152,12 @@ internal static class RaspModule
     {
         if (result?.ReturnCode == WafReturnCode.Match && result?.Data is not null)
         {
-            var spanId = Tracer.Instance.InternalActiveScope.Span.SpanId;
+            var spanId = Tracer.Instance.InternalActiveScope?.Span.SpanId;
+
+            if (spanId is null)
+            {
+                return;
+            }
 
             foreach (var item in result.Data)
             {
