@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
@@ -58,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <returns>The instance of IDistributedTracer</returns>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public static object GetDistributedTracer() => Instance;
+        public static object? GetDistributedTracer() => Instance;
 
         internal static void SetInstanceOnlyForTests(IDistributedTracer instance)
         {
