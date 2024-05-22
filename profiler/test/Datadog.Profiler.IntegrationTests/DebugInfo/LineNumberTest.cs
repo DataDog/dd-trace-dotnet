@@ -75,8 +75,8 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 
                 // "normal" line info
                 second.Filename.Should().EndWith("LineNumber.cs");
-                second.StartLine.Should().Be(42);
-                second.Line.Should().Be(42);
+                second.StartLine.Should().Be(41);
+                second.Line.Should().Be(41);
 
                 // hidden debug info
                 third.Filename.Should().BeEmpty();
