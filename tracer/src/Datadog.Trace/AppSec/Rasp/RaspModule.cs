@@ -126,6 +126,10 @@ internal static class RaspModule
 
             foreach (var item in result.Data)
             {
+                // we know that the item is a dictionary because of the way we are deserializing the data
+                // Any item contained in the data list comes from the current RASP call, so
+                // it should be tagged with current span_id
+
                 if (item is Dictionary<string, object> dictionary)
                 {
                     dictionary.Add("span_id", spanId);
