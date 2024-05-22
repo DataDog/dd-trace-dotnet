@@ -148,7 +148,7 @@ steps:
       dockerTag: $(dockerTag)
       DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
     displayName: Check logs for evidence of crash output
-    condition: eq($(runCrashTest), 'true')
+    condition: eq(variables['runCrashTest'], 'true')
 
 - ${{ if eq(parameters.isLinux, true) }}:
     - script: |

@@ -579,6 +579,7 @@ partial class Build : NukeBuild
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            // https://github.com/dotnet/runtime/issues/66707
                             new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-focal", runCrashTest: false),
@@ -597,6 +598,7 @@ partial class Build : NukeBuild
                         {
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
+                            // https://github.com/dotnet/runtime/issues/66707
                             new (publishFramework: TargetFramework.NET5_0, "35-5.0", runCrashTest: false),
                         },
                         installer: "datadog-dotnet-apm*-1.aarch64.rpm",
@@ -615,6 +617,7 @@ partial class Build : NukeBuild
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            // https://github.com/dotnet/runtime/issues/66707
                             new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
                         },
                         installer: "datadog-dotnet-apm_*_arm64.deb", // we advise customers to install the .deb in this case
