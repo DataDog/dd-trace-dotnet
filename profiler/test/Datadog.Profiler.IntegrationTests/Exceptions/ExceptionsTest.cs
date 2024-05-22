@@ -123,11 +123,11 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             // The profiler samples the exception but also upscale the values after.
             // So we just check that we are in the right order of magnitude.
             // Note: with timestamps, upscaling will round down due to the lack of aggregation
-            exceptionCounts.Should().ContainKey("System.Exception").WhichValue.Should().BeCloseTo(4000, 300);
+            exceptionCounts.Should().ContainKey("System.Exception").WhoseValue.Should().BeCloseTo(4000, 300);
 
             // System.InvalidOperationException is seen only once, so it should be sampled
             // despite the sampler being saturated by the 4000 System.Exception
-            exceptionCounts.Should().ContainKey("System.InvalidOperationException").WhichValue.Should().Be(1);
+            exceptionCounts.Should().ContainKey("System.InvalidOperationException").WhoseValue.Should().Be(1);
         }
 
         [TestAppFact("Samples.ExceptionGenerator")]
