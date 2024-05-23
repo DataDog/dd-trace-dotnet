@@ -451,7 +451,11 @@ namespace Datadog.Trace.Configuration
 
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
-                                     .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan) && !ExperimentalAppSecStandaloneEnabledInternal);
+                                     .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan));
+            if (ExperimentalAppSecStandaloneEnabledInternal)
+            {
+                StatsComputationEnabledInternal = false;
+            }
 
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
