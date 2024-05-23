@@ -399,20 +399,20 @@ partial class Build : NukeBuild
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "debian",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
-                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-buster-slim"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bionic"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-bionic"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-buster-slim"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bionic"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-bionic"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
                         },
                         installer: "datadog-dotnet-apm*_amd64.deb",
                         installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
@@ -424,18 +424,18 @@ partial class Build : NukeBuild
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "fedora",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "35-7.0"),
-                            (publishFramework: TargetFramework.NET6_0, "34-6.0"),
-                            (publishFramework: TargetFramework.NET5_0, "35-5.0"),
-                            (publishFramework: TargetFramework.NET5_0, "34-5.0"),
-                            (publishFramework: TargetFramework.NET5_0, "33-5.0"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "34-3.1"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "33-3.1"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "29-3.1"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
+                            new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
+                            new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "35-5.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "34-5.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "33-5.0"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "34-3.1"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "33-3.1"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "29-3.1"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
                         },
                         installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
@@ -447,18 +447,18 @@ partial class Build : NukeBuild
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "alpine",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
-                            (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
                         },
                         installer: "datadog-dotnet-apm*-musl.tar.gz",
                         installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*-musl.tar.gz",
@@ -470,13 +470,13 @@ partial class Build : NukeBuild
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "centos",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "7-7.0"),
-                            (publishFramework: TargetFramework.NET6_0, "7-6.0"),
-                            (publishFramework: TargetFramework.NET5_0, "7-5.0"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "7-3.1"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "7-2.1"),
+                            new (publishFramework: TargetFramework.NET7_0, "7-7.0"),
+                            new (publishFramework: TargetFramework.NET6_0, "7-6.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "7-5.0"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "7-3.1"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "7-2.1"),
                         },
                         installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
@@ -488,12 +488,12 @@ partial class Build : NukeBuild
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "rhel",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "8-7.0"),
-                            (publishFramework: TargetFramework.NET6_0, "8-6.0"),
-                            (publishFramework: TargetFramework.NET5_0, "8-5.0"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "8-3.1"),
+                            new (publishFramework: TargetFramework.NET7_0, "8-7.0"),
+                            new (publishFramework: TargetFramework.NET6_0, "8-6.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "8-5.0"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "8-3.1"),
                         },
                         installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
@@ -505,13 +505,13 @@ partial class Build : NukeBuild
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "centos-stream",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
                             // (publishFramework: TargetFramework.NET7_0, "9-7.0"), Not updated from RC1 yet
-                            (publishFramework: TargetFramework.NET6_0, "9-6.0"),
-                            (publishFramework: TargetFramework.NET6_0, "8-6.0"),
-                            (publishFramework: TargetFramework.NET5_0, "8-5.0"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "8-3.1"),
+                            new (publishFramework: TargetFramework.NET6_0, "9-6.0"),
+                            new (publishFramework: TargetFramework.NET6_0, "8-6.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "8-5.0"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "8-3.1"),
                         },
                         installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
@@ -523,13 +523,13 @@ partial class Build : NukeBuild
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "opensuse",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "15-7.0"),
-                            (publishFramework: TargetFramework.NET6_0, "15-6.0"),
-                            (publishFramework: TargetFramework.NET5_0, "15-5.0"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "15-3.1"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "15-2.1"),
+                            new (publishFramework: TargetFramework.NET7_0, "15-7.0"),
+                            new (publishFramework: TargetFramework.NET6_0, "15-6.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "15-5.0"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "15-3.1"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "15-2.1"),
                         },
                         installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
@@ -550,10 +550,10 @@ partial class Build : NukeBuild
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "debian",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
                         },
                         installer: null,
                         installCmd: null,
@@ -574,14 +574,15 @@ partial class Build : NukeBuild
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "debian",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
-                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            // https://github.com/dotnet/runtime/issues/66707
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-focal", runCrashTest: false),
                         },
                         installer: "datadog-dotnet-apm_*_arm64.deb",
                         installCmd: "dpkg -i ./datadog-dotnet-apm_*_arm64.deb",
@@ -593,11 +594,12 @@ partial class Build : NukeBuild
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "fedora",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "35-7.0"),
-                            (publishFramework: TargetFramework.NET6_0, "34-6.0"),
-                            (publishFramework: TargetFramework.NET5_0, "35-5.0"),
+                            new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
+                            new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
+                            // https://github.com/dotnet/runtime/issues/66707
+                            new (publishFramework: TargetFramework.NET5_0, "35-5.0", runCrashTest: false),
                         },
                         installer: "datadog-dotnet-apm*-1.aarch64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.aarch64.rpm",
@@ -610,12 +612,13 @@ partial class Build : NukeBuild
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "debian_tar",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
-                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            // https://github.com/dotnet/runtime/issues/66707
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
                         },
                         installer: "datadog-dotnet-apm_*_arm64.deb", // we advise customers to install the .deb in this case
                         installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.arm64.tar.gz",
@@ -636,10 +639,10 @@ partial class Build : NukeBuild
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "debian",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
                         },
                         installer: null,
                         installCmd: null,
@@ -656,7 +659,7 @@ partial class Build : NukeBuild
                 void AddToLinuxSmokeTestsMatrix(
                     Dictionary<string, object> matrix,
                     string shortName,
-                    (string publishFramework, string runtimeTag)[] images,
+                    SmokeTestImage[] images,
                     string installer,
                     string installCmd,
                     string linuxArtifacts,
@@ -666,7 +669,7 @@ partial class Build : NukeBuild
                 {
                     foreach (var image in images)
                     {
-                        var dockerTag = $"{shortName}_{image.runtimeTag.Replace('.', '_')}";
+                        var dockerTag = $"{shortName}_{image.RuntimeTag.Replace('.', '_')}";
                         matrix.Add(
                             dockerTag,
                             new
@@ -675,9 +678,10 @@ partial class Build : NukeBuild
                                 expectedPath = runtimeId,
                                 installCmd = installCmd,
                                 dockerTag = dockerTag,
-                                publishFramework = image.publishFramework,
+                                publishFramework = image.PublishFramework,
                                 linuxArtifacts = linuxArtifacts,
-                                runtimeImage = $"{dockerName}:{image.runtimeTag}"
+                                runCrashTest = image.RunCrashTest ? "true" : "false",
+                                runtimeImage = $"{dockerName}:{image.RuntimeTag}"
                             });
                     }
                 }
@@ -689,17 +693,17 @@ partial class Build : NukeBuild
                     AddToNuGetSmokeTestsMatrix(
                         matrix,
                         "debian",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
-                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
                         },
                         relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
                         relativeApiWrapperPath: "datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
@@ -709,13 +713,13 @@ partial class Build : NukeBuild
                     AddToNuGetSmokeTestsMatrix(
                         matrix,
                         "fedora",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "35-7.0"),
-                            (publishFramework: TargetFramework.NET6_0, "34-6.0"),
-                            (publishFramework: TargetFramework.NET5_0, "33-5.0"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
+                            new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
+                            new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "33-5.0"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
                         },
                         relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
                         relativeApiWrapperPath: "datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
@@ -725,15 +729,15 @@ partial class Build : NukeBuild
                     AddToNuGetSmokeTestsMatrix(
                         matrix,
                         "alpine",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
-                            (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
                         },
                         relativeProfilerPath: "datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
                         relativeApiWrapperPath: "datadog/linux-musl-x64/Datadog.Linux.ApiWrapper.x64.so",
@@ -743,13 +747,13 @@ partial class Build : NukeBuild
                     AddToNuGetSmokeTestsMatrix(
                         matrix,
                         "centos",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "7-7.0"),
-                            (publishFramework: TargetFramework.NET6_0, "7-6.0"),
-                            (publishFramework: TargetFramework.NET5_0, "7-5.0"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "7-3.1"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "7-2.1"),
+                            new (publishFramework: TargetFramework.NET7_0, "7-7.0"),
+                            new (publishFramework: TargetFramework.NET6_0, "7-6.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "7-5.0"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "7-3.1"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "7-2.1"),
                         },
                         relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
                         relativeApiWrapperPath: "datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
@@ -759,13 +763,13 @@ partial class Build : NukeBuild
                     AddToNuGetSmokeTestsMatrix(
                         matrix,
                         "opensuse",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "15-7.0"),
-                            (publishFramework: TargetFramework.NET6_0, "15-6.0"),
-                            (publishFramework: TargetFramework.NET5_0, "15-5.0"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "15-3.1"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "15-2.1"),
+                            new (publishFramework: TargetFramework.NET7_0, "15-7.0"),
+                            new (publishFramework: TargetFramework.NET6_0, "15-6.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "15-5.0"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "15-3.1"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "15-2.1"),
                         },
                         relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
                         relativeApiWrapperPath: "datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
@@ -784,17 +788,17 @@ partial class Build : NukeBuild
                     AddToNuGetSmokeTestsMatrix(
                         matrix,
                         "debian",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
-                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-focal", runCrashTest: false),
                         },
                         relativeProfilerPath: "datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
                         relativeApiWrapperPath: "datadog/linux-arm64/Datadog.Linux.ApiWrapper.x64.so",
@@ -809,7 +813,7 @@ partial class Build : NukeBuild
                 void AddToNuGetSmokeTestsMatrix(
                     Dictionary<string, object> matrix,
                     string shortName,
-                    (string publishFramework, string runtimeTag)[] images,
+                    SmokeTestImage[] images,
                     string relativeProfilerPath,
                     string relativeApiWrapperPath,
                     string dockerName
@@ -817,16 +821,17 @@ partial class Build : NukeBuild
                 {
                     foreach (var image in images)
                     {
-                        var dockerTag = $"{shortName}_{image.runtimeTag.Replace('.', '_')}";
+                        var dockerTag = $"{shortName}_{image.RuntimeTag.Replace('.', '_')}";
                         matrix.Add(
                             dockerTag,
                             new
                             {
                                 dockerTag = dockerTag,
-                                publishFramework = image.publishFramework,
+                                publishFramework = image.PublishFramework,
                                 relativeProfilerPath = relativeProfilerPath,
                                 relativeApiWrapperPath = relativeApiWrapperPath,
-                                runtimeImage = $"{dockerName}:{image.runtimeTag}"
+                                runCrashTest = image.RunCrashTest ? "true" : "false",
+                                runtimeImage = $"{dockerName}:{image.RuntimeTag}"
                             });
                     }
                 }
@@ -838,17 +843,17 @@ partial class Build : NukeBuild
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
                         "debian",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
-                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
                         },
                         platformSuffix: "linux-x64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
@@ -857,13 +862,13 @@ partial class Build : NukeBuild
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
                         "fedora",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "35-7.0"),
-                            (publishFramework: TargetFramework.NET6_0, "34-6.0"),
-                            (publishFramework: TargetFramework.NET5_0, "33-5.0"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
+                            new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
+                            new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "33-5.0"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
                         },
                         platformSuffix: "linux-x64",
                         dockerName: "andrewlock/dotnet-fedora"
@@ -872,15 +877,15 @@ partial class Build : NukeBuild
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
                         "alpine",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"), 
-                            (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
-                            (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"), 
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
                         },
                         platformSuffix: "linux-musl-x64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
@@ -889,13 +894,13 @@ partial class Build : NukeBuild
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
                         "centos",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "7-7.0"),
-                            (publishFramework: TargetFramework.NET6_0, "7-6.0"),
-                            (publishFramework: TargetFramework.NET5_0, "7-5.0"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "7-3.1"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "7-2.1"),
+                            new (publishFramework: TargetFramework.NET7_0, "7-7.0"),
+                            new (publishFramework: TargetFramework.NET6_0, "7-6.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "7-5.0"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "7-3.1"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "7-2.1"),
                         },
                         platformSuffix: "linux-x64",
                         dockerName: "andrewlock/dotnet-centos"
@@ -904,13 +909,13 @@ partial class Build : NukeBuild
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
                         "opensuse",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "15-7.0"),
-                            (publishFramework: TargetFramework.NET6_0, "15-6.0"),
-                            (publishFramework: TargetFramework.NET5_0, "15-5.0"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "15-3.1"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "15-2.1"),
+                            new (publishFramework: TargetFramework.NET7_0, "15-7.0"),
+                            new (publishFramework: TargetFramework.NET6_0, "15-6.0"),
+                            new (publishFramework: TargetFramework.NET5_0, "15-5.0"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "15-3.1"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "15-2.1"),
                         },
                         platformSuffix: "linux-x64",
                         dockerName: "andrewlock/dotnet-opensuse"
@@ -928,17 +933,17 @@ partial class Build : NukeBuild
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
                         "debian",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
-                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-focal", runCrashTest: false),
                         },
                         platformSuffix: "linux-arm64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
@@ -956,15 +961,15 @@ partial class Build : NukeBuild
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
                         "debian",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
-                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye"),
                         },
                         platformSuffix: "linux-x64",
                         dockerName: "mcr.microsoft.com/dotnet/sdk"
@@ -973,11 +978,11 @@ partial class Build : NukeBuild
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
                         "alpine",
-                        new (string publishFramework, string runtimeTag)[]
+                        new SmokeTestImage[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
-                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.15"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.15"),
                         },
                         platformSuffix: "linux-musl-x64",
                         dockerName: "mcr.microsoft.com/dotnet/sdk"
@@ -991,22 +996,23 @@ partial class Build : NukeBuild
                 void AddToDotNetToolSmokeTestsMatrix(
                     Dictionary<string, object> matrix,
                     string shortName,
-                    (string publishFramework, string runtimeTag)[] images,
+                    SmokeTestImage[] images,
                     string platformSuffix,
                     string dockerName
                 )
                 {
                     foreach (var image in images)
                     {
-                        var dockerTag = $"{shortName}_{image.runtimeTag.Replace('.', '_')}";
+                        var dockerTag = $"{shortName}_{image.RuntimeTag.Replace('.', '_')}";
                         matrix.Add(
                             dockerTag,
                             new
                             {
                                 dockerTag = dockerTag,
-                                publishFramework = image.publishFramework,
+                                publishFramework = image.PublishFramework,
                                 platformSuffix = platformSuffix,
-                                runtimeImage = $"{dockerName}:{image.runtimeTag}"
+                                runCrashTest = image.RunCrashTest ? "true" : "false",
+                                runtimeImage = $"{dockerName}:{image.RuntimeTag}"
                             });
                     }
                 }
@@ -1020,25 +1026,25 @@ partial class Build : NukeBuild
                         (MSBuildTargetPlatform.x64, true),
                         (MSBuildTargetPlatform.x86, true)
                     };
-                    var runtimeImages = new (string publishFramework, string runtimeTag)[]
+                    var runtimeImages = new SmokeTestImage[]
                     {
-                        (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
-                        (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
-                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
                     };
 
                     var matrix = (
                                      from platform in platforms
                                      from image in runtimeImages
-                                     let dockerTag = $"{platform.platform}_{image.runtimeTag.Replace('.', '_')}_{(platform.enable32Bit ? "32bit" : "64bit")}"
+                                     let dockerTag = $"{platform.platform}_{image.RuntimeTag.Replace('.', '_')}_{(platform.enable32Bit ? "32bit" : "64bit")}"
                                      let channel32Bit = platform.enable32Bit
-                                                                       ? GetInstallerChannel(image.publishFramework)
+                                                                       ? GetInstallerChannel(image.PublishFramework)
                                                                        : string.Empty
                                      select new
                                      {
                                          dockerTag = dockerTag,
-                                         publishFramework = image.publishFramework,
-                                         runtimeImage = $"{dockerName}:{image.runtimeTag}",
+                                         publishFramework = image.PublishFramework,
+                                         runtimeImage = $"{dockerName}:{image.RuntimeTag}",
                                          targetPlatform = platform.platform,
                                          channel32Bit = channel32Bit,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
@@ -1053,26 +1059,26 @@ partial class Build : NukeBuild
                     var dockerName = "mcr.microsoft.com/dotnet/aspnet";
 
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
-                    var runtimeImages = new (string publishFramework, string runtimeTag)[]
+                    var runtimeImages = new SmokeTestImage[]
                     {
-                        (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
-                        (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
-                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
                     };
 
                     var matrix = (
                                      from platform in platforms
                                      from image in runtimeImages
-                                     let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
+                                     let dockerTag = $"{platform}_{image.RuntimeTag.Replace('.', '_')}"
                                      let channel32Bit = platform == MSBuildTargetPlatform.x86
-                                                                       ? GetInstallerChannel(image.publishFramework)
+                                                                       ? GetInstallerChannel(image.PublishFramework)
                                                                        : string.Empty
                                      select new
                                      {
                                          relativeProfilerPath = $"win-{platform}/Datadog.Trace.ClrProfiler.Native.dll",
                                          dockerTag = dockerTag,
-                                         publishFramework = image.publishFramework,
-                                         runtimeImage = $"{dockerName}:{image.runtimeTag}",
+                                         publishFramework = image.PublishFramework,
+                                         runtimeImage = $"{dockerName}:{image.RuntimeTag}",
                                          targetPlatform = platform,
                                          channel32Bit = channel32Bit,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
@@ -1087,26 +1093,26 @@ partial class Build : NukeBuild
                     var dockerName = "mcr.microsoft.com/dotnet/aspnet";
 
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
-                    var runtimeImages = new (string publishFramework, string runtimeTag)[]
+                    var runtimeImages = new SmokeTestImage[]
                     {
-                        (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
-                        (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
-                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
                     };
 
                     var matrix = (
                                      from platform in platforms
                                      from image in runtimeImages
-                                     let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
+                                     let dockerTag = $"{platform}_{image.RuntimeTag.Replace('.', '_')}"
                                      let channel32Bit = platform == MSBuildTargetPlatform.x86
-                                                                       ? GetInstallerChannel(image.publishFramework)
+                                                                       ? GetInstallerChannel(image.PublishFramework)
                                                                        : string.Empty
                                      select new
                                      {
                                          relativeProfilerPath = $"datadog/win-{platform}/Datadog.Trace.ClrProfiler.Native.dll",
                                          dockerTag = dockerTag,
-                                         publishFramework = image.publishFramework,
-                                         runtimeImage = $"{dockerName}:{image.runtimeTag}",
+                                         publishFramework = image.PublishFramework,
+                                         runtimeImage = $"{dockerName}:{image.RuntimeTag}",
                                          targetPlatform = platform,
                                          channel32Bit = channel32Bit,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
@@ -1121,25 +1127,25 @@ partial class Build : NukeBuild
                     var dockerName = "mcr.microsoft.com/dotnet/aspnet";
 
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
-                    var runtimeImages = new (string publishFramework, string runtimeTag)[]
+                    var runtimeImages = new SmokeTestImage[]
                     {
-                        (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
-                        (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
-                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
                     };
 
                     var matrix = (
                                      from platform in platforms
                                      from image in runtimeImages
-                                     let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
+                                     let dockerTag = $"{platform}_{image.RuntimeTag.Replace('.', '_')}"
                                      let channel32Bit = platform == MSBuildTargetPlatform.x86
-                                                                       ? GetInstallerChannel(image.publishFramework)
+                                                                       ? GetInstallerChannel(image.PublishFramework)
                                                                        : string.Empty
                                      select new
                                      {
                                          dockerTag = dockerTag,
-                                         publishFramework = image.publishFramework,
-                                         runtimeImage = $"{dockerName}:{image.runtimeTag}",
+                                         publishFramework = image.PublishFramework,
+                                         runtimeImage = $"{dockerName}:{image.RuntimeTag}",
                                          targetPlatform = platform,
                                          channel32Bit = channel32Bit,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
@@ -1304,5 +1310,19 @@ partial class Build : NukeBuild
               .Git($"diff --name-only \"{baseCommit}\"")
               .Select(output => output.Text)
               .ToArray();
+    }
+
+    class SmokeTestImage
+    {
+        public SmokeTestImage(string publishFramework, string runtimeTag, bool runCrashTest = true)
+        {
+            PublishFramework = publishFramework;
+            RuntimeTag = runtimeTag;
+            RunCrashTest = runCrashTest;
+        }
+
+        public string PublishFramework { get; init; }
+        public string RuntimeTag { get; init; }
+        public bool RunCrashTest { get; init; }
     }
 }

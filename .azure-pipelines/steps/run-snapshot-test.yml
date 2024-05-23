@@ -129,6 +129,27 @@ steps:
   condition: succeededOrFailed()
   continueOnError: true
 
+# Run crash tests
+- ${{ if eq(parameters.isLinux, true) }}:
+  - bash: |
+      LOGS=$(docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e CRASH_APP_ON_STARTUP=1 -e COMPlus_DbgEnableMiniDump=0 ${{ parameters.target }})
+      echo $LOGS
+
+      # check logs for evidence of crash detection in the output
+      expected="The crash may have been caused by automatic instrumentation"
+      if [[ $LOGS == *"$expected"* ]]; then
+        echo "Correctly found evidence of crash detection"
+      else
+        echo "Did not find required evidence of crash detection running"
+        exit 1;
+      fi
+
+    env:
+      dockerTag: $(dockerTag)
+      DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
+    displayName: Check logs for evidence of crash output
+    condition: eq(variables['runCrashTest'], 'true')
+
 - ${{ if eq(parameters.isLinux, true) }}:
     - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
