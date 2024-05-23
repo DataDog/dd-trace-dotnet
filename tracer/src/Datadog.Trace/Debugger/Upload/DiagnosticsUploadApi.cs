@@ -61,22 +61,15 @@ namespace Datadog.Trace.Debugger.Upload
 
         private Task<IApiResponse> PostAsync(string uri, ArraySegment<byte> data)
         {
+            var request = _apiRequestFactory.Create(new Uri(uri));
             var isLegacy = uri.Contains(LegacyEndpoint);
-            if (isLegacy)
-            {
-                return _apiRequestFactory
-                      .Create(new Uri(uri))
-                      .PostAsync(data, MimeTypes.Json);
-            }
 
-            var multipart = _apiRequestFactory.Create(new Uri(uri));
-
-            return
-                    multipart
-                   .PostAsync(new MultipartFormItem[]
-                    {
-                        new("event", MimeTypes.Json, "event.json", data)
-                    });
+            return isLegacy ?
+                request.PostAsync(data, MimeTypes.Json) :
+                request.PostAsync(new MultipartFormItem[]
+                {
+                    new("event", MimeTypes.Json, "event.json", data)
+                });
         }
     }
 }
