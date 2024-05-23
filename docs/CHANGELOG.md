@@ -21,6 +21,73 @@
 
 
 
+
+## [Release 2.52.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.52.0)
+
+## Summary
+
+* [CIVisibility] Fixes for `test.command` tag value and version-conflict scenarios
+* [ASM] Adds support for session-timeout vulnerability
+* [ASM] Adds support for Grpc.AspNetCore source tainting and exclusion marks
+* [Tracing] Single step instrumentation no longer instruments EOL runtimes by default
+
+## Changes
+
+### Tracer
+* [Tracer] Delay sampling decisions (#5306)
+* [Tracer] Only set `_dd.agent_psr` tag when using sampling rates from Agent (#5545)
+* Refactor `LifetimeManager` callbacks for `UnhandledException` (#5557)
+
+### CI Visibility
+* [CIVisibility] Add SourceLink support to CIEnvironmentValues (#5535)
+* [CI Visibility] IPC subsystem (#5537)
+* [CI Visibility] - Close and flush incomplete TSLV objects before exiting (#5549)
+* [CI Visibility] Send data to the test session using IPC (#5551)
+* [CIVisibility] Fix test.command tag value (#5560)
+* [CIVisibility] Add a code coverage injection session tag (#5561)
+* [CIVisibility] Tag profiles created by BenchmarkDotnet integration and add the IgnoreProfileAttribute (#5568)
+* [CIVisibility] Fix support for custom spans with version mismatch (#5578)
+
+### ASM
+* [ASM][IAST] Add source tainting for Grpc dotnet (#5473)
+* [ASM] Rasp sinks instrumentation (#5512)
+* [ASM][IAST] Add vulnerability marks to Range + Add the mark to Escaped XSS (#5531)
+* [ASM] RASP span metrics (#5542)
+* [ASM] Upgrade WAF to version 1.18 (#5546)
+* [ASM] Remove the need to pass httpcontext to SecurityCoordinators (#5548)
+* [ASM][IAST] Session Timeout vulnerability (#5559)
+* [ASM][IAST] Fix System.Text.Json: Properly implement GetRawText() aspect (#5572)
+* [ASM] Fix null ref (#5596)
+
+### Miscellaneous
+* Bail out of instrumentation in SSI when an unsupported platform is detected (#5524)
+* Don't instrument most `dotnet` SDK calls (#5564)
+* [Test Package Versions Bump] Updating package versions (#5569)
+* [Test Package Versions Bump] Updating package versions (#5585)
+* Crash tracking (#5451)
+
+### Build / Test
+* Update `CODEOWNERS` for APM SDK IDM ownership (#5525)
+* [All Natives] Fix C5105 Warning for Windows Native Projects (#5541)
+* Update lib-injection docker image tags (#5544)
+* Try fixing flake in `TelemetryControllerShouldUpdateGitMetadataWithTelemetry` on macOS (#5547)
+* "Manually" install MSI dependencies instead of using choco install (#5553)
+* Update the .DotSettings in `_build` (#5555)
+* Remove span count assertions from Azure Function tests (#5556)
+* [Tracer] scrub `_dd.agent_psr` from test snapshots (#5562)
+* If a lot of snapshots have changed, we should check them all (#5563)
+* [Build] Fix chiseled smoke tests jobs + capture coredump when crashing in all smoke tests jobs (#5570)
+* Failing serverless tests are not reported in CI (#5574)
+* [Tests] add null checks in `VerifyHelper` (#5575)
+* Fix dependabot and improve `GeneratePackageVersions` (#5579)
+* Disable automatic flush in AgentWriterTests.FaultyApi (#5581)
+* Improve lib-injection tagging script (#5598)
+* Bump Fody from 6.8.0 to 6.8.1 in /tracer/src/Datadog.Trace (#5576)
+* [Tracer][Tests] scrub `_dd.agent_psr` tag from `TraceAnnotationsTests` snapshots only (#5591)
+
+
+[Changes since 2.51.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.51.0...v2.52.0)
+
 ## [Release 2.51.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.51.0)
 
 ## Summary
