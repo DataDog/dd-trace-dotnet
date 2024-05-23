@@ -62,6 +62,20 @@ namespace Datadog.Trace.Security.IntegrationTests
 #endif
             await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestNullAction()
+        {
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var url = "/null-action/test/test";
+            var dateTime = DateTime.UtcNow;
+            await SubmitRequest(url, null, null);
+            var spans = agent.WaitForSpans(1, minDateTime: dateTime);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            await VerifyHelper.VerifySpans(spans, settings).UseFileName($"{GetTestName()}.test-null-action");
+        }
     }
 
     public class AspNetCore5TestsSecurityDisabledWithDefaultExternalRulesFile : AspNetCoreSecurityDisabledWithExternalRulesFile
