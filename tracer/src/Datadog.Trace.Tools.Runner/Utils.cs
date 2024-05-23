@@ -46,6 +46,11 @@ namespace Datadog.Trace.Tools.Runner
         {
             var tracerHome = GetHomePath(applicationContext.RunnerFolder);
 
+            if (tracerHome == null)
+            {
+                return null;
+            }
+
             // pick the right one depending on the platform
             var ddDotnet = (platform: applicationContext.Platform, arch: RuntimeInformation.OSArchitecture, musl: IsAlpine()) switch
             {
