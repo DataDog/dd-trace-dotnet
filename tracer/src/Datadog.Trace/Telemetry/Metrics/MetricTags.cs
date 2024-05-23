@@ -223,6 +223,10 @@ internal static class MetricTags
         [Description("integration_name:reflectioninjection")] ReflectionInjection,
         [Description("integration_name:xss")] Xss,
         [Description("integration_name:nhibernate")] NHibernate,
+        [Description("integration_name:dotnettest")] DotnetTest,
+        [Description("integration_name:selenium")] Selenium,
+        [Description("integration_name:directorylistingleak")] DirectoryListingLeak,
+        [Description("integration_name:sessiontimeout")] SessionTimeout,
     }
 
     public enum InstrumentationError
@@ -243,6 +247,13 @@ internal static class MetricTags
         [Description("waf_version;rule_triggered:true;request_blocked:true;waf_timeout:false;request_excluded:false")]RuleTriggeredAndBlocked,
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:true;request_excluded:false")]WafTimeout,
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
+    }
+
+    [EnumExtensions]
+    public enum RaspRuleType
+    {
+        [Description("waf_version;rule_type:lfi")] Lfi = 0,
+        [Description("waf_version;rule_type:ssrf")] Ssrf = 1,
     }
 
     public enum TruncationReason
@@ -267,6 +278,7 @@ internal static class MetricTags
         [Description("source_type:http.request.cookie.value")] CookieValue = 9,
         [Description("source_type:http.request.matrix.parameter")] MatrixParameter = 10,
         [Description("source_type:http.request.uri")] RequestUri = 11,
+        [Description("source_type:grpc.request.body")] GrpcRequestBody = 12,
     }
 
     [EnumExtensions]
@@ -296,6 +308,8 @@ internal static class MetricTags
         [Description("vulnerability_type:reflection_injection")] ReflectionInjection = 21,
         [Description("vulnerability_type:insecure_auth_protocol")] InsecureAuthProtocol = 22,
         [Description("vulnerability_type:xss")] Xss = 23,
+        [Description("vulnerability_type:directory_listing_leak")] DirectoryListingLeak = 24,
+        [Description("vulnerability_type:session_timeout")] SessionTimeout = 25,
     }
 
     public enum CIVisibilityTestFramework
@@ -319,7 +333,7 @@ internal static class MetricTags
         [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
     }
 
-    public enum CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection
+    public enum CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum
     {
         [Description("event_type:test")] Test,
         [Description("event_type:test;is_benchmark")] Test_IsBenchmark,
@@ -331,6 +345,12 @@ internal static class MetricTags
         [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
         [Description("event_type:test;is_new:true")] Test_EFDTestIsNew,
         [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow")] Test_EFDTestIsNew_EFDTestAbortSlow,
+        [Description("event_type:test;browser_driver:selenium")] Test_BrowserDriverSelenium,
+        [Description("event_type:test;is_new:true;browser_driver:selenium")] Test_EFDTestIsNew_BrowserDriverSelenium,
+        [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow;browser_driver:selenium")] Test_EFDTestIsNew_EFDTestAbortSlow_BrowserDriverSelenium,
+        [Description("event_type:test;browser_driver:selenium;is_rum:true")] Test_BrowserDriverSelenium_IsRum,
+        [Description("event_type:test;is_new:true;browser_driver:selenium;is_rum:true")] Test_EFDTestIsNew_BrowserDriverSelenium_IsRum,
+        [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow;browser_driver:selenium;is_rum:true")] Test_EFDTestIsNew_EFDTestAbortSlow_BrowserDriverSelenium_IsRum,
     }
 
     public enum CIVisibilityCoverageLibrary

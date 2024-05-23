@@ -87,6 +87,7 @@ namespace Honeypot
             NugetPackages.Add("Grpc.AspNetCore.Server", new string[] { "Grpc.AspNetCore" });
             NugetPackages.Add("Grpc.Net.Client", new string[] { "Grpc.AspNetCore" });
             NugetPackages.Add("Grpc.Core", new string[] { "Grpc" });
+            NugetPackages.Add("Google.Protobuf", new string[] { "Google.Protobuf" });
             NugetPackages.Add("Microsoft.AspNetCore.Mvc.Core", new [] { "Microsoft.AspNetCore.Mvc.Core" });
             NugetPackages.Add("Microsoft.AspNetCore.Identity", new [] { "Microsoft.AspNetCore.Identity" });
             NugetPackages.Add("Microsoft.Extensions.Identity.Core", new [] { "Microsoft.Extensions.Identity.Core" });
@@ -100,6 +101,14 @@ namespace Honeypot
             NugetPackages.Add("amqmdnetstd", new [] { "IBMMQDotnetClient" });
             NugetPackages.Add("Yarp.ReverseProxy", new [] { "Yarp.ReverseProxy" });
             NugetPackages.Add("Microsoft.AspNetCore.Html.Abstractions", new [] { "Microsoft.AspNetCore.Html.Abstractions" });
+            NugetPackages.Add("dotnet", Array.Empty<string>());
+            NugetPackages.Add("vstest.console", Array.Empty<string>());
+            NugetPackages.Add("vstest.console.arm64", Array.Empty<string>());
+            NugetPackages.Add("WebDriver", new[] { "Selenium.WebDriver" });
+            NugetPackages.Add("Microsoft.AspNetCore.StaticFiles", new [] { "Microsoft.AspNetCore.StaticFiles" });
+            NugetPackages.Add("coverlet.core", Array.Empty<string>());
+            NugetPackages.Add("Microsoft.AspNetCore.Session", new [] { "Microsoft.AspNetCore.Session" });
+            NugetPackages.Add("Microsoft.TestPlatform.PlatformAbstractions", Array.Empty<string>());
         }
 
         private IntegrationMap()

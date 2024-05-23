@@ -18,5 +18,6 @@ internal enum SourceType : byte
     CookieName = 8,
     CookieValue = 9,
     MatrixParameter = 10,
-    RequestUri = 11
+    RequestUri = 11,
+    GrpcRequestBody = 12
 }

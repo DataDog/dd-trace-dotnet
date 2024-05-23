@@ -632,15 +632,14 @@ internal class IntelligentTestRunnerClient
                 var request = _apiRequestFactory.Create(_packFileUrl);
                 SetRequestHeader(request);
 
-                var multipartRequest = (IMultipartApiRequest)request;
                 using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);
 
                 try
                 {
-                    using var response = await multipartRequest.PostAsync([
-                                                                    new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
-                                                                    new MultipartFormItem("packfile", "application/octet-stream", null, fileStream)])
-                                                               .ConfigureAwait(false);
+                    using var response = await request.PostAsync([
+                                                           new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
+                                                           new MultipartFormItem("packfile", "application/octet-stream", null, fileStream)])
+                                                      .ConfigureAwait(false);
                     var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
                     if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
                     {
@@ -1047,10 +1046,6 @@ internal class IntelligentTestRunnerClient
 
     private async Task<T> WithRetries<T, TState>(Func<TState, bool, Task<T>> sendDelegate, TState state, int numOfRetries)
     {
-        // Because there's an integration to Http requests we need to make sure that if the AssemblyResolver.ctor of the TestPlatform started then it has finished
-        // before continuing to avoid a race condition.
-        await ClrProfiler.AutoInstrumentation.Testing.AssemblyResolverCtorIntegration.WaitForCallToBeCompletedAsync().ConfigureAwait(false);
-
         var retryCount = 1;
         var sleepDuration = 100; // in milliseconds
 
@@ -1157,10 +1152,6 @@ internal class IntelligentTestRunnerClient
 
     private async Task<ProcessHelpers.CommandOutput?> RunGitCommandAsync(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
     {
-        // Because there's an integration to Process.Start we need to make sure that if the AssemblyResolver.ctor of the TestPlatform started then it has finished
-        // before continuing to avoid a race condition.
-        await ClrProfiler.AutoInstrumentation.Testing.AssemblyResolverCtorIntegration.WaitForCallToBeCompletedAsync().ConfigureAwait(false);
-
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
         var sw = System.Diagnostics.Stopwatch.StartNew();
         var gitOutput = await ProcessHelpers.RunCommandAsync(
@@ -1170,7 +1161,8 @@ internal class IntelligentTestRunnerClient
                                 _workingDirectory,
                                 outputEncoding: Encoding.Default,
                                 errorEncoding: Encoding.Default,
-                                inputEncoding: Encoding.Default),
+                                inputEncoding: Encoding.Default,
+                                useWhereIsIfFileNotFound: true),
                             input).ConfigureAwait(false);
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
         if (gitOutput is null)

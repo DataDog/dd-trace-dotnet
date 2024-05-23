@@ -15,4 +15,6 @@ internal interface IJsonElement
     object Parent { get; }
 
     public string GetString();
+
+    public string GetRawText();
 }

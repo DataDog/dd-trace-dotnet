@@ -27,32 +27,41 @@ internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
         commitSha = null;
         repositoryUrl = null;
 
-        // Check if the given URI is a valid AzureDevOps SourceLink mapping string.
-        if (!uri.AbsolutePath.Contains("_apis/git/repositories/") ||
-            !uri.Query.Contains("versionType=commit") ||
-            !uri.Query.Contains("version=") ||
-            !uri.Query.Contains("path=/*"))
+        try
         {
-            return false;
+            // Check if the given URI is a valid AzureDevOps SourceLink mapping string.
+            if (!uri.AbsolutePath.Contains("_apis/git/repositories/") ||
+                !uri.Query.Contains("versionType=commit") ||
+                !uri.Query.Contains("version=") ||
+                !uri.Query.Contains("path=/*"))
+            {
+                return false;
+            }
+
+            // Extract the query string of the URI and check if the required parameters exist.
+            var query = ParseQueryString(uri.Query);
+            commitSha = query["version"];
+            if (!IsValidCommitSha(commitSha))
+            {
+                return false;
+            }
+
+            var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length < 5)
+            {
+                return false;
+            }
+
+            repositoryUrl = $"https://{uri.Host}/{segments[0]}/_git/{segments[4]}";
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while trying to parse Azure DevOps SourceLink URL");
         }
 
-        // Extract the query string of the URI and check if the required parameters exist.
-        var query = ParseQueryString(uri.Query);
-        commitSha = query["version"];
-        if (!IsValidCommitSha(commitSha))
-        {
-            return false;
-        }
-
-        var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length < 5)
-        {
-            return false;
-        }
-
-        repositoryUrl = $"https://{uri.Host}/{segments[0]}/_git/{segments[4]}";
-
-        return true;
+        return false;
     }
 
     private static NameValueCollection ParseQueryString(string queryString)

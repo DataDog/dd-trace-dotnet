@@ -38,7 +38,20 @@ namespace Datadog.Trace.Ci
 
         public static bool Enabled => _enabledLazy.Value;
 
-        public static bool IsRunning => Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
+        public static bool IsRunning
+        {
+            get
+            {
+                // We try first the fast path, if the value is 0 we are running, so we can avoid the Interlocked operation.
+                if (_firstInitialization == 0)
+                {
+                    return true;
+                }
+
+                // If the value is not 0, maybe the value hasn't been updated yet, so we use the Interlocked operation to ensure the value is correct.
+                return Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
+            }
+        }
 
         public static CIVisibilitySettings Settings
         {
@@ -84,10 +97,12 @@ namespace Datadog.Trace.Ci
             var eventPlatformProxyEnabled = false;
             if (!settings.Agentless)
             {
-                if (settings.ForceAgentsEvpProxy)
+                if (!string.IsNullOrWhiteSpace(settings.ForceAgentsEvpProxy))
                 {
                     // if we force the evp proxy (internal switch)
-                    EventPlatformProxySupport = EventPlatformProxySupport.V2;
+                    EventPlatformProxySupport = Enum.TryParse<EventPlatformProxySupport>(settings.ForceAgentsEvpProxy, out var parsedValue) ?
+                                                    parsedValue :
+                                                    EventPlatformProxySupport.V2;
                 }
                 else
                 {
@@ -101,6 +116,10 @@ namespace Datadog.Trace.Ci
                 }
 
                 eventPlatformProxyEnabled = EventPlatformProxySupport != EventPlatformProxySupport.None;
+                if (eventPlatformProxyEnabled)
+                {
+                    Log.Information("EVP Proxy was enabled with mode: {Mode}", EventPlatformProxySupport);
+                }
             }
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
@@ -138,14 +157,14 @@ namespace Datadog.Trace.Ci
                 {
                     Log.Information("ITR: Update and uploading git tree metadata and getting skippable tests.");
                     _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
-                    LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
+                    LifetimeManager.Instance.AddAsyncShutdownTask(_ => _skippableTestsTask);
                 }
                 else if (settings.GitUploadEnabled != false)
                 {
                     // Update and upload git tree metadata.
                     Log.Information("ITR: Update and uploading git tree metadata.");
                     var tskItrUpdate = UploadGitMetadataAsync();
-                    LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+                    LifetimeManager.Instance.AddAsyncShutdownTask(_ => tskItrUpdate);
                 }
             }
             else if (settings.IntelligentTestRunnerEnabled)
@@ -168,7 +187,9 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility from dd-trace / runner");
             Settings = settings;
-            EventPlatformProxySupport = settings.ForceAgentsEvpProxy ? EventPlatformProxySupport.V2 : IsEventPlatformProxySupportedByAgent(discoveryService);
+            EventPlatformProxySupport = Enum.TryParse<EventPlatformProxySupport>(settings.ForceAgentsEvpProxy, out var parsedValue) ?
+                                            parsedValue :
+                                            IsEventPlatformProxySupportedByAgent(discoveryService);
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
@@ -272,6 +293,20 @@ namespace Datadog.Trace.Ci
             {
                 Log.Information("CI Visibility is exiting.");
                 LifetimeManager.Instance.RunShutdownTasks();
+
+                // If the continuous profiler is attached we ensure to flush the remaining profiles before closing.
+                try
+                {
+                    if (ContinuousProfiler.Profiler.Instance.Status.IsProfilerReady)
+                    {
+                        ContinuousProfiler.NativeInterop.FlushProfile();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error flushing the profiler.");
+                }
+
                 Interlocked.Exchange(ref _firstInitialization, 1);
             }
         }
@@ -501,8 +536,51 @@ namespace Datadog.Trace.Ci
             _skippableTestsBySuiteAndName = null;
         }
 
-        private static async Task ShutdownAsync()
+        private static async Task ShutdownAsync(Exception? exception)
         {
+            // Let's close any opened test, suite, modules and sessions before shutting down to avoid losing any data.
+            // But marking them as failed.
+
+            foreach (var test in Test.ActiveTests)
+            {
+                if (exception is not null)
+                {
+                    test.SetErrorInfo(exception);
+                }
+
+                test.Close(TestStatus.Fail);
+            }
+
+            foreach (var testSuite in TestSuite.ActiveTestSuites)
+            {
+                if (exception is not null)
+                {
+                    testSuite.SetErrorInfo(exception);
+                }
+
+                testSuite.Close();
+            }
+
+            foreach (var testModule in TestModule.ActiveTestModules)
+            {
+                if (exception is not null)
+                {
+                    testModule.SetErrorInfo(exception);
+                }
+
+                await testModule.CloseAsync().ConfigureAwait(false);
+            }
+
+            foreach (var testSession in TestSession.ActiveTestSessions)
+            {
+                if (exception is not null)
+                {
+                    testSession.SetErrorInfo(exception);
+                }
+
+                await testSession.CloseAsync(TestStatus.Fail).ConfigureAwait(false);
+            }
+
             await FlushAsync().ConfigureAwait(false);
             MethodSymbolResolver.Instance.Clear();
         }
@@ -518,7 +596,19 @@ namespace Datadog.Trace.Ci
                 {
                     processName ??= GetProcessName();
                     // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
-                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) &&
+                        Environment.CommandLine.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet' test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet.exe test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet.exe\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet.exe' test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet.dll test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet.dll\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("dotnet.dll' test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf(" test ", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("datacollector", StringComparison.OrdinalIgnoreCase) == -1)
                     {
                         Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
                         return false;
@@ -720,6 +810,11 @@ namespace Datadog.Trace.Ci
             }
 
             var eventPlatformProxyEndpoint = agentConfiguration.EventPlatformProxyEndpoint;
+            return EventPlatformProxySupportFromEndpointUrl(eventPlatformProxyEndpoint);
+        }
+
+        internal static EventPlatformProxySupport EventPlatformProxySupportFromEndpointUrl(string? eventPlatformProxyEndpoint)
+        {
             if (!string.IsNullOrEmpty(eventPlatformProxyEndpoint))
             {
                 if (eventPlatformProxyEndpoint?.Contains("/v2") == true)
@@ -754,7 +849,7 @@ namespace Datadog.Trace.Ci
             public DiscoveryAgentConfigurationCallback(IDiscoveryService discoveryService)
             {
                 _manualResetEventSlim = new ManualResetEventSlim();
-                LifetimeManager.Instance.AddShutdownTask(() => _manualResetEventSlim.Set());
+                LifetimeManager.Instance.AddShutdownTask(_ => _manualResetEventSlim.Set());
                 _discoveryService = discoveryService;
                 _callback = CallBack;
                 _agentConfiguration = null;

@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var environmentHelper = new EnvironmentHelper("VersionConflict.1x", typeof(TestHelper), Output);
-            using var helper = await StartConsole(environmentHelper, enableProfiler: true);
+            using var helper = await StartConsole(environmentHelper, enableProfiler: true, "wait");
 
             var (standardOutput, errorOutput, exitCode) = await RunTool($"check process {helper.Process.Id}");
 
@@ -199,22 +199,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
-#if NETFRAMEWORK
-            string archFolder = string.Empty;
-#else
-            string archFolder;
-
-            if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64)
-            {
-                archFolder = "linux-arm64";
-            }
-            else
-            {
-                archFolder = IsAlpine() ? "linux-musl-x64" : "linux-x64";
-            }
-#endif
-
-            var apiWrapperPath = Path.Combine(EnvironmentHelper.MonitoringHome, archFolder, "Datadog.Linux.ApiWrapper.x64.so");
+            var apiWrapperPath = Utils.GetApiWrapperPath();
 
             using var helper = await StartConsole(
                                    enableProfiler: true,

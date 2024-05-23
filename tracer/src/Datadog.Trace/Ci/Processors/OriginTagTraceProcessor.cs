@@ -48,6 +48,7 @@ namespace Datadog.Trace.Ci.Processors
                     var span = trace.Array![i];
                     if (span.Context.ParentInternal is null &&
                         span.Type != SpanTypes.Test &&
+                        span.Type != SpanTypes.Browser &&
                         span.Type != SpanTypes.TestSuite &&
                         span.Type != SpanTypes.TestModule &&
                         span.Type != SpanTypes.TestSession &&

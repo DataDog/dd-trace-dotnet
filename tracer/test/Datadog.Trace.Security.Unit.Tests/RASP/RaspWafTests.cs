@@ -29,7 +29,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         var context = InitWaf(true, ruleFile, args, out var waf);
 
         var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, value } };
-        var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds);
+        var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
         resultEph.BlockInfo["status_code"].Should().Be("403");
         var jsonString = JsonConvert.SerializeObject(resultEph.Data);
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
@@ -44,20 +44,23 @@ public class RaspWafTests : WafLibraryRequiredTest
 
         context = waf.CreateContext();
         context.Run(args, TimeoutMicroSeconds);
-        var resultEphNew = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds);
+        var resultEphNew = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
         resultEphNew.BlockInfo["status_code"].Should().Be("500");
+        resultEphNew.AggregatedTotalRuntimeRasp.Should().BeGreaterThan(0);
+        resultEphNew.AggregatedTotalRuntimeWithBindingsRasp.Should().BeGreaterThan(0);
     }
 
     [Theory]
-    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "customBlock", BlockingAction.BlockRequestType)]
-    public void GivenAPathTraversalRule_WhenInsecureAccess_ThenBlock(string value, string paramValue, string rule, string ruleFile, string action, string actionType)
+    [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "customBlock", BlockingAction.BlockRequestType, AddressesConstants.FileAccess)]
+    [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rasp-002-001", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
+    public void GivenARaspRule_WhenInsecureAccess_ThenBlock(string value, string paramValue, string rule, string action, string actionType, string address)
     {
         ExecuteRule(
-            AddressesConstants.FileAccess,
+            address,
             value,
             paramValue,
             rule,
-            ruleFile,
+            "rasp-rule-set.json",
             action,
             actionType);
     }
@@ -78,7 +81,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         var argsVulnerable = new Dictionary<string, object> { { address, value } };
         for (int i = 0; i < runNtimes; i++)
         {
-            var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds);
+            var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
             CheckResult(rule, expectedAction, resultEph, actionType);
         }
     }

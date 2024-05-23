@@ -1,4 +1,4 @@
-﻿// <copyright file="MetricsTelemetryCollectorTests.cs" company="Datadog">
+// <copyright file="MetricsTelemetryCollectorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -97,6 +97,9 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountLogCreated(MetricTags.LogLevel.Debug, 3);
         collector.RecordCountWafInit(4);
         collector.RecordCountWafRequests(MetricTags.WafAnalysis.Normal, 5);
+        collector.RecordCountRaspRuleEval(MetricTags.RaspRuleType.Lfi, 5);
+        collector.RecordCountRaspRuleMatch(MetricTags.RaspRuleType.Lfi, 3);
+        collector.RecordCountRaspTimeout(MetricTags.RaspRuleType.Lfi, 2);
         collector.RecordGaugeStatsBuckets(234);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 23);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 46);
@@ -105,7 +108,7 @@ public class MetricsTelemetryCollectorTests
         // These aren't applicable in non-ci visibility
         collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 123);
         collector.RecordCountCIVisibilityEventCreated(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
-        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Test);
+        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test);
 
         collector.AggregateMetrics();
 
@@ -235,6 +238,33 @@ public class MetricsTelemetryCollectorTests
             },
             new
             {
+                Metric = Count.RaspRuleEval.GetName(),
+                Points = new[] { new { Value = 5 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Common = true,
+                Namespace = NS.ASM,
+            },
+            new
+            {
+                Metric = Count.RaspRuleMatch.GetName(),
+                Points = new[] { new { Value = 3 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Common = true,
+                Namespace = NS.ASM,
+            },
+            new
+            {
+                Metric = Count.RaspTimeout.GetName(),
+                Points = new[] { new { Value = 2 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Common = true,
+                Namespace = NS.ASM,
+            },
+            new
+            {
                 Metric = Count.TraceSegmentCreated.GetName(),
                 Points = new[] { new { Value = 2 } },
                 Type = TelemetryMetricType.Count,
@@ -318,7 +348,7 @@ public class MetricsTelemetryCollectorTests
         // these ones are
         collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 123);
         collector.RecordCountCIVisibilityEventCreated(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
-        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Test);
+        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test);
 
         collector.AggregateMetrics();
 

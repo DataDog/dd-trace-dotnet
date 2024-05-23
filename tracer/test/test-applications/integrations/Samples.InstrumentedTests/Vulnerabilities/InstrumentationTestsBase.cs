@@ -34,6 +34,7 @@ public class InstrumentationTestsBase : IDisposable
     private static readonly Type _spanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
     private static readonly Type _traceContextType = Type.GetType("Datadog.Trace.TraceContext, Datadog.Trace");
     private static readonly Type _sourceType = Type.GetType("Datadog.Trace.Iast.Source, Datadog.Trace");
+    private static readonly Type _markType = Type.GetType("Datadog.Trace.Iast.SecureMarks, Datadog.Trace");
     private static readonly Type _vulnerabilityType = Type.GetType("Datadog.Trace.Iast.Vulnerability, Datadog.Trace");
     private static readonly Type _rangeType = Type.GetType("Datadog.Trace.Iast.Range, Datadog.Trace");
     private static readonly Type _vulnerabilityBatchType = Type.GetType("Datadog.Trace.Iast.VulnerabilityBatch, Datadog.Trace");
@@ -104,7 +105,7 @@ public class InstrumentationTestsBase : IDisposable
     protected object AddTainted(object tainted, byte sourceType)
     {
         var source = Activator.CreateInstance(_sourceType, new object[] { (byte)sourceType, (string)null, tainted.ToString() });
-        var defaultRange = Activator.CreateInstance(_rangeType, new object[] { 0, tainted.ToString().Length, source });
+        var defaultRange = Activator.CreateInstance(_rangeType, new object[] { 0, tainted.ToString().Length, source, Activator.CreateInstance(_markType) });
         var rangeArray = Array.CreateInstance(_rangeType, 1);
         rangeArray.SetValue(defaultRange, 0);
         _taintMethod.Invoke(_taintedObjects, new object[] { tainted, rangeArray });

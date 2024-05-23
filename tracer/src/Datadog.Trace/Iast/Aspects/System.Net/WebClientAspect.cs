@@ -5,6 +5,7 @@
 
 using System;
 using System.Net;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
 
@@ -13,7 +14,7 @@ using Datadog.Trace.Iast.Propagation;
 namespace Datadog.Trace.Iast.Aspects.System.Net;
 
 /// <summary> WebClient class aspects </summary>
-[AspectClass("System.Net.WebClient,System", AspectType.Sink, VulnerabilityType.Ssrf)]
+[AspectClass("System.Net.WebClient,System", AspectType.RaspIastSink, VulnerabilityType.Ssrf)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class WebClientAspect
@@ -55,6 +56,7 @@ public class WebClientAspect
     public static object Review(string parameter)
     {
         IastModule.OnSSRF(parameter);
+        RaspModule.OnSSRF(parameter);
         return parameter;
     }
 
@@ -117,6 +119,7 @@ public class WebClientAspect
     public static object ReviewUri(Uri parameter)
     {
         IastModule.OnSSRF(parameter.OriginalString);
+        RaspModule.OnSSRF(parameter.OriginalString);
         return parameter;
     }
 }

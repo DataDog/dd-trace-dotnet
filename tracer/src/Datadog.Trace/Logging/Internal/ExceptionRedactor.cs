@@ -33,21 +33,54 @@ internal static class ExceptionRedactor
     /// <returns>The redacted stack trace</returns>
     public static string Redact(Exception exception)
     {
-        var exceptionType = exception.GetType().FullName ?? "Unknown Exception";
-        var stackTrace = new StackTrace(exception);
-
-        var stackFrameCount = stackTrace.FrameCount;
-        if (stackFrameCount == 0)
-        {
-            return exceptionType;
-        }
-
         var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-        sb.AppendLine(exceptionType);
 
-        RedactStackTrace(sb, stackTrace);
+        // Using recursion to handle inner exceptions so that
+        // it matches the behaviour of Exception.ToString():
+        //
+        // System.Exception: Outer most message
+        //  ---> System.InvalidOperationException: Inner message
+        //  ---> System.ArgumentException: Innermost message
+        //    at Program.Inner2()
+        //    --- End of inner exception stack trace --- // end of ArgumentException callstack
+        //    at Program.Inner2()
+        //    at Program.Inner()
+        //    --- End of inner exception stack trace ---  // end of InvalidOperationException callstack
+        //    at Program.Inner()
+        //    at Program.Outer()
+        AddException(sb, exception, isInnerException: false);
 
         return StringBuilderCache.GetStringAndRelease(sb);
+
+        static void AddException(StringBuilder sb, Exception ex, bool isInnerException)
+        {
+            if (isInnerException)
+            {
+                sb.Append(" ---> ");
+            }
+
+            sb.Append(ex.GetType().FullName ?? "Unknown Exception");
+
+            if (ex.InnerException is { } inner)
+            {
+                AddException(sb, inner, isInnerException: true);
+            }
+            else
+            {
+                sb.AppendLine();
+            }
+
+            var stackTrace = new StackTrace(ex);
+            if (stackTrace.FrameCount > 0)
+            {
+                RedactStackTrace(sb, stackTrace);
+            }
+
+            if (isInnerException)
+            {
+                sb.AppendLine("   --- End of inner exception stack trace ---");
+            }
+        }
     }
 
     // internal for testing

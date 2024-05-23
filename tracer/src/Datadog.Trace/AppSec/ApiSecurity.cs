@@ -10,6 +10,7 @@ using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.AppSec;
 
@@ -34,8 +35,9 @@ internal class ApiSecurity
     {
         try
         {
-            var samplingPriority = localRootSpan.Context.TraceContext.SamplingPriority;
-            if (_enabled && lastWafCall && samplingPriority is SamplingPriorityValues.AutoKeep or SamplingPriorityValues.UserKeep)
+            var samplingPriority = localRootSpan.Context.TraceContext.GetOrMakeSamplingDecision();
+
+            if (_enabled && lastWafCall && SamplingPriorityValues.IsKeep(samplingPriority))
             {
                 var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
                 var httpMethod = localRootSpan.GetTag(Tags.HttpMethod);

@@ -57,8 +57,10 @@ WSTRING ToWSTRING(uint64_t i);
 bool TryParse(WSTRING const& s, int& result);
 
 bool EndsWith(const std::string& str, const std::string& suffix);
-
 bool StartsWith(const std::string& str, const std::string& prefix);
+
+bool EndsWith(const WSTRING& str, const WSTRING& suffix);
+bool StartsWith(const WSTRING& str, const WSTRING& prefix);
 
 template <typename TChar>
 std::basic_string<TChar> ReplaceString(std::basic_string<TChar> subject, const std::basic_string<TChar>& search,

@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci.CiEnvironment;
@@ -25,8 +26,11 @@ namespace Datadog.Trace.Ci;
 public sealed class Test
 {
     private static readonly AsyncLocal<Test?> CurrentTest = new();
+    private static readonly HashSet<Test> OpenedTests = new();
+
     private readonly Scope _scope;
     private int _finished;
+    private List<Action<Test>>? _onCloseActions;
 
     internal Test(TestSuite suite, string name, DateTimeOffset? startDate)
         : this(suite, name, startDate, default, 0)
@@ -50,7 +54,7 @@ public sealed class Test
 
         scope.Span.Type = SpanTypes.Test;
         scope.Span.ResourceName = $"{suite.Name}.{name}";
-        scope.Span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);
+        scope.Span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Manual);
         scope.Span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
@@ -62,6 +66,11 @@ public sealed class Test
         }
 
         CurrentTest.Value = this;
+        lock (OpenedTests)
+        {
+            OpenedTests.Add(this);
+        }
+
         CIVisibility.Log.Debug("######### New Test Created: {Name} ({Suite} | {Module})", Name, Suite.Name, Suite.Module.Name);
 
         if (startDate is null)
@@ -103,6 +112,20 @@ public sealed class Test
     {
         get => CurrentTest.Value;
         set => CurrentTest.Value = value;
+    }
+
+    /// <summary>
+    /// Gets the active tests
+    /// </summary>
+    internal static IReadOnlyCollection<Test> ActiveTests
+    {
+        get
+        {
+            lock (OpenedTests)
+            {
+                return OpenedTests.Count == 0 ? [] : OpenedTests.ToArray();
+            }
+        }
     }
 
     /// <summary>
@@ -400,6 +423,17 @@ public sealed class Test
             TelemetryFactory.Metrics.RecordCountCIVisibilityITRForcedRun(MetricTags.CIVisibilityTestingEventType.Test);
         }
 
+        // Call close actions
+        if (_onCloseActions is not null)
+        {
+            foreach (var action in _onCloseActions)
+            {
+                action(this);
+            }
+
+            _onCloseActions.Clear();
+        }
+
         // Finish
         scope.Span.Finish(duration.Value);
         scope.Dispose();
@@ -409,12 +443,19 @@ public sealed class Test
                 MetricTags.CIVisibilityTestingEventType.Test,
                 tags.Type == TestTags.TypeBenchmark,
                 tags.EarlyFlakeDetectionTestIsNew == "true",
-                tags.EarlyFlakeDetectionTestAbortReason == "slow") is { } eventTypeWithMetadata)
+                tags.EarlyFlakeDetectionTestAbortReason == "slow",
+                !string.IsNullOrEmpty(tags.BrowserDriver),
+                tags.IsRumActive == "true") is { } eventTypeWithMetadata)
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework), eventTypeWithMetadata);
         }
 
         Current = null;
+        lock (OpenedTests)
+        {
+            OpenedTests.Remove(this);
+        }
+
         CIVisibility.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
     }
 
@@ -436,5 +477,11 @@ public sealed class Test
     internal void SetName(string name)
     {
         ((TestSpanTags)_scope.Span.Tags).Name = name;
+    }
+
+    internal void AddOnCloseAction(Action<Test> action)
+    {
+        _onCloseActions ??= [];
+        _onCloseActions.Add(action);
     }
 }

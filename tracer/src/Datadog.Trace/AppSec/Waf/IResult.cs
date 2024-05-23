@@ -23,6 +23,8 @@ namespace Datadog.Trace.AppSec.Waf
 
         public Dictionary<string, object?>? RedirectInfo { get; }
 
+        public Dictionary<string, object?>? SendStackInfo { get; }
+
         IReadOnlyCollection<object>? Data { get; }
 
         Dictionary<string, object?>? Actions { get; }
@@ -30,6 +32,12 @@ namespace Datadog.Trace.AppSec.Waf
         ulong AggregatedTotalRuntime { get; }
 
         ulong AggregatedTotalRuntimeWithBindings { get; }
+
+        ulong AggregatedTotalRuntimeRasp { get; }
+
+        ulong AggregatedTotalRuntimeWithBindingsRasp { get; }
+
+        uint RaspRuleEvaluations { get; }
 
         bool Timeout { get; }
 

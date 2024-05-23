@@ -4,20 +4,16 @@
 // </copyright>
 
 using System;
-using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -176,11 +172,14 @@ namespace Datadog.Trace
             sb.AppendLine($"OperationName: {OperationName}");
             sb.AppendLine($"Resource: {ResourceName}");
             sb.AppendLine($"Type: {Type}");
-            sb.AppendLine($"Start: {StartTime.ToString("O")}");
+            sb.AppendLine($"Start: {StartTime:O}");
             sb.AppendLine($"Duration: {Duration}");
-            sb.AppendLine($"End: {StartTime.Add(Duration).ToString("O")}");
+            sb.AppendLine($"End: {StartTime.Add(Duration):O}");
             sb.AppendLine($"Error: {Error}");
-            sb.AppendLine($"TraceSamplingPriority: {(Context.TraceContext.SamplingPriority?.ToString(CultureInfo.InvariantCulture) ?? "not set")}");
+
+            var samplingPriority = Context.TraceContext?.SamplingPriority;
+            sb.AppendLine($"TraceSamplingPriority: {SamplingPriorityValues.ToString(samplingPriority) ?? "not set"}");
+
             sb.AppendLine($"Meta: {Tags}");
 
             return StringBuilderCache.GetStringAndRelease(sb);
@@ -399,8 +398,12 @@ namespace Datadog.Trace
         /// <param name="exception">The exception.</param>
         internal void SetException(Exception exception)
         {
-            Error = true;
-            SetExceptionTags(exception);
+            // We do not log BlockExceptions as errors
+            if (exception is not AppSec.BlockException)
+            {
+                Error = true;
+                SetExceptionTags(exception);
+            }
         }
 
         /// <summary>
@@ -410,14 +413,14 @@ namespace Datadog.Trace
         /// <param name="exception">The exception.</param>
         internal void SetExceptionTags(Exception exception)
         {
-            if (exception != null)
+            if (exception != null && exception is not AppSec.BlockException)
             {
                 try
                 {
                     // for AggregateException, use the first inner exception until we can support multiple errors.
                     // there will be only one error in most cases, and even if there are more and we lose
                     // the other ones, it's still better than the generic "one or more errors occurred" message.
-                    if (exception is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
+                    if (exception is AggregateException { InnerExceptions.Count: > 0 } aggregateException)
                     {
                         exception = aggregateException.InnerExceptions[0];
                     }
@@ -448,21 +451,15 @@ namespace Datadog.Trace
         {
             // since we don't expose a public API for getting trace-level attributes yet,
             // allow retrieval through any span in the trace
-            switch (key)
+            return key switch
             {
-                case Trace.Tags.SamplingPriority:
-                    return Context.TraceContext?.SamplingPriority?.ToString();
-                case Trace.Tags.Env:
-                    return Context.TraceContext?.Environment;
-                case Trace.Tags.Version:
-                    return Context.TraceContext?.ServiceVersion;
-                case Trace.Tags.Origin:
-                    return Context.TraceContext?.Origin;
-                case Trace.Tags.TraceId:
-                    return Context.RawTraceId;
-                default:
-                    return Tags.GetTag(key);
-            }
+                Trace.Tags.SamplingPriority => SamplingPriorityValues.ToString(Context.TraceContext?.SamplingPriority),
+                Trace.Tags.Env => Context.TraceContext?.Environment,
+                Trace.Tags.Version => Context.TraceContext?.ServiceVersion,
+                Trace.Tags.Origin => Context.TraceContext?.Origin,
+                Trace.Tags.TraceId => Context.RawTraceId,
+                _ => Tags.GetTag(key)
+            };
         }
 
         internal void Finish(TimeSpan duration)

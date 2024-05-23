@@ -61,7 +61,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.17.0";
+    const string LibDdwafVersion = "1.18.0";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
 
@@ -174,19 +174,28 @@ partial class Build
                : new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests), Solution.GetProject(Projects.DdDotnetIntegrationTests) };
 
     TargetFramework[] TestingFrameworks =>
-    IncludeAllTestFrameworks || HaveIntegrationsChanged
+    IncludeAllTestFrameworks || RequiresThoroughTesting()
         ? new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, }
         : new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, };
 
-    bool HaveIntegrationsChanged =>
-        GetGitChangedFiles(baseBranch: "origin/master")
-           .Any(s => new[]
+    bool RequiresThoroughTesting()
+    {
+        var gitChangedFiles = GetGitChangedFiles(baseBranch: "origin/master");
+        var integrationChangedFiles = TargetFrameworks
+            .SelectMany(tfm => new[]
             {
-                "tracer/src/Datadog.Trace/Generated/net461/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
-                "tracer/src/Datadog.Trace/Generated/netstandard2.0/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
-                "tracer/src/Datadog.Trace/Generated/netcoreapp3.1/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
-                "tracer/src/Datadog.Trace/Generated/net6.0/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
-            }.Any(s.Contains));
+                $"tracer/src/Datadog.Trace/Generated/{tfm}/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
+                $"tracer/src/Datadog.Trace/Generated/{tfm}/Datadog.Trace.SourceGenerators/AspectsDefinitionsGenerator",
+            })
+            .ToList();
+
+        var hasIntegrationChanges = gitChangedFiles.Any(s => integrationChangedFiles.Any(s.Contains));
+        var snapshotChangeCount = gitChangedFiles.Count(s => s.EndsWith("verified.txt"));
+
+        // If the integrations have changed, we should play it safe and test all the frameworks
+        // If a lot of snapshots have changed, we should play it safe
+        return hasIntegrationChanges || (snapshotChangeCount > 100);
+    }
 
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
     {
@@ -284,7 +293,7 @@ partial class Build
             DeleteDirectory(NativeTracerProject.Directory / "build");
 
             var finalArchs = FastDevLoop ? new[]  { "arm64" } : OsxArchs;
-            
+
             var lstNativeBinaries = new List<string>();
             foreach (var arch in finalArchs)
             {
@@ -2221,7 +2230,7 @@ partial class Build
                     if (line.Contains("#nullable enable"))
                     {
                         missingNullability = false;
-                        break;        
+                        break;
                     }
                 }
 

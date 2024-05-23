@@ -7,11 +7,14 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Pdb.SourceLink
 {
     internal abstract class SourceLinkUrlParser
     {
+        protected static IDatadogLogger Log { get; } = DatadogLogging.GetLoggerFor(typeof(SourceLinkUrlParser));
+
         protected static bool IsValidCommitSha([NotNullWhen(true)] string? commitSha) => commitSha is { Length: 40 } && commitSha.All(char.IsLetterOrDigit);
 
         /// <summary>

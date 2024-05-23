@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.SourceGenerators;
@@ -119,6 +118,7 @@ namespace Datadog.Trace.Propagators
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.TraceContext);
+
             var traceparent = CreateTraceParentHeader(context);
             carrierSetter.Set(carrier, TraceParentHeaderName, traceparent);
 
@@ -132,8 +132,9 @@ namespace Datadog.Trace.Propagators
 
         internal static string CreateTraceParentHeader(SpanContext context)
         {
-            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority ?? SamplingPriorityValues.AutoKeep;
-            var sampled = samplingPriority > 0 ? "01" : "00";
+            var samplingPriority = context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default;
+            var sampled = SamplingPriorityValues.IsKeep(samplingPriority) ? "01" : "00";
+
 #if NET6_0_OR_GREATER
             return string.Create(null, stackalloc char[128], $"00-{context.RawTraceId}-{context.RawSpanId}-{sampled}");
 #else
@@ -150,11 +151,9 @@ namespace Datadog.Trace.Propagators
                 sb.Append("dd=");
 
                 // sampling priority ("s:<value>")
-                var samplingPriority = SamplingPriorityToString(context.TraceContext?.SamplingPriority);
-
-                if (samplingPriority != null)
+                if (context.GetOrMakeSamplingDecision() is { } samplingPriority)
                 {
-                    sb.Append("s:").Append(samplingPriority).Append(TraceStateDatadogPairsSeparator);
+                    sb.Append("s:").Append(SamplingPriorityValues.ToString(samplingPriority)).Append(TraceStateDatadogPairsSeparator);
                 }
 
                 // origin ("o:<value>")
@@ -561,20 +560,6 @@ namespace Datadog.Trace.Propagators
                 sb.Append(otherValuesLeft).Append(TraceStateHeaderValuesSeparator).Append(otherValuesRight);
                 additionalValues = StringBuilderCache.GetStringAndRelease(sb);
             }
-        }
-
-        [return: NotNullIfNotNull("samplingPriority")]
-        private static string? SamplingPriorityToString(int? samplingPriority)
-        {
-            return samplingPriority switch
-                   {
-                       2 => "2",
-                       1 => "1",
-                       0 => "0",
-                       -1 => "-1",
-                       null => null,
-                       not null => samplingPriority.Value.ToString(CultureInfo.InvariantCulture)
-                   };
         }
 
 #if NETCOREAPP

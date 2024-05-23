@@ -12,12 +12,14 @@ using Datadog.Trace;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.BenchmarkDotNet;
 
 namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
 [BenchmarkAgent7]
 [BenchmarkCategory(Constants.AppSecCategory)]
+[IgnoreProfile]
 public class AppSecWafBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;

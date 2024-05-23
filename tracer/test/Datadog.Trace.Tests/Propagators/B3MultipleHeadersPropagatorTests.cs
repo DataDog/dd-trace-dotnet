@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Reflection;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
@@ -19,8 +18,8 @@ namespace Datadog.Trace.Tests.Propagators
         static B3MultipleHeadersPropagatorTests()
         {
             B3Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
-                new[] { ContextPropagationHeaderStyle.B3MultipleHeaders },
-                new[] { ContextPropagationHeaderStyle.B3MultipleHeaders },
+                [ContextPropagationHeaderStyle.B3MultipleHeaders],
+                [ContextPropagationHeaderStyle.B3MultipleHeaders],
                 false);
         }
 
@@ -40,22 +39,26 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
             headers.VerifyNoOtherCalls();
 
-            // Extract sampling from trace context
+            // Extract default (no sampler) sampling from trace context
             var newContext = new SpanContext(parent: null, new TraceContext(Mock.Of<IDatadogTracer>()), serviceName: null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
-            B3Propagator.Inject(newContext, newHeaders.Object);
-            newHeaders.Verify(h => h.Set("x-b3-traceid", "0123456789abcdef1122334455667788"), Times.Once());
-            newHeaders.Verify(h => h.Set("x-b3-spanid", "000000003ade68b1"), Times.Once());
-            newHeaders.Verify(h => h.Set("x-b3-sampled", "0"), Times.Once());
-            newHeaders.VerifyNoOtherCalls();
 
-            var traceContextSamplingField = typeof(TraceContext).GetField("_samplingPriority", BindingFlags.Instance | BindingFlags.NonPublic);
-            traceContextSamplingField!.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
-            newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object);
+
             newHeaders.Verify(h => h.Set("x-b3-traceid", "0123456789abcdef1122334455667788"), Times.Once());
             newHeaders.Verify(h => h.Set("x-b3-spanid", "000000003ade68b1"), Times.Once());
             newHeaders.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
+            newHeaders.VerifyNoOtherCalls();
+
+            // override sampling decision
+            newContext.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject);
+            newHeaders = new Mock<IHeadersCollection>();
+
+            B3Propagator.Inject(newContext, newHeaders.Object);
+
+            newHeaders.Verify(h => h.Set("x-b3-traceid", "0123456789abcdef1122334455667788"), Times.Once());
+            newHeaders.Verify(h => h.Set("x-b3-spanid", "000000003ade68b1"), Times.Once());
+            newHeaders.Verify(h => h.Set("x-b3-sampled", "0"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
         }
 
@@ -77,7 +80,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
             headers.VerifyNoOtherCalls();
 
-            // Extract sampling from trace context
+            // Extract default (no sampler) sampling from trace context
             var newContext = new SpanContext(parent: null, new TraceContext(Mock.Of<IDatadogTracer>()), serviceName: null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
 
@@ -85,18 +88,18 @@ namespace Datadog.Trace.Tests.Propagators
 
             newHeaders.Verify(h => h.Set("x-b3-traceid", "0123456789abcdef1122334455667788"), Times.Once());
             newHeaders.Verify(h => h.Set("x-b3-spanid", "000000003ade68b1"), Times.Once());
-            newHeaders.Verify(h => h.Set("x-b3-sampled", "0"), Times.Once());
+            newHeaders.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
 
-            var traceContextSamplingField = typeof(TraceContext).GetField("_samplingPriority", BindingFlags.Instance | BindingFlags.NonPublic);
-            traceContextSamplingField!.SetValue(newContext.TraceContext, SamplingPriorityValues.UserKeep);
+            // override sampling decision
+            newContext.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject);
             newHeaders = new Mock<IHeadersCollection>();
 
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
 
             newHeaders.Verify(h => h.Set("x-b3-traceid", "0123456789abcdef1122334455667788"), Times.Once());
             newHeaders.Verify(h => h.Set("x-b3-spanid", "000000003ade68b1"), Times.Once());
-            newHeaders.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
+            newHeaders.Verify(h => h.Set("x-b3-sampled", "0"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
         }
 

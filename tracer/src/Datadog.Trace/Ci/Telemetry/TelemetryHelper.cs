@@ -105,37 +105,74 @@ internal static class TelemetryHelper
     /// <param name="isBenchmark">True if is a benchmark event</param>
     /// <param name="isEfdTestNew">True if is a new EFD test</param>
     /// <param name="isEfdTestAbortSlow">True if is an EFD test that aborts because is too slow</param>
+    /// <param name="hasBrowserDriver">True if the test contains a supported browser driver usage</param>
+    /// <param name="hasRumActive">True if the test also has RUM active</param>
     /// <returns>MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark</returns>
-    public static MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection? GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(MetricTags.CIVisibilityTestingEventType eventType, bool isBenchmark, bool isEfdTestNew = false, bool isEfdTestAbortSlow = false)
+    public static MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum? GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(MetricTags.CIVisibilityTestingEventType eventType, bool isBenchmark, bool isEfdTestNew = false, bool isEfdTestAbortSlow = false, bool hasBrowserDriver = false, bool hasRumActive = false)
     {
         switch (eventType)
         {
             case MetricTags.CIVisibilityTestingEventType.Test:
                 if (isBenchmark)
                 {
-                    return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Test_IsBenchmark;
+                    return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test_IsBenchmark;
                 }
 
                 if (isEfdTestNew)
                 {
-                    return isEfdTestAbortSlow ?
-                               MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Test_EFDTestIsNew_EFDTestAbortSlow :
-                               MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Test_EFDTestIsNew;
+                    if (isEfdTestAbortSlow)
+                    {
+                        if (hasBrowserDriver && !hasRumActive)
+                        {
+                            return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test_EFDTestIsNew_EFDTestAbortSlow_BrowserDriverSelenium;
+                        }
+
+                        if (hasRumActive)
+                        {
+                            return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test_EFDTestIsNew_EFDTestAbortSlow_BrowserDriverSelenium_IsRum;
+                        }
+
+                        return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test_EFDTestIsNew_EFDTestAbortSlow;
+                    }
+                    else
+                    {
+                        if (hasBrowserDriver && !hasRumActive)
+                        {
+                            return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test_EFDTestIsNew_BrowserDriverSelenium;
+                        }
+
+                        if (hasRumActive)
+                        {
+                            return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test_EFDTestIsNew_BrowserDriverSelenium_IsRum;
+                        }
+
+                        return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test_EFDTestIsNew;
+                    }
                 }
 
-                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Test;
+                if (hasBrowserDriver && !hasRumActive)
+                {
+                    return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test_BrowserDriverSelenium;
+                }
+
+                if (hasRumActive)
+                {
+                    return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test_BrowserDriverSelenium_IsRum;
+                }
+
+                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test;
             case MetricTags.CIVisibilityTestingEventType.Suite:
-                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Suite;
+                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Suite;
             case MetricTags.CIVisibilityTestingEventType.Module:
-                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Module;
+                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Module;
             case MetricTags.CIVisibilityTestingEventType.Session:
             {
                 return CIEnvironmentValues.Instance switch
                 {
-                    { CodeOwners: not null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Session_HasCodeOwner_IsSupportedCi,
-                    { CodeOwners: not null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Session_HasCodeOwner_UnsupportedCi,
-                    { CodeOwners: null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Session_NoCodeOwner_IsSupportedCi,
-                    { CodeOwners: null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection.Session_NoCodeOwner_UnsupportedCi,
+                    { CodeOwners: not null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_HasCodeOwner_IsSupportedCi,
+                    { CodeOwners: not null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_HasCodeOwner_UnsupportedCi,
+                    { CodeOwners: null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_NoCodeOwner_IsSupportedCi,
+                    { CodeOwners: null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_NoCodeOwner_UnsupportedCi,
                 };
             }
         }

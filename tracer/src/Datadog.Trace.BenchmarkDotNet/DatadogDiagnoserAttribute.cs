@@ -9,7 +9,7 @@ using BenchmarkDotNet.Configs;
 namespace Datadog.Trace.BenchmarkDotNet;
 
 /// <summary>
-/// Datadog BenchmarkDotNet diagnoser
+/// Datadog BenchmarkDotNet diagnoser attribute
 /// </summary>
 public class DatadogDiagnoserAttribute : Attribute, IConfigSource
 {

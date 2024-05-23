@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -10,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 #endif
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Samples.Security.AspNetCore5.Data;
 using Samples.Security.AspNetCore5.Endpoints;
@@ -36,7 +38,19 @@ namespace Samples.Security.AspNetCore5
                 DatabaseHelper.CreateAndFeedDatabase(Configuration.GetConnectionString("DefaultConnection"));
             }
 
-            services.AddSession();
+            if (int.TryParse(Environment.GetEnvironmentVariable("IAST_TEST_SESSION_IDLE_TIMEOUT"), out var parsed))
+            {
+                services.AddSession(
+                    options =>
+                    {
+                        options.IdleTimeout = TimeSpan.FromMinutes(parsed);
+                    });
+            }
+            else
+            {
+                services.AddSession();
+            }
+
             services.AddRazorPages();
             var identityBuilder = services.AddIdentity<IdentityUser, IdentityRole>(
                 o =>
@@ -88,6 +102,28 @@ namespace Samples.Security.AspNetCore5
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             
+            // Directory listing leak vulnerability on request path /Iast/directory_listing_leak
+            if (Environment.GetEnvironmentVariable("IAST_TEST_ENABLE_DIRECTORY_LISTING_REQUEST_PATH") == "true")
+            {
+                app.UseDirectoryBrowser(new DirectoryBrowserOptions
+                {
+                    RequestPath = "/Iast/directory_listing_leak",
+                    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory()))
+                });
+            }
+            
+            // Directory listing leak vulnerability on whole app
+            if (Environment.GetEnvironmentVariable("IAST_TEST_ENABLE_DIRECTORY_LISTING_WHOLE_APP") == "true")
+            {
+                app.UseDirectoryBrowser();
+            }
+            
+            // Directory listing leak vulnerability on string path /Iast/directory_listing_leak
+            if (Environment.GetEnvironmentVariable("IAST_TEST_ENABLE_DIRECTORY_LISTING_STRING_PATH") == "true")
+            {
+                app.UseDirectoryBrowser("/Iast/directory_listing_leak");
+            }
+
             app.UseSession();
             app.UseRouting();
 

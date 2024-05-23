@@ -11,7 +11,7 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal class Result : IResult
     {
-        public Result(DdwafResultStruct returnStruct, WafReturnCode returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
+        public Result(DdwafResultStruct returnStruct, WafReturnCode returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool isRasp = false)
         {
             ReturnCode = returnCode;
             Actions = returnStruct.Actions.DecodeMap();
@@ -36,10 +36,24 @@ namespace Datadog.Trace.AppSec.Waf
                     RedirectInfo = value as Dictionary<string, object?>;
                     ShouldBlock = true;
                 }
+
+                if (Actions.TryGetValue(BlockingAction.GenerateStackType, out value))
+                {
+                    SendStackInfo = value as Dictionary<string, object?>;
+                }
             }
 
-            AggregatedTotalRuntime = aggregatedTotalRuntime;
-            AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
+            if (isRasp)
+            {
+                AggregatedTotalRuntimeRasp = aggregatedTotalRuntime;
+                AggregatedTotalRuntimeWithBindingsRasp = aggregatedTotalRuntimeWithBindings;
+            }
+            else
+            {
+                AggregatedTotalRuntime = aggregatedTotalRuntime;
+                AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
+            }
+
             Timeout = returnStruct.Timeout;
         }
 
@@ -54,20 +68,37 @@ namespace Datadog.Trace.AppSec.Waf
         public Dictionary<string, object?> Derivatives { get; }
 
         /// <summary>
-        /// Gets the total runtime in microseconds
+        /// Gets the total runtime in nanoseconds
         /// </summary>
         public ulong AggregatedTotalRuntime { get; }
 
         /// <summary>
-        /// Gets the total runtime in microseconds with parameter passing to the waf
+        /// Gets the total runtime in nanoseconds with parameter passing to the waf
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindings { get; }
+
+        /// <summary>
+        /// Gets the total runtime in nanoseconds for RASP calls
+        /// </summary>
+        public ulong AggregatedTotalRuntimeRasp { get; }
+
+        /// <summary>
+        /// Gets the total runtime in nanoseconds with parameter passing to the waf for RASP calls
+        /// </summary>
+        public ulong AggregatedTotalRuntimeWithBindingsRasp { get; }
+
+        /// <summary>
+        /// Gets the number of times that a rule type is evaluated in RASP
+        /// </summary>
+        public uint RaspRuleEvaluations { get; }
 
         public bool ShouldBlock { get; }
 
         public Dictionary<string, object?>? BlockInfo { get; }
 
         public Dictionary<string, object?>? RedirectInfo { get; }
+
+        public Dictionary<string, object?>? SendStackInfo { get; }
 
         public bool ShouldReportSecurityResult { get; }
 

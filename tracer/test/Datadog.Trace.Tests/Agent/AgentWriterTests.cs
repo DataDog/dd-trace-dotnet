@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests.Agent
             var spanContext = new SpanContext(null, traceContext, "service");
             var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             traceContext.AddSpan(span);
-            traceContext.SetSamplingPriority(new SamplingDecision(SamplingPriorityValues.UserReject, SamplingMechanism.Manual));
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
             span.Finish(); // triggers the span sampler to run
             var traceChunk = new ArraySegment<Span>(new[] { span });
 
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Tests.Agent
             var spanContext = new SpanContext(null, traceContext, "service");
             var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             traceContext.AddSpan(span);
-            traceContext.SetSamplingPriority(new SamplingDecision(SamplingPriorityValues.UserReject, SamplingMechanism.Manual));
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
             span.Finish();
             var traceChunk = new ArraySegment<Span>(new[] { span });
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
-            traceContext.SetSamplingPriority(new SamplingDecision(SamplingPriorityValues.UserReject, SamplingMechanism.Manual));
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
             var rootSpanContext = new SpanContext(null, traceContext, "service");
             var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             var keptChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "operation" };
@@ -141,7 +141,7 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
-            traceContext.SetSamplingPriority(new SamplingDecision(SamplingPriorityValues.UserReject, SamplingMechanism.Manual));
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
             var rootSpanContext = new SpanContext(null, traceContext, "service");
             var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             var droppedChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "drop_me" };
@@ -230,28 +230,25 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public Task FaultyApi()
+        public async Task FaultyApi()
         {
             // The flush thread should be able to recover from an error when calling the API
             // Also, it should free the faulty buffer
             var api = new Mock<IApi>();
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null);
-            var mutex = new ManualResetEventSlim();
-
-            agent.Flushed += () => mutex.Set();
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, automaticFlush: false);
 
             api.Setup(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()))
                .Returns(() => throw new InvalidOperationException());
 
             agent.WriteTrace(CreateTraceChunk(1));
 
-            mutex.Wait();
+            await agent.FlushTracesAsync();
 
             agent.ActiveBuffer.Should().BeSameAs(agent.FrontBuffer);
             agent.FrontBuffer.IsEmpty.Should().BeTrue();
             agent.BackBuffer.IsEmpty.Should().BeTrue();
 
-            return agent.FlushAndCloseAsync();
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]

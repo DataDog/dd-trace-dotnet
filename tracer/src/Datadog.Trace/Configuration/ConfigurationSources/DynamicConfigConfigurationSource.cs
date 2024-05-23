@@ -15,7 +15,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
 {
     internal class DynamicConfigConfigurationSource : JsonConfigurationSource
     {
-        private static readonly IReadOnlyDictionary<string, string> Mapping = new Dictionary<string, string>
+        private static readonly Dictionary<string, string> Mapping = new()
         {
             { ConfigurationKeys.TraceEnabled, "tracing_enabled" },
             // { ConfigurationKeys.DebugEnabled, "tracing_debug" },
@@ -48,17 +48,17 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             return jobject;
         }
 
-        private static IDictionary<string, string> ReadHeaderTags(JToken token)
+        private static Dictionary<string, string> ReadHeaderTags(JToken token)
         {
             return ((JArray)token).ToDictionary(t => t["header"]!.Value<string>()!, t => t["tag_name"]!.Value<string>()!);
         }
 
-        private static IDictionary<string, string> ReadServiceMapping(JToken token)
+        private static Dictionary<string, string> ReadServiceMapping(JToken token)
         {
             return ((JArray)token).ToDictionary(t => t["from_key"]!.Value<string>()!, t => t["to_name"]!.Value<string>()!);
         }
 
-        private static IDictionary<string, string> ReadGlobalTags(JToken token)
+        private static Dictionary<string, string> ReadGlobalTags(JToken token)
         {
             var result = new Dictionary<string, string>();
 

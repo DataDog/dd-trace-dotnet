@@ -14,6 +14,7 @@
 
 namespace datadog::shared::nativeloader
 {
+    struct RuntimeInformation;
     class IDynamicDispatcher;
 
     class CorProfiler : public ICorProfilerCallback10
@@ -31,7 +32,7 @@ namespace datadog::shared::nativeloader
         std::shared_ptr<ICorProfilerInfo12> m_writeToDiskCorProfilerInfo;
 
         static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
-        static void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
+        static RuntimeInformation GetRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
 
     public:
         CorProfiler(IDynamicDispatcher* dispatcher);
@@ -177,4 +178,46 @@ namespace datadog::shared::nativeloader
         static const char* GetRuntimeId(AppDomainID appDomain);
     };
 
+    struct RuntimeInformation
+    {
+        COR_PRF_RUNTIME_TYPE runtime_type;
+        USHORT major_version;
+        USHORT minor_version;
+        USHORT build_version;
+        USHORT qfe_version;
+
+        RuntimeInformation() :
+            runtime_type((COR_PRF_RUNTIME_TYPE) 0x0), major_version(0), minor_version(0), build_version(0), qfe_version(0)
+        {
+        }
+
+        RuntimeInformation(COR_PRF_RUNTIME_TYPE runtime_type, USHORT major_version, USHORT minor_version,
+                           USHORT build_version, USHORT qfe_version) :
+            runtime_type(runtime_type),
+            major_version(major_version),
+            minor_version(minor_version),
+            build_version(build_version),
+            qfe_version(qfe_version)
+        {
+        }
+
+        RuntimeInformation& operator=(const RuntimeInformation& other)
+        {
+            runtime_type = other.runtime_type;
+            major_version = other.major_version;
+            minor_version = other.minor_version;
+            build_version = other.build_version;
+            qfe_version = other.qfe_version;
+            return *this;
+        }
+
+        bool is_desktop() const
+        {
+            return runtime_type == COR_PRF_DESKTOP_CLR;
+        }
+        bool is_core() const
+        {
+            return runtime_type == COR_PRF_CORE_CLR;
+        }
+    };
 } // namespace datadog::shared::nativeloader

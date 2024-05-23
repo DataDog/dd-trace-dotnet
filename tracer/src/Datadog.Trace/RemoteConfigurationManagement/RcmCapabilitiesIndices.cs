@@ -49,6 +49,26 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static readonly BigInteger ApmTracingTracingEnabled = Create(19);
 
+        public static readonly BigInteger ApmTracingDataStreamsEnabled = Create(20);
+
+        public static readonly BigInteger AsmRaspSqli = Create(21);
+
+        public static readonly BigInteger AsmRaspLfi = Create(22);
+
+        public static readonly BigInteger AsmRaspSsrf = Create(23);
+
+        public static readonly BigInteger AsmRaspShi = Create(24);
+
+        public static readonly BigInteger AsmRaspXxe = Create(25);
+
+        public static readonly BigInteger AsmRaspRce = Create(26);
+
+        public static readonly BigInteger AsmRaspNosqli = Create(27);
+
+        public static readonly BigInteger AsmRaspXss = Create(28);
+
+        public static readonly BigInteger ApmTracingSampleRules = Create(29);
+
         private static BigInteger Create(int index) => new(1UL << index);
     }
 }

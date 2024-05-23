@@ -153,6 +153,173 @@ namespace datadog::shared::nativeloader
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                 }
             }
+
+            // If we weren't on the explicit include list, then try to filter out `dotnet build` etc.
+            // We don't want to instrument _build_ processes in dotnet by default, as they generally
+            // don't give useful information, add latency, and risk triggering bugs in the runtime,
+            // particularly around shutdown, like this one: https://github.com/dotnet/runtime/issues/55441
+           const auto [process_command_line , tokenized_command_line]  = GetCurrentProcessCommandLine();
+            Log::Info("Process CommandLine: ", process_command_line);
+
+            if (!process_command_line.empty())
+            {
+                const auto isDotNetProcess = process_name == WStr("dotnet") || process_name == WStr("dotnet.exe");
+                const auto token_count = tokenized_command_line.size();
+                if (isDotNetProcess && token_count > 1)
+                {
+                    // Exclude:
+                    // - dotnet build, dotnet build myproject.csproj etc  
+                    // - dotnet build-server
+                    // - (... dotnet COMMAND commands listed below)
+                    // - dotnet tool ...
+                    // - dotnet new ...
+                    //
+                    // There are other commands we're choosing not to check because they
+                    // wouldn't normally be called on a build or production server, just locally
+                    // - dotnet add package, dotnet add reference
+                    // - dotnet sln
+                    // - dotnet workload
+                    // - etc
+                    //
+                    // There are some commands that we explicitly DO want to instrument
+                    // i.e. dotnet run
+                    // i.e. dotnet test
+                    // i.e. dotnet vstest
+                    // i.e. dotnet exec (except specific commands)
+                    bool is_ignored_command = false;
+                    const auto token1 = tokenized_command_line[1];
+                    if(token1 == WStr("exec"))
+                    {
+                        // compiler is invoked with arguments something like this:
+                        // dotnet exec /usr/share/dotnet/sdk/6.0.400/Roslyn/bincore/csc.dll /noconfig @/tmp/tmp8895f601306443a6a54388ecc6dcfc44.rsp
+                        // so we check the arguments to see if any of them are an invocation of one of the dlls we want to ignore.
+                        // We don't just check the second argument because the command could set additional flags
+                        // for the exec function
+                        for (int i = 2; i < token_count; ++i)
+                        {
+                            const auto current_token = tokenized_command_line[i];
+                            if(!current_token.empty() &&
+                                (EndsWith(current_token, WStr("csc.dll"))
+                                    || EndsWith(current_token, WStr("VBCSCompiler.dll"))))
+                            {
+                                is_ignored_command = true;
+                                break;
+                            }
+                        }
+                    }
+                    else if(!token1.empty())
+                    {
+                        is_ignored_command =
+                            token1 == WStr("build") ||
+                            token1 == WStr("build-server") ||
+                            token1 == WStr("clean") ||
+                            token1 == WStr("msbuild") ||
+                            token1 == WStr("new") ||
+                            token1 == WStr("nuget") ||
+                            token1 == WStr("pack") ||
+                            token1 == WStr("publish") ||
+                            token1 == WStr("restore") ||
+                            token1 == WStr("tool");
+                    }
+
+                    if (is_ignored_command)
+                    {
+                        Log::Info("The Tracer Profiler has been disabled because the process is 'dotnet' "
+                            "but an unsupported command was detected");
+                        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                    }
+                }
+            }
+        }
+
+        //
+        // Get Profiler interface ICorProfilerInfo4
+        //
+        ICorProfilerInfo4* info4 = nullptr;
+        HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &info4);
+        if (FAILED(hr))
+        {
+            Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
+            return E_FAIL;
+        }
+        const auto runtimeInformation = GetRuntimeVersion(info4);
+
+        //
+        // Check if we're running in Single Step, and if so, whether we should bail out
+        //
+        // This variable is non-empty when we're in single step
+        const auto isSingleStepVariable = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
+        if(!isSingleStepVariable.empty())
+        {
+            Log::Debug("CorProfiler::Initialize: Single step instrumentation detected, checking for EOL environment");
+            // We're doing single-step instrumentation, check if we're in an EOL environment
+            IUnknown* tstVerProfilerInfo;
+            const char* unsupportedFramework = nullptr;
+            if (runtimeInformation.is_core())
+            {
+                // For .NET Core, we require .NET Core 3.1 or higher
+                // We could use runtime_information, but I don't know how reliable the values we get from that are?
+                if (S_OK == pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**) &tstVerProfilerInfo))
+                {
+                    // .NET Core 3.1+, but is it _too_ high?
+                    if(runtimeInformation.major_version > 8)
+                    {
+                        unsupportedFramework = ".NET 9 or higher";
+                    }
+
+                    // supported
+                    tstVerProfilerInfo->Release();
+                }
+                else
+                {
+                    unsupportedFramework = ".NET Core 3.0 or lower";
+                }
+            }
+            else
+            {
+                // For .NET Framework, we require .NET Framework 4.6.1 or higher
+                if (S_OK == pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo7), (void**) &tstVerProfilerInfo))
+                {
+                    // supported
+                    tstVerProfilerInfo->Release();
+                }
+                else
+                {
+                    unsupportedFramework = ".NET Framework 4.6.0 or lower";
+                }
+            }
+
+            if(unsupportedFramework != nullptr)
+            {
+                // Are we supposed to override the EOL check?
+                const auto forceEolInstrumentationVariable = GetEnvironmentValue(EnvironmentVariables::ForceEolInstrumentation);
+                bool forceEolInstrumentation;
+                if(!forceEolInstrumentationVariable.empty()
+                    && TryParseBooleanEnvironmentValue(forceEolInstrumentationVariable, forceEolInstrumentation)
+                    && forceEolInstrumentation)
+                {
+                    Log::Info(
+                        "CorProfiler::Initialize: Unsupported framework version '",
+                        unsupportedFramework,
+                        "' detected. Forcing instrumentation with single-step instrumentation due to ",
+                        EnvironmentVariables::ForceEolInstrumentation);
+                }
+                else
+                {
+                    Log::Warn(
+                        "CorProfiler::Initialize: Single-step instrumentation is not supported in '",
+                        unsupportedFramework,
+                        "'. Set ",
+                        EnvironmentVariables::ForceEolInstrumentation,
+                        " to override this check and force instrumentation");
+                    info4->Release();
+                    return E_FAIL;
+                }
+            }
+            else
+            {
+                Log::Debug("CorProfiler::Initialize: Supported framework version detected, continuing with single-step instrumentation");
+            }
         }
 
         //
@@ -197,18 +364,6 @@ namespace datadog::shared::nativeloader
         // 5. Repeat the steps 2,3,4 for other target profilers.
         // 6. Use the ICorProfilerInfo4 or ICorProfilerInfo5 instance to set the final `mask_low` and `mask_hi`.
         // *******************************************************************************************************
-
-        //
-        // Get Profiler interface ICorProfilerInfo4 and ICorProfilerInfo5
-        //
-        ICorProfilerInfo4* info4 = nullptr;
-        HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &info4);
-        if (FAILED(hr))
-        {
-            Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
-            return E_FAIL;
-        }
-        InspectRuntimeVersion(info4);
 
         ICorProfilerInfo5* info5 = nullptr;
         hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &info5);
@@ -1020,7 +1175,7 @@ namespace datadog::shared::nativeloader
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.2 or later.");
+            Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.1 or later.");
             tstVerProfilerInfo->Release();
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), (void**) &tstVerProfilerInfo))
@@ -1072,7 +1227,7 @@ namespace datadog::shared::nativeloader
         }
     }
 
-    void CorProfiler::InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo)
+    RuntimeInformation CorProfiler::GetRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo)
     {
         USHORT clrInstanceId;
         COR_PRF_RUNTIME_TYPE runtimeType;
@@ -1089,6 +1244,7 @@ namespace datadog::shared::nativeloader
             std::ostringstream hex;
             hex << std::hex << hrGRI;
             Log::Info("Initializing the Profiler: Exact runtime version could not be obtained (0x", hex.str(), ")");
+            return {};
         }
         else
         {
@@ -1100,6 +1256,7 @@ namespace datadog::shared::nativeloader
                       : (std::string("unknown(") + std::to_string(runtimeType) + std::string(")"))),
                  ",", " majorVersion: ", majorVersion, ", minorVersion: ", minorVersion,
                  ", buildNumber: ", buildNumber, ", qfeVersion: ", qfeVersion, " }.");
+            return {runtimeType, majorVersion, minorVersion, buildNumber, qfeVersion};
         }
     }
 

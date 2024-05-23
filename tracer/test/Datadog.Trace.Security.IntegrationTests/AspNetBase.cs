@@ -41,6 +41,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecWafRulesVersion = new(@"\s*_dd.appsec.event_rules.version: \d+.\d+.\d+(\S*)?,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecEventRulesLoaded = new(@"\s*_dd.appsec.event_rules.loaded: \d+\.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecRaspWafDuration = new(@"_dd.appsec.rasp.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecRaspWafDurationWithBindings = new(@"_dd.appsec.rasp.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly string _testName;
         private readonly HttpClient _httpClient;
         private readonly CookieContainer _cookieContainer;
@@ -135,11 +137,13 @@ namespace Datadog.Trace.Security.IntegrationTests
                                 target.Tags[Tags.AppSecJson] = orderedAppSecJson;
                             }
 
-                            return VerifyHelper.ScrubTags(target, target.Tags);
+                            return VerifyHelper.ScrubStringTags(target, target.Tags);
                         });
                 });
             settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
             settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
+            settings.AddRegexScrubber(AppSecRaspWafDuration, "_dd.appsec.rasp.duration: 0.0");
+            settings.AddRegexScrubber(AppSecRaspWafDurationWithBindings, "_dd.appsec.rasp.duration_ext: 0.0");
             if (!testInit)
             {
                 settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
@@ -151,7 +155,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json"));
             if (appsecSpans.Any())
             {
-                appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]);
+                appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]
+                || s.Metrics["_dd.appsec.rasp.duration"] < s.Metrics["_dd.appsec.rasp.duration_ext"]);
             }
 
             // Overriding the type name here as we have multiple test classes in the file

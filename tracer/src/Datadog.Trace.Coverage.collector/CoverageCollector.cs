@@ -9,9 +9,13 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Exceptions;
+using Datadog.Trace.Ci.Ipc;
+using Datadog.Trace.Ci.Ipc.Messages;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
@@ -295,6 +299,32 @@ namespace Datadog.Trace.Coverage.Collector
             }
 
             _logger?.Warning($"Processed {numAssemblies} assemblies in folder: {folder}");
+
+            // The following is just a best effort approach to indicate in the test session that
+            // we sucessfully instrumented all assemblies to collect code coverage.
+            // Is not part of the spec but useful for support tickets.
+            // We try to extract session variables (from out of process sessions)
+            // and try to send a message to the IPC server for setting the test.code_coverage.injected tag.
+            if (SpanContextPropagator.Instance.Extract(
+                    EnvironmentHelpers.GetEnvironmentVariables(),
+                    new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor)) is { } sessionContext)
+            {
+                try
+                {
+                    var name = $"session_{sessionContext.SpanId}";
+                    _logger?.Debug($"CoverageCollector.Enabling IPC client: {name} and sending injection tags");
+                    using var ipcClient = new IpcClient(name);
+                    ipcClient.TrySendMessage(new SetSessionTagMessage(CodeCoverageTags.Instrumented, numAssemblies > 0 ? "true" : "false"));
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Debug("Error enabling IPC client and sending coverage data: " + ex);
+                }
+            }
+            else
+            {
+                _logger?.Debug($"CoverageCollector.Test session context cannot be found, skipping IPC client and sending injection tags");
+            }
         }
 
         /// <inheritdoc />

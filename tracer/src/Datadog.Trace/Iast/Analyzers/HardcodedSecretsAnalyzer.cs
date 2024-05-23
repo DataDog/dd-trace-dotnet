@@ -113,7 +113,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
             if (_instance == null)
             {
                 _instance = new HardcodedSecretsAnalyzer(regexTimeout);
-                LifetimeManager.Instance.AddShutdownTask(_instance.Dispose);
+                LifetimeManager.Instance.AddShutdownTask(_ => _instance.Dispose());
             }
         }
     }

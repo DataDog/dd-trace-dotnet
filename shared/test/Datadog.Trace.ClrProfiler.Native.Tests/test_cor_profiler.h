@@ -1,9 +1,13 @@
 #pragma once
+#include "test_cor_profiler_info.h"
+
 #include <corhlpr.h>
 #include <corprof.h>
 
 class TestCorProfiler : public ICorProfilerCallback10
 {
+    TestCorProfilerInfo* m_corProfilerInfo = new TestCorProfilerInfo();
+
 public:
     ULONG m_Ref = 0;
     ULONG m_Initialize = 0;
@@ -101,8 +105,20 @@ public:
     ULONG m_EventPipeEventDelivered = 0;
     ULONG m_EventPipeProviderCreated = 0;
 
+    virtual ~TestCorProfiler()
+    {
+        delete m_corProfilerInfo;
+    }
+
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
     {
+        if (riid == __uuidof(ICorProfilerInfo4))
+        {
+            *ppvObject = m_corProfilerInfo;
+            // Returning OK so we don't bail out too soon
+            return S_OK;
+        }
+
         return E_FAIL;
     }
     ULONG STDMETHODCALLTYPE AddRef() override

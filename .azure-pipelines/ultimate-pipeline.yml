@@ -1554,13 +1554,17 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
+        
+    # Not using chocolatey as we're getting 429 Too Many Requests
+    - template: steps/install-msi.yml
+      parameters:
+        url: "https://functionscdn.azureedge.net/public/artifacts/v4/latest/func-cli-x64.msi"
+        filename: "func-cli-x64.msi"
+        addToPath: "C:\\Program Files\\Microsoft\\Azure Functions Core Tools"
 
-    - script: |
-        $(runtimeInstall)
-        func
-      displayName: 'Install Azure Functions core tools'
+    - script: func
+      displayName: 'Display Azure Functions core tools'
       workingDirectory: $(Pipeline.Workspace)
-      retryCountOnTaskFailure: 5
 
     - script: |
         "%ProgramFiles(x86)%\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe" start
@@ -1596,13 +1600,6 @@ stages:
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
-
-    - script: |
-        $(runtimeUninstall)
-      displayName: 'Uninstall Azure Functions core tools'
-      workingDirectory: $(Pipeline.Workspace)
-      condition: succeededOrFailed()
-      continueOnError: true
 
 - stage: static_analysis_checks_tracer
   dependsOn: [merge_commit_id]
@@ -1675,20 +1672,14 @@ stages:
     timeoutInMinutes: 60 #default value
 
     steps:
-    - powershell: |
-        # Required to reload environment apparently
-        Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
-        choco install cppcheck -y --version 2.12
-        $errorCode = $LASTEXITCODE
-        if ($errorCode -ne 0)
-        {
-          # something went wrong. Let's retry
-          exit 1
-        }
-        Write-Host "##vso[task.setvariable variable=PATH;]${env:PATH};C:\Program Files\Cppcheck";
-        refreshenv
-      displayName: Install CppCheck
-      retryCountOnTaskFailure: 3
+    # Based on https://community.chocolatey.org/packages/cppcheck#files
+    # Not using chocolatey as we're getting 429 Too Many Requests
+    - template: steps/install-msi.yml
+      parameters:
+        url: "https://github.com/danmar/cppcheck/releases/download/2.12.0/cppcheck-2.12.0-x64-Setup.msi"
+        filename: "cppcheck.msi"
+        addToPath: "C:\\Program Files\\Cppcheck"
+        msiParams: "ADDLOCAL=CppcheckCore,CLI,GUI,Translations,ConfigFiles,PlatformFiles,PythonAddons,CRT"
 
     - template: steps/clone-repo.yml
       parameters:
@@ -1831,7 +1822,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Test, DockerTest]
+      jobs: [Test, DockerTest, Serverless]
 
   - job: Test
     timeoutInMinutes: 60 #default value
@@ -3129,9 +3120,7 @@ stages:
       displayName: RunBenchmarks
       env:
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
-        # Currently, enabling profiling enables the CI Visibility tracer to enable code hotspots.
-        # We may be able to mitigate that in the future, but disabling it for now.
-        DD_PROFILING_ENABLED: false
+        DD_PROFILING_ENABLED: true
         DD_API_KEY: $(ddApiKey)
         DD_DOTNET_TRACER_HOME: $(monitoringHome)
 
@@ -4804,11 +4793,6 @@ stages:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
-        - script: |
-            mkdir -p tracer/build_data/snapshots
-            mkdir -p tracer/build_data/logs
-          displayName: create test data directories
-        
         # Run the "normal" installer smoke tests
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
@@ -5266,11 +5250,6 @@ stages:
           inputs:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
-
-        - script: |
-            mkdir -p tracer/build_data/snapshots
-            mkdir -p tracer/build_data/logs
-          displayName: create test data directories
 
         # Run the "normal" installer smoke tests 
         - script: |

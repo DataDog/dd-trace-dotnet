@@ -37,16 +37,25 @@ namespace Honeypot
         public static Task UpdateIntegrations(AbsolutePath honeypotProject, List<IntegrationMap> distinctIntegrations)
         {
             var fakeRefs = string.Empty;
+            
+            // have to group by packages so we don't have duplicate package references
+            // so reverse the dependencies here
+            var integrationsByPackageName = distinctIntegrations
+                .SelectMany(integration => integration.Packages.Select(package => (integration, package)))
+                .GroupBy(x => x.package)
+                .OrderBy(x => x.Key.NugetName);
 
-            foreach (var integration in distinctIntegrations)
+            foreach (var packageNameGroup in integrationsByPackageName)
             {
-                foreach (var package in integration.Packages)
+                var package = packageNameGroup.Key;
+                foreach (var (integration, _) in packageNameGroup.OrderBy(x => x.integration.Name))
                 {
                     fakeRefs += $@"{Environment.NewLine}    <!-- Integration: {integration.Name} -->";
-                    fakeRefs += $@"{Environment.NewLine}    <!-- Assembly: {integration.AssemblyName} -->";
-                    fakeRefs += $@"{Environment.NewLine}    <!-- Latest package https://www.nuget.org/packages/{package.NugetName}/{package.LatestVersion} -->";
-                    fakeRefs += $@"{Environment.NewLine}    <PackageReference Include=""{package.NugetName}"" Version=""{package.LatestTestedVersion ?? package.LatestSupportedVersion}"" />{Environment.NewLine}";
+                    fakeRefs += $@"{Environment.NewLine}    <!--    Assembly: {integration.AssemblyName} -->";
                 }
+
+                fakeRefs += $@"{Environment.NewLine}    <!-- Latest package https://www.nuget.org/packages/{package.NugetName}/{package.LatestVersion} -->";
+                fakeRefs += $@"{Environment.NewLine}    <PackageReference Include=""{package.NugetName}"" Version=""{package.LatestTestedVersion ?? package.LatestSupportedVersion}"" />{Environment.NewLine}";
             }
 
             var honeypotProjTemplate = GetHoneyPotProjTemplate();

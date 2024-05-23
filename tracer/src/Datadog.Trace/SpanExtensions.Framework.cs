@@ -26,7 +26,7 @@ namespace Datadog.Trace
 
             if (security.Enabled)
             {
-                var securityCoordinator = new SecurityCoordinator(Security.Instance, HttpContext.Current, span);
+                var securityCoordinator = new SecurityCoordinator(Security.Instance, span);
 
                 var wafArgs = new Dictionary<string, object>
                 {

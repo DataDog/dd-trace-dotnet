@@ -61,10 +61,10 @@ namespace Datadog.Trace.AppSec.Waf
         public IResult? Run(IDictionary<string, object> addressData, ulong timeoutMicroSeconds)
             => RunInternal(addressData, null, timeoutMicroSeconds);
 
-        public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds)
-            => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds);
+        public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp)
+            => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds, isRasp);
 
-        private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds)
+        private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
         {
             if (_disposed)
             {
@@ -133,7 +133,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             _stopwatch.Stop();
             _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
-            var result = new Result(retNative, code, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000));
+            var result = new Result(retNative, code, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000), isRasp);
             _wafLibraryInvoker.ResultFree(ref retNative);
 
             if (Log.IsEnabled(LogEventLevel.Debug))

@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Reflection;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
@@ -19,8 +18,8 @@ namespace Datadog.Trace.Tests.Propagators
         static B3SingleHeaderPropagatorTests()
         {
             B3Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
-                new[] { ContextPropagationHeaderStyle.B3SingleHeader },
-                new[] { ContextPropagationHeaderStyle.B3SingleHeader },
+                [ContextPropagationHeaderStyle.B3SingleHeader],
+                [ContextPropagationHeaderStyle.B3SingleHeader],
                 false);
         }
 
@@ -29,8 +28,7 @@ namespace Datadog.Trace.Tests.Propagators
         {
             var traceId = new TraceId(0x0123456789abcdef, 0x1122334455667788);
             const ulong spanId = 987654321;
-            const int samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, origin: null);
+            var context = new SpanContext(traceId, spanId, SamplingPriorityValues.UserKeep, serviceName: null, origin: null);
             var headers = new Mock<IHeadersCollection>();
 
             B3Propagator.Inject(context, headers.Object);
@@ -38,17 +36,18 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set("b3", "0123456789abcdef1122334455667788-000000003ade68b1-1"), Times.Once());
             headers.VerifyNoOtherCalls();
 
-            // Extract sampling from trace context
+            // Extract default (no sampler) sampling from trace context
             var newContext = new SpanContext(parent: null, new TraceContext(Mock.Of<IDatadogTracer>()), serviceName: null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object);
-            newHeaders.Verify(h => h.Set("b3", "0123456789abcdef1122334455667788-000000003ade68b1-0"), Times.Once());
+            newHeaders.Verify(h => h.Set("b3", "0123456789abcdef1122334455667788-000000003ade68b1-1"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
 
-            newContext.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            // override sampling decision
+            newContext.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject);
             newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object);
-            newHeaders.Verify(h => h.Set("b3", "0123456789abcdef1122334455667788-000000003ade68b1-1"), Times.Once());
+            newHeaders.Verify(h => h.Set("b3", "0123456789abcdef1122334455667788-000000003ade68b1-0"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
         }
 
@@ -68,17 +67,18 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-1"), Times.Once());
             headers.VerifyNoOtherCalls();
 
-            // Extract sampling from trace context
+            // Extract default (no sampler) sampling from trace context
             var newContext = new SpanContext(parent: null, new TraceContext(Mock.Of<IDatadogTracer>()), serviceName: null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
-            newHeaders.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-0"), Times.Once());
+            newHeaders.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-1"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
 
-            newContext.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            // override sampling decision
+            newContext.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject);
             newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
-            newHeaders.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-1"), Times.Once());
+            newHeaders.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-0"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
         }
 

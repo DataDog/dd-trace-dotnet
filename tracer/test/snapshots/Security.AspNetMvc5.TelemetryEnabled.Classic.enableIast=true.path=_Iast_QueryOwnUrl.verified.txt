@@ -55,7 +55,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.iast.telemetry.executed.propagation: 4.0,
       _dd.iast.telemetry.executed.sink.sql_injection: 9.0,
       _dd.iast.telemetry.executed.source.http_request_cookie_name: 1.0,

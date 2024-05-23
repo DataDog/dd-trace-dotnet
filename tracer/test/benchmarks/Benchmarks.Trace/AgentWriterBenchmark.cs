@@ -134,6 +134,11 @@ namespace Benchmarks.Trace
 
                 return new FakeApiResponse();
             }
+
+            public Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         private class FakeApiResponse : IApiResponse

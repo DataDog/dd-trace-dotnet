@@ -12,7 +12,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -114,7 +113,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -216,7 +214,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -322,7 +319,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -428,7 +424,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -534,7 +529,6 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -644,7 +638,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -750,7 +743,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -856,7 +848,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -962,7 +953,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1072,7 +1062,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1174,7 +1163,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1276,7 +1264,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1378,7 +1365,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1482,7 +1468,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     },
     Metrics: {
       process_id: 0,
-      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0

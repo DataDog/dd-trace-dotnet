@@ -5,24 +5,27 @@
 
 using System.Collections.Generic;
 using System.CommandLine.Invocation;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tools.Runner
 {
     internal static class RunHelper
     {
-        public static bool TryGetEnvironmentVariables(ApplicationContext applicationContext, InvocationContext invocationContext, RunSettings settings, out Dictionary<string, string> profilerEnvironmentVariables)
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RunHelper));
+
+        public static bool TryGetEnvironmentVariables(ApplicationContext applicationContext, InvocationContext invocationContext, CommonTracerSettings settings, out Dictionary<string, string> profilerEnvironmentVariables)
         {
             return TryGetEnvironmentVariables(applicationContext, invocationContext, settings, Utils.CIVisibilityOptions.None, out profilerEnvironmentVariables);
         }
 
-        public static bool TryGetEnvironmentVariables(ApplicationContext applicationContext, InvocationContext invocationContext, RunSettings settings, Utils.CIVisibilityOptions ciVisibilityOptions, out Dictionary<string, string> profilerEnvironmentVariables)
+        public static bool TryGetEnvironmentVariables(ApplicationContext applicationContext, InvocationContext invocationContext, CommonTracerSettings settings, Utils.CIVisibilityOptions ciVisibilityOptions, out Dictionary<string, string> profilerEnvironmentVariables)
         {
             profilerEnvironmentVariables = Utils.GetProfilerEnvironmentVariables(
                 invocationContext,
                 applicationContext.RunnerFolder,
                 applicationContext.Platform,
                 settings,
-                reducePathLength: false,
                 ciVisibilityOptions: ciVisibilityOptions);
 
             if (profilerEnvironmentVariables is null)
@@ -30,15 +33,23 @@ namespace Datadog.Trace.Tools.Runner
                 return false;
             }
 
-            var additionalEnvironmentVariables = invocationContext.ParseResult.GetValueForOption(settings.AdditionalEnvironmentVariables);
-
-            if (additionalEnvironmentVariables != null)
+            if (settings is RunSettings runSettings)
             {
-                foreach (var env in additionalEnvironmentVariables)
-                {
-                    var (key, value) = ParseEnvironmentVariable(env);
+                var additionalEnvironmentVariables = invocationContext.ParseResult.GetValueForOption(runSettings.AdditionalEnvironmentVariables);
 
-                    profilerEnvironmentVariables[key] = value;
+                if (additionalEnvironmentVariables != null)
+                {
+                    foreach (var env in additionalEnvironmentVariables)
+                    {
+                        var (key, value) = ParseEnvironmentVariable(env);
+
+                        profilerEnvironmentVariables[key] = value;
+                        if (Program.CallbackForTests is null)
+                        {
+                            Log.Debug("Setting: {Key}={Value}", key, value);
+                            EnvironmentHelpers.SetEnvironmentVariable(key, value);
+                        }
+                    }
                 }
             }
 

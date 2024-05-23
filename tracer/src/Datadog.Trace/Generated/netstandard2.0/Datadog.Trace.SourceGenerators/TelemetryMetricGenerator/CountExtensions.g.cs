@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 35;
+    public const int Length = 38;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -53,6 +53,9 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "waf.updates",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "waf.requests",
             Datadog.Trace.Telemetry.Metrics.Count.InputTruncated => "waf.input_truncated",
+            Datadog.Trace.Telemetry.Metrics.Count.RaspRuleEval => "rasp.rule.eval",
+            Datadog.Trace.Telemetry.Metrics.Count.RaspRuleMatch => "rasp.rule.match",
+            Datadog.Trace.Telemetry.Metrics.Count.RaspTimeout => "rasp.timeout",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSources => "executed.source",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedPropagations => "executed.propagation",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSinks => "executed.sink",
@@ -92,6 +95,9 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.InputTruncated => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.RaspRuleEval => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.RaspRuleMatch => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.RaspTimeout => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSources => "iast",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedPropagations => "iast",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSinks => "iast",

@@ -62,8 +62,7 @@ namespace Datadog.Trace.Configuration
             TelemetryFactory.Metrics.Record(PublicApiUsage.CompositeConfigurationSource_Insert);
             if (item == null) { ThrowHelper.ThrowArgumentNullException(nameof(item)); }
 
-            var telemeteredSource = item as ITelemeteredConfigurationSource ?? new CustomTelemeteredConfigurationSource(item);
-            _sources.Insert(index, telemeteredSource);
+            InsertInternal(index, item);
         }
 
         /// <summary>
@@ -126,6 +125,12 @@ namespace Datadog.Trace.Configuration
         {
             var telemeteredSource = source as ITelemeteredConfigurationSource ?? new CustomTelemeteredConfigurationSource(source);
             _sources.Add(telemeteredSource);
+        }
+
+        internal void InsertInternal(int index, IConfigurationSource source)
+        {
+            var telemeteredSource = source as ITelemeteredConfigurationSource ?? new CustomTelemeteredConfigurationSource(source);
+            _sources.Insert(index, telemeteredSource);
         }
 
         /// <inheritdoc />

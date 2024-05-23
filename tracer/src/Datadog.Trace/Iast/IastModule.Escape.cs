@@ -44,11 +44,8 @@ internal static partial class IastModule
                 return res;
             }
 
-            if (object.ReferenceEquals(res, text))
-            {
-                // If returned reference is the same, we create a new one
-                res = text!.CreateNewReference();
-            }
+            // Add the mark (exclusion) to the tainted ranges
+            tainted.Ranges = Ranges.CopyWithMark(tainted.Ranges, SecureMarks.Xss);
         }
         catch (Exception ex)
         {
