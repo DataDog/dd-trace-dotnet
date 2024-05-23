@@ -145,13 +145,14 @@ public static class Program
         {
             { "foo", 1 },
             { "bar", "Hello, World!" },
-            { "baz", new int[] { 1, 2, 3 } }
+            { "baz", new int[] { 1, 2, 3 } },
+            { "strings", new string[] { "str", "1" } }
         });
 
         span.AddEvent("event-message");
-        span.AddEvent("event-messageWithDateTime", DateTimeOffset.Now);
+        span.AddEvent("event-messageWithDateTime", new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero));
         span.AddEvent("event-messageWithAttributes", attributes);
-        span.AddEvent("event-messageWithDateTimeAndAttributes", DateTimeOffset.Now, attributes);
+        span.AddEvent("event-messageWithDateTimeAndAttributes", new DateTimeOffset(1970, 1, 1, 0, 0, 1, TimeSpan.Zero), attributes);
     }
 
     private static void RunSpanUpdateMethods(TelemetrySpan span)
