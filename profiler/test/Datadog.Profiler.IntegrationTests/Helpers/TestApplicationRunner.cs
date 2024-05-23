@@ -70,6 +70,19 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             PrintTestInfo();
         }
 
+        public bool WaitForExitOrCaptureDump(Process process, int milliseconds)
+        {
+            var success = process.WaitForExit(milliseconds);
+
+            if (!success)
+            {
+                process.GetAllThreadsStack(_testBaseOutputDir, _output);
+                process.TakeMemoryDump(_testBaseOutputDir, _output);
+            }
+
+            return success;
+        }
+
         public ProcessHelper LaunchProcess(MockDatadogAgent agent = null)
         {
             var (executor, arguments) = BuildTestCommandLine();
