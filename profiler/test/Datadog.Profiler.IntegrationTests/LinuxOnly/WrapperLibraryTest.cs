@@ -87,12 +87,12 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 7");
 
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpType", string.Empty);
-            
+
             RegisterCrashHandler(runner);
 
             using var processHelper = runner.LaunchProcess();
 
-            processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
+            runner.WaitForExitOrCaptureDump(processHelper.Process, milliseconds: 30_000).Should().BeTrue();
             processHelper.Drain();
             processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
             processHelper.StandardOutput.Should().MatchRegex(@"createdump [\w\.\/]+createdump \d+")
@@ -111,7 +111,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             using var processHelper = runner.LaunchProcess();
 
-            processHelper.Process.WaitForExit(milliseconds: 30_000).Should().BeTrue();
+            runner.WaitForExitOrCaptureDump(processHelper.Process, milliseconds: 30_000).Should().BeTrue();
             processHelper.Drain();
             processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
             processHelper.StandardOutput.Should().NotMatchRegex(@"createdump [\w\.\/]+createdump \d+")
