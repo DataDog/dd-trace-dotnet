@@ -61,6 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         public static void ConfigureLogsInjectionForLoggingRules<TLoggingRules>(TLoggingRules? loggingRules, out bool foundDirectSubmissionTarget)
         {
             foundDirectSubmissionTarget = false;
+
             if (loggingRules is not IList { Count: > 0 } loggingRulesList || _jsonAttributeType is null || _simpleLayoutType is null)
             {
                 return;
