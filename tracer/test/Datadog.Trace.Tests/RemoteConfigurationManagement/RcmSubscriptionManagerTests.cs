@@ -18,27 +18,26 @@ public class RcmSubscriptionManagerTests
     [InlineData(1)]
     // ...
     [InlineData(6)]
-    // [InlineData(7)] FAILS
+    [InlineData(7)]
     [InlineData(8)]
     // ...
     [InlineData(9)]
-    // [InlineData(15)] FAILS
+    [InlineData(15)]
     [InlineData(16)]
     // ...
     [InlineData(17)]
-    // [InlineData(23)] FAILS
+    [InlineData(23)]
     [InlineData(24)]
-    public void GetCapabilityBytes(int capabilityIndex)
+    public void GetCapabilities(int capabilityIndex)
     {
+        var byteCount = (capabilityIndex / 8) + 1;
+        var expectedBytes = new byte[byteCount];
+        var bits = new BitArray(expectedBytes) { [capabilityIndex] = true };
+        bits.CopyTo(expectedBytes, 0);
+        Array.Reverse(expectedBytes);
+
         var subscriptionManager = new RcmSubscriptionManager();
         subscriptionManager.SetCapability(1 << capabilityIndex, true);
-
-        var byteCount = (capabilityIndex / 8) + 1;
-        var bytes = new byte[byteCount];
-        var bits = new BitArray(bytes) { [capabilityIndex] = true };
-        bits.CopyTo(bytes, 0);
-        Array.Reverse(bytes);
-
-        subscriptionManager.GetCapabilities().Should().BeEquivalentTo(bytes);
+        subscriptionManager.GetCapabilities().Should().BeEquivalentTo(expectedBytes);
     }
 }
