@@ -153,6 +153,15 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
 #else
         var capabilitiesArray = _capabilities.ToByteArray();
         Array.Reverse(capabilitiesArray);
+
+        if (capabilitiesArray.Length > 1 && capabilitiesArray[0] == 0)
+        {
+            // HACK: .NET Framework BigInteger.ToByteArray() can add a 0x00 byte to distinguish
+            // some positive numbers ((2^n)-1) from negative numbers. Remove this byte if present.
+            var unsignedArray = new byte[capabilitiesArray.Length - 1];
+            Array.Copy(capabilitiesArray, 1, unsignedArray, 0, unsignedArray.Length);
+            return unsignedArray;
+        }
 #endif
 
         return capabilitiesArray;
