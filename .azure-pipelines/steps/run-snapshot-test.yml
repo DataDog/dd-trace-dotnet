@@ -132,7 +132,7 @@ steps:
 # Run crash tests
 - ${{ if eq(parameters.isLinux, true) }}:
   - bash: |
-      LOGS=$(docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e CRASH_APP_ON_STARTUP=1 -e COMPlus_DbgEnableMiniDump=0 ${{ parameters.target }})
+      LOGS=$(docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e CRASH_APP_ON_STARTUP=1 -e COMPlus_DbgEnableMiniDump=1 ${{ parameters.target }})
       echo $LOGS
 
       # check logs for evidence of crash detection in the output
