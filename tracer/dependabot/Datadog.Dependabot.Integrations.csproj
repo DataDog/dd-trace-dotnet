@@ -86,7 +86,7 @@
     <!-- Integration: Grpc.Net.Client -->
     <!--    Assembly: Grpc.Net.Client -->
     <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.62.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.62.0" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.63.0" />
 
     <!-- Integration: HotChocolate.Execution -->
     <!--    Assembly: HotChocolate.Execution -->
