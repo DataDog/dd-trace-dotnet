@@ -23,11 +23,11 @@ public class RcmSubscriptionManagerTests
     [InlineData(7)] // 7 is the last index of the first byte
     [InlineData(8)]
     // ...
-    [InlineData(9)]
+    [InlineData(14)]
     [InlineData(15)] // 15 is the last index of the second byte
     [InlineData(16)]
     // ...
-    [InlineData(17)]
+    [InlineData(22)]
     [InlineData(23)] // 23 is the last index of the third byte
     [InlineData(24)]
     public void GetCapabilities(int capabilityIndex)
