@@ -77,7 +77,7 @@ namespace Datadog.Trace.Sampling
             _ => 0
         };
 
-        public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, string patternFormat, TimeSpan timeout)
+        public static IEnumerable<CustomSamplingRule> BuildFromLocalConfigurationString(string configuration, string patternFormat, TimeSpan timeout)
         {
             try
             {
