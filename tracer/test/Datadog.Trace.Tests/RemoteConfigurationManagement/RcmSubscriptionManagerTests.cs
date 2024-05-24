@@ -13,20 +13,22 @@ namespace Datadog.Trace.Tests.RemoteConfigurationManagement;
 
 public class RcmSubscriptionManagerTests
 {
+    // some values (noted below) can trigger BigInteger.ToByteArray() to an an extra 0x00 byte,
+    // so we're testing a few values to make sure the conversion is correct
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
     // ...
     [InlineData(6)]
-    [InlineData(7)]
+    [InlineData(7)] // 7 is the last index of the first byte
     [InlineData(8)]
     // ...
     [InlineData(9)]
-    [InlineData(15)]
+    [InlineData(15)] // 15 is the last index of the second byte
     [InlineData(16)]
     // ...
     [InlineData(17)]
-    [InlineData(23)]
+    [InlineData(23)] // 23 is the last index of the third byte
     [InlineData(24)]
     public void GetCapabilities(int capabilityIndex)
     {
