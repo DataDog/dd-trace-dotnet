@@ -69,7 +69,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig, ..CreatedumpConfig, ("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", passthrough), ..CrashReportConfig(reportFile)];
+        (string, string)[] args = [LdPreloadConfig, ..CreatedumpConfig, ("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", passthrough), CrashReportConfig(reportFile)];
 
         using var helper = await StartConsoleWithArgs("crash-datadog", args);
 
@@ -101,7 +101,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig];
+        (string, string)[] args = [LdPreloadConfig, ("DD_TRACE_CRASH_HANDLER_ENABLED", "0")];
 
         if (enableCrashDumps)
         {
@@ -140,7 +140,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig, ..CrashReportConfig(reportFile)];
+        (string, string)[] args = [LdPreloadConfig, CrashReportConfig(reportFile)];
 
         if (crashdumpEnabled)
         {
@@ -187,7 +187,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               [LdPreloadConfig, ..CrashReportConfig(reportFile)]);
+                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
 
@@ -211,6 +211,53 @@ public class CreatedumpTests : ConsoleTestHelper
         report["siginfo"]!["signum"]!.Value<string>().Should().Be("6");
     }
 
+#if !NETFRAMEWORK
+    [SkippableTheory]
+    [InlineData(".")]
+    [InlineData("./continuousprofiler")]
+    public async Task WorksFromDifferentFolders(string subFolder)
+    {
+        // Check that we're still able to locate dd-dotnet when LD_PRELOAD points to the root folder
+
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+        // Create a new home folder for the test
+        var tempHomeFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+
+        try
+        {
+            CopyDirectory(EnvironmentHelper.GetMonitoringHomePath(), tempHomeFolder);
+
+            var apiWrapperPath = Utils.GetApiWrapperPath();
+            var newApiWrapperPath = Path.Combine(tempHomeFolder, subFolder, Path.GetFileName(apiWrapperPath));
+
+            Directory.CreateDirectory(Path.GetDirectoryName(newApiWrapperPath));
+            File.Copy(apiWrapperPath, newApiWrapperPath);
+
+            using var reportFile = new TemporaryFile();
+
+            using var helper = await StartConsoleWithArgs(
+                                   "crash-datadog",
+                                   [("LD_PRELOAD", newApiWrapperPath), CrashReportConfig(reportFile)]);
+
+            await helper.Task;
+
+            using var assertionScope = new AssertionScope();
+            assertionScope.AddReportable("stdout", helper.StandardOutput);
+            assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+
+            File.Exists(reportFile.Path).Should().BeTrue();
+        }
+        finally
+        {
+            Directory.Delete(tempHomeFolder, true);
+        }
+    }
+#endif
+
     [SkippableFact]
     public async Task IgnoreNonDatadogCrashes()
     {
@@ -220,7 +267,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash",
-                               [LdPreloadConfig, ..CrashReportConfig(reportFile)]);
+                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
 
@@ -240,7 +287,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               [LdPreloadConfig, ..CrashReportConfig(reportFile)]);
+                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
 
@@ -303,20 +350,31 @@ public class CreatedumpTests : ConsoleTestHelper
         }
     }
 
-    private static (string Key, string Value)[] CrashReportConfig(TemporaryFile reportFile)
+    private static (string Key, string Value) CrashReportConfig(TemporaryFile reportFile)
     {
-        var ddDotnetPath = Utils.GetDdDotnetPath();
+        return ("DD_TRACE_CRASH_OUTPUT", reportFile.Url);
+    }
 
-        if (!File.Exists(ddDotnetPath))
+    private static void CopyDirectory(string source, string destination)
+    {
+        var dir = new DirectoryInfo(source);
+
+        if (!dir.Exists)
         {
-            throw new FileNotFoundException($"dd-dotnet not found at path {ddDotnetPath}");
+            throw new DirectoryNotFoundException($"Source directory does not exist or could not be found: {source}");
         }
 
-        return
-        [
-            ("DD_TRACE_CRASH_HANDLER", ddDotnetPath),
-            ("DD_TRACE_CRASH_OUTPUT", reportFile.Url)
-        ];
+        Directory.CreateDirectory(destination);
+
+        foreach (var file in dir.GetFiles())
+        {
+            file.CopyTo(Path.Combine(destination, file.Name));
+        }
+
+        foreach (var subdir in dir.GetDirectories())
+        {
+            CopyDirectory(subdir.FullName, Path.Combine(destination, subdir.Name));
+        }
     }
 
     private class TemporaryFile : IDisposable
