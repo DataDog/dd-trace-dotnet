@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
@@ -15,7 +14,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
@@ -35,7 +33,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
     /// </summary>
     private readonly Dictionary<string, RemoteConfigurationCache> _appliedConfigurations = new();
 
-    private readonly string _id;
+    private readonly string _id = Guid.NewGuid().ToString();
 
     // Ideally this would be an ImmutableArray but that's not available in net461
     private IReadOnlyList<ISubscription> _subscriptions = [];
@@ -44,11 +42,6 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
     private int _targetsVersion;
     private BigInteger _capabilities;
     private string? _lastPollError;
-
-    public RcmSubscriptionManager()
-    {
-        _id = Guid.NewGuid().ToString();
-    }
 
     public bool HasAnySubscription => _subscriptions.Count > 0;
 
@@ -156,13 +149,26 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
     {
         // capabilitiesArray needs to be big endian
 #if NETCOREAPP
-        var capabilitiesArray = _capabilities.ToByteArray(true, true);
+        // isUnsigned: true avoids the extra 0x00 byte in some values, no need to remove it.
+        // isBigEndian: true returns the bytes in big-endian order, no need to reverse them.
+        return _capabilities.ToByteArray(isUnsigned: true, isBigEndian: true);
 #else
-        var capabilitiesArray = _capabilities.ToByteArray();
-        Array.Reverse(capabilitiesArray);
-#endif
+        var bytes = _capabilities.ToByteArray();
 
-        return capabilitiesArray;
+        if (bytes.Length > 1 && bytes[bytes.Length - 1] == 0)
+        {
+            // HACK: BigInteger.ToByteArray() adds a 0x00 byte at the end of the array to
+            // distinguish positive numbers where the highest bit it set from negative numbers.
+            // The code below drops this last byte if present.
+            var unsignedBytes = new byte[bytes.Length - 1];
+            Array.Copy(bytes, unsignedBytes, unsignedBytes.Length);
+            bytes = unsignedBytes;
+        }
+
+        // we need a big-endian array
+        Array.Reverse(bytes);
+        return bytes;
+#endif
     }
 
     public async Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback)
