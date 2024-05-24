@@ -111,6 +111,11 @@ namespace Datadog.Trace.Sampling
             return [];
         }
 
+        public static IEnumerable<CustomSamplingRule> BuildFromRemoteConfigurationString(string configuration, TimeSpan timeout)
+        {
+            throw new NotImplementedException();
+        }
+
         public bool IsMatch(Span span)
         {
             if (span == null!)

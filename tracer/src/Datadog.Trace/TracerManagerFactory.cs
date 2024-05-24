@@ -252,17 +252,34 @@ namespace Datadog.Trace
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
             var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
-            var samplingRules = settings.CustomSamplingRulesInternal;
-            var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
 
-            if (patternFormatIsValid && !string.IsNullOrWhiteSpace(samplingRules))
+            // unlike most settings, remote sampling rules don't simply override local ones.
+            // instead, they are combined with local rules, with remote rules taking precedence.
+
+            // local sampling rules
+            var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
+            var localSamplingRules = settings.CustomSamplingRulesInternal;
+
+            if (patternFormatIsValid && !string.IsNullOrWhiteSpace(localSamplingRules))
             {
-                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(samplingRules, samplingRulesFormat, RegexBuilder.DefaultTimeout))
+                foreach (var rule in CustomSamplingRule.BuildFromLocalConfigurationString(localSamplingRules, samplingRulesFormat, RegexBuilder.DefaultTimeout))
                 {
                     sampler.RegisterRule(rule);
                 }
             }
 
+            // remote sampling rules
+            var remoteSamplingRules = settings.RemoteSamplingRules;
+
+            if (!string.IsNullOrWhiteSpace(remoteSamplingRules))
+            {
+                foreach (var rule in CustomSamplingRule.BuildFromRemoteConfigurationString(remoteSamplingRules, RegexBuilder.DefaultTimeout))
+                {
+                    sampler.RegisterRule(rule);
+                }
+            }
+
+            // global sampling rate (remote overrides local)
             if (settings.GlobalSamplingRateInternal != null)
             {
                 var globalRate = (float)settings.GlobalSamplingRateInternal.Value;
