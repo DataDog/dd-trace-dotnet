@@ -1680,7 +1680,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    Logger::Info("InitializeProfiler: received id: ", definitionsId, " from managed side with ", size,
+    Logger::Info("InitializeProfiler (LEGACY MODE): received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
     if (size > 0)
@@ -1692,7 +1692,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 void CorProfiler::RemoveCallTargetDefinitions(WCHAR* id, CallTargetDefinition* items, int size)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    Logger::Info("RemoveCallTargetDefinitions: received id: ", definitionsId, " from managed side with ", size,
+    Logger::Info("RemoveCallTargetDefinitions (LEGACY MODE): received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
     if (size > 0)
