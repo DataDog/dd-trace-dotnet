@@ -354,14 +354,28 @@ partial class Build
                 var doc = XDocument.Load(result);
                 var messages = doc.Descendants("errors").First();
 
-                var foundError = messages.Descendants("error").Where(message =>
+                const int maxErrors = 50;
+
+                var foundErrors = messages.Descendants("error").Where(message =>
                 {
                     return string.Equals(message.Attribute("severity").Value, "error", StringComparison.OrdinalIgnoreCase);
-                }).Any();
+                })
+                .ToList();
 
-                if (foundError)
+                if (foundErrors.Count > 0)
                 {
-                    Logger.Error($"::error::Error(s) was/were detected by CppCheck in {Path.GetFileName(result)}");
+                    Logger.Error($"{foundErrors.Count} error(s) was/were detected by CppCheck in {Path.GetFileName(result)}");
+
+                    foreach (var error in foundErrors.Take(maxErrors))
+                    {
+                        Logger.Error($"{error}");
+                    }
+
+                    if (foundErrors.Count > maxErrors)
+                    {
+                        Logger.Error($"... and {foundErrors.Count - maxErrors} more errors");
+                    }
+
                     throw new Exception($"Error(s) was/were detected by CppCheck in {Path.GetFileName(result)}");
                 }
             }

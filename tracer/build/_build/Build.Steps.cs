@@ -2436,6 +2436,9 @@ partial class Build
            // There's a race in the profiler where unwinding when the thread is running
            knownPatterns.Add(new(@".*Failed to walk \d+ stacks for sampled exception:\s+CORPROF_E_STACKSNAPSHOT_UNSAFE", RegexOptions.Compiled));
 
+           // This one is caused by the intentional crash in the crash tracking smoke test
+           knownPatterns.Add(new("Application threw an unhandled exception: System.BadImageFormatException: Expected", RegexOptions.Compiled));
+           
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
 

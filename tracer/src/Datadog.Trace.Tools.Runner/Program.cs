@@ -58,6 +58,18 @@ namespace Datadog.Trace.Tools.Runner
             AppDomain.CurrentDomain.ProcessExit += (_, _) => CurrentDomain_ProcessExit(applicationContext);
             AppDomain.CurrentDomain.DomainUnload += (_, _) => CurrentDomain_ProcessExit(applicationContext);
 
+            if (applicationContext.Platform == Platform.Linux)
+            {
+                // Make dd-dotnet executable
+                var ddDotnet = Utils.GetDdDotnetPath(applicationContext);
+
+                if (ddDotnet != null && File.Exists(ddDotnet))
+                {
+                    // Make sure the dd-dotnet binary is executable
+                    System.Diagnostics.Process.Start("chmod", $"+x {ddDotnet}")!.WaitForExit();
+                }
+            }
+
             IEnumerable<HelpSectionDelegate> GetLayout(HelpContext context)
             {
                 yield return HelpBuilder.Default.SynopsisSection();

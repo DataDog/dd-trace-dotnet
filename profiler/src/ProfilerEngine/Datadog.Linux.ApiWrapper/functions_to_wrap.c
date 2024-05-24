@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 /* dl_iterate_phdr wrapper
 The .NET profiler on Linux uses a classic signal-based approach to collect thread callstack.
@@ -59,13 +60,220 @@ unsigned long long dd_inside_wrapped_functions()
     return functions_entered_counter;
 }
 
+#if defined(__aarch64__)
+const char* DdDotnetFolder = "linux-arm64";
+const char* DdDotnetMuslFolder = "linux-musl-arm64";
+#else
+const char* DdDotnetFolder = "linux-x64";
+const char* DdDotnetMuslFolder = "linux-musl-x64";
+#endif
+
+char* crashHandler = NULL;
+
+const char* getLibraryPath()
+{
+    Dl_info dl_info;
+
+    if (dladdr((void*)getLibraryPath, &dl_info))
+    {
+        return dl_info.dli_fname;
+    }
+    
+    return NULL;
+}
+
+int isAlpine()
+{
+    if (access("/etc/alpine-release", F_OK) == 0)
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
+char* appendToPath(const char* folder, const char* suffix)
+{
+    int length = strlen(folder) + strlen(suffix);
+
+    char* result = malloc(length + 1);
+
+    if (result == NULL)
+    {
+        return NULL;
+    }
+
+    strcpy(result, folder);
+    strcpy(result + strlen(folder), suffix);
+
+    return result;
+}
+
+char* getFolder(const char* path)
+{
+    char* lastSlash = strrchr(path, '/');
+    if (lastSlash == NULL)
+    {
+        return "";
+    }
+
+    // Copying the last subfolder to a new string
+    int length = lastSlash - path;
+    char* folder = malloc(length + 1);
+
+    if (folder == NULL)
+    {
+        return NULL; // Memory allocation failed
+    }
+
+    strncpy(folder, path, length);
+    folder[length] = '\0';
+
+    return folder;
+}
+
+char* getSubfolder(const char* path)
+{
+    char* lastSlash = strrchr(path, '/');
+    if (lastSlash == NULL) {
+        return NULL; // No slash found, path does not contain subfolders
+    }
+
+    // Finding the last but one slash
+    char* temp = lastSlash - 1;
+    while (temp >= path && *temp != '/') {
+        temp--;
+    }
+
+    if (temp < path)
+    {
+        // No leading slash, that's weird
+        return NULL;
+    }
+
+    // Increment to move past the slash
+    temp++;
+
+    // Copying the last subfolder to a new string
+    int folderLength = lastSlash - temp;
+    char* subfolder = malloc(folderLength + 1);
+
+    if (subfolder == NULL)
+    {
+        return NULL; // Memory allocation failed
+    }
+
+    strncpy(subfolder, temp, folderLength);
+    subfolder[folderLength] = '\0';
+
+    return subfolder;
+}
+
 __attribute__((constructor))
-void initLibrary(void) {
+void initLibrary(void)
+{
+    const char* crashHandlerEnabled = getenv("DD_TRACE_CRASH_HANDLER_ENABLED");
+
+    if (crashHandlerEnabled != NULL)
+    {
+        if (strcasecmp(crashHandlerEnabled, "no") == 0
+         || strcasecmp(crashHandlerEnabled, "false") == 0
+         || strcasecmp(crashHandlerEnabled, "0") == 0)
+        {
+            // Early nope
+            return;
+        }
+    }
+
     // If crashtracking is enabled, check the value of DOTNET_DbgEnableMiniDump
     // If set, set DD_TRACE_CRASH_HANDLER_PASSTHROUGH to indicate dd-dotnet that it should call createdump
     // If not set, set it to 1 so that .NET calls createdump in case of crash
     // (and we will redirect the call to dd-dotnet)
-    char* crashHandler = getenv("DD_TRACE_CRASH_HANDLER");
+    const char* crashHandlerEnv = getenv("DD_TRACE_CRASH_HANDLER");
+
+    if (crashHandlerEnv == NULL || crashHandlerEnv[0] == '\0')
+    {
+        // The path to the crash handler is not set, try to deduce it
+        const char* libraryPath = getLibraryPath();
+
+        if (libraryPath != NULL)
+        {            
+            // If the library is in linux-x64 or linux-musl-x64, we use that folder
+            // Otherwise, if the library is in continuousprofiler, we have to call isAlpine()
+            // and use either ../linux-x64/ or ../linux-musl-x64/, or their ARM64 equivalent
+            char* subFolder = getSubfolder(libraryPath);
+
+            if (subFolder != NULL)
+            {
+                char* newCrashHandler = NULL;
+
+                if (strcmp(subFolder, DdDotnetFolder) == 0
+                    || strcmp(subFolder, DdDotnetMuslFolder) == 0)
+                {
+                    // We use the dd-dotnet in that same folder
+                    char* folder = getFolder(libraryPath);
+
+                    if (folder != NULL)
+                    {
+                        asprintf(&newCrashHandler, "%s/dd-dotnet", folder);
+                        free(folder);
+                    }
+                }
+                else
+                {
+                    char* folder = getFolder(libraryPath);
+
+                    if (folder != NULL)
+                    {
+                        const char* currentDdDotnetFolder;
+
+                        if (isAlpine() == 0)
+                        {
+                            currentDdDotnetFolder = DdDotnetFolder;
+                        }
+                        else
+                        {
+                            currentDdDotnetFolder = DdDotnetMuslFolder;
+                        }
+
+                        if (strcmp(subFolder, "continuousprofiler") == 0)
+                        {
+                            // If we're in continuousprofiler, we need to go up one folder
+                            asprintf(&newCrashHandler, "%s/../%s/dd-dotnet", folder, currentDdDotnetFolder);
+                        }
+                        else
+                        {
+                            // Assume we're at the root
+                            asprintf(&newCrashHandler, "%s/%s/dd-dotnet", folder, currentDdDotnetFolder);
+                        }
+                        
+                        free(folder);
+                    }
+                }
+
+                free(subFolder);
+
+                if (newCrashHandler != NULL)
+                {
+                    // Make sure the file exists and has execute permissions
+                    if (access(newCrashHandler, X_OK) == 0)
+                    {
+                        crashHandler = newCrashHandler;
+                    }
+                    else
+                    {
+                        free(newCrashHandler);
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        // The environment variables can change during the lifetime of the process,
+        // so make a copy of the string
+        crashHandler = strdup(crashHandlerEnv);
+    }
 
     if (crashHandler != NULL && crashHandler[0] != '\0')
     {
@@ -169,25 +377,16 @@ int dladdr(const void* addr_arg, Dl_info* info)
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_execve)(const char* pathname, char* const argv[], char* const envp[]) = NULL;
 
-static char* ddTracePath = NULL;
-
 int execve(const char* pathname, char* const argv[], char* const envp[])
 {
     if (__real_execve == NULL)
     {
         __real_execve = dlsym(RTLD_NEXT, "execve");
-
-        ddTracePath = getenv("DD_TRACE_CRASH_HANDLER");
-
-        if (ddTracePath != NULL && ddTracePath[0] == '\0')
-        {
-            ddTracePath = NULL;
-        }
     }
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wtautological-compare"
-    if (ddTracePath != NULL && pathname != NULL)
+    if (crashHandler != NULL && pathname != NULL)
     {
         size_t length = strlen(pathname);
 
@@ -204,7 +403,7 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
 
             // By convention, argv[0] contains the name of the executable
             // Insert createdump as the first actual argument
-            newArgv[0] = ddTracePath;
+            newArgv[0] = crashHandler;
             newArgv[1] = "createdump";
 
             // Copy the remaining arguments
@@ -237,7 +436,7 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
             }
             new_envp[index] = NULL; // NULL terminate the array
 
-            int result = __real_execve(ddTracePath, newArgv, new_envp);
+            int result = __real_execve(crashHandler, newArgv, new_envp);
 
             free(newArgv);
             free(new_envp);
