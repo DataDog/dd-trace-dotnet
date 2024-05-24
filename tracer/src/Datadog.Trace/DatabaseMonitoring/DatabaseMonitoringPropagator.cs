@@ -27,7 +27,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         {
             traceParentInjected = false;
 
-            if ((integrationId is IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient) &&
+            if (integrationId is IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient or IntegrationId.Oracle &&
                 (propagationStyle is DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
                 var propagatorStringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
@@ -56,8 +56,9 @@ namespace Datadog.Trace.DatabaseMonitoring
                     propagatorStringBuilder.Append(',').Append(SqlCommentVersion).Append("='").Append(Uri.EscapeDataString(versionTag)).Append('\'');
                 }
 
-                // For SqlServer we don't inject the traceparent yet to not affect performance since this DB generates a new plan for any query changes
-                if (propagationStyle == DbmPropagationLevel.Full && integrationId is not IntegrationId.SqlClient)
+                // For SqlServer & Oracle we don't inject the traceparent to avoid affecting performance, since those DBs generate a new plan for any query changes
+                if (propagationStyle == DbmPropagationLevel.Full
+                 && integrationId is not (IntegrationId.SqlClient or IntegrationId.Oracle))
                 {
                     traceParentInjected = true;
                     propagatorStringBuilder.Append(',').Append(W3CTraceContextPropagator.TraceParentHeaderName).Append("='").Append(W3CTraceContextPropagator.CreateTraceParentHeader(span.Context)).Append("'*/");
