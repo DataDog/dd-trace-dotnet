@@ -149,22 +149,26 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
     {
         // capabilitiesArray needs to be big endian
 #if NETCOREAPP
-        var capabilitiesArray = _capabilities.ToByteArray(isUnsigned: true, isBigEndian: true);
+        // isUnsigned: true avoids the extra 0x00 byte in some values, no need to remove it.
+        // isBigEndian: true returns the bytes in big-endian order, no need to reverse them.
+        return _capabilities.ToByteArray(isUnsigned: true, isBigEndian: true);
 #else
-        var capabilitiesArray = _capabilities.ToByteArray();
-        Array.Reverse(capabilitiesArray);
+        var bytes = _capabilities.ToByteArray();
 
-        if (capabilitiesArray.Length > 1 && capabilitiesArray[0] == 0)
+        if (bytes.Length > 1 && bytes[bytes.Length - 1] == 0)
         {
-            // HACK: .NET Framework BigInteger.ToByteArray() can add a 0x00 byte to distinguish
-            // some positive numbers ((2^n)-1) from negative numbers. Remove this byte if present.
-            var unsignedArray = new byte[capabilitiesArray.Length - 1];
-            Array.Copy(capabilitiesArray, 1, unsignedArray, 0, unsignedArray.Length);
-            return unsignedArray;
+            // HACK: BigInteger.ToByteArray() adds a 0x00 byte at the end of the array to
+            // distinguish positive numbers where the highest bit it set from negative numbers.
+            // The code below drops this last byte if present.
+            var unsignedBytes = new byte[bytes.Length - 1];
+            Array.Copy(bytes, unsignedBytes, unsignedBytes.Length);
+            bytes = unsignedBytes;
         }
-#endif
 
-        return capabilitiesArray;
+        // we need a big-endian array
+        Array.Reverse(bytes);
+        return bytes;
+#endif
     }
 
     public async Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback)
