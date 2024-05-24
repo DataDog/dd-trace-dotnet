@@ -2,10 +2,9 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -112,7 +111,7 @@ namespace Samples.Console_
 
         private static unsafe void NativeCrash()
         {
-            var iunknown = Environment.OSVersion.Platform == PlatformID.Win32NT ? CreateCrashReportWindows(0) : CreateCrashReportLinux(0);
+            var iunknown = CreateCrashReport(0);
 
             // Get the QueryInterface method
             var vtable = *(IntPtr**)iunknown;
@@ -140,11 +139,24 @@ namespace Samples.Console_
             throw new Exception("Failed to fail: " + result);
         }
 
-        [DllImport("Datadog.Profiler.Native.so", EntryPoint = "CreateCrashReport")]
-        private static extern IntPtr CreateCrashReportLinux(int pid);
+        private static unsafe IntPtr CreateCrashReport(int pid)
+        {
+            var nativeLibraryType = Type.GetType("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary, Datadog.Trace", throwOnError: true);
+            var tryLoad = nativeLibraryType.GetMethod("TryLoad", BindingFlags.NonPublic | BindingFlags.Static);
+            var getExport = nativeLibraryType.GetMethod("GetExport", BindingFlags.NonPublic | BindingFlags.Static);
+            
+            var folder = Path.GetDirectoryName(Environment.GetEnvironmentVariable("CORECLR_PROFILER_PATH"));
+            var profilerPath = Path.Combine(folder, "Datadog.Profiler.Native" + (Environment.OSVersion.Platform == PlatformID.Win32NT ? ".dll" : ".so"));
+            
+            var arguments = new object[] { profilerPath, null };
+            tryLoad.Invoke(null, arguments);
 
-        [DllImport("Datadog.Profiler.Native.dll", EntryPoint = "CreateCrashReport")]
-        private static extern IntPtr CreateCrashReportWindows(int pid);
+            var handle = (IntPtr)arguments[1];
+
+            var createCrashReport = (IntPtr)getExport.Invoke(null, [handle, "CreateCrashReport"]);
+
+            return ((delegate* unmanaged[Stdcall]<int, IntPtr>)createCrashReport)(pid);
+        }
 
         private class DummySynchronizationContext : SynchronizationContext
         {
