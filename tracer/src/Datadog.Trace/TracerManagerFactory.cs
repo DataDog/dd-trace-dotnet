@@ -261,7 +261,9 @@ namespace Datadog.Trace
             // - agent sampling rates (as a single rule)
             if (settings.ExperimentalAppsecStandaloneEnabledInternal)
             {
-                return new TraceSampler(new TracerRateLimiter(1, 60_000));
+                var samplerStandalone = new TraceSampler(new TracerRateLimiter(1, 60_000));
+                samplerStandalone.RegisterRule(new GlobalSamplingRule(1.0f));
+                return samplerStandalone;
             }
 
             var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal, null));
