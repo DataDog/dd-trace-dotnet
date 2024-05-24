@@ -27,7 +27,7 @@ namespace Samples.OracleMDA
         private static OracleConnection OpenConnection()
         {
             var cstringBuilder = new OracleConnectionStringBuilder();
-            cstringBuilder.DataSource = "(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=10.211.55.2)(PORT=1521)))(CONNECT_DATA=(SERVER=DEDICATED)(SID=xe)))";
+            cstringBuilder.DataSource = "localhost:1521/FREE";
             cstringBuilder.UserID = "system";
             cstringBuilder.Password = "testpassword";
             

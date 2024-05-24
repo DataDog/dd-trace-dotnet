@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet;
 public class OracleTests : TracingIntegrationTest
 {
     public OracleTests(ITestOutputHelper output)
-        : base("OracleMDA.Core", output)
+        : base("OracleMDA", output)
     {
         SetServiceVersion("1.0.0");
     }
