@@ -234,18 +234,19 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             }
         }
 
-        // TODO: Check if the stacktrace is from the tracer or the profiler
         stackFrame.isSuspicious = false;
 
         std::filesystem::path modulePath(module.first);
 
         if (modulePath.has_filename())
         {
-            const auto moduleFilename = modulePath.filename().string();
+            const auto moduleFilename = modulePath.stem().string();
 
-            if ((moduleFilename.length() >= 7 && moduleFilename.substr(0, 7) == "Datadog")
-                || (moduleFileName == "libdatadog.so" || moduleFileName == "datadog.dll")
-                || (moduleFileName == "libddwaf.so" || moduleFileName = "ddwaf.dll"))
+            if (moduleFilename.rfind("Datadog", 0) == 0
+                || moduleFilename == "libdatadog"
+                || moduleFilename == "datadog"
+                || moduleFilename == "libddwaf"
+                || moduleFilename == "ddwaf" )
             {
                 stackFrame.isSuspicious = true;
             }
