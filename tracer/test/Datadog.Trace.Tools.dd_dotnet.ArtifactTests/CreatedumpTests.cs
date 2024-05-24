@@ -49,21 +49,6 @@ public class CreatedumpTests : ConsoleTestHelper
         }
     }
 
-    private static (string Key, string Value) LdPreloadConfigAlt
-    {
-        get
-        {
-            var path = Path.Combine(EnvironmentHelper.GetMonitoringHomePath(), "continuousprofiler", "Datadog.Linux.ApiWrapper.x64.so");
-
-            if (!File.Exists(path))
-            {
-                throw new FileNotFoundException($"LD wrapper not found at path {path}. Ensure you have built the profiler home directory using BuildProfilerHome");
-            }
-
-            return ("LD_PRELOAD", path);
-        }
-    }
-
     private static (string Key, string Value)[] CreatedumpConfig => [("COMPlus_DbgEnableMiniDump", "1"), ("COMPlus_DbgMiniDumpName", "/dev/null")];
 
     [SkippableTheory]
