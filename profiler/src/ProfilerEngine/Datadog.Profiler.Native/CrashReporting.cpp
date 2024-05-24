@@ -322,6 +322,7 @@ int32_t CrashReporting::CrashProcess()
         // The variables are marked as volatile so the compiler doesn't optimize them away.
         volatile int a = 1;
         volatile int b = 0;
+        // cppcheck-suppress zerodiv
         volatile int result = a / b;
         (void)result;  // Use result to prevent the compiler from optimizing it away
     });
