@@ -227,29 +227,49 @@ public class CreatedumpTests : ConsoleTestHelper
     }
 
 #if !NETFRAMEWORK
-    [SkippableFact]
-    public async Task WorksFromContinuousprofiler()
+    [SkippableTheory]
+    [InlineData(".")]
+    [InlineData("./continuousprofiler")]
+    public async Task WorksFromDifferentFolders(string subFolder)
     {
-        // Check that we're still able to locate dd-dotnet when LD_PRELOAD points to the continuousprofiler folder
+        // Check that we're still able to locate dd-dotnet when LD_PRELOAD points to the root folder
 
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
-        using var reportFile = new TemporaryFile();
+        // Create a new home folder for the test
+        var tempHomeFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
-        using var helper = await StartConsoleWithArgs(
-                               "crash-datadog",
-                               [LdPreloadConfigAlt, CrashReportConfig(reportFile)]);
+        try
+        {
+            CopyDirectory(EnvironmentHelper.GetMonitoringHomePath(), tempHomeFolder);
 
-        await helper.Task;
+            var apiWrapperPath = Utils.GetApiWrapperPath();
+            var newApiWrapperPath = Path.Combine(tempHomeFolder, subFolder, Path.GetFileName(apiWrapperPath));
 
-        using var assertionScope = new AssertionScope();
-        assertionScope.AddReportable("stdout", helper.StandardOutput);
-        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+            Directory.CreateDirectory(Path.GetDirectoryName(newApiWrapperPath));
+            File.Copy(apiWrapperPath, newApiWrapperPath);
 
-        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+            using var reportFile = new TemporaryFile();
 
-        File.Exists(reportFile.Path).Should().BeTrue();
+            using var helper = await StartConsoleWithArgs(
+                                   "crash-datadog",
+                                   [("LD_PRELOAD", newApiWrapperPath), CrashReportConfig(reportFile)]);
+
+            await helper.Task;
+
+            using var assertionScope = new AssertionScope();
+            assertionScope.AddReportable("stdout", helper.StandardOutput);
+            assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+
+            File.Exists(reportFile.Path).Should().BeTrue();
+        }
+        finally
+        {
+            Directory.Delete(tempHomeFolder, true);
+        }
     }
 #endif
 
@@ -348,6 +368,28 @@ public class CreatedumpTests : ConsoleTestHelper
     private static (string Key, string Value) CrashReportConfig(TemporaryFile reportFile)
     {
         return ("DD_TRACE_CRASH_OUTPUT", reportFile.Url);
+    }
+
+    private static void CopyDirectory(string source, string destination)
+    {
+        var dir = new DirectoryInfo(source);
+
+        if (!dir.Exists)
+        {
+            throw new DirectoryNotFoundException($"Source directory does not exist or could not be found: {source}");
+        }
+
+        Directory.CreateDirectory(destination);
+
+        foreach (var file in dir.GetFiles())
+        {
+            file.CopyTo(Path.Combine(destination, file.Name));
+        }
+
+        foreach (var subdir in dir.GetDirectories())
+        {
+            CopyDirectory(subdir.FullName, Path.Combine(destination, subdir.Name));
+        }
     }
 
     private class TemporaryFile : IDisposable

@@ -43,7 +43,7 @@ namespace AspNetCoreSmokeTest
                 .ConfigureServices(ConfigureServices)
                 .ConfigureWebHostDefaults(webBuilder => webBuilder.Configure(Configure));
 
-        private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
+        private static void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers()
                     .AddApplicationPart(typeof(ValuesController).Assembly);

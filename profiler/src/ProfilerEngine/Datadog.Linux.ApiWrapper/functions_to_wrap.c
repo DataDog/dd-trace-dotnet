@@ -219,7 +219,7 @@ void initLibrary(void)
                         free(folder);
                     }
                 }
-                else if (strcmp(subFolder, "continuousprofiler") == 0)
+                else
                 {
                     char* folder = getFolder(libraryPath);
 
@@ -236,7 +236,17 @@ void initLibrary(void)
                             currentDdDotnetFolder = DdDotnetMuslFolder;
                         }
 
-                        asprintf(&newCrashHandler, "%s/../%s/dd-dotnet", folder, currentDdDotnetFolder);
+                        if (strcmp(subFolder, "continuousprofiler") == 0)
+                        {
+                            // If we're in continuousprofiler, we need to go up one folder
+                            asprintf(&newCrashHandler, "%s/../%s/dd-dotnet", folder, currentDdDotnetFolder);
+                        }
+                        else
+                        {
+                            // Assume we're at the root
+                            asprintf(&newCrashHandler, "%s/%s/dd-dotnet", folder, currentDdDotnetFolder);
+                        }
+                        
                         free(folder);
                     }
                 }
