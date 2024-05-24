@@ -15,68 +15,89 @@ namespace trace
 WCHAR* assemblyName = (WCHAR*) WStr("Datadog.Trace, Version=2.52.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 
-std::vector<CallTargetDefinition2> GeneratedDefinitions::GetCallTargets(WSTRING platform)
+std::vector<CallTargetDefinition2>* GeneratedDefinitions::GetCallTargets(WSTRING platform)
 {
-    Logger::Debug("GeneratedDefinitions::GetCallTargets: platform: ", platform);
+    std::vector<CallTargetDefinition2>* res = nullptr;
 
     if (platform == WStr("net461"))
     {
-        return g_callTargets_net461;
+        res = &g_callTargets_net461;
     }
     if (platform == WStr("net6.0"))
     {
-        return g_callTargets_net6_0;
+        res = &g_callTargets_net6_0;
     }
     if (platform == WStr("netstandard2.0"))
     {
-        return g_callTargets_netstandard2_0;
+        res = &g_callTargets_netstandard2_0;
     }
     if (platform == WStr("netcoreapp3.1"))
     {
-        return g_callTargets_netcoreapp3_1;
+        res = &g_callTargets_netcoreapp3_1;
     }
 
-    return std::vector<CallTargetDefinition2>();
+    if (res != nullptr)
+    {
+        Logger::Debug("GeneratedDefinitions::GetCallTargets: platform: ", platform, " -> Definitions returned: ", res->size());
+    }
+    else
+    {
+        Logger::Error("GeneratedDefinitions::GetCallTargets: platform not found: ", platform);
+    }
+
+    return res;
 }
 
-std::vector<WCHAR*> GeneratedDefinitions::GetCallSites(WSTRING platform)
+std::vector<WCHAR*>* GeneratedDefinitions::GetCallSites(WSTRING platform)
 {
+    std::vector<WCHAR*>* res = nullptr;
+
     Logger::Debug("GeneratedDefinitions::GetCallSites: platform: ", platform);
 
     if (platform == WStr("net461"))
     {
-        return g_callSites_net461;
+        res = &g_callSites_net461;
     }
     if (platform == WStr("net461_Rasp"))
     {
-        return g_callSites_net461_Rasp;
+        res = &g_callSites_net461_Rasp;
     }
     if (platform == WStr("net6.0"))
     {
-        return g_callSites_net6_0;
+        res = &g_callSites_net6_0;
     }
     if (platform == WStr("net6.0_Rasp"))
     {
-        return g_callSites_net6_0_Rasp;
+        res = &g_callSites_net6_0_Rasp;
     }
     if (platform == WStr("netstandard2.0"))
     {
-        return g_callSites_netstandard2_0;
+        res = &g_callSites_netstandard2_0;
     }
     if (platform == WStr("netstandard2.0_Rasp"))
     {
-        return g_callSites_netstandard2_0_Rasp;
+        res = &g_callSites_netstandard2_0_Rasp;
     }
     if (platform == WStr("netcoreapp3.1"))
     {
-        return g_callSites_netcoreapp3_1;
+        res = &g_callSites_netcoreapp3_1;
     }
     if (platform == WStr("netcoreapp3.1_Rasp"))
     {
-        return g_callSites_netcoreapp3_1_Rasp;
+        res = &g_callSites_netcoreapp3_1_Rasp;
     }
 
-    return std::vector<WCHAR*>();
+    if (res != nullptr)
+    {
+        Logger::Debug("GeneratedDefinitions::GetCallSites: platform: ", platform,
+                      " -> Definitions returned: ", res->size());
+    }
+    else
+    {
+        Logger::Error("GeneratedDefinitions::GetCallSites: platform not found: ", platform);
+    }
+
+    return res;
 }
 
 WCHAR* GetCallTargets_kk_0[] = {(WCHAR*) WStr("")};

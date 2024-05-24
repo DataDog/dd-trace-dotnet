@@ -9,7 +9,7 @@ namespace trace
 class GeneratedDefinitions
 {
 public:
-    static std::vector<CallTargetDefinition2> GetCallTargets(WSTRING platform);
-    static std::vector<WCHAR*> GetCallSites(WSTRING platform);
+    static std::vector<CallTargetDefinition2>* GetCallTargets(WSTRING platform);
+    static std::vector<WCHAR*>* GetCallSites(WSTRING platform);
 };
 } // namespace trace

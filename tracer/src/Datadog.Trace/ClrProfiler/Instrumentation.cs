@@ -39,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         private static int _firstInitialization = 1;
         private static int _firstNonNativePartsInitialization = 1;
+        private static bool _useEmbeddedDefinitions = true;
 
         /// <summary>
         /// Gets the CLSID for the Datadog .NET profiler
@@ -115,8 +116,10 @@ namespace Datadog.Trace.ClrProfiler
                         enabledCategories |= InstrumentationCategory.AppSec;
                     }
 
-                    // var defs = NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
-                    var defs = NativeMethods.InitEmbeddedCallTargetDefinitions(ConfigTelemetryData.ManagedTracerTfmValue, (uint)enabledCategories);
+                    var defs = _useEmbeddedDefinitions ?
+                                    NativeMethods.InitEmbeddedCallTargetDefinitions(ConfigTelemetryData.ManagedTracerTfmValue, (uint)enabledCategories) :
+                                    NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
+
                     Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
                     TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
 
@@ -581,20 +584,30 @@ namespace Datadog.Trace.ClrProfiler
             // enabled and IAST is disabled. We don't expect RASP only instrumentation to be used in the near future.
 
             var isIast = categories.HasFlag(InstrumentationCategory.Iast);
+            var debugMsg = (isIast && raspEnabled) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
 
             if (isIast || raspEnabled)
             {
-                string platform = ConfigTelemetryData.ManagedTracerTfmValue;
-                if (!isIast) { platform += "_Rasp"; }
-                // string[] inputAspects = isIast ? AspectDefinitions.GetAspects() : AspectDefinitions.GetRaspAspects();
-                // if (inputAspects != null)
+                Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
+                int aspects = 0;
+                if (_useEmbeddedDefinitions)
                 {
-                    var debugMsg = (isIast && raspEnabled) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
-                    Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
+                    string platform = ConfigTelemetryData.ManagedTracerTfmValue;
+                    if (!isIast) { platform += "_Rasp"; }
 
-                    // var aspects = NativeMethods.RegisterIastAspects(inputAspects);
-                    var aspects = NativeMethods.InitEmbeddedCallSiteDefinitions(platform, (uint)0xFFFFFFFF);
+                    aspects = NativeMethods.InitEmbeddedCallSiteDefinitions(platform, (uint)categories);
+                }
+                else
+                {
+                    string[] inputAspects = isIast ? AspectDefinitions.GetAspects() : AspectDefinitions.GetRaspAspects();
+                    if (inputAspects != null)
+                    {
+                        aspects = NativeMethods.RegisterIastAspects(inputAspects);
+                    }
+                }
 
+                if (aspects > 0)
+                {
                     Log.Information<int, string>("{Aspects} {DebugMsg} Callsite Dataflow Aspects added to the profiler.", aspects, debugMsg);
 
                     if (isIast)
