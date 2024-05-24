@@ -11,9 +11,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 {
     internal interface ILogFactoryPre43Proxy : IDuckType
     {
-        [DuckField(Name = "_config")]
-        object? ConfigurationField { get; set; }
-
         // Note - when this is get/set it will do a _lot_ of re-configuration of NLog
         object? Configuration { get; set; }
     }
