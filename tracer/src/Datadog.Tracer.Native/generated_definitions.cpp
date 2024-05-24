@@ -1,6 +1,7 @@
 #include "generated_definitions.h"
 #include "corprof.h"
 #include "logger.h"
+#include "version.h"
 #include "../Datadog.Trace/Generated/generated_calltargets_net461.h"
 #include "../Datadog.Trace/Generated/generated_callsites_net461.h"
 #include "../Datadog.Trace/Generated/generated_calltargets_net6_0.h"
@@ -12,8 +13,8 @@
 
 namespace trace
 {
-WCHAR* assemblyName = (WCHAR*) WStr("Datadog.Trace, Version=2.52.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
+WCHAR* assemblyName = (WCHAR*)TRACER_ASSEMBLY;
 
 std::vector<CallTargetDefinition2>* GeneratedDefinitions::GetCallTargets(WSTRING platform)
 {
