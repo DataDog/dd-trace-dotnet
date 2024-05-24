@@ -37,6 +37,7 @@ public class OracleTests : TracingIntegrationTest
     [SkippableTheory]
     [MemberData(nameof(GetEnabledConfig))]
     [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")] // the docker image used doesn't work on arm64. It can still be tested on Mac using colima, see https://github.com/abiosoft/colima
     public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
     {
         SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);

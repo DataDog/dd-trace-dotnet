@@ -219,6 +219,13 @@ services:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
 
+  oracle:
+    image: container-registry.oracle.com/database/free:latest
+    ports:
+      - "127.0.0.1:1521:1521"
+    environment:
+      - ORACLE_PWD=testpassword
+
   wcfservice:
     image: mcr.microsoft.com/dotnet/framework/wcf:4.8
     ports:
@@ -503,6 +510,7 @@ services:
       - elasticsearch6
       - elasticsearch5
       - sqlserver
+      - oracle
       - mongo
       - postgres
       - mysql
@@ -675,6 +683,7 @@ services:
       - elasticsearch6
       - elasticsearch5
       - sqlserver
+      - oracle
       - mongo
       - postgres
       - mysql
@@ -686,7 +695,7 @@ services:
       - couchbase
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 oracle:1521 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210
 
   IntegrationTests.ARM64:
     build:
