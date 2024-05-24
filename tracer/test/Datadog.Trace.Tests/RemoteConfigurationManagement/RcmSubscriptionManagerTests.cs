@@ -30,6 +30,10 @@ public class RcmSubscriptionManagerTests
     [InlineData(22)]
     [InlineData(23)] // 23 is the last index of the third byte
     [InlineData(24)]
+    // ...
+    [InlineData(30)]
+    [InlineData(31)] // 31 is the last index of the fourth byte
+    [InlineData(32)]
     public void GetCapabilities(int capabilityIndex)
     {
         var byteCount = (capabilityIndex / 8) + 1;
