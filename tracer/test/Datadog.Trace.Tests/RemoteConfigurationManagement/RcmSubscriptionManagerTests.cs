@@ -43,7 +43,7 @@ public class RcmSubscriptionManagerTests
         Array.Reverse(expectedBytes);
 
         var subscriptionManager = new RcmSubscriptionManager();
-        subscriptionManager.SetCapability(1 << capabilityIndex, true);
+        subscriptionManager.SetCapability(1UL << capabilityIndex, true);
         subscriptionManager.GetCapabilities().Should().BeEquivalentTo(expectedBytes);
     }
 }
