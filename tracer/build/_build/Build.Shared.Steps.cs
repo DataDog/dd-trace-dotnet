@@ -17,6 +17,7 @@ partial class Build
         .Unlisted()
         .Description("Compiles the native loader")
         .DependsOn(CompileNativeLoaderWindows)
+        .DependsOn(CompileNativeLoaderTestsWindows)
         .DependsOn(CompileNativeLoaderLinux)
         .DependsOn(CompileNativeLoaderOsx);
 
@@ -85,7 +86,7 @@ partial class Build
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
-                arguments: $"--build . --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
+                arguments: $"--build . --parallel {Environment.ProcessorCount} --target all-native-loader",
                 workingDirectory: NativeBuildDirectory);
         });
 
@@ -141,7 +142,7 @@ partial class Build
                     arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}",
                     environmentVariables: envVariables);
                 CMake.Value(
-                    arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
+                    arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target all-native-loader",
                     environmentVariables: envVariables);
 
                 var sourceFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
@@ -218,6 +219,14 @@ partial class Build
                              $"{NativeLoaderProject.Name}.pdb";
                 dest = SymbolsDirectory / archFolder;
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+                source = NativeLoaderTestsProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                         $"{NativeLoaderTestsProject.Name}.exe";
+
+                dest = SharedDirectory / "bin" / "test" / archFolder;
+                EnsureExistingDirectory(dest);
+
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 
@@ -236,6 +245,15 @@ partial class Build
             source = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{ext}";
             dest = MonitoringHomeDirectory / arch;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+            var workingDirectory = SharedTestsDirectory / FileNames.NativeLoaderTests / "bin";
+            EnsureExistingDirectory(workingDirectory);
+
+            var exePath = workingDirectory / FileNames.NativeLoaderTests;
+            dest = SharedDirectory / "bin" / "test";
+            EnsureExistingDirectory(dest);
+
+            CopyFileToDirectory(exePath, dest, FileExistsPolicy.Overwrite);
         });
 
     Target PublishNativeLoaderOsx => _ => _

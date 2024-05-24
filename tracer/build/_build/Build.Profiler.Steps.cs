@@ -26,10 +26,11 @@ partial class Build
 
     AbsolutePath ProfilerDeployDirectory => ProfilerOutputDirectory / "DDProf-Deploy";
 
-    Target CompileProfilerNativeSrc => _ => _
+    Target CompileProfilerNativeSrcAndTests => _ => _
         .Unlisted()
         .Description("Compiles the native profiler assets")
         .DependsOn(CompileProfilerNativeSrcWindows)
+        .DependsOn(CompileProfilerNativeTestsWindows)
         .DependsOn(CompileProfilerNativeSrcAndTestLinux);
 
     Target CompileProfilerNativeSrcWindows => _ => _
@@ -104,7 +105,7 @@ partial class Build
 
     Target CompileProfilerNativeTestsWindows => _ => _
         .Unlisted()
-        .After(CompileProfilerNativeSrc)
+        .After(CompileProfilerNativeSrcWindows)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -151,13 +152,14 @@ partial class Build
     Target PublishProfilerLinux => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
-        .After(CompileProfilerNativeSrc)
+        .After(CompileProfilerNativeSrcAndTests)
         .Executes(() =>
         {
             var (arch, ext) = GetUnixArchitectureAndExtension();
             var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
             EnsureExistingDirectory(SymbolsDirectory / arch);
+            EnsureExistingDirectory(SharedDirectory / "bin" / "test");
 
             var files = new[] { "Datadog.Profiler.Native.so", LinuxApiWrapperLibrary };
             foreach (var file in files)
@@ -166,14 +168,25 @@ partial class Build
                 var dest = MonitoringHomeDirectory / arch / file;
                 CopyFile(source, dest, FileExistsPolicy.Overwrite);
             }
+
+            var testSource = ProfilerOutputDirectory / "bin" / "Datadog.Profiler.Native.Tests" / "Datadog.Profiler.Native.Tests";
+            var testDest = SharedDirectory / "bin" / "test";
+
+            CopyFileToDirectory(testSource, testDest, FileExistsPolicy.Overwrite);
+
+            testSource = ProfilerOutputDirectory / "bin" / "Datadog.Linux.ApiWrapper.Tests" / "Datadog.Linux.ApiWrapper.Tests";
+            testDest = SharedDirectory / "bin" / "test";
+
+            CopyFileToDirectory(testSource, testDest, FileExistsPolicy.Overwrite);
         });
 
     Target PublishProfilerWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
-        .After(CompileProfilerNativeSrc)
+        .After(CompileProfilerNativeSrcAndTests)
         .Executes(() =>
         {
+
             foreach (var architecture in ArchitecturesForPlatformForProfiler)
             {
                 var sourceDir = ProfilerDeployDirectory / $"win-{architecture}";
@@ -184,6 +197,14 @@ partial class Build
                 source = sourceDir / "Datadog.Profiler.Native.pdb";
                 dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
                 CopyFile(source, dest, FileExistsPolicy.Overwrite);
+
+
+                source = ProfilerOutputDirectory / "bin" / $"{BuildConfiguration}-{architecture}" / "profiler" / "test" / "Datadog.Profiler.Native.Tests" / "Datadog.Profiler.Native.Tests.exe";
+
+                dest = SharedDirectory / "bin" / "test" / $"win-{architecture}";
+                EnsureExistingDirectory(dest);
+
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 

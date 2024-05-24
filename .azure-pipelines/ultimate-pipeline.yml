@@ -101,6 +101,7 @@ variables:
   nativeBuildDotnetSdkVersion: 7.0.306
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+  nativeTestsHome: $(System.DefaultWorkingDirectory)/shared/bin/test
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   symbols: $(System.DefaultWorkingDirectory)/tracer/bin/symbols
   relativeRunnerTool: tracer/src/bin/runnerTool
@@ -268,6 +269,10 @@ stages:
       displayName: Upload Windows tracer home directory
       artifact: windows-tracer-home
 
+    - publish: $(nativeTestsHome)
+      displayName: Uploading Windows tracer tests folder
+      artifact: windows-tracer-tests-binaries
+
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
@@ -419,9 +424,14 @@ stages:
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
+    # TODO maybe remove because useless now
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
       displayName: Uploading linux profiler output build folder
       artifact: linux-profiler-binaries-$(artifactSuffix)
+
+    - publish: $(nativeTestsHome)
+      displayName: Uploading linux profiler output build folder
+      artifact: linux-profiler-tests-binaries-$(artifactSuffix)
 
     - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
@@ -1066,7 +1076,13 @@ stages:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
-      - script: tracer\build.cmd BuildAndRunNativeUnitTests
+      - task: DownloadPipelineArtifact@2
+        displayName: Download native loader unit tests
+        inputs:
+          artifact: windows-tracer-tests-binaries
+          path: $(nativeTestsHome)
+
+      - script: tracer\build.cmd RunNativeUnitTests
         displayName: Build and Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1208,23 +1224,29 @@ stages:
         artifact: build-$(artifactSuffix)-working-directory
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download linux profiler binaries
+      displayName: Download linux profiler tests binaries
       inputs:
-        artifact: linux-profiler-binaries-$(artifactSuffix)
-        path: $(System.DefaultWorkingDirectory)/profiler/_build
+        artifact: linux-profiler-tests-binaries-$(artifactSuffix)
+        path: $(nativeTestsHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux profiler tests binaries
+      inputs:
+        artifact: linux-profiler-tests-binaries-$(artifactSuffix)
+        path: $(nativeTestsHome)
 
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildAndRunNativeUnitTests"
+        command: "RunNativeUnitTests"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - task: PublishTestResults@2
       displayName: publish profiler test results
       inputs:
-        testResultsFiles: profiler/build_data/*.xml
+        testResultsFiles: profiler/build_data/*.xml # TOCHECK if we do not need to add the tracer/build_data too
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64

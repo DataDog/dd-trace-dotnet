@@ -82,6 +82,7 @@ partial class Build
 
     readonly string[] WafWindowsArchitectureFolders = { "win-x86", "win-x64" };
     Project NativeTracerProject => Solution.GetProject(Projects.ClrProfilerNative);
+    Project NativeTracerTestsProject => Solution.GetProject(Projects.NativeTracerNativeTests);
     Project NativeLoaderProject => Solution.GetProject(Projects.NativeLoader);
     Project NativeLoaderTestsProject => Solution.GetProject(Projects.NativeLoaderNativeTests);
 
@@ -245,7 +246,7 @@ partial class Build
             }
         });
 
-    Target CompileNativeSrcWindows => _ => _
+    Target CompileTracerNativeSrcWindows => _ => _
         .Unlisted()
         .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsWin)
@@ -270,7 +271,7 @@ partial class Build
                     .SetTargetPlatform(platform)));
         });
 
-    Target CompileTracerNativeSrcLinux => _ => _
+    Target CompileTracerNativeSrcAndTestLinux => _ => _
         .Unlisted()
         .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsLinux)
@@ -281,7 +282,7 @@ partial class Build
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
-                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}");
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-tracer");
         });
 
     Target CompileNativeSrcMacOs => _ => _
@@ -346,12 +347,13 @@ partial class Build
             Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
         });
 
-    Target CompileNativeSrc => _ => _
+    Target CompileTracerNativeSrcAndTests => _ => _
         .Unlisted()
-        .Description("Compiles the native loader")
-        .DependsOn(CompileNativeSrcWindows)
+        .Description("Compiles the native tracer assets")
+        .DependsOn(CompileTracerNativeSrcWindows)
+        .DependsOn(CompileTracerNativeTestsWindows)
         .DependsOn(CompileNativeSrcMacOs)
-        .DependsOn(CompileTracerNativeSrcLinux);
+        .DependsOn(CompileTracerNativeSrcAndTestLinux);
 
     Target CppCheckNativeSrcUnix => _ => _
         .Unlisted()
@@ -413,7 +415,6 @@ partial class Build
 
     Target CompileTracerNativeTestsWindows => _ => _
         .Unlisted()
-        .After(CompileNativeSrc)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -437,7 +438,7 @@ partial class Build
 
     Target CompileTracerNativeTestsLinux => _ => _
         .Unlisted()
-        .After(CompileNativeSrc)
+        .After(CompileTracerNativeSrcAndTests)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
@@ -448,15 +449,6 @@ partial class Build
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracerTests}");
         });
-
-    Target CompileNativeTests => _ => _
-        .Unlisted()
-        .Description("Compiles the native unit tests (native loader, profiler)")
-        .DependsOn(CompileTracerNativeTestsWindows)
-        .DependsOn(CompileTracerNativeTestsLinux)
-        .DependsOn(CompileNativeLoaderTestsWindows)
-        .DependsOn(CompileNativeLoaderTestsLinux)
-        .DependsOn(CompileProfilerNativeTestsWindows);
 
     Target DownloadLibDdwaf => _ => _.Unlisted().After(CreateRequiredDirectories).Executes(() => DownloadWafVersion());
 
@@ -628,7 +620,7 @@ partial class Build
     Target PublishNativeSymbolsWindows => _ => _
       .Unlisted()
       .OnlyWhenStatic(() => IsWin)
-      .After(CompileNativeSrc, PublishManagedTracer)
+      .After(CompileTracerNativeSrcAndTests, PublishManagedTracer)
       .Executes(() =>
        {
            foreach (var architecture in ArchitecturesForPlatformForTracer)
@@ -654,7 +646,7 @@ partial class Build
     Target PublishNativeTracerWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
-        .After(CompileNativeSrc, PublishManagedTracer)
+        .After(CompileTracerNativeSrcAndTests, PublishManagedTracer)
         .Executes(() =>
         {
             foreach (var architecture in ArchitecturesForPlatformForTracer)
@@ -664,13 +656,18 @@ partial class Build
                              $"{NativeTracerProject.Name}.dll";
                 var dest = MonitoringHomeDirectory / $"win-{architecture}";
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+                source = NativeTracerTestsProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                         $"{NativeTracerTestsProject.Name}.exe";
+                dest = SharedDirectory / "bin" / "test" / $"win-{architecture}" / $"{NativeTracerTestsProject.Name}.exe";
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 
     Target PublishNativeTracerUnix => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
-        .After(CompileNativeSrc, PublishManagedTracer)
+        .After(CompileTracerNativeSrcAndTests, PublishManagedTracer)
         .Executes(() =>
         {
             var (arch, extension) = GetUnixArchitectureAndExtension();
@@ -680,12 +677,18 @@ partial class Build
                 NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
                 MonitoringHomeDirectory / arch,
                 FileExistsPolicy.Overwrite);
+
+            CopyFileToDirectory(
+                TracerDirectory / "test" / "Datadog.Tracer.Native.Tests" / "bin" / "Datadog.Tracer.Native.Tests",
+                SharedDirectory / "bin" / "test",
+                FileExistsPolicy.Overwrite);
+
         });
 
     Target PublishNativeTracerOsx => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsOsx)
-        .After(CompileNativeSrc, PublishManagedTracer)
+        .After(CompileTracerNativeSrcAndTests, PublishManagedTracer)
         .Executes(() =>
         {
             // Copy the universal binary to the output folder
