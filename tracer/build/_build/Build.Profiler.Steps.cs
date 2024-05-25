@@ -99,7 +99,7 @@ partial class Build
 
             // LD_PRELOAD must be set for this test library to validate that it works correctly.
             var (arch, _) = GetUnixArchitectureAndExtension();
-            var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / LinuxApiWrapperLibrary}" };
+            var envVars = new[] { $"LD_PRELOAD={SharedDirectory / "bin" /"test" / LinuxApiWrapperLibrary}" };
             RunProfilerUnitTests("Datadog.Linux.ApiWrapper.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None, envVars);
         });
 
@@ -175,8 +175,10 @@ partial class Build
             CopyFileToDirectory(testSource, testDest, FileExistsPolicy.Overwrite);
 
             testSource = ProfilerOutputDirectory / "bin" / "Datadog.Linux.ApiWrapper.Tests" / "Datadog.Linux.ApiWrapper.Tests";
-            testDest = SharedDirectory / "bin" / "test";
+            CopyFileToDirectory(testSource, testDest, FileExistsPolicy.Overwrite);
 
+            // To unit tests the wrapper library too
+            testSource = sourceDir / LinuxApiWrapperLibrary;
             CopyFileToDirectory(testSource, testDest, FileExistsPolicy.Overwrite);
         });
 

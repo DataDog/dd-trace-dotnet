@@ -684,7 +684,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader CompileTracerNativeSrc PublishNativeTracer
+    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader CompileTracerNativeSrcAndTests PublishNativeTracer
       displayName: Build native-tracer
       retryCountOnTaskFailure: 1
 
@@ -1088,12 +1088,6 @@ stages:
         displayName: Download native loader unit tests
         inputs:
           artifact: windows-tracer-tests-binaries
-          path: $(nativeTestsHome)
-
-      - task: DownloadPipelineArtifact@2
-        displayName: Download linux tracer tests binaries
-        inputs:
-          artifact: linux-tracer-tests-binaries
           path: $(nativeTestsHome)
 
       - script: tracer\build.cmd RunNativeUnitTests
