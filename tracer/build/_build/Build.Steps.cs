@@ -651,12 +651,13 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
-                var nativeTestFolder = NativeTracerTestsProject.Directory / "bin" / BuildConfiguration / architecture.ToString();
-
                 // Copy native tracer assets
-                var source = nativeTestFolder / $"{NativeTracerProject.Name}.dll";
+                var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                             $"{NativeTracerProject.Name}.dll";
                 var dest = MonitoringHomeDirectory / $"win-{architecture}";
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+                var nativeTestFolder = NativeTracerTestsProject.Directory / "bin" / BuildConfiguration / architecture.ToString();
 
                 source = nativeTestFolder / $"{NativeTracerTestsProject.Name}.exe";
                 dest = SharedDirectory / "bin" / "test" / $"win-{architecture}";

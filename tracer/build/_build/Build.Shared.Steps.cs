@@ -10,6 +10,7 @@ using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Logger = Serilog.Log;
+using Nuke.Common.Tools.NuGet;
 
 partial class Build
 {
@@ -51,6 +52,12 @@ partial class Build
                 Equals(TargetPlatform, MSBuildTargetPlatform.x64)
                     ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
                     : new[] { MSBuildTargetPlatform.x86 };
+
+
+            NuGetTasks.NuGetRestore(s => s
+                .SetTargetPath(NativeLoaderTestsProject)
+                .SetVerbosity(NuGetVerbosity.Normal)
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackagesDirectory(NugetPackageDirectory)));
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native profiler assets
