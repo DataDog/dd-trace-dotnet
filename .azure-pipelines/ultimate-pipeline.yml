@@ -309,9 +309,9 @@ stages:
       displayName: Upload Windows profiler symbols
       artifact: windows-profiler-symbols
 
-    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
-      displayName: Upload Windows profiler directory
-      artifact: windows-profiler-binaries
+    - publish: $(nativeTestsHome)
+      displayName: Uploading windows profiler tests binaries
+      artifact: windows-profiler-tests-binaries
 
 - stage: build_linux_tracer
   dependsOn: [merge_commit_id]
@@ -427,11 +427,6 @@ stages:
         useNativeSdkVersion: $(useNativeSdkVersion)
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
-
-    # TODO maybe remove because useless now
-    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
-      displayName: Uploading linux profiler output build folder
-      artifact: linux-profiler-binaries-$(artifactSuffix)
 
     - publish: $(nativeTestsHome)
       displayName: Uploading linux profiler output build folder
@@ -1085,9 +1080,15 @@ stages:
       - template: steps/restore-working-directory.yml
 
       - task: DownloadPipelineArtifact@2
-        displayName: Download native loader unit tests
+        displayName: Download tracer unit tests
         inputs:
           artifact: windows-tracer-tests-binaries
+          path: $(nativeTestsHome)
+
+      - task: DownloadPipelineArtifact@2
+        displayName: Download profiler unit tests
+        inputs:
+          artifact: windows-profiler-tests-binaries
           path: $(nativeTestsHome)
 
       - script: tracer\build.cmd RunNativeUnitTests
