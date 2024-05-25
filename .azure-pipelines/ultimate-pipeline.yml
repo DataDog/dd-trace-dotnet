@@ -1092,7 +1092,7 @@ stages:
           path: $(nativeTestsHome)
 
       - script: tracer\build.cmd RunNativeUnitTests
-        displayName: Build and Test
+        displayName: Run Native Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -1255,7 +1255,9 @@ stages:
     - task: PublishTestResults@2
       displayName: publish profiler test results
       inputs:
-        testResultsFiles: profiler/build_data/*.xml # TOCHECK if we do not need to add the tracer/build_data too
+        testResultsFiles: |
+            tracer/test/**/test*.xml
+            profiler/build_data/*.xml
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64

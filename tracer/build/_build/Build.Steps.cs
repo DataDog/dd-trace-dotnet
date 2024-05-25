@@ -1081,9 +1081,10 @@ partial class Build
             {
                 var workingDirectory = SharedDirectory / "bin" / "test" / $"win-{platform}";
                 var exePath = workingDirectory / "Datadog.Tracer.Native.Tests.exe";
-                var testExe = ToolResolver.GetLocalTool(exePath);
 
-                testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+                var testsResultFile = BuildDataDirectory / $"Datadog.Tracer.Native.Tests.Results.{BuildConfiguration}.{platform}.xml";
+                var testExe = ToolResolver.GetLocalTool(exePath);
+                testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
             }
         });
 
@@ -1099,8 +1100,10 @@ partial class Build
             var exePath = workingDirectory / FileNames.NativeTracerTests;
             Chmod.Value.Invoke("+x " + exePath);
 
+            var testsResultFile = BuildDataDirectory / $"{FileNames.NativeTracerTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
             var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+
+            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
         });
 
     Target RunNativeTests => _ => _

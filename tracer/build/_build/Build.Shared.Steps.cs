@@ -78,9 +78,10 @@ partial class Build
         .Executes(() =>
         {
             var workingDirectory = SharedTestsDirectory / FileNames.NativeLoaderTests / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
+            var testsResultFile = BuildDataDirectory / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
             var exePath = workingDirectory / $"{FileNames.NativeLoaderTests}.exe";
             var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
         });
 
     Target CompileNativeLoaderLinux => _ => _
