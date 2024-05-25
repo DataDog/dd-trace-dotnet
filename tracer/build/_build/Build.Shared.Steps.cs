@@ -142,7 +142,7 @@ partial class Build
                     arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}",
                     environmentVariables: envVariables);
                 CMake.Value(
-                    arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target all-native-loader",
+                    arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
                     environmentVariables: envVariables);
 
                 var sourceFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
