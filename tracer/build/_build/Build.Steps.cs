@@ -651,15 +651,21 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
+                var nativeTestFolder = NativeTracerTestsProject.Directory / "bin" / BuildConfiguration / architecture.ToString();
+
                 // Copy native tracer assets
-                var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                             $"{NativeTracerProject.Name}.dll";
+                var source = nativeTestFolder / $"{NativeTracerProject.Name}.dll";
                 var dest = MonitoringHomeDirectory / $"win-{architecture}";
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-                source = NativeTracerTestsProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                         $"{NativeTracerTestsProject.Name}.exe";
-                dest = SharedDirectory / "bin" / "test" / $"win-{architecture}" / $"{NativeTracerTestsProject.Name}.exe";
+                source = nativeTestFolder / $"{NativeTracerTestsProject.Name}.exe";
+                dest = SharedDirectory / "bin" / "test" / $"win-{architecture}";
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+                source = nativeTestFolder / "Samples.ExampleLibrary.dll";
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+                source = nativeTestFolder / "Samples.ExampleLibraryTracer.dll";
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });
@@ -1069,10 +1075,15 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var workingDirectory = TestsDirectory / "Datadog.Tracer.Native.Tests" / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
-            var exePath = workingDirectory / "Datadog.Tracer.Native.Tests.exe";
-            var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+            var platforms = ArchitecturesForPlatformForTracer;
+            foreach (var platform in platforms)
+            {
+                var workingDirectory = SharedDirectory / "bin" / "test" / $"win-{platform}";
+                var exePath = workingDirectory / "Datadog.Tracer.Native.Tests.exe";
+                var testExe = ToolResolver.GetLocalTool(exePath);
+
+                testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+            }
         });
 
     Target RunTracerNativeTestsLinux => _ => _

@@ -773,13 +773,12 @@ partial class Build
 
     void RunProfilerUnitTests(string testLibrary, Configuration configuration, MSBuildTargetPlatform platform, SanitizerKind sanitizer = SanitizerKind.None, string[] additionalEnvVars = null)
     {
-        var intermediateDirPath =
-            IsWin
-            ? (RelativePath)$"{configuration}-{platform}" / "profiler" / "test"
-            : string.Empty;
+        var workingDirectory = SharedDirectory / "bin" / "test";
 
-        var workingDirectory = ProfilerOutputDirectory / "bin" / intermediateDirPath / testLibrary;
-        EnsureExistingDirectory(workingDirectory);
+        if (IsWin)
+        {
+            workingDirectory /= $"win-{platform}";
+        }
 
         // Nuke.Tool creates a Process and run the executable inside.
         // If not set, the process will have no environment variables.

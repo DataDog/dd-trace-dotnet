@@ -371,6 +371,10 @@ stages:
         command: "BuildManagedTracerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
+    - publish: $(nativeTestsHome)
+      displayName: Uploading tracer tests binaries
+      artifact: linux-tracer-tests-binaries-$(artifactSuffix)
+
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-home-$(artifactSuffix)
@@ -538,6 +542,10 @@ stages:
         baseImage: debian
         command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
+
+    - publish: $(nativeTestsHome)
+      displayName: Uploading tracer tests binaries
+      artifact: linux-tracer-tests-binaries-arm64
 
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
@@ -1082,6 +1090,12 @@ stages:
           artifact: windows-tracer-tests-binaries
           path: $(nativeTestsHome)
 
+      - task: DownloadPipelineArtifact@2
+        displayName: Download linux tracer tests binaries
+        inputs:
+          artifact: linux-tracer-tests-binaries
+          path: $(nativeTestsHome)
+
       - script: tracer\build.cmd RunNativeUnitTests
         displayName: Build and Test
         env:
@@ -1224,9 +1238,9 @@ stages:
         artifact: build-$(artifactSuffix)-working-directory
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download linux profiler tests binaries
+      displayName: Download linux tracer tests binaries
       inputs:
-        artifact: linux-profiler-tests-binaries-$(artifactSuffix)
+        artifact: linux-tracer-tests-binaries-$(artifactSuffix)
         path: $(nativeTestsHome)
 
     - task: DownloadPipelineArtifact@2
