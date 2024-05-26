@@ -21,6 +21,8 @@ jobs:
 
       - name: "Regenerating package versions"
         run: .\tracer\build.ps1 BuildTracerHome
+        env:
+          NugetPackageDirectory: "${{ github.workspace }}\\packages"
 
       - name: "Verify no changes in generated files"
         run: |
