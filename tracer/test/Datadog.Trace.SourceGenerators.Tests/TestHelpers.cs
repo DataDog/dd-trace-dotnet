@@ -32,6 +32,26 @@ namespace Datadog.Trace.SourceGenerators.Tests
             return (diagnostics, trees.LastOrDefault() ?? string.Empty);
         }
 
+        public static (ImmutableArray<Diagnostic> Diagnostics, string Output, (string File, string Content) AdditionalFile) GetGeneratedOutputAndAdditionalFile<T>(IEnumerable<AdditionalText> additionalTexts, params string[] source)
+            where T : IIncrementalGenerator, new()
+        {
+            List<(string, string)> additionalFiles = new List<(string, string)>();
+            var additionFileGeneratorMember = typeof(T).GetProperty("WriteAdditionalFile", BindingFlags.FlattenHierarchy | BindingFlags.NonPublic | BindingFlags.Static);
+            if (additionFileGeneratorMember != null)
+            {
+                additionFileGeneratorMember.SetValue(null, (Action<string, string>)((f, c) => additionalFiles.Add((f, c))));
+            }
+
+            var (diagnostics, trees) = GetGeneratedTrees<T, TrackingNames>(additionalTexts, source);
+            return (diagnostics, trees.LastOrDefault() ?? string.Empty, additionalFiles.FirstOrDefault());
+        }
+
+        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedOutputs<T>(IEnumerable<AdditionalText> additionalTexts, params string[] source)
+            where T : IIncrementalGenerator, new()
+        {
+            return GetGeneratedTrees<T, TrackingNames>(additionalTexts, source);
+        }
+
         public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<TGenerator>(params string[] source)
             where TGenerator : IIncrementalGenerator, new()
             => GetGeneratedTrees<TGenerator, TrackingNames>(source);

@@ -16,7 +16,7 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
         private const string InstrumentationsPropertyName = "Instrumentations";
         private const string InstrumentationsCollectionName = "_instrumentations";
 
-        public static string CreateCallTargetDefinitions(IReadOnlyCollection<CallTargetDefinitionSource> definitions)
+        public static string CreateCallTargetDefinitions(IReadOnlyCollection<CallTargetDefinitionSource> definitions, out List<CallTargetDefinitionSource> orderedDefinitions)
         {
             static void BuildInstrumentationDefinitions(StringBuilder sb, List<CallTargetDefinitionSource> orderedDefinitions, string instrumentationsCollectionName)
             {
@@ -107,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler
             {{
                 if ({InstrumentationsCollectionName} == null)
                 {{");
-            var orderedDefinitions = definitions
+            orderedDefinitions = definitions
                                     .OrderBy(static x => x.IntegrationName)
                                     .ThenBy(static x => x.AssemblyName)
                                     .ThenBy(static x => x.TargetTypeName)

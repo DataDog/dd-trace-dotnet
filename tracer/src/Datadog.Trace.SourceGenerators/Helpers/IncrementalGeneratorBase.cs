@@ -21,9 +21,9 @@ namespace Helpers
     /// </summary>
     public abstract class IncrementalGeneratorBase : IIncrementalGenerator
     {
-        /// <summary>
-        /// Init
-        /// </summary>
+        internal static Action<string, string> WriteAdditionalFile { get; set; } = DefaultWriteAdditionalFile;
+
+        /// <summary> Init </summary>
         /// <param name="context"> Ctx </param>
         public abstract void Initialize(IncrementalGeneratorInitializationContext context);
 
@@ -74,6 +74,13 @@ namespace Helpers
                         .Select(static (x, _) => x.Value)
                         .WithTrackingName(TrackingNames.Tfm);
             return tfm;
+        }
+
+        private static void DefaultWriteAdditionalFile(string filePath, string source)
+        {
+            var destFolder = Path.GetDirectoryName(filePath);
+            _ = Directory.CreateDirectory(destFolder);
+            File.WriteAllText(filePath, source);
         }
     }
 }

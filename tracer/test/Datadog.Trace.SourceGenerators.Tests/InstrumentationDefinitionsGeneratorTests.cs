@@ -1192,6 +1192,60 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         [Fact]
+        public void CanGenerateNativeIntegrationDefinitionForStandardInstrumentation()
+        {
+            const string input = @"
+using System;
+using Datadog.Trace.ClrProfiler;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
+
+[Datadog.Trace.Telemetry.TargetFrameworkMoniker(""TestTFM"")]
+[InstrumentMethod(
+    AssemblyName = ""Confluent.Kafka"",
+        TypeName = ""Confluent.Kafka.Producer`2"",
+        MethodName = ""Produce"",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { KafkaConstants.TopicPartitionTypeName, KafkaConstants.MessageTypeName, KafkaConstants.ActionOfDeliveryReportTypeName },
+        MinimumVersion = ""1.4.0"",
+        MaximumVersion = ""1.*.*"",
+        IntegrationName = KafkaConstants.IntegrationName)]
+public class KafkaProduceSyncIntegration
+{ 
+}";
+
+            const string expected = Constants.FileHeaderCpp + """
+#pragma once
+#include "../../Datadog.Tracer.Native/generated_definitions.h"
+
+namespace trace
+{
+extern WCHAR* assemblyName;
+
+WCHAR* g_callTargets_TestTFM_Sig_0[]={(WCHAR*)WStr("System.Void"),(WCHAR*)WStr("Confluent.Kafka.TopicPartition"),(WCHAR*)WStr("Confluent.Kafka.Message`2[!0,!1]"),(WCHAR*)WStr("System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"),};
+
+std::vector<CallTargetDefinition2> g_callTargets_TestTFM=
+{
+{(WCHAR*)WStr("Confluent.Kafka"),(WCHAR*)WStr("Confluent.Kafka.Producer`2"),(WCHAR*)WStr("Produce"),g_callTargets_TestTFM_Sig_0,4,1,4,0,1,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"),CallTargetKind::Default,1},
+};
+}
+
+""";
+
+            var (diagnostics, output, (fileName, fileContent)) = TestHelpers.GetGeneratedOutputAndAdditionalFile<InstrumentationDefinitionsGenerator>(
+                AspectsDefinitionsGeneratorTests.AdditionalTextFiles,
+                SourceHelper.InstrumentMethodAttribute,
+                SourceHelper.ClrNames,
+                SourceHelper.KafkaConstants,
+                AspectsDefinitionsGeneratorTests.SourceHelper.TFMAttribute,
+                input);
+
+            Assert.Empty(diagnostics);
+            Assert.Equal("generated_calltargets_TestTFM.h", System.IO.Path.GetFileName(fileName));
+            Assert.Equal(expected, fileContent);
+        }
+
+        [Fact]
         public void AddsDiagnosticForMissingAssembly()
         {
             const string input = @"
