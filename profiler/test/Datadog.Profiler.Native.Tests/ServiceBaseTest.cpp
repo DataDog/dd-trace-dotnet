@@ -67,7 +67,7 @@ TEST(ServiceBaseTest, CheckStopCannotBeCalledWithoutStart)
     ASSERT_EQ(service._stopCallsCount, 0) << "StopImpl must be called only once";
 }
 
-TEST(ServiceBaseTest, deux)
+TEST(ServiceBaseTest, CheckServiceIsStartedOnceInMultiThreadedEnv)
 {
     auto p = std::promise<void>();
 
