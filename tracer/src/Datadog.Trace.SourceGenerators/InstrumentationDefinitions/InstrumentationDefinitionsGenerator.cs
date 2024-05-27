@@ -769,7 +769,7 @@ extern WCHAR* assemblyName;
 }
 """);
 
-        var filePath = Path.Combine(destFolder, $"Generated\\generated_calltargets_{GetTFMName()}.h");
+        var filePath = Path.Combine(Path.Combine(destFolder, "Generated"), $"generated_calltargets_{GetTFMName()}.h");
         WriteAdditionalFile(filePath, sb.ToString());
 
         string GetTFMName()
