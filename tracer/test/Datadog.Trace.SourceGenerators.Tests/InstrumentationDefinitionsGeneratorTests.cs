@@ -1241,7 +1241,7 @@ std::vector<CallTargetDefinition2> g_callTargets_TestTFM=
                 input);
 
             Assert.Empty(diagnostics);
-            Assert.Equal("generated_calltargets_TestTFM.h", System.IO.Path.GetFileName(fileName));
+            Assert.Equal("generated_calltargets_testtfm.h", System.IO.Path.GetFileName(fileName));
             Assert.Equal(expected, fileContent);
         }
 

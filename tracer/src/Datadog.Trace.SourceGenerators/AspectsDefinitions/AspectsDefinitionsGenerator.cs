@@ -5,6 +5,7 @@
 
 #nullable enable
 
+#pragma warning disable SA1204 // StaticElementsMustAppearBeforeInstanceElements
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -72,10 +73,10 @@ public class AspectsDefinitionsGenerator : IncrementalGeneratorBase
         context.RegisterSourceOutput(
             tfm.Collect().Combine(placeholderFile.Collect())
             .Combine(allClassesToGenerate),
-            static (spc, classToGenerate) => Execute(in classToGenerate.Left, in classToGenerate.Right, spc));
+            (spc, classToGenerate) => Execute(in classToGenerate.Left, in classToGenerate.Right, spc));
     }
 
-    private static void Execute(in (ImmutableArray<string> Tfm, ImmutableArray<string> Placeholders) dest, in ImmutableArray<ClassAspects> aspectClasses, SourceProductionContext context)
+    private void Execute(in (ImmutableArray<string> Tfm, ImmutableArray<string> Placeholders) dest, in ImmutableArray<ClassAspects> aspectClasses, SourceProductionContext context)
     {
         var sb = new StringBuilder();
         sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeader);
@@ -141,7 +142,7 @@ namespace Datadog.Trace.ClrProfiler
         }
     }
 
-    private static void GenerateNative(string tfm, in string destFolder, in ImmutableArray<ClassAspects> aspectClasses, SourceProductionContext context)
+    private void GenerateNative(string tfm, in string destFolder, in ImmutableArray<ClassAspects> aspectClasses, SourceProductionContext context)
     {
         var sb = new StringBuilder();
         sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeaderCpp);
@@ -160,7 +161,7 @@ namespace trace
 }
 """);
 
-        var filePath = Path.Combine(Path.Combine(destFolder, "Generated"), $"generated_callsites_{GetTFMName()}.h");
+        var filePath = Path.Combine(Path.Combine(destFolder, "Generated"), $"generated_callSites_{GetTFMName()}.h".ToLower());
         WriteAdditionalFile(filePath, sb.ToString());
 
         string FormatLine(string line)
@@ -413,3 +414,4 @@ namespace trace
         }
     }
 }
+#pragma warning restore SA1204 // StaticElementsMustAppearBeforeInstanceElements

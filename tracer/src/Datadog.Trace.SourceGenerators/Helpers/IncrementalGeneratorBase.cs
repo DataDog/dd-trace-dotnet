@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.SourceGenerators.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -19,9 +20,12 @@ namespace Helpers
     /// <summary>
     /// Base class
     /// </summary>
-    public abstract class IncrementalGeneratorBase : IIncrementalGenerator
+    public abstract class IncrementalGeneratorBase : IIncrementalGenerator, IAdditionalFileCodeGenerator
     {
-        internal static Action<string, string> WriteAdditionalFile { get; set; } = DefaultWriteAdditionalFile;
+        /// <summary>
+        /// Gets or sets set additional file writer function
+        /// </summary>
+        public Action<string, string> WriteAdditionalFile { get; set; } = DefaultWriteAdditionalFile;
 
         /// <summary> Init </summary>
         /// <param name="context"> Ctx </param>
