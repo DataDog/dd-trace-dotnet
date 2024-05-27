@@ -240,6 +240,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
             using var helper = await StartConsoleWithArgs(
                                    "crash-datadog",
+                                   false,
                                    [("LD_PRELOAD", newApiWrapperPath), CrashReportConfig(reportFile)]);
 
             await helper.Task;
