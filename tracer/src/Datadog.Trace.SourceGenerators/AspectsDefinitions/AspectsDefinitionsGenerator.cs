@@ -160,7 +160,7 @@ namespace trace
 }
 """);
 
-        var filePath = Path.Combine(destFolder, $"Generated\\generated_callsites_{GetTFMName()}.h");
+        var filePath = Path.Combine(Path.Combine(destFolder, "Generated"), $"generated_callsites_{GetTFMName()}.h");
         WriteAdditionalFile(filePath, sb.ToString());
 
         string FormatLine(string line)
