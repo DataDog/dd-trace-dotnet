@@ -41,11 +41,11 @@ namespace Datadog.Trace.Configuration
             {
                 _subscriptionManager.SubscribeToChanges(_subscription!);
 
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, true);
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true);
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true);
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true);
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, true);     // 15
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true); // 14
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true);  // 13
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);     // 12
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true); // 19
             }
         }
 

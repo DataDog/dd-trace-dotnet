@@ -7,13 +7,11 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
@@ -153,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 return configurationChanged.Configuration;
             }
 
-            return Enumerable.Empty<ConfigurationKeyValue>();
+            return [];
         }
 
         private async Task UpdateAndValidateConfig(MockTracerAgent agent, LogEntryWatcher logEntryWatcher, Config config, Config expectedConfig = null)
@@ -166,8 +164,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var request = await agent.SetupRcmAndWait(Output, new[] { ((object)new { lib_config = config }, DynamicConfigurationManager.ProductName, fileId) });
 
+            // copy the byte array and reverse the bytes to create a BitArray with the correct order
+            var capabilityBytes = new byte[request.Client.Capabilities.Length];
+            Array.Copy(request.Client.Capabilities, capabilityBytes, request.Client.Capabilities.Length);
+            Array.Reverse(capabilityBytes);
+
             // Validate capabilities
-            var capabilities = new BitArray(request.Client.Capabilities);
+            var capabilities = new BitArray(capabilityBytes);
 
             capabilities[12].Should().BeTrue(); // APM_TRACING_SAMPLE_RATE
             capabilities[13].Should().BeTrue(); // APM_TRACING_LOGS_INJECTION
@@ -315,7 +318,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             latestConfig.Should().HaveCount(expectedCount);
         }
 
-        internal class PlainJsonStringConverter : JsonConverter
+        private class PlainJsonStringConverter : JsonConverter
         {
             public override bool CanConvert(Type objectType)
             {
@@ -333,7 +336,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        internal record Config
+        private record Config
         {
             [JsonProperty("tracing_enabled")]
             public bool TraceEnabled { get; init; }
