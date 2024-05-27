@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#pragma warning disable SA1204 // StaticElementsMustAppearBeforeInstanceElements
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -114,7 +115,7 @@ public class InstrumentationDefinitionsGenerator : IncrementalGeneratorBase
         context.RegisterSourceOutput(
             tfm.Collect().Combine(placeholderFile.Collect())
             .Combine(allCallTargetDefinitions.Combine(allAdoNetDefinitions)),
-            static (spc, source) =>
+            (spc, source) =>
                 Execute(source.Left, source.Right.Left, source.Right.Right, spc));
     }
 
@@ -725,7 +726,7 @@ public class InstrumentationDefinitionsGenerator : IncrementalGeneratorBase
         return new Result<CallTargetDefinitionSource?>(null, new([diagnostic]));
     }
 
-    private static void Execute(
+    private void Execute(
         in (ImmutableArray<string> Tfm, ImmutableArray<string> Placeholders) dest,
         in ImmutableArray<CallTargetDefinitionSource> definitions,
         in ImmutableArray<CallTargetDefinitionSource> adoNetDefinitions,
@@ -750,7 +751,7 @@ public class InstrumentationDefinitionsGenerator : IncrementalGeneratorBase
         }
     }
 
-    private static void GenerateNative(string tfm, string destFolder, IEnumerable<CallTargetDefinitionSource> orderedDefinitions, SourceProductionContext context)
+    private void GenerateNative(string tfm, string destFolder, IEnumerable<CallTargetDefinitionSource> orderedDefinitions, SourceProductionContext context)
     {
         var sb = new StringBuilder();
         sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeaderCpp);
@@ -769,7 +770,7 @@ extern WCHAR* assemblyName;
 }
 """);
 
-        var filePath = Path.Combine(Path.Combine(destFolder, "Generated"), $"generated_calltargets_{GetTFMName()}.h");
+        var filePath = Path.Combine(Path.Combine(destFolder, "Generated"), $"generated_callTargets_{GetTFMName()}.h".ToLower());
         WriteAdditionalFile(filePath, sb.ToString());
 
         string GetTFMName()
@@ -945,3 +946,4 @@ extern WCHAR* assemblyName;
         return values;
     }
 }
+#pragma warning restore SA1204 // StaticElementsMustAppearBeforeInstanceElements

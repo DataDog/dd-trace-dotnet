@@ -548,7 +548,7 @@ std::vector<WCHAR*> g_callSites_TestTFM_Rasp=
                 SourceHelper.TFMAttribute,
                 input);
 
-            Assert.Equal("generated_callsites_TestTFM.h", System.IO.Path.GetFileName(fileName));
+            Assert.Equal("generated_callsites_testtfm.h", System.IO.Path.GetFileName(fileName));
             Assert.Equal(expected, fileContent);
             Assert.Empty(diagnostics);
         }
