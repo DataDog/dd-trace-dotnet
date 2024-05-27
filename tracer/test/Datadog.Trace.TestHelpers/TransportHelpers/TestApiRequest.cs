@@ -1,4 +1,4 @@
-﻿// <copyright file="TestApiRequest.cs" company="Datadog">
+// <copyright file="TestApiRequest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -32,6 +33,8 @@ internal class TestApiRequest : IApiRequest
 
     public Uri Endpoint { get; }
 
+    public string ContentType { get; private set; }
+
     public Dictionary<string, string> ExtraHeaders { get; } = new();
 
     public List<TestApiResponse> Responses { get; } = new();
@@ -56,6 +59,7 @@ internal class TestApiRequest : IApiRequest
     {
         var response = new TestApiResponse(_statusCode, _responseContent, _responseContentType);
         Responses.Add(response);
+        ContentType = contentType;
 
         return Task.FromResult((IApiResponse)response);
     }
@@ -69,8 +73,19 @@ internal class TestApiRequest : IApiRequest
         }
     }
 
-    public Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
+    public async Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
     {
-        throw new NotImplementedException();
+        var boundary = "----not implemented" + Guid.NewGuid().ToString("N");
+        var contentType = ContentTypeHelper.GetContentType("multipart/form-data", boundary);
+
+        return await PostAsync(
+                   async stream =>
+                   {
+                       using var writer = new StreamWriter(stream, Encoding.UTF8);
+                       await writer.WriteAsync("not implemented \r\n");
+                   },
+                   contentType,
+                   "utf-8",
+                   boundary);
     }
 }
