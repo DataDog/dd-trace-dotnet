@@ -740,16 +740,17 @@ public class InstrumentationDefinitionsGenerator : IncrementalGeneratorBase
                                  ? adoNetDefinitions
                                  : (adoNetDefinitions.IsDefaultOrEmpty ? definitions : definitions.AddRange(adoNetDefinitions));
 
-        string source = Sources.CreateCallTargetDefinitions(allDefinitions);
+        List<CallTargetDefinitionSource> orderedDefinitions;
+        string source = Sources.CreateCallTargetDefinitions(allDefinitions, out orderedDefinitions);
         context.AddSource("InstrumentationDefinitions.g.cs", SourceText.From(source, Encoding.UTF8));
 
-        if (dest.Tfm.Length > 0 && dest.Placeholders.Length > 0)
+        if (dest.Tfm.Length > 0 && dest.Placeholders.Length > 0 && orderedDefinitions is not null)
         {
-            GenerateNative(dest.Tfm[0], dest.Placeholders[0], in allDefinitions, context);
+            GenerateNative(dest.Tfm[0], dest.Placeholders[0], orderedDefinitions, context);
         }
     }
 
-    private static void GenerateNative(string tfm, in string destFolder, in ImmutableArray<CallTargetDefinitionSource> definitions, SourceProductionContext context)
+    private static void GenerateNative(string tfm, string destFolder, IEnumerable<CallTargetDefinitionSource> orderedDefinitions, SourceProductionContext context)
     {
         var sb = new StringBuilder();
         sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeaderCpp);
@@ -762,16 +763,14 @@ namespace trace
 extern WCHAR* assemblyName;
 
 """);
-        var ordered = definitions.OrderBy(p => p.AssemblyName, StringComparer.Ordinal).ThenBy(p => p.TargetTypeName, StringComparer.Ordinal).ThenBy(p => p.TargetMethodName, StringComparer.Ordinal);
-        GenerateSignatures(ordered);
-        GenerateCallTargets(ordered);
+        GenerateSignatures(orderedDefinitions);
+        GenerateCallTargets(orderedDefinitions);
         sb.AppendLine("""
 }
 """);
 
-        _ = Directory.CreateDirectory(destFolder);
         var filePath = Path.Combine(destFolder, $"Generated\\generated_calltargets_{GetTFMName()}.h");
-        File.WriteAllText(filePath, sb.ToString());
+        WriteAdditionalFile(filePath, sb.ToString());
 
         string GetTFMName()
         {

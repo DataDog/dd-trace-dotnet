@@ -17,6 +17,8 @@ namespace Datadog.Trace.SourceGenerators.Tests
     {
         private static AdditionalText[] _additionalTextFiles = { new MyAdditionalText() };
 
+        internal static AdditionalText[] AdditionalTextFiles { get => _additionalTextFiles; }
+
         [Fact]
         public void DoesNotGenerateDefinitionsIfThereAreNone()
         {
@@ -52,7 +54,6 @@ namespace Datadog.Trace.ClrProfiler
 """;
 
             var (diagnostics, output) = TestHelpers.GetGeneratedOutput<AspectsDefinitionsGenerator>(
-                _additionalTextFiles,
                 SourceHelper.AspectAttributes,
                 input);
 
@@ -110,7 +111,6 @@ namespace Datadog.Trace.ClrProfiler
 """";
 
             var (diagnostics, output) = TestHelpers.GetGeneratedOutput<AspectsDefinitionsGenerator>(
-                _additionalTextFiles,
                 SourceHelper.AspectAttributes,
                 input);
             Assert.Equal(expected, output);
@@ -494,6 +494,65 @@ namespace Datadog.Trace.ClrProfiler
             Assert.Empty(diagnostics);
         }
 
+        [Fact]
+        public void CanGenerateNativeAspectsDefinitionForSimpleClass()
+        {
+            const string input = """
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Iast;
+using Datadog.Trace.Iast.Dataflow;
+
+namespace MyTests;
+
+[Datadog.Trace.Telemetry.TargetFrameworkMoniker("TestTFM")]
+[AspectClass("mscorlib,netstandard,System.Private.CoreLib", new[] { AspectFilter.StringOptimization })]
+public class TestAspectClass
+{ 
+    [AspectMethodReplace("System.String::Concat(System.String,System.String)", AspectFilter.StringLiterals_Any)]
+    public static string Concat(string target, string param1)
+    {
+        return string.Concat(target, param1);
+    }
+    [AspectMethodReplace("System.String::Concat(System.Object,System.Object,System.Object)", AspectFilter.StringLiterals_Any)]
+    public static string Concat(object target, object param1, object param2)
+    {
+        return string.Concat(target, param1, param2);
+    }
+}
+""";
+
+            const string expected = Constants.FileHeaderCpp + """"
+#pragma once
+#include "../../Datadog.Tracer.Native/generated_definitions.h"
+
+namespace trace
+{
+
+std::vector<WCHAR*> g_callSites_TestTFM=
+{
+(WCHAR*)WStr("[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass"),
+(WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String)"),
+(WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.Object,System.Object,System.Object)"),
+};
+
+std::vector<WCHAR*> g_callSites_TestTFM_Rasp=
+{
+};
+}
+
+"""";
+
+            var (diagnostics, output, (fileName, fileContent)) = TestHelpers.GetGeneratedOutputAndAdditionalFile<AspectsDefinitionsGenerator>(
+                _additionalTextFiles,
+                SourceHelper.AspectAttributes,
+                SourceHelper.TFMAttribute,
+                input);
+
+            Assert.Equal("generated_callsites_TestTFM.h", System.IO.Path.GetFileName(fileName));
+            Assert.Equal(expected, fileContent);
+            Assert.Empty(diagnostics);
+        }
+
         public static class SourceHelper
         {
             public const string AspectAttributes = """
@@ -810,6 +869,30 @@ internal enum VulnerabilityType
     WeakHash,
 }
 }               
+""";
+
+            public const string TFMAttribute = """
+#nullable enable
+using System;
+
+namespace Datadog.Trace.Telemetry
+{
+    /// <summary>
+    /// Marks class with TargetFrameworkMoniker field
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [AttributeUsage(AttributeTargets.Class)]
+    internal class TargetFrameworkMonikerAttribute : Attribute
+    {
+        public TargetFrameworkMonikerAttribute(string tfm)
+        {
+            TargetFrameworkMoniker = tfm;
+        }
+
+        public string TargetFrameworkMoniker { get; }
+    }
+}
+
 """;
         }
 
