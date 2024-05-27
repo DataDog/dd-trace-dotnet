@@ -66,17 +66,9 @@ namespace Datadog.Trace.AppSec.WafEncoding
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        // public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
-        // {
-        //    var lstPointers = new List<IntPtr>();
-        //    var pool = Pool;
-        //    var result = Encode(o, lstPointers, remainingDepth, key, applySafetyLimits, pool: pool);
-        //    return new EncodeResult(lstPointers, pool, ref result);
-        // }
-
         public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
         {
-            var context = new EncoderContext(applySafetyLimits, Pool);
+            var context = new EncoderContext(applySafetyLimits, Pool, new List<IntPtr>());
             var result = Encode(ref context, remainingDepth, key, o);
             return new EncodeResult(context.Buffers, context.Pool, ref result);
         }
@@ -84,7 +76,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
         // -----------------------------------
         internal DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true, UnmanagedMemoryPool? pool = null)
         {
-            var context = new EncoderContext(applySafetyLimits, Pool);
+            var context = new EncoderContext(applySafetyLimits, Pool, argToFree);
             return Encode(ref context, remainingDepth, key, o);
         }
 
@@ -680,12 +672,13 @@ namespace Datadog.Trace.AppSec.WafEncoding
         {
             public readonly bool ApplySafetyLimits;
             public readonly UnmanagedMemoryPool Pool;
-            public readonly List<IntPtr> Buffers = new List<IntPtr>();
+            public readonly List<IntPtr> Buffers;
 
-            public EncoderContext(bool applySafetyLimits, UnmanagedMemoryPool pool)
+            public EncoderContext(bool applySafetyLimits, UnmanagedMemoryPool pool, List<IntPtr> buffers)
             {
                 ApplySafetyLimits = applySafetyLimits;
                 Pool = pool;
+                Buffers = buffers;
             }
         }
 
