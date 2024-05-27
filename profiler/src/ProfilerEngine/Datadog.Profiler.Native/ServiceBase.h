@@ -6,15 +6,6 @@
 
 #include <atomic>
 
-enum class ServiceState
-{
-    Init,
-    Starting,
-    Started,
-    Stopping,
-    Stopped
-};
-
 class ServiceBase : public IService
 {
 public:
@@ -28,5 +19,14 @@ protected:
     virtual bool StopImpl() = 0;
 
 private:
-    std::atomic<ServiceState> _currentState;
+    enum class State
+    {
+        Init,
+        Starting,
+        Started,
+        Stopping,
+        Stopped
+    };
+
+    std::atomic<State> _currentState;
 };

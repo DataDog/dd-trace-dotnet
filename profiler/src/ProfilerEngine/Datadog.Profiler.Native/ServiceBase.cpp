@@ -4,14 +4,14 @@
 #include "ServiceBase.h"
 
 ServiceBase::ServiceBase() :
-    _currentState{ServiceState::Init}
+    _currentState{State::Init}
 {
 }
 
 bool ServiceBase::Start()
 {
-    auto expected = ServiceState::Init;
-    auto exchange = _currentState.compare_exchange_strong(expected, ServiceState::Starting);
+    auto expected = State::Init;
+    auto exchange = _currentState.compare_exchange_strong(expected, State::Starting);
 
     if (!exchange)
     {
@@ -21,11 +21,11 @@ bool ServiceBase::Start()
     auto result = StartImpl();
     if (result)
     {
-        _currentState = ServiceState::Started;
+        _currentState = State::Started;
     }
     else
     {
-        _currentState = ServiceState::Init;
+        _currentState = State::Init;
     }
 
     return result;
@@ -33,8 +33,8 @@ bool ServiceBase::Start()
 
 bool ServiceBase::Stop()
 {
-    auto expected = ServiceState::Started;
-    auto exchange = _currentState.compare_exchange_strong(expected, ServiceState::Stopping);
+    auto expected = State::Started;
+    auto exchange = _currentState.compare_exchange_strong(expected, State::Stopping);
 
     if (!exchange)
     {
@@ -44,11 +44,11 @@ bool ServiceBase::Stop()
     auto result = StopImpl();
     if (result)
     {
-        _currentState = ServiceState::Stopped;
+        _currentState = State::Stopped;
     }
     else
     {
-        _currentState = ServiceState::Started;
+        _currentState = State::Started;
     }
 
     return result;
