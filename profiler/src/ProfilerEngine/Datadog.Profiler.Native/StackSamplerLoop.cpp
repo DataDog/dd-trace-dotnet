@@ -65,8 +65,7 @@ StackSamplerLoop::StackSamplerLoop(
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
     _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
     _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled()},
-    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()},
-    _isStopped{false}
+    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
     Log::Info("Processor cores = ", _nbCores);
@@ -92,7 +91,7 @@ StackSamplerLoop::StackSamplerLoop(
 
 StackSamplerLoop::~StackSamplerLoop()
 {
-    Stop();
+    StopImpl();
 
     ICorProfilerInfo4* corProfilerInfo = _pCorProfilerInfo;
     if (corProfilerInfo != nullptr)
@@ -107,7 +106,7 @@ const char* StackSamplerLoop::GetName()
     return "StackSamplerLoop";
 }
 
-bool StackSamplerLoop::Start()
+bool StackSamplerLoop::StartImpl()
 {
     _pLoopThread = std::make_unique<std::thread>(&StackSamplerLoop::MainLoop, this);
     OpSysTools::SetNativeThreadName(_pLoopThread.get(), ThreadName);
@@ -115,15 +114,8 @@ bool StackSamplerLoop::Start()
     return true;
 }
 
-bool StackSamplerLoop::Stop()
+bool StackSamplerLoop::StopImpl()
 {
-    // allow multiple calls to Stop()
-    auto wasStopped = std::exchange(_isStopped, true);
-    if (wasStopped)
-    {
-        return true;
-    }
-
     _shutdownRequested = true;
     if (_pLoopThread != nullptr)
     {

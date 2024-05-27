@@ -18,7 +18,7 @@
 
 #include "ManagedThreadInfo.h"
 #include "ICollector.h"
-#include "IService.h"
+#include "ServiceBase.h"
 #include "RawCpuSample.h"
 #include "RawWallTimeSample.h"
 #include "MetricsRegistry.h"
@@ -40,7 +40,7 @@ typedef enum
     CpuTime
 } PROFILING_TYPE;
 
-class StackSamplerLoop : public IService
+class StackSamplerLoop : public ServiceBase
 {
     friend StackSamplerLoopManager;
 
@@ -63,8 +63,6 @@ public:
 
     // Inherited via IService
     const char* GetName() override;
-    bool Start() override;
-    bool Stop() override;
 
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;
@@ -96,7 +94,6 @@ private:
     bool _areInternalMetricsEnabled;
     std::shared_ptr<MeanMaxMetric> _walltimeDurationMetric;
     std::shared_ptr<MeanMaxMetric> _cpuDurationMetric;
-    bool _isStopped;
 
 private:
     void MainLoop();
@@ -115,4 +112,7 @@ private:
     void PersistStackSnapshotResults(StackSnapshotResultBuffer* pSnapshotResult,
                                      std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
                                      PROFILING_TYPE profilingType);
+
+    bool StartImpl() override;
+    bool StopImpl() override;
 };

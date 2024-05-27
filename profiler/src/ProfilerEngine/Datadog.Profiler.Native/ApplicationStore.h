@@ -24,11 +24,12 @@ public:
     void SetGitMetadata(std::string runtimeId, std::string repositoryUrl, std::string commitSha) override;
 
     const char* GetName() override;
-    bool Start() override;
-    bool Stop() override;
 
 private:
     const char* _serviceName = "ApplicationStore";
+
+    bool StartImpl() override;
+    bool StopImpl() override;
 
     IConfiguration* const _pConfiguration;
     std::unordered_map<std::string, ApplicationInfo> _infos;

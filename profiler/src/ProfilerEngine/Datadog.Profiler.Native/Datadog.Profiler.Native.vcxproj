@@ -253,6 +253,7 @@
     <ClInclude Include="MemoryResourceManager.h" />
     <ClInclude Include="RawSamples.hpp" />
     <ClInclude Include="SamplesEnumerator.h" />
+    <ClInclude Include="ServiceBase.h" />
     <ClInclude Include="Success.h" />
     <ClInclude Include="Exception.h" />
     <ClInclude Include="Exporter.h" />
@@ -393,6 +394,7 @@
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
+    <ClCompile Include="ServiceBase.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />

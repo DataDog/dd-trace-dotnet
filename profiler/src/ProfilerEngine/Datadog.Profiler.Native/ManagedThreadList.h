@@ -28,8 +28,6 @@ private:
 
 public:
     const char* GetName() override;
-    bool Start() override;
-    bool Stop() override;
     bool RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThreadInfo) override;
     bool UnregisterThread(ThreadID clrThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
     bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) override;
@@ -48,6 +46,9 @@ private:
     static const std::uint32_t DefaultThreadListSize;
 
 private:
+    bool StartImpl() override;
+    bool StopImpl() override;
+
     // We do most operations under this lock.
     // We expect very little contention on this lock:
     // Modifying operations are expected to be rare and, especially in a thread-pooled architecture.

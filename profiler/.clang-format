@@ -36,11 +36,10 @@ AllowShortLoopsOnASingleLine: true
 PointerAlignment: Left
 AlignConsecutiveAssignments: false
 AlignTrailingComments: true
-SpaceAfterCStyleCast: true
+SpaceAfterCStyleCast: false
 CommentPragmas: '^ NO-FORMAT:'
 IndentCaseLabels: true
 IndentGotoLabels: true
-SpaceAfterCStyleCast: false
 
 # The following doesn't work pre clang-format version 13
 #BreakBeforeConceptDeclarations: true

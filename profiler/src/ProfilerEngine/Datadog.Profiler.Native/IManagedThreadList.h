@@ -5,12 +5,12 @@
 #include "cor.h"
 #include "corprof.h"
 
-#include "IService.h"
+#include "ServiceBase.h"
 #include "ManagedThreadInfo.h"
 
 #include <memory>
 
-class IManagedThreadList : public IService
+class IManagedThreadList : public ServiceBase
 {
 public:
     virtual bool RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThreadInfo) = 0;

@@ -80,6 +80,7 @@
     <ClCompile Include="RuntimeInfoHelper.cpp" />
     <ClCompile Include="SamplesCollectorTest.cpp" />
     <ClCompile Include="SampleValueTypeProviderTest.cpp" />
+    <ClCompile Include="ServiceBaseTest.cpp" />
     <ClCompile Include="StackSnapshotResultBufferTest.cpp" />
     <ClCompile Include="TagsTest.cpp" />
     <ClCompile Include="TagsHelperTest.cpp" />

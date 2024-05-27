@@ -114,12 +114,12 @@ const char* AllocationsRecorder::GetName()
     return "AllocationsRecorder";
 }
 
-bool AllocationsRecorder::Start()
+bool AllocationsRecorder::StartImpl()
 {
     return true;
 }
 
-bool AllocationsRecorder::Stop()
+bool AllocationsRecorder::StopImpl()
 {
     return true;
 }

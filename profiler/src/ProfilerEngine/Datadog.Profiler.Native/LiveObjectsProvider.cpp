@@ -233,12 +233,12 @@ void LiveObjectsProvider::CloseWeakHandle(ObjectHandleID handle) const
     _pCorProfilerInfo->DestroyHandle(handle);
 }
 
-bool LiveObjectsProvider::Start()
+bool LiveObjectsProvider::StartImpl()
 {
     return true;
 }
 
-bool LiveObjectsProvider::Stop()
+bool LiveObjectsProvider::StopImpl()
 {
     return true;
 }
