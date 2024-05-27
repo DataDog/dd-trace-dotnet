@@ -3,6 +3,27 @@
 
 #include "ServiceBase.h"
 
+#include "Log.h"
+
+static std::string to_string(ServiceBase::State state)
+{
+    switch (state)
+    {
+        case ServiceBase::State::Init:
+            return "Init";
+        case ServiceBase::State::Started:
+            return "Started";
+        case ServiceBase::State::Starting:
+            return "Starting";
+        case ServiceBase::State::Stopping:
+            return "Stopping";
+        case ServiceBase::State::Stopped:
+            return "Stopped";
+    }
+
+    return "Unknown state";
+}
+
 ServiceBase::ServiceBase() :
     _currentState{State::Init}
 {
@@ -15,6 +36,7 @@ bool ServiceBase::Start()
 
     if (!exchange)
     {
+        Log::Debug("Unable to start the service. Current state: ", to_string(_currentState.load()));
         return false;
     }
 
@@ -26,6 +48,7 @@ bool ServiceBase::Start()
     else
     {
         _currentState = State::Init;
+        Log::Debug("Unable to start the service. Call to StartImpl failed. Current state: ", to_string(_currentState.load()));
     }
 
     return result;
@@ -38,6 +61,7 @@ bool ServiceBase::Stop()
 
     if (!exchange)
     {
+        Log::Debug("Unable to stop the service. Current state: ", to_string(_currentState.load()));
         return false;
     }
 
@@ -49,6 +73,7 @@ bool ServiceBase::Stop()
     else
     {
         _currentState = State::Started;
+        Log::Debug("Unable to stop the service. Call to StartImpl failed. Current state: ", to_string(_currentState.load()));
     }
 
     return result;

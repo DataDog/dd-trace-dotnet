@@ -619,7 +619,7 @@ bool CorProfilerCallback::StopServices()
         }
         else
         {
-            Log::Error(name, " failed to stop.");
+            Log::Info(name, " failed to stop.");
         }
         result &= success;
     }

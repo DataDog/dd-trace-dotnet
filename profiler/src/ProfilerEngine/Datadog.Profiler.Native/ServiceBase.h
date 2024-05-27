@@ -5,6 +5,7 @@
 #include "IService.h"
 
 #include <atomic>
+#include <string>
 
 class ServiceBase : public IService
 {
@@ -28,5 +29,6 @@ private:
         Stopped
     };
 
+    friend std::string to_string(ServiceBase::State);
     std::atomic<State> _currentState;
 };
