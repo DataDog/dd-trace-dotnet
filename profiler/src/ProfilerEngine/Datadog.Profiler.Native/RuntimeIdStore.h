@@ -7,16 +7,14 @@
 #include <mutex>
 #include <unordered_map>
 #include "IRuntimeIdStore.h"
-#include "IService.h"
+#include "ServiceBase.h"
 
-class RuntimeIdStore : public IService, public IRuntimeIdStore
+class RuntimeIdStore : public ServiceBase, public IRuntimeIdStore
 {
 public:
     RuntimeIdStore() = default;
 
     const char* GetName() override;
-    bool Start() override;
-    bool Stop() override;
 
     const char* GetId(AppDomainID appDomainId) override;
 
@@ -28,6 +26,9 @@ private:
     static void* LoadDynamicLibrary(std::string filePath);
     static void* GetExternalFunction(void* instance, const char* funcName);
     static bool FreeDynamicLibrary(void* handle);
+
+    bool StartImpl() override;
+    bool StopImpl() override;
 
     void* _instance = nullptr;
     std::function<const char*(AppDomainID)> _getIdFn;

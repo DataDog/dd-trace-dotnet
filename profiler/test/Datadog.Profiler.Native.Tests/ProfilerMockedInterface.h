@@ -137,8 +137,8 @@ public:
     MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&), (override));
     MOCK_METHOD(void, SetGitMetadata, (std::string, std::string, std::string), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
-    MOCK_METHOD(bool, Start, (), (override));
-    MOCK_METHOD(bool, Stop, (), (override));
+    MOCK_METHOD(bool, StartImpl, (), (override));
+    MOCK_METHOD(bool, StopImpl, (), (override));
 };
 
 class MockRuntimeIdStore : public IRuntimeIdStore

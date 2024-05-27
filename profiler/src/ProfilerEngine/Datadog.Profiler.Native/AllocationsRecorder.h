@@ -33,12 +33,13 @@ public:
 
 public:
     virtual const char* GetName() override;
-    virtual bool Start() override;
-    virtual bool Stop() override;
     virtual void OnObjectAllocated(ObjectID objectId, ClassID classId) override;
     virtual bool Serialize(const std::string& filename) override;
 
 private:
+    bool StartImpl() override;
+    bool StopImpl() override;
+
     ICorProfilerInfo5* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
 

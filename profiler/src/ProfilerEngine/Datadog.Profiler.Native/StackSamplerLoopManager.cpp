@@ -89,7 +89,7 @@ const char* StackSamplerLoopManager::GetName()
     return _serviceName;
 }
 
-bool StackSamplerLoopManager::Start()
+bool StackSamplerLoopManager::StartImpl()
 {
     RunStackSampling();
     RunWatcher();
@@ -97,15 +97,8 @@ bool StackSamplerLoopManager::Start()
     return true;
 }
 
-bool StackSamplerLoopManager::Stop()
+bool StackSamplerLoopManager::StopImpl()
 {
-    // allow multiple calls to Stop()
-    if (_isStopped)
-    {
-        return true;
-    }
-    _isStopped = true;
-
     _pStackSamplerLoop->Stop();
 
     ShutdownWatcher();
