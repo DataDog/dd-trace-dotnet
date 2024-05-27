@@ -13,7 +13,6 @@ SamplesCollector::SamplesCollector(
     IExporter* exporter,
     IMetricsSender* metricsSender) :
     _uploadInterval{configuration->GetUploadInterval()},
-    _mustStop{false},
     _pThreadsCpuManager{pThreadsCpuManager},
     _metricsSender{metricsSender},
     _exporter{exporter},
@@ -31,10 +30,9 @@ void SamplesCollector::RegisterBatchedProvider(IBatchedSamplesProvider* batchedS
     _batchedSamplesProviders.push_front(std::make_pair(batchedSamplesProvider, 0));
 }
 
-bool SamplesCollector::Start()
+bool SamplesCollector::StartImpl()
 {
     Log::Info("Starting the samples collector");
-    _mustStop = false;
     _workerThread = std::thread(&SamplesCollector::SamplesWork, this);
     OpSysTools::SetNativeThreadName(&_workerThread, WorkerThreadName);
     _exporterThread = std::thread(&SamplesCollector::ExportWork, this);
@@ -42,15 +40,8 @@ bool SamplesCollector::Start()
     return true;
 }
 
-bool SamplesCollector::Stop()
+bool SamplesCollector::StopImpl()
 {
-    if (_mustStop)
-    {
-        return true;
-    }
-
-    _mustStop = true;
-
     _workerThreadPromise.set_value();
     _workerThread.join();
 
