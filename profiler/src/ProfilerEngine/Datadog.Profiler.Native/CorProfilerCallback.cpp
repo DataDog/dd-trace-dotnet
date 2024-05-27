@@ -574,7 +574,7 @@ bool CorProfilerCallback::StartServices()
         }
         else
         {
-            Log::Error(name, " failed to start.");
+            Log::Info(name, " failed to start. This service might have been started earlier.");
         }
         result &= success;
     }
@@ -619,7 +619,7 @@ bool CorProfilerCallback::StopServices()
         }
         else
         {
-            Log::Info(name, " failed to stop.");
+            Log::Info(name, " failed to stop. This service might have been stopped earlier.");
         }
         result &= success;
     }

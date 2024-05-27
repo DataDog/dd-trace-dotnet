@@ -8,7 +8,7 @@
 #include "IExporter.h"
 #include "IMetricsSender.h"
 #include "ISamplesCollector.h"
-#include "IService.h"
+#include "ServiceBase.h"
 #include "IThreadsCpuManager.h"
 
 #include <forward_list>
@@ -19,15 +19,13 @@
 using namespace std::chrono_literals;
 
 class SamplesCollector
-    : public ISamplesCollector, public IService
+    : public ISamplesCollector, public ServiceBase
 {
 public:
     SamplesCollector(IConfiguration* configuration, IThreadsCpuManager* pThreadsCpuManager, IExporter* exporter, IMetricsSender* metricsSender);
 
     // Inherited via IService
     const char* GetName() override;
-    bool Start() override;
-    bool Stop() override;
 
     void Register(ISamplesProvider* samplesProvider) override;
     void RegisterBatchedProvider(IBatchedSamplesProvider* batchedSamplesProvider) override;
@@ -36,6 +34,9 @@ public:
     void Export();
 
 private:
+    bool StartImpl() override;
+    bool StopImpl() override;
+
     void SamplesWork();
     void ExportWork();
     void CollectSamples(std::forward_list<std::pair<ISamplesProvider*, uint64_t>>& samplesProviders);
@@ -49,7 +50,6 @@ private:
     inline static std::string const SuccessfulExportsMetricName = "datadog.profiling.dotnet.operational.exports";
 
     std::chrono::seconds _uploadInterval;
-    bool _mustStop;
     IThreadsCpuManager* _pThreadsCpuManager;
     std::forward_list<std::pair<ISamplesProvider*, uint64_t>> _samplesProviders;
     std::forward_list<std::pair<ISamplesProvider*, uint64_t>> _batchedSamplesProviders;
