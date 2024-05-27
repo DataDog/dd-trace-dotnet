@@ -34,6 +34,7 @@
       cmd.component: process,
       cmd.environment_variables:
 PATH=testPath
+LD_PRELOAD=/project/shared/bin/monitoring-home/linux-arm64/Datadog.Linux.ApiWrapper.x64.so
 ,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
@@ -60,6 +61,7 @@ PATH=testPath
       cmd.component: process,
       cmd.environment_variables:
 PATH=testPath
+LD_PRELOAD=/project/shared/bin/monitoring-home/linux-arm64/Datadog.Linux.ApiWrapper.x64.so
 ,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
