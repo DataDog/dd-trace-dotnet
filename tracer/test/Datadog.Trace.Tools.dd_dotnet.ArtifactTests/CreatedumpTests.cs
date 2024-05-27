@@ -269,7 +269,7 @@ public class CreatedumpTests : ConsoleTestHelper
         using var helper = await StartConsoleWithArgs(
                                "crash-native",
                                true,
-                               [LdPreloadConfig, ..CrashReportConfig(reportFile)]);
+                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
 
