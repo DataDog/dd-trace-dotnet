@@ -153,7 +153,7 @@ namespace Datadog.Trace.Configuration
                                   .AsBoolResult()
                                   .OverrideWith(in otelTraceEnabled, defaultValue: true);
 
-            ExperimentalAppSecStandaloneEnabledInternal = config
+            ExperimentalAppsecStandaloneEnabledInternal = config
                           .WithKeys(ConfigurationKeys.ExperimentalAppsecStandaloneEnabled)
                           .AsBool(defaultValue: false);
 
@@ -452,7 +452,7 @@ namespace Datadog.Trace.Configuration
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
                                      .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan));
-            if (ExperimentalAppSecStandaloneEnabledInternal)
+            if (ExperimentalAppsecStandaloneEnabledInternal)
             {
                 StatsComputationEnabledInternal = false;
             }
@@ -574,10 +574,10 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ExperimentalAppsecStandaloneEnabled"/>
         [GeneratePublicApi(
-            PublicApiUsage.TracerSettings_ExperimentalAppSecStandaloneEnabled_Get,
-            PublicApiUsage.TracerSettings_ExperimentalAppSecStandaloneEnabled_Set)]
+            PublicApiUsage.TracerSettings_ExperimentalAppsecStandaloneEnabled_Get,
+            PublicApiUsage.TracerSettings_ExperimentalAppsecStandaloneEnabled_Set)]
         [ConfigKey(ConfigurationKeys.ExperimentalAppsecStandaloneEnabled)]
-        internal bool ExperimentalAppSecStandaloneEnabledInternal { get; private set; }
+        internal bool ExperimentalAppsecStandaloneEnabledInternal { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether profiling is enabled.

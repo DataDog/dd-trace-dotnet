@@ -95,7 +95,7 @@ namespace Datadog.Trace.Configuration
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
             _traceEnabled = settings.TraceEnabledInternal;
-            _experimentalAppsecStandaloneEnabled = settings.ExperimentalAppSecStandaloneEnabledInternal;
+            _experimentalAppsecStandaloneEnabled = settings.ExperimentalAppsecStandaloneEnabledInternal;
             ExporterInternal = new ImmutableExporterSettings(settings.ExporterInternal, true);
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
@@ -262,10 +262,10 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether Appsec standalone billing is enabled.
-        /// Default is <c>true</c>.
+        /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ExperimentalAppsecStandaloneEnabled"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_ExperimentalAppSecStandaloneEnabled_Get)]
+        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_ExperimentalAppsecStandaloneEnabled_Get)]
         internal bool ExperimentalAppsecStandaloneEnabledInternal => DynamicSettings.ExperimentalAppsecStandaloneEnabled ?? _experimentalAppsecStandaloneEnabled;
 
         /// <summary>

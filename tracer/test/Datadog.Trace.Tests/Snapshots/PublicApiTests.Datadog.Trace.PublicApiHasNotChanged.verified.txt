@@ -263,6 +263,7 @@ namespace Datadog.Trace.Configuration
         public bool AnalyticsEnabled { get; }
         public string? CustomSamplingRules { get; }
         public string? Environment { get; }
+        public bool ExperimentalAppsecStandaloneEnabled { get; }
         public Datadog.Trace.Configuration.ImmutableExporterSettings Exporter { get; }
         public double? GlobalSamplingRate { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> GlobalTags { get; }
@@ -334,6 +335,7 @@ namespace Datadog.Trace.Configuration
         public bool DiagnosticSourceEnabled { get; set; }
         public System.Collections.Generic.HashSet<string> DisabledIntegrationNames { get; set; }
         public string? Environment { get; set; }
+        public bool ExperimentalAppsecStandaloneEnabled { get; set; }
         public Datadog.Trace.Configuration.ExporterSettings Exporter { get; set; }
         public double? GlobalSamplingRate { get; set; }
         public System.Collections.Generic.IDictionary<string, string> GlobalTags { get; set; }

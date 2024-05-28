@@ -46,6 +46,7 @@ namespace Datadog.Trace.Configuration
 
             return
                 TraceEnabled == other.TraceEnabled
+             && ExperimentalAppsecStandaloneEnabled == other.ExperimentalAppsecStandaloneEnabled
              && RuntimeMetricsEnabled == other.RuntimeMetricsEnabled
              && DataStreamsMonitoringEnabled == other.DataStreamsMonitoringEnabled
              && Nullable.Equals(GlobalSamplingRate, other.GlobalSamplingRate)
@@ -80,6 +81,7 @@ namespace Datadog.Trace.Configuration
         {
             return HashCode.Combine(
                 TraceEnabled,
+                ExperimentalAppsecStandaloneEnabled,
                 RuntimeMetricsEnabled,
                 DataStreamsMonitoringEnabled,
                 GlobalSamplingRate,

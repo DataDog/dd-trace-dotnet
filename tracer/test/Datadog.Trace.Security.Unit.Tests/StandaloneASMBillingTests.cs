@@ -21,7 +21,7 @@ public class StandaloneASMBillingTests
             { ConfigurationKeys.ExperimentalAppsecStandaloneEnabled, true }
         });
         var tracerSettings = new TracerSettings(settings, NullConfigurationTelemetry.Instance);
-        Assert.True(tracerSettings.ExperimentalAppSecStandaloneEnabled);
+        Assert.True(tracerSettings.ExperimentalAppsecStandaloneEnabled);
     }
 
     [Fact]
