@@ -9,7 +9,7 @@ enum class DeploymentMode
     SingleStepInstrumentation
 };
 
-std::string to_string(DeploymentMode mode)
+inline std::string to_string(DeploymentMode mode)
 {
     switch (mode)
     {
