@@ -23,8 +23,8 @@
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.303.11 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.303.11" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.303.12 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.303.12" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
@@ -210,8 +210,8 @@
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
-    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.4.0 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="3.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.4.1 -->
+    <PackageReference Include="MSTest.TestAdapter" Version="3.4.1" />
 
     <!-- Integration: MySql.Data -->
     <!--    Assembly: MySql.Data -->
@@ -322,13 +322,13 @@
 
     <!-- Integration: xunit.execution.desktop -->
     <!--    Assembly: xunit.execution.desktop -->
-    <!-- Latest package https://www.nuget.org/packages/xunit/2.8.0 -->
-    <PackageReference Include="xunit" Version="2.8.0" />
+    <!-- Latest package https://www.nuget.org/packages/xunit/2.8.1 -->
+    <PackageReference Include="xunit" Version="2.8.1" />
 
     <!-- Integration: xunit.execution.dotnet -->
     <!--    Assembly: xunit.execution.dotnet -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.8.0 -->
-    <PackageReference Include="xunit.extensibility.execution" Version="2.8.0" />
+    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.8.1 -->
+    <PackageReference Include="xunit.extensibility.execution" Version="2.8.1" />
 
     <!-- Integration: Yarp.ReverseProxy -->
     <!--    Assembly: Yarp.ReverseProxy -->
