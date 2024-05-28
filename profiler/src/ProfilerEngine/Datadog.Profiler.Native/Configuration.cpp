@@ -655,7 +655,7 @@ EnablementStatus Configuration::ExtractEnablementStatus()
         }
         else
         {
-            return EnablementStatus::Default;
+            return EnablementStatus::NotSet;
         }
     }
     else

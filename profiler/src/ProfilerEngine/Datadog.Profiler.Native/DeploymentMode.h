@@ -8,3 +8,16 @@ enum class DeploymentMode
     Manual,
     SingleStepInstrumentation
 };
+
+std::string to_string(DeploymentMode mode)
+{
+    switch (mode)
+    {
+        case DeploymentMode::Manual:
+            return "Manual";
+        case DeploymentMode::SingleStepInstrumentation:
+            return "Single Step Instrumentation";
+    }
+
+    return "Unknown Mode";
+}

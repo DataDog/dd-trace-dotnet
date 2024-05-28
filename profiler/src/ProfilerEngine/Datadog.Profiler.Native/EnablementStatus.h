@@ -5,7 +5,7 @@
 
 enum class EnablementStatus
 {
-    Default,
+    NotSet,
     ManuallyEnabled,
     ManuallyDisabled,
     SsiEnabled

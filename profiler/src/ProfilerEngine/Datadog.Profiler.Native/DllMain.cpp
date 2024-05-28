@@ -12,7 +12,6 @@
 
 #include "dd_profiler_version.h"
 
-
 HINSTANCE DllHandle;
 
 const IID IID_IUnknown = {0x00000000,
@@ -58,19 +57,28 @@ bool IsProfilingEnabled(Configuration const& configuration)
     //  - supporting a scenario where CORECLR_PROFILER_XXX is set machine-wide and DD_PROFILING_ENABLED is set per service.
 
     auto enablementStatus = configuration.GetEnablementStatus();
-    bool isEnabled = false; // disabled by default
+    auto deploymentMode = configuration.GetDeploymentMode();
 
-    if (enablementStatus == EnablementStatus::Default)
+    Log::Info(".NET Profiler deployment mode: ", to_string(deploymentMode));
+
+
+    if (enablementStatus == EnablementStatus::NotSet || enablementStatus == EnablementStatus::SsiEnabled)
     {
-        Log::Info("No \"", EnvironmentVariables::ProfilerEnabled, "\" environment variable has been found.",
-                  " Using default (", isEnabled, ").");
+        auto isSsiDeployed = deploymentMode == DeploymentMode::SingleStepInstrumentation;
+        if (isSsiDeployed)
+        {
+            Log::Info(".NET Profiler is enabled using Single Step Instrumentation limited activation.");
+        }
+        else
+        {
+            assert(enablementStatus != EnablementStatus::SsiEnabled);
+            Log::Info(".NET Profiler environment variable '", EnvironmentVariables::ProfilerEnabled, "' was not set. The .NET profiler will be disabled.");
+        }
+        return isSsiDeployed;
     }
-    
-    isEnabled = enablementStatus == EnablementStatus::ManuallyEnabled;
-    shared::WSTRING isProfilingEnabledConfigStr = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
-    Log::Info("Value \"", isProfilingEnabledConfigStr, "\" for \"",
-              EnvironmentVariables::ProfilerEnabled, "\" environment variable.",
-              " Enable = ", std::boolalpha, isEnabled);
+
+    auto isEnabled = enablementStatus == EnablementStatus::ManuallyEnabled;
+    Log::Info(".NET Profiler is ", std::boolalpha, (isEnabled ? "enabled." : "disabled."));
 
     return isEnabled;
 }

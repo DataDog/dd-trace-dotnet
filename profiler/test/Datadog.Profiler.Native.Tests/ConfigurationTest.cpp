@@ -915,7 +915,7 @@ TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarDoesNotContainProfiler)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
     auto configuration = Configuration{};
-    auto expectedValue = EnablementStatus::Default;
+    auto expectedValue = EnablementStatus::NotSet;
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
 }
 
@@ -923,14 +923,14 @@ TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarIsEmpty)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr(""));
     auto configuration = Configuration{};
-    auto expectedValue = EnablementStatus::Default;
+    auto expectedValue = EnablementStatus::NotSet;
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
 }
 
 TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotSet)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::Default) << "Env var is not set. Profiler enablement should be the default one.";
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::NotSet) << "Env var is not set. Profiler enablement should be the default one.";
 }
 
 TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToTrue)
