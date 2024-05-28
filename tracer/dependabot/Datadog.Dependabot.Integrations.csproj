@@ -18,28 +18,28 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.304.3 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.304.3" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.304.5 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.304.5" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.303.9 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.303.9" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.303.12 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.303.12" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.301.86 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.301.86" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.301.88 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.301.88" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.301.41 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.301.41" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.301.43 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.301.43" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.301.6 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.301.6" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.301.8 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.301.8" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
@@ -63,8 +63,8 @@
 
     <!-- Integration: Google.Protobuf -->
     <!--    Assembly: Google.Protobuf -->
-    <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.26.1 -->
-    <PackageReference Include="Google.Protobuf" Version="3.26.1" />
+    <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.27.0 -->
+    <PackageReference Include="Google.Protobuf" Version="3.27.0" />
 
     <!-- Integration: GraphQL -->
     <!--    Assembly: GraphQL -->
@@ -85,8 +85,8 @@
     <!--    Assembly: Grpc.AspNetCore.Server -->
     <!-- Integration: Grpc.Net.Client -->
     <!--    Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.62.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.62.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.63.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.63.0" />
 
     <!-- Integration: HotChocolate.Execution -->
     <!--    Assembly: HotChocolate.Execution -->
@@ -210,8 +210,8 @@
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
-    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.3.1 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="3.3.1" />
+    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.4.1 -->
+    <PackageReference Include="MSTest.TestAdapter" Version="3.4.1" />
 
     <!-- Integration: MySql.Data -->
     <!--    Assembly: MySql.Data -->
@@ -322,13 +322,13 @@
 
     <!-- Integration: xunit.execution.desktop -->
     <!--    Assembly: xunit.execution.desktop -->
-    <!-- Latest package https://www.nuget.org/packages/xunit/2.8.0 -->
-    <PackageReference Include="xunit" Version="2.8.0" />
+    <!-- Latest package https://www.nuget.org/packages/xunit/2.8.1 -->
+    <PackageReference Include="xunit" Version="2.8.1" />
 
     <!-- Integration: xunit.execution.dotnet -->
     <!--    Assembly: xunit.execution.dotnet -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.8.0 -->
-    <PackageReference Include="xunit.extensibility.execution" Version="2.8.0" />
+    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.8.1 -->
+    <PackageReference Include="xunit.extensibility.execution" Version="2.8.1" />
 
     <!-- Integration: Yarp.ReverseProxy -->
     <!--    Assembly: Yarp.ReverseProxy -->
