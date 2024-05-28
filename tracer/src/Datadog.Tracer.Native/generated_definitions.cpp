@@ -1,7 +1,7 @@
 #include "generated_definitions.h"
 #include "corprof.h"
 #include "logger.h"
-#include "version.h"
+#include "../../../shared/src/native-src/version.h"
 #include "../Datadog.Trace/Generated/generated_calltargets_net461.h"
 #include "../Datadog.Trace/Generated/generated_callsites_net461.h"
 #include "../Datadog.Trace/Generated/generated_calltargets_net6_0.h"
