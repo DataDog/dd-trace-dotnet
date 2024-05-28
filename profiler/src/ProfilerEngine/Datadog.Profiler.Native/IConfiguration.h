@@ -8,6 +8,8 @@
 #include <vector>
 #include <cstdint>
 
+#include "DeploymentMode.h"
+#include "EnablementStatus.h"
 #include "TagsHelper.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
@@ -65,7 +67,7 @@ public:
     virtual bool IsCIVisibilityEnabled() const = 0;
     virtual std::uint64_t GetCIVisibilitySpanId() const = 0;
     virtual bool IsEtwEnabled() const = 0;
-    virtual bool IsSsiDeployed() const = 0;
-    virtual bool IsSsiActivated() const = 0;
     virtual bool IsEtwLoggingEnabled() const = 0;
+    virtual EnablementStatus GetEnablementStatus() const = 0;
+    virtual DeploymentMode GetDeploymentMode() const = 0;
 };

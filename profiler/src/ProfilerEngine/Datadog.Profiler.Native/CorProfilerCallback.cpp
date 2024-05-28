@@ -80,7 +80,8 @@ extern "C" __attribute__((visibility("default"))) const char* Profiler_Version =
 // Initialization
 CorProfilerCallback* CorProfilerCallback::_this = nullptr;
 
-CorProfilerCallback::CorProfilerCallback()
+CorProfilerCallback::CorProfilerCallback(IConfiguration* pConfiguration) :
+    _pConfiguration{pConfiguration}
 {
     // Keep track of the one and only ICorProfilerCallback implementation.
     // It will be used as root for other services
@@ -111,17 +112,17 @@ bool CorProfilerCallback::InitializeServices()
 
     _pAppDomainStore = std::make_unique<AppDomainStore>(_pCorProfilerInfo);
 
-    _pDebugInfoStore = std::make_unique<DebugInfoStore>(_pCorProfilerInfo, _pConfiguration.get());
+    _pDebugInfoStore = std::make_unique<DebugInfoStore>(_pCorProfilerInfo, _pConfiguration);
 
 #ifdef LINUX
     if (_pConfiguration->IsSystemCallsShieldEnabled())
     {
         // This service must be started before StackSamplerLoop-based profilers to help with non-restartable system calls (ex: socket operations)
-        _systemCallsShield = RegisterService<SystemCallsShield>(_pConfiguration.get());
+        _systemCallsShield = RegisterService<SystemCallsShield>(_pConfiguration);
     }
 #endif
 
-    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get());
+    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration, _pDebugInfoStore.get());
 
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
@@ -156,18 +157,18 @@ bool CorProfilerCallback::InitializeServices()
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
             pRuntimeIdStore,
-            _pConfiguration.get(),
+            _pConfiguration,
             MemoryResourceManager::GetDefault());
     }
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get(), MemoryResourceManager::GetDefault());
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration, MemoryResourceManager::GetDefault());
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get(), MemoryResourceManager::GetDefault());
+        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration, MemoryResourceManager::GetDefault());
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -177,7 +178,7 @@ bool CorProfilerCallback::InitializeServices()
             _pCorProfilerInfo,
             _pManagedThreadList,
             _pFrameStore.get(),
-            _pConfiguration.get(),
+            _pConfiguration,
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
             pRuntimeIdStore,
@@ -202,7 +203,7 @@ bool CorProfilerCallback::InitializeServices()
                     _pThreadsCpuManager,
                     _pAppDomainStore.get(),
                     pRuntimeIdStore,
-                    _pConfiguration.get(),
+                    _pConfiguration,
                     _metricsRegistry);
 
                 _pAllocationsProvider = RegisterService<AllocationsProvider>(
@@ -213,7 +214,7 @@ bool CorProfilerCallback::InitializeServices()
                     _pThreadsCpuManager,
                     _pAppDomainStore.get(),
                     pRuntimeIdStore,
-                    _pConfiguration.get(),
+                    _pConfiguration,
                     _pLiveObjectsProvider,
                     _metricsRegistry,
                     CallstackProvider(_memoryResourceManager.GetDefault()),
@@ -242,7 +243,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get(),
+                _pConfiguration,
                 nullptr, // no listener
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
@@ -260,7 +261,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get(),
+                _pConfiguration,
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
                 MemoryResourceManager::GetDefault()
@@ -275,7 +276,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get(),
+                _pConfiguration,
                 MemoryResourceManager::GetDefault()
                 );
             _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
@@ -284,7 +285,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get(),
+                _pConfiguration,
                 _metricsRegistry,
                 MemoryResourceManager::GetDefault()
                 );
@@ -326,7 +327,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get(),
+                _pConfiguration,
                 nullptr, // no listener
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
@@ -343,7 +344,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get(),
+                _pConfiguration,
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
                 MemoryResourceManager::GetDefault());
@@ -357,7 +358,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get(),
+                _pConfiguration,
                 MemoryResourceManager::GetDefault());
 
             _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
@@ -366,7 +367,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
                 pRuntimeIdStore,
-                _pConfiguration.get(),
+                _pConfiguration,
                 _metricsRegistry,
                 MemoryResourceManager::GetDefault());
         }
@@ -382,7 +383,7 @@ bool CorProfilerCallback::InitializeServices()
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider,
-            _pConfiguration.get());
+            _pConfiguration);
 
         if (_pGarbageCollectionProvider != nullptr)
         {
@@ -401,7 +402,7 @@ bool CorProfilerCallback::InitializeServices()
 
     // compute enabled profilers based on configuration and receivable CLR events
     _pEnabledProfilers = std::make_unique<EnabledProfilers>(
-        _pConfiguration.get(),
+        _pConfiguration,
         _pCorProfilerInfoEvents != nullptr    // .NET 5+ CLR events-based profilers
             || _pEtwEventsManager != nullptr, // .NET Framework CLR events-based profilers
         _pLiveObjectsProvider != nullptr);
@@ -428,7 +429,7 @@ bool CorProfilerCallback::InitializeServices()
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
-        _pConfiguration.get(),
+        _pConfiguration,
         _metricsSender,
         _pClrLifetime.get(),
         _pThreadsCpuManager,
@@ -439,13 +440,13 @@ bool CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
 
-    _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
+    _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration);
 
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
     _pExporter = std::make_unique<ProfileExporter>(
         sampleTypeDefinitions,
-        _pConfiguration.get(),
+        _pConfiguration,
         _pApplicationStore,
         _pRuntimeInfo.get(),
         _pEnabledProfilers.get(),
@@ -473,7 +474,7 @@ bool CorProfilerCallback::InitializeServices()
     }
 
     _pSamplesCollector = RegisterService<SamplesCollector>(
-        _pConfiguration.get(),
+        _pConfiguration,
         _pThreadsCpuManager,
         _pExporter.get(),
         _metricsSender.get());
@@ -989,7 +990,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     ConfigureDebugLog();
 
-    _pConfiguration = std::make_unique<Configuration>();
     _pMetadataProvider = std::make_unique<MetadataProvider>();
     _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
