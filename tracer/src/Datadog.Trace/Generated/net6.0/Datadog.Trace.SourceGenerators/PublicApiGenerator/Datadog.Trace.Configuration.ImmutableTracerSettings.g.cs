@@ -73,7 +73,7 @@ partial record ImmutableTracerSettings
 
         /// <summary>
         /// Gets a value indicating whether Appsec standalone billing is enabled.
-        /// Default is <c>true</c>.
+        /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ExperimentalAppsecStandaloneEnabled"/>
     [Datadog.Trace.SourceGenerators.PublicApi]
