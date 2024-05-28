@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "Configuration.h"
+
 #include "unknwn.h"
 #include <atomic>
 #include <mutex>
@@ -10,6 +12,7 @@
 class CorProfilerCallbackFactory : public IClassFactory
 {
 public:
+    CorProfilerCallbackFactory(Configuration configuration);
     virtual ~CorProfilerCallbackFactory();
 
     // use STDMETHODCALLTYPE macro to match the CLR declaration.
@@ -23,4 +26,5 @@ public:
 private:
     std::atomic<ULONG> _refCount{0};
     static std::mutex _lock;
+    Configuration _configuration;
 };

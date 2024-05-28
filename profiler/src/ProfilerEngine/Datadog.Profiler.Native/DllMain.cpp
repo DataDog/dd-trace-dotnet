@@ -4,6 +4,7 @@
 #include <iostream>
 #include <unknwn.h>
 
+#include "Configuration.h"
 #include "CorProfilerCallback.h"
 #include "CorProfilerCallbackFactory.h"
 #include "EnvironmentVariables.h"
@@ -46,7 +47,7 @@ extern "C" BOOL STDMETHODCALLTYPE DllMain(HINSTANCE hInstDll, DWORD reason, PVOI
     return TRUE;
 }
 
-bool IsProfilingEnabled()
+bool IsProfilingEnabled(Configuration const& configuration)
 {
     // If we are in this function, then the user has already configured profiling by setting CORECLR_ENABLE_PROFILING to 1
     // and by correctly pointing the CORECLR_PROFILER_XXX variables.
@@ -55,29 +56,21 @@ bool IsProfilingEnabled()
     //  - supporting scenarios where CORECLR_PROFILER_XXX point to the shared native loader, where some of the suit's products
     //    are enabled, but profiling is explicitly disabled;
     //  - supporting a scenario where CORECLR_PROFILER_XXX is set machine-wide and DD_PROFILING_ENABLED is set per service.
-    shared::WSTRING isProfilingEnabledConfigStr = shared::GetEnvironmentValue(EnvironmentVariables::ProfilingEnabled);
-    bool isEnabled = false;  // disabled by default
 
-    if (isProfilingEnabledConfigStr.empty())
+    auto enablementStatus = configuration.GetEnablementStatus();
+    bool isEnabled = false; // disabled by default
+
+    if (enablementStatus == EnablementStatus::Default)
     {
-        Log::Info("No \"", EnvironmentVariables::ProfilingEnabled, "\" environment variable has been found.",
+        Log::Info("No \"", EnvironmentVariables::ProfilerEnabled, "\" environment variable has been found.",
                   " Using default (", isEnabled, ").");
     }
-    else
-    {
-        if (!shared::TryParseBooleanEnvironmentValue(isProfilingEnabledConfigStr, isEnabled))
-        {
-            Log::Info("Invalid value \"", isProfilingEnabledConfigStr, "\" for \"",
-                      EnvironmentVariables::ProfilingEnabled, "\" environment variable.",
-                      " Using default (", isEnabled, ").");
-        }
-        else
-        {
-            Log::Info("Value \"", isProfilingEnabledConfigStr, "\" for \"",
-                      EnvironmentVariables::ProfilingEnabled, "\" environment variable.",
-                      " Enable = ", isEnabled);
-        }
-    }
+    
+    isEnabled = enablementStatus == EnablementStatus::ManuallyEnabled;
+    shared::WSTRING isProfilingEnabledConfigStr = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
+    Log::Info("Value \"", isProfilingEnabledConfigStr, "\" for \"",
+              EnvironmentVariables::ProfilerEnabled, "\" environment variable.",
+              " Enable = ", std::boolalpha, isEnabled);
 
     return isEnabled;
 }
@@ -107,7 +100,9 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
         return CLASS_E_CLASSNOTAVAILABLE;
     }
 
-    if (!IsProfilingEnabled())
+    Configuration configuration;
+
+    if (!IsProfilingEnabled(configuration))
     {
         Log::Info("DllGetClassObject(): Profiling is not enabled.");
 
@@ -119,7 +114,7 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
 #endif
 
-    CorProfilerCallbackFactory* factory = new CorProfilerCallbackFactory();
+    CorProfilerCallbackFactory* factory = new CorProfilerCallbackFactory(std::move(configuration));
     if (factory == nullptr)
     {
         Log::Error("DllGetClassObject(): Fail to create CorProfilerCallbackFactory.");
