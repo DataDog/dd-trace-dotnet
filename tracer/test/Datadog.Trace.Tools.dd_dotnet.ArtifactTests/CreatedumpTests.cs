@@ -69,7 +69,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig, ..CreatedumpConfig, ("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", passthrough), CrashReportConfig(reportFile)];
+        (string, string)[] args = [LdPreloadConfig, .. CreatedumpConfig, ("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", passthrough), CrashReportConfig(reportFile)];
 
         using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
 
@@ -105,7 +105,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         if (enableCrashDumps)
         {
-            args = [..args, ..CreatedumpConfig];
+            args = [.. args, .. CreatedumpConfig];
         }
 
         using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
@@ -144,10 +144,10 @@ public class CreatedumpTests : ConsoleTestHelper
 
         if (crashdumpEnabled)
         {
-            args = [..args, ..CreatedumpConfig];
+            args = [.. args, .. CreatedumpConfig];
         }
 
-        args = [..args, ("DD_INSTRUMENTATION_TELEMETRY_ENABLED", telemetryEnabled ? "1" : "0")];
+        args = [.. args, ("DD_INSTRUMENTATION_TELEMETRY_ENABLED", telemetryEnabled ? "1" : "0")];
 
         using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
 
@@ -264,6 +264,11 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task NativeCrash()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+        if (Utils.IsAlpine())
+        {
+            throw new SkipException("Signal unwinding does not work correctly on Alpine");
+        }
 
         using var reportFile = new TemporaryFile();
 
