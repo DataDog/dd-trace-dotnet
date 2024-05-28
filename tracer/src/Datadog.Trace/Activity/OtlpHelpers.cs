@@ -501,26 +501,32 @@ namespace Datadog.Trace.Activity
                     continue;
                 }
 
+                string? errorType = null;
+                string? errorMsg = null;
+                string? errorStack = null;
+
                 foreach (var tag in duckEvent.Tags)
                 {
                     switch (tag.Key)
                     {
                         case OpenTelemetryErrorType:
-                            SetTagObject(span, Tags.ErrorType, tag.Value);
+                            errorType = tag.Value?.ToString();
                             break;
 
                         case OpenTelemetryErrorMsg:
-                            SetTagObject(span, Tags.ErrorMsg, tag.Value);
+                            errorMsg = tag.Value?.ToString();
                             break;
 
                         case OpenTelemetryErrorStack:
-                            SetTagObject(span, Tags.ErrorStack, tag.Value);
+                            errorStack = tag.Value?.ToString();
                             break;
                     }
                 }
 
-                // we've found the exception attribute so we should be done here
-                return;
+                // Ensure that all of the error tracking tags are updated (even null values) from the same exception attribute
+                SetTagObject(span, Tags.ErrorType, errorType);
+                SetTagObject(span, Tags.ErrorMsg, errorMsg);
+                SetTagObject(span, Tags.ErrorStack, errorStack);
             }
         }
 
