@@ -103,19 +103,19 @@ partial class TracerSettings
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ExperimentalAppsecStandaloneEnabled"/>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public bool ExperimentalAppSecStandaloneEnabled
+    public bool ExperimentalAppsecStandaloneEnabled
     {
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)132);
-            return ExperimentalAppSecStandaloneEnabledInternal;
+            return ExperimentalAppsecStandaloneEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)133);
-            ExperimentalAppSecStandaloneEnabledInternal = value;
+            ExperimentalAppsecStandaloneEnabledInternal = value;
         }
     }
 

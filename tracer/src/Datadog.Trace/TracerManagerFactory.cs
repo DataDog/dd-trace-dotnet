@@ -323,10 +323,6 @@ namespace Datadog.Trace
                     sampler.RegisterRule(new GlobalSamplingRateRule((float)globalSamplingRate));
                 }
             }
-            else
-            {
-                sampler.RegisterRule(new GlobalSamplingRule(1.0f)); // Keep all APM traces by default
-            }
 
             // AgentSamplingRule handles all sampling rates received from the agent as a single "rule".
             // This rule is always present, even if the agent has not yet provided any sampling rates.
