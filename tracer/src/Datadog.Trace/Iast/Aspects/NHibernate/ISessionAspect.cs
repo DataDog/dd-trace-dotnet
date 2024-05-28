@@ -13,7 +13,7 @@ using static Datadog.Trace.Configuration.ConfigurationKeys;
 namespace Datadog.Trace.Iast.Aspects.NHibernate;
 
 /// <summary> NHibernate class aspect </summary>
-[AspectClass("NHibernate", AspectType.Sink, VulnerabilityType.SqlInjection)]
+[AspectClass("NHibernate", AspectType.RaspIastSink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class ISessionAspect

@@ -13,7 +13,7 @@ namespace Datadog.Trace.Iast.Aspects;
 #nullable enable
 
 /// <summary> DbCommandAspect class aspect </summary>
-[AspectClass("System.Data,System.Data.Common")]
+[AspectClass("System.Data,System.Data.Common", AspectType.RaspIastSink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class DbCommandAspect
