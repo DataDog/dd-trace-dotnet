@@ -7,9 +7,11 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -22,6 +24,8 @@ namespace Datadog.Trace.Activity
         internal const string OpenTelemetryErrorType = "exception.type";
         internal const string OpenTelemetryErrorMsg = "exception.message";
         internal const string OpenTelemetryErrorStack = "exception.stacktrace";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpHelpers));
 
         internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span)
             where TInner : IActivity
@@ -37,7 +41,6 @@ namespace Datadog.Trace.Activity
             var w3cActivity = activity as IW3CActivity;
             var activity5 = activity as IActivity5;
             var activity6 = activity as IActivity6;
-
             span.ResourceName = null; // Reset the resource name, it will be repopulated via the Datadog trace agent logic
             span.OperationName = null; // Reset the operation name, it will be repopulated
 
@@ -200,6 +203,34 @@ namespace Datadog.Trace.Activity
             {
                 span.Type = activity5 is null ? SpanTypes.Custom : AgentSpanKind2Type(activity5.Kind, span);
             }
+
+            // extract any ActivityLinks
+            ExtractActivityLinks<TInner>(span, activity5);
+        }
+
+        private static void ExtractActivityLinks<TInner>(Span span, IActivity5? activity5)
+            where TInner : IActivity
+        {
+            if (activity5 is null)
+            {
+                return;
+            }
+
+            var links = new List<IActivityLink>();
+            foreach (var link in (activity5.Links))
+            {
+                var duckLink = link.DuckCast<IActivityLink>();
+                links.Add(duckLink!);
+            }
+
+            if (links.Count <= 0)
+            {
+                return;
+            }
+
+            var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new ActivityLinkConverter() }, Formatting = Formatting.None };
+            var jsonArray = JsonConvert.SerializeObject(links, settings);
+            span.SetTag("_dd.span_links", jsonArray);
         }
 
         internal static string GetSpanKind(ActivityKind activityKind) =>
@@ -212,7 +243,7 @@ namespace Datadog.Trace.Activity
                 _ => SpanKinds.Internal,
             };
 
-        internal static void SetTagObject(Span span, string key, object? value)
+        internal static void SetTagObject(Span span, string key, object? value, bool allowUnrolling = true)
         {
             if (value is null)
             {
@@ -222,7 +253,7 @@ namespace Datadog.Trace.Activity
 
             switch (value)
             {
-                case char c: // TODO: Can't get here from OTEL API, test with Activity API
+                case char c:
                     AgentSetOtlpTag(span, key, c.ToString());
                     break;
                 case string s:
@@ -231,38 +262,59 @@ namespace Datadog.Trace.Activity
                 case bool b:
                     AgentSetOtlpTag(span, key, b ? "true" : "false");
                     break;
-                case byte b: // TODO: Can't get here from OTEL API, test with Activity API
+                case byte b:
                     span.SetMetric(key, b);
                     break;
-                case sbyte sb: // TODO: Can't get here from OTEL API, test with Activity API
+                case sbyte sb:
                     span.SetMetric(key, sb);
                     break;
-                case short sh: // TODO: Can't get here from OTEL API, test with Activity API
+                case short sh:
                     span.SetMetric(key, sh);
                     break;
-                case ushort us: // TODO: Can't get here from OTEL API, test with Activity API
+                case ushort us:
                     span.SetMetric(key, us);
                     break;
-                case int i: // TODO: Can't get here from OTEL API, test with Activity API
+                case int i:
                     span.SetMetric(key, i);
                     break;
-                case uint ui: // TODO: Can't get here from OTEL API, test with Activity API
+                case uint ui:
                     span.SetMetric(key, ui);
                     break;
-                case long l: // TODO: Can't get here from OTEL API, test with Activity API
+                case long l:
                     span.SetMetric(key, l);
                     break;
-                case ulong ul: // TODO: Can't get here from OTEL API, test with Activity API
+                case ulong ul:
                     span.SetMetric(key, ul);
                     break;
-                case float f: // TODO: Can't get here from OTEL API, test with Activity API
+                case float f:
                     span.SetMetric(key, f);
                     break;
                 case double d:
                     span.SetMetric(key, d);
                     break;
                 case IEnumerable enumerable:
-                    AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(enumerable));
+                    if (allowUnrolling)
+                    {
+                        var index = 0;
+                        foreach (var element in (enumerable))
+                        {
+                            // we are only supporting a single level of unrolling
+                            SetTagObject(span, $"{key}.{index}", element, allowUnrolling: false);
+                            index++;
+                        }
+
+                        if (index == 0)
+                        {
+                            // indicates that it was an empty array, we need to add the tag
+                            AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(value));
+                        }
+                    }
+                    else
+                    {
+                        // we've already unrolled once, don't do it again for IEnumerable values
+                        AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(value));
+                    }
+
                     break;
                 default:
                     AgentSetOtlpTag(span, key, value.ToString());
