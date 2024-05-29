@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <string>
 
+#include "DeploymentMode.h"
+
 class IExporter;
 
 // TODO: move these enums to a separate file
@@ -37,13 +39,6 @@ enum SkipProfileHeuristicType
     ShortLived   = 0x1,
     NoSpan       = 0x2,
     // TODO: add new heuristics here
-};
-
-enum class DeploymentMode
-{
-    Unknown = 0,
-    Manual = 1,
-    SingleStepInstrumentation = 2
 };
 
 

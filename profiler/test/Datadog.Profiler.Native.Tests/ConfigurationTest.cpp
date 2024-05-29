@@ -933,6 +933,13 @@ TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotSet)
     ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::NotSet) << "Env var is not set. Profiler enablement should be the default one.";
 }
 
+TEST(ConfigurationTest, CheckProfilerIsDisabledIfEnvVarIsEmpty)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("  "));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::NotSet);
+}
+
 TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToTrue)
 {
     EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("1 ")); // add a space on purpose to ensure that it's correctly parsed
@@ -966,33 +973,22 @@ TEST(ConfigurationTest, CheckEtwLoggingIsEnabledIfEnvVarSetToTrue)
     ASSERT_THAT(configuration.IsEtwLoggingEnabled(), expectedValue);
 }
 
-TEST(ConfigurationTest, CheckProfilerIsDisabledByDefault)
+TEST(ConfigurationTest, CheckLongLivedThresholdWhenEnvVarNotSet)
 {
     auto configuration = Configuration{};
-    auto expectedValue = false;
-    ASSERT_THAT(configuration.IsProfilerEnabled(), expectedValue);
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 30'000ms);
 }
 
-TEST(ConfigurationTest, CheckProfilerIsDisabledIfEnvVarIsEmpty)
+TEST(ConfigurationTest, CheckLongLivedThresholdWhenEnvVarNotParsable)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr(""));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("not_an_int"));
     auto configuration = Configuration{};
-    auto expectedValue = false;
-    ASSERT_THAT(configuration.IsProfilerEnabled(), expectedValue);
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 30'000ms);
 }
 
-TEST(ConfigurationTest, CheckProfilerIsDisabledIfEnvVarIsNotTrue)
+TEST(ConfigurationTest, CheckLongLivedThresholdWhenEnvVarIsCorrectlySet)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("42001"));
     auto configuration = Configuration{};
-    auto expectedValue = false;
-    ASSERT_THAT(configuration.IsProfilerEnabled(), expectedValue);
-}
-
-TEST(ConfigurationTest, CheckProfilerIsEnabledIfEnvVarIsTrue)
-{
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("1"));
-    auto configuration = Configuration{};
-    auto expectedValue = true;
-    ASSERT_THAT(configuration.IsProfilerEnabled(), expectedValue);
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 42'001ms);
 }

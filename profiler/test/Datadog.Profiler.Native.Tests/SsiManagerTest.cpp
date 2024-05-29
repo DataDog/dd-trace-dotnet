@@ -4,25 +4,33 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "Configuration.h"
+#include "EnvironmentHelper.h"
+#include "EnvironmentVariables.h"
 #include "IConfiguration.h"
 #include "IProfilerTelemetry.h"
 #include "ProfilerMockedInterface.h"
 
 #include "SsiManager.h"
 
+#include <chrono>
+
 using ::testing::Return;
+using namespace std::chrono_literals;
 
 TEST(SsiManagerTest, Should_NotSendProfile_When_ShortLived)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(200'000ms)); // simulate shortlive
+    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::ManuallyDisabled));
+    EXPECT_CALL(mockConfiguration, GetUploadInterval()).WillRepeatedly(Return(10s));
 
     ProfilerTelemetryForTest telemetry;
     SsiLifetimeForTest lifetime;
 
     SsiManager manager(configuration.get(), &telemetry, &lifetime);
     manager.ProcessStart();
-    manager.SetLifetimeDuration(-1);  // short lived
     manager.OnSpanCreated();
     manager.ProcessEnd();
 
@@ -32,13 +40,14 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_ShortLived)
 TEST(SsiManagerTest, Should_NotSendProfile_When_NoSpan)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(0ms));
+    EXPECT_CALL(mockConfiguration, GetUploadInterval()).WillRepeatedly(Return(10s));
 
     ProfilerTelemetryForTest telemetry;
     SsiLifetimeForTest lifetime;
 
     SsiManager manager(configuration.get(), &telemetry, &lifetime);
-    manager.SetLifetimeDuration(1);  // long lived
     // but no span created
     manager.ProcessStart();
     manager.ProcessEnd();
@@ -49,13 +58,13 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_NoSpan)
 TEST(SsiManagerTest, Should_StartAsSSI_When_DeployedAsSSI)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(0ms)); // simulate long lived
 
     ProfilerTelemetryForTest telemetry;
     SsiLifetimeForTest lifetime;
 
     SsiManager manager(configuration.get(), &telemetry, &lifetime);
-    manager.SetLifetimeDuration(1);  // long lived
     manager.ProcessStart();
 
     ASSERT_EQ(telemetry.GetDeployment(), DeploymentMode::SingleStepInstrumentation);
@@ -64,13 +73,13 @@ TEST(SsiManagerTest, Should_StartAsSSI_When_DeployedAsSSI)
 TEST(SsiManagerTest, Should_StartAsManual_When_NotDeployedAsSSI)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(0ms)); // simulate long lived
 
     ProfilerTelemetryForTest telemetry;
     SsiLifetimeForTest lifetime;
 
     SsiManager manager(configuration.get(), &telemetry, &lifetime);
-    manager.SetLifetimeDuration(1);  // long lived
     manager.ProcessStart();
 
     ASSERT_EQ(telemetry.GetDeployment(), DeploymentMode::Manual);
@@ -79,7 +88,8 @@ TEST(SsiManagerTest, Should_StartAsManual_When_NotDeployedAsSSI)
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_NotDeployedAsSSI)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
+    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::ManuallyDisabled));
 
     ProfilerTelemetryForTest telemetry;
     SsiLifetimeForTest lifetime;
@@ -91,55 +101,53 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_NotDeployedAsSSI)
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSI)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
+    auto configuration = Configuration{};
 
     ProfilerTelemetryForTest telemetry;
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry, &lifetime);
+    SsiManager manager(&configuration, &telemetry, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerActivated(), false);
 }
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndDisabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
-    EXPECT_CALL(mockConfiguration, IsProfilerEnabled()).WillRepeatedly(Return(false));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("0"));
+    auto configuration = Configuration{};
 
     ProfilerTelemetryForTest telemetry;
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry, &lifetime);
+    SsiManager manager(&configuration, &telemetry, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerActivated(), false);
 }
 
 TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndEnabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
-    EXPECT_CALL(mockConfiguration, IsProfilerEnabled()).WillRepeatedly(Return(true));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("profiler"));
+    auto configuration = Configuration{};
 
     ProfilerTelemetryForTest telemetry;
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry, &lifetime);
+    SsiManager manager(&configuration, &telemetry, &lifetime);
 
-    ASSERT_EQ(manager.IsProfilerActivated(), true);
+    ASSERT_EQ(manager.IsProfilerEnabled(), true);
 }
 
 TEST(SsiManagerTest, Should_ProfilerBeActivated_When_NotDeployedAsSSIAndEnabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(false));
-    EXPECT_CALL(mockConfiguration, IsProfilerEnabled()).WillRepeatedly(Return(true));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("1"));
+    auto configuration = Configuration{};
 
     ProfilerTelemetryForTest telemetry;
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &telemetry, &lifetime);
+    SsiManager manager(&configuration, &telemetry, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerActivated(), true);
 }
@@ -147,28 +155,31 @@ TEST(SsiManagerTest, Should_ProfilerBeActivated_When_NotDeployedAsSSIAndEnabled)
 TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndSpanAndLongLived)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
+    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::SsiEnabled));
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(0ms));
 
     ProfilerTelemetryForTest telemetry;
     SsiLifetimeForTest lifetime;
 
     SsiManager manager(configuration.get(), &telemetry, &lifetime);
     manager.OnSpanCreated();
-    manager.SetLifetimeDuration(1);  // long lived
 
     ASSERT_EQ(manager.IsProfilerActivated(), true);
+    ASSERT_EQ(manager.IsProfilerEnabled(), true);
 }
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndSpanOnly)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
+    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::NotSet));
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(200'000ms));
 
     ProfilerTelemetryForTest telemetry;
     SsiLifetimeForTest lifetime;
 
     SsiManager manager(configuration.get(), &telemetry, &lifetime);
-    manager.SetLifetimeDuration(-1);  // short lived
     manager.ProcessStart();
     manager.OnSpanCreated();
 
@@ -178,13 +189,15 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndSpanOnly
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndLongLivedOnly)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, IsSsiDeployed()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
+    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::NotSet));
+    // long lived
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(0ms));
 
     ProfilerTelemetryForTest telemetry;
     SsiLifetimeForTest lifetime;
 
     SsiManager manager(configuration.get(), &telemetry, &lifetime);
-    manager.SetLifetimeDuration(1);  // long lived
 
     ASSERT_EQ(manager.IsProfilerActivated(), false);
 }

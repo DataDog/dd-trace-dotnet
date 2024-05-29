@@ -21,12 +21,9 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckProcessStartWhenSsiDeployment(string appName, string framework, string appAssembly)
+        public void CheckManuallyDeployedAndProfilingEnvVarNotSet(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
-
-            // deployed with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -37,16 +34,15 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             var lines = File.ReadAllLines(logFile);
 
-            lines.Should().ContainMatch("*ProcessStart(ssi)*");
-            lines.Should().ContainMatch("*ProcessEnd(ssi,*");
+            lines.Should().ContainMatch("*.NET Profiler deployment mode: Manual*");
+            lines.Should().NotContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
+            lines.Should().ContainMatch("*.NET Profiler environment variable 'DD_PROFILING_ENABLED' was not set. The .NET profiler will be disabled.*");
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckProcessStartWhenManualDeployment(string appName, string framework, string appAssembly)
+        public void CheckManuallyDeployedAndProfilingEnvVarSetToTrue(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
-
-            // not deployed with SSI because the env var is not set
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -57,19 +53,19 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             var lines = File.ReadAllLines(logFile);
 
+            lines.Should().ContainMatch("*.NET Profiler deployment mode: Manual*");
+            lines.Should().ContainMatch("*.NET Profiler is enabled.*");
+            lines.Should().NotContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
             lines.Should().ContainMatch("*ProcessStart(manual)*");
-            lines.Should().ContainMatch("*ProcessEnd(manual,*");
+            lines.Should().ContainMatch("*ProcessEnd(manual*");
+            lines.Should().NotContainMatch("*Process*(ssi*");
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckSkipWhenNoSpan(string appName, string framework, string appAssembly)
+        public void CheckManuallyDeployedAndProfilingEnvVarSetToFalse(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
-
-            // deployed with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
-
-            // no span are created and should be short lived too
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -80,8 +76,200 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             var lines = File.ReadAllLines(logFile);
 
+            lines.Should().ContainMatch("*.NET Profiler deployment mode: Manual*");
+            lines.Should().NotContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
+            lines.Should().ContainMatch("*.NET Profiler is disabled.*");
+            lines.Should().NotContainMatch("*ProcessStart(manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+            lines.Should().NotContainMatch("*Process*(ssi*");
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckSsiDeployedAndProfilingenvVarSetToTrue(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            var lines = File.ReadAllLines(logFile);
+
+            lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
+            lines.Should().ContainMatch("*.NET Profiler is enabled.*");
+            lines.Should().NotContainMatch("*.NET Profiler is enabled using Single Step Instrumentation limited activation.*");
             lines.Should().ContainMatch("*ProcessStart(ssi)*");
-            lines.Should().ContainMatch("*ProcessEnd(ssi,*ShortLived | NoSpan*");
+            lines.Should().ContainMatch("*ProcessEnd(ssi*");
+            lines.Should().NotContainMatch("*ProcessStart(manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckSsiDeployedAndProfilingEnvVarSetToFalse(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            var lines = File.ReadAllLines(logFile);
+
+            lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
+            lines.Should().ContainMatch("*.NET Profiler is disabled.*");
+            lines.Should().ContainMatch("*DllGetClassObject(): Profiling is not enabled.*");
+            lines.Should().NotContainMatch("*ProcessStart(manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+            lines.Should().NotContainMatch("*ProcessStart(ssi)*");
+            lines.Should().NotContainMatch("*ProcessEnd(sii*");
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckSsiDeployedAndProfilingNotSsiEnabled(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            var lines = File.ReadAllLines(logFile);
+
+            lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
+            lines.Should().ContainMatch("*.NET Profiler is enabled using Single Step Instrumentation limited activation.*");
+            // check it's telemetry only
+            // no service started ?
+            lines.Should().ContainMatch("*ProcessStart(ssi)*");
+            lines.Should().ContainMatch("*ProcessEnd(ssi*");
+            lines.Should().NotContainMatch("*ProcessStart(manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckSsiDeployedAndProfilingSsiEnabled_ShortLivedAndNoSpan(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
+            // No need to tweak the SsiShortLivedThreshold env variable to simulate a shortlived app.
+            // This app runs for ~10s and the threshold is 30s.
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            var lines = File.ReadAllLines(logFile);
+
+            lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
+            lines.Should().ContainMatch("*.NET Profiler is enabled using Single Step Instrumentation limited activation.*");
+            lines.Should().ContainMatch("*ProcessStart(ssi)*");
+            lines.Should().ContainMatch("*ProcessEnd(ssi,*, ShortLived | NoSpan*");
+            lines.Should().NotContainMatch("*ProcessStart(manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckSsiDeployedAndProfilingSsiEnabled_NoSpan(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
+
+            // simulate long lived
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "0");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            var lines = File.ReadAllLines(logFile);
+
+            lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
+            lines.Should().ContainMatch("*.NET Profiler is enabled using Single Step Instrumentation limited activation.*");
+            lines.Should().ContainMatch("*ProcessStart(ssi)*");
+            lines.Should().ContainMatch("*ProcessEnd(ssi,*, NoSpan)*");
+            lines.Should().NotContainMatch("*ProcessStart(manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+        }
+
+        [TestAppFact("Samples.BuggyBits")]
+        public void CheckSsiDeployedAndProfilingSsiEnabled_ShortLived(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
+            // short lived with span
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            var lines = File.ReadAllLines(logFile);
+
+            lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
+            lines.Should().ContainMatch("*.NET Profiler is enabled using Single Step Instrumentation limited activation.*");
+            lines.Should().ContainMatch("*ProcessStart(ssi)*");
+            lines.Should().ContainMatch("*ProcessEnd(ssi,*, ShortLived)*");
+            lines.Should().NotContainMatch("*ProcessStart(manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+        }
+
+        [TestAppFact("Samples.BuggyBits")]
+        public void CheckSsiDeployedAndProfilingSsiEnabled_AllTriggered(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
+            // simulate long lived
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "0");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            var lines = File.ReadAllLines(logFile);
+
+            lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
+            lines.Should().ContainMatch("*.NET Profiler is enabled using Single Step Instrumentation limited activation.*");
+            lines.Should().ContainMatch("*ProcessStart(ssi)*");
+            lines.Should().ContainMatch("*ProcessEnd(ssi,*, AllTriggered)*");
+            lines.Should().NotContainMatch("*ProcessStart(manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(manual*");
         }
     }
 }

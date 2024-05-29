@@ -27,7 +27,20 @@ namespace Datadog.Trace.ContinuousProfiler
                 (fd.OSPlatform == OSPlatformName.Windows && (fd.ProcessArchitecture == ProcessArchitecture.X64 || fd.ProcessArchitecture == ProcessArchitecture.X86)) ||
                 (fd.OSPlatform == OSPlatformName.Linux && fd.ProcessArchitecture == ProcessArchitecture.X64);
 
-            _isProfilingEnabled = (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled)?.ToBoolean() ?? false) && isSupported;
+            _isProfilingEnabled = isSupported;
+            if (isSupported)
+            {
+                var manualDeployement = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled);
+
+                if (manualDeployement == null)
+                {
+                    _isProfilingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed)?.Contains("profiler") ?? false;
+                }
+                else
+                {
+                    _isProfilingEnabled = manualDeployement.ToBoolean() ?? false;
+                }
+            }
 
             Log.Information("Continuous Profiler is {IsEnabled}.", _isProfilingEnabled ? "enabled" : "disabled");
             _lockObj = new();

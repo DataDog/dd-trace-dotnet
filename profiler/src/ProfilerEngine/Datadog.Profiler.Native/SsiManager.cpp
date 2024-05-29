@@ -2,36 +2,56 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "SsiManager.h"
+
 #include "IConfiguration.h"
 #include "IProfilerTelemetry.h"
 #include "ISsiLifetime.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 
-SsiManager::SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTelemetry, ISsiLifetime* pSsiLifetime) :
-    _pConfiguration(pConfiguration),
-    _pTelemetry(pTelemetry),
-    _pSsiLifetime(pSsiLifetime)
+#include <functional>
+#include <future>
+#include <mutex>
+
+static void StartProfiling(ISsiLifetime* pSsiLifetime)
 {
-    _isSsiDeployed = pConfiguration->IsSsiDeployed();
-    _timer = std::make_unique<Timer>([this] { OnShortLivedEnds(); }, std::chrono::milliseconds(_pConfiguration->SsiShortLivedThreshold() * 1000));
+    static std::once_flag spanCreated;
+    std::call_once(spanCreated, [pSsiLifetime]() {
+        pSsiLifetime->OnStartDelayedProfiling();
+    });
+}
+
+SsiManager::SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTelemetry, ISsiLifetime* pSsiLifetime) :
+    _pTelemetry(pTelemetry),
+    _pSsiLifetime(pSsiLifetime),
+    _hasSpan{false},
+    _isLongLived{false},
+    _deploymentMode{pConfiguration->GetDeploymentMode()},
+    _enablementStatus{pConfiguration->GetEnablementStatus()},
+    _longLivedThreshold{pConfiguration->GetSsiLongLivedThreshold()}
+{
+}
+
+SsiManager::~SsiManager()
+{
+    _stopTimerPromise.set_value();
 }
 
 void SsiManager::OnShortLivedEnds()
 {
     _isLongLived = true;
-    if (_hasSpan)
+    if (_hasSpan && _deploymentMode == DeploymentMode::SingleStepInstrumentation)
     {
-        _pSsiLifetime->OnStartDelayedProfiling();
+        StartProfiling(_pSsiLifetime);
     }
 }
 
 void SsiManager::OnSpanCreated()
 {
     _hasSpan = true;
-    if (_isLongLived)
+    if (_isLongLived && _deploymentMode == DeploymentMode::SingleStepInstrumentation)
     {
-        _pSsiLifetime->OnStartDelayedProfiling();
+        StartProfiling(_pSsiLifetime);
     }
 }
 
@@ -42,19 +62,8 @@ bool SsiManager::IsSpanCreated()
 
 bool SsiManager::IsLongLived()
 {
-#ifdef DD_TEST
-    if (_lifetimeDuration > 0)
-    {
-        return true;
-    }
-    if (_lifetimeDuration == -1)
-    {
-        return false;
-    }
-#endif
-
     auto lifetime = OsSpecificApi::GetProcessLifetime();
-    return lifetime > _pConfiguration->SsiShortLivedThreshold();
+    return lifetime > _longLivedThreshold.count();
 }
 
 // the profiler is enabled if either:
@@ -62,18 +71,10 @@ bool SsiManager::IsLongLived()
 //  or - the profiler is deployed via SSI and DD_INJECTION_ENABLED contains "profiling"
 bool SsiManager::IsProfilerEnabled()
 {
-    if (_pConfiguration->IsProfilerEnabled())
-    {
-        return true;
-    }
-
-    // in the future, users will be able to enable the profiler via SSI at agent installation time
-    if (_pConfiguration->IsSsiEnabled())
-    {
-        return true;
-    }
-
-    return false;
+    auto enablementStatus = _enablementStatus;
+    return enablementStatus == EnablementStatus::ManuallyEnabled ||
+           // in the future, users will be able to enable the profiler via SSI at agent installation time
+           enablementStatus == EnablementStatus::SsiEnabled;
 }
 
 // the profiler is activated either if:
@@ -81,13 +82,14 @@ bool SsiManager::IsProfilerEnabled()
 //  or - is enabled via SSI + runs for more than 30 seconds + has at least one span
 bool SsiManager::IsProfilerActivated()
 {
-    if (_pConfiguration->IsProfilerEnabled())
+    if (_enablementStatus == EnablementStatus::ManuallyEnabled)
     {
         return true;
     }
 
+    /// should we return enablementstatus::SsiEnabled ?
     // TODO: need to start a timer at the beginning of the process and use it if IsShortLived() is too expensive
-    if (_isSsiDeployed && IsLongLived() && IsSpanCreated())
+    if (_deploymentMode == DeploymentMode::SingleStepInstrumentation && IsLongLived() && IsSpanCreated())
     {
         return true;
     }
@@ -97,16 +99,23 @@ bool SsiManager::IsProfilerActivated()
 
 void SsiManager::ProcessStart()
 {
-    _pTelemetry->ProcessStart(_isSsiDeployed ? DeploymentMode::SingleStepInstrumentation : DeploymentMode::Manual);
+    _pTelemetry->ProcessStart(_deploymentMode);
 
-    // This timer *must* be created only AND only if it's a SSI deployment
-    // we have to check if this is what we want. In CorProfilerCallback.cpp l.1239, we start the service
-    // if the profiler is enabled (SII or not SSI).
-    // For the moment we just enable the timer only in pure SSI
-    if (_isSsiDeployed && !_pConfiguration->IsProfilerEnabled())
+    if (_deploymentMode == DeploymentMode::SingleStepInstrumentation && !IsProfilerEnabled())
     {
-        // start the lifetime timer to detect when the process is not more short lived
-        _timer->Start();
+        // This timer *must* be created only AND only if it's a SSI deployment
+        // we have to check if this is what we want. In CorProfilerCallback.cpp l.1239, we start the service
+        // if the profiler is enabled (SII or not SSI).
+        // For the moment we just enable the timer only in pure SSI
+        _longLivedTimerFuture = std::async(
+            std::launch::async, [this](std::future<void> stopRequest) {
+                auto status = stopRequest.wait_for(_longLivedThreshold);
+                if (status == std::future_status::timeout)
+                {
+                    OnShortLivedEnds();
+                }
+            },
+            _stopTimerPromise.get_future());
     }
 }
 
@@ -114,34 +123,10 @@ void SsiManager::ProcessEnd()
 {
     SkipProfileHeuristicType heuristics = SkipProfileHeuristicType::AllTriggered;
 
-#ifdef DD_TEST
-    if (_lifetimeDuration > 0)
-    {
-        if (!IsSpanCreated())
-        {
-            heuristics = (SkipProfileHeuristicType)(heuristics | SkipProfileHeuristicType::NoSpan);
-        }
-        _pTelemetry->ProcessEnd(_lifetimeDuration, 1, heuristics);
-        return;
-    }
-
-    if (_lifetimeDuration == -1)
-    {
-        heuristics = (SkipProfileHeuristicType)(heuristics | SkipProfileHeuristicType::ShortLived);
-        if (!IsSpanCreated())
-        {
-            heuristics = (SkipProfileHeuristicType)(heuristics | SkipProfileHeuristicType::NoSpan);
-        }
-
-        _pTelemetry->ProcessEnd(0, 1, heuristics);
-        return;
-    }
-#endif
-
     // how to get the number of sent profiles?  process lifetime / exporter period (= Configuration::GetUploadInterval()) + 1
     // TODO: for IIS on Windows, it might be required to let the exporter count the number of sent profiles
     auto lifetime = OsSpecificApi::GetProcessLifetime();
-    uint64_t sentProfiles = lifetime / _pConfiguration->GetUploadInterval().count() + 1;
+    uint64_t sentProfiles = lifetime / std::chrono::duration_cast<std::chrono::seconds>(_longLivedThreshold).count() + 1;
 
     // compute the non triggered heuristics
     heuristics = (SkipProfileHeuristicType)(heuristics | GetSkipProfileHeuristic());

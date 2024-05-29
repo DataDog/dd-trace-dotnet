@@ -75,9 +75,7 @@ public:
     MOCK_METHOD(EnablementStatus, GetEnablementStatus, (), (const override));
     MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
     MOCK_METHOD(bool, IsEtwLoggingEnabled, (), (const override));
-    MOCK_METHOD(bool, IsSsiEnabled, (), (const override));
-    MOCK_METHOD(bool, IsProfilerEnabled, (), (const override));
-    MOCK_METHOD(int32_t, SsiShortLivedThreshold, (), (const override));
+    MOCK_METHOD(std::chrono::milliseconds, GetSsiLongLivedThreshold, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -182,7 +180,7 @@ class ProfilerTelemetryForTest : public IProfilerTelemetry
 public:
     ProfilerTelemetryForTest()
     {
-        _deployment = DeploymentMode::Unknown;
+        _deployment = DeploymentMode::Manual; // should we add Unknown ?
         _duration = 0;
         _heuristic = SkipProfileHeuristicType::AllTriggered;
     }

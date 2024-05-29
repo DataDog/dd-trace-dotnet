@@ -63,7 +63,7 @@ public:
     inline static const shared::WSTRING EtwEnabled                  = WStr("DD_INTERNAL_PROFILING_ETW_ENABLED");
     inline static const shared::WSTRING SsiDeployed                 = WStr("DD_INJECTION_ENABLED");
     inline static const shared::WSTRING EtwLoggingEnabled           = WStr("DD_INTERNAL_ETW_LOGGING_ENABLED");
-    inline static const shared::WSTRING SsiShortLivedThreshold      = WStr("DD_INTERNAL_SHORT_LIVED_THRESHOLD");
+    inline static const shared::WSTRING SsiLongLivedThreshold      = WStr("DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD");
 
     inline static const shared::WSTRING CIVisibilityEnabled         = WStr("DD_CIVISIBILITY_ENABLED");
     inline static const shared::WSTRING InternalCIVisibilitySpanId  = WStr("DD_INTERNAL_CIVISIBILITY_SPANID");

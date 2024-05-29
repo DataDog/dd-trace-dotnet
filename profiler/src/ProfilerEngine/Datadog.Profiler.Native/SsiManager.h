@@ -3,10 +3,12 @@
 
 #pragma once
 
-#include "ISsiManager.h"
+#include "EnablementStatus.h"
 #include "IProfilerTelemetry.h"
+#include "ISsiManager.h"
 #include "Timer.h"
 
+#include <future>
 #include <memory>
 #include <thread>
 
@@ -19,15 +21,7 @@ public:
     // We need to pass another interface to notify when the profiler should start profiling
     // CorProfilerCallback is implementing this ISsiLifetime interface
     SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTelemetry, ISsiLifetime* pSsiLifetime);
-    ~SsiManager() = default;
-
-#ifdef DD_TEST
-public:
-    void SetLifetimeDuration(int duration)
-    {
-        _lifetimeDuration = duration;
-    }
-#endif
+    ~SsiManager();
 
 public:
     // Inherited via ISsiManager
@@ -47,20 +41,13 @@ private:
     void OnShortLivedEnds();
 
 private:
-    IConfiguration* _pConfiguration;
     IProfilerTelemetry* _pTelemetry;
     ISsiLifetime* _pSsiLifetime;
-    bool _hasSpan = false;
-    bool _isLongLived = false;
-    bool _isSsiDeployed = false;
-    std::unique_ptr<Timer> _timer;
-
-#ifdef DD_TEST
-private:
-    //  -1 means short lived
-    //   0 means normal lifetime computing
-    // > 0 means long lived
-    int _lifetimeDuration = 0;
-#endif
+    bool _hasSpan;
+    bool _isLongLived;
+    std::future<void> _longLivedTimerFuture;
+    std::promise<void> _stopTimerPromise;
+    DeploymentMode _deploymentMode;
+    EnablementStatus _enablementStatus;
+    std::chrono::milliseconds _longLivedThreshold;
 };
-

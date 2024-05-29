@@ -92,7 +92,7 @@ Configuration::Configuration()
     _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _enablementStatus = ExtractEnablementStatus();
-    _ssiShortLivedThreshold = GetEnvironmentValue(EnvironmentVariables::SsiShortLivedThreshold, 30);
+    _ssiLongLivedThreshold = GetEnvironmentValue(EnvironmentVariables::SsiLongLivedThreshold, 30'000ms);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -552,7 +552,6 @@ bool Configuration::IsEtwLoggingEnabled() const
 #endif
 }
 
-<<<<<<< HEAD
 EnablementStatus Configuration::GetEnablementStatus() const
 {
     return _enablementStatus;
@@ -563,9 +562,9 @@ DeploymentMode Configuration::GetDeploymentMode() const
     return _deploymentMode;
 }
 
-int32_t Configuration::SsiShortLivedThreshold() const
+std::chrono::milliseconds Configuration::GetSsiLongLivedThreshold() const
 {
-    return _ssiShortLivedThreshold;
+    return _ssiLongLivedThreshold;
 }
 
 static bool convert_to(shared::WSTRING const& s, bool& result)
@@ -618,6 +617,18 @@ static bool convert_to(shared::WSTRING const& s, DeploymentMode& result)
     // if we reach here it means the env var exists
     result = DeploymentMode::SingleStepInstrumentation;
     return true;
+}
+
+static bool convert_to(shared::WSTRING const& s, std::chrono::milliseconds& result)
+{
+    auto intermediate = 0;
+    if (TryParse(s, intermediate))
+    {
+        result = std::chrono::milliseconds(intermediate);
+        return true;
+    }
+
+    return false;
 }
 
 template <typename T>

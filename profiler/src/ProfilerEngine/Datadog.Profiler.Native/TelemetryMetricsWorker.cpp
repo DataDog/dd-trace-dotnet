@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "TelemetryMetricsWorker.h"
+
 #include "IConfiguration.h"
 #include "Log.h"
 #include "ProfileExporter.h"
@@ -34,22 +35,21 @@ TelemetryMetricsWorker::~TelemetryMetricsWorker()
 
 void TelemetryMetricsWorker::Stop()
 {
+    auto handle = std::exchange(_pHandle, nullptr);
     // stop the worker if needed
-    if (_pHandle == nullptr)
+    if (handle == nullptr)
     {
         return;
     }
 
-    ddog_MaybeError result = ddog_telemetry_handle_stop(_pHandle);
+    auto result = ddog_telemetry_handle_stop(handle);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
         Log::Debug("Failed to stop telemetry worker for (", _serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
         return;
     }
 
-    ddog_telemetry_handle_wait_for_shutdown_ms(_pHandle, 10);
-
-    _pHandle = nullptr;
+    ddog_telemetry_handle_wait_for_shutdown_ms(handle, 10);
 }
 
 bool TelemetryMetricsWorker::Start(
@@ -74,7 +74,7 @@ bool TelemetryMetricsWorker::Start(
 
     _serviceName = serviceName;
 
-    if (!pConfiguration->IsSsiDeployed())
+    if (pConfiguration->GetDeploymentMode() != DeploymentMode::SingleStepInstrumentation)
     {
         Log::Debug("No telemetry worker for (", serviceName, ") should be started if not deployed via Single Step Instrumentation");
         return false;
@@ -137,6 +137,13 @@ bool TelemetryMetricsWorker::Start(
 
     // start the worker
     // NOTE: builder is consummed after the call so no need to drop it
+    result = ddog_telemetry_builder_run(builder, &_pHandle);
+    if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
+    {
+        Log::Debug("Failed to run builder for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+        return false;
+    }
+
     result = ddog_telemetry_handle_start(_pHandle);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
@@ -152,7 +159,7 @@ bool TelemetryMetricsWorker::Start(
 
     // telemetry metrics are supposed to be emitted only if deployed via SSI
     // --> should always be "ssi"
-    std::string installationTagValue = (pConfiguration->IsSsiDeployed()) ? std::string("ssi") : std::string("manual");
+    std::string installationTagValue = (pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation) ? std::string("ssi") : std::string("manual");
     auto res = ddog_Vec_Tag_push(&tags,
         libdatadog::FfiHelper::StringToCharSlice(std::string("installation")),
         libdatadog::FfiHelper::StringToCharSlice(installationTagValue)
@@ -165,9 +172,9 @@ bool TelemetryMetricsWorker::Start(
     }
 
     std::string enablementTagValue =
-        (pConfiguration->IsProfilerEnabled())
+        (pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
             ? std::string("manually_enabled") :
-        (pConfiguration->IsSsiEnabled())
+        (pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled)
             ? std::string("ssi_enabled") :
         std::string("not_enabled");
 

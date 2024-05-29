@@ -567,7 +567,7 @@ void CorProfilerCallback::OnStartDelayedProfiling()
     }
 
     // if not enable by SSI only, just get out
-    if (!_pConfiguration->IsSsiEnabled())
+    if (_pConfiguration->GetEnablementStatus() != EnablementStatus::SsiEnabled)
     {
         return;
     }
@@ -1011,9 +1011,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
 
-    _pProfilerTelemetry = std::make_unique<ProfilerTelemetry>(_pConfiguration.get());
+    _pProfilerTelemetry = std::make_unique<ProfilerTelemetry>(_pConfiguration);
 
-    _pSsiManager = std::make_unique<SsiManager>(_pConfiguration.get(), _pProfilerTelemetry.get(), this);
+    _pSsiManager = std::make_unique<SsiManager>(_pConfiguration, _pProfilerTelemetry.get(), this);
     _pSsiManager->ProcessStart();
 
     double coresThreshold = _pConfiguration->MinimumCores();
@@ -1236,7 +1236,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     // Start services only if the profiler is activated
     // For SSI deployment, the services will be started later based on heuristics
-    if (_pConfiguration->IsProfilerEnabled())
+    if (_pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
     {
         auto started = StartServices();
         if (!started)
@@ -1460,7 +1460,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
     }
 
     // ETW listening is not started in SSI deployment mode
-    if (_pConfiguration->IsProfilerEnabled() && !_isETWStarted && (_pEtwEventsManager != nullptr))
+    if (_pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled && !_isETWStarted && (_pEtwEventsManager != nullptr))
     {
         _isETWStarted = true;
         auto success = _pEtwEventsManager->Start();
@@ -1737,12 +1737,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
         return S_OK;
     }
 
-    if (_pConfiguration->IsExceptionProfilingEnabled())
+    if (_pConfiguration->IsExceptionProfilingEnabled() && _pSsiManager->IsProfilerActivated())
     {
-        if (_pSsiManager->IsProfilerActivated())
-        {
-            _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
-        }
+        _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
     }
 
     return S_OK;
@@ -1955,24 +1952,21 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
                                                                        ULONG numStackFrames,
                                                                        UINT_PTR stackFrames[])
 {
-    if (_pEventPipeEventsManager != nullptr)
+    if (_pEventPipeEventsManager != nullptr && _pSsiManager->IsProfilerActivated())
     {
-        if (_pSsiManager->IsProfilerActivated())
-        {
-            _pEventPipeEventsManager->ParseEvent(
-                provider,
-                eventId,
-                eventVersion,
-                cbMetadataBlob,
-                metadataBlob,
-                cbEventData,
-                eventData,
-                pActivityId,
-                pRelatedActivityId,
-                eventThread,
-                numStackFrames,
-                stackFrames);
-        }
+        _pEventPipeEventsManager->ParseEvent(
+            provider,
+            eventId,
+            eventVersion,
+            cbMetadataBlob,
+            metadataBlob,
+            cbEventData,
+            eventData,
+            pActivityId,
+            pRelatedActivityId,
+            eventThread,
+            numStackFrames,
+            stackFrames);
     }
 
     return S_OK;
