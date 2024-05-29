@@ -115,7 +115,7 @@ namespace datadog::shared::nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk)
     {
         Log::Debug("CorProfiler::Initialize");
-        InspectRuntimeCompatibility(pICorProfilerInfoUnk);
+        const auto inferredVersion = InspectRuntimeCompatibility(pICorProfilerInfoUnk);
 
         const auto process_name = ::shared::GetCurrentProcessName();
         Log::Debug("ProcessName: ", process_name);
@@ -242,7 +242,7 @@ namespace datadog::shared::nativeloader
             Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
             return E_FAIL;
         }
-        const auto runtimeInformation = GetRuntimeVersion(info4);
+        const auto runtimeInformation = GetRuntimeVersion(info4, inferredVersion);
 
         //
         // Check if we're running in Single Step, and if so, whether we should bail out
@@ -1147,14 +1147,14 @@ namespace datadog::shared::nativeloader
         RunInAllProfilers(EventPipeProviderCreated(provider));
     }
 
-    void CorProfiler::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk)
+    std::string CorProfiler::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk)
     {
         if (corProfilerInfoUnk == nullptr)
         {
             Log::Info(
                 "No ICorProfilerInfoXxx available. Null pointer was passed to CorProfilerCallback for initialization."
                 " No compatible Profiling API is available.");
-            return;
+            return "";
         }
 
         IUnknown* tstVerProfilerInfo;
@@ -1162,61 +1162,73 @@ namespace datadog::shared::nativeloader
         {
             Log::Info("ICorProfilerInfo12 available. Profiling API compatibility: .NET Core 5.0 or later.");
             tstVerProfilerInfo->Release();
+            return "5.0.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 3.1 or later.");
             tstVerProfilerInfo->Release();
+            return "3.1.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.0 or later.");
             tstVerProfilerInfo->Release();
+            return "3.0.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.1 or later.");
             tstVerProfilerInfo->Release();
+            return "2.1.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo8 available. Profiling API compatibility: .NET Fx 4.7.2 or later.");
             tstVerProfilerInfo->Release();
+            return "4.7.2";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo7), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo7 available. Profiling API compatibility: .NET Fx 4.6.1 or later.");
             tstVerProfilerInfo->Release();
+            return "4.6.1";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo6), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo6 available. Profiling API compatibility: .NET Fx 4.6 or later.");
             tstVerProfilerInfo->Release();
+            return "4.6.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo5 available. Profiling API compatibility: .NET Fx 4.5.2 or later.");
             tstVerProfilerInfo->Release();
+            return "4.5.2";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo4 available. Profiling API compatibility: .NET Fx 4.5 or later.");
             tstVerProfilerInfo->Release();
+            return "4.5.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo3 available. Profiling API compatibility: .NET Fx 4.0 or later.");
             tstVerProfilerInfo->Release();
+            return "4.0.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo2), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo2 available. Profiling API compatibility: .NET Fx 2.0 or later.");
             tstVerProfilerInfo->Release();
+            return "2.0.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo available. Profiling API compatibility: .NET Fx 2 or later.");
             tstVerProfilerInfo->Release();
+            return "2.0.0";
         }
         else
         {
@@ -1224,10 +1236,11 @@ namespace datadog::shared::nativeloader
                  " for initialization, but QueryInterface(..) did not succeed for any of the known "
                  "ICorProfilerInfoXxx ifaces."
                  " No compatible Profiling API is available.");
+            return "";
         }
     }
 
-    RuntimeInformation CorProfiler::GetRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo)
+    RuntimeInformation CorProfiler::GetRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo, const std::string& inferred_version)
     {
         USHORT clrInstanceId;
         COR_PRF_RUNTIME_TYPE runtimeType;
@@ -1256,7 +1269,7 @@ namespace datadog::shared::nativeloader
                       : (std::string("unknown(") + std::to_string(runtimeType) + std::string(")"))),
                  ",", " majorVersion: ", majorVersion, ", minorVersion: ", minorVersion,
                  ", buildNumber: ", buildNumber, ", qfeVersion: ", qfeVersion, " }.");
-            return {runtimeType, majorVersion, minorVersion, buildNumber, qfeVersion};
+            return {runtimeType, majorVersion, minorVersion, buildNumber, qfeVersion, inferred_version};
         }
     }
 
