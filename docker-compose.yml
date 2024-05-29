@@ -219,6 +219,7 @@ services:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
 
+  # this docker image doesn't work on arm64. It can still be tested on Mac using colima, see https://github.com/abiosoft/colima
   oracle:
     image: container-registry.oracle.com/database/free:latest
     ports:

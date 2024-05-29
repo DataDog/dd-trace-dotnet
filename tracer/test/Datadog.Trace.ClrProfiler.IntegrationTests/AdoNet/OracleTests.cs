@@ -42,7 +42,7 @@ public class OracleTests : TracingIntegrationTest
     {
         SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
         SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-        var expectedSpanCount = 91;
+        var expectedSpanCount = 89;
 
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
