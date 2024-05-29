@@ -45,27 +45,27 @@ StackSamplerLoop::StackSamplerLoop(
     ICollector<RawCpuSample>* pCpuTimeCollector,
     MetricsRegistry& metricsRegistry)
     :
-    _pCorProfilerInfo{ pCorProfilerInfo },
-    _pStackFramesCollector{ pStackFramesCollector },
-    _pManager{ pManager },
-    _pConfiguration{ pConfiguration },
-    _pThreadsCpuManager{ pThreadsCpuManager },
-    _pManagedThreadList{ pManagedThreadList },
-    _pCodeHotspotsThreadList{ pCodeHotspotThreadList },
-    _pWallTimeCollector{ pWallTimeCollector },
-    _pCpuTimeCollector{ pCpuTimeCollector },
-    _pLoopThread{ nullptr },
-    _loopThreadOsId{ 0 },
+    _pCorProfilerInfo{pCorProfilerInfo},
+    _pStackFramesCollector{pStackFramesCollector},
+    _pManager{pManager},
+    _pConfiguration{pConfiguration},
+    _pThreadsCpuManager{pThreadsCpuManager},
+    _pManagedThreadList{pManagedThreadList},
+    _pCodeHotspotsThreadList{pCodeHotspotThreadList},
+    _pWallTimeCollector{pWallTimeCollector},
+    _pCpuTimeCollector{pCpuTimeCollector},
+    _pLoopThread{nullptr},
+    _loopThreadOsId{0},
     _targetThread(nullptr),
-    _iteratorWallTime{ 0 },
-    _iteratorCpuTime{ 0 },
-    _iteratorCodeHotspot{ 0 },
-    _walltimeThreadsThreshold{ pConfiguration->WalltimeThreadsThreshold() },
-    _cpuThreadsThreshold{ pConfiguration->CpuThreadsThreshold() },
-    _codeHotspotsThreadsThreshold{ pConfiguration->CodeHotspotsThreadsThreshold() },
-    _isWalltimeEnabled{ pConfiguration->IsWallTimeProfilingEnabled() },
-    _isCpuEnabled{ pConfiguration->IsCpuProfilingEnabled() },
-    _areInternalMetricsEnabled{ pConfiguration->IsInternalMetricsEnabled() }
+    _iteratorWallTime{0},
+    _iteratorCpuTime{0},
+    _iteratorCodeHotspot{0},
+    _walltimeThreadsThreshold{pConfiguration->WalltimeThreadsThreshold()},
+    _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
+    _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
+    _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
+    _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled()},
+    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
     Log::Info("Processor cores = ", _nbCores);
@@ -82,7 +82,7 @@ StackSamplerLoop::StackSamplerLoop(
     _iteratorCpuTime = _pManagedThreadList->CreateIterator();
     _iteratorCodeHotspot = _pCodeHotspotsThreadList->CreateIterator();
 
-    if (_areInternalMetricsEnabled)
+    if(_areInternalMetricsEnabled)
     {
         _walltimeDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_walltime_iterations_duration");
         _cpuDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_cpu_iterations_duration");
@@ -291,14 +291,14 @@ void StackSamplerLoop::CpuProfilingIteration()
             // Note: it is not possible to get this information on Windows 32-bit or in some cases in 64-bit
             //       so isRunning should be true if this thread consumed some CPU since the last iteration
 #if _WINDOWS
-#if BIT64  // Windows 64-bit
+    #if BIT64  // Windows 64-bit
             if (failure)
             {
                 isRunning = (lastConsumption < currentConsumption);
-        }
-#else  // Windows 32-bit
+            }
+    #else  // Windows 32-bit
             isRunning = (lastConsumption < currentConsumption);
-#endif
+    #endif
 #else  // nothing to do for Linux
 #endif
 
@@ -336,8 +336,8 @@ void StackSamplerLoop::CpuProfilingIteration()
                 }
             }
             _targetThread.reset();
+        }
     }
-}
 }
 
 void StackSamplerLoop::CodeHotspotIteration()
@@ -440,7 +440,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             // Notify the loop manager that we are starting a stack collection, and set up a finalizer to notify the manager when we finsih it.
             // This will enable the manager to monitor if this collection freezes due to a deadlock.
 
-            on_leave{ _pManager->NotifyIterationFinished(); };
+            on_leave { _pManager->NotifyIterationFinished(); };
 
             // On Windows, we will now suspend the target thread.
             // On Linux, if we use signals, the suspension may be a no-op since signal handlers do not use explicit suspension.
@@ -467,7 +467,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             // Perform the stack walk according to bitness, OS, platform, sync/async stack-walking, etc..:
             {
                 // We rely on RAII to call NotifyCollectionEnd when we get out this scope.
-                on_leave{ _pManager->NotifyCollectionEnd(); };
+                on_leave { _pManager->NotifyCollectionEnd(); };
 
                 _pManager->NotifyCollectionStart();
                 pStackSnapshotResult = _pStackFramesCollector->CollectStackSample(pThreadInfo.get(), &hrCollectStack);
@@ -582,17 +582,17 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         _pWallTimeCollector->Add(std::move(rawSample));
     }
     else
-        if (profilingType == PROFILING_TYPE::CpuTime)
-        {
-            // add the CPU sample to the lipddprof pipeline if needed
-            RawCpuSample rawCpuSample;
-            rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
-            rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
-            rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
-            rawCpuSample.AppDomainId = pThreadInfo->GetAppDomainId();
-            rawCpuSample.Stack = std::move(callstack);
-            rawCpuSample.ThreadInfo = pThreadInfo;
-            rawCpuSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
-            _pCpuTimeCollector->Add(std::move(rawCpuSample));
-        }
+    if (profilingType == PROFILING_TYPE::CpuTime)
+    {
+        // add the CPU sample to the lipddprof pipeline if needed
+        RawCpuSample rawCpuSample;
+        rawCpuSample.Timestamp = pSnapshotResult->GetUnixTimeUtc();
+        rawCpuSample.LocalRootSpanId = pSnapshotResult->GetLocalRootSpanId();
+        rawCpuSample.SpanId = pSnapshotResult->GetSpanId();
+        rawCpuSample.AppDomainId = pThreadInfo->GetAppDomainId();
+        rawCpuSample.Stack = std::move(callstack);
+        rawCpuSample.ThreadInfo = pThreadInfo;
+        rawCpuSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
+        _pCpuTimeCollector->Add(std::move(rawCpuSample));
+    }
 }
