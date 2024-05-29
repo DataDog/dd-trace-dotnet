@@ -134,7 +134,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                     return Content($"Result: " + rname);
                 }
             }
-            catch (Exception ex)
+            catch (SQLiteException ex)
             {
                 return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
             }
