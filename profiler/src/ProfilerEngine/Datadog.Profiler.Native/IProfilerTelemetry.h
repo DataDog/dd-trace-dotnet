@@ -48,10 +48,11 @@ enum SkipProfileHeuristicType
 class IProfilerTelemetry
 {
 public:
+    virtual ~IProfilerTelemetry() = default;
+
     // send metrics
     virtual void ProcessStart(DeploymentMode deployment) = 0;
     virtual void ProcessEnd(uint64_t duration, uint64_t sentProfiles, SkipProfileHeuristicType heuristics) = 0;
     virtual void SetExporter(IExporter* pExporter) = 0;
 
-    virtual ~IProfilerTelemetry() = default;
 };

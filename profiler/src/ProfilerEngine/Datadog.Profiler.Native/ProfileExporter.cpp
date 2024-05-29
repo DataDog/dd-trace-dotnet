@@ -275,7 +275,7 @@ std::string ProfileExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledPr
     return buffer.str();
 }
 
-std::string ProfileExporter::BuildAgentEndpoint(IConfiguration* configuration)
+std::string ProfileExporter::BuildAgentEndpoint(IConfiguration const* configuration)
 {
     // handle "with agent" case
     auto url = configuration->GetAgentUrl(); // copy expected here

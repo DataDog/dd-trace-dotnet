@@ -3,16 +3,10 @@
 
 #pragma once
 
-#include <string>
-
 #include "IProfilerTelemetry.h"
 
-extern "C"
-{
-#include "datadog/common.h"
-#include "datadog/telemetry.h"
-}
-
+#include <memory>
+#include <string>
 
 class IConfiguration;
 
@@ -25,7 +19,7 @@ public:
     ~TelemetryMetricsWorker();
 
     bool Start(
-        IConfiguration* pConfiguration,
+        const IConfiguration* pConfiguration,
         const std::string& serviceName,
         const std::string& serviceVersion,
         const std::string& language,
@@ -33,16 +27,15 @@ public:
         const std::string& libraryVersion,
         const std::string& agentUrl,
         const std::string& runtimeId,
-        const std::string& environment
-        );
-    bool AddPoint(double value, bool hasSentProfiles, SkipProfileHeuristicType heuristic);
+        const std::string& environment);
     void Stop();
+    bool AddPoint(double value, bool hasSentProfiles, SkipProfileHeuristicType heuristic);
 
 private:
     std::string _serviceName;
-    ddog_TelemetryWorkerHandle* _pHandle;
-    ddog_ContextKey _numberOfProfilesKey;
+
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
 };
 
 } // namespace libdatadog
-

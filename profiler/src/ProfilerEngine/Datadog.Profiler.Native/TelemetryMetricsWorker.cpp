@@ -6,8 +6,11 @@
 #include "IConfiguration.h"
 #include "Log.h"
 #include "ProfileExporter.h"
+#include "Tags.h"
+#include "TagsImpl.hpp"
 
 #include "FfiHelper.h"
+
 extern "C"
 {
 #include "datadog/common.h"
@@ -16,26 +19,27 @@ extern "C"
 
 namespace libdatadog {
 
+struct TelemetryMetricsWorker::Impl
+{
+public:
+    ddog_TelemetryWorkerHandle* _pHandle = nullptr;
+    ddog_ContextKey _numberOfProfilesKey = {};
+};
+
 TelemetryMetricsWorker::TelemetryMetricsWorker() :
     _serviceName{},
-    _pHandle{nullptr},
-    _numberOfProfilesKey{}
+    _impl{std::make_unique<Impl>()}
 {
 }
 
 TelemetryMetricsWorker::~TelemetryMetricsWorker()
 {
-    if (_pHandle == nullptr)
-    {
-        return;
-    }
-
     Stop();
 }
 
 void TelemetryMetricsWorker::Stop()
 {
-    auto handle = std::exchange(_pHandle, nullptr);
+    auto* handle = std::exchange(_impl->_pHandle, nullptr);
     // stop the worker if needed
     if (handle == nullptr)
     {
@@ -45,7 +49,8 @@ void TelemetryMetricsWorker::Stop()
     auto result = ddog_telemetry_handle_stop(handle);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Debug("Failed to stop telemetry worker for (", _serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+        auto error = make_error(result);
+        Log::Debug("Failed to stop telemetry worker for (", _serviceName, "): ", error.message());
         return;
     }
 
@@ -53,7 +58,7 @@ void TelemetryMetricsWorker::Stop()
 }
 
 bool TelemetryMetricsWorker::Start(
-    IConfiguration* pConfiguration,
+    const IConfiguration* pConfiguration,
     const std::string& serviceName,
     const std::string& serviceVersion,
     const std::string& language,
@@ -61,10 +66,9 @@ bool TelemetryMetricsWorker::Start(
     const std::string& libraryVersion,
     const std::string& agentUrl,
     const std::string& runtimeId,
-    const std::string& environment
-)
+    const std::string& environment)
 {
-    if (_pHandle != nullptr)
+    if (_impl->_pHandle != nullptr)
     {
         assert(false);
 
@@ -81,35 +85,39 @@ bool TelemetryMetricsWorker::Start(
     }
 
     ddog_TelemetryWorkerBuilder* builder;
-    ddog_CharSlice service = FfiHelper::StringToCharSlice(serviceName);
-    ddog_CharSlice lang = FfiHelper::StringToCharSlice(language);                   // ProfileExporter::LanguageFamily
-    ddog_CharSlice lang_version = FfiHelper::StringToCharSlice(languageVersion);    // use IRuntimeInfo.GetDotnet(Major/Minor)Version
-    ddog_CharSlice tracer_version = FfiHelper::StringToCharSlice(libraryVersion);   // ProfileExporter::LibraryVersion
+    auto service = FfiHelper::StringToCharSlice(serviceName);
+    auto lang = FfiHelper::StringToCharSlice(language);                 // ProfileExporter::LanguageFamily
+    auto lang_version = FfiHelper::StringToCharSlice(languageVersion);  // use IRuntimeInfo.GetDotnet(Major/Minor)Version
+    auto tracer_version = FfiHelper::StringToCharSlice(libraryVersion); // ProfileExporter::LibraryVersion
 
-    ddog_MaybeError result = ddog_telemetry_builder_instantiate(&builder, service, lang, lang_version, tracer_version);
-    if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)  // TODO: create a macro for these similar repeated check/log
+    auto result = ddog_telemetry_builder_instantiate(&builder, service, lang, lang_version, tracer_version);
+    if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Error("Failed to instantiate telemetry builder for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+        auto error = make_error(result);
+        Log::Error("Failed to instantiate telemetry builder for (", serviceName, "): ", error.message());
         return false;
     }
 
-    std::string agentEndpoint = ProfileExporter::BuildAgentEndpoint(pConfiguration);
-    ddog_CharSlice endpoint_char = FfiHelper::StringToCharSlice(agentEndpoint);
-    struct ddog_Endpoint* endpoint = ddog_endpoint_from_url(endpoint_char);
+    auto agentEndpoint = ProfileExporter::BuildAgentEndpoint(pConfiguration);
+    auto endpoint_char = FfiHelper::StringToCharSlice(agentEndpoint);
+    auto* endpoint = ddog_endpoint_from_url(endpoint_char);
     result = ddog_telemetry_builder_with_endpoint_config_endpoint(builder, endpoint);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Debug("Failed to configure telemetry builder agent endpoint: ", std::string((char*)result.some.message.ptr, result.some.message.len));
+        auto error = make_error(result);
+        Log::Debug("Failed to configure telemetry builder agent endpoint: ", error.message());
         return false;
     }
+
     ddog_endpoint_drop(endpoint);
 
     // other builder configuration
-    ddog_CharSlice runtime_id = FfiHelper::StringToCharSlice(runtimeId);
+    auto runtime_id = FfiHelper::StringToCharSlice(runtimeId);
     result = ddog_telemetry_builder_with_str_runtime_id(builder, runtime_id);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Debug("Failed to set telemetry builder runtime ID for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+        auto error = make_error(result);
+        Log::Debug("Failed to set telemetry builder runtime ID for (", serviceName, "): ", error.message());
         return false;
     }
 
@@ -120,101 +128,75 @@ bool TelemetryMetricsWorker::Start(
         result = ddog_telemetry_builder_with_str_application_service_version(builder, service_version);
         if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
         {
-            Log::Debug("Failed to set telemetry builder service version for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+            auto error = make_error(result);
+            Log::Debug("Failed to set telemetry builder service version for (", serviceName, "): ", error.message());
             return false;
         }
     }
     if (!environment.empty())
     {
-        ddog_CharSlice env = FfiHelper::StringToCharSlice(environment);
+        auto env = FfiHelper::StringToCharSlice(environment);
         result = ddog_telemetry_builder_with_str_application_env(builder, env);
         if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
         {
-            Log::Debug("Failed to set telemetry builder environment for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+            auto error = make_error(result);
+            Log::Debug("Failed to set telemetry builder environment for (", serviceName, "): ", error.message());
             return false;
         }
     }
 
     // start the worker
     // NOTE: builder is consummed after the call so no need to drop it
-    result = ddog_telemetry_builder_run(builder, &_pHandle);
+    result = ddog_telemetry_builder_run(builder, &_impl->_pHandle);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Debug("Failed to run builder for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+        auto error = make_error(result);
+        Log::Debug("Failed to run builder for (", serviceName, "): ", error.message());
         return false;
     }
 
-    result = ddog_telemetry_handle_start(_pHandle);
+    result = ddog_telemetry_handle_start(_impl->_pHandle);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Debug("Failed to start telemetry for (", serviceName, "): ", std::string((char*)result.some.message.ptr, result.some.message.len));
+        auto error = make_error(result);
+        Log::Debug("Failed to start telemetry for (", serviceName, "): ", error.message());
         return false;
     }
 
     // metrics definition
-    // TODO: see if we need to also emit ssi_heuristic.number_of_runtime_id
-    ddog_CharSlice numberOfProfilesMetricName = FfiHelper::StringToCharSlice(std::string("ssi_heuristic.number_of_profiles"));
-
-    ddog_Vec_Tag tags = ddog_Vec_Tag_new();
 
     // telemetry metrics are supposed to be emitted only if deployed via SSI
     // --> should always be "ssi"
-    std::string installationTagValue = (pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation) ? std::string("ssi") : std::string("manual");
-    auto res = ddog_Vec_Tag_push(&tags,
-        libdatadog::FfiHelper::StringToCharSlice(std::string("installation")),
-        libdatadog::FfiHelper::StringToCharSlice(installationTagValue)
-    );
-
-    if (res.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
-    {
-        auto error = make_error(res.err);
-        Log::Debug("Failed to add label 'installation' with value '", installationTagValue, "'. Reason: ", error.message());
-    }
+    auto installationTagValue = (pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation) ? "ssi" : "manual";
 
     std::string enablementTagValue =
         (pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
-            ? std::string("manually_enabled") :
-        (pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled)
-            ? std::string("ssi_enabled") :
-        std::string("not_enabled");
+            ? "manually_enabled"
+        : (pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled)
+            ? "ssi_enabled"
+            : "not_enabled";
 
-    res = ddog_Vec_Tag_push(&tags,
-        libdatadog::FfiHelper::StringToCharSlice(std::string("enablement_choice")),
-        libdatadog::FfiHelper::StringToCharSlice(enablementTagValue)
-    );
+    auto tags = libdatadog::Tags({{"installation", std::move(installationTagValue)},
+                                  {"enablement_choice", std::move(enablementTagValue)}},
+                                 false);
 
-    if (res.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
-    {
-        auto error = make_error(res.err);
-        Log::Debug("Failed to add label 'enablement_choice' with value '", enablementTagValue, "'. Reason: ", error.message());
-    }
+    // TODO: see if we need to also emit ssi_heuristic.number_of_runtime_id
+    auto numberOfProfilesMetricName = FfiHelper::StringToCharSlice("ssi_heuristic.number_of_profiles");
 
-    // tags is consummed
-    _numberOfProfilesKey = ddog_telemetry_handle_register_metric_context(
-        _pHandle, numberOfProfilesMetricName, DDOG_METRIC_TYPE_COUNT, tags, true, DDOG_METRIC_NAMESPACE_PROFILERS);
+    _impl->_numberOfProfilesKey = ddog_telemetry_handle_register_metric_context(
+        _impl->_pHandle, numberOfProfilesMetricName, DDOG_METRIC_TYPE_COUNT, *static_cast<ddog_Vec_Tag const*>(*tags._impl), true, DDOG_METRIC_NAMESPACE_PROFILERS);
 
     return true;
 }
 
 bool TelemetryMetricsWorker::AddPoint(double value, bool hasSentProfiles, SkipProfileHeuristicType heuristics)
 {
-    if (_pHandle == nullptr)
+    if (_impl->_pHandle == nullptr)
     {
         assert(false);
 
         Log::Debug("Impossible to add telemetry point: worker is not started.");
         return false;
-    }
-
-    ddog_Vec_Tag tags = ddog_Vec_Tag_new();
-    auto res = ddog_Vec_Tag_push(&tags,
-        libdatadog::FfiHelper::StringToCharSlice(std::string("has_sent_profiles")),
-        libdatadog::FfiHelper::StringToCharSlice(hasSentProfiles ? std::string("true") : std::string("false")));
-
-    if (res.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
-    {
-        auto error = make_error(res.err);
-        Log::Debug("Failed to add label 'has_sent_profiles' with value '", std::boolalpha, hasSentProfiles, "'. Reason: ", error.message());
     }
 
     std::string heuristicTag;
@@ -239,21 +221,16 @@ bool TelemetryMetricsWorker::AddPoint(double value, bool hasSentProfiles, SkipPr
             heuristicTag = "short_lived";
         }
     }
-    res = ddog_Vec_Tag_push(&tags,
-        libdatadog::FfiHelper::StringToCharSlice(std::string("heuristic_hypothetical_decision")),
-        libdatadog::FfiHelper::StringToCharSlice(heuristicTag));
 
-    if (res.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
-    {
-        auto error = make_error(res.err);
-        Log::Debug("Failed to add label 'heuristic_hypothetical_decision' with value '", heuristicTag, "'. Reason: ", error.message());
-    }
+    auto tags = libdatadog::Tags({{"has_sent_profiles", hasSentProfiles ? "true" : "false"},
+                                  {"heuristic_hypothetical_decision", std::move(heuristicTag)}},
+                                 false);
 
-    auto result = ddog_telemetry_handle_add_point_with_tags(_pHandle, &_numberOfProfilesKey, value, tags);
+    auto result = ddog_telemetry_handle_add_point_with_tags(_impl->_pHandle, &_impl->_numberOfProfilesKey, value, *static_cast<ddog_Vec_Tag const*>(*tags._impl));
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
-        Log::Debug("Failed to add telemetry point");
-
+        auto error = make_error(result);
+        Log::Debug("Failed to add telemetry point: ", error.message());
         return false;
     }
 

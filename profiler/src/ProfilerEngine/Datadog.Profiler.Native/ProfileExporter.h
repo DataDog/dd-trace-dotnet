@@ -57,7 +57,7 @@ public:
     void RegisterProcessSamplesProvider(ISamplesProvider* provider) override;
     void CreateTelemetryMetricsWorker(std::string runtimeId, ApplicationInfo* pInfo) override;
 
-    static std::string BuildAgentEndpoint(IConfiguration* configuration);
+    static std::string BuildAgentEndpoint(IConfiguration const* configuration);
 
     // TODO: move to a common place (also used for the telemetry metrics)
     static std::string const LibraryName;
