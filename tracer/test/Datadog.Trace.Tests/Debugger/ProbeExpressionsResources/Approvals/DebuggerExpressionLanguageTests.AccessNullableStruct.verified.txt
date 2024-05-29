@@ -31,13 +31,14 @@ Expressions:
     var DictionaryLocal = (Dictionary<string, string>)scopeMemberArray[4].Value;
     var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[5].Value;
     var NullLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[6].Value;
-    var NullableNotNullValueLocal = (Guid?)scopeMemberArray[7].Value;
-    var NullableNullValueLocal = (Guid?)scopeMemberArray[8].Value;
-    var IntArg = (int)scopeMemberArray[9].Value;
-    var DoubleArg = (double)scopeMemberArray[10].Value;
-    var StringArg = (string)scopeMemberArray[11].Value;
-    var CollectionArg = (List<string>)scopeMemberArray[12].Value;
-    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[13].Value;
+    var BooleanValue = (bool)scopeMemberArray[7].Value;
+    var NullableNotNullValueLocal = (Guid?)scopeMemberArray[8].Value;
+    var NullableNullValueLocal = (Guid?)scopeMemberArray[9].Value;
+    var IntArg = (int)scopeMemberArray[10].Value;
+    var DoubleArg = (double)scopeMemberArray[11].Value;
+    var StringArg = (string)scopeMemberArray[12].Value;
+    var CollectionArg = (List<string>)scopeMemberArray[13].Value;
+    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[14].Value;
     var $dd_el_result = (this.NullableNullValue == null)
         ? "null"
         : {

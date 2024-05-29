@@ -204,7 +204,7 @@ namespace Datadog.Trace.Tests.Debugger
             scope.AddMember(new ScopeMember("BooleanValue", TestObject.BooleanValue.GetType(), TestObject.BooleanValue, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("Char", TestObject.Char.GetType(), TestObject.Char, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("AnotherChar", TestObject.AnotherChar.GetType(), TestObject.AnotherChar, ScopeMemberKind.Local));
-			scope.AddMember(new ScopeMember("NullableNotNullValueLocal", typeof(Guid?), TestObject.NullableNotNullValue, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("NullableNotNullValueLocal", typeof(Guid?), TestObject.NullableNotNullValue, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("NullableNullValueLocal", typeof(Guid?), TestObject.NullableNullValue, ScopeMemberKind.Local));
 
 
@@ -343,8 +343,8 @@ namespace Datadog.Trace.Tests.Debugger
             public NestedObject ParentAsChildNested;
 
             public NestedObject Null;
-			
-			public bool BooleanValue;
+
+            public bool BooleanValue;
 
             public Guid? NullableNullValue;
 
