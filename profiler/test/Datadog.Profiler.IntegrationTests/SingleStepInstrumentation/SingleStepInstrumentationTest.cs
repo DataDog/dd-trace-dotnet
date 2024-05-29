@@ -200,7 +200,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
 
             // simulate long lived
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -253,7 +253,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
             // simulate long lived
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 

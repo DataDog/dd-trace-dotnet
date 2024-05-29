@@ -12,6 +12,8 @@
 class ISsiManager
 {
 public:
+    virtual ~ISsiManager() = default;
+
     virtual void OnSpanCreated() = 0;
     virtual bool IsSpanCreated() = 0;
     virtual bool IsLongLived() = 0;
@@ -28,6 +30,4 @@ public:
 
     // heuristics state
     virtual SkipProfileHeuristicType GetSkipProfileHeuristic() = 0;
-
-    virtual ~ISsiManager() = default;
 };

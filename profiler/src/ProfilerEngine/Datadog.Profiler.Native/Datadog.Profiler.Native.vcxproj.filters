@@ -687,7 +687,6 @@
     <ClCompile Include="CrashReporting.cpp">
       <Filter>libdatadog</Filter>
     </ClCompile>
-<<<<<<< HEAD
     <ClCompile Include="CallstackProvider.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
@@ -696,13 +695,12 @@
     </ClCompile>
     <ClCompile Include="ServiceBase.cpp">
       <Filter>Utils</Filter>
-=======
+    </ClCompile>
     <ClCompile Include="IProfilerTelemetry.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
     <ClCompile Include="ProfilerTelemetry.cpp">
       <Filter>CorProfiler-Infrastructure</Filter>
->>>>>>> 577d2ec4d (Add entry points for profiler telemetry related to SSI)
     </ClCompile>
     <ClCompile Include="TelemetryMetricsWorker.cpp">
       <Filter>libdatadog</Filter>

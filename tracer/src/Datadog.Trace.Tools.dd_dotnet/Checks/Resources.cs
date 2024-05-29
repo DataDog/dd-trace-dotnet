@@ -46,6 +46,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string DdAgentChecks = "---- DATADOG AGENT CHECKS -----";
 
         public const string ContinuousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
+        public const string ContinuousProfilerSsiEnabled = "DD_INJECTION_ENABLED is set. Profiler is enabled through SSI.";
         public const string ContinuousProfilerDisabled = "The continuous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
         public const string ContinuousProfilerNotSet = "DD_PROFILING_ENABLED is not set, the continuous profiler is disabled.";
         public const string ContinuousProfilerNotLoaded = "The continuous profiler library is not loaded into the process.";

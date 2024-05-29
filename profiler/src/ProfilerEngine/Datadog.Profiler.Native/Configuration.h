@@ -95,6 +95,7 @@ private:
     static int32_t ExtractCodeHotspotsThreadsThreshold();
     static bool GetContention();
     EnablementStatus ExtractEnablementStatus();
+    std::chrono::milliseconds ExtractSsiLongLivedThreshold() const;
 
 private:
     static std::string const DefaultProdSite;

@@ -75,7 +75,15 @@ namespace Datadog.Trace
                 }
 
                 var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
-                var automaticProfilingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)?.ToBoolean() ?? false;
+
+                var profilingManuallyEnabled = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled);
+                var profilingSsiDeployed = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.SsiDeployed);
+
+                var automaticProfilingEnabled = profilingManuallyEnabled switch
+                {
+                    null => profilingSsiDeployed != null,
+                    _ => profilingManuallyEnabled.ToBoolean() ?? false
+                };
 
                 if (azureAppServiceSettings.CustomTracingEnabled || automaticTraceEnabled || automaticProfilingEnabled)
                 {

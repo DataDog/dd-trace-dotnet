@@ -689,9 +689,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
 bool ShouldRewriteProfilerMaps()
 {
-    auto strValue = shared::GetEnvironmentValue(WStr("DD_PROFILING_ENABLED"));
-    bool is_profiler_enabled;
-    return shared::TryParseBooleanEnvironmentValue(strValue, is_profiler_enabled) && is_profiler_enabled;
+    const auto envVarKey = WStr("DD_PROFILING_ENABLED");
+    if (shared::EnvironmentExist(envVarKey))
+    {
+        bool is_profiler_enabled;
+        auto strValue = shared::GetEnvironmentValue(envVarKey);
+        return shared::TryParseBooleanEnvironmentValue(strValue, is_profiler_enabled) && is_profiler_enabled;
+    }
+    
+    return shared::EnvironmentExist(WStr("DD_INJECTION_ENABLED"));
 }
 
 std::string GetNativeLoaderFilePath()

@@ -92,7 +92,7 @@ Configuration::Configuration()
     _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _enablementStatus = ExtractEnablementStatus();
-    _ssiLongLivedThreshold = GetEnvironmentValue(EnvironmentVariables::SsiLongLivedThreshold, 30'000ms);
+    _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -657,34 +657,39 @@ bool Configuration::IsEnvironmentValueSet(shared::WSTRING const& name, T& value)
 
 EnablementStatus Configuration::ExtractEnablementStatus()
 {
-    auto enabled = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
-
-    auto isEnabled = false;
-    auto parsed = shared::TryParseBooleanEnvironmentValue(enabled, isEnabled);
-    if (enabled.empty() || !parsed)
+    if (shared::EnvironmentExist(EnvironmentVariables::ProfilerEnabled))
     {
-        auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
-        auto pos = r.find(WStr("profiler"));
-        auto ssiEnabled = (pos != shared::WSTRING::npos);
+        auto isEnabled = false;
+        auto enabled = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
+        auto parsed = shared::TryParseBooleanEnvironmentValue(enabled, isEnabled);
 
-        if (ssiEnabled)
-        {
-            return EnablementStatus::SsiEnabled;
-        }
-        else
-        {
-            return EnablementStatus::NotSet;
-        }
-    }
-    else
-    {
-        if (isEnabled)
-        {
-            return EnablementStatus::ManuallyEnabled;
-        }
-        else
+        if (enabled.empty() || !parsed || !isEnabled)
         {
             return EnablementStatus::ManuallyDisabled;
         }
+        return EnablementStatus::ManuallyEnabled;
     }
+
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
+    auto pos = r.find(WStr("profiler"));
+    auto ssiEnabled = (pos != shared::WSTRING::npos);
+
+    if (ssiEnabled)
+    {
+        return EnablementStatus::SsiEnabled;
+    }
+    else
+    {
+        return EnablementStatus::NotSet;
+    }
+}
+
+std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const
+{
+    auto const defaultValue = 30'000ms;
+    auto value = GetEnvironmentValue(EnvironmentVariables::SsiLongLivedThreshold, defaultValue);
+
+    if (value <= 0ms)
+        return defaultValue;
+    return std::chrono::milliseconds(value);
 }

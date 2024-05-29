@@ -937,7 +937,7 @@ TEST(ConfigurationTest, CheckProfilerIsDisabledIfEnvVarIsEmpty)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("  "));
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::NotSet);
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyDisabled);
 }
 
 TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToTrue)
@@ -945,6 +945,13 @@ TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToTrue)
     EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("1 ")); // add a space on purpose to ensure that it's correctly parsed
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyEnabled) << "Env var is to 1. Profiler must be enabled.";
+}
+
+TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotParsable)
+{
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("not_parsable_ "));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyDisabled) << "Profiler must disabled is value for DD_PROLIFER_ENABLED cannot be converted to bool.";
 }
 
 TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToFalse)
@@ -991,4 +998,11 @@ TEST(ConfigurationTest, CheckLongLivedThresholdWhenEnvVarIsCorrectlySet)
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("42001"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 42'001ms);
+}
+
+TEST(ConfigurationTest, CheckLongLivedThresholdIsDefaultIfSetToZero)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 30'000ms);
 }

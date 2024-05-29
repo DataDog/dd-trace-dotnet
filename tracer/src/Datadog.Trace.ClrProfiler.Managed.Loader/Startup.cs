@@ -21,7 +21,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private const string AasCustomTracingKey = "DD_AAS_ENABLE_CUSTOM_TRACING";
         private const string AasCustomMetricsKey = "DD_AAS_ENABLE_CUSTOM_METRICS";
         private const string TraceEnabledKey = "DD_TRACE_ENABLED";
-        private const string ProfilingEnabledKey = "DD_PROFILING_ENABLED";
+        private const string ProfilingManuallyEnabledKey = "DD_PROFILING_ENABLED";
+        private const string ProfilingSsiEnabledKey = "DD_INJECTION_ENABLED";
 
         private static int _startupCtorInitialized;
 
@@ -73,7 +74,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var customTracingEnabled = ReadBooleanEnvironmentVariable(AasCustomTracingKey, false);
             var needsDogStatsD = ReadBooleanEnvironmentVariable(AasCustomMetricsKey, false);
             var automaticTraceEnabled = ReadBooleanEnvironmentVariable(TraceEnabledKey, true);
-            var automaticProfilingEnabled = ReadBooleanEnvironmentVariable(ProfilingEnabledKey, false);
+
+            var profilingSsiEnabled = ReadEnvironmentVariable(ProfilingSsiEnabledKey);
+            var profilingManuallyEnabled = ReadEnvironmentVariable(ProfilingManuallyEnabledKey);
+
+            var automaticProfilingEnabled = profilingManuallyEnabled switch
+            {
+                null => profilingSsiEnabled != null,
+                _ => Parse(profilingManuallyEnabled)
+            };
 
             if (automaticTraceEnabled || customTracingEnabled || needsDogStatsD || automaticProfilingEnabled)
             {
@@ -166,11 +175,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static bool ReadBooleanEnvironmentVariable(string key, bool defaultValue)
         {
             var value = ReadEnvironmentVariable(key);
+            if (value == null)
+            {
+                return defaultValue;
+            }
+
+            return Parse(value);
+        }
+
+        private static bool Parse(string value)
+        {
             return value switch
             {
                 "1" or "true" or "True" or "TRUE" or "t" or "T" => true,
-                "0" or "false" or "False" or "FALSE" or "f" or "F" => false,
-                _ => defaultValue
+                _ => false
             };
         }
     }
