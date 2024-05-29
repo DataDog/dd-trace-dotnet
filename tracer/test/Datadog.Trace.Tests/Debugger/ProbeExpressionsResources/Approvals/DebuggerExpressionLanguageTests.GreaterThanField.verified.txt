@@ -26,11 +26,12 @@ Expression: (
     var DictionaryLocal = (Dictionary<string, string>)scopeMemberArray[4].Value;
     var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[5].Value;
     var NullLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[6].Value;
-    var IntArg = (int)scopeMemberArray[7].Value;
-    var DoubleArg = (double)scopeMemberArray[8].Value;
-    var StringArg = (string)scopeMemberArray[9].Value;
-    var CollectionArg = (List<string>)scopeMemberArray[10].Value;
-    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[11].Value;
+    var BooleanValue = (bool)scopeMemberArray[7].Value;
+    var IntArg = (int)scopeMemberArray[8].Value;
+    var DoubleArg = (double)scopeMemberArray[9].Value;
+    var StringArg = (string)scopeMemberArray[10].Value;
+    var CollectionArg = (List<string>)scopeMemberArray[11].Value;
+    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[12].Value;
     var $dd_el_result = this.IntNumber > 2;
 
     return $dd_el_result;
