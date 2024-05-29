@@ -38,7 +38,7 @@ public:
     static inline bool QueryThreadCycleTime(HANDLE handle, PULONG64 cycleTime);
     static inline HANDLE GetCurrentProcess();
 
-    static bool SetNativeThreadName(std::thread* pNativeThread, const WCHAR* description);
+    static bool SetNativeThreadName(const WCHAR* description);
 #ifdef _WINDOWS
     static shared::WSTRING GetNativeThreadName(HANDLE threadHandle);
     static ScopedHandle GetThreadHandle(DWORD threadId);

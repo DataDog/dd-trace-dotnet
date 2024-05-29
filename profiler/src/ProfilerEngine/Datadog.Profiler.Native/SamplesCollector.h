@@ -43,8 +43,8 @@ private:
     void SendHeartBeatMetric(bool success);
 
     const char* _serviceName = "SamplesCollector";
-    const WCHAR* WorkerThreadName = WStr("DD.Profiler.SamplesCollector.WorkerThread");
-    const WCHAR* ExporterThreadName = WStr("DD.Profiler.SamplesCollector.ExporterThread");
+    const WCHAR* WorkerThreadName = WStr("DD_worker");
+    const WCHAR* ExporterThreadName = WStr("DD_exporter");
 
     inline static constexpr std::chrono::nanoseconds CollectingPeriod = 60ms;
     inline static std::string const SuccessfulExportsMetricName = "datadog.profiling.dotnet.operational.exports";
