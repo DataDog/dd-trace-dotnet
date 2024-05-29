@@ -119,8 +119,9 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         var testName = _enableIast ? "RaspIast.AspNetMvc5" : "Rasp.AspNetMvc5";
         testName += _classicMode ? ".Classic" : ".Integrated";
         await SubmitRequest(url, body, "application/json");
-        var spans = await SendRequestsAsync(_iisFixture.Agent, url, body, 1, 1, string.Empty, "application/json", null);
-        await VerifySpans(spans, settings, testName: testName, methodNameOverride: exploit);
+        var spans = agent.WaitForSpans(2, minDateTime: dateTime);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
     }
 
     public async Task InitializeAsync()
