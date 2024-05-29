@@ -70,6 +70,20 @@ namespace Samples.Security.AspNetCore5.Controllers
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
+        [Route("PopulateDDBB")]
+        public ActionResult PopulateDDBB()
+        {
+            try
+            {
+                dbConnection = dbConnection ?? IastControllerHelper.CreateDatabase();
+                return Content("OK");
+            }
+            catch (SQLiteException ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+        }
+
         [Route("SqlQuery")]
         public ActionResult SqlQuery(string username, string query)
         {

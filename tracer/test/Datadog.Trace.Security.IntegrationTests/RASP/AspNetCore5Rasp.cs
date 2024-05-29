@@ -103,8 +103,9 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
+        _ = await SendRequestsAsync(agent, "/Iast/PopulateDDBB", null, 1, 1, string.Empty, "application/json", null);
         var spans = await SendRequestsAsync(agent, url, body, 1, 1, string.Empty, "application/json", null);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web && !x.Resource.Contains("/Iast/PopulateDDBB")).ToList();
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.UseParameters(url, exploit, body);
         settings.AddIastScrubbing();
