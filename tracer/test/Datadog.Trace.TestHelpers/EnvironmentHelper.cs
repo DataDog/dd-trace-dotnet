@@ -215,8 +215,9 @@ namespace Datadog.Trace.TestHelpers
                     {
                         environmentVariables["LD_PRELOAD"] = apiWrapperPath;
                     }
-                    else if (IsRunningInAzureDevOps()) // For convenience, allow tests to run without LD_PRELOAD outside of CI
+                    else if (IsRunningInAzureDevOps())
                     {
+                        // For convenience, allow tests to run without LD_PRELOAD outside of CI
                         throw new Exception($"Unable to find API Wrapper at {apiWrapperPath}");
                     }
                 }
