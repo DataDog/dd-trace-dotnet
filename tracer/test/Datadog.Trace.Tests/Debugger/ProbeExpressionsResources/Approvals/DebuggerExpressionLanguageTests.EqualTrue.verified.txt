@@ -1,18 +1,14 @@
 ﻿Condition:
 Json:
 {
-    "eq": [
-        {
-            "getmember": [
-                {
-                    "ref": "Nested"
-                },
-                "NestedString"
-            ]
-        },
-        "Hello from nested object"
-    ]
+  "eq": [
+    {
+      "ref": "BooleanValue"
+    },
+    true
+  ]
 }
+
 Expression: (
     scopeMember,
     scopeMember,
@@ -37,7 +33,7 @@ Expression: (
     var StringArg = (string)scopeMemberArray[10].Value;
     var CollectionArg = (List<string>)scopeMemberArray[11].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[12].Value;
-    var $dd_el_result = this.Nested.NestedString == "Hello from nested object";
+    var $dd_el_result = BooleanValue;
 
     return $dd_el_result;
 }

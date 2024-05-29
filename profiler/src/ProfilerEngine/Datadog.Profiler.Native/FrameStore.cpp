@@ -197,7 +197,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
             std::lock_guard<std::mutex> lock(_methodsLock);
             auto& value = _methods[functionId];
             std::stringstream builder;
-            builder << UnknownManagedType << " |fn:" << std::move(methodName) << "|fg:" << std::move(methodGenericParameters) << " |sg:" << std::move(signature);
+            builder << UnknownManagedType << " |fn:" << std::move(methodName) << " |fg:" << std::move(methodGenericParameters) << " |sg:" << std::move(signature);
             value = {UnknownManagedAssembly, builder.str(), "", 0};
             return value;
         }
