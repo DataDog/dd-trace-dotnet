@@ -82,7 +82,7 @@ namespace Datadog.Trace.Sampling
             try
             {
                 if (!string.IsNullOrWhiteSpace(configuration) &&
-                    JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration) is { Count: > 0 } rules)
+                    JsonConvert.DeserializeObject<List<LocalSamplingRuleConfig>>(configuration) is { Count: > 0 } rules)
                 {
                     var samplingRules = new List<CustomSamplingRule>(rules.Count);
 
@@ -162,7 +162,7 @@ namespace Datadog.Trace.Sampling
         }
 
         // ReSharper disable once ClassNeverInstantiated.Local
-        private class CustomRuleConfig
+        private class LocalSamplingRuleConfig
         {
             // ReSharper disable UnusedAutoPropertyAccessor.Local
             [JsonProperty(PropertyName = "provenance")]
