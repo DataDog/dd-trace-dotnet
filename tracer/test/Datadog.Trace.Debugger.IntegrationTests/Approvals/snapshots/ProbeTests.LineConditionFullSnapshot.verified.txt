@@ -41,7 +41,7 @@
           "location": {
             "file": "LineConditionFullSnapshot.cs",
             "lines": [
-              26
+              "26"
             ]
           },
           "version": 0

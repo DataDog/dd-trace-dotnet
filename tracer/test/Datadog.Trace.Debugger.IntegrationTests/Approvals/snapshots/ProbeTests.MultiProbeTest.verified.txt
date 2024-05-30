@@ -122,7 +122,7 @@
           "location": {
             "file": "MultiProbeTest.cs",
             "lines": [
-              39
+              "39"
             ]
           },
           "version": 0

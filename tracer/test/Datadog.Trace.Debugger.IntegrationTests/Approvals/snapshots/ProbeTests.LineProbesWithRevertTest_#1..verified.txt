@@ -114,7 +114,7 @@
           "location": {
             "file": "LineProbesWithRevertTest.cs",
             "lines": [
-              41
+              "41"
             ]
           },
           "version": 0
@@ -177,7 +177,7 @@
           "location": {
             "file": "LineProbesWithRevertTest.cs",
             "lines": [
-              55
+              "55"
             ]
           },
           "version": 0
@@ -240,7 +240,7 @@
           "location": {
             "file": "LineProbesWithRevertTest.cs",
             "lines": [
-              56
+              "56"
             ]
           },
           "version": 0
