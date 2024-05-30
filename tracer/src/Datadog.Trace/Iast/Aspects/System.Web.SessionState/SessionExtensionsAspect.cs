@@ -2,6 +2,8 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
+
 #if !NETFRAMEWORK
 
 using System;
@@ -30,7 +32,7 @@ public class SessionExtensionsAspect
     /// <returns> Consumed params </returns>
     [AspectMethodInsertBefore("Microsoft.AspNetCore.Http.SessionExtensions::SetString(Microsoft.AspNetCore.Http.ISession,System.String,System.String)", new int[] { 0, 1 })]
     [AspectMethodInsertBefore("Microsoft.AspNetCore.Http.SessionExtensions::SetInt32(Microsoft.AspNetCore.Http.ISession,System.String,System.Int32)", 1)]
-    public static string ReviewTbv(string value)
+    public static string? ReviewTbv(string? value)
     {
         if (value != null)
         {

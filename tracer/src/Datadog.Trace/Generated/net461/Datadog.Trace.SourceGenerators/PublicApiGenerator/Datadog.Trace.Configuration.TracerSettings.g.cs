@@ -245,7 +245,7 @@ partial class TracerSettings
         /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
         /// </summary>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public System.Collections.Generic.IDictionary<string, string> GlobalTags
+    public System.Collections.Generic.IDictionary<string, string?> GlobalTags
     {
         get
         {
@@ -266,7 +266,7 @@ partial class TracerSettings
         /// of incoming and outgoing HTTP requests.
         /// </summary>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public System.Collections.Generic.IDictionary<string, string> HeaderTags
+    public System.Collections.Generic.IDictionary<string, string?> HeaderTags
     {
         get
         {
@@ -288,7 +288,7 @@ partial class TracerSettings
         /// of incoming and outgoing GRPC requests.
         /// </summary>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public System.Collections.Generic.IDictionary<string, string> GrpcTags
+    public System.Collections.Generic.IDictionary<string, string?> GrpcTags
     {
         get
         {

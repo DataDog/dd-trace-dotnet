@@ -32,7 +32,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
         private ImmutableDirectLogSubmissionSettings(
             string host,
             string source,
-            IReadOnlyDictionary<string, string> globalTags,
+            IReadOnlyDictionary<string, string?> globalTags,
             Uri? intakeUrl,
             string apiKey,
             bool isEnabled,
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
         public string Source { get; }
 
-        public IReadOnlyDictionary<string, string> GlobalTags { get; }
+        public IReadOnlyDictionary<string, string?> GlobalTags { get; }
 
         public Uri? IntakeUrl { get; }
 
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             return new ImmutableDirectLogSubmissionSettings(
                 host: settings.DirectLogSubmissionHost,
                 source: settings.DirectLogSubmissionSource,
-                globalTags: new ReadOnlyDictionary<string, string>(settings.DirectLogSubmissionGlobalTags),
+                globalTags: new ReadOnlyDictionary<string, string?>(settings.DirectLogSubmissionGlobalTags),
                 intakeUrl: settings.DirectLogSubmissionUrl,
                 apiKey: settings.ApiKey ?? string.Empty,
                 isEnabled: isEnabled,
@@ -145,7 +145,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             return new ImmutableDirectLogSubmissionSettings(
                 host: string.Empty,
                 source: string.Empty,
-                globalTags: new Dictionary<string, string>(),
+                globalTags: new Dictionary<string, string?>(),
                 intakeUrl: new Uri("http://localhost"),
                 apiKey: string.Empty,
                 isEnabled: false,

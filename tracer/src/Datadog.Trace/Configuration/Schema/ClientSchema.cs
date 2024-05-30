@@ -17,9 +17,9 @@ namespace Datadog.Trace.Configuration.Schema
         private readonly bool _peerServiceTagsEnabled;
         private readonly bool _removeClientServiceNamesEnabled;
         private readonly string _defaultServiceName;
-        private readonly IReadOnlyDictionary<string, string>? _serviceNameMappings;
+        private readonly IReadOnlyDictionary<string, string?>? _serviceNameMappings;
 
-        public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
+        public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string?>? serviceNameMappings)
         {
             _version = version;
             _peerServiceTagsEnabled = peerServiceTagsEnabled;
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => $"{requestType}.request",
             };
 
-        public string GetServiceName(string component)
+        public string? GetServiceName(string component)
         {
             if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(component, out var mappedServiceName))
             {

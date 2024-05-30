@@ -67,7 +67,7 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args, lastTime);
     }
 
-    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
+    public IResult? RunWaf(Dictionary<string, object?> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
     {
         LogAddressIfDebugEnabled(args);
         IResult? result = null;

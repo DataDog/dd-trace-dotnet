@@ -537,10 +537,10 @@ internal readonly struct ConfigurationBuilder
         // Dictionary accessors
         // ****************
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(Func<IDictionary<string, string>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
+        public IDictionary<string, string?>? AsDictionary(Func<IDictionary<string, string?>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<IDictionary<string, string>>? getDefaultValue = null)
+        public IDictionary<string, string?>? AsDictionary(bool allowOptionalMappings, Func<IDictionary<string, string?>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
             var result = Source.GetDictionary(Key, Telemetry, validator: null, allowOptionalMappings, separator: ':')
@@ -567,7 +567,7 @@ internal readonly struct ConfigurationBuilder
             return null;
         }
 
-        public IDictionary<string, string>? AsDictionaryWithOpenTelemetryMapping(string openTelemetryKey, Func<IDictionary<string, string>>? getDefaultValue = null)
+        public IDictionary<string, string?>? AsDictionaryWithOpenTelemetryMapping(string openTelemetryKey, Func<IDictionary<string, string?>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
             var result = Source.GetDictionary(Key, Telemetry, validator: null)
@@ -575,7 +575,7 @@ internal readonly struct ConfigurationBuilder
                       ?? (FallbackKey2 is null ? null : Source.GetDictionary(FallbackKey2, Telemetry, validator: null))
                       ?? (FallbackKey3 is null ? null : Source.GetDictionary(FallbackKey3, Telemetry, validator: null));
 
-            IDictionary<string, string>? returnValue = null;
+            IDictionary<string, string?>? returnValue = null;
             bool datadogConfigurationIsPresent = false;
             if (result is { Result: { } value, IsValid: { } resultIsValid })
             {

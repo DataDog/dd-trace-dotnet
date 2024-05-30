@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.ComponentModel;
@@ -133,7 +134,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <typeparam name="T">Type to get the default value</typeparam>
         /// <returns>Default value of T</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T GetDefaultValue<T>() => default;
+        public static T? GetDefaultValue<T>() => default;
 
         /// <summary>
         /// Begin Line Invoker
@@ -155,20 +156,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
             {
                 if (!MethodMetadataCollection.Instance.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
                 {
-                    Log.Warning("BeginLine: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadataId = {MethodMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, probeId });
+                    Log.Warning("BeginLine: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadataId = {MethodMetadataIndex}, probeId = {ProbeId}", new object?[] { typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, probeId });
                     return CreateInvalidatedLineDebuggerState();
                 }
 
                 ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
                 if (probeData.IsEmpty())
                 {
-                    Log.Warning("BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
+                    Log.Warning("BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object?[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
                     return CreateInvalidatedLineDebuggerState();
                 }
 
                 if (!probeData.Processor.ShouldProcess(in probeData))
                 {
-                    Log.Warning("BeginLine: Skipping the instrumentation. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
+                    Log.Warning("BeginLine: Skipping the instrumentation. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object?[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
                     return CreateInvalidatedLineDebuggerState();
                 }
 

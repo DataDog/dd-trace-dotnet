@@ -31,9 +31,9 @@ internal readonly struct TestsConfigurations
     public readonly string? RuntimeArchitecture;
 
     [JsonProperty("custom")]
-    public readonly Dictionary<string, string>? Custom;
+    public readonly Dictionary<string, string?>? Custom;
 
-    public TestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string?runtimeName, string? runtimeVersion, string? runtimeArchitecture, Dictionary<string, string>? custom)
+    public TestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string?runtimeName, string? runtimeVersion, string? runtimeArchitecture, Dictionary<string, string?>? custom)
     {
         OSPlatform = osPlatform;
         OSVersion = osVersion;

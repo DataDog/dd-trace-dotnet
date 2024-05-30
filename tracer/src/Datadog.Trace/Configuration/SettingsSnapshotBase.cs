@@ -82,7 +82,7 @@ internal class SettingsSnapshotBase
         }
     }
 
-    protected static void RecordIfChanged(IConfigurationTelemetry telemetry, string key, IDictionary<string, string>? oldValues, IDictionary<string, string>? newValues)
+    protected static void RecordIfChanged(IConfigurationTelemetry telemetry, string key, IDictionary<string, string?>? oldValues, IDictionary<string, string?>? newValues)
     {
         if (oldValues is null
          && (newValues is null || newValues is { Count: 0 }))

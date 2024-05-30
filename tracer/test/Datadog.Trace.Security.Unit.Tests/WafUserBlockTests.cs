@@ -35,14 +35,14 @@ namespace Datadog.Trace.Security.Unit.Tests
             res.HasErrors.Should().BeFalse();
             using var context = waf.CreateContext()!;
             var result = context.Run(
-                new Dictionary<string, object> { { AddressesConstants.UserId, "user3" } },
+                new Dictionary<string, object?> { { AddressesConstants.UserId, "user3" } },
                 WafTests.TimeoutMicroSeconds);
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(WafReturnCode.Match);
             result!.Actions.Should().NotBeEmpty();
             result!.Actions.Should().ContainKey(BlockingAction.BlockRequestType);
             result = context.Run(
-                new Dictionary<string, object> { { AddressesConstants.UserId, "user4" } },
+                new Dictionary<string, object?> { { AddressesConstants.UserId, "user4" } },
                 WafTests.TimeoutMicroSeconds);
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(WafReturnCode.Ok);

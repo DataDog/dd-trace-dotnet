@@ -82,7 +82,7 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    private Dictionary<string, object> GetBasicRequestArgsForWaf()
+    private Dictionary<string, object?> GetBasicRequestArgsForWaf()
     {
         var request = _httpTransport.Context.Request;
         var headersDic = ExtractHeadersFromRequest(request.Headers);
@@ -120,7 +120,7 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        var addressesDictionary = new Dictionary<string, object> { { AddressesConstants.RequestMethod, request.Method }, { AddressesConstants.ResponseStatus, request.HttpContext.Response.StatusCode.ToString() }, { AddressesConstants.RequestUriRaw, request.GetUrlForWaf() }, { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) } };
+        var addressesDictionary = new Dictionary<string, object?> { { AddressesConstants.RequestMethod, request.Method }, { AddressesConstants.ResponseStatus, request.HttpContext.Response.StatusCode.ToString() }, { AddressesConstants.RequestUriRaw, request.GetUrlForWaf() }, { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) } };
 
         var userId = _localRootSpan.Context?.TraceContext?.Tags.GetTag(Tags.User.Id);
         if (!string.IsNullOrEmpty(userId))

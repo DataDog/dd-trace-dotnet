@@ -52,7 +52,7 @@ internal static class RaspModule
             return;
         }
 
-        var arguments = new Dictionary<string, object> { [address] = valueToCheck };
+        var arguments = new Dictionary<string, object?> { [address] = valueToCheck };
         RunWafRasp(arguments, rootSpan, address);
     }
 
@@ -79,7 +79,7 @@ internal static class RaspModule
         }
     }
 
-    private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
+    private static void RunWafRasp(Dictionary<string, object?> arguments, Span rootSpan, string address)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, rootSpan);
         var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true, isRasp: true);

@@ -115,10 +115,10 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
         return ConfigurationResult<bool>.Invalid(result.Value);
     }
 
-    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+    public ConfigurationResult<IDictionary<string, string?>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator)
         => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
-    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+    public ConfigurationResult<IDictionary<string, string?>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator, bool allowOptionalMappings, char separator)
     {
 #pragma warning disable DD0002 // This class is intentionally a wrapper around IConfigurationSource
         var result = Source.GetDictionary(key, allowOptionalMappings);
@@ -151,11 +151,11 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
         if (validator is null || validator(result))
         {
             telemetry.Record(key, stringifiedDictionary, recordValue: true, ConfigurationOrigins.Code);
-            return ConfigurationResult<IDictionary<string, string>>.Valid(result);
+            return ConfigurationResult<IDictionary<string, string?>>.Valid(result);
         }
 
         telemetry.Record(key, stringifiedDictionary, recordValue: true, ConfigurationOrigins.Code, TelemetryErrorCode.FailedValidation);
-        return ConfigurationResult<IDictionary<string, string>>.Invalid(result);
+        return ConfigurationResult<IDictionary<string, string?>>.Invalid(result);
     }
 
     public ConfigurationResult<T>? GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
