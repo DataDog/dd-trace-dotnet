@@ -77,119 +77,7 @@ namespace Datadog.Trace.Activity
                     OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
                 }
 
-                // Additionally, since .NET 5, an Activity can hold Events
-                // Each event object is a System.Diagnostics.ActivityEvent struct, so unfortunately we will end up boxing the values
-                // Marshall events here using tag "events"
-                bool containsEvents = false;
-                StringBuilder sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-                var stringWriter = new StringWriter(sb);
-                using var writer = new JsonTextWriter(stringWriter);
-
-                foreach (var activityEvent in activity5.Events)
-                {
-                    if (!activityEvent.TryDuckCast<ActivityEvent>(out var duckEvent))
-                    {
-                        continue;
-                    }
-
-                    if (!containsEvents)
-                    {
-                        writer.WriteStartArray();
-                        containsEvents = true;
-                    }
-
-                    writer.WriteStartObject();
-                    writer.WritePropertyName("name");
-                    writer.WriteValue(duckEvent.Name);
-                    writer.WritePropertyName("time_unix_nano");
-                    writer.WriteValue(duckEvent.Timestamp.ToUnixTimeNanoseconds());
-
-                    bool firstAttributeEncountered = false;
-                    foreach (var tag in duckEvent.Tags)
-                    {
-                        if (!firstAttributeEncountered)
-                        {
-                            writer.WritePropertyName("attributes");
-                            writer.WriteStartObject();
-                            firstAttributeEncountered = true;
-                        }
-
-                        writer.WritePropertyName(tag.Key);
-
-                        switch (tag.Value)
-                        {
-                            case char:
-                            case string:
-                            case bool:
-                            case byte:
-                            case sbyte:
-                            case short:
-                            case ushort:
-                            case int:
-                            case uint:
-                            case long:
-                            case ulong:
-                            case float:
-                            case double:
-                                writer.WriteValue(tag.Value);
-                                break;
-                            case IEnumerable enumerable:
-                                writer.WriteStartArray();
-                                foreach (var item in enumerable)
-                                {
-                                    switch (item)
-                                    {
-                                        case char:
-                                        case string:
-                                        case bool:
-                                        case byte:
-                                        case sbyte:
-                                        case short:
-                                        case ushort:
-                                        case int:
-                                        case uint:
-                                        case long:
-                                        case ulong:
-                                        case float:
-                                        case double:
-                                            writer.WriteValue(item);
-                                            break;
-                                        case IEnumerable:
-                                            // Do nothing. We do not support arrays of arrays
-                                            break;
-                                        default:
-                                            writer.WriteValue(item?.ToString());
-                                            break;
-                                    }
-                                }
-
-                                writer.WriteEndArray();
-                                // writer.WriteRaw(JsonConvert.SerializeObject(enumerable));
-                                break;
-                            default:
-                                writer.WriteValue(tag.Value?.ToString());
-                                break;
-                        }
-                    }
-
-                    if (firstAttributeEncountered)
-                    {
-                        writer.WriteEndObject();
-                    }
-
-                    writer.WriteEndObject();
-                }
-
-                if (containsEvents)
-                {
-                    writer.WriteEndArray();
-                    string eventsValue = StringBuilderCache.GetStringAndRelease(sb);
-                    span.SetTag("events", eventsValue);
-                }
-                else
-                {
-                    StringBuilderCache.GetStringAndRelease(sb);
-                }
+                OtlpHelpers.SerializeEventsToJson(span, activity5.Events);
             }
             else
             {
@@ -527,6 +415,123 @@ namespace Datadog.Trace.Activity
                 SetTagObject(span, Tags.ErrorType, errorType);
                 SetTagObject(span, Tags.ErrorMsg, errorMsg);
                 SetTagObject(span, Tags.ErrorStack, errorStack);
+            }
+        }
+
+        internal static void SerializeEventsToJson(Span span, IEnumerable events)
+        {
+            // Additionally, since .NET 5, an Activity can hold Events
+            // Each event object is a System.Diagnostics.ActivityEvent struct, so unfortunately we will end up boxing the values
+            // Marshall events here using tag "events"
+            bool containsEvents = false;
+            StringBuilder sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var stringWriter = new StringWriter(sb);
+            using var writer = new JsonTextWriter(stringWriter);
+
+            foreach (var activityEvent in events)
+            {
+                if (!activityEvent.TryDuckCast<ActivityEvent>(out var duckEvent))
+                {
+                    continue;
+                }
+
+                if (!containsEvents)
+                {
+                    writer.WriteStartArray();
+                    containsEvents = true;
+                }
+
+                writer.WriteStartObject();
+                writer.WritePropertyName("name");
+                writer.WriteValue(duckEvent.Name);
+                writer.WritePropertyName("time_unix_nano");
+                writer.WriteValue(duckEvent.Timestamp.ToUnixTimeNanoseconds());
+
+                bool firstAttributeEncountered = false;
+                foreach (var tag in duckEvent.Tags)
+                {
+                    if (!firstAttributeEncountered)
+                    {
+                        writer.WritePropertyName("attributes");
+                        writer.WriteStartObject();
+                        firstAttributeEncountered = true;
+                    }
+
+                    writer.WritePropertyName(tag.Key);
+
+                    switch (tag.Value)
+                    {
+                        case char:
+                        case string:
+                        case bool:
+                        case byte:
+                        case sbyte:
+                        case short:
+                        case ushort:
+                        case int:
+                        case uint:
+                        case long:
+                        case ulong:
+                        case float:
+                        case double:
+                            writer.WriteValue(tag.Value);
+                            break;
+                        case IEnumerable enumerable:
+                            writer.WriteStartArray();
+                            foreach (var item in enumerable)
+                            {
+                                switch (item)
+                                {
+                                    case char:
+                                    case string:
+                                    case bool:
+                                    case byte:
+                                    case sbyte:
+                                    case short:
+                                    case ushort:
+                                    case int:
+                                    case uint:
+                                    case long:
+                                    case ulong:
+                                    case float:
+                                    case double:
+                                        writer.WriteValue(item);
+                                        break;
+                                    case IEnumerable:
+                                        // Do nothing. We do not support arrays of arrays
+                                        break;
+                                    default:
+                                        writer.WriteValue(item?.ToString());
+                                        break;
+                                }
+                            }
+
+                            writer.WriteEndArray();
+                            // writer.WriteRaw(JsonConvert.SerializeObject(enumerable));
+                            break;
+                        default:
+                            writer.WriteValue(tag.Value?.ToString());
+                            break;
+                    }
+                }
+
+                if (firstAttributeEncountered)
+                {
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndObject();
+            }
+
+            if (containsEvents)
+            {
+                writer.WriteEndArray();
+                string eventsValue = StringBuilderCache.GetStringAndRelease(sb);
+                span.SetTag("events", eventsValue);
+            }
+            else
+            {
+                StringBuilderCache.GetStringAndRelease(sb);
             }
         }
 
