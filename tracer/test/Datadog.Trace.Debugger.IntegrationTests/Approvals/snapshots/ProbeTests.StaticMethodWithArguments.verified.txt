@@ -80,7 +80,7 @@
           "location": {
             "file": "StaticMethodWithArguments.cs",
             "lines": [
-              18
+              "18"
             ]
           },
           "version": 0

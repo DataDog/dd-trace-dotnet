@@ -67899,16 +67899,24 @@
                                           "value": "BigObject"
                                         },
                                         {
-                                          "pruned": true
+                                          "notCapturedReason": "depth",
+                                          "type": "BigObject",
+                                          "value": "BigObject"
                                         },
                                         {
-                                          "pruned": true
+                                          "notCapturedReason": "depth",
+                                          "type": "BigObject",
+                                          "value": "BigObject"
                                         },
                                         {
-                                          "pruned": true
+                                          "notCapturedReason": "depth",
+                                          "type": "BigObject",
+                                          "value": "BigObject"
                                         },
                                         {
-                                          "pruned": true
+                                          "notCapturedReason": "depth",
+                                          "type": "BigObject",
+                                          "value": "BigObject"
                                         },
                                         {
                                           "pruned": true
@@ -74623,7 +74631,7 @@
           "location": {
             "file": "LargeSnapshotTest.cs",
             "lines": [
-              20
+              "20"
             ]
           },
           "version": 0

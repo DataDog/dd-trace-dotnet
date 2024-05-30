@@ -13,7 +13,7 @@
           "location": {
             "file": "LineTemplatePartialSnapshot.cs",
             "lines": [
-              23
+              "23"
             ]
           },
           "version": 0
