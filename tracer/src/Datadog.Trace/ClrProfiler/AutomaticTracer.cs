@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler
         /// Sets the internal distributed trace object
         /// </summary>
         /// <param name="value">Shared distributed trace object instance</param>
-        public void SetDistributedTrace(IReadOnlyDictionary<string, string> value)
+        public void SetDistributedTrace(IReadOnlyDictionary<string, string>? value)
         {
             if (_child != null)
             {
