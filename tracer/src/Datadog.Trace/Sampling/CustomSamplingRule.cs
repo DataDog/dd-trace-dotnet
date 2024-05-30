@@ -164,6 +164,7 @@ namespace Datadog.Trace.Sampling
         // ReSharper disable once ClassNeverInstantiated.Local
         private class CustomRuleConfig
         {
+            // ReSharper disable UnusedAutoPropertyAccessor.Local
             [JsonProperty(PropertyName = "provenance")]
             public string? Provenance { get; set; }
 
@@ -182,6 +183,7 @@ namespace Datadog.Trace.Sampling
 
             [JsonProperty(PropertyName = "tags")]
             public Dictionary<string, string?>? Tags { get; set; }
+            // ReSharper restore UnusedAutoPropertyAccessor.Local
         }
     }
 }
