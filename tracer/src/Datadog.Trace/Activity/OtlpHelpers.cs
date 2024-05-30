@@ -422,105 +422,24 @@ namespace Datadog.Trace.Activity
 
         internal static void SerializeEventsToJson(Span span, IEnumerable events)
         {
-            // Additionally, since .NET 5, an Activity can hold Events
-            // Each event object is a System.Diagnostics.ActivityEvent struct, so unfortunately we will end up boxing the values
-            // Marshall events here using tag "events"
-            bool containsEvents = false;
-            StringBuilder sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            var stringWriter = new StringWriter(sb);
-            using var writer = new JsonTextWriter(stringWriter);
+            var eventsList = new List<ActivityEvent>();
 
             foreach (var activityEvent in events)
             {
-                if (!activityEvent.TryDuckCast<ActivityEvent>(out var duckEvent))
+                if (activityEvent.TryDuckCast<ActivityEvent>(out var duckEvent))
                 {
-                    continue;
+                    eventsList.Add(duckEvent);
                 }
-
-                if (!containsEvents)
-                {
-                    writer.WriteStartArray();
-                    containsEvents = true;
-                }
-
-                writer.WriteStartObject();
-                writer.WritePropertyName("name");
-                writer.WriteValue(duckEvent.Name);
-                writer.WritePropertyName("time_unix_nano");
-                writer.WriteValue(duckEvent.Timestamp.ToUnixTimeNanoseconds());
-
-                // The attributes field is optional, so if there are no attributes, then avoid emitting the object
-                bool firstAttributeEncountered = false;
-                foreach (var tag in duckEvent.Tags)
-                {
-                    if (!firstAttributeEncountered)
-                    {
-                        writer.WritePropertyName("attributes");
-                        writer.WriteStartObject();
-                        firstAttributeEncountered = true;
-                    }
-
-                    writer.WritePropertyName(tag.Key);
-                    SerializeAttributeValue(writer, isAlreadyNested: false, tag.Value);
-                }
-
-                if (firstAttributeEncountered)
-                {
-                    writer.WriteEndObject();
-                }
-
-                writer.WriteEndObject();
             }
 
-            if (containsEvents)
+            if (eventsList.Count <= 0)
             {
-                writer.WriteEndArray();
-                string eventsValue = StringBuilderCache.GetStringAndRelease(sb);
-                span.SetTag("events", eventsValue);
-            }
-            else
-            {
-                StringBuilderCache.GetStringAndRelease(sb);
+                return;
             }
 
-            void SerializeAttributeValue(JsonTextWriter writer, bool isAlreadyNested, object? value)
-            {
-                switch (value)
-                {
-                    case char:
-                    case string:
-                    case bool:
-                    case byte:
-                    case sbyte:
-                    case short:
-                    case ushort:
-                    case int:
-                    case uint:
-                    case long:
-                    case ulong:
-                    case float:
-                    case double:
-                        writer.WriteValue(value);
-                        break;
-                    case IEnumerable enumerable:
-                        if (!isAlreadyNested)
-                        {
-                            writer.WriteStartArray();
-                            foreach (var item in enumerable)
-                            {
-                                SerializeAttributeValue(writer, isAlreadyNested: true, item);
-                            }
-
-                            writer.WriteEndArray();
-                            // writer.WriteRaw(JsonConvert.SerializeObject(enumerable));
-                        }
-
-                        break;
-                    default:
-                        writer.WriteValue(value?.ToString());
-                        break;
-                }
-            }
+            var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new ActivityEventConverter() }, Formatting = Formatting.None };
+            var eventsJson = JsonConvert.SerializeObject(eventsList, settings);
+            span.SetTag("events", eventsJson);
         }
 
         // See trace agent func spanKind2Type: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L621
