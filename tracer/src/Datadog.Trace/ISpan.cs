@@ -25,7 +25,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets the resource name
         /// </summary>
-        string ResourceName { get; set; }
+        string? ResourceName { get; set; }
 
         /// <summary>
         /// Gets or sets the type of request this span represents (ex: web, db).

@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 #if !NETFRAMEWORK
 using System;
@@ -57,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
             var claimsToTestInSafeMode = new[] { ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub" };
             if (claimsPrincipal?.Claims != null && Security.Instance is { TrackUserEvents: true } security)
             {
-                var span = state.Scope.Span;
+                var span = state.Scope?.Span;
                 var setTag = TaggingUtils.GetSpanSetter(span, out _);
                 var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
@@ -89,7 +90,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                     }
                 }
 
-                security.SetTraceSamplingPriority(span);
+                if (span != null)
+                {
+                    security.SetTraceSamplingPriority(span);
+                }
             }
 
             return returnValue;
