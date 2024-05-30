@@ -1000,9 +1000,16 @@ TEST(ConfigurationTest, CheckLongLivedThresholdWhenEnvVarIsCorrectlySet)
     ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 42'001ms);
 }
 
-TEST(ConfigurationTest, CheckLongLivedThresholdIsDefaultIfSetToZero)
+TEST(ConfigurationTest, CheckLongLivedThresholdIsSetToZero)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 0ms);
+}
+
+TEST(ConfigurationTest, CheckLongLivedThresholdIsDefaultIfSetToNegativeValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("-1"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 30'000ms);
 }

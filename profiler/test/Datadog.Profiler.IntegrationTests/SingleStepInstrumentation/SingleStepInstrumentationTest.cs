@@ -56,9 +56,9 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             lines.Should().ContainMatch("*.NET Profiler deployment mode: Manual*");
             lines.Should().ContainMatch("*.NET Profiler is enabled.*");
             lines.Should().NotContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
-            lines.Should().ContainMatch("*ProcessStart(manual)*");
-            lines.Should().ContainMatch("*ProcessEnd(manual*");
-            lines.Should().NotContainMatch("*Process*(ssi*");
+            lines.Should().ContainMatch("*ProcessStart(Manual)*");
+            lines.Should().ContainMatch("*ProcessEnd(Manual*");
+            lines.Should().NotContainMatch("*Process*(Single Step Instrumentation*");
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -79,9 +79,9 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             lines.Should().ContainMatch("*.NET Profiler deployment mode: Manual*");
             lines.Should().NotContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
             lines.Should().ContainMatch("*.NET Profiler is disabled.*");
-            lines.Should().NotContainMatch("*ProcessStart(manual)*");
-            lines.Should().NotContainMatch("*ProcessEnd(manual*");
-            lines.Should().NotContainMatch("*Process*(ssi*");
+            lines.Should().NotContainMatch("*ProcessStart(Manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(Manual*");
+            lines.Should().NotContainMatch("*Process*(Single Step Instrumentation*");
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -104,10 +104,10 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
             lines.Should().ContainMatch("*.NET Profiler is enabled.*");
             lines.Should().NotContainMatch("*.NET Profiler is enabled using Single Step Instrumentation limited activation.*");
-            lines.Should().ContainMatch("*ProcessStart(ssi)*");
-            lines.Should().ContainMatch("*ProcessEnd(ssi*");
-            lines.Should().NotContainMatch("*ProcessStart(manual)*");
-            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+            lines.Should().ContainMatch("*ProcessStart(Single Step Instrumentation)*");
+            lines.Should().ContainMatch("*ProcessEnd(Single Step Instrumentation*");
+            lines.Should().NotContainMatch("*ProcessStart(Manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(Manual*");
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -131,10 +131,10 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
             lines.Should().ContainMatch("*.NET Profiler is disabled.*");
             lines.Should().ContainMatch("*DllGetClassObject(): Profiling is not enabled.*");
-            lines.Should().NotContainMatch("*ProcessStart(manual)*");
-            lines.Should().NotContainMatch("*ProcessEnd(manual*");
-            lines.Should().NotContainMatch("*ProcessStart(ssi)*");
-            lines.Should().NotContainMatch("*ProcessEnd(sii*");
+            lines.Should().NotContainMatch("*ProcessStart(Manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(Manual*");
+            lines.Should().NotContainMatch("*ProcessStart(Single Step Instrumentation)*");
+            lines.Should().NotContainMatch("*ProcessEnd(Single Step Instrumentation*");
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -158,10 +158,10 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             lines.Should().ContainMatch("*.NET Profiler is enabled using Single Step Instrumentation limited activation.*");
             // check it's telemetry only
             // no service started ?
-            lines.Should().ContainMatch("*ProcessStart(ssi)*");
-            lines.Should().ContainMatch("*ProcessEnd(ssi*");
-            lines.Should().NotContainMatch("*ProcessStart(manual)*");
-            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+            lines.Should().ContainMatch("*ProcessStart(Single Step Instrumentation)*");
+            lines.Should().ContainMatch("*ProcessEnd(Single Step Instrumentation*");
+            lines.Should().NotContainMatch("*ProcessStart(Manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(Manual*");
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -185,10 +185,10 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
             lines.Should().ContainMatch("*.NET Profiler is enabled using Single Step Instrumentation limited activation.*");
-            lines.Should().ContainMatch("*ProcessStart(ssi)*");
-            lines.Should().ContainMatch("*ProcessEnd(ssi,*, ShortLived | NoSpan*");
-            lines.Should().NotContainMatch("*ProcessStart(manual)*");
-            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+            lines.Should().ContainMatch("*ProcessStart(Single Step Instrumentation)*");
+            lines.Should().ContainMatch("*ProcessEnd(Single Step Instrumentation, ShortLived | NoSpan*");
+            lines.Should().NotContainMatch("*ProcessStart(Manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(Manual*");
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -213,10 +213,10 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
             lines.Should().ContainMatch("*.NET Profiler is enabled using Single Step Instrumentation limited activation.*");
-            lines.Should().ContainMatch("*ProcessStart(ssi)*");
-            lines.Should().ContainMatch("*ProcessEnd(ssi,*, NoSpan)*");
-            lines.Should().NotContainMatch("*ProcessStart(manual)*");
-            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+            lines.Should().ContainMatch("*ProcessStart(Single Step Instrumentation)*");
+            lines.Should().ContainMatch("*ProcessEnd(Single Step Instrumentation, NoSpan)*");
+            lines.Should().NotContainMatch("*ProcessStart(Manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(Manual*");
         }
 
         [TestAppFact("Samples.BuggyBits")]
@@ -239,10 +239,10 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
             lines.Should().ContainMatch("*.NET Profiler is enabled using Single Step Instrumentation limited activation.*");
-            lines.Should().ContainMatch("*ProcessStart(ssi)*");
-            lines.Should().ContainMatch("*ProcessEnd(ssi,*, ShortLived)*");
-            lines.Should().NotContainMatch("*ProcessStart(manual)*");
-            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+            lines.Should().ContainMatch("*ProcessStart(Single Step Instrumentation)*");
+            lines.Should().ContainMatch("*ProcessEnd(Single Step Instrumentation, ShortLived)*");
+            lines.Should().NotContainMatch("*ProcessStart(Manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(Manual*");
         }
 
         [TestAppFact("Samples.BuggyBits")]
@@ -266,10 +266,10 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             lines.Should().ContainMatch("*.NET Profiler deployment mode: Single Step Instrumentation*");
             lines.Should().ContainMatch("*.NET Profiler is enabled using Single Step Instrumentation limited activation.*");
-            lines.Should().ContainMatch("*ProcessStart(ssi)*");
-            lines.Should().ContainMatch("*ProcessEnd(ssi,*, AllTriggered)*");
-            lines.Should().NotContainMatch("*ProcessStart(manual)*");
-            lines.Should().NotContainMatch("*ProcessEnd(manual*");
+            lines.Should().ContainMatch("*ProcessStart(Single Step Instrumentation)*");
+            lines.Should().ContainMatch("*ProcessEnd(Single Step Instrumentation, AllTriggered)*");
+            lines.Should().NotContainMatch("*ProcessStart(Manual)*");
+            lines.Should().NotContainMatch("*ProcessEnd(Manual*");
         }
     }
 }

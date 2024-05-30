@@ -12,7 +12,6 @@
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
-#include "IProfilerTelemetry.h"
 #include "ISsiLifetime.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
@@ -82,7 +81,7 @@ class MockExporter : public IExporter
 {
 public:
     MOCK_METHOD(void, Add, (std::shared_ptr<Sample> const& sample), (override));
-    MOCK_METHOD(bool, Export, (), (override));
+    MOCK_METHOD(bool, Export, (bool lastCall), (override));
     MOCK_METHOD(void, SetEndpoint, (const std::string& runtimeId, uint64_t traceId, const std::string& endpoint), (override));
     MOCK_METHOD(void, RegisterUpscaleProvider, (IUpscaleProvider * provider), (override));
     MOCK_METHOD(void, RegisterProcessSamplesProvider, (ISamplesProvider * provider), (override));
@@ -174,56 +173,6 @@ public:
 private:
     bool _hasBeenStarted = false;
 };
-
-class ProfilerTelemetryForTest : public IProfilerTelemetry
-{
-public:
-    ProfilerTelemetryForTest()
-    {
-        _deployment = DeploymentMode::Manual; // should we add Unknown ?
-        _duration = 0;
-        _heuristic = SkipProfileHeuristicType::AllTriggered;
-    }
-
-    void ProcessStart(DeploymentMode deployment) override
-    {
-        _deployment = deployment;
-    }
-
-    void ProcessEnd(uint64_t duration, uint64_t sentProfiles, SkipProfileHeuristicType heuristics) override
-    {
-        _duration = duration;
-        _sentProfiles = sentProfiles;
-        _heuristic = heuristics;
-    }
-
-    void SetExporter(IExporter* exporter) override
-    {
-    }
-
-public:
-    DeploymentMode GetDeployment() const
-    {
-        return _deployment;
-    }
-
-    uint64_t GetDuration() const
-    {
-        return _duration;
-    }
-
-    SkipProfileHeuristicType GetHeuristic() const
-    {
-        return _heuristic;
-    }
-
-private:
-    DeploymentMode _deployment;
-    uint64_t _duration;
-    uint64_t _sentProfiles;
-    SkipProfileHeuristicType _heuristic;
-};
-
 
 template <typename T, typename U, typename... Args>
 std::pair<std::unique_ptr<T>, U&> CreateMockForUniquePtr(Args... args)

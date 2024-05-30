@@ -19,7 +19,6 @@
 #include "IExporter.h"
 #include "IFrameStore.h"
 #include "IMetricsSender.h"
-#include "IProfilerTelemetry.h"
 #include "ISamplesProvider.h"
 #include "ISsiManager.h"
 #include "WallTimeProvider.h"
@@ -271,11 +270,6 @@ private :
     bool _isETWStarted = false;
     MemoryResourceManager _memoryResourceManager;
 
-    // today, only the SSI manager is using telemetry
-    // but we could have more telemetry in the future
-    // so keep it at the CorProfilerCallback level
-    // instead of hidding it inside the SSI manager
-    std::unique_ptr<IProfilerTelemetry> _pProfilerTelemetry = nullptr;
     std::unique_ptr<ISsiManager> _pSsiManager = nullptr;
 
 private:

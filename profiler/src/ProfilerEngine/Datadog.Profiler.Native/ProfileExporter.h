@@ -50,7 +50,7 @@ public:
         IAllocationsRecorder* allocationsRecorder);
     ~ProfileExporter() override;
 
-    bool Export() override;
+    bool Export(bool lastCall = false) override;
     void Add(std::shared_ptr<Sample> const& sample) override;
     void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
     void RegisterUpscaleProvider(IUpscaleProvider* provider) override;

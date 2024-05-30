@@ -42,7 +42,6 @@
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "ProfilerEngineStatus.h"
-#include "ProfilerTelemetry.h"
 #include "RuntimeIdStore.h"
 #include "RuntimeInfo.h"
 #include "Sample.h"
@@ -457,8 +456,6 @@ void CorProfilerCallback::InitializeServices()
         _pSsiManager.get(),
         _pAllocationsRecorder.get()
         );
-
-    _pProfilerTelemetry->SetExporter(_pExporter.get());
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
         _pCpuTimeProvider != nullptr &&
@@ -1011,9 +1008,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
 
-    _pProfilerTelemetry = std::make_unique<ProfilerTelemetry>(_pConfiguration);
-
-    _pSsiManager = std::make_unique<SsiManager>(_pConfiguration, _pProfilerTelemetry.get(), this);
+    _pSsiManager = std::make_unique<SsiManager>(_pConfiguration, this);
     _pSsiManager->ProcessStart();
 
     double coresThreshold = _pConfiguration->MinimumCores();

@@ -4,6 +4,7 @@
 #include "TelemetryMetricsWorker.h"
 
 #include "IConfiguration.h"
+#include "ISsiManager.h"
 #include "Log.h"
 #include "ProfileExporter.h"
 #include "Tags.h"
@@ -24,11 +25,14 @@ struct TelemetryMetricsWorker::Impl
 public:
     ddog_TelemetryWorkerHandle* _pHandle = nullptr;
     ddog_ContextKey _numberOfProfilesKey = {};
+    ddog_ContextKey _numberOfRuntimeIdKey = {};
 };
 
-TelemetryMetricsWorker::TelemetryMetricsWorker() :
+TelemetryMetricsWorker::TelemetryMetricsWorker(ISsiManager* ssiManager) :
     _serviceName{},
-    _impl{std::make_unique<Impl>()}
+    _impl{std::make_unique<Impl>()},
+    _hasSentProfiles{false},
+    _ssiManager{ssiManager}
 {
 }
 
@@ -86,9 +90,9 @@ bool TelemetryMetricsWorker::Start(
 
     ddog_TelemetryWorkerBuilder* builder;
     auto service = FfiHelper::StringToCharSlice(serviceName);
-    auto lang = FfiHelper::StringToCharSlice(language);                 // ProfileExporter::LanguageFamily
-    auto lang_version = FfiHelper::StringToCharSlice(languageVersion);  // use IRuntimeInfo.GetDotnet(Major/Minor)Version
-    auto tracer_version = FfiHelper::StringToCharSlice(libraryVersion); // ProfileExporter::LibraryVersion
+    auto lang = FfiHelper::StringToCharSlice(language);
+    auto lang_version = FfiHelper::StringToCharSlice(languageVersion);
+    auto tracer_version = FfiHelper::StringToCharSlice(libraryVersion);
 
     auto result = ddog_telemetry_builder_instantiate(&builder, service, lang, lang_version, tracer_version);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
@@ -98,8 +102,7 @@ bool TelemetryMetricsWorker::Start(
         return false;
     }
 
-    auto agentEndpoint = ProfileExporter::BuildAgentEndpoint(pConfiguration);
-    auto endpoint_char = FfiHelper::StringToCharSlice(agentEndpoint);
+    auto endpoint_char = FfiHelper::StringToCharSlice(agentUrl);
     auto* endpoint = ddog_endpoint_from_url(endpoint_char);
     result = ddog_telemetry_builder_with_endpoint_config_endpoint(builder, endpoint);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
@@ -124,7 +127,7 @@ bool TelemetryMetricsWorker::Start(
     // these are optional
     if (!serviceVersion.empty())
     {
-        ddog_CharSlice service_version = FfiHelper::StringToCharSlice(serviceVersion);
+        auto service_version = FfiHelper::StringToCharSlice(serviceVersion);
         result = ddog_telemetry_builder_with_str_application_service_version(builder, service_version);
         if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
         {
@@ -133,6 +136,7 @@ bool TelemetryMetricsWorker::Start(
             return false;
         }
     }
+
     if (!environment.empty())
     {
         auto env = FfiHelper::StringToCharSlice(environment);
@@ -165,10 +169,6 @@ bool TelemetryMetricsWorker::Start(
 
     // metrics definition
 
-    // telemetry metrics are supposed to be emitted only if deployed via SSI
-    // --> should always be "ssi"
-    auto installationTagValue = (pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation) ? "ssi" : "manual";
-
     std::string enablementTagValue =
         (pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
             ? "manually_enabled"
@@ -176,8 +176,8 @@ bool TelemetryMetricsWorker::Start(
             ? "ssi_enabled"
             : "not_enabled";
 
-    auto tags = libdatadog::Tags({{"installation", std::move(installationTagValue)},
-                                  {"enablement_choice", std::move(enablementTagValue)}},
+    auto tags = libdatadog::Tags({{"installation", "ssi"},
+                                  {"enablement_choice", enablementTagValue}},
                                  false);
 
     // TODO: see if we need to also emit ssi_heuristic.number_of_runtime_id
@@ -186,17 +186,45 @@ bool TelemetryMetricsWorker::Start(
     _impl->_numberOfProfilesKey = ddog_telemetry_handle_register_metric_context(
         _impl->_pHandle, numberOfProfilesMetricName, DDOG_METRIC_TYPE_COUNT, *static_cast<ddog_Vec_Tag const*>(*tags._impl), true, DDOG_METRIC_NAMESPACE_PROFILERS);
 
+    tags = libdatadog::Tags({{"installation", "ssi"},
+                             {"enablement_choice", enablementTagValue}},
+                            false);
+
+    auto numberOfRuntimeIdMetricName = FfiHelper::StringToCharSlice("ssi_heuristic.number_of_runtime_id");
+
+    _impl->_numberOfRuntimeIdKey = ddog_telemetry_handle_register_metric_context(
+        _impl->_pHandle, numberOfRuntimeIdMetricName, DDOG_METRIC_TYPE_COUNT, *static_cast<ddog_Vec_Tag const*>(*tags._impl), true, DDOG_METRIC_NAMESPACE_PROFILERS);
+
     return true;
 }
 
-bool TelemetryMetricsWorker::AddPoint(double value, bool hasSentProfiles, SkipProfileHeuristicType heuristics)
+struct TelemetryMetricsWorker::Key
+{
+public:
+    ddog_ContextKey* _internal;
+};
+
+void TelemetryMetricsWorker::IncNumberOfProfiles(bool hasSentProfiles)
+{
+    _hasSentProfiles |= hasSentProfiles;
+    auto k = Key{._internal = &_impl->_numberOfProfilesKey};
+    AddPoint(&k, 1, hasSentProfiles, _ssiManager->GetSkipProfileHeuristic());
+}
+
+void TelemetryMetricsWorker::IncNumberOfApplications()
+{
+    auto k = Key{._internal = &_impl->_numberOfRuntimeIdKey};
+    AddPoint(&k, 1, _hasSentProfiles, _ssiManager->GetSkipProfileHeuristic());
+}
+
+void TelemetryMetricsWorker::AddPoint(Key* key, double value, bool hasSentProfiles, SkipProfileHeuristicType heuristics)
 {
     if (_impl->_pHandle == nullptr)
     {
         assert(false);
 
         Log::Debug("Impossible to add telemetry point: worker is not started.");
-        return false;
+        return;
     }
 
     std::string heuristicTag;
@@ -226,15 +254,13 @@ bool TelemetryMetricsWorker::AddPoint(double value, bool hasSentProfiles, SkipPr
                                   {"heuristic_hypothetical_decision", std::move(heuristicTag)}},
                                  false);
 
-    auto result = ddog_telemetry_handle_add_point_with_tags(_impl->_pHandle, &_impl->_numberOfProfilesKey, value, *static_cast<ddog_Vec_Tag const*>(*tags._impl));
+    auto result = ddog_telemetry_handle_add_point_with_tags(_impl->_pHandle, key->_internal, value, *static_cast<ddog_Vec_Tag const*>(*tags._impl));
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
         auto error = make_error(result);
         Log::Debug("Failed to add telemetry point: ", error.message());
-        return false;
+        return;
     }
-
-    return true;
 }
 
 // telemetry SSI metrics definition

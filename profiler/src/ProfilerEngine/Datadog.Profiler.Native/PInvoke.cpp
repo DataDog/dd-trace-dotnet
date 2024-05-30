@@ -98,7 +98,7 @@ extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, 
         environment ? environment : std::string(),
         version ? version : std::string());
 
-    profiler->GetExporter()->CreateTelemetryMetricsWorker(rid, pApplicationInfo);
+    profiler->GetExporter()->CreateTelemetryMetricsWorker(std::move(rid), pApplicationInfo);
 }
 
 extern "C" void __stdcall SetEndpointForTrace(const char* runtimeId, uint64_t traceId, const char* endpoint)

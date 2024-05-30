@@ -21,16 +21,10 @@
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "Profile.h"
-#include "ProfilerTelemetry.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "ScopeFinalizer.h"
 #include "dd_profiler_version.h"
-
-extern "C"
-{
-#include "datadog/telemetry.h"
-}
 
 #include <cassert>
 #include <fstream>
@@ -458,7 +452,7 @@ void ProfileExporter::AddProcessSamples(libdatadog::Profile* profile, std::list<
     }
 }
 
-bool ProfileExporter::Export()
+bool ProfileExporter::Export(bool lastCall)
 {
     bool exported = false;
 
@@ -534,19 +528,15 @@ bool ProfileExporter::Export()
 
         const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(runtimeId));
 
-        // telemetry metrics are counting the number of profiles sent or that should have been sent if the heuristics were triggered
-        SkipProfileHeuristicType heuristicTag =
-            (_ssiManager == nullptr)  // could be null in tests
-            ? SkipProfileHeuristicType::AllTriggered
-            : _ssiManager->GetSkipProfileHeuristic();
-
         if (profile == nullptr || samplesCount == 0)
         {
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
 
             if (applicationInfo.Worker != nullptr)
             {
-                applicationInfo.Worker->AddPoint(1, false, heuristicTag);
+                applicationInfo.Worker->IncNumberOfProfiles(false);
+                if (lastCall)
+                    applicationInfo.Worker->IncNumberOfApplications();
             }
 
             continue;
@@ -554,7 +544,9 @@ bool ProfileExporter::Export()
 
         if (applicationInfo.Worker != nullptr)
         {
-            applicationInfo.Worker->AddPoint(1, true, heuristicTag);
+            applicationInfo.Worker->IncNumberOfProfiles(true);
+            if (lastCall)
+                applicationInfo.Worker->IncNumberOfApplications();
         }
 
         if (_exporter == nullptr)
@@ -600,6 +592,7 @@ bool ProfileExporter::Export()
 
             // TODO: send telemetry about failed sendings
         }
+
         exported &= error_code;
     }
 
@@ -631,7 +624,7 @@ void ProfileExporter::CreateTelemetryMetricsWorker(std::string runtimeId, Applic
     // create the worker and assign it to the application info
     auto agentUrl = BuildAgentEndpoint(_configuration);
     auto languageVersion = _runtimeInfo->GetClrString();
-    pInfo->Worker = std::make_shared<libdatadog::TelemetryMetricsWorker>();
+    pInfo->Worker = std::make_shared<libdatadog::TelemetryMetricsWorker>(_ssiManager);
     bool success = pInfo->Worker->Start(
         _configuration,
         pInfo->ServiceName,

@@ -12,7 +12,6 @@
 #include "IMetadataProvider.h"
 #include "MetricsRegistry.h"
 #include "ProfilerMockedInterface.h"
-#include "ProfilerTelemetry.h"
 #include "RuntimeInfoHelper.h"
 #include "SamplesEnumerator.h"
 
@@ -81,7 +80,6 @@ TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    ProfilerTelemetry telemetry(&mockConfiguration);
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo,
                                     &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder);
@@ -198,7 +196,6 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    ProfilerTelemetry telemetry(&mockConfiguration);
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                     metricsRegistry, metadataProvider, ssiManager, allocRecorder);
@@ -307,7 +304,6 @@ TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    ProfilerTelemetry telemetry(&mockConfiguration);
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                     metricsRegistry, metadataProvider, ssiManager, allocRecorder);
@@ -401,7 +397,6 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    ProfilerTelemetry telemetry(&mockConfiguration);
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                     metricsRegistry, metadataProvider, ssiManager, allocRecorder);
@@ -448,7 +443,6 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    ProfilerTelemetry telemetry(&mockConfiguration);
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                     metricsRegistry, metadataProvider, ssiManager, allocRecorder);
@@ -488,7 +482,6 @@ TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    ProfilerTelemetry telemetry(&mockConfiguration);
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                     metricsRegistry, metadataProvider, ssiManager, allocRecorder);
@@ -529,7 +522,6 @@ TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
     IAllocationsRecorder* allocRecorder = nullptr;
     MockProcessSamplesProvider processSamplesProvider;
     IMetadataProvider* metadataProvider = nullptr;
-    ProfilerTelemetry telemetry(&mockConfiguration);
     EXPECT_CALL(processSamplesProvider, GetSamples()).Times(1).WillOnce(Return(::testing::ByMove(std::make_unique<FakeSamples>())));
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
@@ -575,7 +567,6 @@ TEST(ProfileExporterTest, MakeSureNoCrashForReallyLongCallstack)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    ProfilerTelemetry telemetry(&mockConfiguration);
     ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                     metricsRegistry, metadataProvider, ssiManager, allocRecorder);

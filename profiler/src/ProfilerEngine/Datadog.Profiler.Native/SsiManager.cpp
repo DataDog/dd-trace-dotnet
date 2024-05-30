@@ -1,11 +1,12 @@
+#include "SsiManager.h"
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "SsiManager.h"
 
 #include "IConfiguration.h"
-#include "IProfilerTelemetry.h"
 #include "ISsiLifetime.h"
+#include "Log.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 
@@ -21,8 +22,7 @@ static void StartProfiling(ISsiLifetime* pSsiLifetime)
     });
 }
 
-SsiManager::SsiManager(IConfiguration* pConfiguration, IProfilerTelemetry* pTelemetry, ISsiLifetime* pSsiLifetime) :
-    _pTelemetry(pTelemetry),
+SsiManager::SsiManager(IConfiguration* pConfiguration, ISsiLifetime* pSsiLifetime) :
     _pSsiLifetime(pSsiLifetime),
     _hasSpan{false},
     _isLongLived{false},
@@ -71,10 +71,9 @@ bool SsiManager::IsLongLived()
 //  or - the profiler is deployed via SSI and DD_INJECTION_ENABLED contains "profiling"
 bool SsiManager::IsProfilerEnabled()
 {
-    auto enablementStatus = _enablementStatus;
-    return enablementStatus == EnablementStatus::ManuallyEnabled ||
+    return _enablementStatus == EnablementStatus::ManuallyEnabled ||
            // in the future, users will be able to enable the profiler via SSI at agent installation time
-           enablementStatus == EnablementStatus::SsiEnabled;
+           _enablementStatus == EnablementStatus::SsiEnabled;
 }
 
 // the profiler is activated either if:
@@ -82,26 +81,18 @@ bool SsiManager::IsProfilerEnabled()
 //  or - is enabled via SSI + runs for more than 30 seconds + has at least one span
 bool SsiManager::IsProfilerActivated()
 {
-    if (_enablementStatus == EnablementStatus::ManuallyEnabled)
-    {
-        return true;
-    }
-
-    /// should we return enablementstatus::SsiEnabled ?
-    // TODO: need to start a timer at the beginning of the process and use it if IsShortLived() is too expensive
-    if (_deploymentMode == DeploymentMode::SingleStepInstrumentation && IsLongLived() && IsSpanCreated())
-    {
-        return true;
-    }
-
-    return false;
+    return _enablementStatus == EnablementStatus::ManuallyEnabled ||
+           (_deploymentMode == DeploymentMode::SingleStepInstrumentation && IsLongLived() && IsSpanCreated());
 }
 
 void SsiManager::ProcessStart()
 {
-    _pTelemetry->ProcessStart(_deploymentMode);
+    Log::Debug("ProcessStart(", to_string(_deploymentMode), ")");
 
-    if (_deploymentMode == DeploymentMode::SingleStepInstrumentation && !IsProfilerEnabled())
+    // TODO the doc again to know when we need the timer.
+    // currently it's disabled in ssi deployed AND not manually enabled nor ssi enabled
+    // I guess we still have to start the timer when ssi enabled
+    if (_deploymentMode == DeploymentMode::SingleStepInstrumentation && _enablementStatus == EnablementStatus::SsiEnabled)
     {
         // This timer *must* be created only AND only if it's a SSI deployment
         // we have to check if this is what we want. In CorProfilerCallback.cpp l.1239, we start the service
@@ -121,22 +112,12 @@ void SsiManager::ProcessStart()
 
 void SsiManager::ProcessEnd()
 {
-    SkipProfileHeuristicType heuristics = SkipProfileHeuristicType::AllTriggered;
-
-    // how to get the number of sent profiles?  process lifetime / exporter period (= Configuration::GetUploadInterval()) + 1
-    // TODO: for IIS on Windows, it might be required to let the exporter count the number of sent profiles
-    auto lifetime = OsSpecificApi::GetProcessLifetime();
-    uint64_t sentProfiles = lifetime / std::chrono::duration_cast<std::chrono::seconds>(_longLivedThreshold).count() + 1;
-
-    // compute the non triggered heuristics
-    heuristics = (SkipProfileHeuristicType)(heuristics | GetSkipProfileHeuristic());
-
-    _pTelemetry->ProcessEnd((uint64_t)lifetime, sentProfiles, heuristics);
+    Log::Debug("ProcessEnd(", to_string(_deploymentMode), ", ", to_string(GetSkipProfileHeuristic()), ")");
 }
 
 SkipProfileHeuristicType SsiManager::GetSkipProfileHeuristic()
 {
-    SkipProfileHeuristicType heuristics = SkipProfileHeuristicType::AllTriggered;
+    auto heuristics = SkipProfileHeuristicType::AllTriggered;
 
     if (!IsLongLived())
     {
@@ -148,4 +129,9 @@ SkipProfileHeuristicType SsiManager::GetSkipProfileHeuristic()
     }
 
     return heuristics;
+}
+
+DeploymentMode SsiManager::GetDeploymentMode() const
+{
+    return _deploymentMode;
 }

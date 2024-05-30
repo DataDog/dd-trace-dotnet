@@ -255,7 +255,6 @@
     <ClInclude Include="LinkedList.hpp" />
     <ClInclude Include="MemoryResourceManager.h" />
     <ClInclude Include="ISsiManager.h" />
-    <ClInclude Include="ProfilerTelemetry.h" />
     <ClInclude Include="RawSamples.hpp" />
     <ClInclude Include="SamplesEnumerator.h" />
     <ClInclude Include="ServiceBase.h" />
@@ -402,8 +401,7 @@
     <ClCompile Include="FrameworkThreadInfo.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
     <ClCompile Include="ServiceBase.cpp" />
-    <ClCompile Include="IProfilerTelemetry.h" />
-    <ClCompile Include="ProfilerTelemetry.cpp" />
+    <ClCompile Include="SkipProfileHeuristicType.h" />
     <ClCompile Include="SsiManager.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />

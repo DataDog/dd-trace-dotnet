@@ -3,19 +3,20 @@
 
 #pragma once
 
-#include "IProfilerTelemetry.h"
+#include "SkipProfileHeuristicType.h"
 
 #include <memory>
 #include <string>
 
 class IConfiguration;
+class ISsiManager;
 
 namespace libdatadog {
 
 class TelemetryMetricsWorker
 {
 public:
-    TelemetryMetricsWorker();
+    TelemetryMetricsWorker(ISsiManager* ssiManager);
     ~TelemetryMetricsWorker();
 
     bool Start(
@@ -29,13 +30,21 @@ public:
         const std::string& runtimeId,
         const std::string& environment);
     void Stop();
-    bool AddPoint(double value, bool hasSentProfiles, SkipProfileHeuristicType heuristic);
+
+    void IncNumberOfProfiles(bool hasSentProfiles);
+    void IncNumberOfApplications();
+
 
 private:
     std::string _serviceName;
+    bool _hasSentProfiles;
+    ISsiManager* _ssiManager;
 
     struct Impl;
     std::unique_ptr<Impl> _impl;
+
+    struct Key;
+    void AddPoint(Key* key, double value, bool hasSentProfiles, SkipProfileHeuristicType heuristic);
 };
 
 } // namespace libdatadog

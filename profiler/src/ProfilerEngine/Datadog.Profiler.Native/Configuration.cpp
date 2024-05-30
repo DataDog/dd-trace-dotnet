@@ -689,7 +689,7 @@ std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const
     auto const defaultValue = 30'000ms;
     auto value = GetEnvironmentValue(EnvironmentVariables::SsiLongLivedThreshold, defaultValue);
 
-    if (value <= 0ms)
+    if (value < 0ms)
         return defaultValue;
     return std::chrono::milliseconds(value);
 }

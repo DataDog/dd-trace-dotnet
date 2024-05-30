@@ -3,7 +3,8 @@
 
 #pragma once
 
-#include "IProfilerTelemetry.h"
+#include "SkipProfileHeuristicType.h"
+#include "DeploymentMode.h"
 
 #include <cstdint>
 #include <string>
@@ -30,4 +31,6 @@ public:
 
     // heuristics state
     virtual SkipProfileHeuristicType GetSkipProfileHeuristic() = 0;
+
+    virtual DeploymentMode GetDeploymentMode() const = 0;
 };

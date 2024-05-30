@@ -31,7 +31,7 @@ public:
     void RegisterBatchedProvider(IBatchedSamplesProvider* batchedSamplesProvider) override;
 
     // Public but should only be called privately or from tests
-    void Export();
+    void Export(bool lastCall = false);
 
 private:
     bool StartImpl() override;
