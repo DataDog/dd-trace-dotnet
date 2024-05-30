@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
@@ -359,7 +360,8 @@ namespace Datadog.Trace.Activity
 
         /// <summary>
         /// Iterates through <c>Activity.Events</c> looking for a <see cref="OpenTelemetryException"/> to copy over
-        /// to the <see cref="Span.Tags"/> of <paramref name="span"/>.
+        /// to the <see cref="Span.Tags"/> of <paramref name="span"/>. The span tags will reflect the last exception
+        /// event.
         /// </summary>
         /// <param name="activity">The <see cref="IActivity"/> to check for the exception event data.</param>
         /// <param name="span">The <see cref="Span"/> to copy the exception event data to.</param>
@@ -447,6 +449,7 @@ namespace Datadog.Trace.Activity
                 writer.WritePropertyName("time_unix_nano");
                 writer.WriteValue(duckEvent.Timestamp.ToUnixTimeNanoseconds());
 
+                // The attributes field is optional, so if there are no attributes, then avoid emitting the object
                 bool firstAttributeEncountered = false;
                 foreach (var tag in duckEvent.Tags)
                 {
@@ -458,61 +461,7 @@ namespace Datadog.Trace.Activity
                     }
 
                     writer.WritePropertyName(tag.Key);
-
-                    switch (tag.Value)
-                    {
-                        case char:
-                        case string:
-                        case bool:
-                        case byte:
-                        case sbyte:
-                        case short:
-                        case ushort:
-                        case int:
-                        case uint:
-                        case long:
-                        case ulong:
-                        case float:
-                        case double:
-                            writer.WriteValue(tag.Value);
-                            break;
-                        case IEnumerable enumerable:
-                            writer.WriteStartArray();
-                            foreach (var item in enumerable)
-                            {
-                                switch (item)
-                                {
-                                    case char:
-                                    case string:
-                                    case bool:
-                                    case byte:
-                                    case sbyte:
-                                    case short:
-                                    case ushort:
-                                    case int:
-                                    case uint:
-                                    case long:
-                                    case ulong:
-                                    case float:
-                                    case double:
-                                        writer.WriteValue(item);
-                                        break;
-                                    case IEnumerable:
-                                        // Do nothing. We do not support arrays of arrays
-                                        break;
-                                    default:
-                                        writer.WriteValue(item?.ToString());
-                                        break;
-                                }
-                            }
-
-                            writer.WriteEndArray();
-                            // writer.WriteRaw(JsonConvert.SerializeObject(enumerable));
-                            break;
-                        default:
-                            writer.WriteValue(tag.Value?.ToString());
-                            break;
-                    }
+                    SerializeAttributeValue(writer, isAlreadyNested: false, tag.Value);
                 }
 
                 if (firstAttributeEncountered)
@@ -532,6 +481,45 @@ namespace Datadog.Trace.Activity
             else
             {
                 StringBuilderCache.GetStringAndRelease(sb);
+            }
+
+            void SerializeAttributeValue(JsonTextWriter writer, bool isAlreadyNested, object? value)
+            {
+                switch (value)
+                {
+                    case char:
+                    case string:
+                    case bool:
+                    case byte:
+                    case sbyte:
+                    case short:
+                    case ushort:
+                    case int:
+                    case uint:
+                    case long:
+                    case ulong:
+                    case float:
+                    case double:
+                        writer.WriteValue(value);
+                        break;
+                    case IEnumerable enumerable:
+                        if (!isAlreadyNested)
+                        {
+                            writer.WriteStartArray();
+                            foreach (var item in enumerable)
+                            {
+                                SerializeAttributeValue(writer, isAlreadyNested: true, item);
+                            }
+
+                            writer.WriteEndArray();
+                            // writer.WriteRaw(JsonConvert.SerializeObject(enumerable));
+                        }
+
+                        break;
+                    default:
+                        writer.WriteValue(value?.ToString());
+                        break;
+                }
             }
         }
 
