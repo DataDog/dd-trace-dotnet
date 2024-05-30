@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <returns>The instance of IDistributedTracer</returns>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public static object? GetDistributedTracer() => Instance;
+        public static object GetDistributedTracer() => Instance;
 
         internal static void SetInstanceOnlyForTests(IDistributedTracer instance)
         {
