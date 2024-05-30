@@ -161,13 +161,12 @@ namespace Datadog.Trace.Sampling
             };
         }
 
-        // ReSharper disable once ClassNeverInstantiated.Local
+        {
+
+        // ReSharper disable ClassNeverInstantiated.Local
+        // ReSharper disable UnusedAutoPropertyAccessor.Local
         private class LocalSamplingRuleConfig
         {
-            // ReSharper disable UnusedAutoPropertyAccessor.Local
-            [JsonProperty(PropertyName = "provenance")]
-            public string? Provenance { get; set; }
-
             [JsonRequired]
             [JsonProperty(PropertyName = "sample_rate")]
             public float SampleRate { get; set; }
@@ -183,7 +182,40 @@ namespace Datadog.Trace.Sampling
 
             [JsonProperty(PropertyName = "tags")]
             public Dictionary<string, string?>? Tags { get; set; }
-            // ReSharper restore UnusedAutoPropertyAccessor.Local
         }
+
+        private class RemoteSamplingRuleConfig
+        {
+            [JsonRequired]
+            [JsonProperty(PropertyName = "sample_rate")]
+            public float SampleRate { get; set; }
+
+            [JsonProperty(PropertyName = "provenance")]
+            public string? Provenance { get; set; }
+
+            [JsonProperty(PropertyName = "name")]
+            public string? OperationName { get; set; }
+
+            [JsonProperty(PropertyName = "service")]
+            public string? Service { get; set; }
+
+            [JsonProperty(PropertyName = "resource")]
+            public string? Resource { get; set; }
+
+            [JsonProperty(PropertyName = "tags")]
+            public List<Tag>? Tags { get; set; }
+
+            internal class Tag
+            {
+                [JsonProperty(PropertyName = "key")]
+                public string? Name { get; set; }
+
+                [JsonProperty(PropertyName = "value_glob")]
+                public string? Value { get; set; }
+            }
+        }
+
+        // ReSharper disable UnusedAutoPropertyAccessor.Local
+        // ReSharper disable ClassNeverInstantiated.Local
     }
 }
