@@ -132,8 +132,8 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             _stopwatch.Stop();
-            _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
-            var result = new Result(retNative, code, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000), isRasp);
+            _totalRuntimeOverRuns += retNative.TotalRuntime;
+            var result = new Result(retNative, code, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000000), isRasp);
             _wafLibraryInvoker.ResultFree(ref retNative);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
