@@ -82,7 +82,7 @@ namespace Datadog.Trace.Sampling
             try
             {
                 if (!string.IsNullOrWhiteSpace(configuration) &&
-                    JsonConvert.DeserializeObject<List<LocalSamplingRuleConfig>>(configuration) is { Count: > 0 } rules)
+                    JsonConvert.DeserializeObject<List<LocalSamplingRuleJsonModel>>(configuration) is { Count: > 0 } rules)
                 {
                     var samplingRules = new List<CustomSamplingRule>(rules.Count);
 
@@ -91,8 +91,8 @@ namespace Datadog.Trace.Sampling
                         samplingRules.Add(
                             new CustomSamplingRule(
                                 rate: r.SampleRate,
-                                provenance: SamplingRuleProvenance.Local,
-                                patternFormat: patternFormat,
+                                provenance: SamplingRuleProvenance.Local, // hard-coded, not present in local config json
+                                patternFormat: patternFormat,             // from DD_TRACE_SAMPLING_RULES_FORMAT
                                 serviceNamePattern: r.Service,
                                 operationNamePattern: r.OperationName,
                                 resourceNamePattern: r.Resource,
@@ -116,19 +116,20 @@ namespace Datadog.Trace.Sampling
             try
             {
                 if (!string.IsNullOrWhiteSpace(configuration) &&
-                    JsonConvert.DeserializeObject<List<RemoteSamplingRuleConfig>>(configuration) is { Count: > 0 } rules)
+                    JsonConvert.DeserializeObject<List<RemoteSamplingRuleJsonModel>>(configuration) is { Count: > 0 } rules)
                 {
                     var samplingRules = new List<CustomSamplingRule>(rules.Count);
 
                     foreach (var r in rules)
                     {
+                        // "tags" has different json schema between local and remote config
                         var tags = ConvertToLocalTags(r.Tags);
 
                         samplingRules.Add(
                             new CustomSamplingRule(
                                 rate: r.SampleRate,
-                                provenance: r.Provenance!,
-                                patternFormat: SamplingRulesFormat.Glob,
+                                provenance: r.Provenance!,               // never null for remote config rules
+                                patternFormat: SamplingRulesFormat.Glob, // hard-coded, always "glob" for remote config rules
                                 serviceNamePattern: r.Service,
                                 operationNamePattern: r.OperationName,
                                 resourceNamePattern: r.Resource,
@@ -196,7 +197,7 @@ namespace Datadog.Trace.Sampling
         /// Convert a list of tags in the remote configuration format ("tags": [{"key": "{key1}", "value_glob": "{value1}"}, ...])
         /// into the local configuration format ({"{key1}": "{value1}", ...}).
         /// </summary>
-        private static Dictionary<string, string?>? ConvertToLocalTags(List<RemoteSamplingRuleConfig.Tag>? remoteTags)
+        internal static Dictionary<string, string?>? ConvertToLocalTags(List<RemoteSamplingRuleJsonModel.Tag>? remoteTags)
         {
             if (remoteTags == null)
             {
@@ -218,7 +219,7 @@ namespace Datadog.Trace.Sampling
 
         // ReSharper disable ClassNeverInstantiated.Local
         // ReSharper disable UnusedAutoPropertyAccessor.Local
-        private class LocalSamplingRuleConfig
+        internal class LocalSamplingRuleJsonModel
         {
             [JsonRequired]
             [JsonProperty(PropertyName = "sample_rate")]
@@ -237,7 +238,7 @@ namespace Datadog.Trace.Sampling
             public Dictionary<string, string?>? Tags { get; set; }
         }
 
-        private class RemoteSamplingRuleConfig
+        internal class RemoteSamplingRuleJsonModel
         {
             [JsonRequired]
             [JsonProperty(PropertyName = "sample_rate")]
