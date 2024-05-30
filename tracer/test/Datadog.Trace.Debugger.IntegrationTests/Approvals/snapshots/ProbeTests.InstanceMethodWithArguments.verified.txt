@@ -92,7 +92,7 @@
           "location": {
             "file": "InstanceMethodWithArguments.cs",
             "lines": [
-              18
+              "18"
             ]
           },
           "version": 0

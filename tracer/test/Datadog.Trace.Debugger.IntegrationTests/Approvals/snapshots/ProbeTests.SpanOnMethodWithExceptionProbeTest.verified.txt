@@ -253,7 +253,7 @@
           "location": {
             "file": "SpanOnMethodWithExceptionProbeTest.cs",
             "lines": [
-              33
+              "33"
             ]
           },
           "version": 0
@@ -417,7 +417,7 @@
           "location": {
             "file": "SpanOnMethodWithExceptionProbeTest.cs",
             "lines": [
-              38
+              "38"
             ]
           },
           "version": 0
