@@ -91,7 +91,7 @@ namespace Datadog.Trace.Sampling
                         samplingRules.Add(
                             new CustomSamplingRule(
                                 rate: r.SampleRate,
-                                provenance: r.Provenance ?? SamplingRuleProvenance.Local,
+                                provenance: SamplingRuleProvenance.Local,
                                 patternFormat: patternFormat,
                                 serviceNamePattern: r.Service,
                                 operationNamePattern: r.OperationName,
@@ -113,7 +113,38 @@ namespace Datadog.Trace.Sampling
 
         public static IEnumerable<CustomSamplingRule> BuildFromRemoteConfigurationString(string configuration, TimeSpan timeout)
         {
-            throw new NotImplementedException();
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(configuration) &&
+                    JsonConvert.DeserializeObject<List<RemoteSamplingRuleConfig>>(configuration) is { Count: > 0 } rules)
+                {
+                    var samplingRules = new List<CustomSamplingRule>(rules.Count);
+
+                    foreach (var r in rules)
+                    {
+                        var tags = ConvertToLocalTags(r.Tags);
+
+                        samplingRules.Add(
+                            new CustomSamplingRule(
+                                rate: r.SampleRate,
+                                provenance: r.Provenance!,
+                                patternFormat: SamplingRulesFormat.Glob,
+                                serviceNamePattern: r.Service,
+                                operationNamePattern: r.OperationName,
+                                resourceNamePattern: r.Resource,
+                                tagPatterns: tags,
+                                timeout: timeout));
+                    }
+
+                    return samplingRules;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Unable to parse the trace sampling rules.");
+            }
+
+            return [];
         }
 
         public bool IsMatch(Span span)
@@ -161,7 +192,29 @@ namespace Datadog.Trace.Sampling
             };
         }
 
+        /// <summary>
+        /// Convert a list of tags in the remote configuration format ("tags": [{"key": "{key1}", "value_glob": "{value1}"}, ...])
+        /// into the local configuration format ({"{key1}": "{value1}", ...}).
+        /// </summary>
+        private static Dictionary<string, string?>? ConvertToLocalTags(List<RemoteSamplingRuleConfig.Tag>? remoteTags)
         {
+            if (remoteTags == null)
+            {
+                return null;
+            }
+
+            var localTags = new Dictionary<string, string?>(remoteTags.Count);
+
+            foreach (var tag in remoteTags)
+            {
+                if (tag is { Name: not null, Value: not null })
+                {
+                    localTags[tag.Name] = tag.Value;
+                }
+            }
+
+            return localTags;
+        }
 
         // ReSharper disable ClassNeverInstantiated.Local
         // ReSharper disable UnusedAutoPropertyAccessor.Local
