@@ -28,17 +28,16 @@ public class OracleTests : TracingIntegrationTest
 
     public static IEnumerable<object[]> GetEnabledConfig()
     {
-        return from packageVersionArray in PackageVersions.SystemDataSqlClient
-               from metadataSchemaVersion in new[] { "v0", "v1" }
+        return from metadataSchemaVersion in new[] { "v0", "v1" }
                from propagation in new[] { string.Empty, "service", "full" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
+               select new[] { metadataSchemaVersion, propagation };
     }
 
     [SkippableTheory]
     [MemberData(nameof(GetEnabledConfig))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")] // the docker image used doesn't work on arm64. It can still be tested on Mac using colima, see https://github.com/abiosoft/colima
-    public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
+    public async Task SubmitsTraces(string metadataSchemaVersion, string dbmPropagation)
     {
         SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
         SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
@@ -46,7 +45,7 @@ public class OracleTests : TracingIntegrationTest
 
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+        using var process = await RunSampleAndWaitForExit(agent);
 
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: "oracle.query");
 
