@@ -185,8 +185,8 @@ namespace Datadog.Trace.Configuration
         public CompositeConfigurationSource() { }
         public void Add(Datadog.Trace.Configuration.IConfigurationSource source) { }
         public bool? GetBool(string key) { }
-        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key) { }
-        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) { }
+        public System.Collections.Generic.IDictionary<string, string?>? GetDictionary(string key) { }
+        public System.Collections.Generic.IDictionary<string, string?>? GetDictionary(string key, bool allowOptionalMappings) { }
         public double? GetDouble(string key) { }
         public int? GetInt32(string key) { }
         public string? GetString(string key) { }
@@ -223,8 +223,8 @@ namespace Datadog.Trace.Configuration
     public interface IConfigurationSource
     {
         bool? GetBool(string key);
-        System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key);
-        System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings);
+        System.Collections.Generic.IDictionary<string, string?>? GetDictionary(string key);
+        System.Collections.Generic.IDictionary<string, string?>? GetDictionary(string key, bool allowOptionalMappings);
         double? GetDouble(string key);
         int? GetInt32(string key);
         string? GetString(string key);
@@ -265,9 +265,9 @@ namespace Datadog.Trace.Configuration
         public string? Environment { get; }
         public Datadog.Trace.Configuration.ImmutableExporterSettings Exporter { get; }
         public double? GlobalSamplingRate { get; }
-        public System.Collections.Generic.IReadOnlyDictionary<string, string> GlobalTags { get; }
-        public System.Collections.Generic.IReadOnlyDictionary<string, string> GrpcTags { get; }
-        public System.Collections.Generic.IReadOnlyDictionary<string, string> HeaderTags { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string?> GlobalTags { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string?> GrpcTags { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string?> HeaderTags { get; }
         public Datadog.Trace.Configuration.ImmutableIntegrationSettingsCollection Integrations { get; }
         public bool KafkaCreateConsumerScopeEnabled { get; }
         public bool LogsInjectionEnabled { get; }
@@ -299,8 +299,8 @@ namespace Datadog.Trace.Configuration
     public class JsonConfigurationSource : Datadog.Trace.Configuration.IConfigurationSource
     {
         public JsonConfigurationSource(string json) { }
-        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key) { }
-        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) { }
+        public System.Collections.Generic.IDictionary<string, string?>? GetDictionary(string key) { }
+        public System.Collections.Generic.IDictionary<string, string?>? GetDictionary(string key, bool allowOptionalMappings) { }
         public T? GetValue<T>(string key) { }
         public static Datadog.Trace.Configuration.JsonConfigurationSource FromFile(string filename) { }
     }
@@ -313,14 +313,14 @@ namespace Datadog.Trace.Configuration
     {
         protected StringConfigurationSource() { }
         public virtual bool? GetBool(string key) { }
-        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key) { }
-        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) { }
+        public System.Collections.Generic.IDictionary<string, string?>? GetDictionary(string key) { }
+        public System.Collections.Generic.IDictionary<string, string?>? GetDictionary(string key, bool allowOptionalMappings) { }
         public double? GetDouble(string key) { }
         public virtual int? GetInt32(string key) { }
         public abstract string? GetString(string key);
-        public static System.Collections.Generic.IDictionary<string, string>? ParseCustomKeyValues(string? data) { }
+        public static System.Collections.Generic.IDictionary<string, string?>? ParseCustomKeyValues(string? data) { }
         [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull("data")]
-        public static System.Collections.Generic.IDictionary<string, string>? ParseCustomKeyValues(string? data, bool allowOptionalMappings) { }
+        public static System.Collections.Generic.IDictionary<string, string?>? ParseCustomKeyValues(string? data, bool allowOptionalMappings) { }
     }
     public class TracerSettings
     {
@@ -336,9 +336,9 @@ namespace Datadog.Trace.Configuration
         public string? Environment { get; set; }
         public Datadog.Trace.Configuration.ExporterSettings Exporter { get; set; }
         public double? GlobalSamplingRate { get; set; }
-        public System.Collections.Generic.IDictionary<string, string> GlobalTags { get; set; }
-        public System.Collections.Generic.IDictionary<string, string> GrpcTags { get; set; }
-        public System.Collections.Generic.IDictionary<string, string> HeaderTags { get; set; }
+        public System.Collections.Generic.IDictionary<string, string?> GlobalTags { get; set; }
+        public System.Collections.Generic.IDictionary<string, string?> GrpcTags { get; set; }
+        public System.Collections.Generic.IDictionary<string, string?> HeaderTags { get; set; }
         public Datadog.Trace.Configuration.IntegrationSettingsCollection Integrations { get; }
         public bool KafkaCreateConsumerScopeEnabled { get; set; }
         public bool LogsInjectionEnabled { get; set; }
@@ -352,7 +352,7 @@ namespace Datadog.Trace.Configuration
         public Datadog.Trace.Configuration.ImmutableTracerSettings Build() { }
         public void SetHttpClientErrorStatusCodes(System.Collections.Generic.IEnumerable<int> statusCodes) { }
         public void SetHttpServerErrorStatusCodes(System.Collections.Generic.IEnumerable<int> statusCodes) { }
-        public void SetServiceNameMappings(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> mappings) { }
+        public void SetServiceNameMappings(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string?>> mappings) { }
         public static Datadog.Trace.Configuration.CompositeConfigurationSource CreateDefaultConfigurationSource() { }
         public static Datadog.Trace.Configuration.TracerSettings FromDefaultSources() { }
     }
@@ -508,8 +508,8 @@ namespace Datadog.Trace
             " spans.")]
         public Tracer() { }
         [System.Obsolete(@"This API is deprecated, as it replaces the global settings for all Tracer instances in the application. If you were using this API to configure the global Tracer.Instance in code, use the static Tracer.Configure() to replace the global Tracer settings for the application")]
-        public Tracer(Datadog.Trace.Configuration.TracerSettings settings) { }
-        public Datadog.Trace.IScope ActiveScope { get; }
+        public Tracer(Datadog.Trace.Configuration.TracerSettings? settings) { }
+        public Datadog.Trace.IScope? ActiveScope { get; }
         public string DefaultServiceName { get; }
         public Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
         [set: System.Obsolete("Use Tracer.Configure to configure the global Tracer instance in code.")]

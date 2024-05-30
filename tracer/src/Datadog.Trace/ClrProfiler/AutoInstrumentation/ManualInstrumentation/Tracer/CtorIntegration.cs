@@ -64,9 +64,9 @@ public class CtorIntegration
         values[TracerSettingKeyConstants.TracerMetricsEnabledKey] = settings.TracerMetricsEnabledInternal;
 
         // probably don't _have_ to copy these dictionaries, but playing it safe
-        values[TracerSettingKeyConstants.GlobalTagsKey] = new ConcurrentDictionary<string, string>(settings.GlobalTagsInternal);
-        values[TracerSettingKeyConstants.GrpcTags] = new ConcurrentDictionary<string, string>(settings.GrpcTagsInternal);
-        values[TracerSettingKeyConstants.HeaderTags] = new ConcurrentDictionary<string, string>(settings.HeaderTagsInternal);
+        values[TracerSettingKeyConstants.GlobalTagsKey] = new ConcurrentDictionary<string, string?>(settings.GlobalTagsInternal);
+        values[TracerSettingKeyConstants.GrpcTags] = new ConcurrentDictionary<string, string?>(settings.GrpcTagsInternal);
+        values[TracerSettingKeyConstants.HeaderTags] = new ConcurrentDictionary<string, string?>(settings.HeaderTagsInternal);
 
         values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.IntegrationsInternal);
     }

@@ -31,18 +31,18 @@ internal static class RaspModule
 
     internal static void OnLfi(string file)
     {
-        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.FileAccess] = file }, AddressesConstants.FileAccess);
+        CheckVulnerability(new Dictionary<string, object?> { [AddressesConstants.FileAccess] = file }, AddressesConstants.FileAccess);
     }
 
     internal static void OnSSRF(string url)
     {
-        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.UrlAccess] = url }, AddressesConstants.UrlAccess);
+        CheckVulnerability(new Dictionary<string, object?> { [AddressesConstants.UrlAccess] = url }, AddressesConstants.UrlAccess);
     }
 
     internal static void OnSqlQuery(string sql, IntegrationId id)
     {
         var ddbbType = SqlIntegrationIdToDDBBType(id);
-        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.DBStatement] = sql, [AddressesConstants.DBSystem] = ddbbType }, AddressesConstants.DBStatement);
+        CheckVulnerability(new Dictionary<string, object?> { [AddressesConstants.DBStatement] = sql, [AddressesConstants.DBSystem] = ddbbType }, AddressesConstants.DBStatement);
     }
 
     private static string SqlIntegrationIdToDDBBType(IntegrationId id)
@@ -60,7 +60,7 @@ internal static class RaspModule
         };
     }
 
-    private static void CheckVulnerability(Dictionary<string, object> arguments, string address)
+    private static void CheckVulnerability(Dictionary<string, object?> arguments, string address)
     {
         var security = Security.Instance;
 
@@ -102,7 +102,7 @@ internal static class RaspModule
         }
     }
 
-    private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
+    private static void RunWafRasp(Dictionary<string, object?> arguments, Span rootSpan, string address)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, rootSpan);
 

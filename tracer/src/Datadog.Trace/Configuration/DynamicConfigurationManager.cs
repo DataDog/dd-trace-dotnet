@@ -83,9 +83,9 @@ namespace Datadog.Trace.Configuration
                 GlobalSamplingRate = settings.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(),
                 // SpanSamplingRules = settings.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString(),
                 LogsInjectionEnabled = settings.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(),
-                HeaderTags = headerTags == null ? null : new ReadOnlyDictionary<string, string>(headerTags),
+                HeaderTags = headerTags == null ? null : new ReadOnlyDictionary<string, string?>(headerTags),
                 // ServiceNameMappings = serviceNameMappings == null ? null : new ReadOnlyDictionary<string, string>(serviceNameMappings)
-                GlobalTags = globalTags == null ? null : new ReadOnlyDictionary<string, string>(globalTags)
+                GlobalTags = globalTags == null ? null : new ReadOnlyDictionary<string, string?>(globalTags)
             };
 
             // Needs to be done before returning, to feed the value to the telemetry

@@ -336,7 +336,7 @@ namespace Datadog.Trace
 
                 using (var writer = new JsonTextWriter(stringWriter))
                 {
-                    void WriteDictionary(IReadOnlyDictionary<string, string> dictionary)
+                    void WriteDictionary(IReadOnlyDictionary<string, string?>? dictionary)
                     {
                         writer.WriteStartArray();
 

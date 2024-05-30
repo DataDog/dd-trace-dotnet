@@ -161,7 +161,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
         /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>
-        public IDictionary<string, string>? GetDictionary(string key)
+        public IDictionary<string, string?>? GetDictionary(string key)
         {
             return GetDictionaryInternal(key, allowOptionalMappings: false);
         }
@@ -182,12 +182,12 @@ namespace Datadog.Trace.Configuration
         /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping. This only applies to string values, not JSON objects</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
         /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>
-        public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
+        public IDictionary<string, string?>? GetDictionary(string key, bool allowOptionalMappings)
         {
             return GetDictionaryInternal(key, allowOptionalMappings);
         }
 
-        private IDictionary<string, string>? GetDictionaryInternal(string key, bool allowOptionalMappings)
+        private IDictionary<string, string?>? GetDictionaryInternal(string key, bool allowOptionalMappings)
         {
             var token = SelectToken(key);
             if (token == null)
@@ -387,31 +387,31 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        ConfigurationResult<IDictionary<string, string?>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        ConfigurationResult<IDictionary<string, string?>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator, bool allowOptionalMappings, char separator)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings, separator);
 
         private protected virtual JToken? SelectToken(string key) => _configuration?.SelectToken(key, errorWhenNoMatch: false);
 
-        private protected virtual IDictionary<string, string>? ConvertToDictionary(string key, JToken token)
+        private protected virtual IDictionary<string, string?>? ConvertToDictionary(string key, JToken token)
         {
-            return token.ToObject<ConcurrentDictionary<string, string>>();
+            return token.ToObject<ConcurrentDictionary<string, string?>>();
         }
 
-        private ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        private ConfigurationResult<IDictionary<string, string?>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator, bool allowOptionalMappings, char separator)
         {
             var token = SelectToken(key);
             if (token == null)
             {
-                return ConfigurationResult<IDictionary<string, string>>.NotFound();
+                return ConfigurationResult<IDictionary<string, string?>>.NotFound();
             }
 
             if (!TreatNullDictionaryAsEmpty && !token.HasValues)
             {
-                return ConfigurationResult<IDictionary<string, string>>.NotFound();
+                return ConfigurationResult<IDictionary<string, string?>>.NotFound();
             }
 
             var tokenAsString = token.ToString();
@@ -428,7 +428,7 @@ namespace Datadog.Trace.Configuration
                             // AFAICT this should never return null in practice - we
                             // already checked the token is not null, and it will throw
                             // if parsing fails, so using parsing failure here for safety
-                            return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
+                            return ConfigurationResult<IDictionary<string, string?>>.ParseFailure();
                         }
 
                         return Validate(dictionary);
@@ -437,7 +437,7 @@ namespace Datadog.Trace.Configuration
                     {
                         Log.Error(e, "Unable to parse configuration value for {ConfigurationKey} as key-value pairs of strings.", key);
                         telemetry.Record(key, tokenAsString, recordValue: true, _origin, TelemetryErrorCode.JsonStringError);
-                        return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
+                        return ConfigurationResult<IDictionary<string, string?>>.ParseFailure();
                     }
                 }
 
@@ -450,16 +450,16 @@ namespace Datadog.Trace.Configuration
                 throw; // Exising behaviour
             }
 
-            ConfigurationResult<IDictionary<string, string>> Validate(IDictionary<string, string> dictionary)
+            ConfigurationResult<IDictionary<string, string?>> Validate(IDictionary<string, string?> dictionary)
             {
                 if (validator is null || validator(dictionary))
                 {
                     telemetry.Record(key, tokenAsString, recordValue: true, _origin);
-                    return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary);
+                    return ConfigurationResult<IDictionary<string, string?>>.Valid(dictionary);
                 }
 
                 telemetry.Record(key, tokenAsString, recordValue: true, _origin, TelemetryErrorCode.FailedValidation);
-                return ConfigurationResult<IDictionary<string, string>>.Invalid(dictionary);
+                return ConfigurationResult<IDictionary<string, string?>>.Invalid(dictionary);
             }
         }
     }

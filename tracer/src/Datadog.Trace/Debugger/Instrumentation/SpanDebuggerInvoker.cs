@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.ComponentModel;
@@ -154,6 +155,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <typeparam name="T">Type to get the default value</typeparam>
         /// <returns>Default value of T</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T GetDefaultValue<T>() => default;
+        public static T? GetDefaultValue<T>() => default;
     }
 }

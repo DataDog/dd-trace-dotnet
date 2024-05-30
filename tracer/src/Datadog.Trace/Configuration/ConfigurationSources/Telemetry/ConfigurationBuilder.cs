@@ -277,10 +277,10 @@ internal readonly struct ConfigurationBuilder
         // Dictionary accessors
         // ****************
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
+        public IDictionary<string, string?>? AsDictionary(Func<DefaultResult<IDictionary<string, string?>>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null)
+        public IDictionary<string, string?>? AsDictionary(bool allowOptionalMappings, Func<DefaultResult<IDictionary<string, string?>>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
             var result = GetDictionaryResult(allowOptionalMappings, separator: ':');
@@ -359,16 +359,16 @@ internal readonly struct ConfigurationBuilder
             => new(Telemetry, Key, recordValue: true, configurationResult: GetDoubleResult(validator, converter));
 
         // dictionary
-        public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult()
+        public ClassConfigurationResultWithKey<IDictionary<string, string?>> AsDictionaryResult()
             => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(allowOptionalMappings: false, separator: ':'));
 
-        public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult(bool allowOptionalMappings)
+        public ClassConfigurationResultWithKey<IDictionary<string, string?>> AsDictionaryResult(bool allowOptionalMappings)
             => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(allowOptionalMappings, separator: ':'));
 
-        public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult(char separator)
+        public ClassConfigurationResultWithKey<IDictionary<string, string?>> AsDictionaryResult(char separator)
             => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(allowOptionalMappings: false, separator));
 
-        public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult(bool allowOptionalMappings, char separator)
+        public ClassConfigurationResultWithKey<IDictionary<string, string?>> AsDictionaryResult(bool allowOptionalMappings, char separator)
             => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(allowOptionalMappings, separator));
 
         private ConfigurationResult<string> GetStringResult(Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
@@ -457,7 +457,7 @@ internal readonly struct ConfigurationBuilder
             return result;
         }
 
-        private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(bool allowOptionalMappings, char separator)
+        private ConfigurationResult<IDictionary<string, string?>> GetDictionaryResult(bool allowOptionalMappings, char separator)
         {
             var result = Source.GetDictionary(Key, Telemetry, validator: null, allowOptionalMappings, separator);
             if (result.ShouldFallBack && FallbackKey1 is not null)

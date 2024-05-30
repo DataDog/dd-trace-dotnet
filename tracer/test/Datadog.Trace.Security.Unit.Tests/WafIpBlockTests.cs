@@ -36,14 +36,14 @@ namespace Datadog.Trace.Security.Unit.Tests
             res.Success.Should().BeTrue();
             res.HasErrors.Should().BeFalse();
             using var context = initResult.Waf.CreateContext();
-            var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, WafTests.TimeoutMicroSeconds);
+            var result = context!.Run(new Dictionary<string, object?> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, WafTests.TimeoutMicroSeconds);
             result!.Timeout.Should().BeFalse("Timeout should be false");
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(WafReturnCode.Match);
             result!.Actions.Should().NotBeEmpty();
             result!.Actions!.Should().ContainKey(BlockingAction.BlockRequestType);
             result = context.Run(
-                new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
+                new Dictionary<string, object?> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
                 WafTests.TimeoutMicroSeconds);
             result!.Timeout.Should().BeFalse("Timeout should be false");
             result.Should().NotBeNull();
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             res.HasErrors.Should().BeFalse();
             using var context = waf!.CreateContext();
             var result = context!.Run(
-                new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
+                new Dictionary<string, object?> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
                 WafTests.TimeoutMicroSeconds);
             result!.Timeout.Should().BeFalse("Timeout should be false");
             result.Should().NotBeNull();

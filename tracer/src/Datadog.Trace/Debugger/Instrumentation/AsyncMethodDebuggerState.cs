@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.ComponentModel;
@@ -70,12 +71,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator
         /// </summary>
-        internal IDebuggerSnapshotCreator SnapshotCreator { get; }
+        internal IDebuggerSnapshotCreator? SnapshotCreator { get; }
 
         /// <summary>
         /// Gets or sets the LiveDebugger BeginMethod scope
         /// </summary>
-        internal Scope Scope { get; set; }
+        internal Scope? Scope { get; set; }
 
         /// <summary>
         /// Gets or sets the LiveDebugger state StartTime
@@ -85,19 +86,19 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Gets or sets the method probe ID
         /// </summary>
-        internal string ProbeId { get; set; }
+        internal string? ProbeId { get; set; }
 
         /// <summary>
         /// Gets or sets the object that represents the "this" object of the async kick-off method (i.e. original method)
         /// We can save it in some cases as TTarget but because we use it in serialization as boxed object anyway, we save it as object here
         /// </summary>
-        public object KickoffInvocationTarget { get; set; }
+        public object? KickoffInvocationTarget { get; set; }
 
         /// <summary>
         /// Gets or sets the object that represents the "this" object of the async MoveNext method
         /// We can save it in some cases as TTarget but because we use it in serialization as boxed object anyway, we save it as object here
         /// </summary>
-        public object MoveNextInvocationTarget { get; set; }
+        public object? MoveNextInvocationTarget { get; set; }
 
         /// <summary>
         /// Gets or sets the MethodMetadataIndex

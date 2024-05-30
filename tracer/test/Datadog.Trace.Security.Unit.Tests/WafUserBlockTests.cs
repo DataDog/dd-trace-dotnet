@@ -35,7 +35,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             res.HasErrors.Should().BeFalse();
             using var context = waf.CreateContext()!;
             var result = context.Run(
-                new Dictionary<string, object> { { AddressesConstants.UserId, "user3" } },
+                new Dictionary<string, object?> { { AddressesConstants.UserId, "user3" } },
                 WafTests.TimeoutMicroSeconds);
             result!.Timeout.Should().BeFalse("Timeout should be false");
             result.Should().NotBeNull();
@@ -43,7 +43,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             result!.Actions.Should().NotBeEmpty();
             result!.Actions.Should().ContainKey(BlockingAction.BlockRequestType);
             result = context.Run(
-                new Dictionary<string, object> { { AddressesConstants.UserId, "user4" } },
+                new Dictionary<string, object?> { { AddressesConstants.UserId, "user4" } },
                 WafTests.TimeoutMicroSeconds);
             result!.Timeout.Should().BeFalse("Timeout should be false");
             result.Should().NotBeNull();

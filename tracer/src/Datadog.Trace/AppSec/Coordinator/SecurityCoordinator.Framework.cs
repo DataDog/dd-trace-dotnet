@@ -259,7 +259,7 @@ internal readonly partial struct SecurityCoordinator
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
-    internal void BlockAndReport(Dictionary<string, object> args, bool lastWafCall = false)
+    internal void BlockAndReport(Dictionary<string, object?> args, bool lastWafCall = false)
     {
         var result = RunWaf(args, lastWafCall);
         if (result is not null)
@@ -372,7 +372,7 @@ internal readonly partial struct SecurityCoordinator
         _httpTransport.Context.ApplicationInstance.CompleteRequest();
     }
 
-    public Dictionary<string, object> GetBasicRequestArgsForWaf()
+    public Dictionary<string, object?> GetBasicRequestArgsForWaf()
     {
         var request = _httpTransport.Context.Request;
         var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
@@ -439,7 +439,7 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        var dict = new Dictionary<string, object>(capacity: 7)
+        var dict = new Dictionary<string, object?>(capacity: 7)
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
             { AddressesConstants.RequestUriRaw, request.Url.PathAndQuery },
