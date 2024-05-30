@@ -290,7 +290,7 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    sampler.RegisterRule(new GlobalSamplingRule(globalRate));
+                    sampler.RegisterRule(new GlobalSamplingRateRule(globalRate));
                 }
             }
 

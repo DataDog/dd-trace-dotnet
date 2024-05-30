@@ -1,4 +1,4 @@
-// <copyright file="GlobalSamplingRule.cs" company="Datadog">
+// <copyright file="GlobalSamplingRateRule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,11 +7,11 @@
 
 namespace Datadog.Trace.Sampling
 {
-    internal class GlobalSamplingRule : ISamplingRule
+    internal class GlobalSamplingRateRule : ISamplingRule
     {
         private readonly float _globalRate;
 
-        public GlobalSamplingRule(float rate)
+        public GlobalSamplingRateRule(float rate)
         {
             _globalRate = rate;
         }
