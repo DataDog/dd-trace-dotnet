@@ -565,5 +565,7 @@
   "trace.sidecar_trace_sender": "trace_sidecar_trace_sender",
   "trace.sampling_rules_format": "trace_sampling_rules_format",
   "DD_TRACE_SAMPLING_RULES_FORMAT": "trace_sampling_rules_format",
-  "trace.agentless": "trace_agentless"
+  "trace.agentless": "trace_agentless",
+  "ssi_injection_enabled": "ssi_injection_enabled",
+  "ssi_forced_injection_enabled": "ssi_forced_injection_enabled"
 }
