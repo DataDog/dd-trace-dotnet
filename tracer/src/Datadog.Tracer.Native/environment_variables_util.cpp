@@ -75,7 +75,7 @@ bool IsAsmSettingEnabled()
 
 bool IsRaspSettingEnabled()
 {
-    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::rasp_enabled), false);
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::rasp_enabled), true);
 }
 
 bool IsRaspEnabled()
