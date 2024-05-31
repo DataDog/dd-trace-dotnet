@@ -280,17 +280,15 @@ namespace Datadog.Trace
             }
 
             // global sampling rate (remote overrides local)
-            if (settings.GlobalSamplingRateInternal != null)
+            if (settings.GlobalSamplingRateInternal is { } globalSamplingRate)
             {
-                var globalRate = (float)settings.GlobalSamplingRateInternal.Value;
-
-                if (globalRate < 0f || globalRate > 1f)
+                if (globalSamplingRate is < 0f or > 1f)
                 {
                     Log.Warning("{ConfigurationKey} configuration of {ConfigurationValue} is out of range", ConfigurationKeys.GlobalSamplingRate, settings.GlobalSamplingRateInternal);
                 }
                 else
                 {
-                    sampler.RegisterRule(new GlobalSamplingRateRule(globalRate));
+                    sampler.RegisterRule(new GlobalSamplingRateRule((float)globalSamplingRate));
                 }
             }
 
