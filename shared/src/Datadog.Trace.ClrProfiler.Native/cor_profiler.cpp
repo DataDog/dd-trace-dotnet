@@ -243,6 +243,8 @@ namespace datadog::shared::nativeloader
         if (FAILED(hr))
         {
             Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
+            // we're not recording the exact version here, we just know that at this point it's not enough
+            single_step_guard_rails.RecordBootstrapError(single_step_guard_rails.NetFrameworkRuntime, inferredVersion, "incompatible_runtime");
             return E_FAIL;
         }
         const auto runtimeInformation = GetRuntimeVersion(info4, inferredVersion);
@@ -258,6 +260,7 @@ namespace datadog::shared::nativeloader
         //
         if (m_dispatcher == nullptr)
         {
+            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
             return E_FAIL;
         }
         IDynamicInstance* cpInstance = m_dispatcher->GetContinuousProfilerInstance();
@@ -321,6 +324,7 @@ namespace datadog::shared::nativeloader
         if (FAILED(hr))
         {
             Log::Warn("CorProfiler::Initialize: Error getting the event mask.");
+            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
             return E_FAIL;
         }
 
@@ -486,9 +490,11 @@ namespace datadog::shared::nativeloader
         if (FAILED(hr))
         {
             Log::Warn("CorProfiler::Initialize: Error setting the event mask.");
+            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
             return E_FAIL;
         }               
 
+        single_step_guard_rails.RecordBootstrapSuccess(runtimeInformation);
         return S_OK;
     }
 
