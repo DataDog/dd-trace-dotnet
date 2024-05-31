@@ -28,8 +28,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Mvc;
     MethodName = "CreateActionModel",
     ReturnTypeName = "Microsoft.AspNetCore.Mvc.ApplicationModels.ActionModel",
     ParameterTypeNames = ["System.Reflection.TypeInfo", "System.Reflection.MethodInfo"],
-    MinimumVersion = "7.0.0",
-    MaximumVersion = "7.*.*",
+    MinimumVersion = "2.0.0.0",
+    MaximumVersion = "8.*.*.*.*",
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
