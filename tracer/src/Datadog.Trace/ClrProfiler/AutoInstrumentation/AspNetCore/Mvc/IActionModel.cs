@@ -4,6 +4,8 @@
 // </copyright>
 #if !NETFRAMEWORK
 
+#nullable enable
+
 using System.Collections;
 using System.Reflection;
 
