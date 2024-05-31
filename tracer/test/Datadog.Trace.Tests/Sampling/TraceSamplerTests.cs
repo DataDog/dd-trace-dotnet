@@ -134,6 +134,7 @@ namespace Datadog.Trace.Tests.Sampling
         public async Task No_Registered_Rules_Uses_Legacy_Rates()
         {
             var sampler = new TraceSampler(new NoLimits());
+            sampler.RegisterRule(new AgentSamplingRule());
             sampler.SetDefaultSampleRates(MockAgentRates);
 
             await RunSamplerTest(
@@ -155,6 +156,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var span = scope.Span;
             var sampler = new TraceSampler(new NoLimits());
+            sampler.RegisterRule(new AgentSamplingRule());
 
             // if there are no other rules, and before we have agent rates, mechanism is "Default"
             var (_, mechanism1) = sampler.MakeSamplingDecision(span);
