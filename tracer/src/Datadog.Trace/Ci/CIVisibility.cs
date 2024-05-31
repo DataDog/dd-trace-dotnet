@@ -479,7 +479,7 @@ namespace Datadog.Trace.Ci
                     factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, settings.ProxyNoProxy, credential), credential);
                 }
             }
-            
+
             return factory;
         }
 

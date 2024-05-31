@@ -3,13 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -22,7 +18,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     [UsesVerify]
-    public class XUnitTests : TestingFrameworkTest
+    public abstract class XUnitTests : TestingFrameworkTest
     {
         private const string TestBundleName = "Samples.XUnitTests";
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
@@ -36,11 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             SetServiceVersion("1.0.0");
         }
 
-        [SkippableTheory]
-        [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("Category", "TestIntegrations")]
-        public async Task SubmitTraces(string packageVersion)
+        public virtual async Task SubmitTraces(string packageVersion)
         {
             List<MockSpan> spans = null;
             string[] messages = null;
@@ -64,6 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings("all");
                         settings.DisableRequireUniquePrefix();
+                        settings.UseTypeName(nameof(XUnitTests));
                         await Verifier.Verify(spans.OrderBy(s => s.Resource).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Parameters)), settings);
 
                         // Check the span count

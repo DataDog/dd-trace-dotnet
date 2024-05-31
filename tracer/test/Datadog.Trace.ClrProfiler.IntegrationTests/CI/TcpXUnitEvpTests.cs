@@ -1,4 +1,4 @@
-// <copyright file="UdsXUnitEvpTests.cs" company="Datadog">
+// <copyright file="TcpXUnitEvpTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
-public class UdsXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
+public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
 {
     [SkippableTheory]
     [MemberData(nameof(GetData))]
@@ -17,7 +17,7 @@ public class UdsXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
     [Trait("Category", "TestIntegrations")]
     public override Task SubmitTraces(string packageVersion, string evpVersionToRemove, bool expectedGzip)
     {
-        EnvironmentHelper.EnableUnixDomainSockets();
+        EnvironmentHelper.EnableDefaultTransport();
         return base.SubmitTraces(packageVersion, evpVersionToRemove, expectedGzip);
     }
 
@@ -28,7 +28,7 @@ public class UdsXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
     [Trait("Category", "EarlyFlakeDetection")]
     public override Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
     {
-        EnvironmentHelper.EnableUnixDomainSockets();
+        EnvironmentHelper.EnableDefaultTransport();
         return base.EarlyFlakeDetection(packageVersion, evpVersionToRemove, expectedGzip, settingsJson, testsJson, expectedSpans, friendlyName);
     }
 }

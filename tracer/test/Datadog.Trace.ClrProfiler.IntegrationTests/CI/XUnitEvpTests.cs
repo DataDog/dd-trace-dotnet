@@ -28,7 +28,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 [UsesVerify]
-public class XUnitEvpTests : TestingFrameworkEvpTest
+public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 {
     private const string TestBundleName = "Samples.XUnitTests";
     private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
@@ -74,11 +74,7 @@ public class XUnitEvpTests : TestingFrameworkEvpTest
         }
     }
 
-    [SkippableTheory]
-    [MemberData(nameof(GetData))]
-    [Trait("Category", "EndToEnd")]
-    [Trait("Category", "TestIntegrations")]
-    public async Task SubmitTraces(string packageVersion, string evpVersionToRemove, bool expectedGzip)
+    public virtual async Task SubmitTraces(string packageVersion, string evpVersionToRemove, bool expectedGzip)
     {
         var tests = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
@@ -174,6 +170,7 @@ public class XUnitEvpTests : TestingFrameworkEvpTest
                 var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
                 settings.UseTextForParameters("packageVersion=all");
                 settings.DisableRequireUniquePrefix();
+                settings.UseTypeName(nameof(XUnitEvpTests));
                 await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
 
                 // Check the tests, suites and modules count
@@ -378,12 +375,7 @@ public class XUnitEvpTests : TestingFrameworkEvpTest
         }
     }
 
-    [SkippableTheory]
-    [MemberData(nameof(GetDataForEarlyFlakeDetection))]
-    [Trait("Category", "EndToEnd")]
-    [Trait("Category", "TestIntegrations")]
-    [Trait("Category", "EarlyFlakeDetection")]
-    public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
+    public virtual async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
     {
         var tests = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
@@ -471,6 +463,7 @@ public class XUnitEvpTests : TestingFrameworkEvpTest
             var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
             settings.UseTextForParameters(friendlyName);
             settings.DisableRequireUniquePrefix();
+            settings.UseTypeName(nameof(XUnitEvpTests));
             await Verifier.Verify(
                 tests
                    .OrderBy(s => s.Resource)
