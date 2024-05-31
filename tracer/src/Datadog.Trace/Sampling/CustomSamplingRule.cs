@@ -13,7 +13,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Sampling
 {
-    internal class CustomSamplingRule : ISamplingRule
+    internal abstract class CustomSamplingRule : ISamplingRule
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CustomSamplingRule>();
 
@@ -29,7 +29,7 @@ namespace Datadog.Trace.Sampling
 
         private bool _regexTimedOut;
 
-        public CustomSamplingRule(
+        protected CustomSamplingRule(
             float rate,
             string provenance,
             string patternFormat,
@@ -77,77 +77,6 @@ namespace Datadog.Trace.Sampling
             _ => 0
         };
 
-        public static IEnumerable<CustomSamplingRule> BuildFromLocalConfigurationString(string configuration, string patternFormat, TimeSpan timeout)
-        {
-            try
-            {
-                if (!string.IsNullOrWhiteSpace(configuration) &&
-                    JsonConvert.DeserializeObject<List<LocalSamplingRuleJsonModel>>(configuration) is { Count: > 0 } rules)
-                {
-                    var samplingRules = new List<CustomSamplingRule>(rules.Count);
-
-                    foreach (var r in rules)
-                    {
-                        samplingRules.Add(
-                            new CustomSamplingRule(
-                                rate: r.SampleRate,
-                                provenance: SamplingRuleProvenance.Local, // hard-coded, not present in local config json
-                                patternFormat: patternFormat,             // from DD_TRACE_SAMPLING_RULES_FORMAT
-                                serviceNamePattern: r.Service,
-                                operationNamePattern: r.OperationName,
-                                resourceNamePattern: r.Resource,
-                                tagPatterns: r.Tags,
-                                timeout: timeout));
-                    }
-
-                    return samplingRules;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Unable to parse the trace sampling rules.");
-            }
-
-            return [];
-        }
-
-        public static IEnumerable<CustomSamplingRule> BuildFromRemoteConfigurationString(string configuration, TimeSpan timeout)
-        {
-            try
-            {
-                if (!string.IsNullOrWhiteSpace(configuration) &&
-                    JsonConvert.DeserializeObject<List<RemoteSamplingRuleJsonModel>>(configuration) is { Count: > 0 } rules)
-                {
-                    var samplingRules = new List<CustomSamplingRule>(rules.Count);
-
-                    foreach (var r in rules)
-                    {
-                        // "tags" has different json schema between local and remote config
-                        var tags = ConvertToLocalTags(r.Tags);
-
-                        samplingRules.Add(
-                            new CustomSamplingRule(
-                                rate: r.SampleRate,
-                                provenance: r.Provenance!,               // never null for remote config rules
-                                patternFormat: SamplingRulesFormat.Glob, // hard-coded, always "glob" for remote config rules
-                                serviceNamePattern: r.Service,
-                                operationNamePattern: r.OperationName,
-                                resourceNamePattern: r.Resource,
-                                tagPatterns: tags,
-                                timeout: timeout));
-                    }
-
-                    return samplingRules;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Unable to parse the trace sampling rules.");
-            }
-
-            return [];
-        }
-
         public bool IsMatch(Span span)
         {
             if (span == null!)
@@ -192,84 +121,4 @@ namespace Datadog.Trace.Sampling
                 _ => "UnknownSamplingRule"
             };
         }
-
-        /// <summary>
-        /// Convert a list of tags in the remote configuration format ("tags": [{"key": "{key1}", "value_glob": "{value1}"}, ...])
-        /// into the local configuration format ({"{key1}": "{value1}", ...}).
-        /// </summary>
-        internal static Dictionary<string, string?>? ConvertToLocalTags(List<RemoteSamplingRuleJsonModel.Tag>? remoteTags)
-        {
-            if (remoteTags == null)
-            {
-                return null;
-            }
-
-            var localTags = new Dictionary<string, string?>(remoteTags.Count);
-
-            foreach (var tag in remoteTags)
-            {
-                if (tag is { Name: not null, Value: not null })
-                {
-                    localTags[tag.Name] = tag.Value;
-                }
-            }
-
-            return localTags;
-        }
-
-        // ReSharper disable ClassNeverInstantiated.Local
-        // ReSharper disable UnusedAutoPropertyAccessor.Local
-        internal class LocalSamplingRuleJsonModel
-        {
-            [JsonRequired]
-            [JsonProperty(PropertyName = "sample_rate")]
-            public float SampleRate { get; set; }
-
-            [JsonProperty(PropertyName = "name")]
-            public string? OperationName { get; set; }
-
-            [JsonProperty(PropertyName = "service")]
-            public string? Service { get; set; }
-
-            [JsonProperty(PropertyName = "resource")]
-            public string? Resource { get; set; }
-
-            [JsonProperty(PropertyName = "tags")]
-            public Dictionary<string, string?>? Tags { get; set; }
-        }
-
-        internal class RemoteSamplingRuleJsonModel
-        {
-            [JsonRequired]
-            [JsonProperty(PropertyName = "sample_rate")]
-            public float SampleRate { get; set; }
-
-            [JsonProperty(PropertyName = "provenance")]
-            public string? Provenance { get; set; }
-
-            [JsonProperty(PropertyName = "name")]
-            public string? OperationName { get; set; }
-
-            [JsonProperty(PropertyName = "service")]
-            public string? Service { get; set; }
-
-            [JsonProperty(PropertyName = "resource")]
-            public string? Resource { get; set; }
-
-            [JsonProperty(PropertyName = "tags")]
-            public List<Tag>? Tags { get; set; }
-
-            internal class Tag
-            {
-                [JsonProperty(PropertyName = "key")]
-                public string? Name { get; set; }
-
-                [JsonProperty(PropertyName = "value_glob")]
-                public string? Value { get; set; }
-            }
-        }
-
-        // ReSharper disable UnusedAutoPropertyAccessor.Local
-        // ReSharper disable ClassNeverInstantiated.Local
-    }
 }
