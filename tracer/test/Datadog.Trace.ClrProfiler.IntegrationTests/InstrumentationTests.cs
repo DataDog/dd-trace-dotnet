@@ -168,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
             // set the "run me anyway, dammit" flag
-            SetEnvironmentVariable("DD_TRACE_ALLOW_UNSUPPORTED_SSI_RUNTIMES", "true");
+            SetEnvironmentVariable("DD_INJECT_FORCE", "true");
             var logDir = SetLogDirectory();
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
@@ -255,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
             SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
-            SetEnvironmentVariable("DD_TRACE_ALLOW_UNSUPPORTED_SSI_RUNTIMES", "true");
+            SetEnvironmentVariable("DD_INJECT_FORCE", "true");
 
             var logDir = SetLogDirectory();
 
@@ -288,7 +288,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
             SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
             // this value doesn't matter, should have same result, and _shouldn't_ change the metrics
-            SetEnvironmentVariable("DD_TRACE_ALLOW_UNSUPPORTED_SSI_RUNTIMES", isOverriden);
+            SetEnvironmentVariable("DD_INJECT_FORCE", isOverriden);
 
             var logDir = SetLogDirectory($"_{isOverriden}");
 
