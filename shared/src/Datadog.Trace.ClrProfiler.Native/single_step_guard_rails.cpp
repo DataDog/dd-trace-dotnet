@@ -116,13 +116,6 @@ HRESULT SingleStepGuardRails::HandleUnsupportedNetCoreVersion(const std::string&
         return S_OK;
     }
 
-    Log::Warn(
-        "CorProfiler::Initialize: Single-step instrumentation is not supported in '",
-        unsupportedDescription,
-        "'. Set ",
-        EnvironmentVariables::ForceEolInstrumentation,
-        "=1 to override this check and force instrumentation");
-
     SendAbortTelemetry(NetCoreRuntime, runtimeVersion, MinNetCoreVersion, MaxNetCoreVersion);
     return E_FAIL;
 }
@@ -134,19 +127,16 @@ HRESULT SingleStepGuardRails::HandleUnsupportedNetFrameworkVersion(const std::st
         return S_OK;
     }
 
-    Log::Warn(
-        "CorProfiler::Initialize: Single-step instrumentation is not supported in '",
-        unsupportedDescription,
-        "'. Set ",
-        EnvironmentVariables::ForceEolInstrumentation,
-        "=1 to override this check and force instrumentation");
-
     SendAbortTelemetry(NetFrameworkRuntime, runtimeVersion, MinNetFrameworkVersion, MaxNetFrameworkVersion);
     return E_FAIL;
 }
 
 bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string& eolDescription)
 {
+    // Should only be called when we have an incompatible runtime
+    Log::Warn(
+        "SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime ", eolDescription);
+
     // Are we supposed to override the EOL check?
     const auto forceEolInstrumentationVariable = GetEnvironmentValue(EnvironmentVariables::ForceEolInstrumentation);
 
@@ -156,14 +146,16 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
         && forceEolInstrumentation)
     {
         m_isForcedExecution = true;
+        
         Log::Info(
-            "CorProfiler::Initialize: Unsupported framework version '",
-            eolDescription,
-            "' detected. Forcing instrumentation with single-step instrumentation due to ",
-            EnvironmentVariables::ForceEolInstrumentation);
+            "SingleStepGuardRails::ShouldForceInstrumentationOverride: ",
+            EnvironmentVariables::ForceEolInstrumentation,
+            "enabled, allowing unsupported runtimes and continuing");
         return true;
     }
 
+    Log::Warn(
+        "SingleStepGuardRails::HandleUnsupportedNetCoreVersion: Aborting application instrumentation due to eol_runtime");
     return false;
 }
 
@@ -174,6 +166,10 @@ void SingleStepGuardRails::RecordBootstrapError(const RuntimeInformation& runtim
     {
         return;
     }
+
+    Log::Error(
+        "SingleStepGuardRails::RecordBootstrapError: Error during instrumentation of application, aborting. Error: ",
+        errorType);
 
     const auto runtimeName = runtimeInformation.is_core() ? NetCoreRuntime : NetFrameworkRuntime;
     const auto runtimeVersion = runtimeInformation.description();
@@ -196,14 +192,13 @@ void SingleStepGuardRails::RecordBootstrapError(const std::string& runtimeName, 
 
 void SingleStepGuardRails::RecordBootstrapSuccess(const RuntimeInformation& runtimeInformation) const
 {
-    Log::Debug("SingleStepGuardRails::RecordBootstrapSuccess");
     if(!m_isRunningInSingleStep)
     {
-        Log::Debug("SingleStepGuardRails::RecordBootstrapSuccess Not running in Single Step mode");
         return;
     }
 
-    Log::Debug("SingleStepGuardRails::RecordBootstrapSuccess Generating telemetry");
+    Log::Info("SingleStepGuardRails::RecordBootstrapSuccess: Application instrumentation bootstrapping complete");
+
     const auto runtimeName = runtimeInformation.is_core() ? NetCoreRuntime : NetFrameworkRuntime;
     const auto runtimeVersion = runtimeInformation.description();
 
