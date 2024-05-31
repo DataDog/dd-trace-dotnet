@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+	<DataCollectionRunSettings>
+		<DataCollectors>
+			<DataCollector friendlyName="Code Coverage">
+				<Configuration>
+					<Format>xml</Format>
+					<CodeCoverage>
+						<!-- Switching to static instrumentation (dynamic instrumentation collides with dd-trace instrumentation) -->
+						<EnableStaticManagedInstrumentation>True</EnableStaticManagedInstrumentation>
+						<EnableDynamicManagedInstrumentation>False</EnableDynamicManagedInstrumentation>
+						<UseVerifiableInstrumentation>False</UseVerifiableInstrumentation>
+						<EnableStaticNativeInstrumentation>True</EnableStaticNativeInstrumentation>
+						<EnableDynamicNativeInstrumentation>False</EnableDynamicNativeInstrumentation>
+					</CodeCoverage>
+				</Configuration>
+			</DataCollector>
+		</DataCollectors>
+	</DataCollectionRunSettings>
+</RunSettings>
