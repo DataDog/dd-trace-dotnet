@@ -12,6 +12,7 @@ using System.Text;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -216,21 +217,23 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            var links = new List<IActivityLink>();
             foreach (var link in (activity5.Links))
             {
                 var duckLink = link.DuckCast<IActivityLink>();
-                links.Add(duckLink!);
-            }
 
-            if (links.Count <= 0)
-            {
-                return;
-            }
+                _ = HexString.TryParseTraceId(duckLink!.Context.TraceId.TraceId!, out var newActivityTraceId);
+                _ = HexString.TryParseUInt64(duckLink.Context.SpanId.SpanId!, out var newActivitySpanId);
 
-            var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new ActivityLinkConverter() }, Formatting = Formatting.None };
-            var jsonArray = JsonConvert.SerializeObject(links, settings);
-            span.SetTag("_dd.span_links", jsonArray);
+                var spanContext = new SpanContext(
+                    newActivityTraceId,
+                    newActivitySpanId,
+                    samplingPriority: (int?)duckLink!.Context.TraceFlags == (int?)ActivityTraceFlags.None ? 0 : 1,
+                    serviceName: null,
+                    origin: null);
+
+                var duckLinkSpan = new Span(spanContext, DateTimeOffset.Now, new CommonTags());
+                span.AddSpanLink(duckLinkSpan);
+            }
         }
 
         internal static string GetSpanKind(ActivityKind activityKind) =>
