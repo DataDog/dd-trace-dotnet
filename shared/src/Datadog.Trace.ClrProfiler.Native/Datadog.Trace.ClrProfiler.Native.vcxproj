@@ -334,6 +334,7 @@
     <ClInclude Include="process_helper.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="runtimeid_store.h" />
+    <ClInclude Include="single_step_guard_rails.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -355,6 +356,7 @@
     <ClCompile Include="exported_functions.cpp" />
     <ClCompile Include="process_helper.cpp" />
     <ClCompile Include="runtimeid_store.cpp" />
+    <ClCompile Include="single_step_guard_rails.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.Trace.ClrProfiler.Native.def" />
