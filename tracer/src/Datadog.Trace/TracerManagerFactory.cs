@@ -262,7 +262,7 @@ namespace Datadog.Trace
 
             if (patternFormatIsValid && !string.IsNullOrWhiteSpace(localSamplingRules))
             {
-                foreach (var rule in CustomSamplingRule.BuildFromLocalConfigurationString(localSamplingRules, samplingRulesFormat, RegexBuilder.DefaultTimeout))
+                foreach (var rule in LocalCustomSamplingRule.BuildFromConfigurationString(localSamplingRules, samplingRulesFormat, RegexBuilder.DefaultTimeout))
                 {
                     sampler.RegisterRule(rule);
                 }
@@ -273,7 +273,7 @@ namespace Datadog.Trace
 
             if (!string.IsNullOrWhiteSpace(remoteSamplingRules))
             {
-                foreach (var rule in CustomSamplingRule.BuildFromRemoteConfigurationString(remoteSamplingRules, RegexBuilder.DefaultTimeout))
+                foreach (var rule in RemoteCustomSamplingRule.BuildFromConfigurationString(remoteSamplingRules, RegexBuilder.DefaultTimeout))
                 {
                     sampler.RegisterRule(rule);
                 }
