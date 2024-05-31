@@ -16,11 +16,6 @@ namespace Datadog.Trace.Sampling
             _globalRate = rate;
         }
 
-        /// <summary>
-        /// Gets the priority which is one beneath custom rules.
-        /// </summary>
-        public int Priority => 0;
-
         public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.LocalTraceSamplingRule;
 
         public bool IsMatch(Span span) => true;

@@ -65,18 +65,6 @@ namespace Datadog.Trace.Sampling
             _ => Datadog.Trace.Sampling.SamplingMechanism.Default
         };
 
-        /// <summary>
-        /// Gets the priority of the rule.
-        /// </summary>
-        public int Priority => _provenance switch
-        {
-            // TODO: fix the order of these, larger values mean higher priority
-            SamplingRuleProvenance.Local => 1,
-            SamplingRuleProvenance.RemoteCustomer => 2,
-            SamplingRuleProvenance.RemoteDynamic => 3,
-            _ => 0
-        };
-
         public bool IsMatch(Span span)
         {
             if (span == null!)
