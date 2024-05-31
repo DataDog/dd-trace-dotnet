@@ -227,6 +227,7 @@ internal static class MetricTags
         [Description("integration_name:selenium")] Selenium,
         [Description("integration_name:directorylistingleak")] DirectoryListingLeak,
         [Description("integration_name:sessiontimeout")] SessionTimeout,
+        [Description("integration_name:verbtampering")] VerbTampering,
     }
 
     public enum InstrumentationError
