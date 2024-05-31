@@ -121,4 +121,5 @@ namespace Datadog.Trace.Sampling
                 _ => "UnknownSamplingRule"
             };
         }
+    }
 }
