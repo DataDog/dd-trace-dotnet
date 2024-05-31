@@ -18,13 +18,13 @@ public class CustomSamplingRuleTests
     [Fact]
     public void ConvertToLocalTags()
     {
-        var remoteTags = new List<CustomSamplingRule.RemoteSamplingRuleJsonModel.Tag>
+        var remoteTags = new List<RemoteCustomSamplingRule.RemoteSamplingRuleJsonModel.Tag>
         {
             new() { Name = "key1", Value = "value1" },
             new() { Name = "key2", Value = "value2" },
         };
 
-        var localTags = CustomSamplingRule.ConvertToLocalTags(remoteTags);
+        var localTags = RemoteCustomSamplingRule.ConvertToLocalTags(remoteTags);
         localTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "key1", "value1" }, { "key2", "value2" } });
     }
 }

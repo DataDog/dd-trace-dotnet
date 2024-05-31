@@ -44,9 +44,8 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new TraceSampler(new DenyAll());
 
             sampler.RegisterRule(
-                new CustomSamplingRule(
+                new LocalCustomSamplingRule(
                     rate: 1,
-                    SamplingRuleProvenance.Local,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
@@ -68,9 +67,8 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new TraceSampler(new NoLimits());
 
             sampler.RegisterRule(
-                new CustomSamplingRule(
+                new LocalCustomSamplingRule(
                     rate: 1,
-                    SamplingRuleProvenance.Local,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
@@ -92,9 +90,8 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new TraceSampler(new NoLimits());
 
             sampler.RegisterRule(
-                new CustomSamplingRule(
+                new LocalCustomSamplingRule(
                     rate: 0,
-                    SamplingRuleProvenance.Local,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
@@ -116,9 +113,8 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new TraceSampler(new NoLimits());
 
             sampler.RegisterRule(
-                new CustomSamplingRule(
+                new LocalCustomSamplingRule(
                     rate: 0.5f,
-                    SamplingRuleProvenance.Local,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
                     operationNamePattern: ".*",
