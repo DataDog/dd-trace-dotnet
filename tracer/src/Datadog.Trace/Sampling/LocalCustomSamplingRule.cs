@@ -36,7 +36,7 @@ internal class LocalCustomSamplingRule : CustomSamplingRule
     {
     }
 
-    public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(
+    public static LocalCustomSamplingRule[] BuildFromConfigurationString(
         string configuration,
         string patternFormat,
         TimeSpan timeout)
@@ -44,12 +44,14 @@ internal class LocalCustomSamplingRule : CustomSamplingRule
         try
         {
             if (!string.IsNullOrWhiteSpace(configuration) &&
-                JsonConvert.DeserializeObject<List<LocalSamplingRuleJsonModel>>(configuration) is { Count: > 0 } rules)
+                JsonConvert.DeserializeObject<List<LocalSamplingRuleJsonModel>>(configuration) is { Count: > 0 } ruleModels)
             {
-                var samplingRules = new List<CustomSamplingRule>(rules.Count);
+                var samplingRules = new LocalCustomSamplingRule[ruleModels.Count];
 
-                foreach (var r in rules)
+                for (var i = 0; i < ruleModels.Count; i++)
                 {
+                    var r = ruleModels[i];
+
                     var samplingRule = new LocalCustomSamplingRule(
                         rate: r.SampleRate,
                         patternFormat: patternFormat, // from DD_TRACE_SAMPLING_RULES_FORMAT
@@ -59,7 +61,7 @@ internal class LocalCustomSamplingRule : CustomSamplingRule
                         tagPatterns: r.Tags,
                         timeout: timeout);
 
-                    samplingRules.Add(samplingRule);
+                    samplingRules[i] = samplingRule;
                 }
 
                 return samplingRules;

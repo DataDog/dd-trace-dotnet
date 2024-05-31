@@ -36,17 +36,19 @@ internal class RemoteCustomSamplingRule : CustomSamplingRule
     {
     }
 
-    public static IEnumerable<CustomSamplingRule> BuildFromConfigurationString(string configuration, TimeSpan timeout)
+    public static RemoteCustomSamplingRule[] BuildFromConfigurationString(string configuration, TimeSpan timeout)
     {
         try
         {
             if (!string.IsNullOrWhiteSpace(configuration) &&
-                JsonConvert.DeserializeObject<List<RemoteSamplingRuleJsonModel>>(configuration) is { Count: > 0 } rules)
+                JsonConvert.DeserializeObject<List<RemoteSamplingRuleJsonModel>>(configuration) is { Count: > 0 } ruleModels)
             {
-                var samplingRules = new List<CustomSamplingRule>(rules.Count);
+                var samplingRules = new RemoteCustomSamplingRule[ruleModels.Count];
 
-                foreach (var r in rules)
+                for (var i = 0; i < ruleModels.Count; i++)
                 {
+                    var r = ruleModels[i];
+
                     // "tags" has different json schema between local and remote config
                     var tags = ConvertToLocalTags(r.Tags);
 
@@ -59,7 +61,7 @@ internal class RemoteCustomSamplingRule : CustomSamplingRule
                         tagPatterns: tags,
                         timeout: timeout);
 
-                    samplingRules.Add(samplingRule);
+                    samplingRules[i] = samplingRule;
                 }
 
                 return samplingRules;
