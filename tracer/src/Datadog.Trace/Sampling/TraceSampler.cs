@@ -16,18 +16,18 @@ namespace Datadog.Trace.Sampling
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceSampler>();
 
         private readonly IRateLimiter _limiter;
-        private readonly AgentSamplingRule _defaultRule = new();
+        private readonly AgentSamplingRule _agentSamplingRule = new();
         private readonly List<ISamplingRule> _rules = [];
 
         public TraceSampler(IRateLimiter limiter)
         {
             _limiter = limiter;
-            RegisterRule(_defaultRule);
+            RegisterRule(_agentSamplingRule);
         }
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
         {
-            _defaultRule.SetDefaultSampleRates(sampleRates);
+            _agentSamplingRule.SetDefaultSampleRates(sampleRates);
         }
 
         public SamplingDecision MakeSamplingDecision(Span span)
