@@ -108,9 +108,9 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
         return CLASS_E_CLASSNOTAVAILABLE;
     }
 
-    Configuration configuration;
+    auto configuration = std::make_shared<Configuration>();
 
-    if (!IsProfilingEnabled(configuration))
+    if (!IsProfilingEnabled(*configuration))
     {
         Log::Info("DllGetClassObject(): Profiling is not enabled.");
 
