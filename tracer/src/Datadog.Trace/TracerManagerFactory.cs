@@ -292,6 +292,9 @@ namespace Datadog.Trace
                 }
             }
 
+            // agent sampling rule handles all sampling rates received from the agent as a single "rule"
+            sampler.RegisterRule(new AgentSamplingRule());
+
             return sampler;
         }
 

@@ -16,18 +16,18 @@ namespace Datadog.Trace.Sampling
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceSampler>();
 
         private readonly IRateLimiter _limiter;
-        private readonly AgentSamplingRule _agentSamplingRule = new();
         private readonly List<ISamplingRule> _rules = [];
+
+        private AgentSamplingRule? _agentSamplingRule;
 
         public TraceSampler(IRateLimiter limiter)
         {
             _limiter = limiter;
-            RegisterRule(_agentSamplingRule);
         }
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
         {
-            _agentSamplingRule.SetDefaultSampleRates(sampleRates);
+            _agentSamplingRule?.SetDefaultSampleRates(sampleRates);
         }
 
         public SamplingDecision MakeSamplingDecision(Span span)
@@ -55,6 +55,12 @@ namespace Datadog.Trace.Sampling
         /// <param name="rule">The new rule being registered.</param>
         public void RegisterRule(ISamplingRule rule)
         {
+            if (rule is AgentSamplingRule agentSamplingRule)
+            {
+                // keep a reference so we can call SetDefaultSampleRates() later
+                _agentSamplingRule = agentSamplingRule;
+            }
+
             for (var i = 0; i < _rules.Count; i++)
             {
                 if (_rules[i].Priority < rule.Priority)
