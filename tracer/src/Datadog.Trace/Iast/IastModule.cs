@@ -43,6 +43,7 @@ internal static partial class IastModule
     private const string OperationNameReflectionInjection = "reflection_injection";
     private const string OperationNameXss = "xss";
     private const string OperationNameSessionTimeout = "session_timeout";
+    private const string OperationVerbTampering = "verb_tampering";
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -402,6 +403,20 @@ internal static partial class IastModule
             IntegrationId.DirectoryListingLeak);
 
         AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
+    }
+
+    public static void OnVerbTamperingVulnerability(string evidence)
+    {
+        if (!Iast.Instance.Settings.Enabled) { return; }
+
+        var vulnerability = new Vulnerability(
+            VulnerabilityTypeName.VerbTampering,
+            (VulnerabilityTypeName.VerbTampering + ':' + evidence).GetStaticHashCode(),
+            GetLocation(),
+            new Evidence(evidence),
+            IntegrationId.VerbTampering);
+
+        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.VerbTampering, OperationVerbTampering, vulnerability).SingleSpan?.Dispose();
     }
 
     public static void OnSessionTimeout(string methodName, TimeSpan value)
