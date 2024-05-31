@@ -12,10 +12,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
@@ -425,48 +427,84 @@ namespace Datadog.Trace.Ci
         internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings tracerSettings, TimeSpan timeout)
         {
             IApiRequestFactory? factory = null;
+            var exporterSettings = tracerSettings.ExporterInternal;
+            var strategy = exporterSettings.TracesTransport;
 
-#if NETCOREAPP
-            Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            factory = new HttpClientRequestFactory(
-                tracerSettings.ExporterInternal.AgentUriInternal,
-                AgentHttpHeaderNames.DefaultHeaders,
-                handler: new System.Net.Http.HttpClientHandler
-                {
-                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-                },
-                timeout: timeout);
-#else
-            Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            factory = new ApiWebRequestFactory(tracerSettings.ExporterInternal.AgentUriInternal, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
-#endif
-
-            var settings = Settings;
-            if (!string.IsNullOrWhiteSpace(settings.ProxyHttps))
+            switch (strategy)
             {
-                var proxyHttpsUriBuilder = new UriBuilder(settings.ProxyHttps);
+                case TracesTransportType.WindowsNamedPipe:
+                    Log.Information<string?, int>("Using " + nameof(NamedPipeClientStreamFactory) + " for CI Visibility transport, with pipe name {TracesPipeName} and timeout {TracesPipeTimeoutMs}ms.", exporterSettings.TracesPipeNameInternal, exporterSettings.TracesPipeTimeoutMsInternal);
+                    factory = new HttpStreamRequestFactory(
+                        new NamedPipeClientStreamFactory(exporterSettings.TracesPipeNameInternal, exporterSettings.TracesPipeTimeoutMsInternal),
+                        new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
+                        new Uri("http://localhost"));
+                    break;
+                case TracesTransportType.UnixDomainSocket:
+#if NET5_0_OR_GREATER
+                    Log.Information("Using " + nameof(SocketHandlerRequestFactory) + " for CI Visibility transport, with UDS path {Path}.", exporterSettings.TracesUnixDomainSocketPathInternal);
+                    // use http://localhost as base endpoint
+                    factory = new SocketHandlerRequestFactory(
+                        new UnixDomainSocketStreamFactory(exporterSettings.TracesUnixDomainSocketPathInternal),
+                        AgentHttpHeaderNames.DefaultHeaders,
+                        new Uri("http://localhost"),
+                        timeout: timeout);
+#elif NETCOREAPP3_1_OR_GREATER
+                    Log.Information<string?, int>("Using " + nameof(UnixDomainSocketStreamFactory) + " for CI Visibility transport, with Unix Domain Sockets path {TracesUnixDomainSocketPath} and timeout {TracesPipeTimeoutMs}ms.", exporterSettings.TracesUnixDomainSocketPathInternal, exporterSettings.TracesPipeTimeoutMsInternal);
+                    factory = new HttpStreamRequestFactory(
+                        new UnixDomainSocketStreamFactory(exporterSettings.TracesUnixDomainSocketPathInternal),
+                        new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
+                        new Uri("http://localhost"));
+#else
+                    Log.Error("Using Unix Domain Sockets for CI Visibility transport is only supported on .NET Core 3.1 and greater. Falling back to default transport.");
+                    goto case TracesTransportType.Default;
+#pragma warning disable CS0162 // Unreachable code detected
+#endif
+                    break;
+                case TracesTransportType.Default:
+                default:
+#if NETCOREAPP
+                    Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
+                    factory = new HttpClientRequestFactory(
+                        exporterSettings.AgentUriInternal,
+                        AgentHttpHeaderNames.DefaultHeaders,
+                        handler: new System.Net.Http.HttpClientHandler
+                        {
+                            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+                        },
+                        timeout: timeout);
+#else
+                    Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
+                    factory = new ApiWebRequestFactory(tracerSettings.ExporterInternal.AgentUriInternal, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
+#endif
+                    var settings = Settings;
+                    if (!string.IsNullOrWhiteSpace(settings.ProxyHttps))
+                    {
+                        var proxyHttpsUriBuilder = new UriBuilder(settings.ProxyHttps);
 
-                var userName = proxyHttpsUriBuilder.UserName;
-                var password = proxyHttpsUriBuilder.Password;
+                        var userName = proxyHttpsUriBuilder.UserName;
+                        var password = proxyHttpsUriBuilder.Password;
 
-                proxyHttpsUriBuilder.UserName = string.Empty;
-                proxyHttpsUriBuilder.Password = string.Empty;
+                        proxyHttpsUriBuilder.UserName = string.Empty;
+                        proxyHttpsUriBuilder.Password = string.Empty;
 
-                if (proxyHttpsUriBuilder.Scheme == "https")
-                {
-                    // HTTPS proxy is not supported by .NET BCL
-                    Log.Error("HTTPS proxy is not supported. ({ProxyHttpsUriBuilder})", proxyHttpsUriBuilder);
-                    return factory;
-                }
+                        if (proxyHttpsUriBuilder.Scheme == "https")
+                        {
+                            // HTTPS proxy is not supported by .NET BCL
+                            Log.Error("HTTPS proxy is not supported. ({ProxyHttpsUriBuilder})", proxyHttpsUriBuilder);
+                            return factory;
+                        }
 
-                NetworkCredential? credential = null;
-                if (!string.IsNullOrWhiteSpace(userName))
-                {
-                    credential = new NetworkCredential(userName, password);
-                }
+                        NetworkCredential? credential = null;
+                        if (!string.IsNullOrWhiteSpace(userName))
+                        {
+                            credential = new NetworkCredential(userName, password);
+                        }
 
-                Log.Information("Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
-                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, settings.ProxyNoProxy, credential), credential);
+                        Log.Information("Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
+                        factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, settings.ProxyNoProxy, credential), credential);
+                    }
+
+                    break;
             }
 
             return factory;
