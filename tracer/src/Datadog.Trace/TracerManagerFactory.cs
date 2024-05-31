@@ -276,9 +276,9 @@ namespace Datadog.Trace
 
             if (!string.IsNullOrWhiteSpace(remoteSamplingRules))
             {
-                foreach (var rule in RemoteCustomSamplingRule.BuildFromConfigurationString(remoteSamplingRules, RegexBuilder.DefaultTimeout))
+                foreach (var remoteSamplingRule in RemoteCustomSamplingRule.BuildFromConfigurationString(remoteSamplingRules, RegexBuilder.DefaultTimeout))
                 {
-                    sampler.RegisterRule(rule);
+                    sampler.RegisterRule(remoteSamplingRule);
                 }
             }
 
@@ -288,9 +288,9 @@ namespace Datadog.Trace
 
             if (patternFormatIsValid && !string.IsNullOrWhiteSpace(localSamplingRules))
             {
-                foreach (var rule in LocalCustomSamplingRule.BuildFromConfigurationString(localSamplingRules, samplingRulesFormat, RegexBuilder.DefaultTimeout))
+                foreach (var localSamplingRule in LocalCustomSamplingRule.BuildFromConfigurationString(localSamplingRules, samplingRulesFormat, RegexBuilder.DefaultTimeout))
                 {
-                    sampler.RegisterRule(rule);
+                    sampler.RegisterRule(localSamplingRule);
                 }
             }
 
