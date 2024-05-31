@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: verb_tampering,
     Resource: verb_tampering,
-    Service: Samples.Security.AspNetCore5Startup,
+    Service: Samples.Security.AspNetCore5,
     Type: vulnerability,
     Tags: {
       env: integration_tests,
@@ -16,13 +16,13 @@
   "vulnerabilities": [
     {
       "type": "VERB_TAMPERING",
-      "hash": 1460150639,
+      "hash": -1164934566,
       "location": {
-        "path": "Samples.Security.AspNetCore5Startup.Startup+<>c",
+        "path": "Samples.Security.AspNetCore5.Startup+<>c",
         "method": "<Configure>b__5_3"
       },
       "evidence": {
-        "value": "The method Microsoft.AspNetCore.Mvc.IActionResult VerbTampering() in Samples.Security.AspNetCore5Startup.Controllers.TestController is vulnerable to verb tampering with the HTTP verb: PUT"
+        "value": "The method Microsoft.AspNetCore.Mvc.IActionResult VerbTampering() in Samples.Security.AspNetCore5.Controllers.IastController is vulnerable to verb tampering with the HTTP verb: PUT"
       }
     }
   ]

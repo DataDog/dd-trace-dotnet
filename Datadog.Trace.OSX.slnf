@@ -166,7 +166,6 @@
       "tracer\\test\\test-applications\\regression\\StackExchange.Redis.StackOverflowException\\StackExchange.Redis.StackOverflowException.csproj",
       "tracer\\test\\test-applications\\Samples.Shared\\Samples.Shared.shproj",
       "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCore2\\Samples.Security.AspNetCore2.csproj",
-      "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCore5Startup\\Samples.Security.AspNetCore5Startup.csproj",
       "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCore5\\Samples.Security.AspNetCore5.csproj",
       "tracer\\test\\test-applications\\security\\Samples.Security.AspNetCoreBare\\Samples.Security.AspNetCoreBare.csproj"
     ]

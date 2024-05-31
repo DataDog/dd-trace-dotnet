@@ -34,5 +34,41 @@
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: verb_tampering,
+    Resource: verb_tampering,
+    Service: Samples.Security.AspNetCore5,
+    Type: vulnerability,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      _dd.iast.enabled: 1,
+      _dd.iast.json:
+{
+  "vulnerabilities": [
+    {
+      "type": "VERB_TAMPERING",
+      "hash": XXX,
+      "location": {
+        "path": "Samples.Security.AspNetCore5.Startup+<>c",
+        "method": "<Configure>b__5_3"
+      },
+      "evidence": {
+        "value": "The method Microsoft.AspNetCore.Mvc.IActionResult VerbTampering() in Samples.Security.AspNetCore5.Controllers.IastController is vulnerable to verb tampering with the HTTP verb: PUT"
+      }
+    }
+  ]
+}
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
   }
 ]

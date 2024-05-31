@@ -965,5 +965,12 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             return new string(original.AsEnumerable().ToArray());
         }
+        
+        [HttpGet("VerbTampering")]
+        [HttpPut("VerbTampering")]
+        public IActionResult VerbTampering()
+        {
+            return Content("VerbTampering Test");
+        }
     }
 }

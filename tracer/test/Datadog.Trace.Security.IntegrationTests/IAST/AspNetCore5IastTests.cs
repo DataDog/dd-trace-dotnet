@@ -287,6 +287,30 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         newFixture.Dispose();
         newFixture.SetOutput(null);
     }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastVerbTamperingVulnerability()
+    {
+        var filename = "Iast.VerbTampering.AspNetCore5.IastEnabled";
+        var newFixture = new AspNetCoreTestFixture();
+        newFixture.SetOutput(Output);
+
+        var datetimeOffset = DateTimeOffset.UtcNow; // Catch vulnerability at the startup of the app
+        await TryStartApp(newFixture);
+
+        var agent = newFixture.Agent;
+        var spans = agent.WaitForSpans(1, minDateTime: datetimeOffset);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+
+        newFixture.Dispose();
+        newFixture.SetOutput(null);
+    }
 }
 
 public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsFullSampling
