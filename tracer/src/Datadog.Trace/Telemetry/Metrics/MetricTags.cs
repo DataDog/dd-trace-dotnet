@@ -310,6 +310,7 @@ internal static class MetricTags
         [Description("vulnerability_type:xss")] Xss = 23,
         [Description("vulnerability_type:directory_listing_leak")] DirectoryListingLeak = 24,
         [Description("vulnerability_type:session_timeout")] SessionTimeout = 25,
+        [Description("vulnerability_type:verb_tampering")] VerbTampering = 26,
     }
 
     public enum CIVisibilityTestFramework
