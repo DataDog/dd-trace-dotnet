@@ -25,14 +25,14 @@ internal class RemoteCustomSamplingRule : CustomSamplingRule
         ICollection<KeyValuePair<string, string?>>? tagPatterns,
         TimeSpan timeout)
         : base(
-            rate,
-            provenance,
-            SamplingRulesFormat.Glob, // hard-coded, always "glob" for remote config rules
-            serviceNamePattern,
-            operationNamePattern,
-            resourceNamePattern,
-            tagPatterns,
-            timeout)
+            rate: rate,
+            provenance: provenance,
+            patternFormat: SamplingRulesFormat.Glob, // hard-coded, always "glob" for remote config rules
+            serviceNamePattern: serviceNamePattern,
+            operationNamePattern: operationNamePattern,
+            resourceNamePattern: resourceNamePattern,
+            tagPatterns: tagPatterns,
+            timeout: timeout)
     {
     }
 

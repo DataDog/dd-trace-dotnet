@@ -25,14 +25,14 @@ internal class LocalCustomSamplingRule : CustomSamplingRule
         ICollection<KeyValuePair<string, string?>>? tagPatterns,
         TimeSpan timeout)
         : base(
-            rate,
-            SamplingRuleProvenance.Local, // hard-coded, not present in local config json
-            patternFormat,
-            serviceNamePattern,
-            operationNamePattern,
-            resourceNamePattern,
-            tagPatterns,
-            timeout)
+            rate: rate,
+            provenance: SamplingRuleProvenance.Local, // hard-coded, not present in local config json
+            patternFormat: patternFormat,
+            serviceNamePattern: serviceNamePattern,
+            operationNamePattern: operationNamePattern,
+            resourceNamePattern: resourceNamePattern,
+            tagPatterns: tagPatterns,
+            timeout: timeout)
     {
     }
 
