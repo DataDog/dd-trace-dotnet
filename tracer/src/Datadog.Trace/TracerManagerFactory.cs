@@ -253,8 +253,23 @@ namespace Datadog.Trace
         {
             var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
 
-            // unlike most settings, remote sampling rules don't simply override local ones.
-            // instead, they are combined with local rules, with remote rules taking precedence.
+            // ISamplingRule is used to implement, in order of precedence:
+            // - custom sampling rules
+            //   - remote custom rules (provenance: "customer")
+            //   - remote dynamic rules (provenance: "dynamic")
+            //   - local custom rules (provenance: "local"/none) = DD_TRACE_SAMPLING_RULES
+            // - global sampling rate
+            //   - remote
+            //   - local = DD_TRACE_SAMPLE_RATE
+            // - agent sampling rates (as a single rule)
+
+            // Note: the order that rules are registered is important, as they are evaluated in order.
+            // The first rule that matches will be used to determine the sampling rate.
+
+            // Remote and local "custom" sampling rules:
+            // Unlike most settings, local custom sampling rules configuration (DD_TRACE_SAMPLING_RULES) is not
+            // simply overriden with the remote configuration. Instead, remote rules are merged with local rules,
+            // with remote rules taking precedence.
 
             // remote sampling rules
             var remoteSamplingRules = settings.RemoteSamplingRules;
@@ -292,7 +307,8 @@ namespace Datadog.Trace
                 }
             }
 
-            // agent sampling rule handles all sampling rates received from the agent as a single "rule"
+            // AgentSamplingRule handles all sampling rates received from the agent as a single "rule".
+            // This rule is always present, even if the agent has not yet provided any sampling rates.
             sampler.RegisterRule(new AgentSamplingRule());
 
             return sampler;
