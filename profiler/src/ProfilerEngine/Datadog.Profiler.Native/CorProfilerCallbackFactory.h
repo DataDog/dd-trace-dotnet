@@ -5,6 +5,7 @@
 
 #include "unknwn.h"
 #include <atomic>
+#include <memory>
 #include <mutex>
 
 class IConfiguration;

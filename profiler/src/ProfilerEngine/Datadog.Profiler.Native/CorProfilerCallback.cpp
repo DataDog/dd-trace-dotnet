@@ -118,7 +118,7 @@ bool CorProfilerCallback::InitializeServices()
     if (_pConfiguration->IsSystemCallsShieldEnabled())
     {
         // This service must be started before StackSamplerLoop-based profilers to help with non-restartable system calls (ex: socket operations)
-        _systemCallsShield = RegisterService<SystemCallsShield>(_pConfiguration);
+        _systemCallsShield = RegisterService<SystemCallsShield>(_pConfiguration.get());
     }
 #endif
 
