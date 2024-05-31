@@ -256,6 +256,17 @@ namespace Datadog.Trace
             // unlike most settings, remote sampling rules don't simply override local ones.
             // instead, they are combined with local rules, with remote rules taking precedence.
 
+            // remote sampling rules
+            var remoteSamplingRules = settings.RemoteSamplingRules;
+
+            if (!string.IsNullOrWhiteSpace(remoteSamplingRules))
+            {
+                foreach (var rule in RemoteCustomSamplingRule.BuildFromConfigurationString(remoteSamplingRules, RegexBuilder.DefaultTimeout))
+                {
+                    sampler.RegisterRule(rule);
+                }
+            }
+
             // local sampling rules
             var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
             var localSamplingRules = settings.CustomSamplingRulesInternal;
@@ -268,18 +279,7 @@ namespace Datadog.Trace
                 }
             }
 
-            // remote sampling rules
-            var remoteSamplingRules = settings.RemoteSamplingRules;
-
-            if (!string.IsNullOrWhiteSpace(remoteSamplingRules))
-            {
-                foreach (var rule in RemoteCustomSamplingRule.BuildFromConfigurationString(remoteSamplingRules, RegexBuilder.DefaultTimeout))
-                {
-                    sampler.RegisterRule(rule);
-                }
-            }
-
-            // global sampling rate (remote overrides local)
+            // global sampling rate (remote value overrides local value)
             if (settings.GlobalSamplingRateInternal is { } globalSamplingRate)
             {
                 if (globalSamplingRate is < 0f or > 1f)
