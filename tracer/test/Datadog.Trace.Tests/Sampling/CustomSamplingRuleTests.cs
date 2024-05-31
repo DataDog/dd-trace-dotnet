@@ -18,7 +18,7 @@ public class CustomSamplingRuleTests
     [Fact]
     public void ConvertToLocalTags()
     {
-        var remoteTags = new List<RemoteCustomSamplingRule.RemoteSamplingRuleJsonModel.Tag>
+        var remoteTags = new List<RemoteCustomSamplingRule.RuleConfigJsonModel.TagJsonModel>
         {
             new() { Name = "key1", Value = "value1" },
             new() { Name = "key2", Value = "value2" },

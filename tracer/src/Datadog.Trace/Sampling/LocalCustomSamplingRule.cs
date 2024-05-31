@@ -44,7 +44,7 @@ internal class LocalCustomSamplingRule : CustomSamplingRule
         try
         {
             if (!string.IsNullOrWhiteSpace(configuration) &&
-                JsonConvert.DeserializeObject<List<LocalSamplingRuleJsonModel>>(configuration) is { Count: > 0 } ruleModels)
+                JsonConvert.DeserializeObject<List<RuleConfigJsonModel>>(configuration) is { Count: > 0 } ruleModels)
             {
                 var samplingRules = new LocalCustomSamplingRule[ruleModels.Count];
 
@@ -75,7 +75,7 @@ internal class LocalCustomSamplingRule : CustomSamplingRule
         return [];
     }
 
-    internal class LocalSamplingRuleJsonModel
+    internal class RuleConfigJsonModel
     {
         [JsonRequired]
         [JsonProperty(PropertyName = "sample_rate")]

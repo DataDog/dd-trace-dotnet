@@ -41,7 +41,7 @@ internal class RemoteCustomSamplingRule : CustomSamplingRule
         try
         {
             if (!string.IsNullOrWhiteSpace(configuration) &&
-                JsonConvert.DeserializeObject<List<RemoteSamplingRuleJsonModel>>(configuration) is { Count: > 0 } ruleModels)
+                JsonConvert.DeserializeObject<List<RuleConfigJsonModel>>(configuration) is { Count: > 0 } ruleModels)
             {
                 var samplingRules = new RemoteCustomSamplingRule[ruleModels.Count];
 
@@ -79,7 +79,7 @@ internal class RemoteCustomSamplingRule : CustomSamplingRule
     /// Convert a list of tags in the remote configuration format ("tags": [{"key": "{key1}", "value_glob": "{value1}"}, ...])
     /// into the local configuration format ({"{key1}": "{value1}", ...}).
     /// </summary>
-    internal static Dictionary<string, string?>? ConvertToLocalTags(List<RemoteSamplingRuleJsonModel.Tag>? remoteTags)
+    internal static Dictionary<string, string?>? ConvertToLocalTags(List<RuleConfigJsonModel.TagJsonModel>? remoteTags)
     {
         if (remoteTags == null)
         {
@@ -99,7 +99,7 @@ internal class RemoteCustomSamplingRule : CustomSamplingRule
         return localTags;
     }
 
-    internal class RemoteSamplingRuleJsonModel
+    internal class RuleConfigJsonModel
     {
         [JsonRequired]
         [JsonProperty(PropertyName = "sample_rate")]
@@ -118,9 +118,9 @@ internal class RemoteCustomSamplingRule : CustomSamplingRule
         public string? Resource { get; set; }
 
         [JsonProperty(PropertyName = "tags")]
-        public List<Tag>? Tags { get; set; }
+        public List<TagJsonModel>? Tags { get; set; }
 
-        internal class Tag
+        internal class TagJsonModel
         {
             [JsonProperty(PropertyName = "key")]
             public string? Name { get; set; }
