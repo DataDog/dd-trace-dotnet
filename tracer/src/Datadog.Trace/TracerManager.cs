@@ -407,6 +407,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("sampling_rules");
                     writer.WriteValue(instanceSettings.CustomSamplingRulesInternal);
 
+                    writer.WritePropertyName("remote_sampling_rules");
+                    writer.WriteValue(instanceSettings.RemoteSamplingRules);
+
                     writer.WritePropertyName("tags");
                     WriteDictionary(instanceSettings.GlobalTagsInternal);
 
