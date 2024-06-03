@@ -8,18 +8,13 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Sampling
 {
     internal abstract class CustomSamplingRule : ISamplingRule
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CustomSamplingRule>();
-
         private readonly float _samplingRate;
         private readonly bool _alwaysMatch;
-        private readonly string _provenance;
 
         // TODO consider moving toward these https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/SimpleRegex.cs
         private readonly Regex? _serviceNameRegex;
@@ -31,7 +26,6 @@ namespace Datadog.Trace.Sampling
 
         protected CustomSamplingRule(
             float rate,
-            string provenance,
             string patternFormat,
             string? serviceNamePattern,
             string? operationNamePattern,
@@ -40,7 +34,6 @@ namespace Datadog.Trace.Sampling
             TimeSpan timeout)
         {
             _samplingRate = rate;
-            _provenance = provenance;
 
             _serviceNameRegex = RegexBuilder.Build(serviceNamePattern, patternFormat, timeout);
             _operationNameRegex = RegexBuilder.Build(operationNamePattern, patternFormat, timeout);
@@ -57,13 +50,9 @@ namespace Datadog.Trace.Sampling
             }
         }
 
-        public int SamplingMechanism => _provenance switch
-        {
-            SamplingRuleProvenance.Local => Datadog.Trace.Sampling.SamplingMechanism.LocalTraceSamplingRule,
-            SamplingRuleProvenance.RemoteCustomer => Datadog.Trace.Sampling.SamplingMechanism.RemoteUserSamplingRule,
-            SamplingRuleProvenance.RemoteDynamic => Datadog.Trace.Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule,
-            _ => Datadog.Trace.Sampling.SamplingMechanism.Default
-        };
+        public abstract string Provenance { get; }
+
+        public abstract int SamplingMechanism { get; }
 
         public bool IsMatch(Span span)
         {
@@ -97,17 +86,6 @@ namespace Datadog.Trace.Sampling
         {
             span.SetMetric(Metrics.SamplingRuleDecision, _samplingRate);
             return _samplingRate;
-        }
-
-        public override string ToString()
-        {
-            return _provenance switch
-            {
-                SamplingRuleProvenance.Local => "LocalSamplingRule",
-                SamplingRuleProvenance.RemoteCustomer => "RemoteUserSamplingRule",
-                SamplingRuleProvenance.RemoteDynamic => "RemoteAdaptiveSamplingRule",
-                _ => "UnknownSamplingRule"
-            };
         }
     }
 }

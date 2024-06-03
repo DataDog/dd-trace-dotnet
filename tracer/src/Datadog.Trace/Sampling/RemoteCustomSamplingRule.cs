@@ -12,7 +12,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Sampling;
 
-internal class RemoteCustomSamplingRule : CustomSamplingRule
+internal sealed class RemoteCustomSamplingRule : CustomSamplingRule
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RemoteCustomSamplingRule>();
 
@@ -26,7 +26,6 @@ internal class RemoteCustomSamplingRule : CustomSamplingRule
         TimeSpan timeout)
         : base(
             rate: rate,
-            provenance: provenance,
             patternFormat: SamplingRulesFormat.Glob, // hard-coded, always "glob" for remote config rules
             serviceNamePattern: serviceNamePattern,
             operationNamePattern: operationNamePattern,
@@ -34,7 +33,19 @@ internal class RemoteCustomSamplingRule : CustomSamplingRule
             tagPatterns: tagPatterns,
             timeout: timeout)
     {
+        Provenance = provenance;
+
+        SamplingMechanism = Provenance switch
+        {
+            SamplingRuleProvenance.RemoteCustomer => Datadog.Trace.Sampling.SamplingMechanism.RemoteUserSamplingRule,
+            SamplingRuleProvenance.RemoteDynamic => Datadog.Trace.Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule,
+            _ => Datadog.Trace.Sampling.SamplingMechanism.Default
+        };
     }
+
+    public override string Provenance { get; }
+
+    public override int SamplingMechanism { get; }
 
     public static RemoteCustomSamplingRule[] BuildFromConfigurationString(string configuration, TimeSpan timeout)
     {
@@ -97,6 +108,11 @@ internal class RemoteCustomSamplingRule : CustomSamplingRule
         }
 
         return localTags;
+    }
+
+    public override string ToString()
+    {
+        return $"{base.ToString()} (Provenance: {Provenance})";
     }
 
     internal class RuleConfigJsonModel

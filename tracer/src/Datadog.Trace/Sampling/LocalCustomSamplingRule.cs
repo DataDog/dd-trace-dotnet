@@ -12,7 +12,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Sampling;
 
-internal class LocalCustomSamplingRule : CustomSamplingRule
+internal sealed class LocalCustomSamplingRule : CustomSamplingRule
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LocalCustomSamplingRule>();
 
@@ -26,7 +26,6 @@ internal class LocalCustomSamplingRule : CustomSamplingRule
         TimeSpan timeout)
         : base(
             rate: rate,
-            provenance: SamplingRuleProvenance.Local, // hard-coded, not present in local config json
             patternFormat: patternFormat,
             serviceNamePattern: serviceNamePattern,
             operationNamePattern: operationNamePattern,
@@ -35,6 +34,10 @@ internal class LocalCustomSamplingRule : CustomSamplingRule
             timeout: timeout)
     {
     }
+
+    public override string Provenance => SamplingRuleProvenance.Local;
+
+    public override int SamplingMechanism => Sampling.SamplingMechanism.LocalTraceSamplingRule;
 
     public static LocalCustomSamplingRule[] BuildFromConfigurationString(
         string configuration,
