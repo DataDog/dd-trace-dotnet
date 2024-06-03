@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -251,8 +250,6 @@ namespace Datadog.Trace
 
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
-            var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
-
             // ISamplingRule is used to implement, in order of precedence:
             // - custom sampling rules
             //   - remote custom rules (provenance: "customer")
@@ -270,6 +267,8 @@ namespace Datadog.Trace
             // Unlike most settings, local custom sampling rules configuration (DD_TRACE_SAMPLING_RULES) is not
             // simply overriden with the remote configuration. Instead, remote rules are merged with local rules,
             // with remote rules taking precedence.
+
+            var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
 
             // remote sampling rules
             var remoteSamplingRulesJson = settings.RemoteSamplingRules;
