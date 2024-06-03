@@ -9,6 +9,8 @@ namespace Samples.OracleMDA
 {
     internal static class Program
     {
+        private static string Host => Environment.GetEnvironmentVariable("ORACLE_HOST") ?? "localhost";
+
         private static async Task Main()
         {
             var tableId = Guid.NewGuid().ToString("N").Substring(0, 10);
@@ -27,7 +29,7 @@ namespace Samples.OracleMDA
         private static OracleConnection OpenConnection()
         {
             var cstringBuilder = new OracleConnectionStringBuilder();
-            cstringBuilder.DataSource = "localhost:1521/FREE";
+            cstringBuilder.DataSource = $"{Host}:1521/FREE";
             cstringBuilder.UserID = "system";
             cstringBuilder.Password = "testpassword";
             
