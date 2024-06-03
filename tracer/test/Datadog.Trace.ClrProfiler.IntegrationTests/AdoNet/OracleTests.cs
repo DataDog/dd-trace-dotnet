@@ -55,6 +55,8 @@ public class OracleTests : TracingIntegrationTest
         var settings = VerifyHelper.GetSpanVerifierSettings();
         // database name is generated with a random suffix
         settings.AddRegexScrubber(new Regex("oracletest[a-f0-9]{10}"), "oracletest{rand}");
+        settings.AddSimpleScrubber("localhost:", "host:");
+        settings.AddSimpleScrubber("oracle:", "host:");
 
         var fileName = nameof(OracleTests);
         await VerifyHelper.VerifySpans(spans, settings)
