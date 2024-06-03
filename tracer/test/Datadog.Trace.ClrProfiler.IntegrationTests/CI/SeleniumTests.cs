@@ -156,7 +156,7 @@ public class SeleniumTests : TestingFrameworkEvpTest
         using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                       agent,
                                       packageVersion: packageVersion,
-                                      arguments: $"--settings:\"{Path.Combine(sampleFolder, "ci.runsettings")}\" --diag:\"diag.diagtxt\"");
+                                      arguments: $"--settings:\"{Path.Combine(sampleFolder, "ci.runsettings")}\" --diag:\"{Path.Combine(sampleFolder, "diag.diagtxt")}\"");
 
         // Check if we have the data
         using var s = new AssertionScope();
