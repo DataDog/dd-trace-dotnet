@@ -146,7 +146,10 @@ public static class Program
             { "foo", 1 },
             { "bar", "Hello, World!" },
             { "baz", new int[] { 1, 2, 3 } },
-            { "strings", new string[] { "str", "1" } }
+            { "strings", new string[] { "str", "1" } },
+            { "ignored_array_of_object", new object[] { "str", 2 } },
+            { "ignored_array_of_arrays", new string[][] { new string[] { "arr1_val1"}, new string[] { "arr2_val1" } } },
+            { "ignored_dict", new Dictionary<string, string> { { "ignored_key", "ignored_value" } } }
         });
 
         span.AddEvent("event-message");

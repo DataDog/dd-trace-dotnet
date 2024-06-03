@@ -70,6 +70,14 @@ internal class ActivityEventConverter : JsonConverter<ActivityEvent>
                 return false;
             }
 
+            if (value.GetType() is { } type
+                && type.IsArray
+                && type.GetElementType() == typeof(object))
+            {
+                // Arrays may only have a primitive type, not 'object'
+                return false;
+            }
+
             value = array.GetValue(0);
 
             if (value is null)
