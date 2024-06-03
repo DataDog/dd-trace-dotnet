@@ -272,11 +272,14 @@ namespace Datadog.Trace
             // with remote rules taking precedence.
 
             // remote sampling rules
-            var remoteSamplingRules = settings.RemoteSamplingRules;
+            var remoteSamplingRulesJson = settings.RemoteSamplingRules;
 
-            if (!string.IsNullOrWhiteSpace(remoteSamplingRules))
+            if (!string.IsNullOrWhiteSpace(remoteSamplingRulesJson))
             {
-                foreach (var remoteSamplingRule in RemoteCustomSamplingRule.BuildFromConfigurationString(remoteSamplingRules, RegexBuilder.DefaultTimeout))
+                var remoteSamplingRules =
+                    RemoteCustomSamplingRule.BuildFromConfigurationString(remoteSamplingRulesJson, RegexBuilder.DefaultTimeout);
+
+                foreach (var remoteSamplingRule in remoteSamplingRules)
                 {
                     sampler.RegisterRule(remoteSamplingRule);
                 }
@@ -284,11 +287,14 @@ namespace Datadog.Trace
 
             // local sampling rules
             var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
-            var localSamplingRules = settings.CustomSamplingRulesInternal;
+            var localSamplingRulesJson = settings.CustomSamplingRulesInternal;
 
-            if (patternFormatIsValid && !string.IsNullOrWhiteSpace(localSamplingRules))
+            if (patternFormatIsValid && !string.IsNullOrWhiteSpace(localSamplingRulesJson))
             {
-                foreach (var localSamplingRule in LocalCustomSamplingRule.BuildFromConfigurationString(localSamplingRules, samplingRulesFormat, RegexBuilder.DefaultTimeout))
+                var localSamplingRules =
+                    LocalCustomSamplingRule.BuildFromConfigurationString(localSamplingRulesJson, samplingRulesFormat, RegexBuilder.DefaultTimeout);
+
+                foreach (var localSamplingRule in localSamplingRules)
                 {
                     sampler.RegisterRule(localSamplingRule);
                 }
@@ -299,7 +305,10 @@ namespace Datadog.Trace
             {
                 if (globalSamplingRate is < 0f or > 1f)
                 {
-                    Log.Warning("{ConfigurationKey} configuration of {ConfigurationValue} is out of range", ConfigurationKeys.GlobalSamplingRate, settings.GlobalSamplingRateInternal);
+                    Log.Warning(
+                        "{ConfigurationKey} configuration of {ConfigurationValue} is out of range",
+                        ConfigurationKeys.GlobalSamplingRate,
+                        settings.GlobalSamplingRateInternal);
                 }
                 else
                 {
