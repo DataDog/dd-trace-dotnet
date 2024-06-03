@@ -1,5 +1,5 @@
 
-#include "threads.h"
+#include "threadUtils.h"
 
 #ifdef _WIN32
 
@@ -9,6 +9,10 @@
 
 
 #ifdef _WIN32
+
+bool Threads::s_isRunTimeLinkingThreadDescriptionDone = false;
+Threads::SetThreadDescriptionDelegate_t Threads::s_setThreadDescriptionDelegate = nullptr;
+
 void Threads::InitDelegates_GetSetThreadDescription()
 {
     if (s_isRunTimeLinkingThreadDescriptionDone)

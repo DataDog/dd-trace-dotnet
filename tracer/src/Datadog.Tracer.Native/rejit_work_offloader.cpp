@@ -1,6 +1,6 @@
 #include "rejit_work_offloader.h"
 #include "logger.h"
-#include "threads.h"
+#include "threadUtils.h"
 
 namespace trace
 {
