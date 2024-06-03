@@ -152,10 +152,11 @@ public class SeleniumTests : TestingFrameworkEvpTest
 
         SetEnvironmentVariable("SAMPLES_SELENIUM_TEST_URL", $"http://127.0.0.1:{agent.Port}/evp_proxy/v4/rumpage");
         var sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion);
+        var sampleFolder = Path.GetDirectoryName(sampleAppPath);
         using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                       agent,
                                       packageVersion: packageVersion,
-                                      arguments: $"--settings:\"{Path.Combine(Path.GetDirectoryName(sampleAppPath), "ci.runsettings")}\" --diag:\"diag.diagtxt\"");
+                                      arguments: $"--settings:\"{Path.Combine(sampleFolder, "ci.runsettings")}\" --diag:\"diag.diagtxt\"");
 
         // Check if we have the data
         using var s = new AssertionScope();
@@ -178,11 +179,17 @@ public class SeleniumTests : TestingFrameworkEvpTest
                .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)),
             settings);
 
-        foreach (var diagFile in Directory.GetFiles(Path.GetDirectoryName(sampleAppPath), "*.diagtxt"))
+        var diagFiles = Directory.GetFiles(sampleFolder, "*.diagtxt");
+        foreach (var diagFile in diagFiles)
         {
             Output.WriteLine("Diag File: " + diagFile);
             Output.WriteLine(File.ReadAllText(diagFile));
             Output.WriteLine("END.");
+        }
+
+        if (diagFiles.Length == 0)
+        {
+            Output.WriteLine("No diag files found.");
         }
 
         // check if we received code coverage information at session level
