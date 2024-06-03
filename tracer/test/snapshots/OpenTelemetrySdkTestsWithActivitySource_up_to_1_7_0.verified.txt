@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -20,9 +20,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     },
     Metrics: {
       process_id: 0,
@@ -53,9 +51,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -80,9 +76,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -107,9 +101,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -135,9 +127,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -163,9 +153,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -191,9 +179,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -219,9 +205,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -247,9 +231,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -274,9 +256,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -301,9 +281,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -328,9 +306,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -356,9 +332,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -383,9 +357,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -410,9 +382,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -437,9 +407,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -463,9 +431,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -490,9 +456,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -516,9 +480,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -542,9 +504,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -568,9 +528,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -594,9 +552,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -622,9 +578,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     },
     Metrics: {
       _dd.top_level: 1.0,
@@ -662,9 +616,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     },
     Metrics: {
       attribute-double: 2.0,
@@ -696,9 +648,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -722,9 +672,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -732,7 +680,7 @@
     SpanId: Id_29,
     Name: internal,
     Resource: StartRootSpan,
-    Service: CustomServiceName,
+    Service: MyServiceName,
     Type: custom,
     ParentId: Id_26,
     Tags: {
@@ -741,14 +689,14 @@
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
-      runtime-id: Guid_2,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal,
-      version: 1.0.x,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version,
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -772,9 +720,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -801,9 +747,7 @@
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -834,9 +778,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -861,9 +803,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -887,9 +827,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -913,9 +851,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     },
     Metrics: {
       process_id: 0,
@@ -945,9 +881,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     },
     Metrics: {
       process_id: 0,
@@ -977,9 +911,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.base_service: CustomServiceName
     },
     Metrics: {
       process_id: 0,
