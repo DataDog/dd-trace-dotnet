@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
+        [Trait("RunOnWindows", "True")]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
         public override async Task SubmitTraces(string packageVersion)

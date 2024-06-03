@@ -14,6 +14,7 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
 {
     [SkippableTheory]
     [MemberData(nameof(GetData))]
+    [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     public override async Task SubmitTraces(string packageVersion, string evpVersionToRemove, bool expectedGzip)
@@ -39,6 +40,7 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
 
     [SkippableTheory]
     [MemberData(nameof(GetDataForEarlyFlakeDetection))]
+    [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "EarlyFlakeDetection")]
