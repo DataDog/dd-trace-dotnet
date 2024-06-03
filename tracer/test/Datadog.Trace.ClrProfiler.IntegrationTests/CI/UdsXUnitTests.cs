@@ -7,19 +7,20 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
+namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
+
+[Collection(nameof(TransportTestsCollection))]
+public class UdsXUnitTests(ITestOutputHelper output) : XUnitTests(output)
 {
-    public class UdsXUnitTests(ITestOutputHelper output) : XUnitTests(output)
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    public override Task SubmitTraces(string packageVersion)
     {
-        [SkippableTheory]
-        [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("Category", "TestIntegrations")]
-        public override Task SubmitTraces(string packageVersion)
-        {
-            EnvironmentHelper.EnableUnixDomainSockets();
-            return base.SubmitTraces(packageVersion);
-        }
+        EnvironmentHelper.EnableUnixDomainSockets();
+        return base.SubmitTraces(packageVersion);
     }
 }
+
 #endif

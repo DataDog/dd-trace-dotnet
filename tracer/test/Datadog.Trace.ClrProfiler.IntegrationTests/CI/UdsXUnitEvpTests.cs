@@ -9,6 +9,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Collection(nameof(TransportTestsCollection))]
 public class UdsXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
 {
     [SkippableTheory]
