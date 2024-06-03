@@ -5,6 +5,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -23,6 +24,7 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         EnvironmentHelper.EnableWindowsNamedPipes();
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
 
         // The server implementation of named pipes is flaky so have 3 attempts
         var attemptsRemaining = 3;
@@ -52,6 +54,7 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         EnvironmentHelper.EnableWindowsNamedPipes();
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
 
         // The server implementation of named pipes is flaky so have 3 attempts
         var attemptsRemaining = 3;
