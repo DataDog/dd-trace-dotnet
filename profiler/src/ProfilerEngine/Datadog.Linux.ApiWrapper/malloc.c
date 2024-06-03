@@ -40,7 +40,7 @@ __attribute__((visibility("hidden"))) int dd_is_using_allocation_api()
     }
 
 WRAP_ALLOC_FN(void*, malloc, (size_t, size))
-WRAP_ALLOC_FN_VOID(free, (void*, ptr))
-WRAP_ALLOC_FN(void*, calloc, (size_t, nmemb)(size_t, size))
-WRAP_ALLOC_FN(void*, realloc, (void*, ptr)(size_t, size))
-WRAP_ALLOC_FN(void*, reallocarray, (void*, ptr)(size_t, nmemb)(size_t, size))
+//WRAP_ALLOC_FN_VOID(free, (void*, ptr))
+//WRAP_ALLOC_FN(void*, calloc, (size_t, nmemb)(size_t, size))
+//WRAP_ALLOC_FN(void*, realloc, (void*, ptr)(size_t, size))
+//WRAP_ALLOC_FN(void*, reallocarray, (void*, ptr)(size_t, nmemb)(size_t, size))
