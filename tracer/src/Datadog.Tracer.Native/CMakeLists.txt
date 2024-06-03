@@ -194,7 +194,7 @@ add_library("Datadog.Tracer.Native.static" STATIC
         fault_tolerant_tokens.cpp
         fault_tolerant_tracker.cpp
         fault_tolerant_cor_profiler_function_control.cpp
-		threads.cpp
+        threads.cpp
 )
 
 set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")
