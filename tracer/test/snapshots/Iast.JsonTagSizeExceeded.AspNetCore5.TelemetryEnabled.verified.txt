@@ -6,7 +6,6 @@
     Resource: GET /iast/testjsontagsizeexceeded,
     Service: Samples.Security.AspNetCore5,
     Type: web,
-    ParentId: Id_3,
     Tags: {
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.IastController.TestJsonTagSizeExceeded (Samples.Security.AspNetCore5),
       aspnet_core.route: iast/testjsontagsizeexceeded,
@@ -414,7 +413,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_4,
+    SpanId: Id_3,
     Name: aspnet_core_mvc.request,
     Resource: GET /iast/testjsontagsizeexceeded,
     Service: Samples.Security.AspNetCore5,
