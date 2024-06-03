@@ -17,7 +17,7 @@ The .NET tracer v3.0.0 includes breaking changes that you must be aware of befor
 	- **Changes in behavior**. The semantic requirements and meaning of some settings have changed, as have some of the tags added to traces.  See below for more details.
 	- **The 32-bit MSI installer will no longer be available**. The 64-bit MSI installer already includes support for tracing 32-bit processes, so you should use this installer instead. 
     - **The client library will still be injected when `DD_TRACE_ENABLED=0`**. In v2.x.x, setting `DD_TRACE_ENABLED=0` would prevent the client library from being injected into the application completely. In v3.0.0+, the client library will still be injected, but tracing will be disabled.
-    - **Referencing the `Datadog.Trace.AspNet` module is no longer supported**. In v1.x.x, ASP.NET support required adding a reference to the `Datadog.Trace.AspNet` module in your web.config. This is no longer required or supported in v3.x.x.
+    - **Referencing the `Datadog.Trace.AspNet` module is no longer supported**. In v1.x.x and 2.x.x ASP.NET support allowed adding a reference to the `Datadog.Trace.AspNet` module in your web.config. This is no longer supported in v3.x.x.
 - Deprecation notices
 	- **.NET Core 2.1 is marked EOL** in v3.0.0+ of the tracer. That means versions 2.0, 2.1, 2.2 and 3.0 of .NET Core are now EOL. These versions may still work with v3.0.0+, but they will no longer receive significant testing and you will receive limited support for issues arising with EOL versions.
 	- **Datadog.Trace.OpenTracing is now obsolete**. OpenTracing is considered deprecated, and so _Datadog.Trace.OpenTracing_ is considered deprecated. See the following details on future deprecation.
@@ -151,12 +151,12 @@ If you don't set `COR_ENABLE_PROFILING=0`/`CORECLR_ENABLE_PROFILING=1` and conti
 
 #### What changed?
 
-In version 1.x.x of the tracer, ASP.NET support required adding a reference to the `Datadog.Trace.AspNet` module in your application's `web.config` file. In version 2.x.x, technical changes to the tracer meant this was no longer required, but referencing the module did not cause an error. In version 3.x.x, referencing the `Datadog.Trace.AspNet` in your application's `web.config` will cause an error, and may cause your application to fail to start, with the error:
+In version 1.x.x and 2.x.x of the tracer, it was possible to reference the `Datadog.Trace.AspNet` module in your application's `web.config` file, although this wasn't required for ASP.NET support in general. In version 3.x.x, referencing the `Datadog.Trace.AspNet` in your application's `web.config` will cause an error, and may cause your application to fail to start, with the error:
 
 > "There was an error when performing this operation"
 
 #### Why did we change it?
-The `Datadog.Trace.AspNet` module is obsolete and is not required for tracing ASP.NET applications. We are removing the `Datadog.Trace.AspNet` module to remove a point of failure when upgrading the .NET client library. Referencing the module in an application's `web.config` file, and required installation into the Global Assembly Cache (GAC), can make the update experience harder; by removing the module, we remove this constraint. 
+The `Datadog.Trace.AspNet` module is obsolete and is not required for tracing ASP.NET applications. We are removing the `Datadog.Trace.AspNet` module to remove a point of failure when upgrading the .NET client library. Referencing the module in an application's `web.config` file, and the required installation into the [Global Assembly Cache (GAC)](https://learn.microsoft.com/en-us/dotnet/framework/app-domains/gac), can make the update experience harder; by removing the module, we remove this constraint. 
 
 #### What action should you take?
 Remove any references to the `Datadog.Trace.AspNet` module in your application's `web.config file` and anywhere else it is referenced in your IIS configuration. For example, if you have code in the `system.webServer/modules` element that references `Datadog.Trace.AspNet`:
