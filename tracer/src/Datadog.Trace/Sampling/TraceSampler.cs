@@ -61,7 +61,6 @@ namespace Datadog.Trace.Sampling
                 _agentSamplingRule = agentSamplingRule;
             }
 
-            // No items or this is the last priority
             _rules.Add(rule);
         }
 
