@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <link.h>
 #include <sys/auxv.h>
+#include <sys/prctl.h>
 #endif
 
 #include "ScopeFinalizer.h"
@@ -171,13 +172,8 @@ OpSysTools::GetThreadDescriptionDelegate_t OpSysTools::GetDelegate_GetThreadDesc
 }
 #endif // #ifdef _WINDOWS
 
-bool OpSysTools::SetNativeThreadName(std::thread* pNativeThread, const WCHAR* description)
+bool OpSysTools::SetNativeThreadName(const WCHAR* description)
 {
-    if (nullptr == pNativeThread)
-    {
-        return false;
-    }
-
 #ifdef _WINDOWS
     // The SetThreadDescription(..) API is only available on recent Windows versions and must be called dynamically.
     // We attempt to link to it at runtime, and if we do not succeed, this operation is a No-Op.
@@ -189,11 +185,12 @@ bool OpSysTools::SetNativeThreadName(std::thread* pNativeThread, const WCHAR* de
         return false;
     }
 
-    HANDLE windowsThreadHandle = static_cast<HANDLE>(pNativeThread->native_handle());
-    HRESULT hr = setThreadDescriptionDelegate(windowsThreadHandle, description);
+    HRESULT hr = setThreadDescriptionDelegate(GetCurrentThread(), description);
     return SUCCEEDED(hr);
 #else
-    return false;
+    const auto name = shared::ToString(description);
+    prctl(PR_SET_NAME, name.data(), 0, 0, 0);
+    return true;
 #endif
 }
 

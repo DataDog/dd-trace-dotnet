@@ -34,8 +34,8 @@
     Tags: {
       cmd.component: process,
       cmd.environment_variables:
-PATH=testPath
-,
+LD_PRELOAD=path
+PATH=testPath,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
@@ -61,8 +61,8 @@ PATH=testPath
     Tags: {
       cmd.component: process,
       cmd.environment_variables:
-PATH=testPath
-,
+LD_PRELOAD=path
+PATH=testPath,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,

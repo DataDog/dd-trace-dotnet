@@ -116,6 +116,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ?
                     "ProcessStartTests.SubmitsTracesOsx" :
                     "ProcessStartTests.SubmitsTraces";
+
+            settings.AddSimpleScrubber($"LD_PRELOAD={EnvironmentHelper.GetApiWrapperPath()}", "LD_PRELOAD=path");
+
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename + $".Schema{metadataSchemaVersion.ToUpper()}")
                               .DisableRequireUniquePrefix();
