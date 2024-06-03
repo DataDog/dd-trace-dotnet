@@ -35,6 +35,7 @@ add_library(${API_WRAPPER_SHARED_LIB_NAME} SHARED
     functions_to_wrap.c
     socket_operations.c
     common.c
+    malloc.c
 )
 
 # Define linker libraries

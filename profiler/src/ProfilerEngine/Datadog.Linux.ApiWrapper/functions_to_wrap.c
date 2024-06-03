@@ -54,9 +54,18 @@ enum FUNCTION_ID
 // counters: one byte per function
 __thread unsigned long long functions_entered_counter = 0;
 
+extern int dd_is_using_allocation_api();
+
 // this function is called by the profiler
 unsigned long long dd_inside_wrapped_functions()
 {
+    // if the current thread is using the allocation api, we just bail.
+    // Otherwise check if we are in sensible function
+    if (dd_is_using_allocation_api())
+    {
+        return 1;
+    }
+
     return functions_entered_counter;
 }
 
