@@ -227,9 +227,10 @@ namespace Datadog.Trace.Activity
                 var spanContext = new SpanContext(
                     newActivityTraceId,
                     newActivitySpanId,
-                    samplingPriority: (int?)duckLink!.Context.TraceFlags == (int?)ActivityTraceFlags.None ? 0 : 1,
+                    samplingPriority: (int?)duckLink.Context.TraceFlags == (int?)ActivityTraceFlags.None ? 0 : 1,
                     serviceName: null,
-                    origin: null);
+                    origin: null,
+                    isRemote: duckLink.Context.IsRemote);
 
                 var duckLinkSpan = new Span(spanContext, DateTimeOffset.Now, new CommonTags());
                 span.AddSpanLink(duckLinkSpan);
