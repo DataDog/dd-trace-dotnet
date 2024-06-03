@@ -64,6 +64,12 @@ namespace Datadog.Trace.Sampling
             _rules.Add(rule);
         }
 
+        // used for testing
+        internal IReadOnlyList<ISamplingRule> GetRules()
+        {
+            return _rules;
+        }
+
         private SamplingDecision MakeSamplingDecision(Span span, float rate, int mechanism)
         {
             // make a sampling decision as a function of traceId and sampling rate.
