@@ -209,7 +209,7 @@ namespace Datadog.Trace.TestHelpers
 
                 var apiWrapperPath = GetApiWrapperPath();
 
-                if (!string.IsNullOrEmpty(apiWrapperPath))
+                if (!string.IsNullOrEmpty(apiWrapperPath) && !environmentVariables.ContainsKey("LD_PRELOAD"))
                 {
                     if (File.Exists(apiWrapperPath))
                     {
@@ -621,27 +621,21 @@ namespace Datadog.Trace.TestHelpers
 
         public string GetApiWrapperPath()
         {
-#if NETFRAMEWORK
-        return string.Empty;
-#else
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            var archFolder = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), IsAlpine()) switch
+            {
+                ("linux", "Arm64", true) => "linux-musl-arm64",
+                ("linux", "Arm64", false) => "linux-arm64",
+                ("linux", "X64", true) => "linux-musl-x64",
+                ("linux", "X64", false) => "linux-x64",
+                _ => string.Empty,
+            };
+
+            if (string.IsNullOrEmpty(archFolder))
             {
                 return string.Empty;
             }
 
-            string archFolder;
-
-            if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64)
-            {
-                archFolder = "linux-arm64";
-            }
-            else
-            {
-                archFolder = IsAlpine() ? "linux-musl-x64" : "linux-x64";
-            }
-
             return Path.Combine(GetMonitoringHomePath(), archFolder, "Datadog.Linux.ApiWrapper.x64.so");
-#endif
         }
 
         private bool IsEnvironmentVariableSet(string ev)
