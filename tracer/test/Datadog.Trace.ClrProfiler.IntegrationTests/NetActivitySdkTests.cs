@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -43,6 +44,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "set-string",
         };
 
+        private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
+
         public NetActivitySdkTests(ITestOutputHelper output)
             : base("NetActivitySdk", output)
         {
@@ -73,6 +76,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateIntegrationSpans(myServiceNameSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+                settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(nameof(NetActivitySdkTests));
 
