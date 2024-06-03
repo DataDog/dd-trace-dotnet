@@ -5,6 +5,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -19,6 +20,8 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
     [Trait("Category", "TestIntegrations")]
     public override async Task SubmitTraces(string packageVersion, string evpVersionToRemove, bool expectedGzip)
     {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.Platform(SkipOn.PlatformValue.Linux);
         EnvironmentHelper.EnableWindowsNamedPipes();
 
         // The server implementation of named pipes is flaky so have 3 attempts
@@ -46,6 +49,8 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
     [Trait("Category", "EarlyFlakeDetection")]
     public override async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
     {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.Platform(SkipOn.PlatformValue.Linux);
         EnvironmentHelper.EnableWindowsNamedPipes();
 
         // The server implementation of named pipes is flaky so have 3 attempts

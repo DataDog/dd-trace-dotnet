@@ -5,6 +5,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -19,6 +20,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public override async Task SubmitTraces(string packageVersion)
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            SkipOn.Platform(SkipOn.PlatformValue.Linux);
             EnvironmentHelper.EnableWindowsNamedPipes();
 
             // The server implementation of named pipes is flaky so have 3 attempts
