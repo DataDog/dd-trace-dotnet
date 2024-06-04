@@ -185,21 +185,21 @@ namespace datadog::shared::nativeloader
         USHORT minor_version;
         USHORT build_version;
         USHORT qfe_version;
-        std::string inferred_version = "";
+        std::string inferred_version;
 
         RuntimeInformation() :
-            runtime_type((COR_PRF_RUNTIME_TYPE) 0x0), major_version(0), minor_version(0), build_version(0), qfe_version(0)
+            runtime_type((COR_PRF_RUNTIME_TYPE) 0x0), major_version(0), minor_version(0), build_version(0), qfe_version(0), inferred_version("")
         {
         }
 
         RuntimeInformation(COR_PRF_RUNTIME_TYPE runtime_type, USHORT major_version, USHORT minor_version,
-                           USHORT build_version, USHORT qfe_version, const std::string inferred_version) :
+                           USHORT build_version, USHORT qfe_version, std::string inferred_version) :
             runtime_type(runtime_type),
             major_version(major_version),
             minor_version(minor_version),
             build_version(build_version),
             qfe_version(qfe_version),
-            inferred_version(inferred_version)
+            inferred_version(std::move(inferred_version))
         {
         }
 
