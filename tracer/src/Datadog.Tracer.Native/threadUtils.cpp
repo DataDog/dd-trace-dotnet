@@ -1,14 +1,11 @@
 
 #include "threadUtils.h"
 
-#ifdef _WIN32
-
-#elif __linux__
+#ifdef __linux__
 #include <sys/prctl.h>
-#else
+#elif __APPLE__
 #include <pthread.h>
 #endif
-
 
 #ifdef _WIN32
 
@@ -72,7 +69,7 @@ bool Threads::SetNativeThreadName(const WCHAR* description)
     return true;
 #else
     const auto name = shared::ToString(description);
-    pthread_setname_np(pthread_self(), name);
+    pthread_setname_np(name);
     return true;
 #endif
 }
