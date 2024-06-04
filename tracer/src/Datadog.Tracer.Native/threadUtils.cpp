@@ -3,8 +3,10 @@
 
 #ifdef _WIN32
 
-#else
+#elif __linux__
 #include <sys/prctl.h>
+#else
+#include <pthread.h>
 #endif
 
 
@@ -64,9 +66,13 @@ bool Threads::SetNativeThreadName(const WCHAR* description)
 
     HRESULT hr = setThreadDescriptionDelegate(GetCurrentThread(), description);
     return SUCCEEDED(hr);
-#else
+#elif __linux__
     const auto name = shared::ToString(description);
     prctl(PR_SET_NAME, name.data(), 0, 0, 0);
+    return true;
+#else
+    const auto name = shared::ToString(description);
+    pthread_setname_np(pthread_self(), name);
     return true;
 #endif
 }
