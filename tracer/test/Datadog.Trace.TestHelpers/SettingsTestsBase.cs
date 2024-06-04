@@ -25,7 +25,7 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public static TheoryData<string, bool?> BooleanTestCases(bool? defaultValue)
-            => new TheoryData<string, bool?>
+            => new()
             {
                 { "true", true },
                 { "1", true },
@@ -37,7 +37,7 @@ namespace Datadog.Trace.TestHelpers
             };
 
         public static TheoryData<string, int?> Int32TestCases(int defaultValue)
-            => new TheoryData<string, int?>
+            => new()
             {
                 { "1", 1 },
                 { "0", 0 },
@@ -47,8 +47,8 @@ namespace Datadog.Trace.TestHelpers
                 { string.Empty, defaultValue }
             };
 
-        public static TheoryData<string, double?> DoubleTestCases(double? defaultValue)
-            => new TheoryData<string, double?>
+        public static TheoryData<string, double?> DoubleTestCases(double? defaultValue, double minValueInclusive, double maxValueInclusive)
+            => new()
             {
                 { "1.5", 1.5d },
                 { "1", 1.0d },
@@ -60,7 +60,7 @@ namespace Datadog.Trace.TestHelpers
             };
 
         public static TheoryData<string, string> StringTestCases()
-            => new TheoryData<string, string>
+            => new()
             {
                 { "test", "test" },
                 { null, null },
@@ -68,7 +68,7 @@ namespace Datadog.Trace.TestHelpers
             };
 
         public static TheoryData<string, string> StringTestCases(string defaultValue, Strings emptyStringBehavior)
-            => new TheoryData<string, string>
+            => new()
             {
                 { "test", "test" },
                 { null, defaultValue },
