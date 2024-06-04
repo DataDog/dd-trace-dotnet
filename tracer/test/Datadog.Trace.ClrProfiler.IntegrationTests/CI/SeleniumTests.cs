@@ -156,7 +156,7 @@ public class SeleniumTests : TestingFrameworkEvpTest
         using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                       agent,
                                       packageVersion: packageVersion,
-                                      arguments: $"--settings:\"{Path.Combine(sampleFolder, "ci.runsettings")}\" --diag:\"{Path.Combine(sampleFolder, "diag.diagtxt")}\"");
+                                      arguments: $"--settings:\"{Path.Combine(sampleFolder, "ci.runsettings")}\"");
 
         // Check if we have the data
         using var s = new AssertionScope();
@@ -178,19 +178,6 @@ public class SeleniumTests : TestingFrameworkEvpTest
                .OrderBy(s => s.Resource)
                .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)),
             settings);
-
-        var diagFiles = Directory.GetFiles(sampleFolder, "*.diagtxt");
-        foreach (var diagFile in diagFiles)
-        {
-            Output.WriteLine("Diag File: " + diagFile);
-            Output.WriteLine(File.ReadAllText(diagFile));
-            Output.WriteLine("END.");
-        }
-
-        if (diagFiles.Length == 0)
-        {
-            Output.WriteLine("No diag files found.");
-        }
 
         // check if we received code coverage information at session level
         codeCoverageReceived.Value.Should().BeTrue();
