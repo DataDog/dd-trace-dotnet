@@ -69,7 +69,7 @@ bool Threads::SetNativeThreadName(const WCHAR* description)
     return true;
 #else
     const auto name = shared::ToString(description);
-    pthread_setname_np(name);
+    pthread_setname_np(name.data());
     return true;
 #endif
 }
