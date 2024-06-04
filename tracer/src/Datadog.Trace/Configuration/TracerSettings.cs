@@ -310,7 +310,7 @@ namespace Datadog.Trace.Configuration
 
             ObfuscationQueryStringRegexTimeout = config
                                                 .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegexTimeout)
-                                                .AsDouble(200, val1 => val1 is > 0).Value;
+                                                .AsDouble(200, val1 => val1 > 0).Value;
 
             IsActivityListenerEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
@@ -324,7 +324,7 @@ namespace Datadog.Trace.Configuration
                                     .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
                                     .GetAs(
                                          getDefaultValue: () => new DefaultResult<string[]>(
-                                             new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext },
+                                             [ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext],
                                              $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}"),
                                          validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
                                          converter: style => TrimSplitString(style, commaSeparator));
@@ -333,7 +333,7 @@ namespace Datadog.Trace.Configuration
                                      .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
                                      .GetAs(
                                           getDefaultValue: () => new DefaultResult<string[]>(
-                                              new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext },
+                                              [ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext],
                                               $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}"),
                                           validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
                                           converter: style => TrimSplitString(style, commaSeparator));
@@ -393,7 +393,7 @@ namespace Datadog.Trace.Configuration
 
             HttpClientExcludedUrlSubstrings = !string.IsNullOrEmpty(urlSubstringSkips)
                                                   ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
-                                                  : Array.Empty<string>();
+                                                  : [];
 
             DbmPropagationMode = config
                                 .WithKeys(ConfigurationKeys.DbmPropagationMode)
@@ -1093,7 +1093,7 @@ namespace Datadog.Trace.Configuration
         {
             if (string.IsNullOrWhiteSpace(textValues))
             {
-                return Array.Empty<string>();
+                return [];
             }
 
             var values = textValues!.Split(separators);
