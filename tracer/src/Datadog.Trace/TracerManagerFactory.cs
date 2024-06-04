@@ -269,7 +269,12 @@ namespace Datadog.Trace
 
                 if (globalRate < 0f || globalRate > 1f)
                 {
-                    Log.Warning("{ConfigurationKey} configuration of {ConfigurationValue} is out of range", ConfigurationKeys.GlobalSamplingRate, settings.GlobalSamplingRateInternal);
+                    // this maybe be handled already in TracerSettings,
+                    // but users can set this value directly, so check again to be sure
+                    Log.Warning(
+                        "{ConfigurationKey} value {ConfigurationValue} is out of range. Expected value between 0 and 1.",
+                        ConfigurationKeys.GlobalSamplingRate,
+                        settings.GlobalSamplingRateInternal);
                 }
                 else
                 {
