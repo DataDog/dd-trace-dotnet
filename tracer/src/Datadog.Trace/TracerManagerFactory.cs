@@ -276,12 +276,11 @@ namespace Datadog.Trace
             if (!string.IsNullOrWhiteSpace(remoteSamplingRulesJson))
             {
                 var remoteSamplingRules =
-                    RemoteCustomSamplingRule.BuildFromConfigurationString(remoteSamplingRulesJson, RegexBuilder.DefaultTimeout);
+                    RemoteCustomSamplingRule.BuildFromConfigurationString(
+                        remoteSamplingRulesJson,
+                        RegexBuilder.DefaultTimeout);
 
-                foreach (var remoteSamplingRule in remoteSamplingRules)
-                {
-                    sampler.RegisterRule(remoteSamplingRule);
-                }
+                sampler.RegisterRules(remoteSamplingRules);
             }
 
             // local sampling rules
@@ -291,12 +290,12 @@ namespace Datadog.Trace
             if (patternFormatIsValid && !string.IsNullOrWhiteSpace(localSamplingRulesJson))
             {
                 var localSamplingRules =
-                    LocalCustomSamplingRule.BuildFromConfigurationString(localSamplingRulesJson, samplingRulesFormat, RegexBuilder.DefaultTimeout);
+                    LocalCustomSamplingRule.BuildFromConfigurationString(
+                        localSamplingRulesJson,
+                        samplingRulesFormat,
+                        RegexBuilder.DefaultTimeout);
 
-                foreach (var localSamplingRule in localSamplingRules)
-                {
-                    sampler.RegisterRule(localSamplingRule);
-                }
+                sampler.RegisterRules(localSamplingRules);
             }
 
             // global sampling rate (remote value overrides local value)

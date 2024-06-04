@@ -63,6 +63,19 @@ namespace Datadog.Trace.Sampling
         }
 
         /// <summary>
+        /// Register new sampling rules. To register a <see cref="AgentSamplingRule"/>,
+        /// use <see cref="RegisterAgentSamplingRule"/> instead.
+        /// </summary>
+        /// <remarks>
+        /// The order that rules are registered is important, as they are evaluated in order.
+        /// The first rule that matches will be used to determine the sampling rate.
+        /// </remarks>
+        public void RegisterRules(IEnumerable<ISamplingRule> rules)
+        {
+            _rules.AddRange(rules);
+        }
+
+        /// <summary>
         /// Register a new agent sampling rule. This rule should be registered last,
         /// after any calls to <see cref="RegisterRule"/> or <see cref="RegisterRules"/>.
         /// </summary>
