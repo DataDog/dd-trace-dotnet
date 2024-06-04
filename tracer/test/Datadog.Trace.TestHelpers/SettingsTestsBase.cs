@@ -50,10 +50,14 @@ namespace Datadog.Trace.TestHelpers
         public static TheoryData<string, double?> DoubleTestCases(double? defaultValue, double minValueInclusive, double maxValueInclusive)
             => new()
             {
-                { "1.5", 1.5d },
-                { "1", 1.0d },
-                { "0", 0.0d },
-                { "-1", -1.0d },
+                { "0", Validate(0, defaultValue, minValueInclusive, maxValueInclusive) },
+                { ".0", Validate(0, defaultValue, minValueInclusive, maxValueInclusive) },
+                { "0.0", Validate(0, defaultValue, minValueInclusive, maxValueInclusive) },
+                { ".5", Validate(0.5, defaultValue, minValueInclusive, maxValueInclusive) },
+                { "0.5", Validate(0.5, defaultValue, minValueInclusive, maxValueInclusive) },
+                { "1", Validate(1, defaultValue, minValueInclusive, maxValueInclusive) },
+                { "1.0", Validate(1, defaultValue, minValueInclusive, maxValueInclusive) },
+                { "1.5", Validate(1.5, defaultValue, minValueInclusive, maxValueInclusive) },
                 { "A", defaultValue },
                 { null, defaultValue },
                 { string.Empty, defaultValue }
@@ -85,6 +89,11 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return new NameValueConfigurationSource(config);
+        }
+
+        private static double? Validate(double? value, double? defaultValue, double minValueInclusive, double maxValueInclusive)
+        {
+            return minValueInclusive <= value && value <= maxValueInclusive ? value : defaultValue;
         }
     }
 }

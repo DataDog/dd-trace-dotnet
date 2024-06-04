@@ -520,7 +520,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(DoubleTestCases), null)]
+        [MemberData(nameof(DoubleTestCases), null, 0.0, 1.0)]
         public void GlobalSamplingRate(string value, double? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.GlobalSamplingRate, value));
