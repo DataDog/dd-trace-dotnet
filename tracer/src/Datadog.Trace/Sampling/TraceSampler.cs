@@ -49,10 +49,13 @@ namespace Datadog.Trace.Sampling
         }
 
         /// <summary>
-        /// Will insert a rule according to how high the Priority field is set.
-        /// If the priority is equal to other rules, the new rule will be the last in that priority group.
+        /// Register a new sampling rule. To register a <see cref="AgentSamplingRule"/>,
+        /// use <see cref="RegisterAgentSamplingRule"/> instead.
         /// </summary>
-        /// <param name="rule">The new rule being registered.</param>
+        /// <remarks>
+        /// The order that rules are registered is important, as they are evaluated in order.
+        /// The first rule that matches will be used to determine the sampling rate.
+        /// </remarks>
         public void RegisterRule(ISamplingRule rule)
         {
             _rules.Add(rule);
