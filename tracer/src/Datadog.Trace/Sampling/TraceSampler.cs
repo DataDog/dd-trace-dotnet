@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -63,11 +64,19 @@ namespace Datadog.Trace.Sampling
 
         public void RegisterAgentSamplingRule(AgentSamplingRule rule)
         {
-            // keep a reference to this rule so we can call SetDefaultSampleRates() later
-            // to update the agent sampling rates
-            _agentSamplingRule = rule;
+            // only register the one AgentSamplingRule
+            if (Interlocked.Exchange(ref _agentSamplingRule, rule) == null)
+            {
+                // keep a reference to this rule so we can call SetDefaultSampleRates() later
+                // to update the agent sampling rates
+                _agentSamplingRule = rule;
 
-            RegisterRule(rule);
+                RegisterRule(rule);
+            }
+            else
+            {
+                Log.Warning("AgentSamplingRule already registered. Ignoring additional registration.");
+            }
         }
 
         // used for testing
