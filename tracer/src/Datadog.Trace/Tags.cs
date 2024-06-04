@@ -679,6 +679,12 @@ namespace Datadog.Trace
         /// </summary>
         internal const string BaseService = "_dd.base_service";
 
+        /// <summary>
+        /// Holds the last seen Datadog span ID to be used by the backend for span reparenting
+        /// for distributed traces.
+        /// </summary>
+        internal const string LastParentId = "_dd.parent_id";
+
         internal static class User
         {
             internal const string Email = "usr.email";
