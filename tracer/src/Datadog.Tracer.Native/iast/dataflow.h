@@ -53,7 +53,6 @@ namespace iast
         COR_PRF_RUNTIME_TYPE m_runtimeType = COR_PRF_DESKTOP_CLR;
         VersionInfo m_runtimeVersion = VersionInfo{4, 0, 0, 0};
 
-        std::thread* _initThread = nullptr;
         std::map<ModuleID, ModuleInfo*> _modules;
         std::map<AppDomainID, AppDomainInfo*> _appDomains;
 
