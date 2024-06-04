@@ -140,31 +140,29 @@ namespace Datadog.Trace.Tests.Configuration
 
             traceSampler = TracerManager.Instance.PerTraceSettings.TraceSampler as TraceSampler;
             var rules = traceSampler!.GetRules();
-            rules.Should().HaveCount(3);
 
-            rules[0].Should()
-                    .BeEquivalentTo(
-                         new RemoteCustomSamplingRule(
-                             rate: 0.5f,
-                             provenance: SamplingRuleProvenance.RemoteCustomer,
-                             serviceNamePattern: "Service1",
-                             operationNamePattern: null,
-                             resourceNamePattern: "Resource1",
-                             tagPatterns: null,
-                             timeout: TimeSpan.FromSeconds(1)));
-
-            rules[1].Should()
-                    .BeEquivalentTo(
-                         new RemoteCustomSamplingRule(
-                             rate: 0.1f,
-                             provenance: SamplingRuleProvenance.RemoteDynamic,
-                             serviceNamePattern: "Service2",
-                             operationNamePattern: null,
-                             resourceNamePattern: "Resource2",
-                             tagPatterns: null,
-                             timeout: TimeSpan.FromSeconds(1)));
-
-            rules[2].Should().BeOfType<AgentSamplingRule>();
+            rules.Should()
+                 .BeEquivalentTo(
+                      new ISamplingRule[]
+                      {
+                          new RemoteCustomSamplingRule(
+                              rate: 0.5f,
+                              provenance: SamplingRuleProvenance.RemoteCustomer,
+                              serviceNamePattern: "Service1",
+                              operationNamePattern: null,
+                              resourceNamePattern: "Resource1",
+                              tagPatterns: null,
+                              timeout: TimeSpan.FromSeconds(1)),
+                          new RemoteCustomSamplingRule(
+                              rate: 0.1f,
+                              provenance: SamplingRuleProvenance.RemoteDynamic,
+                              serviceNamePattern: "Service2",
+                              operationNamePattern: null,
+                              resourceNamePattern: "Resource2",
+                              tagPatterns: null,
+                              timeout: TimeSpan.FromSeconds(1)),
+                          new AgentSamplingRule()
+                      });
         }
 
         private static ConfigurationBuilder CreateConfig(params (string Key, object Value)[] settings)
