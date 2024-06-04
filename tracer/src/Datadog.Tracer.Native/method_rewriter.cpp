@@ -4,7 +4,6 @@
 #include "integration.h"
 #include "logger.h"
 #include "stats.h"
-#include "version.h"
 #include "environment_variables_util.h"
 #include "dd_profiler_constants.h"
 

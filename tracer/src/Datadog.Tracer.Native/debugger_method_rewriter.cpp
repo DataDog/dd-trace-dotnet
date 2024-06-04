@@ -6,7 +6,6 @@
 #include "il_rewriter_wrapper.h"
 #include "logger.h"
 #include "stats.h"
-#include "version.h"
 #include "environment_variables_util.h"
 #include "debugger_probes_tracker.h"
 #include "fault_tolerant_envionrment_variables_util.h"
