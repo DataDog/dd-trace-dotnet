@@ -55,13 +55,16 @@ namespace Datadog.Trace.Sampling
         /// <param name="rule">The new rule being registered.</param>
         public void RegisterRule(ISamplingRule rule)
         {
-            if (rule is AgentSamplingRule agentSamplingRule)
-            {
-                // keep a reference so we can call SetDefaultSampleRates() later
-                _agentSamplingRule = agentSamplingRule;
-            }
-
             _rules.Add(rule);
+        }
+
+        public void RegisterAgentSamplingRule(AgentSamplingRule rule)
+        {
+            // keep a reference to this rule so we can call SetDefaultSampleRates() later
+            // to update the agent sampling rates
+            _agentSamplingRule = rule;
+
+            RegisterRule(rule);
         }
 
         // used for testing
