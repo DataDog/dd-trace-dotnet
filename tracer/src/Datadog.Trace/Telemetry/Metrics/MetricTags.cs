@@ -417,4 +417,15 @@ internal static class MetricTags
         [Description("itrskip_enabled;early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled,
         [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled,
     }
+
+    public enum UnmanagedMemoryPoolType
+    {
+        [Description("pool_type:pooled")] Pooled,
+        [Description("pool_type:unpooled")] Unpooled,
+    }
+
+    public enum UnmanagedMemoryPoolComponent
+    {
+        [Description("component:asm_encoder")] AsmEncoder,
+    }
 }

@@ -356,7 +356,7 @@ namespace Datadog.Trace.AppSec
         public void Dispose()
         {
             _waf?.Dispose();
-            Encoder.Pool.Dispose();
+            Encoder.Allocator.Dispose();
         }
 
         private void SetRemoteConfigCapabilites()

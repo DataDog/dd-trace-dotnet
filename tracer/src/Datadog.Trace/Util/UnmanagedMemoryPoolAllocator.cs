@@ -1,4 +1,4 @@
-﻿// <copyright file="UnmanagedMemoryPool.cs" company="Datadog">
+// <copyright file="UnmanagedMemoryPoolAllocator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,37 +9,52 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Util;
 
 /// <summary>
 /// Beware that this type is not thread safe and should be used with [ThreadStatic]
 /// </summary>
-internal unsafe class UnmanagedMemoryPool : IDisposable
+internal unsafe class UnmanagedMemoryPoolAllocator
+
+    : IUnmanagedMemoryAllocator
 {
+    private static int _instanceCount;
+
     private readonly IntPtr* _items;
     private readonly int _length;
     private readonly int _blockSize;
+    private readonly MetricTags.UnmanagedMemoryPoolComponent _component;
     private int _initialSearchIndex;
+
     private bool _isDisposed;
 
-    public UnmanagedMemoryPool(int blockSize, int poolSize)
+    public UnmanagedMemoryPoolAllocator(int blockSize, int poolSize, MetricTags.UnmanagedMemoryPoolComponent component)
     {
         _blockSize = blockSize;
         _items = (IntPtr*)Marshal.AllocCoTaskMem(poolSize * sizeof(IntPtr));
         _length = poolSize;
         _initialSearchIndex = 0;
+        _component = component;
 
         for (var i = 0; i < _length; i++)
         {
             _items[i] = IntPtr.Zero;
         }
+
+        Interlocked.Increment(ref _instanceCount);
+        TelemetryFactory.Metrics.RecordGaugeUnmanagedMemoryPool(MetricTags.UnmanagedMemoryPoolType.Pooled, _component, _instanceCount);
     }
 
-    ~UnmanagedMemoryPool()
+    ~UnmanagedMemoryPoolAllocator()
     {
         Dispose();
     }
+
+    public static int InstanceCount => _instanceCount;
 
     public bool IsDisposed => _isDisposed;
 
@@ -139,6 +154,10 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             return;
         }
 
+        _isDisposed = true;
+        Interlocked.Decrement(ref _instanceCount);
+        TelemetryFactory.Metrics.RecordGaugeUnmanagedMemoryPool(MetricTags.UnmanagedMemoryPoolType.Pooled, _component, _instanceCount);
+
         for (var i = 0; i < _length; i++)
         {
             if (_items[i] != IntPtr.Zero)
@@ -149,13 +168,11 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         }
 
         Marshal.FreeCoTaskMem((IntPtr)_items);
-
-        _isDisposed = true;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowObjectDisposedException()
     {
-        throw new ObjectDisposedException("UnmanagedMemoryPool");
+        throw new ObjectDisposedException(nameof(UnmanagedMemoryPoolAllocator));
     }
 }
