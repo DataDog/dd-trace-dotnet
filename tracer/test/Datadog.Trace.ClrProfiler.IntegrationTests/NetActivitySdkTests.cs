@@ -44,6 +44,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "set-string",
         };
 
+        private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
+
         public NetActivitySdkTests(ITestOutputHelper output)
             : base("NetActivitySdk", output)
         {
@@ -77,6 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var traceIdRegex = new Regex("\"trace_id\":\"[0-9a-fA-F]+\"");
                 settings.AddRegexScrubber(spanIdRegex, "\"span_id\":\"span_link_id\"");
                 settings.AddRegexScrubber(traceIdRegex, "\"trace_id\":\"trace_link_id\"");
+                settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(nameof(NetActivitySdkTests));
 

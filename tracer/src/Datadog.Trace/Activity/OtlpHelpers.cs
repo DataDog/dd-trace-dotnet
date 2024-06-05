@@ -57,9 +57,6 @@ namespace Datadog.Trace.Activity
             if (w3cActivity is not null)
             {
                 span.SetTag("otel.trace_id", w3cActivity.TraceId);
-
-                // Marshall events here using tag "events"
-                // span.SetTag("events", eventsArray);
             }
 
             // Fixup "version" tag
@@ -80,6 +77,8 @@ namespace Datadog.Trace.Activity
                 {
                     OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
                 }
+
+                OtlpHelpers.SerializeEventsToJson(span, activity5.Events);
             }
             else
             {
@@ -415,7 +414,8 @@ namespace Datadog.Trace.Activity
 
         /// <summary>
         /// Iterates through <c>Activity.Events</c> looking for a <see cref="OpenTelemetryException"/> to copy over
-        /// to the <see cref="Span.Tags"/> of <paramref name="span"/>.
+        /// to the <see cref="Span.Tags"/> of <paramref name="span"/>. The span tags will reflect the last exception
+        /// event.
         /// </summary>
         /// <param name="activity">The <see cref="IActivity"/> to check for the exception event data.</param>
         /// <param name="span">The <see cref="Span"/> to copy the exception event data to.</param>
@@ -445,27 +445,55 @@ namespace Datadog.Trace.Activity
                     continue;
                 }
 
+                string? errorType = null;
+                string? errorMsg = null;
+                string? errorStack = null;
+
                 foreach (var tag in duckEvent.Tags)
                 {
                     switch (tag.Key)
                     {
                         case OpenTelemetryErrorType:
-                            SetTagObject(span, Tags.ErrorType, tag.Value);
+                            errorType = tag.Value?.ToString();
                             break;
 
                         case OpenTelemetryErrorMsg:
-                            SetTagObject(span, Tags.ErrorMsg, tag.Value);
+                            errorMsg = tag.Value?.ToString();
                             break;
 
                         case OpenTelemetryErrorStack:
-                            SetTagObject(span, Tags.ErrorStack, tag.Value);
+                            errorStack = tag.Value?.ToString();
                             break;
                     }
                 }
 
-                // we've found the exception attribute so we should be done here
+                // Ensure that all of the error tracking tags are updated (even null values) from the same exception attribute
+                SetTagObject(span, Tags.ErrorType, errorType);
+                SetTagObject(span, Tags.ErrorMsg, errorMsg);
+                SetTagObject(span, Tags.ErrorStack, errorStack);
+            }
+        }
+
+        internal static void SerializeEventsToJson(Span span, IEnumerable events)
+        {
+            var eventsList = new List<ActivityEvent>();
+
+            foreach (var activityEvent in events)
+            {
+                if (activityEvent.TryDuckCast<ActivityEvent>(out var duckEvent))
+                {
+                    eventsList.Add(duckEvent);
+                }
+            }
+
+            if (eventsList.Count <= 0)
+            {
                 return;
             }
+
+            var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new ActivityEventConverter() }, Formatting = Formatting.None };
+            var eventsJson = JsonConvert.SerializeObject(eventsList, settings);
+            span.SetTag("events", eventsJson);
         }
 
         // See trace agent func spanKind2Type: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L621

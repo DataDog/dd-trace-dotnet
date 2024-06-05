@@ -206,6 +206,21 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["CORECLR_ENABLE_PROFILING"] = profilerEnabled;
                 environmentVariables["CORECLR_PROFILER"] = EnvironmentTools.ProfilerClsId;
                 environmentVariables["CORECLR_PROFILER_PATH"] = nativeLoaderPath;
+
+                var apiWrapperPath = GetApiWrapperPath();
+
+                if (!string.IsNullOrEmpty(apiWrapperPath) && !environmentVariables.ContainsKey("LD_PRELOAD"))
+                {
+                    if (File.Exists(apiWrapperPath))
+                    {
+                        environmentVariables["LD_PRELOAD"] = apiWrapperPath;
+                    }
+                    else if (IsRunningInAzureDevOps())
+                    {
+                        // For convenience, allow tests to run without LD_PRELOAD outside of CI
+                        throw new Exception($"Unable to find API Wrapper at {apiWrapperPath}");
+                    }
+                }
             }
             else
             {
@@ -575,7 +590,7 @@ namespace Datadog.Trace.TestHelpers
                 var metricsUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 agent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath) { UseDogstatsD = useStatsD, UseTelemetry = useTelemetry });
 #else
-            throw new NotSupportedException("UDS is not supported in non-netcore applications or < .NET Core 3.1 ");
+                throw new NotSupportedException("UDS is not supported in non-netcore applications or < .NET Core 3.1 ");
 #endif
             }
             else if (_transportType == TestTransports.WindowsNamedPipe)
@@ -602,6 +617,25 @@ namespace Datadog.Trace.TestHelpers
         public bool IsScheduledBuild()
         {
             return IsEnvironmentVariableSet("isScheduledBuild");
+        }
+
+        public string GetApiWrapperPath()
+        {
+            var archFolder = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), IsAlpine()) switch
+            {
+                ("linux", "Arm64", true) => "linux-musl-arm64",
+                ("linux", "Arm64", false) => "linux-arm64",
+                ("linux", "X64", true) => "linux-musl-x64",
+                ("linux", "X64", false) => "linux-x64",
+                _ => string.Empty,
+            };
+
+            if (string.IsNullOrEmpty(archFolder))
+            {
+                return string.Empty;
+            }
+
+            return Path.Combine(GetMonitoringHomePath(), archFolder, "Datadog.Linux.ApiWrapper.x64.so");
         }
 
         private bool IsEnvironmentVariableSet(string ev)

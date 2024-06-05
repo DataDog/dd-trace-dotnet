@@ -547,6 +547,7 @@
     ParentId: Id_26,
     Tags: {
       env: integration_tests,
+      events: [{"name":"name","time_unix_nano":<DateTimeOffset.Now>}],
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
@@ -983,6 +984,7 @@
     ParentId: Id_29,
     Tags: {
       env: integration_tests,
+      events: [{"name":"name-date","time_unix_nano":<DateTimeOffset.Now>}],
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
@@ -1019,6 +1021,7 @@
     ParentId: Id_50,
     Tags: {
       env: integration_tests,
+      events: [{"name":"event-empty-tags","time_unix_nano":<DateTimeOffset.Now>}],
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
@@ -1037,6 +1040,7 @@
     ParentId: Id_52,
     Tags: {
       env: integration_tests,
+      events: [{"name":"event-tags","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"key-str":"str","key-int":5}}],
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
@@ -1055,6 +1059,7 @@
     ParentId: Id_54,
     Tags: {
       env: integration_tests,
+      events: [{"name":"event-1","time_unix_nano":0},{"name":"event-2","time_unix_nano":1000000000}],
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,

@@ -3,10 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.IO;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
@@ -102,6 +105,64 @@ namespace Datadog.Trace.Tests.Configuration
             // re-enable "remotely"
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", true)));
             TracerManager.Instance.Settings.TraceEnabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void SetSamplingRules()
+        {
+            var tracerSettings = new TracerSettings();
+            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
+
+            // sampling rules is null by default
+            TracerManager.Instance.Settings.RemoteSamplingRules.Should().BeNull();
+
+            var traceSampler = TracerManager.Instance.PerTraceSettings.TraceSampler as TraceSampler;
+            traceSampler!.GetRules().Should().ContainSingle().And.AllBeOfType<AgentSamplingRule>();
+
+            const string samplingRulesJson = """
+                                             [{
+                                                "sample_rate": 0.5,
+                                                "provenance": "customer",
+                                                "service": "Service1",
+                                                "resource": "Resource1"
+                                             },
+                                             {
+                                                "sample_rate": 0.1,
+                                                "provenance": "dynamic",
+                                                "service": "Service2",
+                                                "resource": "Resource2"
+                                             }]
+                                             """;
+
+            // set sampling rules "remotely"
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_sampling_rules", samplingRulesJson)));
+            TracerManager.Instance.Settings.RemoteSamplingRules.Should().Be(samplingRulesJson);
+
+            traceSampler = TracerManager.Instance.PerTraceSettings.TraceSampler as TraceSampler;
+            var rules = traceSampler!.GetRules();
+
+            rules.Should()
+                 .BeEquivalentTo(
+                      new ISamplingRule[]
+                      {
+                          new RemoteCustomSamplingRule(
+                              rate: 0.5f,
+                              provenance: SamplingRuleProvenance.RemoteCustomer,
+                              serviceNamePattern: "Service1",
+                              operationNamePattern: null,
+                              resourceNamePattern: "Resource1",
+                              tagPatterns: null,
+                              timeout: TimeSpan.FromSeconds(1)),
+                          new RemoteCustomSamplingRule(
+                              rate: 0.1f,
+                              provenance: SamplingRuleProvenance.RemoteDynamic,
+                              serviceNamePattern: "Service2",
+                              operationNamePattern: null,
+                              resourceNamePattern: "Resource2",
+                              tagPatterns: null,
+                              timeout: TimeSpan.FromSeconds(1)),
+                          new AgentSamplingRule()
+                      });
         }
 
         private static ConfigurationBuilder CreateConfig(params (string Key, object Value)[] settings)

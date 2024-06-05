@@ -780,7 +780,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                 _jsonWriter.WritePropertyName("lines");
                 _jsonWriter.WriteStartArray();
-                _jsonWriter.WriteValue(methodNameOrLineNumber);
+                _jsonWriter.WriteValue(methodNameOrLineNumber.ToString());
                 _jsonWriter.WriteEndArray();
             }
 

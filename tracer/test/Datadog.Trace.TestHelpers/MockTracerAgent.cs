@@ -1303,25 +1303,41 @@ namespace Datadog.Trace.TestHelpers
 
             private async Task HandleNamedPipeStats(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
-                using var reader = new StreamReader(namedPipeServerStream);
-
-                while (await reader.ReadLineAsync() is { } request)
+                try
                 {
-                    OnMetricsReceived(request);
-                    StatsdRequests.Enqueue(request);
+                    using var reader = new StreamReader(namedPipeServerStream);
+
+                    while (await reader.ReadLineAsync() is { } request)
+                    {
+                        OnMetricsReceived(request);
+                        StatsdRequests.Enqueue(request);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Output?.WriteLine("Error handling stats named pipe stream: " + ex);
+                    Exceptions.Add(ex);
                 }
             }
 
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
-                var request = await MockHttpParser.ReadRequest(namedPipeServerStream);
-                OnRequestReceived(request);
-                var mockTracerResponse = HandleHttpRequest(request);
-
-                if (mockTracerResponse.SendResponse)
+                try
                 {
-                    var responseBytes = GetResponseBytes(body: mockTracerResponse.Response, status: mockTracerResponse.StatusCode);
-                    await namedPipeServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
+                    var request = await MockHttpParser.ReadRequest(namedPipeServerStream);
+                    OnRequestReceived(request);
+                    var mockTracerResponse = HandleHttpRequest(request);
+
+                    if (mockTracerResponse.SendResponse)
+                    {
+                        var responseBytes = GetResponseBytes(body: mockTracerResponse.Response, status: mockTracerResponse.StatusCode);
+                        await namedPipeServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Output?.WriteLine("Error handling traces named pipe stream: " + ex);
+                    Exceptions.Add(ex);
                 }
             }
 

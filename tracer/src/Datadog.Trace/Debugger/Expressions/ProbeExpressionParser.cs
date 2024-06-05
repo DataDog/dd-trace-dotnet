@@ -365,6 +365,11 @@ internal partial class ProbeExpressionParser<T>
                         {
                             return Expression.Constant(null);
                         }
+
+                    case JsonToken.Boolean:
+                        {
+                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Boolean));
+                        }
                 }
             }
             catch (Exception e)

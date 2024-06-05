@@ -64,7 +64,7 @@ class Loader;
 class CorProfilerCallback : public ICorProfilerCallback10
 {
 public:
-    CorProfilerCallback();
+    CorProfilerCallback(std::shared_ptr<IConfiguration> pConfiguration);
     virtual ~CorProfilerCallback();
 
     // use STDMETHODCALLTYPE macro to match the CLR declaration.
@@ -245,7 +245,7 @@ private :
     std::vector<std::unique_ptr<IService>> _services;
 
     std::unique_ptr<IExporter> _pExporter = nullptr;
-    std::unique_ptr<IConfiguration> _pConfiguration = nullptr;
+    std::shared_ptr<IConfiguration> _pConfiguration = nullptr;
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
     std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;

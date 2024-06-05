@@ -31,6 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private static readonly HashSet<string> ExcludeTags = new HashSet<string>
         {
+            "events",
             "attribute-string",
             "attribute-int",
             "attribute-bool",
@@ -70,6 +71,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         };
 
         private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
+        private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
+        private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
             : base("OpenTelemetrySdk", output)
@@ -139,6 +142,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddRegexScrubber(spanIdRegex, "\"span_id\":\"span_link_id\"");
                 settings.AddRegexScrubber(traceIdRegex, "\"trace_id\":\"trace_link_id\"");
                 settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
+                settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+                settings.AddRegexScrubber(_exceptionStacktraceRegex, @"exception.stacktrace"":""System.ArgumentException: Example argument exception"",""");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(filename)
                                   .DisableRequireUniquePrefix();
@@ -187,6 +192,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var traceIdRegex = new Regex("\"trace_id\":\"[0-9a-fA-F]+\"");
                 settings.AddRegexScrubber(spanIdRegex, "\"span_id\":\"span_link_id\"");
                 settings.AddRegexScrubber(traceIdRegex, "\"trace_id\":\"trace_link_id\"");
+                settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+                settings.AddRegexScrubber(_exceptionStacktraceRegex, @"exception.stacktrace"":""System.ArgumentException: Example argument exception"",""");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(filename)
                                   .DisableRequireUniquePrefix();

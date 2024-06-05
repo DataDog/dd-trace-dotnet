@@ -19,9 +19,9 @@
 #include "module_metadata.h"
 #include "resource.h"
 #include "stats.h"
-#include "version.h"
 
 #include "../../../shared/src/native-src/pal.h"
+#include "../../../shared/src/native-src/version.h"
 
 #include "iast/dataflow.h"
 

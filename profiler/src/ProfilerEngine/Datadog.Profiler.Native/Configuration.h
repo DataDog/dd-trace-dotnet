@@ -6,6 +6,8 @@
 #include <memory>
 #include <string>
 
+#include "DeploymentMode.h"
+#include "EnablementStatus.h"
 #include "IConfiguration.h"
 #include "TagsHelper.h"
 #include "shared/src/native-src/string.h"
@@ -67,10 +69,9 @@ public:
     bool IsCIVisibilityEnabled() const override;
     std::uint64_t GetCIVisibilitySpanId() const override;
     bool IsEtwEnabled() const override;
-    bool IsSsiDeployed() const override;
-    bool IsSsiActivated() const override;
     bool IsEtwLoggingEnabled() const override;
-
+    EnablementStatus GetEnablementStatus() const override;
+    DeploymentMode GetDeploymentMode() const override;
 
 private:
     static tags ExtractUserTags();
@@ -92,7 +93,7 @@ private:
     static int32_t ExtractCpuThreadsThreshold();
     static int32_t ExtractCodeHotspotsThreadsThreshold();
     static bool GetContention();
-    static void ExtractSsiState(bool& ssiDeployed, bool& ssiEnabled);
+    EnablementStatus ExtractEnablementStatus();
 
 private:
     static std::string const DefaultProdSite;
@@ -155,7 +156,7 @@ private:
     bool _isCIVisibilityEnabled;
     std::uint64_t _internalCIVisibilitySpanId;
     bool _isEtwEnabled;
-    bool _isSsiDeployed;
-    bool _isSsiActivated;
+    DeploymentMode _deploymentMode;
     bool _isEtwLoggingEnabled;
+    EnablementStatus _enablementStatus;
 };

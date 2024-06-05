@@ -253,7 +253,7 @@
           "location": {
             "file": "SpanOnMethodWithArgsTest.cs",
             "lines": [
-              32
+              "32"
             ]
           },
           "version": 0

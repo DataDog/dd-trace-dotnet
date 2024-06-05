@@ -1,4 +1,4 @@
-﻿// <copyright file="ActivityLinkConverter.cs" company="Datadog">
+// <copyright file="ActivityEventConverter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,21 +7,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Activity;
 
-internal class ActivityLinkConverter : JsonConverter<IActivityLink>
+internal class ActivityEventConverter : JsonConverter<ActivityEvent>
 {
     public override bool CanRead => false; // don't need to read the JSON only write
 
-    public override void WriteJson(JsonWriter writer, IActivityLink value, JsonSerializer serializer)
+    public override void WriteJson(JsonWriter writer, ActivityEvent value, JsonSerializer serializer)
     {
-        int numInvalidAttr = 0;
-        var linkJObject = new JObject();
-        linkJObject.Add("span_id", value.Context.SpanId.SpanId);
-        linkJObject.Add("trace_id", value.Context.TraceId.TraceId);
+        var eventJObject = new JObject();
+        eventJObject.Add("name", value.Name);
+        eventJObject.Add("time_unix_nano", value.Timestamp.ToUnixTimeNanoseconds());
 
         // allowed types as values: string, bool, or some numeric type
         // note that char wasn't listed in RFC, but putting it here as it is like a string
@@ -32,54 +32,24 @@ internal class ActivityLinkConverter : JsonConverter<IActivityLink>
             // while we _can_ serialize most objects we aren't supposed to
             foreach (var kvp in value.Tags)
             {
-                if (string.IsNullOrEmpty(kvp.Key))
+                if (!string.IsNullOrEmpty(kvp.Key)
+                    && IsAllowedType(kvp.Value))
                 {
-                    numInvalidAttr++;
-                }
-                else
-                {
-                    if (IsAllowedType(kvp.Value))
-                    {
-                        acceptedAttr.Add(kvp);
-                    }
-                    else
-                    {
-                        numInvalidAttr++;
-                    }
+                    acceptedAttr.Add(kvp);
                 }
             }
 
             if (acceptedAttr.Count > 0)
             {
                 var jObject = new JObject(acceptedAttr.Select(kvp => new JProperty(kvp.Key, JToken.FromObject(kvp.Value))));
-                linkJObject.Add("attributes", jObject);
+                eventJObject.Add("attributes", jObject);
             }
         }
 
-        if (numInvalidAttr > 0)
-        {
-            linkJObject.Add("dropped_attributes_count", numInvalidAttr.ToString());
-        }
-
-        if (value.Context.TraceState is not null)
-        {
-            // TODO does this need to be converted based on what headers are being used?
-            linkJObject.Add("tracestate", value.Context.TraceState);
-        }
-
-        if (value.Context.TraceFlags == ActivityTraceFlags.None)
-        {
-            linkJObject.Add("flags", "0");
-        }
-        else
-        {
-            linkJObject.Add("flags", "1");
-        }
-
-        writer.WriteToken(linkJObject.CreateReader());
+        writer.WriteToken(eventJObject.CreateReader());
     }
 
-    public override IActivityLink ReadJson(JsonReader reader, Type objectType, IActivityLink existingValue, bool hasExistingValue, JsonSerializer serializer)
+    public override ActivityEvent ReadJson(JsonReader reader, Type objectType, ActivityEvent existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         throw new NotImplementedException();
     }
@@ -97,6 +67,14 @@ internal class ActivityLinkConverter : JsonConverter<IActivityLink>
                 array.Rank > 1)
             {
                 // Newtonsoft doesn't seem to support multidimensional arrays (e.g., [,]), but does support jagged (e.g., [][])
+                return false;
+            }
+
+            if (value.GetType() is { } type
+                && type.IsArray
+                && type.GetElementType() == typeof(object))
+            {
+                // Arrays may only have a primitive type, not 'object'
                 return false;
             }
 

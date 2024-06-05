@@ -5,11 +5,15 @@
 
 #include "unknwn.h"
 #include <atomic>
+#include <memory>
 #include <mutex>
+
+class IConfiguration;
 
 class CorProfilerCallbackFactory : public IClassFactory
 {
 public:
+    CorProfilerCallbackFactory(std::shared_ptr<IConfiguration> configuration);
     virtual ~CorProfilerCallbackFactory();
 
     // use STDMETHODCALLTYPE macro to match the CLR declaration.
@@ -23,4 +27,5 @@ public:
 private:
     std::atomic<ULONG> _refCount{0};
     static std::mutex _lock;
+    std::shared_ptr<IConfiguration> _configuration;
 };

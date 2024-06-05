@@ -183,45 +183,42 @@ HRESULT Dataflow::Init()
     HRESULT hr = S_OK;
     try
     {
-        //_initThread = new std::thread([this]() {
-            // Init config
-            // Domain filters
-            for (int x = 0; _fixedAppDomainIncludeFilters[x] != LastEntry; x++)
-            {
-                _domainIncludeFilters.push_back(_fixedAppDomainIncludeFilters[x]);
-            }
-            for (int x = 0; _fixedAppDomainExcludeFilters[x] != LastEntry; x++)
-            {
-                _domainExcludeFilters.push_back(_fixedAppDomainExcludeFilters[x]);
-            }
+        // Init config
+        // Domain filters
+        for (int x = 0; _fixedAppDomainIncludeFilters[x] != LastEntry; x++)
+        {
+            _domainIncludeFilters.push_back(_fixedAppDomainIncludeFilters[x]);
+        }
+        for (int x = 0; _fixedAppDomainExcludeFilters[x] != LastEntry; x++)
+        {
+            _domainExcludeFilters.push_back(_fixedAppDomainExcludeFilters[x]);
+        }
 
-            // Assembly filters
-            for (int x = 0; _fixedAssemblyIncludeFilters[x] != LastEntry; x++)
-            {
-                _assemblyIncludeFilters.push_back(_fixedAssemblyIncludeFilters[x]);
-            }
-            for (int x = 0; _fixedAssemblyExcludeFilters[x] != LastEntry; x++)
-            {
-                _assemblyExcludeFilters.push_back(_fixedAssemblyExcludeFilters[x]);
-            }
+        // Assembly filters
+        for (int x = 0; _fixedAssemblyIncludeFilters[x] != LastEntry; x++)
+        {
+            _assemblyIncludeFilters.push_back(_fixedAssemblyIncludeFilters[x]);
+        }
+        for (int x = 0; _fixedAssemblyExcludeFilters[x] != LastEntry; x++)
+        {
+            _assemblyExcludeFilters.push_back(_fixedAssemblyExcludeFilters[x]);
+        }
 
-            // Method filters
-            for (int x = 0; _fixedMethodIncludeFilters[x] != LastEntry; x++)
-            {
-                _methodIncludeFilters.push_back(_fixedMethodIncludeFilters[x]);
-            }
-            for (int x = 0; _fixedMethodExcludeFilters[x] != LastEntry; x++)
-            {
-                _methodExcludeFilters.push_back(_fixedMethodExcludeFilters[x]);
-            }
+        // Method filters
+        for (int x = 0; _fixedMethodIncludeFilters[x] != LastEntry; x++)
+        {
+            _methodIncludeFilters.push_back(_fixedMethodIncludeFilters[x]);
+        }
+        for (int x = 0; _fixedMethodExcludeFilters[x] != LastEntry; x++)
+        {
+            _methodExcludeFilters.push_back(_fixedMethodExcludeFilters[x]);
+        }
 
-            // Method attribute filters
-            for (int x = 0; _fixedMethodAttributeExcludeFilters[x] != LastEntry; x++)
-            {
-                _methodAttributeExcludeFilters.push_back(_fixedMethodAttributeExcludeFilters[x]);
-            }
-
-        //});
+        // Method attribute filters
+        for (int x = 0; _fixedMethodAttributeExcludeFilters[x] != LastEntry; x++)
+        {
+            _methodAttributeExcludeFilters.push_back(_fixedMethodAttributeExcludeFilters[x]);
+        }
     }
     catch (std::exception& err)
     {
@@ -256,7 +253,6 @@ HRESULT Dataflow::Destroy()
     DEL_MAP_VALUES(_modules);
     DEL_MAP_VALUES(_appDomains);
     DEL_MAP_VALUES(_moduleAspects);
-    //DEL(_initThread);
     return hr;
 }
 
@@ -629,12 +625,6 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl*
     HRESULT hr = S_OK;
     try
     {
-        if (_initThread) // ensure initialization has finished
-        {
-            _initThread->join();
-            DEL(_initThread);
-        }
-
         CSGUARD(_cs);
 
         MethodAnalyzers::ProcessMethod(method);

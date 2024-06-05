@@ -163,7 +163,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
+        [MemberData(nameof(BooleanTestCases), true)]
         public void RaspEnabledAsmEnabled(string raspEnabledValue, bool expected)
         {
             var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.Enabled, "true"), (ConfigurationKeys.AppSec.RaspEnabled, raspEnabledValue)]);

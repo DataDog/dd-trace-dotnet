@@ -110,7 +110,7 @@
           "location": {
             "file": "HasLocalsAndReturnValue.cs",
             "lines": [
-              16
+              "16"
             ]
           },
           "version": 0
@@ -161,7 +161,7 @@
           "location": {
             "file": "HasLocalsAndReturnValue.cs",
             "lines": [
-              17
+              "17"
             ]
           },
           "version": 0
@@ -222,7 +222,7 @@
           "location": {
             "file": "HasLocalsAndReturnValue.cs",
             "lines": [
-              25
+              "25"
             ]
           },
           "version": 0

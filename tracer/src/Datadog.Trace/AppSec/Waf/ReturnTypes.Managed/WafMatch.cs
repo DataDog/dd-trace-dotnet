@@ -15,5 +15,8 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         [JsonProperty("rule_matches")]
         public RuleMatch[] RuleMatches { get; set; }
+
+        [JsonProperty("span_id", NullValueHandling = NullValueHandling.Ignore)]
+        internal ulong? SpanId { get; set; }
     }
 }

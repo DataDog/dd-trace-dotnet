@@ -643,7 +643,7 @@
           "location": {
             "file": "AsyncLineProbeWithFieldsArgsAndLocalsTest.cs",
             "lines": [
-              23
+              "23"
             ]
           },
           "version": 0
@@ -738,7 +738,7 @@
           "location": {
             "file": "AsyncLineProbeWithFieldsArgsAndLocalsTest.cs",
             "lines": [
-              25
+              "25"
             ]
           },
           "version": 0
@@ -833,7 +833,7 @@
           "location": {
             "file": "AsyncLineProbeWithFieldsArgsAndLocalsTest.cs",
             "lines": [
-              26
+              "26"
             ]
           },
           "version": 0
@@ -929,7 +929,7 @@
           "location": {
             "file": "AsyncLineProbeWithFieldsArgsAndLocalsTest.cs",
             "lines": [
-              27
+              "27"
             ]
           },
           "version": 0
@@ -1084,7 +1084,7 @@
           "location": {
             "file": "AsyncLineProbeWithFieldsArgsAndLocalsTest.cs",
             "lines": [
-              28
+              "28"
             ]
           },
           "version": 0
@@ -1344,7 +1344,7 @@
           "location": {
             "file": "AsyncLineProbeWithFieldsArgsAndLocalsTest.cs",
             "lines": [
-              29
+              "29"
             ]
           },
           "version": 0
@@ -1701,7 +1701,7 @@
           "location": {
             "file": "AsyncLineProbeWithFieldsArgsAndLocalsTest.cs",
             "lines": [
-              45
+              "45"
             ]
           },
           "version": 0
@@ -2058,7 +2058,7 @@
           "location": {
             "file": "AsyncLineProbeWithFieldsArgsAndLocalsTest.cs",
             "lines": [
-              46
+              "46"
             ]
           },
           "version": 0
@@ -2415,7 +2415,7 @@
           "location": {
             "file": "AsyncLineProbeWithFieldsArgsAndLocalsTest.cs",
             "lines": [
-              47
+              "47"
             ]
           },
           "version": 0

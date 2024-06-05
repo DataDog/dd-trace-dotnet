@@ -134,19 +134,17 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 }
 
                 var errorMess = StringBuilderCache.GetStringAndRelease(sb);
-                Log.Warning("WAF initialization failed. Some rules are invalid in rule file {RulesFile}: {ErroringRules}", rulesFile, errorMess);
+                Log.Warning("Some rules are invalid in rule file {RulesFile}: {ErroringRules}", rulesFile, errorMess);
+            }
+
+            // sometimes loaded rules will be 0 if other errors happen above, that's why it should be the fallback log
+            if (initResult.LoadedRules == 0)
+            {
+                Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
             }
             else
             {
-                // sometimes loaded rules will be 0 if other errors happen above, that's why it should be the fallback log
-                if (initResult.LoadedRules == 0)
-                {
-                    Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
-                }
-                else
-                {
-                    Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", initResult.LoadedRules, rulesFile);
-                }
+                Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", initResult.LoadedRules, rulesFile);
             }
 
             return initResult;

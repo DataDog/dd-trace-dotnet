@@ -33,10 +33,16 @@ void SamplesCollector::RegisterBatchedProvider(IBatchedSamplesProvider* batchedS
 bool SamplesCollector::StartImpl()
 {
     Log::Info("Starting the samples collector");
-    _workerThread = std::thread(&SamplesCollector::SamplesWork, this);
-    OpSysTools::SetNativeThreadName(&_workerThread, WorkerThreadName);
-    _exporterThread = std::thread(&SamplesCollector::ExportWork, this);
-    OpSysTools::SetNativeThreadName(&_exporterThread, ExporterThreadName);
+    _workerThread = std::thread([this]
+        {
+            OpSysTools::SetNativeThreadName(WorkerThreadName);
+            SamplesWork();
+        });
+    _exporterThread = std::thread([this]
+        {
+            OpSysTools::SetNativeThreadName(ExporterThreadName);
+            ExportWork();
+        });
     return true;
 }
 

@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         LogInjectionEnabled = true,
                         // SpanSamplingRules = "[{\"service\": \"cart*\"}]",
                         TraceSampleRate = .5,
-                        // CustomSamplingRules = "[{\"sample_rate\":0.1}]",
+                        TraceSamplingRules = "[{\"sample_rate\":0.1}]",
                         // ServiceNameMapping = "[{\"from_key\":\"foo\", \"to_name\":\"bar\"}]",
                         TraceHeaderTags = "[{ \"header\": \"User-Agent\", \"tag_name\": \"http.user_agent\" }]",
                         GlobalTags = "[\"foo1:bar1\",\"foo2:bar2\"]"
@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         LogInjectionEnabled = true,
                         // SpanSamplingRules = "[{\"service\": \"cart*\"}]",
                         TraceSampleRate = .5,
-                        // CustomSamplingRules = "[{\"sample_rate\":0.1}]",
+                        TraceSamplingRules = "[{\"sample_rate\":0.1}]",
                         // ServiceNameMapping = "foo:bar",
                         TraceHeaderTags = "User-Agent:http.user_agent",
                         GlobalTags = "[\"foo1:bar1\",\"foo2:bar2\"]"
@@ -177,6 +177,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             capabilities[14].Should().BeTrue(); // APM_TRACING_HTTP_HEADER_TAGS
             capabilities[15].Should().BeTrue(); // APM_TRACING_CUSTOM_TAGS
             capabilities[19].Should().BeTrue(); // APM_TRACING_TRACING_ENABLED
+            capabilities[29].Should().BeTrue(); // APM_TRACING_SAMPLE_RULES
 
             request.Client.State.ConfigStates.Should().ContainSingle(f => f.Id == fileId)
                .Subject.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
@@ -212,7 +213,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // json["debug"]?.Value<bool>().Should().Be(expectedConfig.DebugLogsEnabled);
                 json["log_injection_enabled"]?.Value<bool>().Should().Be(expectedConfig.LogInjectionEnabled);
                 json["sample_rate"]?.Value<double?>().Should().Be(expectedConfig.TraceSampleRate);
-                // json["sampling_rules"]?.Value<string>().Should().Be(expectedConfig.CustomSamplingRules);
+                json["remote_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.TraceSamplingRules);
                 // json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
                 // json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
                 FlattenJsonArray(json["header_tags"]).Should().Be(expectedConfig.TraceHeaderTags ?? string.Empty);
@@ -254,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // (ConfigurationKeys.DebugEnabled, config.DebugLogsEnabled),
                 (ConfigurationKeys.LogsInjectionEnabled, config.LogInjectionEnabled),
                 (ConfigurationKeys.GlobalSamplingRate, config.TraceSampleRate),
-                // (ConfigurationKeys.CustomSamplingRules, config.CustomSamplingRules),
+                (ConfigurationKeys.CustomSamplingRules, config.TraceSamplingRules),
                 // (ConfigurationKeys.SpanSamplingRules, config.SpanSamplingRules),
                 // (ConfigurationKeys.DataStreamsMonitoring.Enabled, config.DataStreamsEnabled),
                 (ConfigurationKeys.HeaderTags, config.TraceHeaderTags == null ? null : JToken.Parse(config.TraceHeaderTags).ToString()),
@@ -353,8 +354,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             [JsonProperty("tracing_sampling_rate")]
             public double? TraceSampleRate { get; init; }
 
-            // [JsonProperty("tracing_sampling_rules")]
-            // public string CustomSamplingRules { get; init; }
+            [JsonProperty("tracing_sampling_rules")]
+            public string TraceSamplingRules { get; init; }
 
             // [JsonProperty("span_sampling_rules")]
             // public string SpanSamplingRules { get; init; }

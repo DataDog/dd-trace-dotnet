@@ -606,6 +606,7 @@
       attribute-stringArray.2: str3,
       attribute-stringArrayEmpty: [],
       env: integration_tests,
+      events: [{"name":"event-message","time_unix_nano":<DateTimeOffset.Now>},{"name":"event-messageWithDateTime","time_unix_nano":0},{"name":"event-messageWithAttributes","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"foo":1,"bar":"Hello, World!","baz":[1,2,3],"strings":["str","1"]}},{"name":"event-messageWithDateTimeAndAttributes","time_unix_nano":1000000000,"attributes":{"foo":1,"bar":"Hello, World!","baz":[1,2,3],"strings":["str","1"]}}],
       language: dotnet,
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
@@ -772,6 +773,7 @@
 System.ArgumentException: Example argument exception
 at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       error.type: ArgumentException,
+      events: [{"name":"exception","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"exception.type":"ArgumentException","exception.stacktrace":"System.ArgumentException: Example argument exception","exception.message":"Example argument exception"}}],
       language: dotnet,
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_ERROR,
