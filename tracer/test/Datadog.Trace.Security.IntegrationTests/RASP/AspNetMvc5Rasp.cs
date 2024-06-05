@@ -107,9 +107,11 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
     }
 
     [SkippableTheory]
-    [InlineData("/Iast/ExecuteQueryFromBodyQueryData", "SqlI", "{\"UserName\": \"' or '1'='1\"}")]
+    [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestRaspRequestBody(string url, string exploit, string body = null)
+    [Trait("LoadFromGAC", "True")]
+    [InlineData("/Iast/ExecuteQueryFromBodyQueryData", "SqlI", "{\"UserName\": \"' or '1'='1\"}")]
+    public async Task TestRaspRequestSqlInBody(string url, string exploit, string body = null)
     {
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings();

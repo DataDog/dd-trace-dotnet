@@ -96,8 +96,9 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
 
     [SkippableTheory]
     [InlineData("/Iast/ExecuteQueryFromBodyQueryData", "SqlI", "{\"UserName\": \"' or '1'='1\"}")]
+    [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestRaspRequestBody(string url, string exploit, string body = null)
+    public async Task TestRaspRequestSqlInBody(string url, string exploit, string body = null)
     {
         var testName = IastEnabled ? "RaspIast.AspNetCore5" : "Rasp.AspNetCore5";
         IncludeAllHttpSpans = true;
