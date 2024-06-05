@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tests.PublicApiTests
         [Fact]
         public void ExposesTracingHttpModule()
         {
-            var httpModuleType = Type.GetType("Datadog.Trace.AspNet.TracingHttpModule, Datadog.Trace.AspNet");
+            var httpModuleType = Type.GetType("Datadog.Trace.AspNet.TracingHttpModule, Datadog.Trace");
             Assert.NotNull(httpModuleType);
         }
 #endif
