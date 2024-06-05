@@ -258,6 +258,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
                 var totalLines = totalLinesCovered + totalLinesPartiallyCovered + totalLinesNotCovered;
                 percentage = Math.Round((totalLinesCovered / totalLines) * 100, 2).ToValidPercentage();
+                Log.Debug("TryGetCoveragePercentageFromXml: Microsoft.CodeCoverage code coverage was reported: {Value}", percentage);
                 return true;
             }
 

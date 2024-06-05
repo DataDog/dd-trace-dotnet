@@ -40,6 +40,11 @@ public class ManagedVanguardStopIntegration
         {
             foreach (var file in lstFiles.Distinct())
             {
+                if (file is null)
+                {
+                    continue;
+                }
+
                 if (Path.GetExtension(file).Equals(".xml", StringComparison.OrdinalIgnoreCase) &&
                     DotnetCommon.TryGetCoveragePercentageFromXml(file, out var percentage))
                 {
