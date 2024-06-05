@@ -247,7 +247,16 @@ namespace Datadog.Trace.Activity
                     span.SetMetric(key, us);
                     break;
                 case int i: // TODO: Can't get here from OTEL API, test with Activity API
-                    span.SetMetric(key, i);
+                    // special case where we need to remap "http.response.status_code"
+                    if (key == "http.response.status_code")
+                    {
+                        span.SetTag(Tags.HttpStatusCode, i.ToString());
+                    }
+                    else
+                    {
+                        span.SetMetric(key, i);
+                    }
+
                     break;
                 case uint ui: // TODO: Can't get here from OTEL API, test with Activity API
                     span.SetMetric(key, ui);
@@ -307,6 +316,9 @@ namespace Datadog.Trace.Activity
                         string s => s,
                     };
                     span.SetTag(key, newStatusCodeString);
+                    break;
+                case "http.response.status_code":
+                    span.SetTag(Tags.HttpStatusCode, value);
                     break;
                 default:
                     span.SetTag(key, value);
