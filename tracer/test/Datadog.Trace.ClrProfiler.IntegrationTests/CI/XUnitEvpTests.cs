@@ -79,6 +79,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
 
         var tests = new List<MockCIVisibilityTest>();
+        var testsCopy = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
         var testModules = new List<MockCIVisibilityTestModule>();
 
@@ -147,6 +148,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                             if (@event.Type == SpanTypes.Test)
                             {
                                 tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
+                                testsCopy.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
                             }
                             else if (@event.Type == SpanTypes.TestSuite)
                             {
@@ -362,7 +364,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         settings.UseTextForParameters("packageVersion=all");
         settings.DisableRequireUniquePrefix();
         settings.UseTypeName(nameof(XUnitEvpTests));
-        await Verifier.Verify(tests.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
+        await Verifier.Verify(testsCopy.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
 
         // ***************************************************************************
         // Check logs

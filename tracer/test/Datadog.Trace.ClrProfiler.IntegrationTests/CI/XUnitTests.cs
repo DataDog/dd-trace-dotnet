@@ -34,7 +34,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         public virtual async Task SubmitTraces(string packageVersion)
         {
-            List<MockSpan> spans = null;
             string[] messages = null;
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
@@ -48,9 +47,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             // We remove the evp_proxy endpoint to force the APM protocol compatibility
             agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();
             using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            spans = agent.WaitForSpans(ExpectedSpanCount)
+            var spans = agent.WaitForSpans(ExpectedSpanCount)
                          .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                          .ToList();
+            var spansCopy = JsonConvert.DeserializeObject<List<MockSpan>>(JsonConvert.SerializeObject(spans));
 
             // Check the span count
             Assert.Equal(ExpectedSpanCount, spans.Count);
@@ -221,7 +221,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings("all");
             settings.DisableRequireUniquePrefix();
             settings.UseTypeName(nameof(XUnitTests));
-            await Verifier.Verify(spans.OrderBy(s => s.Resource).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Parameters)), settings);
+            await Verifier.Verify(spansCopy.OrderBy(s => s.Resource).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Parameters)), settings);
 
             // ***************************************************************************
             // Check logs
