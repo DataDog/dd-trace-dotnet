@@ -13,19 +13,19 @@ internal class NullSpan : ISpan
     {
     }
 
-    public string OperationName
+    public string? OperationName
     {
         get => string.Empty;
         set { }
     }
 
-    public string ResourceName
+    public string? ResourceName
     {
         get => string.Empty;
         set { }
     }
 
-    public string Type
+    public string? Type
     {
         get => string.Empty;
         set { }
@@ -37,7 +37,7 @@ internal class NullSpan : ISpan
         set { }
     }
 
-    public string ServiceName
+    public string? ServiceName
     {
         get => string.Empty;
         set { }
