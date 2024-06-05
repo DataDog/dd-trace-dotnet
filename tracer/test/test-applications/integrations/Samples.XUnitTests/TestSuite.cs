@@ -13,13 +13,6 @@ namespace Samples.XUnitTests
 
         public TestSuite(ITestOutputHelper output)
         {
-            output.WriteLine($"Pid: {Process.GetCurrentProcess().Id}");
-            output.WriteLine("Environment Variables:");
-            foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
-            {
-                output.WriteLine($"  {entry.Key} = {entry.Value}");
-            }
-            output.WriteLine(string.Empty);
             _output = output;
         }
 
