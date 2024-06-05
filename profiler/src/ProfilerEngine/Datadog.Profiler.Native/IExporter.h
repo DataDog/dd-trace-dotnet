@@ -22,5 +22,5 @@ public:
     virtual bool Export(bool lastCall = false) = 0;
     virtual void RegisterUpscaleProvider(IUpscaleProvider* provider) = 0;
     virtual void RegisterProcessSamplesProvider(ISamplesProvider* provider) = 0;
-    virtual void CreateTelemetryMetricsWorker(std::string runtimeId, ApplicationInfo* pInfo) = 0;
+    virtual void RegisterApplication(std::string_view runtimeId) = 0;
 };

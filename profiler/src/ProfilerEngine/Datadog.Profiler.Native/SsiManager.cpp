@@ -1,4 +1,3 @@
-#include "SsiManager.h"
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
@@ -55,15 +54,14 @@ void SsiManager::OnSpanCreated()
     }
 }
 
-bool SsiManager::IsSpanCreated()
+bool SsiManager::IsSpanCreated() const
 {
     return _hasSpan;
 }
 
-bool SsiManager::IsLongLived()
+bool SsiManager::IsLongLived() const
 {
-    auto lifetime = OsSpecificApi::GetProcessLifetime();
-    return lifetime > _longLivedThreshold.count();
+    return _isLongLived;
 }
 
 // the profiler is enabled if either:
@@ -115,7 +113,7 @@ void SsiManager::ProcessEnd()
     Log::Debug("ProcessEnd(", to_string(_deploymentMode), ", ", to_string(GetSkipProfileHeuristic()), ")");
 }
 
-SkipProfileHeuristicType SsiManager::GetSkipProfileHeuristic()
+SkipProfileHeuristicType SsiManager::GetSkipProfileHeuristic() const
 {
     auto heuristics = SkipProfileHeuristicType::AllTriggered;
 

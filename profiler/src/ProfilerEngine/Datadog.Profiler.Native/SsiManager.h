@@ -7,7 +7,6 @@
 #include "EnablementStatus.h"
 #include "ISsiManager.h"
 #include "SkipProfileHeuristicType.h"
-#include "Timer.h"
 
 #include <future>
 #include <memory>
@@ -27,8 +26,8 @@ public:
 public:
     // Inherited via ISsiManager
     void OnSpanCreated() override;
-    bool IsSpanCreated() override;
-    bool IsLongLived() override;
+    bool IsSpanCreated() const override;
+    bool IsLongLived() const override;
     bool IsProfilerEnabled() override;
     bool IsProfilerActivated() override;
 
@@ -36,7 +35,7 @@ public:
     void ProcessStart() override;
     void ProcessEnd() override;
 
-    SkipProfileHeuristicType GetSkipProfileHeuristic() override;
+    SkipProfileHeuristicType GetSkipProfileHeuristic() const override;
 
     DeploymentMode GetDeploymentMode() const override;
 

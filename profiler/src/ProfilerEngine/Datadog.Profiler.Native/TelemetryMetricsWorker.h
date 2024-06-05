@@ -36,6 +36,7 @@ public:
 
 
 private:
+    static std::string TelemetryMetricsEndPoint;
     std::string _serviceName;
     bool _hasSentProfiles;
     ISsiManager* _ssiManager;

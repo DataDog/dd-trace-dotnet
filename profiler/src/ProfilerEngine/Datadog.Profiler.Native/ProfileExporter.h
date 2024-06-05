@@ -55,7 +55,7 @@ public:
     void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
     void RegisterUpscaleProvider(IUpscaleProvider* provider) override;
     void RegisterProcessSamplesProvider(ISamplesProvider* provider) override;
-    void CreateTelemetryMetricsWorker(std::string runtimeId, ApplicationInfo* pInfo) override;
+    void RegisterApplication(std::string_view runtimeId) override;
 
     static std::string BuildAgentEndpoint(IConfiguration const* configuration);
 

@@ -28,6 +28,8 @@ public:
     ddog_ContextKey _numberOfRuntimeIdKey = {};
 };
 
+std::string TelemetryMetricsWorker::TelemetryMetricsEndPoint = "/telemetry/proxy/api/v2/apmtelemetry";
+
 TelemetryMetricsWorker::TelemetryMetricsWorker(ISsiManager* ssiManager) :
     _serviceName{},
     _impl{std::make_unique<Impl>()},
@@ -82,7 +84,7 @@ bool TelemetryMetricsWorker::Start(
 
     _serviceName = serviceName;
 
-    if (pConfiguration->GetDeploymentMode() != DeploymentMode::SingleStepInstrumentation)
+    if (_ssiManager->GetDeploymentMode() != DeploymentMode::SingleStepInstrumentation)
     {
         Log::Debug("No telemetry worker for (", serviceName, ") should be started if not deployed via Single Step Instrumentation");
         return false;
@@ -98,11 +100,12 @@ bool TelemetryMetricsWorker::Start(
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
         auto error = make_error(result);
-        Log::Error("Failed to instantiate telemetry builder for (", serviceName, "): ", error.message());
+        Log::Debug("Failed to instantiate telemetry builder for (", serviceName, "): ", error.message());
         return false;
     }
 
-    auto endpoint_char = FfiHelper::StringToCharSlice(agentUrl);
+    auto endpointUrl = agentUrl + TelemetryMetricsEndPoint;
+    auto endpoint_char = FfiHelper::StringToCharSlice(endpointUrl);
     auto* endpoint = ddog_endpoint_from_url(endpoint_char);
     result = ddog_telemetry_builder_with_endpoint_config_endpoint(builder, endpoint);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
@@ -217,6 +220,30 @@ void TelemetryMetricsWorker::IncNumberOfApplications()
     AddPoint(&k, 1, _hasSentProfiles, _ssiManager->GetSkipProfileHeuristic());
 }
 
+static std::string GetHeuristicsTag(SkipProfileHeuristicType heuristics)
+{
+    if (heuristics == SkipProfileHeuristicType::AllTriggered)
+    {
+        return "triggered";
+    }
+
+    std::string str;
+    if ((heuristics & SkipProfileHeuristicType::NoSpan) == SkipProfileHeuristicType::NoSpan)
+    {
+        str = "no_span";
+    }
+
+    if ((heuristics & SkipProfileHeuristicType::ShortLived) == SkipProfileHeuristicType::ShortLived)
+    {
+        if (!str.empty())
+        {
+            str += "_";
+        }
+        str += "short_lived";
+    }
+
+    return str;
+}
 void TelemetryMetricsWorker::AddPoint(Key* key, double value, bool hasSentProfiles, SkipProfileHeuristicType heuristics)
 {
     if (_impl->_pHandle == nullptr)
@@ -227,31 +254,8 @@ void TelemetryMetricsWorker::AddPoint(Key* key, double value, bool hasSentProfil
         return;
     }
 
-    std::string heuristicTag;
-    if (heuristics == SkipProfileHeuristicType::AllTriggered)
-    {
-        heuristicTag = "triggered";
-    }
-    else
-    {
-        if ((heuristics & SkipProfileHeuristicType::NoSpan) == SkipProfileHeuristicType::NoSpan)
-        {
-            heuristicTag += "no_span";
-        }
-
-        if ((heuristics & SkipProfileHeuristicType::ShortLived) == SkipProfileHeuristicType::ShortLived)
-        {
-            if (!heuristicTag.empty())
-            {
-                heuristicTag += "_";
-            }
-
-            heuristicTag = "short_lived";
-        }
-    }
-
     auto tags = libdatadog::Tags({{"has_sent_profiles", hasSentProfiles ? "true" : "false"},
-                                  {"heuristic_hypothetical_decision", std::move(heuristicTag)}},
+                                  {"heuristic_hypothetical_decision", GetHeuristicsTag(heuristics)}},
                                  false);
 
     auto result = ddog_telemetry_handle_add_point_with_tags(_impl->_pHandle, key->_internal, value, *static_cast<ddog_Vec_Tag const*>(*tags._impl));
@@ -262,35 +266,4 @@ void TelemetryMetricsWorker::AddPoint(Key* key, double value, bool hasSentProfil
         return;
     }
 }
-
-// telemetry SSI metrics definition
-//  "profilers": {
-//      "ssi_heuristic.number_of_profiles": {
-//          "tags": [
-//              "installation",
-//              "enablement_choice",
-//              "has_sent_profiles",
-//              "heuristic_hypothetical_decision"
-//              ] ,
-//          "metric_type": "count",
-//          "data_type" : "profiles",
-//          "description" : "The number of profiles that would have been hypothetically emitted if SSI was enabled for profiling",
-//          "send_to_user" : false,
-//          "user_tags" : []
-//      },
-//      "ssi_heuristic.number_of_runtime_id": {
-//          "tags": [
-//              "installation",
-//              "enablement_choice",
-//              "has_sent_profiles",
-//              "heuristic_hypothetical_decision"
-//              ] ,
-//          "metric_type": "count",
-//          "data_type" : "profiles",
-//          "description" : "The number of runtimes that would have been hypothetically profiled if SSI was enabled for profiling",
-//          "send_to_user" : false,
-//          "user_tags" : []
-//      }
-//  }
-
 } // namespace libdatadog

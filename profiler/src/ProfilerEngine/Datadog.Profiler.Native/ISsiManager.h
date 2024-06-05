@@ -16,8 +16,8 @@ public:
     virtual ~ISsiManager() = default;
 
     virtual void OnSpanCreated() = 0;
-    virtual bool IsSpanCreated() = 0;
-    virtual bool IsLongLived() = 0;
+    virtual bool IsSpanCreated() const = 0;
+    virtual bool IsLongLived() const = 0;
 
     // enabled by configuration (DD_PROFILING_ENABLED=true) / SSI (DD_INJECTION_ENABLED contains "profiler")
     virtual bool IsProfilerEnabled() = 0;
@@ -30,7 +30,7 @@ public:
     virtual void ProcessEnd() = 0;
 
     // heuristics state
-    virtual SkipProfileHeuristicType GetSkipProfileHeuristic() = 0;
+    virtual SkipProfileHeuristicType GetSkipProfileHeuristic() const = 0;
 
     virtual DeploymentMode GetDeploymentMode() const = 0;
 };

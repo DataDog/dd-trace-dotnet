@@ -16,25 +16,21 @@ enum SkipProfileHeuristicType
 inline std::string to_string(SkipProfileHeuristicType heuristics)
 {
     std::string tags;
-    if (heuristics == SkipProfileHeuristicType::AllTriggered) 
+    if (heuristics == SkipProfileHeuristicType::AllTriggered)
     {
         return "AllTriggered";
-        
     }
-     if ((heuristics & SkipProfileHeuristicType::ShortLived) == SkipProfileHeuristicType::ShortLived) 
+    if ((heuristics & SkipProfileHeuristicType::ShortLived) == SkipProfileHeuristicType::ShortLived)
     {
         tags = "ShortLived";
-        
     }
-     if ((heuristics & SkipProfileHeuristicType::NoSpan) == SkipProfileHeuristicType::NoSpan) 
+    if ((heuristics & SkipProfileHeuristicType::NoSpan) == SkipProfileHeuristicType::NoSpan)
     {
-        if (!tags.empty()) 
+        if (!tags.empty())
         {
             tags += " | ";
-            
         }
-         tags += "NoSpan";
-        
+        tags += "NoSpan";
     }
-     return tags;
+    return tags;
 }

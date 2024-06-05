@@ -53,6 +53,7 @@ class IManagedThreadList;
 class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
+class RuntimeIdStore;
 
 #ifdef LINUX
 class SystemCallsShield;
@@ -245,6 +246,7 @@ private :
     GarbageCollectionProvider* _pGarbageCollectionProvider = nullptr;
     LiveObjectsProvider* _pLiveObjectsProvider = nullptr;
     ThreadLifetimeProvider* _pThreadLifetimeProvider = nullptr;
+    RuntimeIdStore* _pRuntimeIdStore = nullptr;
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
 #endif

@@ -146,7 +146,7 @@ void CorProfilerCallback::InitializeServices()
         return _pCodeHotspotsThreadList->Count();
     });
 
-    auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
+    _pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
     auto valueTypeProvider = SampleValueTypeProvider();
 
@@ -157,19 +157,19 @@ void CorProfilerCallback::InitializeServices()
             _pFrameStore.get(),
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
-            pRuntimeIdStore,
+            _pRuntimeIdStore,
             _pConfiguration.get(),
             MemoryResourceManager::GetDefault());
     }
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get(), MemoryResourceManager::GetDefault());
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), _pRuntimeIdStore, _pConfiguration.get(), MemoryResourceManager::GetDefault());
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get(), MemoryResourceManager::GetDefault());
+        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), _pRuntimeIdStore, _pConfiguration.get(), MemoryResourceManager::GetDefault());
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -182,7 +182,7 @@ void CorProfilerCallback::InitializeServices()
             _pConfiguration.get(),
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
-            pRuntimeIdStore,
+            _pRuntimeIdStore,
             _metricsRegistry,
             CallstackProvider(_memoryResourceManager.GetDefault()),
             MemoryResourceManager::GetDefault());
@@ -203,7 +203,7 @@ void CorProfilerCallback::InitializeServices()
                     _pFrameStore.get(),
                     _pThreadsCpuManager,
                     _pAppDomainStore.get(),
-                    pRuntimeIdStore,
+                    _pRuntimeIdStore,
                     _pConfiguration.get(),
                     _metricsRegistry);
 
@@ -214,7 +214,7 @@ void CorProfilerCallback::InitializeServices()
                     _pFrameStore.get(),
                     _pThreadsCpuManager,
                     _pAppDomainStore.get(),
-                    pRuntimeIdStore,
+                    _pRuntimeIdStore,
                     _pConfiguration.get(),
                     _pLiveObjectsProvider,
                     _metricsRegistry,
@@ -243,7 +243,7 @@ void CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 nullptr, // no listener
                 _metricsRegistry,
@@ -261,7 +261,7 @@ void CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
@@ -276,7 +276,7 @@ void CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 MemoryResourceManager::GetDefault()
                 );
@@ -285,7 +285,7 @@ void CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
                 MemoryResourceManager::GetDefault()
@@ -327,7 +327,7 @@ void CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 nullptr, // no listener
                 _metricsRegistry,
@@ -344,7 +344,7 @@ void CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
@@ -358,7 +358,7 @@ void CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 MemoryResourceManager::GetDefault());
 
@@ -367,7 +367,7 @@ void CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
                 MemoryResourceManager::GetDefault());
@@ -441,7 +441,7 @@ void CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
 
-    _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
+    _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get(), _pRuntimeInfo.get(), _pSsiManager.get());
 
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
@@ -1008,7 +1008,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
 
-    _pSsiManager = std::make_unique<SsiManager>(_pConfiguration, this);
+    _pSsiManager = std::make_unique<SsiManager>(_pConfiguration.get(), this);
     _pSsiManager->ProcessStart();
 
     double coresThreshold = _pConfiguration->MinimumCores();
@@ -1132,7 +1132,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     InitializeServices();
 
     // Configure which profiler callbacks we want to receive by setting the event mask:
-    DWORD eventMask = COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT;
+    DWORD eventMask = COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT | COR_PRF_MONITOR_APPDOMAIN_LOADS;
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
@@ -1221,6 +1221,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // the Tracer needs to know that the Profiler is here to enable code hotspots
     _isInitialized.store(true);
     ProfilerEngineStatus::WriteIsProfilerEngineActive(true);
+
+    if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation &&
+        _pConfiguration->GetEnablementStatus() != EnablementStatus::ManuallyEnabled)
+    {
+        _pSamplesCollector->Start();
+        _pRuntimeIdStore->Start();
+    }
 
     // if the profiler is not enabled (either manually or via SSI), nothing is profiled
     if (!_pSsiManager->IsProfilerEnabled())
@@ -1320,6 +1327,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationStarted(AppDomai
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
 {
+    if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation)
+    {
+        auto runtimeId = _pRuntimeIdStore->GetId(appDomainId);
+        _pExporter->RegisterApplication(runtimeId);
+    }
+
     return S_OK;
 }
 

@@ -166,6 +166,11 @@ void ProfileExporter::RegisterProcessSamplesProvider(ISamplesProvider* provider)
     _processSamplesProviders.push_back(provider);
 }
 
+void ProfileExporter::RegisterApplication(std::string_view runtimeId)
+{
+    GetOrCreateInfo(runtimeId);
+}
+
 libdatadog::Tags ProfileExporter::CreateTags(
     IConfiguration* configuration,
     IRuntimeInfo* runtimeInfo,
@@ -598,71 +603,6 @@ bool ProfileExporter::Export(bool lastCall)
 
     return exported;
 }
-
-void ProfileExporter::CreateTelemetryMetricsWorker(std::string runtimeId, ApplicationInfo* pInfo)
-{
-    if (pInfo == nullptr)
-    {
-        assert(false);
-        return;
-    }
-
-    if (pInfo->Worker != nullptr)
-    {
-        assert(false);
-        Log::Debug("A telemetry worker already exists for ", pInfo->ServiceName);
-        return;
-    }
-
-    // agentless mode is not supported for telemetry
-    if (_configuration->IsAgentless())
-    {
-        Log::Info("No telemetry available in agentless mode", pInfo->ServiceName);
-        return;
-    }
-
-    // create the worker and assign it to the application info
-    auto agentUrl = BuildAgentEndpoint(_configuration);
-    auto languageVersion = _runtimeInfo->GetClrString();
-    pInfo->Worker = std::make_shared<libdatadog::TelemetryMetricsWorker>(_ssiManager);
-    bool success = pInfo->Worker->Start(
-        _configuration,
-        pInfo->ServiceName,
-        pInfo->Version,
-        LanguageFamily,
-        languageVersion,
-        LibraryVersion,
-        agentUrl,
-        runtimeId,
-        pInfo->Environment);
-
-    if (!success)
-    {
-        Log::Debug("Failed to start the telemetry worker for ", pInfo->ServiceName);
-        pInfo->Worker = nullptr;
-    }
-}
-//
-// Tags
-// -----------------------------------------------
-//  installation:  CONSTANT
-//     ssi(only case where we emit the telemetry)
-//
-//  enablement_choice:  CONSTANT
-//      manually_enabled(DD_PROFILING_ENABLED = TRUE)
-//      ssi_enabled (does not exist yet)
-//      not_enabled (DD_PROFILING_ENABLED is not set. We cannot emit the telemetry when DD_PROFILING_ENABLED = false but this is supposedly an edge case)
-//
-//  has_sent_profiles :  should be CONSTANT even for short lived
-//      true (profiler indeed sent profiles)
-//      false
-//
-//  heuristic_hypothetical_decision :  VARIABLE
-//      triggered (heuristics are triggered, ie process is not short lived and emitted at least one span. Important: it does not matter if they are actually used to decide if profile are emitted or not)
-//      no_span
-//      short_lived
-//      no_span_short_lived
-
 
 std::string ProfileExporter::CreateMetricsFileContent() const
 {

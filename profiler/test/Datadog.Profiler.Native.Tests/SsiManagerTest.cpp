@@ -42,8 +42,9 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_NoSpan)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
-    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms));
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(0ms));
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).WillRepeatedly(Return(10s));
+    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::SsiEnabled));
 
     SsiLifetimeForTest lifetime;
 
@@ -52,6 +53,8 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_NoSpan)
     manager.ProcessStart();
     manager.ProcessEnd();
 
+    // wait for the timer to finish
+    std::this_thread::sleep_for(100ms);
     ASSERT_EQ(manager.GetSkipProfileHeuristic(), SkipProfileHeuristicType::NoSpan);
 }
 
@@ -150,12 +153,16 @@ TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndSpanAndLong
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::SsiEnabled));
-    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms));
+    EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(0ms));
 
     SsiLifetimeForTest lifetime;
 
     SsiManager manager(configuration.get(), &lifetime);
     manager.OnSpanCreated();
+    manager.ProcessStart();
+
+    // wait for the timer to finish
+    std::this_thread::sleep_for(100ms);
 
     ASSERT_EQ(manager.IsProfilerActivated(), true);
     ASSERT_EQ(manager.IsProfilerEnabled(), true);
