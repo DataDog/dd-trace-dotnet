@@ -24,7 +24,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             // { ConfigurationKeys.ServiceNameMappings, "tracing_service_mapping" },
             { ConfigurationKeys.LogsInjectionEnabled, "log_injection_enabled" },
             { ConfigurationKeys.GlobalSamplingRate, "tracing_sampling_rate" },
-            // { ConfigurationKeys.CustomSamplingRules, "tracing_sampling_rules" },
+            { ConfigurationKeys.CustomSamplingRules, "tracing_sampling_rules" },
             // { ConfigurationKeys.SpanSamplingRules, "span_sampling_rules" },
             // { ConfigurationKeys.DataStreamsMonitoring.Enabled, "data_streams_enabled" },
             { ConfigurationKeys.GlobalTags, "tracing_tags" }

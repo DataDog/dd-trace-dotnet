@@ -34,7 +34,7 @@ public class TraceTags
     [Theory]
     [InlineData(SamplingMechanism.Default)]
     [InlineData(SamplingMechanism.AgentRate)]
-    [InlineData(SamplingMechanism.TraceSamplingRule)]
+    [InlineData(SamplingMechanism.LocalTraceSamplingRule)]
     [InlineData(SamplingMechanism.Manual)]
     [InlineData(SamplingMechanism.Asm)]
     public async Task SerializeSamplingMechanismTag(int samplingMechanism)

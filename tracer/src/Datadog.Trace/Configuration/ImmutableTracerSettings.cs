@@ -38,7 +38,6 @@ namespace Datadog.Trace.Configuration
         private readonly IReadOnlyDictionary<string, string> _globalTags;
         private readonly double? _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
-        private readonly string? _spanSamplingRules;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class
@@ -99,7 +98,7 @@ namespace Datadog.Trace.Configuration
             MaxTracesSubmittedPerSecondInternal = settings.MaxTracesSubmittedPerSecondInternal;
             CustomSamplingRulesInternal = settings.CustomSamplingRulesInternal;
             CustomSamplingRulesFormat = settings.CustomSamplingRulesFormat;
-            _spanSamplingRules = settings.SpanSamplingRules;
+            SpanSamplingRules = settings.SpanSamplingRules;
             _globalSamplingRate = settings.GlobalSamplingRateInternal;
             IntegrationsInternal = new ImmutableIntegrationSettingsCollection(settings.IntegrationsInternal, settings.DisabledIntegrationNamesInternal);
             _headerTags = new ReadOnlyDictionary<string, string>(settings.HeaderTagsInternal);
@@ -300,6 +299,13 @@ namespace Datadog.Trace.Configuration
         internal string? CustomSamplingRulesInternal { get; }
 
         /// <summary>
+        /// Gets the trace sampling rules from remote config.
+        /// These contain custom remote rules and dynamic (aka adaptive) rules.
+        /// They will be merged with local sampling rules.
+        /// </summary>
+        internal string? RemoteSamplingRules => DynamicSettings.SamplingRules;
+
+        /// <summary>
         /// Gets a value indicating the format for custom sampling rules ("regex" or "glob").
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRulesFormat"/>
@@ -309,7 +315,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the span sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
-        internal string? SpanSamplingRules => DynamicSettings.SpanSamplingRules ?? _spanSamplingRules;
+        internal string? SpanSamplingRules { get; }
 
         /// <summary>
         /// Gets a value indicating a global rate for sampling.
