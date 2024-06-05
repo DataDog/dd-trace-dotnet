@@ -213,7 +213,7 @@ namespace Datadog.Trace.Configuration
                                                    converter: value =>
                                                    {
                                                        // We intentionally report invalid values as "valid" in the converter,
-                                                       // because we don't want to automatically fallback to the
+                                                       // because we don't want to automatically fall back to the
                                                        // default value.
                                                        if (!SamplingRulesFormat.IsValid(value, out var normalizedFormat))
                                                        {

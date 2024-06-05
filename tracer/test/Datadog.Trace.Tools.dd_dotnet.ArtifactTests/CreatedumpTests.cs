@@ -289,6 +289,31 @@ public class CreatedumpTests : ConsoleTestHelper
     }
 
     [SkippableFact]
+    public async Task CheckThreadName()
+    {
+        // Test that threads prefixed with DD_ are marked as suspicious even if they have nothing of Datadog in the stacktrace
+
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash-thread",
+                               true,
+                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
+
+        await helper.Task;
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+
+        File.Exists(reportFile.Path).Should().BeTrue();
+    }
+
+    [SkippableFact]
     public async Task IgnoreNonDatadogCrashes()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);

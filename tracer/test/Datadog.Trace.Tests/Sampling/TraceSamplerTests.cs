@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new TraceSampler(new DenyAll());
 
             sampler.RegisterRule(
-                new CustomSamplingRule(
+                new LocalCustomSamplingRule(
                     rate: 1,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new TraceSampler(new NoLimits());
 
             sampler.RegisterRule(
-                new CustomSamplingRule(
+                new LocalCustomSamplingRule(
                     rate: 1,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new TraceSampler(new NoLimits());
 
             sampler.RegisterRule(
-                new CustomSamplingRule(
+                new LocalCustomSamplingRule(
                     rate: 0,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new TraceSampler(new NoLimits());
 
             sampler.RegisterRule(
-                new CustomSamplingRule(
+                new LocalCustomSamplingRule(
                     rate: 0.5f,
                     patternFormat: SamplingRulesFormat.Regex,
                     serviceNamePattern: ".*",
@@ -134,6 +134,7 @@ namespace Datadog.Trace.Tests.Sampling
         public async Task No_Registered_Rules_Uses_Legacy_Rates()
         {
             var sampler = new TraceSampler(new NoLimits());
+            sampler.RegisterAgentSamplingRule(new AgentSamplingRule());
             sampler.SetDefaultSampleRates(MockAgentRates);
 
             await RunSamplerTest(
@@ -155,6 +156,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var span = scope.Span;
             var sampler = new TraceSampler(new NoLimits());
+            sampler.RegisterAgentSamplingRule(new AgentSamplingRule());
 
             // if there are no other rules, and before we have agent rates, mechanism is "Default"
             var (_, mechanism1) = sampler.MakeSamplingDecision(span);

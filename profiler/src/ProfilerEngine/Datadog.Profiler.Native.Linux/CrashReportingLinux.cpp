@@ -316,7 +316,7 @@ std::string CrashReportingLinux::GetSignalInfo(int32_t signal)
     return signalInfo;
 }
 
-std::vector<int32_t> CrashReportingLinux::GetThreads()
+std::vector<std::pair<int32_t, std::string>> CrashReportingLinux::GetThreads()
 {
     DIR* proc_dir;
     char dirname[256];
@@ -326,7 +326,7 @@ std::vector<int32_t> CrashReportingLinux::GetThreads()
 
     proc_dir = opendir(dirname);
 
-    std::vector<int32_t> threads;
+    std::vector<std::pair<int32_t, std::string>> threads;
 
     if (proc_dir != nullptr)
     {
@@ -339,11 +339,28 @@ std::vector<int32_t> CrashReportingLinux::GetThreads()
             if (entry->d_name[0] == '.')
                 continue;
             auto threadId = atoi(entry->d_name);
-            threads.push_back(threadId);
+            auto threadName = GetThreadName(threadId);
+            threads.push_back(std::make_pair(threadId, threadName));
         }
 
         closedir(proc_dir);
     }
 
     return threads;
+}
+
+std::string CrashReportingLinux::GetThreadName(int32_t tid)
+{
+    char path[256];
+    snprintf(path, sizeof(path), "/proc/%d/task/%d/comm", _pid, tid);
+    std::ifstream commFile(path);
+    if (!commFile.is_open())
+    {
+        return "";
+    }
+
+    std::string threadName;
+    std::getline(commFile, threadName);
+    commFile.close();
+    return threadName;    
 }

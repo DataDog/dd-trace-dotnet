@@ -56,7 +56,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Constructs_With_ResourceName()
         {
             const string config = """[{ "sample_rate":0.3, resource: "/api/v1/.*" }]""";
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
+            var rule = LocalCustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
 
             var matchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v1/user/123" };
             var nonMatchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v2/user/123" };
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Constructs_With_Tags()
         {
             const string config = """[{ "sample_rate":0.3, tags: { "http.method": "GE.", "http.status_code": "200" } }]""";
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
+            var rule = LocalCustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
 
             var matchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now);
             matchingSpan.SetTag("http.method", "GET");
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Tests.Sampling
                          ]
                          """;
 
-            var rules = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).ToArray();
+            var rules = LocalCustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).ToArray();
             rules.Should().HaveCount(4);
 
             var cartRule = rules[0];
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void RuleShouldBeCaseInsensitive()
         {
             var config = """[{"sample_rate":0.5, "service":"SHOPPING-cart-service", "name":"CHECKOUT"}]""";
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
+            var rule = LocalCustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
             VerifySingleRule(rule, TestSpans.CartCheckoutSpan, true);
         }
 
@@ -158,13 +158,13 @@ namespace Datadog.Trace.Tests.Sampling
 
         public void Malformed_Rules_Do_Not_Register_Or_Crash(string ruleConfig)
         {
-            var rules = CustomSamplingRule.BuildFromConfigurationString(ruleConfig, SamplingRulesFormat.Regex, Timeout).ToArray();
+            var rules = LocalCustomSamplingRule.BuildFromConfigurationString(ruleConfig, SamplingRulesFormat.Regex, Timeout).ToArray();
             Assert.Empty(rules);
         }
 
         private static void VerifyRate(string config, float expectedRate)
         {
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
+            var rule = LocalCustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
             VerifyRate(rule, expectedRate);
         }
 
@@ -175,7 +175,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private static void VerifySingleRule(string config, Span span, bool expected)
         {
-            var rule = CustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
+            var rule = LocalCustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
             VerifySingleRule(rule, span, expected);
         }
 
