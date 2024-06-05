@@ -17,6 +17,7 @@ The .NET tracer v3.0.0 includes breaking changes that you must be aware of befor
 	- **Changes in behavior**. The semantic requirements and meaning of some settings have changed, as have some of the tags added to traces.  See below for more details.
 	- **The 32-bit MSI installer will no longer be available**. The 64-bit MSI installer already includes support for tracing 32-bit processes, so you should use this installer instead. 
     - **The client library will still be injected when `DD_TRACE_ENABLED=0`**. In v2.x.x, setting `DD_TRACE_ENABLED=0` would prevent the client library from being injected into the application completely. In v3.0.0+, the client library will still be injected, but tracing will be disabled.
+    - **Referencing the `Datadog.Trace.AspNet` module is no longer supported**. In v1.x.x and 2.x.x ASP.NET support allowed adding a reference to the `Datadog.Trace.AspNet` module in your web.config. This is no longer supported in v3.x.x.
 - Deprecation notices
 	- **.NET Core 2.1 is marked EOL** in v3.0.0+ of the tracer. That means versions 2.0, 2.1, 2.2 and 3.0 of .NET Core are now EOL. These versions may still work with v3.0.0+, but they will no longer receive significant testing and you will receive limited support for issues arising with EOL versions.
 	- **Datadog.Trace.OpenTracing is now obsolete**. OpenTracing is considered deprecated, and so _Datadog.Trace.OpenTracing_ is considered deprecated. See the following details on future deprecation.
@@ -145,6 +146,44 @@ The Datadog client library is no longer focused solely on APM tracing, but disab
 If you are currently using `DD_TRACE_ENABLED=0` to avoid instrumenting an application, you should instead use `CORECLR_ENABLE_PROFILING=0` (for .NET and .NET Core applications) or `COR_ENABLE_PROFILING=0` (for .NET Framework applications). These variables are provided by the .NET runtime, and ensures the client library is not injected into your process.
 
 If you don't set `COR_ENABLE_PROFILING=0`/`CORECLR_ENABLE_PROFILING=1` and continue to set `DD_TRACE_ENABLED=0`, the client library will be injected but tracing will be disabled and you will not receive traces. 
+
+### Referencing the `Datadog.Trace.AspNet` module is no longer supported
+
+#### What changed?
+
+In version 1.x.x and 2.x.x of the tracer, it was possible to reference the `Datadog.Trace.AspNet` module in your application's `web.config` file, although this wasn't required for ASP.NET support in general. In version 3.x.x, referencing the `Datadog.Trace.AspNet` in your application's `web.config` will cause an error, and may cause your application to fail to start, with the error:
+
+> "There was an error when performing this operation"
+
+#### Why did we change it?
+The `Datadog.Trace.AspNet` module is obsolete and is not required for tracing ASP.NET applications. We are removing the `Datadog.Trace.AspNet` module to remove a point of failure when upgrading the .NET client library. Referencing the module in an application's `web.config` file, and the required installation into the [Global Assembly Cache (GAC)](https://learn.microsoft.com/en-us/dotnet/framework/app-domains/gac), can make the update experience harder; by removing the module, we remove this constraint. 
+
+#### What action should you take?
+Remove any references to the `Datadog.Trace.AspNet` module in your application's `web.config file` and anywhere else it is referenced in your IIS configuration. For example, if you have code in the `system.webServer/modules` element that references `Datadog.Trace.AspNet`:
+
+```xml
+<system.webServer>
+  <modules>
+    <remove name="FormsAuthentication" />
+    <remove name="SomeOtherModule" />
+    <!--  👇 Remove this line  -->
+    <add name="DatadogModule" type="Datadog.Trace.AspNet.TracingHttpModule, Datadog.Trace.AspNet"/>
+    <add name="MyCustomModule" type="ExampleOrg.MyCustomModule, ExampleOrg.Modules"/>
+  </modules>
+</system.webServer>
+```
+
+Then you should remove the `<add>` line that references `Datadog.Trace.AspNet`:
+
+```xml
+<system.webServer>
+  <modules>
+    <remove name="FormsAuthentication" />
+    <remove name="SomeOtherModule" />
+    <add name="MyCustomModule" type="ExampleOrg.MyCustomModule, ExampleOrg.Modules"/>
+  </modules>
+</system.webServer>
+```
 
 > [!WARNING]
 > **Deprecated APIs and platforms**: The following section describes some of the APIs, supported platforms, and runtimes that are considered deprecated as of version 3.0.0 of the .NET tracer.
