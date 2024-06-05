@@ -4,7 +4,6 @@ public static class Projects
     public const string DatadogTraceManual = "Datadog.Trace.Manual";
     public const string ManagedLoader = "Datadog.Trace.ClrProfiler.Managed.Loader";
     public const string DatadogTraceAnnotations = "Datadog.Trace.Annotations";
-    public const string DatadogTraceAspNet = "Datadog.Trace.AspNet";
     public const string DatadogTraceBundle = "Datadog.Trace.Bundle";
     public const string DatadogTraceMsBuild = "Datadog.Trace.MSBuild";
     public const string DatadogTraceBenchmarkDotNet = "Datadog.Trace.BenchmarkDotNet";
