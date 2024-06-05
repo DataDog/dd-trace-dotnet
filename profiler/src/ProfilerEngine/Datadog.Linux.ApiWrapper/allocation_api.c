@@ -1,7 +1,7 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <stdlib.h>
-#include <threads.h>
+#include <pthread.h>
 
 #include "common.h"
 
@@ -62,10 +62,10 @@ static void init()
     SET_SYMBOL(valloc);
 }
 
-static once_flag flag = ONCE_FLAG_INIT;
+static pthread_once_t flag = PTHREAD_ONCE_INIT;
 static void check_init()
 {
-    call_once(&flag, init);
+    pthread_once(&flag, init);
 }
 
 #define DEFINE_FN(return_type, name, parameters)                           \
