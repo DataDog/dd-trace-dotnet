@@ -15,6 +15,10 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <GenerateProgramFile>false</GenerateProgramFile>
+
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <CopyDebugSymbolFilesFromPackages>true</CopyDebugSymbolFilesFromPackages>
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,4 +40,16 @@
     </None>
   </ItemGroup>
 
+  <Target Name="CodeCoverageFixTarget" AfterTargets="Build" Condition=" '$(OS)' == 'Windows_NT' AND '$(TargetFramework)' != '' ">
+    <Message Importance="High" Text="Fixing Code Coverage: $(TargetFramework)" />
+    <CallTarget Targets="ComputeFilesToPublish" />
+    <CallTarget Targets="CopyCoverletDataCollectorFiles" />
+
+    <!-- Because we don't publish on windows, we just move the code coverage binaries from the publish folder to the actual build bin folder-->
+    <ItemGroup>
+      <PublishedTraceDataCollectorArtifacts Include="$(PublishDir)**\*.*" />
+    </ItemGroup>
+    <Move SourceFiles="@(PublishedTraceDataCollectorArtifacts)" DestinationFolder="$(PublishDir)..\%(RecursiveDir)" />
+  </Target>
+  
 </Project>
