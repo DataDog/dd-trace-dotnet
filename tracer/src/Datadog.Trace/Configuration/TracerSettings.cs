@@ -160,12 +160,12 @@ namespace Datadog.Trace.Configuration
             GlobalTagsInternal = config
                         // backwards compatibility for names used in the past
                         .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
-                        .AsDictionary(() => new Dictionary<string, string>())
+                        .AsDictionary(() => new Dictionary<string, string?>())
                        // Filter out tags with empty keys or empty values, and trim whitespace
                        ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
+                        .ToDictionary(kvp => kvp.Key!.Trim(), kvp => kvp.Value?.Trim())
                       // default value (empty)
-                      ?? (IDictionary<string, string>)new ConcurrentDictionary<string, string>();
+                      ?? (IDictionary<string, string?>)new ConcurrentDictionary<string, string?>();
 
             var headerTagsNormalizationFixEnabled = config
                                                .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
@@ -173,7 +173,7 @@ namespace Datadog.Trace.Configuration
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
             HeaderTagsInternal = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled)
-                ?? new Dictionary<string, string>();
+                ?? new Dictionary<string, string?>();
 
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
@@ -357,7 +357,7 @@ namespace Datadog.Trace.Configuration
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
             GrpcTagsInternal = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true)
-                ?? new Dictionary<string, string>();
+                ?? new Dictionary<string, string?>();
 
             OutgoingTagPropagationHeaderMaxLength = config
                                                    .WithKeys(ConfigurationKeys.TagPropagation.HeaderMaxLength)
@@ -618,7 +618,7 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_GlobalTags_Get,
             PublicApiUsage.TracerSettings_GlobalTags_Set)]
         [ConfigKey(ConfigurationKeys.GlobalTags)]
-        internal IDictionary<string, string> GlobalTagsInternal { get; private set; }
+        internal IDictionary<string, string?> GlobalTagsInternal { get; private set; }
 
         /// <summary>
         /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
@@ -628,7 +628,7 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_HeaderTags_Get,
             PublicApiUsage.TracerSettings_HeaderTags_Set)]
         [ConfigKey(ConfigurationKeys.HeaderTags)]
-        internal IDictionary<string, string> HeaderTagsInternal { get; set; }
+        internal IDictionary<string, string?> HeaderTagsInternal { get; set; }
 #pragma warning restore SA1624
 
         /// <summary>
@@ -650,7 +650,7 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_GrpcTags_Get,
             PublicApiUsage.TracerSettings_GrpcTags_Set)]
         [ConfigKey(ConfigurationKeys.GrpcTags)]
-        internal IDictionary<string, string> GrpcTagsInternal { get; private set; }
+        internal IDictionary<string, string?> GrpcTagsInternal { get; private set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether internal metrics
@@ -822,12 +822,12 @@ namespace Datadog.Trace.Configuration
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
         [IgnoreForSnapshot] // Changes are recorded in SetServiceNameMappings
-        internal IDictionary<string, string>? ServiceNameMappings { get; private set; }
+        internal IDictionary<string, string?>? ServiceNameMappings { get; private set; }
 
         /// <summary>
         /// Gets configuration values for changing peer service names based on configuration
         /// </summary>
-        internal IDictionary<string, string>? PeerServiceNameMappings { get; }
+        internal IDictionary<string, string?>? PeerServiceNameMappings { get; }
 
         /// <summary>
         /// Gets a value indicating the size in bytes of the trace buffer
@@ -1008,7 +1008,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="mappings">Mappings to use from original service name (e.g. <code>sql-server</code> or <code>graphql</code>)
         /// as the <see cref="KeyValuePair{TKey, TValue}.Key"/>) to replacement service names as <see cref="KeyValuePair{TKey, TValue}.Value"/>).</param>
         [PublicApi]
-        public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string>> mappings)
+        public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string?>> mappings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetServiceNameMappings);
             // Could optimise this to remove allocations/linq, but leave that for later if we find it's used a lot
@@ -1027,27 +1027,27 @@ namespace Datadog.Trace.Configuration
             return new ImmutableTracerSettings(this, true);
         }
 
-        internal static IDictionary<string, string>? InitializeServiceNameMappings(ConfigurationBuilder config, string key)
+        internal static IDictionary<string, string?>? InitializeServiceNameMappings(ConfigurationBuilder config, string key)
         {
             return config
                .WithKeys(key)
                .AsDictionary()
               ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-               .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+               .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim());
         }
 
-        internal static IDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
+        internal static IDictionary<string, string?>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
         {
             var configurationDictionary = config
                    .WithKeys(key)
-                   .AsDictionary(allowOptionalMappings: true, () => new Dictionary<string, string>());
+                   .AsDictionary(allowOptionalMappings: true, () => new Dictionary<string, string?>());
 
             if (configurationDictionary == null)
             {
                 return null;
             }
 
-            var headerTags = new Dictionary<string, string>(configurationDictionary.Count);
+            var headerTags = new Dictionary<string, string?>(configurationDictionary.Count);
 
             foreach (var kvp in configurationDictionary)
             {
@@ -1212,7 +1212,7 @@ namespace Datadog.Trace.Configuration
             HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpStatusErrorCodes);
         }
 
-        internal void SetServiceNameMappingsInternal(Dictionary<string, string> dictionary)
+        internal void SetServiceNameMappingsInternal(Dictionary<string, string?> dictionary)
         {
             _telemetry.Record(
                 ConfigurationKeys.ServiceNameMappings,

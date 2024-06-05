@@ -244,10 +244,10 @@ internal readonly struct ConfigurationBuilder
         // Dictionary accessors
         // ****************
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(Func<IDictionary<string, string>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
+        public IDictionary<string, string?>? AsDictionary(Func<IDictionary<string, string?>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<IDictionary<string, string>>? getDefaultValue = null)
+        public IDictionary<string, string?>? AsDictionary(bool allowOptionalMappings, Func<IDictionary<string, string?>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
             var result = Source.GetDictionary(Key, Telemetry, validator: null, allowOptionalMappings)

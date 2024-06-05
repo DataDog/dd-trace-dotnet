@@ -32,10 +32,10 @@ namespace Datadog.Trace.Configuration
         private readonly DomainMetadata _domainMetadata;
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly bool _logsInjectionEnabled;
-        private readonly ReadOnlyDictionary<string, string> _headerTags;
-        private readonly IReadOnlyDictionary<string, string> _serviceNameMappings;
-        private readonly IReadOnlyDictionary<string, string> _peerServiceNameMappings;
-        private readonly IReadOnlyDictionary<string, string> _globalTags;
+        private readonly ReadOnlyDictionary<string, string?> _headerTags;
+        private readonly IReadOnlyDictionary<string, string?> _serviceNameMappings;
+        private readonly IReadOnlyDictionary<string, string?> _peerServiceNameMappings;
+        private readonly IReadOnlyDictionary<string, string?> _globalTags;
         private readonly double? _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
         private readonly string? _spanSamplingRules;
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Configuration
                                      .Where(kvp => kvp.Key is not (Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))
                                      .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
-            _globalTags = new ReadOnlyDictionary<string, string>(globalTags);
+            _globalTags = new ReadOnlyDictionary<string, string?>(globalTags);
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
             ServiceNameInternal = settings.ServiceNameInternal;
@@ -102,8 +102,8 @@ namespace Datadog.Trace.Configuration
             _spanSamplingRules = settings.SpanSamplingRules;
             _globalSamplingRate = settings.GlobalSamplingRateInternal;
             IntegrationsInternal = new ImmutableIntegrationSettingsCollection(settings.IntegrationsInternal, settings.DisabledIntegrationNamesInternal);
-            _headerTags = new ReadOnlyDictionary<string, string>(settings.HeaderTagsInternal);
-            GrpcTagsInternal = new ReadOnlyDictionary<string, string>(settings.GrpcTagsInternal);
+            _headerTags = new ReadOnlyDictionary<string, string?>(settings.HeaderTagsInternal);
+            GrpcTagsInternal = new ReadOnlyDictionary<string, string?>(settings.GrpcTagsInternal);
             IpHeader = settings.IpHeader;
             IpHeaderEnabled = settings.IpHeaderEnabled;
             TracerMetricsEnabledInternal = settings.TracerMetricsEnabledInternal;
@@ -118,8 +118,8 @@ namespace Datadog.Trace.Configuration
             PeerServiceTagsEnabled = settings.PeerServiceTagsEnabled;
             RemoveClientServiceNamesEnabled = settings.RemoveClientServiceNamesEnabled;
             MetadataSchemaVersion = settings.MetadataSchemaVersion;
-            _serviceNameMappings = settings.ServiceNameMappings == null ? new Dictionary<string, string>() : new ReadOnlyDictionary<string, string>(settings.ServiceNameMappings);
-            _peerServiceNameMappings = settings.PeerServiceNameMappings == null ? new Dictionary<string, string>() : new ReadOnlyDictionary<string, string>(settings.PeerServiceNameMappings);
+            _serviceNameMappings = settings.ServiceNameMappings == null ? new Dictionary<string, string?>() : new ReadOnlyDictionary<string, string?>(settings.ServiceNameMappings);
+            _peerServiceNameMappings = settings.PeerServiceNameMappings == null ? new Dictionary<string, string?>() : new ReadOnlyDictionary<string, string?>(settings.PeerServiceNameMappings);
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
@@ -167,7 +167,7 @@ namespace Datadog.Trace.Configuration
 
             CommandsCollectionEnabled = settings.CommandsCollectionEnabled;
 
-            static string? GetExplicitSettingOrTag(string? explicitSetting, IDictionary<string, string> globalTags, string tag)
+            static string? GetExplicitSettingOrTag(string? explicitSetting, IDictionary<string, string?> globalTags, string tag)
             {
                 if (!string.IsNullOrWhiteSpace(explicitSetting))
                 {
@@ -176,7 +176,7 @@ namespace Datadog.Trace.Configuration
                 else
                 {
                     var version = globalTags.GetValueOrDefault(tag);
-                    return string.IsNullOrWhiteSpace(version) ? null : version.Trim();
+                    return string.IsNullOrWhiteSpace(version) ? null : version!.Trim();
                 }
             }
 
@@ -327,21 +327,21 @@ namespace Datadog.Trace.Configuration
         /// Gets the global tags, which are applied to all <see cref="Span"/>s.
         /// </summary>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_GlobalTags_Get)]
-        internal IReadOnlyDictionary<string, string> GlobalTagsInternal => DynamicSettings.GlobalTags ?? _globalTags;
+        internal IReadOnlyDictionary<string, string?> GlobalTagsInternal => DynamicSettings.GlobalTags ?? _globalTags;
 
         /// <summary>
         /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
         /// of incoming and outgoing requests.
         /// </summary>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_HeaderTags_Get)]
-        internal IReadOnlyDictionary<string, string> HeaderTagsInternal => DynamicSettings.HeaderTags ?? _headerTags;
+        internal IReadOnlyDictionary<string, string?> HeaderTagsInternal => DynamicSettings.HeaderTags ?? _headerTags;
 
         /// <summary>
         /// Gets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
         /// of incoming and outgoing GRPC requests.
         /// </summary>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_GrpcTags_Get)]
-        internal IReadOnlyDictionary<string, string> GrpcTagsInternal { get; }
+        internal IReadOnlyDictionary<string, string?> GrpcTagsInternal { get; }
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
@@ -412,7 +412,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
-        internal IReadOnlyDictionary<string, string> ServiceNameMappings => DynamicSettings.ServiceNameMappings ?? _serviceNameMappings;
+        internal IReadOnlyDictionary<string, string?> ServiceNameMappings => DynamicSettings.ServiceNameMappings ?? _serviceNameMappings;
 
         /// <summary>
         /// Gets a value indicating the size in bytes of the trace buffer
@@ -596,7 +596,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
-        internal IReadOnlyDictionary<string, string> PeerServiceNameMappings => _peerServiceNameMappings;
+        internal IReadOnlyDictionary<string, string?> PeerServiceNameMappings => _peerServiceNameMappings;
 
         /// <summary>
         /// Gets a value indicating whether to remove the service names when using the v0 schema.

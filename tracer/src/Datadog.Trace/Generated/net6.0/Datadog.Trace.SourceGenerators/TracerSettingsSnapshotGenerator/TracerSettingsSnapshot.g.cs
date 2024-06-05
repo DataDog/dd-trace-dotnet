@@ -20,9 +20,9 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
         MaxTracesSubmittedPerSecondInternal = settings.MaxTracesSubmittedPerSecondInternal;
         CustomSamplingRulesInternal = settings.CustomSamplingRulesInternal;
         GlobalSamplingRateInternal = settings.GlobalSamplingRateInternal;
-        GlobalTagsInternal = GetDictionary(settings.GlobalTagsInternal);
-        HeaderTagsInternal = GetDictionary(settings.HeaderTagsInternal);
-        GrpcTagsInternal = GetDictionary(settings.GrpcTagsInternal);
+        GlobalTagsInternal = settings.GlobalTagsInternal;
+        HeaderTagsInternal = settings.HeaderTagsInternal;
+        GrpcTagsInternal = settings.GrpcTagsInternal;
         TracerMetricsEnabledInternal = settings.TracerMetricsEnabledInternal;
         StatsComputationEnabledInternal = settings.StatsComputationEnabledInternal;
         KafkaCreateConsumerScopeEnabledInternal = settings.KafkaCreateConsumerScopeEnabledInternal;
@@ -39,9 +39,9 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
     private int MaxTracesSubmittedPerSecondInternal { get; }
     private string? CustomSamplingRulesInternal { get; }
     private double? GlobalSamplingRateInternal { get; }
-    private System.Collections.Generic.IDictionary<string, string>? GlobalTagsInternal { get; }
-    private System.Collections.Generic.IDictionary<string, string>? HeaderTagsInternal { get; }
-    private System.Collections.Generic.IDictionary<string, string>? GrpcTagsInternal { get; }
+    private System.Collections.Generic.IDictionary<string, string?> GlobalTagsInternal { get; }
+    private System.Collections.Generic.IDictionary<string, string?> HeaderTagsInternal { get; }
+    private System.Collections.Generic.IDictionary<string, string?> GrpcTagsInternal { get; }
     private bool TracerMetricsEnabledInternal { get; }
     private bool StatsComputationEnabledInternal { get; }
     private bool KafkaCreateConsumerScopeEnabledInternal { get; }
@@ -58,9 +58,9 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
         RecordIfChanged(telemetry, "DD_TRACE_RATE_LIMIT", MaxTracesSubmittedPerSecondInternal, settings.MaxTracesSubmittedPerSecondInternal);
         RecordIfChanged(telemetry, "DD_TRACE_SAMPLING_RULES", CustomSamplingRulesInternal, settings.CustomSamplingRulesInternal);
         RecordIfChanged(telemetry, "DD_TRACE_SAMPLE_RATE", GlobalSamplingRateInternal, settings.GlobalSamplingRateInternal);
-        RecordIfChanged(telemetry, "DD_TAGS", GlobalTagsInternal, GetDictionary(settings.GlobalTagsInternal));
-        RecordIfChanged(telemetry, "DD_TRACE_HEADER_TAGS", HeaderTagsInternal, GetDictionary(settings.HeaderTagsInternal));
-        RecordIfChanged(telemetry, "DD_TRACE_GRPC_TAGS", GrpcTagsInternal, GetDictionary(settings.GrpcTagsInternal));
+        RecordIfChanged(telemetry, "DD_TAGS", GlobalTagsInternal, settings.GlobalTagsInternal);
+        RecordIfChanged(telemetry, "DD_TRACE_HEADER_TAGS", HeaderTagsInternal, settings.HeaderTagsInternal);
+        RecordIfChanged(telemetry, "DD_TRACE_GRPC_TAGS", GrpcTagsInternal, settings.GrpcTagsInternal);
         RecordIfChanged(telemetry, "DD_TRACE_METRICS_ENABLED", TracerMetricsEnabledInternal, settings.TracerMetricsEnabledInternal);
         RecordIfChanged(telemetry, "DD_TRACE_STATS_COMPUTATION_ENABLED", StatsComputationEnabledInternal, settings.StatsComputationEnabledInternal);
         RecordIfChanged(telemetry, "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED", KafkaCreateConsumerScopeEnabledInternal, settings.KafkaCreateConsumerScopeEnabledInternal);

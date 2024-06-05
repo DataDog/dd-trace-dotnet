@@ -167,7 +167,7 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    internal static Dictionary<string, string>? GetCustomTestsConfigurations(IDictionary<string, string> globalTags)
+    internal static Dictionary<string, string?>? GetCustomTestsConfigurations(IDictionary<string, string> globalTags)
     {
         Dictionary<string, string>? customConfiguration = null;
         if (globalTags is not null)

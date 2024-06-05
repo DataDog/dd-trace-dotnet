@@ -12,7 +12,7 @@ namespace Datadog.Trace.Configuration.Schema
 {
     internal class NamingSchema
     {
-        private readonly IReadOnlyDictionary<string, string>? _peerServiceNameMappings;
+        private readonly IReadOnlyDictionary<string, string?>? _peerServiceNameMappings;
         private readonly bool _peerServiceTagsEnabled;
 
         public NamingSchema(
@@ -20,8 +20,8 @@ namespace Datadog.Trace.Configuration.Schema
             bool peerServiceTagsEnabled,
             bool removeClientServiceNamesEnabled,
             string defaultServiceName,
-            IReadOnlyDictionary<string, string>? serviceNameMappings,
-            IReadOnlyDictionary<string, string>? peerServiceNameMappings)
+            IReadOnlyDictionary<string, string?>? serviceNameMappings,
+            IReadOnlyDictionary<string, string?>? peerServiceNameMappings)
         {
             Version = version;
             RemoveClientServiceNamesEnabled = removeClientServiceNamesEnabled;

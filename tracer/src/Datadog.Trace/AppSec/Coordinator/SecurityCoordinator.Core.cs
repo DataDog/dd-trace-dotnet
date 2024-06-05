@@ -82,7 +82,7 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    private Dictionary<string, object> GetBasicRequestArgsForWaf()
+    private Dictionary<string, object?> GetBasicRequestArgsForWaf()
     {
         var request = _httpTransport.Context.Request;
         var headersDic = ExtractHeadersFromRequest(request.Headers);
