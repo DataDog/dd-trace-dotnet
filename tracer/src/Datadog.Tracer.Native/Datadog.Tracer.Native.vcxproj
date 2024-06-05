@@ -274,6 +274,7 @@
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\pal.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\string.h" />
+    <ClInclude Include="..\..\..\shared\src\native-src\version.h" />
     <ClInclude Include="fault_tolerant_cor_profiler_function_control.h" />
     <ClInclude Include="fault_tolerant_tokens.h" />
     <ClInclude Include="fault_tolerant_envionrment_variables_util.h" />
@@ -333,8 +334,8 @@
     <ClInclude Include="rejit_work_offloader.h" />
     <ClInclude Include="stats.h" />
     <ClInclude Include="Synchronized.hpp" />
+    <ClInclude Include="threadUtils.h" />
     <ClInclude Include="tracer_tokens.h" />
-    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\shared\src\native-src\miniutf.cpp" />
@@ -383,6 +384,7 @@
     <ClCompile Include="rejit_handler.cpp" />
     <ClCompile Include="rejit_preprocessor.cpp" />
     <ClCompile Include="rejit_work_offloader.cpp" />
+    <ClCompile Include="threadUtils.cpp" />
     <ClCompile Include="tracer_tokens.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -161,7 +161,7 @@
           "location": {
             "file": "NotSupportedFailureTest.cs",
             "lines": [
-              24
+              "24"
             ]
           },
           "version": 0
@@ -212,7 +212,7 @@
           "location": {
             "file": "NotSupportedFailureTest.cs",
             "lines": [
-              25
+              "25"
             ]
           },
           "version": 0
@@ -263,7 +263,7 @@
           "location": {
             "file": "NotSupportedFailureTest.cs",
             "lines": [
-              26
+              "26"
             ]
           },
           "version": 0
@@ -314,7 +314,7 @@
           "location": {
             "file": "NotSupportedFailureTest.cs",
             "lines": [
-              27
+              "27"
             ]
           },
           "version": 0
@@ -365,7 +365,7 @@
           "location": {
             "file": "NotSupportedFailureTest.cs",
             "lines": [
-              28
+              "28"
             ]
           },
           "version": 0
@@ -414,7 +414,7 @@
           "location": {
             "file": "NotSupportedFailureTest.cs",
             "lines": [
-              51
+              "51"
             ]
           },
           "version": 0
@@ -469,7 +469,7 @@
           "location": {
             "file": "NotSupportedFailureTest.cs",
             "lines": [
-              64
+              "64"
             ]
           },
           "version": 0

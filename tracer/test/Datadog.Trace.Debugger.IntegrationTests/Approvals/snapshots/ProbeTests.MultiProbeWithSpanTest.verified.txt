@@ -144,7 +144,7 @@
           "location": {
             "file": "MultiProbeWithSpanTest.cs",
             "lines": [
-              53
+              "53"
             ]
           },
           "version": 0

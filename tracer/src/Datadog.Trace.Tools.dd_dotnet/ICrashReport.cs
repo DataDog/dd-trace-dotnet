@@ -33,6 +33,9 @@ internal unsafe interface ICrashReport : IUnknown
 
     int WriteToFile(IntPtr url);
 
+    [Obsolete("You're aware it's going to crash the process, right?")]
+    int CrashProcess();
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct Tag
     {

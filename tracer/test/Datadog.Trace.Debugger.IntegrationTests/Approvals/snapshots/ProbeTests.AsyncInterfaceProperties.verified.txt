@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -172,7 +172,7 @@
           "location": {
             "file": "AsyncInterfaceProperties.cs",
             "lines": [
-              34
+              "34"
             ]
           },
           "version": 0

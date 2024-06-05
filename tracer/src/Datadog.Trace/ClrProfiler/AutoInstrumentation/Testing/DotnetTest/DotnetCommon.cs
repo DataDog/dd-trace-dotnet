@@ -142,31 +142,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath &&
                         File.Exists(extCodeCoverageFilePath))
                     {
-                        // Check Code Coverage from other files.
-                        var xmlDoc = new XmlDocument();
-                        xmlDoc.Load(extCodeCoverageFilePath);
-
-                        if (xmlDoc.SelectSingleNode("/CoverageSession/Summary/@sequenceCoverage") is { } seqCovAttribute &&
-                            double.TryParse(seqCovAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var seqCovValue))
+                        if (TryGetCoveragePercentageFromXml(extCodeCoverageFilePath, out var coveragePercentage))
                         {
-                            // Found using the OpenCover format.
-
-                            // Adds the global code coverage percentage to the session
-                            var coveragePercentage = Math.Round(seqCovValue, 2).ToValidPercentage();
                             session.SetTag(CodeCoverageTags.Enabled, "true");
                             session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
-                            Log.Debug("RunCiCommand: OpenCover code coverage was reported: {Value}", seqCovValue);
-                        }
-                        else if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
-                                 double.TryParse(lineRateAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var lineRateValue))
-                        {
-                            // Found using the Cobertura format.
-
-                            // Adds the global code coverage percentage to the session
-                            var coveragePercentage = Math.Round(lineRateValue * 100, 2).ToValidPercentage();
-                            session.SetTag(CodeCoverageTags.Enabled, "true");
-                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
-                            Log.Debug("RunCiCommand: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
                         }
                         else
                         {
@@ -181,6 +160,109 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
+        }
+
+        internal static bool TryGetCoveragePercentageFromXml(string filePath, out double percentage)
+        {
+            percentage = 0;
+            if (!File.Exists(filePath))
+            {
+                return false;
+            }
+
+            // Load Code Coverage from the file.
+            var xmlDoc = new XmlDocument();
+            xmlDoc.Load(filePath);
+
+            if (xmlDoc.SelectSingleNode("/CoverageSession/Summary/@sequenceCoverage") is { } seqCovAttribute &&
+                double.TryParse(seqCovAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var seqCovValue))
+            {
+                // Found using the OpenCover format.
+                percentage = Math.Round(seqCovValue, 2).ToValidPercentage();
+                Log.Debug("TryGetCoveragePercentageFromXml: OpenCover code coverage was reported: {Value}", seqCovValue);
+                return true;
+            }
+
+            if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
+                double.TryParse(lineRateAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var lineRateValue))
+            {
+                // Found using the Cobertura format.
+                percentage = Math.Round(lineRateValue * 100, 2).ToValidPercentage();
+                Log.Debug("TryGetCoveragePercentageFromXml: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
+                return true;
+            }
+
+            var linesCovered = xmlDoc.SelectNodes("/results/modules/module/@lines_covered");
+            var linesPartiallyCovered = xmlDoc.SelectNodes("/results/modules/module/@lines_partially_covered");
+            var linesNotCovered = xmlDoc.SelectNodes("/results/modules/module/@lines_not_covered");
+
+            if (linesCovered != null && linesPartiallyCovered != null && linesNotCovered != null &&
+                linesCovered.Count == linesPartiallyCovered.Count && linesCovered.Count == linesNotCovered.Count)
+            {
+                // Found using Microsoft.CodeCoverage xml format
+                var modulesCount = linesCovered.Count;
+
+                var totalLinesCovered = 0d;
+                foreach (XmlNode? lineCovered in linesCovered)
+                {
+                    if (lineCovered is null)
+                    {
+                        continue;
+                    }
+
+                    if (double.TryParse(lineCovered.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
+                    {
+                        totalLinesCovered += value;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                var totalLinesPartiallyCovered = 0d;
+                foreach (XmlNode? linePartiallyCovered in linesPartiallyCovered)
+                {
+                    if (linePartiallyCovered is null)
+                    {
+                        continue;
+                    }
+
+                    if (double.TryParse(linePartiallyCovered.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
+                    {
+                        totalLinesPartiallyCovered += value;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                var totalLinesNotCovered = 0d;
+                foreach (XmlNode? lineNotCovered in linesNotCovered)
+                {
+                    if (lineNotCovered is null)
+                    {
+                        continue;
+                    }
+
+                    if (double.TryParse(lineNotCovered.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
+                    {
+                        totalLinesNotCovered += value;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                var totalLines = totalLinesCovered + totalLinesPartiallyCovered + totalLinesNotCovered;
+                percentage = Math.Round((totalLinesCovered / totalLines) * 100, 2).ToValidPercentage();
+                Log.Debug("TryGetCoveragePercentageFromXml: Microsoft.CodeCoverage code coverage was reported: {Value}", percentage);
+                return true;
+            }
+
+            return false;
         }
 
         internal static void InjectCodeCoverageCollectorToDotnetTest(ref IEnumerable<string>? msbuildArgs)

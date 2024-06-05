@@ -34,7 +34,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc.AspNetCore" Version="$(ApiVersion)" />
+    <!-- Grpc.AspNetCore is a metapackage that includes the following packages -->
+    <!-- https://www.nuget.org/packages/Grpc.AspNetCore/2.63.0 -->
+    <!-- Not referencing it directly, so that we can use an older version of Grpc.Tools -->
+    <PackageReference Include="Grpc.AspNetCore.Server.ClientFactory" Version="$(ApiVersion)" />
+    <!-- different versions of Grpc.AspNetCore use different versions of Google.Protobuf, -->
+    <!-- but hoping we can just bump this to the latest as needs be-->
+    <PackageReference Include="Google.Protobuf" Version="3.24.0" />
+    <!-- 2.63.0 won't install on arm64, so we pin to earlier here -->
+    <PackageReference Include="Grpc.Tools" Version="2.62.0" Condition="'$(TargetFramework)' != 'netcoreapp3.0' AND '$(TargetFramework)' != 'netcoreapp3.1' AND '$(TargetFramework)' != 'net5.0'" />
+    <!-- 2.56.0 is highest that supports <.NET 6-->
+    <PackageReference Include="Grpc.Tools" Version="2.56.0" Condition="'$(TargetFramework)' == 'netcoreapp3.0' OR '$(TargetFramework)' == 'netcoreapp3.1' OR '$(TargetFramework)' == 'net5.0'" />
   </ItemGroup>
 
 </Project>

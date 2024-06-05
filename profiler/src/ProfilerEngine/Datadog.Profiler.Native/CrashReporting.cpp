@@ -6,6 +6,7 @@
 #include "unknwn.h"
 #include "FfiHelper.h"
 #include <shared/src/native-src/util.h>
+#include <thread>
 
 extern "C"
 {
@@ -311,4 +312,15 @@ int32_t CrashReporting::WriteToFile(const char* url)
     }
 
     return 0;
+}
+
+int32_t CrashReporting::CrashProcess()
+{
+    std::thread crashThread([]()
+    {
+        throw 42;
+    });
+
+    crashThread.join();
+    return 0;  // If we get there, somehow we failed to crash. Are we even able to do *anything* properly? ;_;
 }

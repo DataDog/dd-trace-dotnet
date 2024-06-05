@@ -156,7 +156,7 @@
           "location": {
             "file": "ConditionAndTemplateChangeTest.cs",
             "lines": [
-              70
+              "70"
             ]
           },
           "version": 0

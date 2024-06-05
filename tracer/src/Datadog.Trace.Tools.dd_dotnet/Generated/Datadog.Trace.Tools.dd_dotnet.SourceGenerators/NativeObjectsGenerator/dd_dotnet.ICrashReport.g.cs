@@ -137,6 +137,16 @@ internal unsafe class ICrashReport : Datadog.Trace.Tools.dd_dotnet.ICrashReport
         }
         return returnvalue;
     }
+    public int CrashProcess()
+    {
+        var func = (delegate* unmanaged[Stdcall]<IntPtr, out int, int>)*(VTable + 11);
+        var result = func(_implementation, out var returnvalue);
+        if (result != 0)
+        {
+            throw new System.ComponentModel.Win32Exception(result);
+        }
+        return returnvalue;
+    }
 
 
 }

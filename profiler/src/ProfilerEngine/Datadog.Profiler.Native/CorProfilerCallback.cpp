@@ -80,7 +80,8 @@ extern "C" __attribute__((visibility("default"))) const char* Profiler_Version =
 // Initialization
 CorProfilerCallback* CorProfilerCallback::_this = nullptr;
 
-CorProfilerCallback::CorProfilerCallback()
+CorProfilerCallback::CorProfilerCallback(std::shared_ptr<IConfiguration> pConfiguration) :
+    _pConfiguration{std::move(pConfiguration)}
 {
     // Keep track of the one and only ICorProfilerCallback implementation.
     // It will be used as root for other services
@@ -549,7 +550,9 @@ bool CorProfilerCallback::InitializeServices()
         }
     }
 
+    Log::Info("{{{{ starting services");
     auto started = StartServices();
+    Log::Info("{{{{ services started ");
     if (!started)
     {
         Log::Error("One or multiple services failed to start. Stopping all services.");
@@ -989,7 +992,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     ConfigureDebugLog();
 
-    _pConfiguration = std::make_unique<Configuration>();
     _pMetadataProvider = std::make_unique<MetadataProvider>();
     _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();

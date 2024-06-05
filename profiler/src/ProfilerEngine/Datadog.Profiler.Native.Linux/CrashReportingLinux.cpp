@@ -9,6 +9,7 @@
 #include <dirent.h>
 #include <string>
 #include <memory>
+#include <filesystem>
 
 #include <libunwind.h>
 #include <libunwind-ptrace.h>
@@ -233,8 +234,23 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             }
         }
 
-        // TODO: Check if the stacktrace is from the tracer or the profiler
         stackFrame.isSuspicious = false;
+
+        std::filesystem::path modulePath(module.first);
+
+        if (modulePath.has_filename())
+        {
+            const auto moduleFilename = modulePath.stem().string();
+
+            if (moduleFilename.rfind("Datadog", 0) == 0
+                || moduleFilename == "libdatadog"
+                || moduleFilename == "datadog"
+                || moduleFilename == "libddwaf"
+                || moduleFilename == "ddwaf" )
+            {
+                stackFrame.isSuspicious = true;
+            }
+        }
 
         frames.push_back(std::move(stackFrame));
 
