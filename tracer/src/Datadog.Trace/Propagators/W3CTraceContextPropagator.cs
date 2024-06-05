@@ -148,14 +148,14 @@ namespace Datadog.Trace.Propagators
 
             try
             {
-                // additional tracestate from other vendors
+                // tracestate from current context
                 // Check if additionalState already contains "dd="
-                var additionalState = context.TraceContext?.AdditionalW3CTraceState;
+                var mainContextAdditionalW3CTraceState = context.AdditionalW3CTraceState;
 
-                if (!string.IsNullOrWhiteSpace(additionalState) && additionalState!.Contains("dd="))
+                if (!string.IsNullOrWhiteSpace(mainContextAdditionalW3CTraceState) && mainContextAdditionalW3CTraceState!.Contains("dd="))
                 {
                     // If additionalState contains "dd=", return it immediately
-                    return additionalState;
+                    return mainContextAdditionalW3CTraceState;
                 }
 
                 sb.Append("dd=");
@@ -198,6 +198,8 @@ namespace Datadog.Trace.Propagators
                     // remove trailing ";"
                     sb.Length--;
                 }
+
+                var additionalState = context.TraceContext?.AdditionalW3CTraceState;
 
                 if (!string.IsNullOrWhiteSpace(additionalState))
                 {
