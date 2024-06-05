@@ -24,7 +24,7 @@ namespace Samples.Computer01
         public SocketTimeout()
         {
             _serverReadyEvent = new ManualResetEventSlim(false);
-            _serverThreadTask = Task.Factory.StartNew(StartServerAsync, TaskCreationOptions.LongRunning);
+            _serverThreadTask = Task.Factory.StartNew(StartServer, TaskCreationOptions.LongRunning);
         }
 
         private int TimeoutErrorCode { get; } = OperatingSystem.IsWindows() ? 10060 : 110;
@@ -139,7 +139,7 @@ namespace Samples.Computer01
             }
         }
 
-        private void StartServerAsync(object obj)
+        private void StartServer(object obj)
         {
             Thread.CurrentThread.Name = "DD Socket Srv";
 
