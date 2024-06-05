@@ -21,7 +21,7 @@ constexpr std::chrono::milliseconds StatsAggregationPeriodMs = 10000ms;
 #endif
 constexpr std::chrono::nanoseconds StatsAggregationPeriodNs = StatsAggregationPeriodMs;
 
-const WCHAR* WatcherThreadName = WStr("DD.Profiler.StackSamplerLoopManager.WatcherThread");
+const WCHAR* WatcherThreadName = WStr("DD_Watcher");
 const std::chrono::nanoseconds StackSamplerLoopManager::StatisticAggregationPeriodNs = 10s;
 
 StackSamplerLoopManager::StackSamplerLoopManager(
@@ -125,8 +125,11 @@ void StackSamplerLoopManager::RunStackSampling()
 
 void StackSamplerLoopManager::RunWatcher()
 {
-    _pWatcherThread = std::make_unique<std::thread>(&StackSamplerLoopManager::WatcherLoop, this);
-    OpSysTools::SetNativeThreadName(_pWatcherThread.get(), WatcherThreadName);
+    _pWatcherThread = std::make_unique<std::thread>([this]
+        {
+            OpSysTools::SetNativeThreadName(WatcherThreadName);
+            WatcherLoop();
+        });
 }
 
 void StackSamplerLoopManager::ShutdownWatcher()

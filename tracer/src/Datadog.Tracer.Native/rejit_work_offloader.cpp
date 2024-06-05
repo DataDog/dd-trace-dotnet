@@ -1,5 +1,6 @@
 #include "rejit_work_offloader.h"
 #include "logger.h"
+#include "threadUtils.h"
 
 namespace trace
 {
@@ -29,7 +30,11 @@ std::unique_ptr<RejitWorkItem> RejitWorkItem::CreateTerminatingWorkItem()
 RejitWorkOffloader::RejitWorkOffloader(ICorProfilerInfo7* pInfo) :
     m_profilerInfo(pInfo),
     m_offloader_queue(std::make_unique<shared::UniqueBlockingQueue<RejitWorkItem>>()),
-    m_offloader_queue_thread(std::make_unique<std::thread>(EnqueueThreadLoop, this))
+    m_offloader_queue_thread(std::make_unique<std::thread>([this] 
+        {
+            Threads::SetNativeThreadName(WStr("DD_rejit"));
+            EnqueueThreadLoop(this);
+        }))
 {
 }
 

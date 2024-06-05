@@ -127,8 +127,8 @@ public static class Program
         span4?.AddEvent(tagsEvent);
 
         using var span5 = _source.StartActivity("MultipleEvents");
-        var event1 = new ActivityEvent("event-1", DateTimeOffset.Now);
-        var event2 = new ActivityEvent("event-2", DateTimeOffset.Now);
+        var event1 = new ActivityEvent("event-1", new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var event2 = new ActivityEvent("event-2", new DateTimeOffset(1970, 1, 1, 0, 0, 1, TimeSpan.Zero));
         span5?.AddEvent(event1);
         span5?.AddEvent(event2);
     }

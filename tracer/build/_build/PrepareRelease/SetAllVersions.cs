@@ -331,10 +331,6 @@ namespace PrepareRelease
                         return text;
                     });
 
-                SynchronizeVersion(
-                    "src/Datadog.Tracer.Native/version.h",
-                    text => FullVersionReplace(text, "."));
-
                 // .NET profiler
 
                 SynchronizeVersion(
@@ -372,6 +368,10 @@ namespace PrepareRelease
                 SynchronizeVersion(
                     "../shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
                     text => FullVersionReplace(text, ".", prefix: "VERSION "));
+
+                SynchronizeVersion(
+                    "../shared/src/native-src/version.h",
+                    text => FullVersionReplace(text, "."));
 
                 // Misc
 

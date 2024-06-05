@@ -1,5 +1,6 @@
 #include "iast_util.h"
 #include "../../../../shared/src/native-src/pal.h"
+#include "../../../../shared/src/native-src/version.h"
 
 #include <cwctype>
 #include <iterator>
@@ -9,7 +10,6 @@
 #include <sys/stat.h> 
 #include <stdio.h>
 #include "../logger.h"
-#include "../version.h"
 
 using namespace shared;
 

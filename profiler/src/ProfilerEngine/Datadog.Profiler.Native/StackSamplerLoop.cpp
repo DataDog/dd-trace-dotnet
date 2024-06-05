@@ -31,7 +31,7 @@
 
 // Configuration constants:
 using namespace std::chrono_literals;
-constexpr const WCHAR* ThreadName = WStr("DD.Profiler.StackSamplerLoop.Thread");
+constexpr const WCHAR* ThreadName = WStr("DD_StackSampler");
 
 StackSamplerLoop::StackSamplerLoop(
     ICorProfilerInfo4* pCorProfilerInfo,
@@ -108,8 +108,11 @@ const char* StackSamplerLoop::GetName()
 
 bool StackSamplerLoop::StartImpl()
 {
-    _pLoopThread = std::make_unique<std::thread>(&StackSamplerLoop::MainLoop, this);
-    OpSysTools::SetNativeThreadName(_pLoopThread.get(), ThreadName);
+    _pLoopThread = std::make_unique<std::thread>([this]
+        {
+            OpSysTools::SetNativeThreadName(ThreadName);
+            MainLoop();
+        });
 
     return true;
 }
