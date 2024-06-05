@@ -91,12 +91,12 @@ namespace Datadog.Trace.TestHelpers
                 throw new Exception($"application not found: {sampleAppPath}");
             }
 
-            Output.WriteLine($"Starting Application: {sampleAppPath}");
+            Output.WriteLine($"Starting Application: {sampleAppPath} {arguments ?? string.Empty}");
             string testCli = forceVsTestParam ? EnvironmentHelper.GetDotnetExe() : EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
             string appPath = testCli.StartsWith("dotnet") || forceVsTestParam ? $"vstest {sampleAppPath}" : sampleAppPath;
             Output.WriteLine("Executable: " + exec);
-            Output.WriteLine("ApplicationPath: " + appPath);
+            Output.WriteLine($"ApplicationPath: {appPath} {arguments ?? string.Empty}");
             var process = await ProfilerHelper.StartProcessWithProfiler(
                 exec,
                 EnvironmentHelper,

@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+	<DataCollectionRunSettings>
+		<DataCollectors>
+			<DataCollector friendlyName="Code Coverage">
+				<Configuration>
+					<Format>xml</Format>
+					<CodeCoverage>
+						<!-- 
+						    Switching to static instrumentation (dynamic instrumentation collides with dd-trace instrumentation)
+
+						    Microsoft.CodeCoverage dynamic instrumentation (enabled by default in Windows)
+						    uses the Microsoft CLRIE to instrument the assemblies at runtime replacing our own instrumentation.
+						    
+						    https://docs.datadoghq.com/tests/setup/dotnet/?tab=cloudciprovideragentless#compatibility-with-microsoftcodecoverage-nuget-package
+						-->
+						<EnableStaticManagedInstrumentation>True</EnableStaticManagedInstrumentation>
+						<EnableDynamicManagedInstrumentation>False</EnableDynamicManagedInstrumentation>
+						<UseVerifiableInstrumentation>False</UseVerifiableInstrumentation>
+						<EnableStaticNativeInstrumentation>True</EnableStaticNativeInstrumentation>
+						<EnableDynamicNativeInstrumentation>False</EnableDynamicNativeInstrumentation>
+					</CodeCoverage>
+				</Configuration>
+			</DataCollector>
+		</DataCollectors>
+	</DataCollectionRunSettings>
+</RunSettings>
