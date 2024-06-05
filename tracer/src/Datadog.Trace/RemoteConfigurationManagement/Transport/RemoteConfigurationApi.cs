@@ -91,7 +91,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 
             if (!apiResponse.HasMimeType(MimeTypes.Json))
             {
-                var content = await apiResponse.ReadAsStringAsync().ConfigureAwait(false);
+                var contentType = apiResponse.RawContentType;
+                var content = (await apiResponse.ReadAsStringAsync().ConfigureAwait(false))?.Substring(0, 128);
                 Log.Warning("Failed to receive remote configurations: expected " + MimeTypes.Json + " but received {ContentType}: {ResponseContent}", contentType, content);
                 throw new RemoteConfigurationDeserializationException(new Exception($"Unexpected content type {contentType} with response {content}"));
             }
