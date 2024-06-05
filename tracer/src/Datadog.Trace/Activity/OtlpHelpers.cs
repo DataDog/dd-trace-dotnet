@@ -232,6 +232,8 @@ namespace Datadog.Trace.Activity
                     origin: null,
                     isRemote: duckLink.Context.IsRemote);
 
+                spanContext.AdditionalW3CTraceState = duckLink.Context.TraceState;
+
                 var duckLinkSpan = new Span(spanContext, DateTimeOffset.Now, new CommonTags());
                 span.AddSpanLink(duckLinkSpan);
             }

@@ -17,6 +17,8 @@ public static class Program
 
     public static async Task Main(string[] args)
     {
+        System.Diagnostics.Debugger.Launch();
+
         Console.WriteLine($"SpanId 1: {SpanLinkSpanId1} SpanId 2: {SpanLinkSpanId2}");
         _source = new ActivitySource("Samples.NetActivitySdk");
 
@@ -322,9 +324,9 @@ public static class Program
         var context2 = new ActivityContext(
             ActivityTraceId.CreateFromString(SpanLinkTraceId2.AsSpan()),
             ActivitySpanId.CreateFromString(SpanLinkSpanId2.AsSpan()),
-            ActivityTraceFlags.Recorded);
-
-        // TODO context with tracestate
+            ActivityTraceFlags.Recorded,
+            "foo=1,dd=t.dm:-4;s:2,bar=baz",
+            true);
 
         activityLinks.Add(new ActivityLink(context1, activityLinkTags1));
         activityLinks.Add(new ActivityLink(context2));
