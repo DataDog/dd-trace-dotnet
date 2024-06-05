@@ -10,10 +10,19 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <GenerateProgramFile>false</GenerateProgramFile>
+
+    <RunSettingsFilePath>ci.runsettings</RunSettingsFilePath>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <CopyDebugSymbolFilesFromPackages>true</CopyDebugSymbolFilesFromPackages>
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+    <PackageReference Include="Microsoft.CodeCoverage" Version="17.10.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="xunit" Version="2.4.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
     <PackageReference Include="Selenium.WebDriver" Version="$(ApiVersion)" />
@@ -23,6 +32,23 @@
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="ci.runsettings">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
+
+  <Target Name="CodeCoverageFixTarget" AfterTargets="Build">
+    <Message Importance="High" Text="Fixing Code Coverage" />
+
+    <!-- Running a target in Microsoft.CodeCoverage.targets to copy the code coverage assemblies to the publish folder -->
+    <CallTarget Targets="ComputeFilesToPublish" />
+    <CallTarget Targets="CopyTraceDataCollectorArtifacts" />
+
+    <!-- Because we don't publish on windows, we just move the code coverage binaries from the publish folder to the actual build bin folder-->
+    <ItemGroup>
+      <PublishedTraceDataCollectorArtifacts Include="$(PublishDir)**\*.*" />
+    </ItemGroup>
+    <Move SourceFiles="@(PublishedTraceDataCollectorArtifacts)" DestinationFolder="$(PublishDir)..\%(RecursiveDir)" />
+  </Target>
 
 </Project>
