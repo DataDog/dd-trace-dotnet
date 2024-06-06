@@ -250,7 +250,7 @@ namespace Datadog.Trace.Activity
                     // special case where we need to remap "http.response.status_code"
                     if (key == "http.response.status_code")
                     {
-                        span.SetTag(Tags.HttpStatusCode, i.ToString());
+                        span.SetTag(Tags.HttpStatusCode, i.ToString(CultureInfo.InvariantCulture));
                     }
                     else
                     {
