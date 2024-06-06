@@ -149,12 +149,16 @@ namespace Benchmarks.Trace
 
             public Encoding ContentEncoding => Encoding.UTF8;
 
+            public string RawContentType => "application/json";
+
             public string GetHeader(string headerName) => string.Empty;
 
             public Task<Stream> GetStreamAsync()
             {
                 throw new NotImplementedException();
             }
+
+            public bool HasMimeType(string mimeType) => ApiResponseExtensions.HasMimeType(RawContentType, mimeType);
 
             public Task<string> ReadAsStringAsync()
             {

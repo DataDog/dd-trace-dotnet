@@ -29,6 +29,8 @@ namespace Datadog.Trace.Agent.Transports
 
         public Encoding ContentEncoding { get; }
 
+        public string RawContentType => _headers.GetValue("Content-Type");
+
         public Stream ResponseStream { get; }
 
         public void Dispose()
@@ -41,5 +43,7 @@ namespace Datadog.Trace.Agent.Transports
         {
             return Task.FromResult(ResponseStream);
         }
+
+        public bool HasMimeType(string mimeType) => ApiResponseExtensions.HasMimeType(RawContentType, mimeType);
     }
 }

@@ -25,6 +25,8 @@ namespace Datadog.Trace.Agent.Transports
 
         public long ContentLength => _response.ContentLength;
 
+        public string RawContentType => _response.ContentType;
+
         public Encoding ContentEncoding { get; }
 
         public string GetHeader(string headerName) => _response.Headers[headerName];
@@ -38,5 +40,7 @@ namespace Datadog.Trace.Agent.Transports
         {
             _response?.Dispose();
         }
+
+        public bool HasMimeType(string mimeType) => ApiResponseExtensions.HasMimeType(RawContentType, mimeType);
     }
 }

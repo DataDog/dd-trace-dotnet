@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETCOREAPP
+using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -27,6 +28,8 @@ namespace Datadog.Trace.Agent.Transports
         public int StatusCode => (int)_response.StatusCode;
 
         public long ContentLength => _response.Content.Headers.ContentLength ?? -1;
+
+        public string RawContentType => _response.Content.Headers.ContentType?.ToString();
 
         public Encoding ContentEncoding { get; }
 
@@ -59,6 +62,9 @@ namespace Datadog.Trace.Agent.Transports
         {
             return _response.Content.ReadAsStreamAsync();
         }
+
+        public bool HasMimeType(string mimeType)
+            => string.Equals(_response.Content.Headers.ContentType?.MediaType, mimeType, StringComparison.OrdinalIgnoreCase);
     }
 }
 #endif

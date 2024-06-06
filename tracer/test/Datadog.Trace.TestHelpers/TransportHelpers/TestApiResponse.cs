@@ -19,10 +19,10 @@ internal class TestApiResponse : IApiResponse
     {
         StatusCode = statusCode;
         _body = body;
-        ContentType = contentType;
+        RawContentType = contentType;
     }
 
-    public string ContentType { get; }
+    public string RawContentType { get; }
 
     public int StatusCode { get; }
 
@@ -40,6 +40,8 @@ internal class TestApiResponse : IApiResponse
     {
         return Task.FromResult((Stream)new MemoryStream(ContentEncoding.GetBytes(_body)));
     }
+
+    public bool HasMimeType(string mimeType) => ApiResponseExtensions.HasMimeType(RawContentType, mimeType);
 
     public Task<string> ReadAsStringAsync() => Task.FromResult(_body);
 }

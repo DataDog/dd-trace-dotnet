@@ -19,9 +19,17 @@ namespace Datadog.Trace.Agent
 
         Encoding ContentEncoding { get; }
 
+        /// <summary>
+        /// Gets the "raw" content-type header, which may contain additional information like charset or boundary.
+        /// Prefer using <see cref="HasMimeType"/> to check for specific mime types.
+        /// </summary>
+        string RawContentType { get; }
+
         string GetHeader(string headerName);
 
         Task<Stream> GetStreamAsync();
+
+        bool HasMimeType(string mimeType);
     }
 
     internal static class ApiResponseExtensions
@@ -63,6 +71,49 @@ namespace Datadog.Trace.Agent
             };
 
             return shouldRetry;
+        }
+
+        internal static bool HasMimeType(string rawContentType, string mimeType)
+        {
+            if (string.IsNullOrEmpty(mimeType))
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(mimeType));
+            }
+
+            if (string.IsNullOrEmpty(rawContentType))
+            {
+                return false;
+            }
+
+            if (string.Equals(rawContentType, mimeType, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // handle when we have charsets and directives, assuming (hopefully sensibly) that the mime type is the first part
+            // but that it might have white space around it
+            // e.g. text/html; charset=utf-8
+            var indexOfSemicolon = rawContentType.IndexOf(';');
+            if (indexOfSemicolon >= 0 && mimeType.Length > indexOfSemicolon)
+            {
+                return false;
+            }
+
+#if NETCOREAPP
+            var untrimmedMediaType = indexOfSemicolon > 0
+                                      ? rawContentType.AsSpan(0, indexOfSemicolon)
+                                      : rawContentType.AsSpan();
+            return untrimmedMediaType.Trim().Equals(mimeType.AsSpan(), StringComparison.OrdinalIgnoreCase);
+#else
+            var endIndex = indexOfSemicolon > 0 ? indexOfSemicolon : mimeType.Length;
+
+            // ideally we'd avoid the double allocation here, but that's a lot of faff
+
+            var untrimmedMediaType = indexOfSemicolon > 0
+                                         ? rawContentType.Substring(0, indexOfSemicolon)
+                                         : rawContentType;
+            return string.Equals(untrimmedMediaType.Trim(), mimeType, StringComparison.OrdinalIgnoreCase);
+#endif
         }
     }
 }
