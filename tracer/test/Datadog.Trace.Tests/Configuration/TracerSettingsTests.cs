@@ -71,14 +71,21 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("", true)]
-        [InlineData("1", true)]
-        [InlineData("0", false)]
-        public void TraceEnabled(string value, bool areTracesEnabled)
+        [InlineData("", null, true)]
+        [InlineData("", "random", true)]
+        [InlineData("", "none", false)]
+        [InlineData("1", null, true)]
+        [InlineData("1", "none", true)]
+        [InlineData("0", "random", false)]
+        [InlineData("0", "none", false)]
+        [InlineData(null, "random", true)]
+        [InlineData(null, "none", false)]
+        public void TraceEnabled(string value, string otelValue, bool areTracesEnabled)
         {
             var settings = new NameValueCollection
             {
-                { ConfigurationKeys.TraceEnabled, value }
+                { ConfigurationKeys.TraceEnabled, value },
+                { "OTEL_TRACES_EXPORTER", otelValue },
             };
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
@@ -211,16 +218,20 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("test", null, "test")]
-        [InlineData("test", "error", "test")]
-        [InlineData(null, "test", "test")]
-        [InlineData("", "test", "")]
-        [InlineData(null, null, null)]
-        public void ServiceName(string value, string legacyValue, string expected)
+        [InlineData("test", null, null, "test")]
+        [InlineData("test", null, "ignored_otel", "test")]
+        [InlineData("test", "error", "ignored_otel", "test")]
+        [InlineData(null, "test", null, "test")]
+        [InlineData(null, "test", "ignored_otel", "test")]
+        [InlineData("", "test", "ignored_otel", "")]
+        [InlineData(null, null, "otel", "otel")]
+        [InlineData(null, null, null, null)]
+        public void ServiceName(string value, string legacyValue, string otelValue, string expected)
         {
             const string legacyServiceName = "DD_SERVICE_NAME";
+            const string otelKey = "OTEL_SERVICE_NAME";
 
-            var source = CreateConfigurationSource((ConfigurationKeys.ServiceName, value), (legacyServiceName, legacyValue));
+            var source = CreateConfigurationSource((ConfigurationKeys.ServiceName, value), (legacyServiceName, legacyValue), (otelKey, otelValue));
             var settings = new TracerSettings(source);
 
             settings.ServiceName.Should().Be(expected);
@@ -434,10 +445,21 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
-        public void RuntimeMetricsEnabled(string value, bool expected)
+        [InlineData("true", "none", true)]
+        [InlineData("true", "random", true)]
+        [InlineData("false", "none", false)]
+        [InlineData("false", "random", false)]
+        [InlineData("A", "none", false)]
+        [InlineData("A", "random", false)]
+        [InlineData("", "none", false)]
+        [InlineData("", "random", false)]
+        [InlineData(null, "none", false)]
+        [InlineData(null, "random", false)]
+        public void RuntimeMetricsEnabled(string value, string otelValue, bool expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.RuntimeMetricsEnabled, value));
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, value),
+                ("OTEL_METRICS_EXPORTER", otelValue));
             var settings = new TracerSettings(source);
 
             settings.RuntimeMetricsEnabled.Should().Be(expected);
@@ -520,10 +542,29 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(DoubleTestCases), null)]
-        public void GlobalSamplingRate(string value, double? expected)
+        [InlineData("1.5", null, null, 1.5d)]
+        [InlineData("1", "parentbased_traceidratio", "0.5", 1.0d)]
+        [InlineData("0", "parentbased_traceidratio", null, 0.0d)]
+        [InlineData("-1", "parentbased_traceidratio", null, -1.0d)]
+        [InlineData("A", null, null, null)]
+        [InlineData("", "parentbased_always_on", null, 1.0)]
+        [InlineData("", "parentbased_always_off", null, 0.0)]
+        [InlineData(null, "parentbased_traceidratio", "0.5", 0.5d)]
+        [InlineData(null, "parentbased_traceidratio", "1", 1.0d)]
+        [InlineData(null, "parentbased_traceidratio", null, null)]
+        [InlineData(null, "traceidratio", "0.5", 0.5d)]
+        [InlineData(null, "traceidratio", "1", 1.0d)]
+        [InlineData(null, "traceidratio", null, null)]
+        [InlineData(null, "parentbased_always_on", null, 1.0d)]
+        [InlineData(null, "always_on", null, 1.0d)]
+        [InlineData(null, "parentbased_always_off", null, 0.0d)]
+        [InlineData(null, "always_off", null, 0.0d)]
+        public void GlobalSamplingRate(string value, string otelSampler, string otelSampleRate, double? expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.GlobalSamplingRate, value));
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.GlobalSamplingRate, value),
+                ("OTEL_TRACES_SAMPLER", otelSampler),
+                ("OTEL_TRACES_SAMPLER_ARG", otelSampleRate));
             var settings = new TracerSettings(source);
 
             settings.GlobalSamplingRate.Should().Be(expected);
@@ -674,35 +715,41 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("1", "0", true)]
-        [InlineData("0", "0", false)]
-        [InlineData("true", "1", true)]
-        [InlineData("false", "1", false)]
-        [InlineData(null, "1", true)]
-        [InlineData(null, "true", true)]
-        [InlineData(null, "0", false)]
-        [InlineData(null, "false", false)]
-        [InlineData(null, null, false)]
-        [InlineData("", "", false)]
-        public void IsActivityListenerEnabled(string value, string fallbackValue, bool expected)
+        [InlineData("1", "0", "otel_ignored", true)]
+        [InlineData("0", "0", null, false)]
+        [InlineData("true", "1", null, true)]
+        [InlineData("false", "1", null, false)]
+        [InlineData(null, "1", "otel_ignored", true)]
+        [InlineData(null, "true", null, true)]
+        [InlineData(null, "0", null, false)]
+        [InlineData(null, "false", "otel_ignored", false)]
+        [InlineData(null, null, "true", false)]
+        [InlineData(null, null, "uses_default_value", false)]
+        [InlineData("", "", null, false)]
+        public void IsActivityListenerEnabled(string value, string fallbackValue, string otelValue, bool expected)
         {
             const string fallbackKey = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
+            const string otelKey = "OTEL_SDK_DISABLED";
 
-            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, value), (fallbackKey, fallbackValue));
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, value), (fallbackKey, fallbackValue), (otelKey, otelValue));
             var settings = new TracerSettings(source);
 
             settings.IsActivityListenerEnabled.Should().Be(expected);
         }
 
         [Theory]
-        [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", new[] { "test1", "test2" })]
-        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "Datadog", "tracecontext" })]
-        [InlineData(null, "test3,, ,test4", "test5,, ,test6", new[] { "test3", "test4" })]
-        [InlineData(null, null, "test5,, ,test6", new[] { "test5", "test6" })]
-        [InlineData(null, null, null, new[] { "Datadog", "tracecontext" })]
-        public void PropagationStyleInject(string value, string legacyValue, string fallbackValue, string[] expected)
+        [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", null, new[] { "test1", "test2" })]
+        [InlineData("", "test3,, ,test4", "test5,, ,test6", null, new[] { "Datadog", "tracecontext" })]
+        [InlineData(null, "test3,, ,test4", "test5,, ,test6", null, new[] { "test3", "test4" })]
+        [InlineData(null, null, "test5,, ,test6", null, new[] { "test5", "test6" })]
+        [InlineData(null, null, null, "tracecontext,datadog", new[] { "tracecontext", "datadog" })]
+        [InlineData(null, null, null, "tracecontext", new[] { "tracecontext" })]
+        [InlineData(null, null, null, "tracecontext,b3,b3multi", new[] { "tracecontext", "b3 single header", "b3multi" })]
+        [InlineData(null, null, null, null, new[] { "Datadog", "tracecontext" })]
+        public void PropagationStyleInject(string value, string legacyValue, string fallbackValue, string otelValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_INJECT";
+            const string otelKey = "OTEL_PROPAGATORS";
 
             foreach (var isActivityListenerEnabled in new[] { true, false })
             {
@@ -710,6 +757,7 @@ namespace Datadog.Trace.Tests.Configuration
                     (ConfigurationKeys.PropagationStyleInject, value),
                     (legacyKey, legacyValue),
                     (ConfigurationKeys.PropagationStyle, fallbackValue),
+                    (otelKey, otelValue),
                     (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
 
                 var settings = new TracerSettings(source);
@@ -719,14 +767,18 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", new[] { "test1", "test2" })]
-        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "tracecontext", "Datadog" })]
-        [InlineData(null, "test3,, ,test4", "test5,, ,test6", new[] { "test3", "test4" })]
-        [InlineData(null, null, "test5,, ,test6", new[] { "test5", "test6" })]
-        [InlineData(null, null, null, new[] { "tracecontext", "Datadog" })]
-        public void PropagationStyleExtract(string value, string legacyValue, string fallbackValue, string[] expected)
+        [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", null, new[] { "test1", "test2" })]
+        [InlineData("", "test3,, ,test4", "test5,, ,test6", null, new[] { "Datadog", "tracecontext" })]
+        [InlineData(null, "test3,, ,test4", "test5,, ,test6", null, new[] { "test3", "test4" })]
+        [InlineData(null, null, "test5,, ,test6", null, new[] { "test5", "test6" })]
+        [InlineData(null, null, null, "tracecontext,datadog", new[] { "tracecontext", "datadog" })]
+        [InlineData(null, null, null, "tracecontext", new[] { "tracecontext" })]
+        [InlineData(null, null, null, "tracecontext,b3,b3multi", new[] { "tracecontext", "b3 single header", "b3multi" })]
+        [InlineData(null, null, null, null, new[] { "Datadog", "tracecontext" })]
+        public void PropagationStyleExtract(string value, string legacyValue, string fallbackValue, string otelValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_EXTRACT";
+            const string otelKey = "OTEL_PROPAGATORS";
 
             foreach (var isActivityListenerEnabled in new[] { true, false })
             {
@@ -734,6 +786,7 @@ namespace Datadog.Trace.Tests.Configuration
                     (ConfigurationKeys.PropagationStyleExtract, value),
                     (legacyKey, legacyValue),
                     (ConfigurationKeys.PropagationStyle, fallbackValue),
+                    (otelKey, otelValue),
                     (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
 
                 var settings = new TracerSettings(source);
