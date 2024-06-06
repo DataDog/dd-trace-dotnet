@@ -18,7 +18,6 @@ namespace Datadog.Trace.AppSec.Rasp;
 
 internal static class RaspModule
 {
-    private const string GenericSqlDDBBType = "generic";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
 
     private static RaspRuleType? TryGetAddressRuleType(string address)
@@ -56,7 +55,7 @@ internal static class RaspModule
             IntegrationId.Oracle => "oracle",
             IntegrationId.Sqlite => "sqlite",
             IntegrationId.NHibernate => "nhibernate",
-            _ => GenericSqlDDBBType
+            _ => "generic"
         };
     }
 
