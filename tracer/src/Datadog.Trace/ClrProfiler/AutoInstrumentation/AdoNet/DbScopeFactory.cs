@@ -38,14 +38,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             try
             {
-                if (Iast.Iast.Instance.Settings.Enabled)
-                {
-                    IastModule.OnSqlQuery(commandText, integrationId);
-                }
-
-                // We might block the SQL call from RASP depending on the query
-                RaspModule.OnSqlI(commandText, integrationId);
-
                 Span parent = tracer.InternalActiveScope?.Span;
 
                 if (parent is { Type: SpanTypes.Sql } &&
@@ -57,6 +49,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     // e.g. ExecuteReader() -> ExecuteReader(commandBehavior)
                     return null;
                 }
+
+                if (Iast.Iast.Instance.Settings.Enabled)
+                {
+                    IastModule.OnSqlQuery(commandText, integrationId);
+                }
+
+                // We might block the SQL call from RASP depending on the query
+                RaspModule.OnSqlI(commandText, integrationId);
 
                 SqlTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
                 tags.DbType = dbType;
