@@ -12,6 +12,7 @@ using System.Text;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -222,16 +223,42 @@ namespace Datadog.Trace.Activity
 
                 _ = HexString.TryParseTraceId(duckLink!.Context.TraceId.TraceId!, out var newActivityTraceId);
                 _ = HexString.TryParseUInt64(duckLink.Context.SpanId.SpanId!, out var newActivitySpanId);
+                var traceParentSample = duckLink.Context.TraceFlags > 0;
+                var traceState = W3CTraceContextPropagator.ParseTraceState(duckLink.Context.TraceState!);
+
+                var samplingPriority = traceParentSample switch
+                {
+                    true when traceState.SamplingPriority is > 0 => traceState.SamplingPriority.Value,
+                    true => SamplingPriorityValues.AutoKeep,
+                    false when traceState.SamplingPriority is <= 0 => traceState.SamplingPriority.Value,
+                    false => SamplingPriorityValues.AutoReject,
+                };
 
                 var spanContext = new SpanContext(
                     newActivityTraceId,
                     newActivitySpanId,
-                    samplingPriority: (int?)duckLink.Context.TraceFlags == (int?)ActivityTraceFlags.None ? 0 : 1,
+                    samplingPriority: samplingPriority,
                     serviceName: null,
                     origin: null,
                     isRemote: duckLink.Context.IsRemote);
 
-                spanContext.AdditionalW3CTraceState = duckLink.Context.TraceState;
+                if (duckLink.Context.TraceState is not null)
+                {
+                    var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
+
+                    if (traceParentSample && traceState.SamplingPriority <= 0)
+                    {
+                        traceTags.SetTag(Tags.Propagated.DecisionMaker, "-0");
+                    }
+                    else if (!traceParentSample && traceState.SamplingPriority > 0)
+                    {
+                        traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
+                    }
+
+                    spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
+                    spanContext.LastParentId = traceState.LastParent;
+                    spanContext.PropagatedTags = traceTags;
+                }
 
                 var duckLinkSpan = new Span(spanContext, DateTimeOffset.Now, new CommonTags());
                 span.AddSpanLink(duckLinkSpan);

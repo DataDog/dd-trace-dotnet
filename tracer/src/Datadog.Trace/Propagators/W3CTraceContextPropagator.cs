@@ -148,16 +148,6 @@ namespace Datadog.Trace.Propagators
 
             try
             {
-                // tracestate from current context
-                // Check if additionalState already contains "dd="
-                var mainContextAdditionalW3CTraceState = context.AdditionalW3CTraceState;
-
-                if (!string.IsNullOrWhiteSpace(mainContextAdditionalW3CTraceState) && mainContextAdditionalW3CTraceState!.Contains("dd="))
-                {
-                    // If additionalState contains "dd=", return it immediately
-                    return mainContextAdditionalW3CTraceState;
-                }
-
                 sb.Append("dd=");
 
                 // sampling priority ("s:<value>")
@@ -167,7 +157,7 @@ namespace Datadog.Trace.Propagators
                 }
 
                 // origin ("o:<value>")
-                var origin = context.TraceContext?.Origin;
+                var origin = context.Origin;
 
                 if (!string.IsNullOrWhiteSpace(origin))
                 {
@@ -199,7 +189,7 @@ namespace Datadog.Trace.Propagators
                     sb.Length--;
                 }
 
-                var additionalState = context.TraceContext?.AdditionalW3CTraceState;
+                var additionalState = context.AdditionalW3CTraceState;
 
                 if (!string.IsNullOrWhiteSpace(additionalState))
                 {

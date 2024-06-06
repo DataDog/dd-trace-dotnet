@@ -51,6 +51,7 @@ namespace Datadog.Trace
         private string _rawTraceId;
         private string _rawSpanId;
         private string _origin;
+        private string _additionalW3CTraceState;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
@@ -260,7 +261,19 @@ namespace Datadog.Trace
         /// This value will _not_ include the "dd" key, which is parsed out into other individual values
         /// (e.g. sampling priority, origin, propagates tags, etc).
         /// </summary>
-        internal string AdditionalW3CTraceState { get; set; }
+        internal string AdditionalW3CTraceState
+        {
+            get => TraceContext?.AdditionalW3CTraceState ?? _additionalW3CTraceState;
+            set
+            {
+                _additionalW3CTraceState = value;
+
+                if (TraceContext is not null)
+                {
+                    TraceContext.AdditionalW3CTraceState = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Gets or sets the last span ID of the most recently seen Datadog span that will be propagated downstream
