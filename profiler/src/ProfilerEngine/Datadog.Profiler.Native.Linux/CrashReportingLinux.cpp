@@ -209,6 +209,8 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             unw_word_t offset;
             result = unw_get_proc_name(&cursor, methodData.symbolName, sizeof(methodData.symbolName), &offset);
 
+            bool hasName = false;
+
             if (result == 0)
             {
                 stackFrame.method = std::string(methodData.symbolName);
@@ -223,10 +225,12 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
                     if (stringWrapper.message.len > 0)
                     {
                         stackFrame.method = std::string((char*)stringWrapper.message.ptr, stringWrapper.message.len);
+                        hasName = true;
                     }
                 }
             }
-            else
+
+            if (!hasName)
             {
                 std::ostringstream unknownModule;
                 unknownModule << module.first << "!<unknown>+" << std::hex << (ip - module.second);
