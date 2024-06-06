@@ -508,7 +508,7 @@ namespace Datadog.Trace
             " spans.")]
         public Tracer() { }
         [System.Obsolete(@"This API is deprecated, as it replaces the global settings for all Tracer instances in the application. If you were using this API to configure the global Tracer.Instance in code, use the static Tracer.Configure() to replace the global Tracer settings for the application")]
-        public Tracer(Datadog.Trace.Configuration.TracerSettings? settings) { }
+        public Tracer(Datadog.Trace.Configuration.TracerSettings settings) { }
         public Datadog.Trace.IScope? ActiveScope { get; }
         public string DefaultServiceName { get; }
         public Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
