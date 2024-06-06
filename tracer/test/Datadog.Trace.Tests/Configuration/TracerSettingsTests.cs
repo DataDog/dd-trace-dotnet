@@ -338,18 +338,20 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("key1:value1,key2:value2", "key3:value3", new[] { "key1:value1", "key2:value2" })]
-        [InlineData("key1 :value1,invalid,key2: value2", "key3:value3", new[] { "key1:value1", "key2:value2" })]
-        [InlineData("invalid", "key1:value1,key2:value2", new string[0])]
-        [InlineData(null, "key1:value1,key2:value2", new[] { "key1:value1", "key2:value2" })]
-        [InlineData("", "key1:value1,key2:value2", new string[0])]
-        [InlineData("", "", new string[0])]
-        [InlineData("invalid", "invalid", new string[0])]
-        public void GlobalTags(string value, string legacyValue, string[] expected)
+        [InlineData("key1:value1,key2:value2", "key3:value3", "otel_key=otel_value", new[] { "key1:value1", "key2:value2" })]
+        [InlineData("key1 :value1,invalid,key2: value2", "key3:value3", "otel_key=otel_value", new[] { "key1:value1", "key2:value2" })]
+        [InlineData("invalid", "key1:value1,key2:value2", "otel_key=otel_value", new string[0])]
+        [InlineData(null, "key1:value1,key2:value2", "otel_key=otel_value", new[] { "key1:value1", "key2:value2" })]
+        [InlineData("", "key1:value1,key2:value2", "otel_key=otel_value", new string[0])]
+        [InlineData("", "", "otel_key=otel_value", new string[0])]
+        [InlineData("invalid", "invalid", "otel_key=otel_value", new string[0])]
+        [InlineData(null, null, "otel_key=otel_value", new[] { "otel_key:otel_value" })]
+        public void GlobalTags(string value, string legacyValue, string otelValue, string[] expected)
         {
             const string legacyGlobalTagsKey = "DD_TRACE_GLOBAL_TAGS";
+            const string otelKey = "OTEL_RESOURCE_ATTRIBUTES";
 
-            var source = CreateConfigurationSource((ConfigurationKeys.GlobalTags, value), (legacyGlobalTagsKey, legacyValue));
+            var source = CreateConfigurationSource((ConfigurationKeys.GlobalTags, value), (legacyGlobalTagsKey, legacyValue), (otelKey, otelValue));
             var settings = new TracerSettings(source);
 
             settings.GlobalTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));

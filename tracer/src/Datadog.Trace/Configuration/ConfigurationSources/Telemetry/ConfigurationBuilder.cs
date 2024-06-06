@@ -524,15 +524,76 @@ internal readonly struct ConfigurationBuilder
         public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<IDictionary<string, string>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
-            var result = Source.GetDictionary(Key, Telemetry, validator: null, allowOptionalMappings)
-                      ?? (FallbackKey1 is null ? null : Source.GetDictionary(FallbackKey1, Telemetry, validator: null, allowOptionalMappings))
-                      ?? (FallbackKey2 is null ? null : Source.GetDictionary(FallbackKey2, Telemetry, validator: null, allowOptionalMappings))
-                      ?? (FallbackKey3 is null ? null : Source.GetDictionary(FallbackKey3, Telemetry, validator: null, allowOptionalMappings));
+            var result = Source.GetDictionary(Key, Telemetry, validator: null, allowOptionalMappings, separator: ':')
+                      ?? (FallbackKey1 is null ? null : Source.GetDictionary(FallbackKey1, Telemetry, validator: null, allowOptionalMappings, separator: ':'))
+                      ?? (FallbackKey2 is null ? null : Source.GetDictionary(FallbackKey2, Telemetry, validator: null, allowOptionalMappings, separator: ':'))
+                      ?? (FallbackKey3 is null ? null : Source.GetDictionary(FallbackKey3, Telemetry, validator: null, allowOptionalMappings, separator: ':'));
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
             {
                 return value;
+            }
+
+            if (getDefaultValue != null)
+            {
+                // Horrible that we have to stringify the dictionary, but that's all that's available in the telemetry api
+                var defaultValue = getDefaultValue();
+                var defaultValueAsString = defaultValue.Count == 0 ? string.Empty : string.Join(", ", defaultValue!.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+
+                Telemetry.Record(Key, defaultValueAsString, true, ConfigurationOrigins.Default);
+                return defaultValue;
+            }
+
+            return null;
+        }
+
+        public IDictionary<string, string>? AsDictionaryWithOpenTelemetryMapping(string openTelemetryKey, Func<IDictionary<string, string>>? getDefaultValue = null)
+        {
+            // TODO: Handle/allow default values + validation?
+            var result = Source.GetDictionary(Key, Telemetry, validator: null)
+                      ?? (FallbackKey1 is null ? null : Source.GetDictionary(FallbackKey1, Telemetry, validator: null))
+                      ?? (FallbackKey2 is null ? null : Source.GetDictionary(FallbackKey2, Telemetry, validator: null))
+                      ?? (FallbackKey3 is null ? null : Source.GetDictionary(FallbackKey3, Telemetry, validator: null));
+
+            IDictionary<string, string>? returnValue = null;
+            bool datadogConfigurationIsPresent = false;
+            if (result is { Result: { } value, IsValid: { } resultIsValid })
+            {
+                datadogConfigurationIsPresent = true;
+                if (resultIsValid)
+                {
+                    returnValue = value;
+                }
+            }
+            else
+            {
+                datadogConfigurationIsPresent = Source.IsPresent(Key)
+                                             || (FallbackKey1 is null ? false : Source.IsPresent(FallbackKey1))
+                                             || (FallbackKey2 is null ? false : Source.IsPresent(FallbackKey2))
+                                             || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
+            }
+
+            // OpenTelemetry key must always be checked so we can warn the user about the conflicting variables
+            var openTelemetryResult = Source.GetDictionary(openTelemetryKey, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings: false, separator: '=');
+
+            // Emit a telemetry warning that we saw both configurations
+            if (openTelemetryResult is { Result: { } openTelemetryValue, IsValid: { } openTelemetryResultIsValid })
+            {
+                if (datadogConfigurationIsPresent)
+                {
+                    // TODO emit telemetry warning that we saw both
+                }
+                else if (openTelemetryResultIsValid)
+                {
+                    // TODO emit telemetry success
+                    return openTelemetryValue;
+                }
+            }
+
+            if (returnValue is not null)
+            {
+                return returnValue;
             }
 
             if (getDefaultValue != null)
