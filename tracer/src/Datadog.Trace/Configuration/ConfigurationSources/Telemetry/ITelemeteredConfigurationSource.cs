@@ -1,4 +1,4 @@
-﻿// <copyright file="ITelemeteredConfigurationSource.cs" company="Datadog">
+// <copyright file="ITelemeteredConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,6 +17,13 @@ namespace Datadog.Trace.Configuration.Telemetry;
 /// </summary>
 internal interface ITelemeteredConfigurationSource
 {
+    /// <summary>
+    /// Gets whether the specified key is present in the source.
+    /// </summary>
+    /// <param name="key">The key that identifies the setting.</param>
+    /// <returns><c>true</c> if the key is present in the source, false otherwise.</returns>
+    bool IsPresent(string key);
+
     /// <summary>
     /// Gets the <see cref="string"/> value of
     /// the setting with the specified key.

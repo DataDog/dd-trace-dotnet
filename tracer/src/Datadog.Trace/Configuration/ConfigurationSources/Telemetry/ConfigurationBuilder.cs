@@ -136,6 +136,13 @@ internal readonly struct ConfigurationBuilder
                     returnValue = value;
                 }
             }
+            else
+            {
+                datadogConfigurationIsPresent = Source.IsPresent(Key)
+                                             || (FallbackKey1 is null ? false : Source.IsPresent(FallbackKey1))
+                                             || (FallbackKey2 is null ? false : Source.IsPresent(FallbackKey2))
+                                             || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
+            }
 
             // OpenTelemetry key must always be checked so we can warn the user about the conflicting variables
             var openTelemetryResult = openTelemetryConverter switch
@@ -216,6 +223,13 @@ internal readonly struct ConfigurationBuilder
                 {
                     returnValue = value;
                 }
+            }
+            else
+            {
+                datadogConfigurationIsPresent = Source.IsPresent(Key)
+                                             || (FallbackKey1 is null ? false : Source.IsPresent(FallbackKey1))
+                                             || (FallbackKey2 is null ? false : Source.IsPresent(FallbackKey2))
+                                             || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
             }
 
             // OpenTelemetry key must always be checked so we can warn the user about the conflicting variables
@@ -308,6 +322,13 @@ internal readonly struct ConfigurationBuilder
                 {
                     returnValue = value;
                 }
+            }
+            else
+            {
+                datadogConfigurationIsPresent = Source.IsPresent(Key)
+                                             || (FallbackKey1 is null ? false : Source.IsPresent(FallbackKey1))
+                                             || (FallbackKey2 is null ? false : Source.IsPresent(FallbackKey2))
+                                             || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
             }
 
             // OpenTelemetry key must always be checked so we can warn the user about the conflicting variables
@@ -426,6 +447,13 @@ internal readonly struct ConfigurationBuilder
                 {
                     returnValue = value;
                 }
+            }
+            else
+            {
+                datadogConfigurationIsPresent = Source.IsPresent(Key)
+                                             || (FallbackKey1 is null ? false : Source.IsPresent(FallbackKey1))
+                                             || (FallbackKey2 is null ? false : Source.IsPresent(FallbackKey2))
+                                             || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
             }
 
             // OpenTelemetry key must always be checked so we can warn the user about the conflicting variables

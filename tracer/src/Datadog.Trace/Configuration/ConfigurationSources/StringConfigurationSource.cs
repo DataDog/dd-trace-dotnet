@@ -169,6 +169,14 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
+        bool ITelemeteredConfigurationSource.IsPresent(string key)
+        {
+            var value = GetString(key);
+
+            return value is not null;
+        }
+
+        /// <inheritdoc />
         ConfigurationResult<string>? ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {
             var value = GetString(key);

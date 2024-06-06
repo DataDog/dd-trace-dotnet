@@ -172,6 +172,10 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
+        bool ITelemeteredConfigurationSource.IsPresent(string key)
+            => _sources.Select(source => source.IsPresent(key)).FirstOrDefault(value => value);
+
+        /// <inheritdoc />
         ConfigurationResult<string>? ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
             => _sources.Select(source => source.GetString(key, telemetry, validator, recordValue)).FirstOrDefault(value => value != null);
 
