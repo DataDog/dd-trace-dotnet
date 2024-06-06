@@ -381,16 +381,8 @@ public class CreatedumpTests : ConsoleTestHelper
         using var assertionScope = new AssertionScope();
         assertionScope.AddReportable("Report", report.ToString());
 
-        try
-        {
-            ValidateStacktrace(report["stacktrace"]);
-            ValidateStacktrace(report["additional_stacktraces"][expectedPid.Value.ToString()]);
-        }
-        catch (ArgumentNullException)
-        {
-            Output.WriteLine(report.ToString());
-            throw;
-        }
+        ValidateStacktrace(report["stacktrace"]);
+        ValidateStacktrace(report["additional_stacktraces"][expectedPid.Value.ToString()]);
 
         void ValidateStacktrace(JToken callstack)
         {
