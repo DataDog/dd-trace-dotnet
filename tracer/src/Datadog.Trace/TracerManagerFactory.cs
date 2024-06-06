@@ -259,20 +259,18 @@ namespace Datadog.Trace
             //   - remote
             //   - local = DD_TRACE_SAMPLE_RATE
             // - agent sampling rates (as a single rule)
+
+            // Note: the order that rules are registered is important, as they are evaluated in order.
+            // The first rule that matches will be used to determine the sampling rate.
+
             if (settings.ExperimentalAppsecStandaloneEnabledInternal)
             {
                 var samplerStandalone = new TraceSampler(new TracerRateLimiter(1, 60_000));
-                samplerStandalone.RegisterRule(new GlobalSamplingRule(1.0f));
+                samplerStandalone.RegisterRule(new GlobalSamplingRateRule(1.0f));
                 return samplerStandalone;
             }
 
             var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal, null));
-            var samplingRules = settings.CustomSamplingRulesInternal;
-            var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
-
-            // Note: the order that rules are registered is important, as they are evaluated in order.
-            // The first rule that matches will be used to determine the sampling rate.
-            var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
 
             // sampling rules (remote value overrides local value)
             var samplingRulesJson = settings.CustomSamplingRulesInternal;
