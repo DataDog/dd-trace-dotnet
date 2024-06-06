@@ -586,6 +586,25 @@ internal readonly struct ConfigurationBuilder
                 }
                 else if (openTelemetryResultIsValid)
                 {
+                    // Update well-known service information resources
+                    if (openTelemetryValue.TryGetValue("deployment.environment", out var envValue))
+                    {
+                        openTelemetryValue.Remove("deployment.environment");
+                        openTelemetryValue.Add(Tags.Env, envValue);
+                    }
+
+                    if (openTelemetryValue.TryGetValue("service.name", out var serviceValue))
+                    {
+                        openTelemetryValue.Remove("service.name");
+                        openTelemetryValue.Add("service", serviceValue);
+                    }
+
+                    if (openTelemetryValue.TryGetValue("service.version", out var versionValue))
+                    {
+                        openTelemetryValue.Remove("service.version");
+                        openTelemetryValue.Add(Tags.Version, versionValue);
+                    }
+
                     // TODO emit telemetry success
                     return openTelemetryValue;
                 }

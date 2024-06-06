@@ -71,6 +71,47 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData(Tags.Env, "deployment.environment")]
+        [InlineData(Tags.Version, "service.version")]
+        public void OtelTagsSetsServiceInformation(string ddTagKey, string otelTagKey)
+        {
+            string expectedValue = $"ddtags-custom-{otelTagKey}";
+            string tagsLine = $"{otelTagKey}=ddtags-custom-{otelTagKey}";
+            var collection = new NameValueCollection { { "OTEL_RESOURCE_ATTRIBUTES", tagsLine } };
+
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var settings = new TracerSettings(source);
+            Assert.True(settings.GlobalTags.Any());
+            settings.GlobalTags.Should().NotContainKey(otelTagKey);
+
+            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            var span = tracer.StartSpan("Operation");
+
+            Assert.Equal(span.GetTag(ddTagKey), expectedValue);
+        }
+
+        [Theory]
+        [InlineData(Tags.Env, "deployment.environment")]
+        [InlineData(Tags.Version, "service.version")]
+        public void DDTagsTakesPrecedenceOverOtelTags(string ddTagKey, string otelTagKey)
+        {
+            string expectedValue = $"ddtags-custom-{ddTagKey}";
+            string ddTagsLine = $"{ddTagKey}:ddtags-custom-{ddTagKey}";
+            string otelTagsLine = $"{otelTagKey}=ddtags-custom-{otelTagKey}";
+            var collection = new NameValueCollection { { ConfigurationKeys.GlobalTags, ddTagsLine }, { "OTEL_RESOURCE_ATTRIBUTES", otelTagsLine } };
+
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var settings = new TracerSettings(source);
+            Assert.True(settings.GlobalTags.Any());
+            settings.GlobalTags.Should().NotContainKey(otelTagKey);
+
+            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            var span = tracer.StartSpan("Operation");
+
+            Assert.Equal(span.GetTag(ddTagKey), expectedValue);
+        }
+
+        [Theory]
         [InlineData("", null, true)]
         [InlineData("", "random", true)]
         [InlineData("", "none", true)]
