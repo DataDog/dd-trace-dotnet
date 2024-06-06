@@ -16,6 +16,7 @@
 #include <mutex>
 #include <signal.h>
 #include <unordered_map>
+#include <link.h>
 
 class IManagedThreadList;
 class ProfilerSignalManager;
@@ -81,6 +82,23 @@ private:
     static std::mutex s_stackWalkInProgressMutex;
 
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
+
+    static int DlIteratePhdrCallback(struct dl_phdr_info* info, std::size_t size, void* data);
+
+    struct LibraryInfo
+    {
+        public:
+            struct dl_phdr_info Info;
+            std::size_t Size;
+    };
+
+    void RegisterLibrary(struct dl_phdr_info* info, std::size_t size);
+
+    using DlIteratePhdrCallback_t = int (*)(struct dl_phdr_info *info, size_t size, void *data);
+    static int CustomDlIteratePhdr(DlIteratePhdrCallback_t callback, void* data);
+
+    std::vector<LibraryInfo> _librariesInfo;
+
 
     std::int32_t CollectCallStackCurrentThread(void* ucontext);
 

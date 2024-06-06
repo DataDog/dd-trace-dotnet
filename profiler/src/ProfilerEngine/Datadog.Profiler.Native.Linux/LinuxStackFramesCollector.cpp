@@ -26,6 +26,7 @@ using namespace std::chrono_literals;
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
+
 LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
     IConfiguration const* const configuration,
@@ -39,6 +40,8 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     _useBacktrace2{configuration->UseBacktrace2()}
 {
     _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
+    unw_set_iterate_phdr_function(unw_local_addr_space, LinuxStackFramesCollector::CustomDlIteratePhdr);
+    _librariesInfo.reserve(100);
 }
 
 LinuxStackFramesCollector::~LinuxStackFramesCollector()
@@ -81,11 +84,26 @@ void LinuxStackFramesCollector::UpdateErrorStats(std::int32_t errorCode)
     }
 }
 
+extern "C" unsigned int dd_nb_opened_libraries() __attribute__((weak));
+
 StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                        uint32_t* pHR,
                                                                                        bool selfCollect)
 {
     long errorCode;
+
+    // maybe check if we need to before calling dl_iterate_phdr
+    if (dd_nb_opened_libraries != nullptr)
+    {
+        static unsigned int previousNbOpenedLibs = 0;
+        auto current = dd_nb_opened_libraries();
+        if (current != previousNbOpenedLibs)
+        {
+            previousNbOpenedLibs = current;
+            _librariesInfo.clear();
+            dl_iterate_phdr(LinuxStackFramesCollector::DlIteratePhdrCallback, this);
+        }
+    }
 
     if (selfCollect)
     {
@@ -374,4 +392,30 @@ void LinuxStackFramesCollector::ErrorStatistics::Log()
                   ss.str());
         _stats.clear();
     }
+}
+
+int LinuxStackFramesCollector::DlIteratePhdrCallback(struct dl_phdr_info* info, std::size_t size, void* data)
+{
+    auto collector = static_cast<LinuxStackFramesCollector*>(data);
+    collector->RegisterLibrary(info, size);
+    return 1;
+}
+
+void LinuxStackFramesCollector::RegisterLibrary(struct dl_phdr_info* info, std::size_t size)
+{
+    _librariesInfo.push_back({ .Info = *info, .Size = size});
+}
+
+int LinuxStackFramesCollector::CustomDlIteratePhdr(DlIteratePhdrCallback_t callback, void* data)
+{
+    int rc = 0;
+    for (auto& library : s_pInstanceCurrentlyStackWalking->_librariesInfo)
+    {
+        rc = callback(&library.Info, library.Size, data);
+        if (rc != 0)
+        {
+            return rc;
+        }
+    }
+    return rc;
 }
