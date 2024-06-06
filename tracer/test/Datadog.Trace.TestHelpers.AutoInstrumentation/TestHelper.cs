@@ -94,7 +94,7 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"Starting Application: {sampleAppPath} {arguments ?? string.Empty}");
             string testCli = forceVsTestParam ? EnvironmentHelper.GetDotnetExe() : EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
-            string appPath = testCli.StartsWith("dotnet") || forceVsTestParam ? $"vstest {sampleAppPath}" : sampleAppPath;
+            string appPath = testCli.StartsWith("dotnet") || testCli.Contains("dotnet.exe") || forceVsTestParam ? $"vstest {sampleAppPath}" : sampleAppPath;
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine($"ApplicationPath: {appPath} {arguments ?? string.Empty}");
             var process = await ProfilerHelper.StartProcessWithProfiler(
@@ -139,12 +139,20 @@ namespace Datadog.Trace.TestHelpers
             {
                 Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
             }
+            else
+            {
+                Output.WriteLine($"StandardOutput: (empty)");
+            }
 
             var standardError = helper.ErrorOutput;
 
             if (!string.IsNullOrWhiteSpace(standardError))
             {
                 Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+            }
+            else
+            {
+                Output.WriteLine($"StandardError: (empty)");
             }
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
