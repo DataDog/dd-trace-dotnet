@@ -264,10 +264,6 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         + "\\\",\\\"pid\\\":" + std::to_string(GetPID())
         + ",},\\\"points\\\": " + points + "}";
 
-
-    // We only pass through DD_TRACE_LOG_DIRECTORY for testing purposes, it's not required by the telemetry forwarder
-    const auto logDir = "DD_TRACE_LOG_DIRECTORY=" + ToString(GetEnvironmentValue(WStr("DD_TRACE_LOG_DIRECTORY")));
-    const std::vector env = {logDir};
     const auto processPath = ToString(forwarderPath);
 
 #ifdef _WIN32
@@ -279,7 +275,7 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
 #endif
 
     Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", args[0]);
-    const auto success = ProcessHelper::RunProcess(processPath, args, env);
+    const auto success = ProcessHelper::RunProcess(processPath, args);
     if(success)
     {
         Log::Debug("SingleStepGuardRails::SendTelemetry: Telemetry sent to forwarder");

@@ -9,6 +9,8 @@
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
+extern char **environ;
 #endif
 
 
@@ -21,12 +23,10 @@ namespace datadog::shared::nativeloader
  * No attempt is made to connect to the process, establish a pipe, or anything else.
  * @param processPath The path of the process to execute
  * @param args The additional arguments (if any) to send
- * @param env The environment variables to set for the process
  * @return true if the process was invoked successfully, false otherwise
  */
 bool ProcessHelper::RunProcess(const std::string& processPath,
-                               const std::vector<std::string>& args,
-                               const std::vector<std::string>& env)
+                               const std::vector<std::string>& args)
 {
 #if _WIN32
     // For windows we combine the processPath and args into a single, space separated, string
@@ -45,7 +45,6 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
     SecureZeroMemory(&si, sizeof(STARTUPINFO));
     si.cb = sizeof(STARTUPINFO);
 
-    // TODO: This currently ignores the passed-in environment variables for simplicity
     // as it's not REQUIRED right now (the child inherits the caller's env vars),
     // and the docs show that it's a PITA:
     //
@@ -87,14 +86,6 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
         argv.push_back(arg.c_str());
     }
     argv.push_back(nullptr);
-
-    // envp needs to be a null-terminated array of c-style strings
-    std::vector<const char*> envp;
-    for (const auto& envPair : env)
-    {
-        envp.push_back(envPair.c_str());
-    }
-    envp.push_back(nullptr);
 
     // Largely blindly copied from the .NET runtime code
     // and then deleted stuff I didn't _think_ we needed for this basic scenario :blindfold:
@@ -150,7 +141,7 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
         pthread_sigmask(SIG_SETMASK, &old_signal_set, &junk_signal_set); // Not all architectures allow NULL here
 
         // Finally, execute the new process.  execve will not return if it's successful.
-        execve(processPath.c_str(), const_cast<char* const *>(argv.data()), const_cast<char* const *>(envp.data()));
+        execve(processPath.c_str(), const_cast<char* const *>(argv.data()), environ);
         ExitChild(waitForChildToExecPipe[WRITE_END_OF_PIPE], errno); // execve failed
     }
 
