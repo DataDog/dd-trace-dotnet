@@ -95,8 +95,15 @@ namespace Datadog.Trace.HttpOverStreams
                     ThrowHelper.ThrowInvalidOperationException($"Unexpected end of stream at position {streamPosition}");
                 }
 
-                currentChar = Encoding.ASCII.GetChars(chArray)[0];
-                streamPosition++;
+                if (chArray[0] is > 0 and <= 127)
+                {
+                    currentChar = (char)chArray[0];
+                    streamPosition++;
+                }
+                else
+                {
+                    ThrowHelper.ThrowInvalidOperationException($"Unexpected character {chArray[0]} at position {streamPosition}");
+                }
             }
 
             async Task SkipUntil(int requiredStreamPosition)
@@ -121,8 +128,15 @@ namespace Datadog.Trace.HttpOverStreams
                     bytesRemaining -= lastBytesRead;
                 }
 
-                currentChar = Encoding.ASCII.GetChars(chArray)[lastBytesRead - 1];
-                streamPosition += requiredBytes;
+                if (chArray[lastBytesRead - 1] is > 0 and <= 127)
+                {
+                    currentChar = (char)chArray[lastBytesRead - 1];
+                    streamPosition += requiredBytes;
+                }
+                else
+                {
+                    ThrowHelper.ThrowInvalidOperationException($"Unexpected character {chArray[lastBytesRead - 1]} at position {streamPosition}");
+                }
             }
 
             async Task ReadUntil(StringBuilder builder, char stopChar)
