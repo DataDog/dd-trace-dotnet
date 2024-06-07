@@ -248,7 +248,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task OnEolFrameworkInSsi_WhenOverriden_CallsForwarderWithExpectedTelemetry()
         {
-            var echoFilename = "received_logs.txt";
             var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
             Output.WriteLine("Setting forwarder to " + echoApp);
 
