@@ -199,6 +199,8 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
         auto module = FindModule(ip);
         stackFrame.moduleAddress = module.second;
 
+        bool hasName = false;
+
         unw_proc_info_t procInfo;
         result = unw_get_proc_info(&cursor, &procInfo);
 
@@ -223,15 +225,17 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
                     if (stringWrapper.message.len > 0)
                     {
                         stackFrame.method = std::string((char*)stringWrapper.message.ptr, stringWrapper.message.len);
+                        hasName = true;
                     }
                 }
             }
-            else
-            {
-                std::ostringstream unknownModule;
-                unknownModule << module.first << "!<unknown>+" << std::hex << (ip - module.second);
-                stackFrame.method = unknownModule.str();
-            }
+        }
+
+        if (!hasName)
+        {
+            std::ostringstream unknownModule;
+            unknownModule << module.first << "!<unknown>+" << std::hex << (ip - module.second);
+            stackFrame.method = unknownModule.str();
         }
 
         stackFrame.isSuspicious = false;
