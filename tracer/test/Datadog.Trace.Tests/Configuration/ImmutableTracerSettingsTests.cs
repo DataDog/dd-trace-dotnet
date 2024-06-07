@@ -161,9 +161,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             immutableTracerSettings.EnvironmentInternal.Should().Be("datadog_env");
             immutableTracerSettings.ServiceVersionInternal.Should().Be("datadog_version");
-
-            // Note: This mapping does not apply to service
-            immutableTracerSettings.ServiceNameInternal.Should().NotBe("datadog_service");
+            immutableTracerSettings.ServiceNameInternal.Should().Be("datadog_service");
         }
 
         [Fact]
@@ -179,9 +177,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             immutableTracerSettings.EnvironmentInternal.Should().Be("datadog_env");
             immutableTracerSettings.ServiceVersionInternal.Should().Be("datadog_version");
-
-            // Note: This mapping does not apply to service
-            immutableTracerSettings.ServiceNameInternal.Should().NotBe("datadog_service");
+            immutableTracerSettings.ServiceNameInternal.Should().Be("datadog_service");
         }
 
         [Fact]
