@@ -404,7 +404,7 @@ namespace Samples
             {
                 return;
             }
-            
+
             var scope = GetActiveScope();
             if (scope is null)
             {
@@ -424,7 +424,7 @@ namespace Samples
                 // handled by the aspnet middleware pipeline, so we "manuallY" unwrap it 
                 SetUserMethod.Invoke(null, new object[] { span, userDetails });
             }
-            catch(System.Reflection.TargetInvocationException ex) when (ex.InnerException != null)
+            catch (System.Reflection.TargetInvocationException ex) when (ex.InnerException != null)
             {
                 System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
             }
