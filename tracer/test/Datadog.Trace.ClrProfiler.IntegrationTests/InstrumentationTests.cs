@@ -401,7 +401,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                             "runtime_version": "{{runtimeVersion}}",
                                             "language_name": "dotnet",
                                             "language_version": "{{runtimeVersion}}",
-                                            "tracer_name": "dotnet",
                                             "tracer_version": "{{TracerConstants.ThreePartVersion}}",
                                             "pid": {{processResult.Process.Id}}
                                           },
