@@ -407,7 +407,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                           "points": {{pointsJson}}
                                       }
                                       """;
-            echoLogContent.Should().BeJsonEquivalentTo(expectedTelemetry);
+
+            var argTypePrefix = "library_entrypoint ";
+            echoLogContent.Should().StartWith(argTypePrefix);
+            var telemetryArgument = echoLogContent.Substring(argTypePrefix.Length);
+            telemetryArgument.Should().BeJsonEquivalentTo(expectedTelemetry);
         }
 
         private void AddFilesAsReportable(string logDir, AssertionScope scope, string[] allFiles)

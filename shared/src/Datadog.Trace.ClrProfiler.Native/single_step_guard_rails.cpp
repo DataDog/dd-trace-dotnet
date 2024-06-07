@@ -266,12 +266,14 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
 
     const auto processPath = ToString(forwarderPath);
 
+    // The telemetry forwarder expects the first argument to be the execution type:
+    const std::string initialArg = "library_entrypoint";
 #ifdef _WIN32
-    const std::vector args = {metadata};
+    const std::vector args = {initialArg, metadata};
 #else
     // linux and mac require different escaping, so just regex remove the \ for now
     const auto linuxMetadata = std::regex_replace(metadata, std::regex("\\\\"), "");
-    const std::vector args = {linuxMetadata};
+    const std::vector args = {initialArg, linuxMetadata};
 #endif
 
     Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", args[0]);
