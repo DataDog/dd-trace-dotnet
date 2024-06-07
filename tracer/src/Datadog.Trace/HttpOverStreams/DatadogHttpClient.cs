@@ -124,7 +124,7 @@ namespace Datadog.Trace.HttpOverStreams
 
                 // https://learn.microsoft.com/en-us/dotnet/api/system.text.asciiencoding.getchars?view=net-8.0
                 currentChar = chArray[lastBytesRead - 1] is > 0 and <= 127 ? (char)chArray[lastBytesRead - 1] : '?';
-                streamPosition++;
+                streamPosition += requiredBytes;
             }
 
             async Task ReadUntil(StringBuilder builder, char stopChar)
