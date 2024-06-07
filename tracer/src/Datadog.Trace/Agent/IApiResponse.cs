@@ -26,6 +26,8 @@ namespace Datadog.Trace.Agent
 
     internal static class ApiResponseExtensions
     {
+        private const int DefaultBufferSize = 1024;
+
         public static async Task<string> ReadAsStringAsync(this IApiResponse apiResponse)
         {
             using var reader = await GetStreamReader(apiResponse).ConfigureAwait(false);
@@ -44,7 +46,7 @@ namespace Datadog.Trace.Agent
             var stream = await apiResponse.GetStreamAsync().ConfigureAwait(false);
             // Server may not send the content length, in that case we use a default value.
             // https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/IO/StreamReader.cs,25
-            var length = apiResponse.ContentLength > 0 ? (int)apiResponse.ContentLength : 1024;
+            var length = apiResponse.ContentLength is > 0 and < DefaultBufferSize ? (int)apiResponse.ContentLength : DefaultBufferSize;
             return new StreamReader(stream, apiResponse.ContentEncoding, detectEncodingFromByteOrderMarks: false, length, leaveOpen: true);
         }
 

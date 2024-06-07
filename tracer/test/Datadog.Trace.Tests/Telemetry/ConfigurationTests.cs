@@ -49,7 +49,9 @@ public class ConfigurationTests
         "DD_DOTNET_TRACER_HOME",
         "DD_INSTRUMENTATION_INSTALL_ID",
         "DD_INSTRUMENTATION_INSTALL_TYPE",
-        "DD_INSTRUMENTATION_INSTALL_TIME"
+        "DD_INSTRUMENTATION_INSTALL_TIME",
+        "DD_INJECTION_ENABLED",
+        "DD_INJECT_FORCE",
     };
 
     [Fact]

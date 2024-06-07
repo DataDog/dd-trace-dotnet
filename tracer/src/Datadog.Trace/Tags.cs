@@ -612,6 +612,11 @@ namespace Datadog.Trace
         internal const string IastJson = "_dd.iast.json";
 
         /// <summary>
+        /// Indicates if the vulnerability json has been truncated because it exceeds the maximum tag size
+        /// </summary>
+        internal const string IastJsonTagSizeExceeded = "_dd.iast.json.tag.size.exceeded";
+
+        /// <summary>
         /// Indicates at the end of a request if IAST analisys has been performned
         /// </summary>
         internal const string IastEnabled = "_dd.iast.enabled";

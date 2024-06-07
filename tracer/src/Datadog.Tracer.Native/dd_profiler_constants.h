@@ -69,6 +69,8 @@ const shared::WSTRING default_exclude_assemblies[]{
     WStr("dd-trace.exe"),
     WStr("aspnet_state.exe"),
     WStr("sqlservr.exe"),
+    WStr("vsdbg"),
+    WStr("vsdbg.exe"),
 };
 
 const shared::WSTRING skip_traceattribute_assembly_prefixes[]{

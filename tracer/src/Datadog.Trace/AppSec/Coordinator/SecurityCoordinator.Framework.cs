@@ -240,7 +240,15 @@ internal readonly partial struct SecurityCoordinator
             // key could be null, but it's not a valid key in a dictionary
             // Using [] instead of Add to avoid potential duplicate key
             // but it does mean there's a (tiny) chance of overwriting the key
-            formData[key ?? string.Empty] = _httpTransport.Context.Request.Form[key];
+            try
+            {
+                formData[key ?? string.Empty] = _httpTransport.Context.Request.Form[key];
+            }
+            catch (HttpRequestValidationException)
+            {
+                // We cannot retrieve the value of Form[key] because it triggers a validation exception,
+                // which happens when a dangerous value is detected in the request and validation is enabled.
+            }
         }
 
         return formData;

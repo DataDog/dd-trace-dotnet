@@ -576,5 +576,7 @@
   "OTEL_RESOURCE_ATTRIBUTES": "otel_resource_attributes",
   "OTEL_TRACES_EXPORTER": "otel_traces_exporter",
   "OTEL_TRACES_SAMPLER": "otel_traces_sampler",
-  "OTEL_TRACES_SAMPLER_ARG": "otel_traces_sampler_arg"
+  "OTEL_TRACES_SAMPLER_ARG": "otel_traces_sampler_arg",
+  "ssi_injection_enabled": "ssi_injection_enabled",
+  "ssi_forced_injection_enabled": "ssi_forced_injection_enabled"
 }
