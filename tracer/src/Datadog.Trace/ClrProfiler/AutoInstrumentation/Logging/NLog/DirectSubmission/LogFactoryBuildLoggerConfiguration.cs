@@ -65,7 +65,7 @@ public class LogFactoryBuildLoggerConfiguration
             return CallTargetState.GetDefault();
         }
 
-        // first check to see if the configuration is null - TODO should we limit to v5.3+
+        // first check to see if the configuration is null
         if (logFactoryProxy is not null && logFactoryProxy.ConfigurationField is null)
         {
             // with 5.3 a change was made to call _config?.BuildLoggingConfiguration instead of static methods
