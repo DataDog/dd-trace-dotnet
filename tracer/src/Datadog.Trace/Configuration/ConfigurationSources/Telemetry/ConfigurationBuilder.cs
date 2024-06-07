@@ -18,7 +18,6 @@ namespace Datadog.Trace.Configuration.Telemetry;
 
 internal readonly struct ConfigurationBuilder
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationBuilder>();
     private readonly ITelemeteredConfigurationSource _source;
     private readonly IConfigurationTelemetry _telemetry;
 
@@ -151,12 +150,7 @@ internal readonly struct ConfigurationBuilder
             // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
             if (datadogConfigurationIsPresent && Source.IsPresent(openTelemetryKey))
             {
-                Log.Warning(
-                    "Both Datadog configuration {DatadogConfiguration} and OpenTelemetry configuration {OpenTelemetryConfiguration} are set. The Datadog configuration will be used.",
-                    Key,
-                    openTelemetryKey);
-                OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
-                TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
+                // TODO Log to user and report "otel.env.hiding" telemetry metric
             }
             else if (Source.IsPresent(openTelemetryKey))
             {
@@ -172,9 +166,7 @@ internal readonly struct ConfigurationBuilder
                 }
                 else
                 {
-                    Log.Warning("OpenTelemetry configuration {OpenTelemetryConfiguration} is invalid.", openTelemetryKey);
-                    OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
-                    TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
+                    // TODO Log to user and report "otel.env.invalid" telemetry metric
                 }
             }
 
@@ -248,12 +240,7 @@ internal readonly struct ConfigurationBuilder
             // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
             if (datadogConfigurationIsPresent && Source.IsPresent(openTelemetryKey))
             {
-                Log.Warning(
-                    "Both Datadog configuration {DatadogConfiguration} and OpenTelemetry configuration {OpenTelemetryConfiguration} are set. The Datadog configuration will be used.",
-                    Key,
-                    openTelemetryKey);
-                OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
-                TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
+                // TODO Log to user and report "otel.env.hiding" telemetry metric
             }
             else if (Source.IsPresent(openTelemetryKey))
             {
@@ -265,9 +252,7 @@ internal readonly struct ConfigurationBuilder
                 }
                 else
                 {
-                    Log.Warning("OpenTelemetry configuration {OpenTelemetryConfiguration} is invalid.", openTelemetryKey);
-                    OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
-                    TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
+                    // TODO Log to user and report "otel.env.invalid" telemetry metric
                 }
             }
 
@@ -356,12 +341,7 @@ internal readonly struct ConfigurationBuilder
             // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
             if (datadogConfigurationIsPresent && Source.IsPresent(openTelemetryKey))
             {
-                Log.Warning(
-                    "Both Datadog configuration {DatadogConfiguration} and OpenTelemetry configuration {OpenTelemetryConfiguration} are set. The Datadog configuration will be used.",
-                    Key,
-                    openTelemetryKey);
-                OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
-                TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
+                // TODO Log to user and report "otel.env.hiding" telemetry metric
             }
             else if (Source.IsPresent(openTelemetryKey))
             {
@@ -377,9 +357,7 @@ internal readonly struct ConfigurationBuilder
                 }
                 else
                 {
-                    Log.Warning("OpenTelemetry configuration {OpenTelemetryConfiguration} is invalid.", openTelemetryKey);
-                    OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
-                    TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
+                    // TODO Log to user and report "otel.env.invalid" telemetry metric
                 }
             }
 
@@ -496,22 +474,12 @@ internal readonly struct ConfigurationBuilder
             {
                 if (samplerKeyPresent)
                 {
-                    Log.Warning(
-                        "Both Datadog configuration {DatadogConfiguration} and OpenTelemetry configuration {OpenTelemetryConfiguration} are set. The Datadog configuration will be used.",
-                        Key,
-                        openTelemetryKey);
-                    OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
-                    TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
+                    // TODO Log to user and report "otel.env.hiding" telemetry metric
                 }
 
                 if (samplerArgKeyPresent)
                 {
-                    Log.Warning(
-                        "Both Datadog configuration {DatadogConfiguration} and OpenTelemetry configuration {OpenTelemetryConfiguration} are set. The Datadog configuration will be used.",
-                        Key,
-                        openTelemetryArgKey);
-                    OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryArgKey, out var openTelemetryConfig, out var datadogConfig);
-                    TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
+                    // TODO Log to user and report "otel.env.hiding" telemetry metric
                 }
             }
             else if (samplerKeyPresent)
@@ -534,12 +502,12 @@ internal readonly struct ConfigurationBuilder
 
                     if (supportedSamplerName is null)
                     {
-                        Log.Warning("OpenTelemetry configuration {OpenTelemetryConfiguration}={OpenTelemetryValue} is invalid.", openTelemetryKey, samplerName);
+                        // TODO log warning that the OpenTelemetry value is invalid
                         return returnValue;
                     }
                     else if (!string.Equals(samplerName, supportedSamplerName, StringComparison.OrdinalIgnoreCase))
                     {
-                        Log.Warning("The following configuration is not supported: {OpenTelemetryConfiguration}={OpenTelemetryValue}. {ModifiedValue} will be used instead.", openTelemetryKey, samplerName, supportedSamplerName);
+                        // TODO log warning that the configuration is not supported
                     }
 
                     var samplerArgResult = Source.GetDouble(openTelemetryArgKey, NullConfigurationTelemetry.Instance, validator: null);
@@ -557,9 +525,7 @@ internal readonly struct ConfigurationBuilder
                     }
                     else
                     {
-                        Log.Warning("OpenTelemetry configuration {OpenTelemetryConfiguration} is invalid.", openTelemetryArgKey);
-                        OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryArgKey, out var openTelemetryConfig, out var datadogConfig);
-                        TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
+                        // TODO Log to user and report "otel.env.invalid" telemetry metric
                     }
                 }
             }
