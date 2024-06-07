@@ -1,4 +1,4 @@
-﻿// <copyright file="LogFactoryBuildLoggerConfiguration.cs" company="Datadog">
+// <copyright file="LogFactoryBuildLoggerConfiguration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -63,6 +63,32 @@ public class LogFactoryBuildLoggerConfiguration
         if (!tracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog) || alreadyAddedOurTarget)
         {
             return CallTargetState.GetDefault();
+        }
+
+        // first check to see if the configuration is null
+        if (logFactoryProxy is not null && logFactoryProxy.ConfigurationField is null)
+        {
+            // with 5.3 a change was made to call _config?.BuildLoggingConfiguration instead of static methods
+            // if a user doesn't have a configuration for NLog setup the BuildLoggingConfiguration won't be called
+            object? loggingConfigurationInstance = null;
+            try
+            {
+                var loggingType = Type.GetType("NLog.Config.LoggingConfiguration, NLog", throwOnError: false);
+                if (loggingType is not null)
+                {
+                    loggingConfigurationInstance = Activator.CreateInstance(loggingType);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to create new instance of NLog's LoggingConfiguration");
+            }
+
+            if (loggingConfigurationInstance is not null)
+            {
+                // this will do _a lot_ of reconfiguration within NLog
+                logFactoryProxy.Configuration = loggingConfigurationInstance;
+            }
         }
 
         // if logging rules is null we need to create an instance of the list

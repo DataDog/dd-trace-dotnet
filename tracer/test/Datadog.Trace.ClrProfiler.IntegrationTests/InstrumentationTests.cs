@@ -4,11 +4,15 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -16,11 +20,14 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class InstrumentationTests : TestHelper
+    public class InstrumentationTests : TestHelper, IClassFixture<InstrumentationTests.TelemetryReporterFixture>
     {
-        public InstrumentationTests(ITestOutputHelper output)
+        private readonly TelemetryReporterFixture _fixture;
+
+        public InstrumentationTests(ITestOutputHelper output, TelemetryReporterFixture fixture)
             : base("Console", output)
         {
+            _fixture = fixture;
             SetServiceVersion("1.0.0");
         }
 
@@ -127,9 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task InstrumentRunsOnEolFramework()
         {
-            var logDir = Path.Combine(LogDirectory, nameof(InstrumentRunsOnEolFramework));
-            Directory.CreateDirectory(logDir);
-            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
+            var logDir = SetLogDirectory();
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
@@ -149,10 +154,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
-
-            var logDir = Path.Combine(LogDirectory, nameof(DoesNotInstrumentRunsOnEolFrameworkWithSSI));
-            Directory.CreateDirectory(logDir);
-            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
+            var logDir = SetLogDirectory();
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
@@ -166,11 +168,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
             // set the "run me anyway, dammit" flag
-            SetEnvironmentVariable("DD_TRACE_ALLOW_UNSUPPORTED_SSI_RUNTIMES", "true");
-
-            var logDir = Path.Combine(LogDirectory, nameof(InstrumentRunsOnEolFrameworkInSSIWithOverride));
-            Directory.CreateDirectory(logDir);
-            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
+            SetEnvironmentVariable("DD_INJECT_FORCE", "true");
+            var logDir = SetLogDirectory();
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
@@ -184,7 +183,139 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-dotnet-"));
         }
 
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task OnEolFrameworkInSsi_WhenForwarderPathIsNotSet_DoesNotFailAndLogs()
+        {
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            // DD_TELEMETRY_FORWARDER_PATH is not set
+
+            var logDir = SetLogDirectory();
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertNotInstrumented(agent, logDir);
+            AssertNativeLoaderLogContainsString(logDir, "SingleStepGuardRails::SendTelemetry: Unable to send telemetry, DD_TELEMETRY_FORWARDER_PATH is not set");
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task OnEolFrameworkInSsi_WhenForwarderPathDoesNotExist_DoesNotFailAndLogs()
+        {
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", "does_not_exist");
+
+            var logDir = SetLogDirectory();
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertNotInstrumented(agent, logDir);
+            AssertNativeLoaderLogContainsString(logDir, "SingleStepGuardRails::SendTelemetry: Unable to send telemetry, DD_TELEMETRY_FORWARDER_PATH path does not exist");
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task OnEolFrameworkInSsi_WhenForwarderPathExists_CallsForwarderWithExpectedTelemetry()
+        {
+            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
+            Output.WriteLine("Setting forwarder to " + echoApp);
+
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
+
+            var logDir = SetLogDirectory();
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            AssertNotInstrumented(agent, logDir);
+
+            var pointsJson = """
+                             [{
+                               "name": "library_entrypoint.abort", 
+                               "tags": ["reason:eol_runtime"]
+                             },{
+                               "name": "library_entrypoint.abort.runtime",
+                               "tags": ["min_supported_version:3.1.0", "max_supported_version:8.0.0"]
+                             }]
+                             """;
+            AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task OnEolFrameworkInSsi_WhenOverriden_CallsForwarderWithExpectedTelemetry()
+        {
+            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
+            Output.WriteLine("Setting forwarder to " + echoApp);
+
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
+            SetEnvironmentVariable("DD_INJECT_FORCE", "true");
+
+            var logDir = SetLogDirectory();
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+
+            var pointsJson = """
+                             [{
+                               "name": "library_entrypoint.complete", 
+                               "tags": ["injection_forced:true"]
+                             }]
+                             """;
+            AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
+        }
+
 #endif
+#if NETCOREAPP3_1_OR_GREATER
+        [SkippableTheory]
+        [Trait("RunOnWindows", "True")]
+        [InlineData("1")]
+        [InlineData("0")]
+        public async Task OnSupportedFrameworkInSsi_CallsForwarderWithExpectedTelemetry(string isOverriden)
+        {
+            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
+            Output.WriteLine("Setting forwarder to " + echoApp);
+
+            // indicate we're running in auto-instrumentation, this just needs to be non-null
+            SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
+            // this value doesn't matter, should have same result, and _shouldn't_ change the metrics
+            SetEnvironmentVariable("DD_INJECT_FORCE", isOverriden);
+
+            var logDir = SetLogDirectory($"_{isOverriden}");
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+
+            var pointsJson = """
+                             [{
+                               "name": "library_entrypoint.complete", 
+                               "tags": ["injection_forced:false"]
+                             }]
+                             """;
+            AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
+        }
+#endif
+
+        /// <summary>
+        /// Should only be called _directly_ by running test, so that the testName is populated correctly
+        /// </summary>
+        private string SetLogDirectory(string suffix = "", [CallerMemberName] string testName = null)
+        {
+            var logDir = Path.Combine(LogDirectory, $"{testName}{suffix}");
+            Directory.CreateDirectory(logDir);
+            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
+            return logDir;
+        }
 
         private async Task<string> RunDotnetCommand(string workingDirectory, MockTracerAgent mockTracerAgent, string arguments)
         {
@@ -223,6 +354,65 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             mockTracerAgent.Telemetry.Should().BeEmpty();
         }
 
+        private void AssertNativeLoaderLogContainsString(string logDir, string requiredLog)
+        {
+            using var scope = new AssertionScope();
+            var allFiles = Directory.GetFiles(logDir);
+            AddFilesAsReportable(logDir, scope, allFiles);
+
+            var nativeLoaderLogFilenames = allFiles
+                                  .Where(filename => Path.GetFileName(filename).StartsWith("dotnet-native-loader-dotnet-"))
+                                  .ToList();
+            nativeLoaderLogFilenames.Should().NotBeEmpty();
+            var nativeLoaderLogFiles = nativeLoaderLogFilenames.Select(File.ReadAllText).ToList();
+            nativeLoaderLogFiles.Should().Contain(log => log.Contains(requiredLog));
+        }
+
+        private void AssertHasExpectedTelemetry(string logDir, ProcessResult processResult, string pointsJson)
+        {
+            var echoLogFileName = Path.Combine(logDir, TelemetryReporterFixture.LogFileName);
+            using var s = new AssertionScope();
+            File.Exists(echoLogFileName).Should().BeTrue();
+            var echoLogContent = File.ReadAllText(echoLogFileName);
+            s.AddReportable(echoLogFileName, echoLogContent);
+
+#if NETFRAMEWORK
+            var runtimeVersion = "4.7.2"; // best we get on the native side
+            var runtimeName = ".NET Framework";
+#else
+            var runtimeName = ".NET Core";
+#if NET5_0_OR_GREATER
+            var runtimeVersion = $"{Environment.Version.Major}.{Environment.Version.Minor}.{Environment.Version.Build}";
+#elif NETCOREAPP3_1
+            var runtimeVersion = $"3.1.0";
+#elif NETCOREAPP3_0
+            var runtimeVersion = "3.0.0";
+#elif NETCOREAPP2_1_OR_GREATER
+            var runtimeVersion = "2.1.0";
+#else
+            var runtimeVersion = "2.0.0";
+#endif
+#endif
+            var expectedTelemetry = $$"""
+                                      {
+                                          "metadata": {
+                                            "runtime_name": "{{runtimeName}}",
+                                            "runtime_version": "{{runtimeVersion}}",
+                                            "language_name": "dotnet",
+                                            "language_version": "{{runtimeVersion}}",
+                                            "tracer_version": "{{TracerConstants.ThreePartVersion}}",
+                                            "pid": {{processResult.Process.Id}}
+                                          },
+                                          "points": {{pointsJson}}
+                                      }
+                                      """;
+
+            var argTypePrefix = "library_entrypoint ";
+            echoLogContent.Should().StartWith(argTypePrefix);
+            var telemetryArgument = echoLogContent.Substring(argTypePrefix.Length);
+            telemetryArgument.Should().BeJsonEquivalentTo(expectedTelemetry);
+        }
+
         private void AddFilesAsReportable(string logDir, AssertionScope scope, string[] allFiles)
         {
             scope.AddReportable(
@@ -239,6 +429,111 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     return sb.ToString();
                 });
+        }
+
+        public class TelemetryReporterFixture : IDisposable
+        {
+            public const string LogFileName = "received_logs.txt";
+            private readonly string _workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
+            private string _appPath;
+
+            public string GetAppPath(ITestOutputHelper output, EnvironmentHelper environment)
+            {
+                if (!string.IsNullOrEmpty(_appPath))
+                {
+                    return _appPath;
+                }
+
+                var publishDir = Path.Combine(_workingDir, "publish");
+                Directory.CreateDirectory(publishDir);
+                output.WriteLine("Using forwarder directory " + _workingDir);
+
+                // Create project directory, yeah this should _probably_ just be a sample, but meh
+                var program = $"""
+                               using System;
+                               using System.IO;
+                               using System.Reflection;
+
+                               var logsFolder = Environment.GetEnvironmentVariable("{ConfigurationKeys.LogDirectory}");
+                               var cmdLine = string.Join(" ", args);
+                               var path = Path.Combine(logsFolder, "{LogFileName}");
+
+                               Console.WriteLine(cmdLine);
+                               File.WriteAllText(path, cmdLine);
+                               """;
+                File.WriteAllText(Path.Combine(_workingDir, "Program.cs"), program);
+
+                var project = """
+                              <Project Sdk="Microsoft.NET.Sdk">
+                                  <PropertyGroup>
+                                      <OutputType>Exe</OutputType>
+                                      <TargetFramework>net8.0</TargetFramework>
+                                  </PropertyGroup>
+                              </Project>
+                              """;
+                File.WriteAllText(Path.Combine(_workingDir, "telemetry_echo.csproj"), project);
+
+                // publish the echo app as self contained (for "simplicity")
+                var rid = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), EnvironmentHelper.IsAlpine()) switch
+                {
+                    ("win", _, _) => "win-x64",
+                    ("linux", "Arm64", _) => "linux-arm64",
+                    ("linux", "X64", false) => "linux-x64",
+                    ("linux", "X64", true) => "linux-musl-x64",
+                    ("osx", "X64", _) => "osx-x64",
+                    ("osx", "Arm64", _) => "osx-arm64",
+                    var unsupportedTarget => throw new PlatformNotSupportedException(unsupportedTarget.ToString())
+                };
+
+                var startInfo = new ProcessStartInfo(environment.GetDotnetExe(), $"publish -c Release -r {rid} --self-contained -o {publishDir}")
+                {
+                    WorkingDirectory = _workingDir,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+                using var process = new ProcessHelper(Process.Start(startInfo), x => output.WriteLine(x), x => output.WriteLine(x));
+                process.Process.WaitForExit(30_000);
+                process.Drain(15_000);
+
+                var extension = EnvironmentTools.IsWindows() ? ".exe" : string.Empty;
+                _appPath = Path.Combine(publishDir, $"telemetry_echo{extension}");
+                output.WriteLine("Created forwarder at: " + _appPath);
+                File.Exists(_appPath).Should().BeTrue();
+
+                // need to chmod +x it on linux
+                if (!EnvironmentTools.IsWindows())
+                {
+                    output.WriteLine("Running chmod +x " + _appPath);
+
+                    var chmodStart = new ProcessStartInfo("chmod", $"+x {_appPath}")
+                    {
+                        WorkingDirectory = Path.GetDirectoryName(_appPath)!,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    };
+                    using var chmodProcess = new ProcessHelper(Process.Start(chmodStart), x => output.WriteLine(x), x => output.WriteLine(x));
+                    process.Process.WaitForExit(30_000);
+                    process.Drain(15_000);
+                }
+
+                return _appPath;
+            }
+
+            public void Dispose()
+            {
+                try
+                {
+                    Directory.Delete(_workingDir, recursive: true);
+                }
+                catch (Exception)
+                {
+                    // swallow
+                }
+            }
         }
     }
 }

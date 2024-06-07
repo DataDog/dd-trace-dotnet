@@ -4,6 +4,7 @@
 #include "util.h"
 #include "../../../shared/src/native-src/pal.h"
 #include "EnvironmentVariables.h"
+#include "single_step_guard_rails.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_function_control.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_helper.h"
@@ -232,6 +233,8 @@ namespace datadog::shared::nativeloader
             }
         }
 
+        SingleStepGuardRails single_step_guard_rails;
+
         //
         // Get Profiler interface ICorProfilerInfo4
         //
@@ -240,86 +243,16 @@ namespace datadog::shared::nativeloader
         if (FAILED(hr))
         {
             Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
+            // we're not recording the exact version here, we just know that at this point it's not enough
+            single_step_guard_rails.RecordBootstrapError(single_step_guard_rails.NetFrameworkRuntime, inferredVersion, "incompatible_runtime");
             return E_FAIL;
         }
         const auto runtimeInformation = GetRuntimeVersion(info4, inferredVersion);
 
-        //
-        // Check if we're running in Single Step, and if so, whether we should bail out
-        //
-        // This variable is non-empty when we're in single step
-        const auto isSingleStepVariable = GetEnvironmentValue(EnvironmentVariables::SingleStepInstrumentationEnabled);
-        if(!isSingleStepVariable.empty())
+        if(single_step_guard_rails.CheckRuntime(runtimeInformation, pICorProfilerInfoUnk) != S_OK)
         {
-            Log::Debug("CorProfiler::Initialize: Single step instrumentation detected, checking for EOL environment");
-            // We're doing single-step instrumentation, check if we're in an EOL environment
-            IUnknown* tstVerProfilerInfo;
-            const char* unsupportedFramework = nullptr;
-            if (runtimeInformation.is_core())
-            {
-                // For .NET Core, we require .NET Core 3.1 or higher
-                // We could use runtime_information, but I don't know how reliable the values we get from that are?
-                if (S_OK == pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**) &tstVerProfilerInfo))
-                {
-                    // .NET Core 3.1+, but is it _too_ high?
-                    if(runtimeInformation.major_version > 8)
-                    {
-                        unsupportedFramework = ".NET 9 or higher";
-                    }
-
-                    // supported
-                    tstVerProfilerInfo->Release();
-                }
-                else
-                {
-                    unsupportedFramework = ".NET Core 3.0 or lower";
-                }
-            }
-            else
-            {
-                // For .NET Framework, we require .NET Framework 4.6.1 or higher
-                if (S_OK == pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo7), (void**) &tstVerProfilerInfo))
-                {
-                    // supported
-                    tstVerProfilerInfo->Release();
-                }
-                else
-                {
-                    unsupportedFramework = ".NET Framework 4.6.0 or lower";
-                }
-            }
-
-            if(unsupportedFramework != nullptr)
-            {
-                // Are we supposed to override the EOL check?
-                const auto forceEolInstrumentationVariable = GetEnvironmentValue(EnvironmentVariables::ForceEolInstrumentation);
-                bool forceEolInstrumentation;
-                if(!forceEolInstrumentationVariable.empty()
-                    && TryParseBooleanEnvironmentValue(forceEolInstrumentationVariable, forceEolInstrumentation)
-                    && forceEolInstrumentation)
-                {
-                    Log::Info(
-                        "CorProfiler::Initialize: Unsupported framework version '",
-                        unsupportedFramework,
-                        "' detected. Forcing instrumentation with single-step instrumentation due to ",
-                        EnvironmentVariables::ForceEolInstrumentation);
-                }
-                else
-                {
-                    Log::Warn(
-                        "CorProfiler::Initialize: Single-step instrumentation is not supported in '",
-                        unsupportedFramework,
-                        "'. Set ",
-                        EnvironmentVariables::ForceEolInstrumentation,
-                        " to override this check and force instrumentation");
-                    info4->Release();
-                    return E_FAIL;
-                }
-            }
-            else
-            {
-                Log::Debug("CorProfiler::Initialize: Supported framework version detected, continuing with single-step instrumentation");
-            }
+            info4->Release();
+            return E_FAIL;
         }
 
         //
@@ -327,6 +260,7 @@ namespace datadog::shared::nativeloader
         //
         if (m_dispatcher == nullptr)
         {
+            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
             return E_FAIL;
         }
         IDynamicInstance* cpInstance = m_dispatcher->GetContinuousProfilerInstance();
@@ -390,6 +324,7 @@ namespace datadog::shared::nativeloader
         if (FAILED(hr))
         {
             Log::Warn("CorProfiler::Initialize: Error getting the event mask.");
+            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
             return E_FAIL;
         }
 
@@ -555,9 +490,11 @@ namespace datadog::shared::nativeloader
         if (FAILED(hr))
         {
             Log::Warn("CorProfiler::Initialize: Error setting the event mask.");
+            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
             return E_FAIL;
         }               
 
+        single_step_guard_rails.RecordBootstrapSuccess(runtimeInformation);
         return S_OK;
     }
 

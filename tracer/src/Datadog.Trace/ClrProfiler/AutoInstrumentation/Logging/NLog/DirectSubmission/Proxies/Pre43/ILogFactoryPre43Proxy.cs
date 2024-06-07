@@ -5,10 +5,13 @@
 
 using Datadog.Trace.DuckTyping;
 
+#nullable enable
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43
 {
     internal interface ILogFactoryPre43Proxy : IDuckType
     {
-        object Configuration { get; set; }
+        // Note - when this is get/set it will do a _lot_ of re-configuration of NLog
+        object? Configuration { get; set; }
     }
 }

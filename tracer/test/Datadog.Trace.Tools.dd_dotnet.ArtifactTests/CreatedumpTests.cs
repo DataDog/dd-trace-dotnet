@@ -11,6 +11,8 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -289,6 +291,61 @@ public class CreatedumpTests : ConsoleTestHelper
     }
 
     [SkippableFact]
+    public async Task CheckThreadName()
+    {
+        // Test that threads prefixed with DD_ are marked as suspicious even if they have nothing of Datadog in the stacktrace
+
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash-thread",
+                               true,
+                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
+
+        await helper.Task;
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+
+        File.Exists(reportFile.Path).Should().BeTrue();
+    }
+
+    [SkippableFact]
+    public async Task SendReportThroughTelemetry()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+        using var agent = new MockTelemetryAgent(TcpPortProvider.GetOpenPort()) { OptionalHeaders = true };
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash-datadog",
+                               false,
+                               [LdPreloadConfig, ("DD_TRACE_AGENT_URL", $"http://localhost:{agent.Port}")]);
+
+        await helper.Task;
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+
+        var data = agent.WaitForLatestTelemetry(d => d.IsRequestType(TelemetryRequestTypes.RedactedErrorLogs));
+        data.Should().NotBeNull();
+
+        var log = (LogsPayload)data.Payload;
+        log.Logs.Should().HaveCount(1);
+        var report = JObject.Parse(log.Logs[0].Message);
+
+        report["additional_stacktraces"].Should().NotBeNull();
+    }
+
+    [SkippableFact]
     public async Task IgnoreNonDatadogCrashes()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
@@ -352,6 +409,9 @@ public class CreatedumpTests : ConsoleTestHelper
         expectedCallstack.Should().HaveCountGreaterOrEqualTo(2);
 
         var report = JObject.Parse(reportFile.GetContent());
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("Report", report.ToString());
 
         ValidateStacktrace(report["stacktrace"]);
         ValidateStacktrace(report["additional_stacktraces"][expectedPid.Value.ToString()]);

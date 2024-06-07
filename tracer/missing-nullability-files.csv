@@ -782,7 +782,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmissi
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmission/LevelDuckExtensions.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/LogsInjection/AppenderAttachedImplIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/LogsInjection/ILoggingEvent.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/ILogFactoryProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/NLogConstants.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/LogsInjection/DiagnosticContextHelper.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/LogsInjection/IScopeContextSetterProxy.cs
@@ -826,7 +825,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Serilog/DirectSubmissi
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Serilog/DirectSubmission/Formatting/SequenceValueDuck.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Serilog/DirectSubmission/Formatting/StructureValueDuck.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/IJsonLayout4Proxy.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILogFactoryPre43Proxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILoggingConfigurationPre43Proxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILoggingRuleProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILoggingRulesListProxy.cs

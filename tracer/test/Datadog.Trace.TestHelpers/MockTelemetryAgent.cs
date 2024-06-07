@@ -9,8 +9,10 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
@@ -19,6 +21,7 @@ using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -70,6 +73,8 @@ namespace Datadog.Trace.TestHelpers
                 listener.Close();
             }
         }
+
+        public bool OptionalHeaders { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to skip serialization of traces.
@@ -155,7 +160,20 @@ namespace Datadog.Trace.TestHelpers
             var apiVersion = ctx.Request.Headers[TelemetryConstants.ApiVersionHeader];
             var requestType = ctx.Request.Headers[TelemetryConstants.RequestTypeHeader];
 
-            var telemetry = DeserializeResponse(ctx.Request.InputStream, apiVersion, requestType);
+            var inputStream = ctx.Request.InputStream;
+
+            if (OptionalHeaders && (apiVersion == null || requestType == null))
+            {
+                using var sr = new StreamReader(inputStream);
+                var text = sr.ReadToEnd();
+
+                var json = JObject.Parse(text);
+                apiVersion = json["api_version"].Value<string>();
+                requestType = json["request_type"].Value<string>();
+                inputStream = new MemoryStream(Encoding.UTF8.GetBytes(text));
+            }
+
+            var telemetry = DeserializeResponse(inputStream, apiVersion, requestType);
             Telemetry.Push(telemetry);
 
             lock (this)
@@ -216,7 +234,7 @@ namespace Datadog.Trace.TestHelpers
                     { TelemetryRequestTypes.AppProductChanged, CreateSerializer<AppProductChangePayload>() },
                     { TelemetryRequestTypes.GenerateMetrics, CreateSerializer<GenerateMetricsPayload>() },
                     { TelemetryRequestTypes.Distributions, CreateSerializer<DistributionsPayload>() },
-                    { TelemetryRequestTypes.RedactedErrorLogs, CreateSerializer<LogsPayload>() },
+                    { TelemetryRequestTypes.RedactedErrorLogs, CreateLogsSerializer() },
                     { TelemetryRequestTypes.AppExtendedHeartbeat, CreateSerializer<AppExtendedHeartbeatPayload>() },
                     { TelemetryRequestTypes.AppClosing, CreateNullPayloadSerializer() },
                     { TelemetryRequestTypes.AppHeartbeat, CreateNullPayloadSerializer() },
@@ -230,6 +248,14 @@ namespace Datadog.Trace.TestHelpers
                     NullValueHandling = JsonTelemetryTransport.SerializerSettings.NullValueHandling,
                     ContractResolver = JsonTelemetryTransport.SerializerSettings.ContractResolver,
                     Converters = new List<JsonConverter> { new PayloadConverter<TPayload>(), new IntegrationTelemetryDataConverter(), new MessageBatchDataConverter(), new ConfigurationKeyValueConverter() },
+                });
+
+            private static JsonSerializer CreateLogsSerializer() =>
+                JsonSerializer.Create(new JsonSerializerSettings
+                {
+                    NullValueHandling = JsonTelemetryTransport.SerializerSettings.NullValueHandling,
+                    ContractResolver = JsonTelemetryTransport.SerializerSettings.ContractResolver,
+                    Converters = new List<JsonConverter> { new LogsConverter(), new IntegrationTelemetryDataConverter(), new MessageBatchDataConverter(), new ConfigurationKeyValueConverter() },
                 });
 
             private static JsonSerializer CreateNullPayloadSerializer() =>
@@ -273,6 +299,28 @@ namespace Datadog.Trace.TestHelpers
 
             public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
                 => serializer.Deserialize<TPayload>(reader);
+        }
+
+        private class LogsConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+                => objectType == typeof(IPayload);
+
+            // use the default serialization - it works fine
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+                => serializer.Serialize(writer, value);
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                var token = JToken.Load(reader);
+
+                return token.Type switch
+                {
+                    JTokenType.Object => token.ToObject<LogsPayload>(serializer),
+                    JTokenType.Array => new LogsPayload(token.ToObject<LogMessageData[]>(serializer).ToList()),
+                    _ => throw new JsonSerializationException($"Unexpected token type: {token.Type}")
+                };
+            }
         }
 
         private class IntegrationTelemetryDataConverter : JsonConverter

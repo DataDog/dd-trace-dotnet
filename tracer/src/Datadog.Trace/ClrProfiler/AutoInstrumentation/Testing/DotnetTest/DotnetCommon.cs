@@ -15,6 +15,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -48,6 +49,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             // We create test session if not DataCollector
             if (IsDataCollectorDomain)
             {
+                return null;
+            }
+
+            // Let's detect if we already have a session for this test process
+            if (SpanContextPropagator.Instance.Extract(
+                    EnvironmentHelpers.GetEnvironmentVariables(),
+                    new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor)) is not null)
+            {
+                // Session found in the environment variables
+                // let's bail-out
                 return null;
             }
 

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -142,7 +143,18 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             else
             {
                 // Use Agent EVP Proxy
-                builder = new UriBuilder(_settings.TracerSettings.ExporterInternal.AgentUriInternal);
+                switch (_settings.TracerSettings.ExporterInternal.TracesTransport)
+                {
+                    case TracesTransportType.WindowsNamedPipe:
+                    case TracesTransportType.UnixDomainSocket:
+                        builder = new UriBuilder("http://localhost");
+                        break;
+                    case TracesTransportType.Default:
+                    default:
+                        builder = new UriBuilder(_settings.TracerSettings.ExporterInternal.AgentUriInternal);
+                        break;
+                }
+
                 if (CIVisibility.EventPlatformProxySupport == EventPlatformProxySupport.V4)
                 {
                     builder.Path = $"/evp_proxy/v4/{EventPlatformPath}";
