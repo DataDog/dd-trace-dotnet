@@ -33,7 +33,7 @@ namespace Datadog.Trace.Configuration
                           .WithKeys(ConfigurationKeys.DebugEnabled)
                           .AsBoolWithOpenTelemetryMapping(
                             defaultValue: false,
-                            openTelemetryKey: "OTEL_LOG_LEVEL",
+                            openTelemetryKey: ConfigurationKeys.OpenTelemetry.LogLevel,
                             openTelemetryConverter: value => string.Equals(value, "debug", StringComparison.OrdinalIgnoreCase)
                                                              ? ParsingResult<bool>.Success(result: true)
                                                              : ParsingResult<bool>.Failure());

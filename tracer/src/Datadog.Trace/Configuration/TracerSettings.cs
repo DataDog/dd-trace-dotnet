@@ -107,7 +107,7 @@ namespace Datadog.Trace.Configuration
 
             ServiceNameInternal = config
                          .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
-                         .AsStringWithOpenTelemetryMapping("OTEL_SERVICE_NAME");
+                         .AsStringWithOpenTelemetryMapping(ConfigurationKeys.OpenTelemetry.ServiceName);
 
             ServiceVersionInternal = config
                             .WithKeys(ConfigurationKeys.ServiceVersion)
@@ -129,7 +129,7 @@ namespace Datadog.Trace.Configuration
                           .WithKeys(ConfigurationKeys.TraceEnabled)
                           .AsBoolWithOpenTelemetryMapping(
                             defaultValue: true,
-                            openTelemetryKey: "OTEL_TRACES_EXPORTER",
+                            openTelemetryKey: ConfigurationKeys.OpenTelemetry.TracesExporter,
                             openTelemetryConverter: value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
                                                              ? ParsingResult<bool>.Success(result: false)
                                                              : ParsingResult<bool>.Failure());
@@ -166,7 +166,7 @@ namespace Datadog.Trace.Configuration
                         .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
                         .AsDictionaryWithOpenTelemetryMapping(
                             getDefaultValue: () => new Dictionary<string, string>(),
-                            openTelemetryKey: "OTEL_RESOURCE_ATTRIBUTES")
+                            openTelemetryKey: ConfigurationKeys.OpenTelemetry.ResourceAttributes)
                        // Filter out tags with empty keys or empty values, and trim whitespace
                        ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                         .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
@@ -213,7 +213,7 @@ namespace Datadog.Trace.Configuration
             RuntimeMetricsEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
                                           .AsBoolWithOpenTelemetryMapping(
                                               defaultValue: false,
-                                              openTelemetryKey: "OTEL_METRICS_EXPORTER",
+                                              openTelemetryKey: ConfigurationKeys.OpenTelemetry.MetricsExporter,
                                               openTelemetryConverter: value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
                                                                                ? ParsingResult<bool>.Success(result: false)
                                                                                : ParsingResult<bool>.Failure());
@@ -332,7 +332,7 @@ namespace Datadog.Trace.Configuration
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
                                        .AsBoolWithOpenTelemetryMapping(
                                             defaultValue: false,
-                                            openTelemetryKey: "OTEL_SDK_DISABLED",
+                                            openTelemetryKey: ConfigurationKeys.OpenTelemetry.SdkDisabled,
                                             openTelemetryConverter: value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
                                                                              ? ParsingResult<bool>.Success(result: false)
                                                                              : ParsingResult<bool>.Failure());

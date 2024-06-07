@@ -79,7 +79,7 @@ namespace Datadog.Trace
                 {
                     automaticTraceEnabled = stringValue.ToBoolean() ?? true;
                 }
-                else if (EnvironmentHelpers.GetEnvironmentVariable("OTEL_TRACES_EXPORTER", string.Empty) is string otelTraceExporter
+                else if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.OpenTelemetry.TracesExporter, string.Empty) is string otelTraceExporter
                     && string.Equals(otelTraceExporter, "none", StringComparison.OrdinalIgnoreCase))
                 {
                     automaticTraceEnabled = false;

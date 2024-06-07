@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("", "debug", false)]
         public void OtelLogLevelDebugSetsDebugEnabled(string value, string otelValue, bool expected)
         {
-            const string otelKey = "OTEL_LOG_LEVEL";
+            const string otelKey = ConfigurationKeys.OpenTelemetry.LogLevel;
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.DebugEnabled, value),
                 (otelKey, otelValue));

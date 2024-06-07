@@ -77,7 +77,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             string expectedValue = $"ddtags-custom-{otelTagKey}";
             string tagsLine = $"{otelTagKey}=ddtags-custom-{otelTagKey}";
-            var collection = new NameValueCollection { { "OTEL_RESOURCE_ATTRIBUTES", tagsLine } };
+            var collection = new NameValueCollection { { ConfigurationKeys.OpenTelemetry.ResourceAttributes, tagsLine } };
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Tests.Configuration
             string expectedValue = $"ddtags-custom-{ddTagKey}";
             string ddTagsLine = $"{ddTagKey}:ddtags-custom-{ddTagKey}";
             string otelTagsLine = $"{otelTagKey}=ddtags-custom-{otelTagKey}";
-            var collection = new NameValueCollection { { ConfigurationKeys.GlobalTags, ddTagsLine }, { "OTEL_RESOURCE_ATTRIBUTES", otelTagsLine } };
+            var collection = new NameValueCollection { { ConfigurationKeys.GlobalTags, ddTagsLine }, { ConfigurationKeys.OpenTelemetry.ResourceAttributes, otelTagsLine } };
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new NameValueCollection
             {
                 { ConfigurationKeys.TraceEnabled, value },
-                { "OTEL_TRACES_EXPORTER", otelValue },
+                { ConfigurationKeys.OpenTelemetry.TracesExporter, otelValue },
             };
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
@@ -270,7 +270,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void ServiceName(string value, string legacyValue, string otelValue, string expected)
         {
             const string legacyServiceName = "DD_SERVICE_NAME";
-            const string otelKey = "OTEL_SERVICE_NAME";
+            const string otelKey = ConfigurationKeys.OpenTelemetry.ServiceName;
 
             var source = CreateConfigurationSource((ConfigurationKeys.ServiceName, value), (legacyServiceName, legacyValue), (otelKey, otelValue));
             var settings = new TracerSettings(source);
@@ -390,7 +390,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void GlobalTags(string value, string legacyValue, string otelValue, string[] expected)
         {
             const string legacyGlobalTagsKey = "DD_TRACE_GLOBAL_TAGS";
-            const string otelKey = "OTEL_RESOURCE_ATTRIBUTES";
+            const string otelKey = ConfigurationKeys.OpenTelemetry.ResourceAttributes;
 
             var source = CreateConfigurationSource((ConfigurationKeys.GlobalTags, value), (legacyGlobalTagsKey, legacyValue), (otelKey, otelValue));
             var settings = new TracerSettings(source);
@@ -502,7 +502,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.RuntimeMetricsEnabled, value),
-                ("OTEL_METRICS_EXPORTER", otelValue));
+                (ConfigurationKeys.OpenTelemetry.MetricsExporter, otelValue));
             var settings = new TracerSettings(source);
 
             settings.RuntimeMetricsEnabled.Should().Be(expected);
@@ -606,8 +606,8 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.GlobalSamplingRate, value),
-                ("OTEL_TRACES_SAMPLER", otelSampler),
-                ("OTEL_TRACES_SAMPLER_ARG", otelSampleRate));
+                (ConfigurationKeys.OpenTelemetry.TracesSampler, otelSampler),
+                (ConfigurationKeys.OpenTelemetry.TracesSamplerArg, otelSampleRate));
             var settings = new TracerSettings(source);
 
             settings.GlobalSamplingRate.Should().Be(expected);
@@ -772,7 +772,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void IsActivityListenerEnabled(string value, string fallbackValue, string otelValue, bool expected)
         {
             const string fallbackKey = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
-            const string otelKey = "OTEL_SDK_DISABLED";
+            const string otelKey = ConfigurationKeys.OpenTelemetry.SdkDisabled;
 
             var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, value), (fallbackKey, fallbackValue), (otelKey, otelValue));
             var settings = new TracerSettings(source);

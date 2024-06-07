@@ -442,8 +442,8 @@ internal readonly struct ConfigurationBuilder
 
         public double? AsOpenTelemetrySampleRate()
         {
-            var openTelemetryKey = "OTEL_TRACES_SAMPLER";
-            var openTelemetryArgKey = "OTEL_TRACES_SAMPLER_ARG";
+            var openTelemetryKey = ConfigurationKeys.OpenTelemetry.TracesSampler;
+            var openTelemetryArgKey = ConfigurationKeys.OpenTelemetry.TracesSamplerArg;
             var result = Source.GetDouble(Key, Telemetry, validator: null)
                       ?? (FallbackKey1 is null ? null : Source.GetDouble(FallbackKey1, Telemetry, validator: null))
                       ?? (FallbackKey2 is null ? null : Source.GetDouble(FallbackKey2, Telemetry, validator: null))
