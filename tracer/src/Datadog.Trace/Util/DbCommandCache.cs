@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -19,12 +21,12 @@ namespace Datadog.Trace.Util
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbCommandCache));
 
-        private static ConcurrentDictionary<string, TagsCacheItem> _cache = new();
+        private static ConcurrentDictionary<string, TagsCacheItem>? _cache = new();
 
         /// <summary>
         /// Gets or sets the underlying cache, to be used for unit tests
         /// </summary>
-        internal static ConcurrentDictionary<string, TagsCacheItem> Cache
+        internal static ConcurrentDictionary<string, TagsCacheItem>? Cache
         {
             get
             {
@@ -39,7 +41,7 @@ namespace Datadog.Trace.Util
 
         public static TagsCacheItem GetTagsFromDbCommand(IDbCommand command)
         {
-            string connectionString = null;
+            string? connectionString = null;
             try
             {
                 if (command.GetType().FullName == "System.Data.Common.DbDataSource.DbCommandWrapper")
@@ -104,11 +106,11 @@ namespace Datadog.Trace.Util
                 outHost: GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host"));
         }
 
-        private static string GetConnectionStringValue(DbConnectionStringBuilder builder, params string[] names)
+        private static string? GetConnectionStringValue(DbConnectionStringBuilder builder, params string[] names)
         {
             foreach (string name in names)
             {
-                if (builder.TryGetValue(name, out object valueObj) &&
+                if (builder.TryGetValue(name, out var valueObj) &&
                     valueObj is string value)
                 {
                     return value;
@@ -120,11 +122,11 @@ namespace Datadog.Trace.Util
 
         internal readonly struct TagsCacheItem
         {
-            public readonly string DbName;
-            public readonly string DbUser;
-            public readonly string OutHost;
+            public readonly string? DbName;
+            public readonly string? DbUser;
+            public readonly string? OutHost;
 
-            public TagsCacheItem(string dbName, string dbUser, string outHost)
+            public TagsCacheItem(string? dbName, string? dbUser, string? outHost)
             {
                 DbName = dbName;
                 DbUser = dbUser;

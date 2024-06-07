@@ -247,7 +247,6 @@ src/Datadog.Trace/Util/ArrayBuilder.cs
 src/Datadog.Trace/Util/ArraySlice.cs
 src/Datadog.Trace/Util/AsyncUtil.cs
 src/Datadog.Trace/Util/Clock.cs
-src/Datadog.Trace/Util/DbCommandCache.cs
 src/Datadog.Trace/Util/DomainMetadata.cs
 src/Datadog.Trace/Util/FnvHash64.cs
 src/Datadog.Trace/Util/IClock.cs
@@ -459,7 +458,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/CommandExecuteReaderWit
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/CommandExecuteScalarAsyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/CommandExecuteScalarIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/CommandExecuteScalarWithBehaviorIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/DbScopeFactory.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/DbType.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/IAdoNetClientData.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Aerospike/AerospikeCommon.cs
