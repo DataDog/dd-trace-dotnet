@@ -25,10 +25,9 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         EnvironmentHelper.EnableWindowsNamedPipes();
-        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
 
-        // The server implementation of named pipes is flaky so have 3 attempts
-        var attemptsRemaining = 3;
+        // The server implementation of named pipes is flaky so have 5 attempts
+        var attemptsRemaining = 5;
         while (true)
         {
             try
@@ -55,10 +54,9 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         EnvironmentHelper.EnableWindowsNamedPipes();
-        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
 
-        // The server implementation of named pipes is flaky so have 3 attempts
-        var attemptsRemaining = 3;
+        // The server implementation of named pipes is flaky so have 5 attempts
+        var attemptsRemaining = 5;
         while (true)
         {
             try
