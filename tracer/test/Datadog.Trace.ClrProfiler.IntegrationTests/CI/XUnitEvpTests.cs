@@ -76,8 +76,6 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
     public virtual async Task SubmitTraces(string packageVersion, string evpVersionToRemove, bool expectedGzip)
     {
-        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
-
         var tests = new List<MockCIVisibilityTest>();
         var testsCopy = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
@@ -380,8 +378,6 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
     public virtual async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
     {
-        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
-
         var tests = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
         var testModules = new List<MockCIVisibilityTestModule>();
