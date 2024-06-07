@@ -62,12 +62,14 @@ namespace Datadog.Trace.Agent
 
         private long _droppedTraces;
 
-        public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
-        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval)
+        private bool _experimentalAppsecStandaloneEnabled;
+
+        public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool experimentalAppsecStandaloneEnabled = false)
+        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval, experimentalAppsecStandaloneEnabled)
         {
         }
 
-        internal AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval)
+        internal AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool experimentalAppsecStandaloneEnabled = false)
         {
             _statsAggregator = statsAggregator;
 
@@ -91,6 +93,8 @@ namespace Datadog.Trace.Agent
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
+
+            _experimentalAppsecStandaloneEnabled = experimentalAppsecStandaloneEnabled;
         }
 
         internal event Action Flushed;
@@ -101,7 +105,7 @@ namespace Datadog.Trace.Agent
 
         internal SpanBuffer BackBuffer => _backBuffer;
 
-        public bool CanComputeStats => _statsAggregator?.CanComputeStats == true;
+        public bool CanComputeStats => !_experimentalAppsecStandaloneEnabled && _statsAggregator?.CanComputeStats == true;
 
         public Task<bool> Ping() => _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
 

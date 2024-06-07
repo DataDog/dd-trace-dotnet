@@ -346,7 +346,7 @@ namespace Datadog.Trace
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval);
+            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, experimentalAppsecStandaloneEnabled: settings.ExperimentalAppsecStandaloneEnabledInternal);
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)

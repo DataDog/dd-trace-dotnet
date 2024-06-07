@@ -284,7 +284,7 @@ namespace Datadog.Trace.Agent
                 request.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
             }
 
-            if (statsComputationEnabled || Tracer.Instance.Settings.ExperimentalAppsecStandaloneEnabledInternal)
+            if (statsComputationEnabled)
             {
                 request.AddHeader(AgentHttpHeaderNames.StatsComputation, "true");
                 request.AddHeader(AgentHttpHeaderNames.DroppedP0Traces, numberOfDroppedP0Traces.ToString());
