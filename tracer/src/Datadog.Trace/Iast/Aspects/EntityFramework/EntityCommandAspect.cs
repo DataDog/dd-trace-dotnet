@@ -32,7 +32,7 @@ public class EntityCommandAspect
         {
             var commandText = dbCommand.CommandText;
             IastModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
-            RaspModule.OnSqlI(commandText, IntegrationId.NHibernate);
+            RaspModule.OnSqlI(commandText, IntegrationId.SqlClient);
         }
 
         return command;

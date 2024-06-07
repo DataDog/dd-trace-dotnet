@@ -47,6 +47,7 @@ internal static class RaspModule
 
     private static string SqlIntegrationIdToDDBBType(IntegrationId id)
     {
+        // Check https://datadoghq.atlassian.net/wiki/spaces/APM/pages/2357395856/Span+attributes#db.system
         return id switch
         {
             IntegrationId.SqlClient => "sqlserver",
