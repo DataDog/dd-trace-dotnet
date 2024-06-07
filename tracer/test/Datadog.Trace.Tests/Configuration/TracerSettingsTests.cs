@@ -792,7 +792,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void PropagationStyleInject(string value, string legacyValue, string fallbackValue, string otelValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_INJECT";
-            const string otelKey = "OTEL_PROPAGATORS";
+            const string otelKey = ConfigurationKeys.OpenTelemetry.Propagators;
 
             foreach (var isActivityListenerEnabled in new[] { true, false })
             {
@@ -821,7 +821,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void PropagationStyleExtract(string value, string legacyValue, string fallbackValue, string otelValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_EXTRACT";
-            const string otelKey = "OTEL_PROPAGATORS";
+            const string otelKey = ConfigurationKeys.OpenTelemetry.Propagators;
 
             foreach (var isActivityListenerEnabled in new[] { true, false })
             {

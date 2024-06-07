@@ -350,7 +350,7 @@ namespace Datadog.Trace.Configuration
                                              $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}"),
                                          validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
                                          converter: style => TrimSplitString(style, commaSeparator),
-                                         openTelemetryKey: "OTEL_PROPAGATORS",
+                                         openTelemetryKey: ConfigurationKeys.OpenTelemetry.Propagators,
                                          openTelemetryConverter: style => TrimSplitString(style, commaSeparator)
                                                                           .Select(s => string.Equals(s, "b3", StringComparison.OrdinalIgnoreCase)
                                                                               ? ContextPropagationHeaderStyle.B3SingleHeader // OTEL's "b3" maps to "b3 single header"
@@ -365,7 +365,7 @@ namespace Datadog.Trace.Configuration
                                               $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}"),
                                           validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
                                           converter: style => TrimSplitString(style, commaSeparator),
-                                          openTelemetryKey: "OTEL_PROPAGATORS",
+                                          openTelemetryKey: ConfigurationKeys.OpenTelemetry.Propagators,
                                           openTelemetryConverter: style => TrimSplitString(style, commaSeparator)
                                                                           .Select(s => string.Equals(s, "b3", StringComparison.OrdinalIgnoreCase)
                                                                               ? ContextPropagationHeaderStyle.B3SingleHeader // OTEL's "b3" maps to "b3 single header"

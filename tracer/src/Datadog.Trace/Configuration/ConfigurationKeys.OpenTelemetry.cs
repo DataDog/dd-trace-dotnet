@@ -21,6 +21,14 @@ namespace Datadog.Trace.Configuration
             public const string ResourceAttributes = "OTEL_RESOURCE_ATTRIBUTES";
 
             /// <summary>
+            /// Configuration key for a list of tracing propagators.
+            /// Datadog only supports a subset of the OpenTelemetry propagators.
+            /// Also, the 'b3' OpenTelemetry propagator is mapped to the
+            /// 'b3 single header' Datadog propagator.
+            /// </summary>
+            public const string Propagators = "OTEL_PROPAGATORS";
+
+            /// <summary>
             /// Configuration key to set the application's default service name.
             /// </summary>
             public const string ServiceName = "OTEL_SERVICE_NAME";
