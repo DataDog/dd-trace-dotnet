@@ -10,11 +10,15 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Configuration.Telemetry;
 
 internal readonly struct ConfigurationBuilder
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationBuilder>();
     private readonly ITelemeteredConfigurationSource _source;
     private readonly IConfigurationTelemetry _telemetry;
 
@@ -144,24 +148,33 @@ internal readonly struct ConfigurationBuilder
                                              || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
             }
 
-            // OpenTelemetry key must always be checked so we can warn the user about the conflicting variables
-            var openTelemetryResult = openTelemetryConverter switch
+            // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
+            if (datadogConfigurationIsPresent && Source.IsPresent(openTelemetryKey))
             {
-                null => Source.GetString(openTelemetryKey, NullConfigurationTelemetry.Instance, validator, recordValue), // replace with null telemetry
-                _ => Source.GetAs(openTelemetryKey, NullConfigurationTelemetry.Instance, openTelemetryConverter, validator, recordValue), // replace with null telemetry
-            };
+                Log.Warning(
+                    "Both Datadog configuration {DatadogConfiguration} and OpenTelemetry configuration {OpenTelemetryConfiguration} are set. The Datadog configuration will be used.",
+                    Key,
+                    openTelemetryKey);
+                OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
+                TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
+            }
+            else if (Source.IsPresent(openTelemetryKey))
+            {
+                var openTelemetryResult = openTelemetryConverter switch
+                {
+                    null => Source.GetString(openTelemetryKey, Telemetry, validator, recordValue),
+                    _ => Source.GetAs(openTelemetryKey, Telemetry, openTelemetryConverter, validator, recordValue),
+                };
 
-            // Emit a telemetry warning that we saw both configurations
-            if (openTelemetryResult is { Result: { } openTelemetryValue, IsValid: { } openTelemetryResultIsValid })
-            {
-                if (datadogConfigurationIsPresent)
+                if (openTelemetryResult is { Result: { } openTelemetryValue, IsValid: true })
                 {
-                    // TODO emit telemetry warning that we saw both
-                }
-                else if (openTelemetryResultIsValid)
-                {
-                    // TODO emit telemetry success
                     return openTelemetryValue;
+                }
+                else
+                {
+                    Log.Warning("OpenTelemetry configuration {OpenTelemetryConfiguration} is invalid.", openTelemetryKey);
+                    OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
+                    TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
                 }
             }
 
@@ -232,20 +245,29 @@ internal readonly struct ConfigurationBuilder
                                              || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
             }
 
-            // OpenTelemetry key must always be checked so we can warn the user about the conflicting variables
-            var openTelemetryResult = Source.GetAs(openTelemetryKey, NullConfigurationTelemetry.Instance, openTelemetryConverter, validator, recordValue: true); // replace with null telemetry
-
-            // Emit a telemetry warning that we saw both configurations
-            if (openTelemetryResult is { Result: { } openTelemetryValue, IsValid: { } openTelemetryResultIsValid })
+            // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
+            if (datadogConfigurationIsPresent && Source.IsPresent(openTelemetryKey))
             {
-                if (datadogConfigurationIsPresent)
+                Log.Warning(
+                    "Both Datadog configuration {DatadogConfiguration} and OpenTelemetry configuration {OpenTelemetryConfiguration} are set. The Datadog configuration will be used.",
+                    Key,
+                    openTelemetryKey);
+                OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
+                TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
+            }
+            else if (Source.IsPresent(openTelemetryKey))
+            {
+                var openTelemetryResult = Source.GetAs(openTelemetryKey, Telemetry, openTelemetryConverter, validator, recordValue: true); // replace with null telemetry
+
+                if (openTelemetryResult is { Result: { } openTelemetryValue, IsValid: true })
                 {
-                    // TODO emit telemetry warning that we saw both
-                }
-                else if (openTelemetryResultIsValid)
-                {
-                    // TODO emit telemetry success
                     return openTelemetryValue;
+                }
+                else
+                {
+                    Log.Warning("OpenTelemetry configuration {OpenTelemetryConfiguration} is invalid.", openTelemetryKey);
+                    OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
+                    TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
                 }
             }
 
@@ -331,24 +353,33 @@ internal readonly struct ConfigurationBuilder
                                              || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
             }
 
-            // OpenTelemetry key must always be checked so we can warn the user about the conflicting variables
-            var openTelemetryResult = openTelemetryConverter switch
+            // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
+            if (datadogConfigurationIsPresent && Source.IsPresent(openTelemetryKey))
             {
-                null => Source.GetBool(openTelemetryKey, NullConfigurationTelemetry.Instance, validator),
-                _ => Source.GetAs(openTelemetryKey, NullConfigurationTelemetry.Instance, openTelemetryConverter, validator, recordValue: true), // replace with null telemetry
-            };
+                Log.Warning(
+                    "Both Datadog configuration {DatadogConfiguration} and OpenTelemetry configuration {OpenTelemetryConfiguration} are set. The Datadog configuration will be used.",
+                    Key,
+                    openTelemetryKey);
+                OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
+                TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
+            }
+            else if (Source.IsPresent(openTelemetryKey))
+            {
+                var openTelemetryResult = openTelemetryConverter switch
+                {
+                    null => Source.GetBool(openTelemetryKey, Telemetry, validator),
+                    _ => Source.GetAs(openTelemetryKey, Telemetry, openTelemetryConverter, validator, recordValue: true), // replace with null telemetry
+                };
 
-            // Emit a telemetry warning that we saw both configurations
-            if (openTelemetryResult is { Result: { } openTelemetryValue, IsValid: { } openTelemetryResultIsValid })
-            {
-                if (datadogConfigurationIsPresent)
+                if (openTelemetryResult is { Result: { } openTelemetryValue, IsValid: true })
                 {
-                    // TODO emit telemetry warning that we saw both
-                }
-                else if (openTelemetryResultIsValid)
-                {
-                    // TODO emit telemetry success
                     return openTelemetryValue;
+                }
+                else
+                {
+                    Log.Warning("OpenTelemetry configuration {OpenTelemetryConfiguration} is invalid.", openTelemetryKey);
+                    OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
+                    TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
                 }
             }
 
@@ -433,6 +464,8 @@ internal readonly struct ConfigurationBuilder
 
         public double? AsOpenTelemetrySampleRate()
         {
+            var openTelemetryKey = "OTEL_TRACES_SAMPLER";
+            var openTelemetryArgKey = "OTEL_TRACES_SAMPLER_ARG";
             var result = Source.GetDouble(Key, Telemetry, validator: null)
                       ?? (FallbackKey1 is null ? null : Source.GetDouble(FallbackKey1, Telemetry, validator: null))
                       ?? (FallbackKey2 is null ? null : Source.GetDouble(FallbackKey2, Telemetry, validator: null))
@@ -456,17 +489,37 @@ internal readonly struct ConfigurationBuilder
                                              || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
             }
 
-            // OpenTelemetry key must always be checked so we can warn the user about the conflicting variables
-            var samplerResult = Source.GetString("OTEL_TRACES_SAMPLER", NullConfigurationTelemetry.Instance, validator: null, recordValue: true);
-
-            // Emit a telemetry warning that we saw both configurations
-            if (samplerResult is { Result: { } samplerName, IsValid: { } samplerNameIsValid })
+            // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
+            var samplerKeyPresent = Source.IsPresent(openTelemetryKey);
+            var samplerArgKeyPresent = Source.IsPresent(openTelemetryArgKey);
+            if (datadogConfigurationIsPresent)
             {
-                if (datadogConfigurationIsPresent)
+                if (samplerKeyPresent)
                 {
-                    // TODO emit telemetry warning that we saw both a Datadog configuration and OTEL_TRACES_SAMPLER
+                    Log.Warning(
+                        "Both Datadog configuration {DatadogConfiguration} and OpenTelemetry configuration {OpenTelemetryConfiguration} are set. The Datadog configuration will be used.",
+                        Key,
+                        openTelemetryKey);
+                    OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
+                    TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
                 }
-                else if (samplerNameIsValid)
+
+                if (samplerArgKeyPresent)
+                {
+                    Log.Warning(
+                        "Both Datadog configuration {DatadogConfiguration} and OpenTelemetry configuration {OpenTelemetryConfiguration} are set. The Datadog configuration will be used.",
+                        Key,
+                        openTelemetryArgKey);
+                    OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryArgKey, out var openTelemetryConfig, out var datadogConfig);
+                    TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
+                }
+            }
+            else if (samplerKeyPresent)
+            {
+                var samplerResult = Source.GetString(openTelemetryKey, Telemetry, validator: null, recordValue: true);
+
+                // Emit a telemetry warning that we saw both configurations
+                if (samplerResult is { Result: { } samplerName, IsValid: true })
                 {
                     string? supportedSamplerName = samplerName switch
                     {
@@ -481,21 +534,15 @@ internal readonly struct ConfigurationBuilder
 
                     if (supportedSamplerName is null)
                     {
-                        // Log warning that this sampler is unsupported
+                        Log.Warning("OpenTelemetry configuration {OpenTelemetryConfiguration}={OpenTelemetryValue} is invalid.", openTelemetryKey, samplerName);
                         return returnValue;
                     }
                     else if (!string.Equals(samplerName, supportedSamplerName, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Log warning that we only support parentbased samplers and
-                        // we'll proceed as if this was the corresponding parentbased sampler
+                        Log.Warning("The following configuration is not supported: {OpenTelemetryConfiguration}={OpenTelemetryValue}. {ModifiedValue} will be used instead.", openTelemetryKey, samplerName, supportedSamplerName);
                     }
 
-                    var samplerArgResult = Source.GetDouble("OTEL_TRACES_SAMPLER_ARG", NullConfigurationTelemetry.Instance, validator: null);
-                    if (datadogConfigurationIsPresent && samplerArgResult is { Result: { } samplerArg })
-                    {
-                        // TODO emit telemetry warning that we saw both
-                    }
-
+                    var samplerArgResult = Source.GetDouble(openTelemetryArgKey, NullConfigurationTelemetry.Instance, validator: null);
                     ConfigurationResult<double>? openTelemetrySampleRateResult = supportedSamplerName switch
                     {
                         "parentbased_always_on" => ConfigurationResult<double>.Valid(1.0),
@@ -504,9 +551,15 @@ internal readonly struct ConfigurationBuilder
                         _ => null,
                     };
 
-                    if (!datadogConfigurationIsPresent && openTelemetrySampleRateResult is { Result: { } sampleRateResult, IsValid: true })
+                    if (openTelemetrySampleRateResult is { Result: { } sampleRateResult, IsValid: true })
                     {
                         return sampleRateResult;
+                    }
+                    else
+                    {
+                        Log.Warning("OpenTelemetry configuration {OpenTelemetryConfiguration} is invalid.", openTelemetryArgKey);
+                        OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryArgKey, out var openTelemetryConfig, out var datadogConfig);
+                        TelemetryFactory.Metrics.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
                     }
                 }
             }

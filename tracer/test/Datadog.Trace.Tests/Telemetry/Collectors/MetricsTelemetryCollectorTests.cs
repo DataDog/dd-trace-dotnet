@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
@@ -86,6 +87,13 @@ public class MetricsTelemetryCollectorTests
     [InlineData("1.2.3")]
     public async Task AllMetricsAreReturned_ForMetricsTelemetryCollector(string wafVersion)
     {
+        static void IncrementOpenTelemetryConfigMetrics(MetricsTelemetryCollector collector, string openTelemetryKey)
+        {
+            OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
+            collector.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
+            collector.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
+        }
+
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.Record(PublicApiUsage.Tracer_Configure);
         collector.Record(PublicApiUsage.Tracer_Configure);
@@ -104,6 +112,17 @@ public class MetricsTelemetryCollectorTests
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 23);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 46);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, 52);
+
+        // Record OpenTelemetry => Datadog configuration error metrics
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_SERVICE_NAME");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_LOG_LEVEL");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_PROPAGATORS");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_TRACES_SAMPLER");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_TRACES_SAMPLER_ARG");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_TRACES_EXPORTER");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_METRICS_EXPORTER");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_RESOURCE_ATTRIBUTES");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_SDK_DISABLED");
 
         // These aren't applicable in non-ci visibility
         collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 123);
@@ -289,6 +308,168 @@ public class MetricsTelemetryCollectorTests
                 Tags = (string[])null,
                 Common = false,
                 Namespace = (string)null,
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_SERVICE_NAME", "config.datadog:DD_SERVICE" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_SERVICE_NAME", "config.datadog:DD_SERVICE" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_LOG_LEVEL", "config.datadog:DD_LOG_LEVEL" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_LOG_LEVEL", "config.datadog:DD_LOG_LEVEL" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_PROPAGATORS", "config.datadog:DD_TRACE_PROPAGATION_STYLE" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_PROPAGATORS", "config.datadog:DD_TRACE_PROPAGATION_STYLE" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_TRACES_SAMPLER", "config.datadog:DD_TRACE_SAMPLE_RATE" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_TRACES_SAMPLER", "config.datadog:DD_TRACE_SAMPLE_RATE" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_TRACES_SAMPLER_ARG", "config.datadog:DD_TRACE_SAMPLE_RATE" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_TRACES_SAMPLER_ARG", "config.datadog:DD_TRACE_SAMPLE_RATE" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_TRACES_EXPORTER", "config.datadog:DD_TRACE_ENABLED" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_TRACES_EXPORTER", "config.datadog:DD_TRACE_ENABLED" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_METRICS_EXPORTER", "config.datadog:DD_RUNTIME_METRICS_ENABLED" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_METRICS_EXPORTER", "config.datadog:DD_RUNTIME_METRICS_ENABLED" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_RESOURCE_ATTRIBUTES", "config.datadog:DD_TAGS" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_RESOURCE_ATTRIBUTES", "config.datadog:DD_TAGS" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_SDK_DISABLED", "config.datadog:DD_TRACE_OTEL_ENABLED" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config.opentelemetry:OTEL_SDK_DISABLED", "config.datadog:DD_TRACE_OTEL_ENABLED" },
+                Common = true,
+                Namespace = "tracers",
             },
         });
 
