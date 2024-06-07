@@ -9,6 +9,7 @@ using System;
 using System.Reflection.Emit;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
@@ -58,7 +59,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                             {
                                 if (attribute.Key == "service.name")
                                 {
-                                    span.ServiceName = attribute.Value.ToString();
+                                    var resourceServiceName = attribute.Value.ToString();
+
+                                    if (string.IsNullOrEmpty(resourceServiceName) || resourceServiceName.Contains("unknown_service"))
+                                    {
+                                        resourceServiceName = Tracer.Instance.DefaultServiceName;
+
+                                        span.SetTag(attribute.Key, resourceServiceName);
+                                    }
+
+                                    span.ServiceName = resourceServiceName;
                                 }
                                 else if (attribute.Key == "service.version")
                                 {
