@@ -7,7 +7,6 @@
 #include "FfiHelper.h"
 #include <shared/src/native-src/util.h>
 #include <thread>
-#include <iostream>
 
 extern "C"
 {
