@@ -5342,6 +5342,7 @@ stages:
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
+          --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
           nuget-smoke-tests
       env:
         dockerTag: $(dockerTag)
@@ -5359,6 +5360,7 @@ stages:
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
+          --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
           nuget-dddotnet-smoke-tests
       env:
         dockerTag: $(dockerTag)
