@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.AppSec.Waf;
@@ -56,12 +57,21 @@ namespace Datadog.Trace.AppSec
 
         private static IReadOnlyDictionary<string, object?> ExtractProperties(object body, int depth, HashSet<object> visited)
         {
-            if (visited.Contains(body))
+            try
             {
+                if (visited.Contains(body))
+                {
+                    return EmptyDictionary;
+                }
+
+                visited.Add(body);
+            }
+            catch
+            {
+                // Contains and Add call GetHashCode which can throw an exception if has a custom implementation
+                // If visited is empty, we could potentially get the exception only when calling Add
                 return EmptyDictionary;
             }
-
-            visited.Add(body);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
