@@ -314,6 +314,12 @@ public static class Program
         activityLinkTags1.Add("some_int[]", new [] { 5, 55, 555 } );
         activityLinkTags1.Add("some_int[][]", new [,] {{5, 55}, {555, 5555}}); // can't serialize
 
+        var activityLinkTags2 = new ActivityTagsCollection();
+        activityLinkTags1.Add("foo", "bar"); // can't serialize
+        activityLinkTags1.Add("array",new [] { "a", "b", "c" });
+        activityLinkTags1.Add("bools", new [] { true, false });
+        activityLinkTags1.Add("nested", new [] { 1, 2 });
+
         // basic linked context
         var context1 = new ActivityContext(
             ActivityTraceId.CreateFromString(SpanLinkTraceId1.AsSpan()),
@@ -329,7 +335,7 @@ public static class Program
             true);
 
         activityLinks.Add(new ActivityLink(context1, activityLinkTags1));
-        activityLinks.Add(new ActivityLink(context2));
+        activityLinks.Add(new ActivityLink(context2, activityLinkTags2));
 
         using var activity = _source.StartActivity(
             "ActivityWithLinks",

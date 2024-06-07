@@ -16,6 +16,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Activity
 {
@@ -239,29 +240,54 @@ namespace Datadog.Trace.Activity
                     newActivitySpanId,
                     samplingPriority: samplingPriority,
                     serviceName: null,
-                    origin: null,
+                    origin: traceState.Origin,
                     isRemote: duckLink.Context.IsRemote);
 
-                if (duckLink.Context.TraceState is not null)
+                var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
+
+                if (traceParentSample && traceState.SamplingPriority <= 0)
                 {
-                    var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
-
-                    if (traceParentSample && traceState.SamplingPriority <= 0)
-                    {
-                        traceTags.SetTag(Tags.Propagated.DecisionMaker, "-0");
-                    }
-                    else if (!traceParentSample && traceState.SamplingPriority > 0)
-                    {
-                        traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
-                    }
-
-                    spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
-                    spanContext.LastParentId = traceState.LastParent;
-                    spanContext.PropagatedTags = traceTags;
+                    traceTags.SetTag(Tags.Propagated.DecisionMaker, "-0");
+                }
+                else if (!traceParentSample && traceState.SamplingPriority > 0)
+                {
+                    traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
                 }
 
+                spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
+                spanContext.LastParentId = traceState.LastParent;
+                spanContext.PropagatedTags = traceTags;
+
                 var duckLinkSpan = new Span(spanContext, DateTimeOffset.Now, new CommonTags());
-                span.AddSpanLink(duckLinkSpan);
+                var eventJObject = new JObject();
+                var spanLink = span.AddSpanLink(duckLinkSpan);
+
+                if (duckLink.Tags is not null)
+                {
+                    foreach (var kvp in duckLink.Tags)
+                    {
+                        if (!string.IsNullOrEmpty(kvp.Key)
+                         && IsAllowedAtributeType(kvp.Value!))
+                        {
+                            if (kvp.Value is Array array)
+                            {
+                                int index = 0;
+                                foreach (var item in array)
+                                {
+                                    if (item is not null)
+                                    {
+                                        spanLink.AddAttribute($"{kvp.Key}.{index}", item.ToString()!);
+                                        index++;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                spanLink.AddAttribute(kvp.Key, kvp.Value!.ToString()!);
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -574,6 +600,53 @@ namespace Datadog.Trace.Activity
             }
 
             return null;
+        }
+
+        private static bool IsAllowedAtributeType(object value)
+        {
+            if (value is null)
+            {
+                return false;
+            }
+
+            if (value is Array array)
+            {
+                if (array.Length == 0 ||
+                    array.Rank > 1)
+                {
+                    // Newtonsoft doesn't seem to support multidimensional arrays (e.g., [,]), but does support jagged (e.g., [][])
+                    return false;
+                }
+
+                if (value.GetType() is { } type
+                 && type.IsArray
+                 && type.GetElementType() == typeof(object))
+                {
+                    // Arrays may only have a primitive type, not 'object'
+                    return false;
+                }
+
+                value = array.GetValue(0)!;
+
+                if (value is null)
+                {
+                    return false;
+                }
+            }
+
+            return (value is string or bool ||
+                    value is char ||
+                    value is sbyte ||
+                    value is byte ||
+                    value is ushort ||
+                    value is short ||
+                    value is uint ||
+                    value is int ||
+                    value is ulong ||
+                    value is long ||
+                    value is float ||
+                    value is double ||
+                    value is decimal);
         }
     }
 }
