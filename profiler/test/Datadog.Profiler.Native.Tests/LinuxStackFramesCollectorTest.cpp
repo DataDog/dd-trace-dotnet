@@ -40,6 +40,12 @@ extern "C" unsigned long long dd_inside_wrapped_functions()
     return inside_wrapped_functions;
 }
 
+extern "C" unsigned long long dd_nb_calls_to_dlopen_dlclose()
+{
+    // to force the first call to dl_iterate_phdr
+    return 1;
+}
+
 #define ASSERT_DURATION_LE(secs, stmt)                                            \
     {                                                                             \
         std::promise<bool> completed;                                             \

@@ -23,9 +23,120 @@
 
 using namespace std::chrono_literals;
 
+// This function is exposed by the ld_preload wrapper library.
+// This allows us to know if we have to reload the cache or not
+extern "C" unsigned long long dd_nb_calls_to_dlopen_dlclose() __attribute__((weak));
+
+// This class copy-wraps dl_phdr_info
+// Why? We do not own dl_phdr_info objects when called-back by dl_iterate_phdr.
+// This struct contains pointers which will be freed when dlclose is called.
+// So we have to deep-copy them to avoid a potential crash:
+// dlclose is happening when libunwind is calling our custom dl_iterate_phdr.
+// The pointers will be invalidated and a crash can happen.
+class DlPhdrInfoWrapper
+{
+public:
+    DlPhdrInfoWrapper(struct dl_phdr_info* info, std::size_t size)
+    : _size(size), _name{nullptr, &std::free}
+    {
+        DeepCopy(_info, info);
+    }
+
+    std::pair<struct dl_phdr_info*, std::size_t> Get()
+    {
+        return {&_info, _size};
+    }
+
+private:
+    void DeepCopy(struct dl_phdr_info& destination, struct dl_phdr_info* source)
+    {
+        // first copy all fields
+        destination = *source;
+        // then update the pointer-ones
+        _name = {strdup(source->dlpi_name), &std::free};
+        destination.dlpi_name = _name.get();
+
+        _phdr = std::make_unique<ElfW(Phdr)[]>(source->dlpi_phnum);
+        memcpy(_phdr.get(), source->dlpi_phdr, sizeof(ElfW(Phdr)) * source->dlpi_phnum);
+        destination.dlpi_phdr = _phdr.get();
+
+        // Those fields appeared in glibc 2.4 (with two others).
+        // Since we compile with glibc 2.17, those fields are present (size of struct dl_phdr_info contains those fields),
+        // so need to check the size/offset.
+        // We do not know how to copy dlpi_tls_data field and libunwind does not use them, we can nullify/zeroify them
+        destination.dlpi_tls_modid = 0;
+        destination.dlpi_tls_data = nullptr;
+    }
+
+    struct dl_phdr_info _info;
+    std::unique_ptr<ElfW(Phdr)[]> _phdr;
+    std::unique_ptr<char, decltype(&std::free)> _name;
+    std::size_t _size;
+};
+
+struct LinuxStackFramesCollector::LibrariesInfoCache
+{
+public:
+    LibrariesInfoCache()
+    {
+        LibrariesInfo.reserve(100);
+        NbCallsToDlopenDlclose=0;
+        s_instance = this;
+        unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::CustomDlIteratePhdr);
+    }
+
+    ~LibrariesInfoCache()
+    {
+        unw_set_iterate_phdr_function(unw_local_addr_space, dl_iterate_phdr);
+        s_instance = nullptr;
+    }
+
+    void UpdateCache()
+    {
+        auto nbCallsToDlopenDlclose = dd_nb_calls_to_dlopen_dlclose != nullptr ? dd_nb_calls_to_dlopen_dlclose() : NbCallsToDlopenDlclose;
+        if (nbCallsToDlopenDlclose != NbCallsToDlopenDlclose)
+        {
+            dl_iterate_phdr([](struct dl_phdr_info* info, std::size_t size, void* data)
+                            {
+                                auto* instance = static_cast<LibrariesInfoCache*>(data);
+                                instance->LibrariesInfo.push_back(DlPhdrInfoWrapper(info, size));
+                                return 0;
+                            }, this);
+            NbCallsToDlopenDlclose = nbCallsToDlopenDlclose;
+        }
+    }
+
+    static int CustomDlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data)
+    {
+        int rc = 0;
+        auto* instance = s_instance;
+        if (instance == nullptr)
+        {
+            return rc;
+        }
+
+        for (auto& wrappedInfo : instance->LibrariesInfo)
+        {
+            auto [info, size] = wrappedInfo.Get();
+            rc = callback(info, size, data);
+            if (rc != 0)
+            {
+                break;
+            }
+        }
+        return rc;
+    }
+
+    std::vector<DlPhdrInfoWrapper> LibrariesInfo;
+
+    static LibrariesInfoCache* s_instance;
+    unsigned int NbCallsToDlopenDlclose;
+};
+
+LinuxStackFramesCollector::LibrariesInfoCache* LinuxStackFramesCollector::LibrariesInfoCache::s_instance = nullptr;
+
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
-
 
 LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
@@ -40,12 +151,13 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     _useBacktrace2{configuration->UseBacktrace2()}
 {
     _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
-    unw_set_iterate_phdr_function(unw_local_addr_space, LinuxStackFramesCollector::CustomDlIteratePhdr);
-    _librariesInfo.reserve(100);
+
+    _pLibrariesInfoCacheInstance = std::make_unique<LibrariesInfoCache>();
 }
 
 LinuxStackFramesCollector::~LinuxStackFramesCollector()
 {
+    unw_set_iterate_phdr_function(unw_local_addr_space, dl_iterate_phdr);
     _errorStatistics.Log();
 }
 
@@ -84,7 +196,6 @@ void LinuxStackFramesCollector::UpdateErrorStats(std::int32_t errorCode)
     }
 }
 
-extern "C" unsigned int dd_nb_opened_libraries() __attribute__((weak));
 
 StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                        uint32_t* pHR,
@@ -92,18 +203,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 {
     long errorCode;
 
-    // maybe check if we need to before calling dl_iterate_phdr
-    if (dd_nb_opened_libraries != nullptr)
-    {
-        static unsigned int previousNbOpenedLibs = 0;
-        auto current = dd_nb_opened_libraries();
-        if (current != previousNbOpenedLibs)
-        {
-            previousNbOpenedLibs = current;
-            _librariesInfo.clear();
-            dl_iterate_phdr(LinuxStackFramesCollector::DlIteratePhdrCallback, this);
-        }
-    }
+    _pLibrariesInfoCacheInstance->UpdateCache();
 
     if (selfCollect)
     {
@@ -392,30 +492,4 @@ void LinuxStackFramesCollector::ErrorStatistics::Log()
                   ss.str());
         _stats.clear();
     }
-}
-
-int LinuxStackFramesCollector::DlIteratePhdrCallback(struct dl_phdr_info* info, std::size_t size, void* data)
-{
-    auto collector = static_cast<LinuxStackFramesCollector*>(data);
-    collector->RegisterLibrary(info, size);
-    return 1;
-}
-
-void LinuxStackFramesCollector::RegisterLibrary(struct dl_phdr_info* info, std::size_t size)
-{
-    _librariesInfo.push_back({ .Info = *info, .Size = size});
-}
-
-int LinuxStackFramesCollector::CustomDlIteratePhdr(DlIteratePhdrCallback_t callback, void* data)
-{
-    int rc = 0;
-    for (auto& library : s_pInstanceCurrentlyStackWalking->_librariesInfo)
-    {
-        rc = callback(&library.Info, library.Size, data);
-        if (rc != 0)
-        {
-            return rc;
-        }
-    }
-    return rc;
 }

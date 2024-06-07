@@ -338,11 +338,12 @@ int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void
  * dlopen, dladdr issue happens mainly on Alpine
  */
 
-atomic_uint __dd_opened_libraries = 0;
+__attribute__((visibility("hidden")))
+atomic_uint __dd_dlopen_dlcose_calls_counter = 0;
 
-unsigned int dd_nb_opened_libraries()
+unsigned long long dd_nb_calls_to_dlopen_dlclose()
 {
-    return __dd_opened_libraries;
+    return __dd_dlopen_dlcose_calls_counter;
 }
 
 /* Function pointers to hold the value of the glibc functions */
@@ -359,7 +360,7 @@ void* dlopen(const char* file, int mode)
 
     // call the real dlopen (libc/musl-libc)
     void* result = __real_dlopen(file, mode);
-    __dd_opened_libraries++;
+    __dd_dlopen_dlcose_calls_counter++;
 
     ((char*)&functions_entered_counter)[ENTERED_DL_OPEN]--;
 
@@ -378,7 +379,7 @@ int dlclose(void* handle)
 
     // call the real dlopen (libc/musl-libc)
     int result = __real_dlclose(handle);
-    __dd_opened_libraries--;
+    __dd_dlopen_dlcose_calls_counter++;
 
     return result;
 }
