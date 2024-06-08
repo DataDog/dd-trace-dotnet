@@ -57,7 +57,6 @@ namespace Datadog.Trace.Activity.Handlers
             {
                 var activityTraceId = w3cActivity.TraceId;
                 var activitySpanId = w3cActivity.SpanId;
-                Log.Debug("Activity Started Info: {Name} {SpanId}", activity.OperationName, activitySpanId);
 
                 if (activityTraceId != null! && activitySpanId != null!)
                 {

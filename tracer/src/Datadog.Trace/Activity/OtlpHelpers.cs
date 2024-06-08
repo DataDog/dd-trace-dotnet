@@ -28,8 +28,6 @@ namespace Datadog.Trace.Activity
         internal const string OpenTelemetryErrorMsg = "exception.message";
         internal const string OpenTelemetryErrorStack = "exception.stacktrace";
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpHelpers));
-
         internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span)
             where TInner : IActivity
         {
