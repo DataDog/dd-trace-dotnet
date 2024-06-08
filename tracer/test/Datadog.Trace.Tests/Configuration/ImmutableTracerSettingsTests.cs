@@ -147,5 +147,56 @@ namespace Datadog.Trace.Tests.Configuration
                   .Should()
                   .Contain(expected);
         }
+
+        [Fact]
+        public void DDTagsSetsServiceInformation()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { "DD_TAGS", "env:datadog_env,service:datadog_service,version:datadog_version" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+            var immutableTracerSettings = tracerSettings.Build();
+
+            immutableTracerSettings.EnvironmentInternal.Should().Be("datadog_env");
+            immutableTracerSettings.ServiceVersionInternal.Should().Be("datadog_version");
+            immutableTracerSettings.ServiceNameInternal.Should().Be("datadog_service");
+        }
+
+        [Fact]
+        public void OTELTagsSetsServiceInformation()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+            var immutableTracerSettings = tracerSettings.Build();
+
+            immutableTracerSettings.EnvironmentInternal.Should().Be("datadog_env");
+            immutableTracerSettings.ServiceVersionInternal.Should().Be("datadog_version");
+            immutableTracerSettings.ServiceNameInternal.Should().Be("datadog_service");
+        }
+
+        [Fact]
+        public void DDTagsTakesPrecdenceOverOTELTags()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { "DD_TAGS", "env:datadog_env" },
+                { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+            var immutableTracerSettings = tracerSettings.Build();
+
+            immutableTracerSettings.EnvironmentInternal.Should().Be("datadog_env");
+
+            // Since the DD_TAGS config is set, the OTEL_RESOURCE_ATTRIBUTES config is ignored
+            immutableTracerSettings.ServiceVersionInternal.Should().NotBe("datadog_version");
+            immutableTracerSettings.ServiceNameInternal.Should().NotBe("datadog_service");
+        }
     }
 }

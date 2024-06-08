@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
@@ -29,7 +31,12 @@ namespace Datadog.Trace.Configuration
         {
             DebugEnabledInternal = new ConfigurationBuilder(source, telemetry)
                           .WithKeys(ConfigurationKeys.DebugEnabled)
-                          .AsBool(false);
+                          .AsBoolWithOpenTelemetryMapping(
+                            defaultValue: false,
+                            openTelemetryKey: ConfigurationKeys.OpenTelemetry.LogLevel,
+                            openTelemetryConverter: value => string.Equals(value, "debug", StringComparison.OrdinalIgnoreCase)
+                                                             ? ParsingResult<bool>.Success(result: true)
+                                                             : ParsingResult<bool>.Failure());
 
             DiagnosticSourceEnabled = new ConfigurationBuilder(source, telemetry)
                                      .WithKeys(ConfigurationKeys.DiagnosticSourceEnabled)
