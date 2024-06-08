@@ -1,4 +1,4 @@
-﻿// <copyright file="CustomTelemeteredConfigurationSource.cs" company="Datadog">
+// <copyright file="CustomTelemeteredConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -25,6 +25,15 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
     }
 
     public IConfigurationSource Source { get; }
+
+    bool ITelemeteredConfigurationSource.IsPresent(string key)
+    {
+#pragma warning disable DD0002 // This class is intentionally a wrapper around IConfigurationSource
+        var result = Source.GetString(key);
+#pragma warning restore DD0002
+
+        return result is not null;
+    }
 
     public ConfigurationResult<string>? GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
     {
@@ -107,9 +116,9 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
     }
 
     public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
-        => GetDictionary(key, telemetry, validator, allowOptionalMappings: false);
+        => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
-    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
+    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
     {
 #pragma warning disable DD0002 // This class is intentionally a wrapper around IConfigurationSource
         var result = Source.GetDictionary(key, allowOptionalMappings);

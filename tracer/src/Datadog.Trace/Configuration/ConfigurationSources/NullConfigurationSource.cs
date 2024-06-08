@@ -1,4 +1,4 @@
-﻿// <copyright file="NullConfigurationSource.cs" company="Datadog">
+// <copyright file="NullConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,6 +15,8 @@ namespace Datadog.Trace.Configuration;
 internal class NullConfigurationSource : IConfigurationSource, ITelemeteredConfigurationSource
 {
     public static readonly NullConfigurationSource Instance = new();
+
+    public bool IsPresent(string key) => false;
 
     public string? GetString(string key) => null;
 
@@ -43,7 +45,7 @@ internal class NullConfigurationSource : IConfigurationSource, ITelemeteredConfi
     public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
         => null;
 
-    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
+    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
         => null;
 
     public ConfigurationResult<T>? GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)

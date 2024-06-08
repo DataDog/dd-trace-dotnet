@@ -58,6 +58,10 @@ namespace Datadog.Trace.Configuration
 
         [return: NotNullIfNotNull(nameof(data))]
         internal static IDictionary<string, string>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings)
+            => ParseCustomKeyValuesInternal(data, allowOptionalMappings, ':');
+
+        [return: NotNullIfNotNull(nameof(data))]
+        internal static IDictionary<string, string>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings, char separator)
         {
             // A null return value means the key was not present,
             // and CompositeConfigurationSource depends on this behavior
@@ -79,30 +83,30 @@ namespace Datadog.Trace.Configuration
 
             foreach (var entry in entries)
             {
-                // we need TrimStart() before looking for ':' so we can skip entries with no key
-                // (that is, entries with a leading ':', like "<empty or whitespace>:value")
+                // we need TrimStart() before looking for the separator so we can skip entries with no key
+                // (that is, entries with a leading separator, like "<empty or whitespace>:value")
                 var trimmedEntry = entry.TrimStart();
 
                 if (trimmedEntry.Length > 0)
                 {
-                    // colonIndex == 0 is a leading colon, not valid
-                    var colonIndex = trimmedEntry.IndexOf(':');
+                    // separatorIndex == 0 is a leading separator, not valid
+                    var separatorIndex = trimmedEntry.IndexOf(separator);
 
-                    if (colonIndex < 0 && allowOptionalMappings)
+                    if (separatorIndex < 0 && allowOptionalMappings)
                     {
-                        // entries with no colon are allowed (e.g. "key1, key2:value2, key3"),
+                        // entries with no separator are allowed (e.g. "key1, key2:value2, key3"),
                         // it's a key with no value.
                         // note we already did TrimStart(), so we only need TrimEnd().
                         var key = trimmedEntry.TrimEnd();
                         dictionary[key] = string.Empty;
                     }
-                    else if (colonIndex > 0)
+                    else if (separatorIndex > 0)
                     {
-                        // split at the first colon only. any other colons are part of the value.
-                        // if a colon is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
+                        // split at the first separator only. any other separators are part of the value.
+                        // if a separator is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
                         // note we already did TrimStart() on the key, so it only needs TrimEnd().
-                        var key = trimmedEntry.Substring(0, colonIndex).TrimEnd();
-                        var value = trimmedEntry.Substring(colonIndex + 1).Trim();
+                        var key = trimmedEntry.Substring(0, separatorIndex).TrimEnd();
+                        var value = trimmedEntry.Substring(separatorIndex + 1).Trim();
                         dictionary[key] = value;
                     }
                 }
@@ -166,6 +170,14 @@ namespace Datadog.Trace.Configuration
         public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
         {
             return ParseCustomKeyValuesInternal(GetString(key), allowOptionalMappings);
+        }
+
+        /// <inheritdoc />
+        bool ITelemeteredConfigurationSource.IsPresent(string key)
+        {
+            var value = GetString(key);
+
+            return value is not null;
         }
 
         /// <inheritdoc />
@@ -296,13 +308,13 @@ namespace Datadog.Trace.Configuration
 
         /// <inheritdoc />
         ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
-            => GetDictionary(key, telemetry, validator, allowOptionalMappings: false);
+            => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
-            => GetDictionary(key, telemetry, validator, allowOptionalMappings);
+        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+            => GetDictionary(key, telemetry, validator, allowOptionalMappings, separator);
 
-        private ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
+        private ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
         {
             var value = GetString(key);
 
@@ -314,7 +326,7 @@ namespace Datadog.Trace.Configuration
             // We record the original dictionary value here instead of serializing the _parsed_ value
             // Currently we have no validation of the dictionary values during parsing, so there's no way to get
             // a validation error that needs recording at this stage
-            var result = ParseCustomKeyValuesInternal(value, allowOptionalMappings);
+            var result = ParseCustomKeyValuesInternal(value, allowOptionalMappings, separator);
 
             if (validator is null || validator(result))
             {
