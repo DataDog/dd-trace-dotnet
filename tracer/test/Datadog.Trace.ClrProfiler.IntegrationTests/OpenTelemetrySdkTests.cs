@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 36;
+                const int expectedSpanCount = 35;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
@@ -137,10 +137,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion, legacyOperationNames);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                var spanIdRegex = new Regex("\"span_id\":\"[0-9a-fA-F]+\"");
-                var traceIdRegex = new Regex("\"trace_id\":\"[0-9a-fA-F]+\"");
-                settings.AddRegexScrubber(spanIdRegex, "\"span_id\":\"span_link_id\"");
-                settings.AddRegexScrubber(traceIdRegex, "\"trace_id\":\"trace_link_id\"");
+                var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
+                var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
+                var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
+                settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
+                settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
+                settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
                 settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
                 settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
                 settings.AddRegexScrubber(_exceptionStacktraceRegex, @"exception.stacktrace"":""System.ArgumentException: Example argument exception"",""");
@@ -165,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 36;
+                const int expectedSpanCount = 35;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
@@ -188,10 +190,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
-                var spanIdRegex = new Regex("\"span_id\":\"[0-9a-fA-F]+\"");
-                var traceIdRegex = new Regex("\"trace_id\":\"[0-9a-fA-F]+\"");
-                settings.AddRegexScrubber(spanIdRegex, "\"span_id\":\"span_link_id\"");
-                settings.AddRegexScrubber(traceIdRegex, "\"trace_id\":\"trace_link_id\"");
+                var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
+                var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
+                var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
+                settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
+                settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
+                settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
                 settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
                 settings.AddRegexScrubber(_exceptionStacktraceRegex, @"exception.stacktrace"":""System.ArgumentException: Example argument exception"",""");
                 await VerifyHelper.VerifySpans(spans, settings)

@@ -75,10 +75,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 ValidateIntegrationSpans(myServiceNameSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                var spanIdRegex = new Regex("\"span_id\":\"[0-9a-fA-F]+\"");
-                var traceIdRegex = new Regex("\"trace_id\":\"[0-9a-fA-F]+\"");
-                settings.AddRegexScrubber(spanIdRegex, "\"span_id\":\"span_link_id\"");
-                settings.AddRegexScrubber(traceIdRegex, "\"trace_id\":\"trace_link_id\"");
+                var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
+                var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
+                var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
+                settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
+                settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
+                settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
                 settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(nameof(NetActivitySdkTests));

@@ -17,8 +17,6 @@ public static class Program
 
     public static async Task Main(string[] args)
     {
-        System.Diagnostics.Debugger.Launch();
-
         Console.WriteLine($"SpanId 1: {SpanLinkSpanId1} SpanId 2: {SpanLinkSpanId2}");
         _source = new ActivitySource("Samples.NetActivitySdk");
 
@@ -308,17 +306,13 @@ public static class Program
 
         var activityLinkTags1 = new ActivityTagsCollection();
         activityLinkTags1.Add("some_unserializeable_object", null); // can't serialize
-        activityLinkTags1.Add("some_int", 5);
         activityLinkTags1.Add("some_string", "five");
+        activityLinkTags1.Add("some_string[]",new [] { "a", "b", "c" });
         activityLinkTags1.Add("some_bool", false);
+        activityLinkTags1.Add("some_bool[]", new [] { true, false });
+        activityLinkTags1.Add("some_int", 5);
         activityLinkTags1.Add("some_int[]", new [] { 5, 55, 555 } );
         activityLinkTags1.Add("some_int[][]", new [,] {{5, 55}, {555, 5555}}); // can't serialize
-
-        var activityLinkTags2 = new ActivityTagsCollection();
-        activityLinkTags1.Add("foo", "bar"); // can't serialize
-        activityLinkTags1.Add("array",new [] { "a", "b", "c" });
-        activityLinkTags1.Add("bools", new [] { true, false });
-        activityLinkTags1.Add("nested", new [] { 1, 2 });
 
         // basic linked context
         var context1 = new ActivityContext(
@@ -335,7 +329,7 @@ public static class Program
             true);
 
         activityLinks.Add(new ActivityLink(context1, activityLinkTags1));
-        activityLinks.Add(new ActivityLink(context2, activityLinkTags2));
+        activityLinks.Add(new ActivityLink(context2));
 
         using var activity = _source.StartActivity(
             "ActivityWithLinks",
