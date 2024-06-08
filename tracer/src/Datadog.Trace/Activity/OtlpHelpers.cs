@@ -220,70 +220,75 @@ namespace Datadog.Trace.Activity
 
             foreach (var link in (activity5.Links))
             {
-                var duckLink = link.DuckCast<IActivityLink>();
-
-                _ = HexString.TryParseTraceId(duckLink!.Context.TraceId.TraceId!, out var newActivityTraceId);
-                _ = HexString.TryParseUInt64(duckLink.Context.SpanId.SpanId!, out var newActivitySpanId);
-                var traceParentSample = duckLink.Context.TraceFlags > 0;
-                var traceState = W3CTraceContextPropagator.ParseTraceState(duckLink.Context.TraceState!);
-
-                var samplingPriority = traceParentSample switch
+                if (link.TryDuckCast<IActivityLink>(out var duckLink))
                 {
-                    true when traceState.SamplingPriority is > 0 => traceState.SamplingPriority.Value,
-                    true => SamplingPriorityValues.AutoKeep,
-                    false when traceState.SamplingPriority is <= 0 => traceState.SamplingPriority.Value,
-                    false => SamplingPriorityValues.AutoReject,
-                };
-
-                var spanContext = new SpanContext(
-                    newActivityTraceId,
-                    newActivitySpanId,
-                    samplingPriority: samplingPriority,
-                    serviceName: null,
-                    origin: traceState.Origin,
-                    isRemote: duckLink.Context.IsRemote);
-
-                var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
-
-                if (traceParentSample && traceState.SamplingPriority <= 0)
-                {
-                    traceTags.SetTag(Tags.Propagated.DecisionMaker, "-0");
-                }
-                else if (!traceParentSample && traceState.SamplingPriority > 0)
-                {
-                    traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
-                }
-
-                spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
-                spanContext.LastParentId = traceState.LastParent;
-                spanContext.PropagatedTags = traceTags;
-
-                var duckLinkSpan = new Span(spanContext, DateTimeOffset.Now, new CommonTags());
-                var eventJObject = new JObject();
-                var spanLink = span.AddSpanLink(duckLinkSpan);
-
-                if (duckLink.Tags is not null)
-                {
-                    foreach (var kvp in duckLink.Tags)
+                    if (duckLink.Context.TraceId.TraceId is null || duckLink.Context.SpanId.SpanId is null)
                     {
-                        if (!string.IsNullOrEmpty(kvp.Key)
-                         && IsAllowedAtributeType(kvp.Value!))
+                        continue;
+                    }
+
+                    _ = HexString.TryParseTraceId(duckLink.Context.TraceId.TraceId, out var newActivityTraceId);
+                    _ = HexString.TryParseUInt64(duckLink.Context.SpanId.SpanId, out var newActivitySpanId);
+                    var traceParentSample = duckLink.Context.TraceFlags > 0;
+                    var traceState = W3CTraceContextPropagator.ParseTraceState(duckLink.Context.TraceState ?? string.Empty);
+
+                    var samplingPriority = traceParentSample switch
+                    {
+                        true when traceState.SamplingPriority is > 0 => traceState.SamplingPriority.Value,
+                        true => SamplingPriorityValues.AutoKeep,
+                        false when traceState.SamplingPriority is <= 0 => traceState.SamplingPriority.Value,
+                        false => SamplingPriorityValues.AutoReject,
+                    };
+
+                    var spanContext = new SpanContext(
+                        newActivityTraceId,
+                        newActivitySpanId,
+                        samplingPriority: samplingPriority,
+                        serviceName: null,
+                        origin: traceState.Origin,
+                        isRemote: duckLink.Context.IsRemote);
+
+                    var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
+
+                    if (traceParentSample && traceState.SamplingPriority <= 0)
+                    {
+                        traceTags.SetTag(Tags.Propagated.DecisionMaker, "-0");
+                    }
+                    else if (!traceParentSample && traceState.SamplingPriority > 0)
+                    {
+                        traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
+                    }
+
+                    spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
+                    spanContext.LastParentId = traceState.LastParent;
+                    spanContext.PropagatedTags = traceTags;
+
+                    var extractedSpan = new Span(spanContext, DateTimeOffset.Now, new CommonTags());
+                    var spanLink = span.AddSpanLink(extractedSpan);
+
+                    if (duckLink.Tags is not null)
+                    {
+                        foreach (var kvp in duckLink.Tags)
                         {
-                            if (kvp.Value is Array array)
+                            if (!string.IsNullOrEmpty(kvp.Key)
+                             && IsAllowedAtributeType(kvp.Value))
                             {
-                                int index = 0;
-                                foreach (var item in array)
+                                if (kvp.Value is Array array)
                                 {
-                                    if (item is not null)
+                                    int index = 0;
+                                    foreach (var item in array)
                                     {
-                                        spanLink.AddAttribute($"{kvp.Key}.{index}", item.ToString()!);
-                                        index++;
+                                        if (item is not null)
+                                        {
+                                            spanLink.AddAttribute($"{kvp.Key}.{index}", item.ToString()!);
+                                            index++;
+                                        }
                                     }
                                 }
-                            }
-                            else
-                            {
-                                spanLink.AddAttribute(kvp.Key, kvp.Value!.ToString()!);
+                                else
+                                {
+                                    spanLink.AddAttribute(kvp.Key, kvp.Value!.ToString()!);
+                                }
                             }
                         }
                     }
@@ -614,7 +619,7 @@ namespace Datadog.Trace.Activity
             return null;
         }
 
-        private static bool IsAllowedAtributeType(object value)
+        private static bool IsAllowedAtributeType(object? value)
         {
             if (value is null)
             {
