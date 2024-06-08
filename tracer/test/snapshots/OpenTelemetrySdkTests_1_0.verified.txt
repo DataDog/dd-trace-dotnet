@@ -791,7 +791,15 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        TraceIdHigh: LinkIdHigh,
+        TraceIdLow: LinkIdLow,
+        SpanId: Id_26,
+        TraceFlags: 2147483649
+      }
+    ]
   },
   {
     TraceId: Id_38,
@@ -818,7 +826,21 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        TraceIdHigh: LinkIdHigh,
+        TraceIdLow: LinkIdLow,
+        SpanId: Id_26,
+        TraceFlags: 2147483649
+      },
+      {
+        TraceIdHigh: LinkIdHigh,
+        TraceIdLow: LinkIdLow,
+        SpanId: Id_37,
+        TraceFlags: 2147483649
+      }
+    ]
   },
   {
     TraceId: Id_40,
