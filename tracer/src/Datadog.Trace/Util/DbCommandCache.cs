@@ -58,6 +58,11 @@ namespace Datadog.Trace.Util
                 Log.Debug(ex, "Error trying to retrieve the ConnectionString from the command.");
             }
 
+            return GetTagsFromConnectionString(connectionString);
+        }
+
+        internal static TagsCacheItem GetTagsFromConnectionString(string connectionString)
+        {
             if (connectionString is null)
             {
                 return default;
