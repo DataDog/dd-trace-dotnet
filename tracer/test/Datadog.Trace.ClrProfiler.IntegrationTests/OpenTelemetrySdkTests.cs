@@ -36,13 +36,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "attribute-int",
             "attribute-bool",
             "attribute-double",
-            "attribute-stringArray",
+            "attribute-stringArray.0",
+            "attribute-stringArray.1",
+            "attribute-stringArray.2",
             "attribute-stringArrayEmpty",
-            "attribute-intArray",
+            "attribute-intArray.0",
+            "attribute-intArray.1",
+            "attribute-intArray.2",
             "attribute-intArrayEmpty",
-            "attribute-boolArray",
+            "attribute-boolArray.0",
+            "attribute-boolArray.1",
+            "attribute-boolArray.2",
             "attribute-boolArrayEmpty",
-            "attribute-doubleArray",
+            "attribute-doubleArray.0",
+            "attribute-doubleArray.1",
+            "attribute-doubleArray.2",
             "attribute-doubleArrayEmpty",
             "telemetry.sdk.name",
             "telemetry.sdk.language",
@@ -129,6 +137,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion, legacyOperationNames);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+                var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
+                var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
+                var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
+                settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
+                settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
+                settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
                 settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
                 settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
                 settings.AddRegexScrubber(_exceptionStacktraceRegex, @"exception.stacktrace"":""System.ArgumentException: Example argument exception"",""");
@@ -176,6 +190,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
+                var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
+                var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
+                var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
+                settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
+                settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
+                settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
                 settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
                 settings.AddRegexScrubber(_exceptionStacktraceRegex, @"exception.stacktrace"":""System.ArgumentException: Example argument exception"",""");
                 await VerifyHelper.VerifySpans(spans, settings)

@@ -157,7 +157,7 @@ namespace Datadog.Trace.Propagators
                 }
 
                 // origin ("o:<value>")
-                var origin = context.TraceContext?.Origin;
+                var origin = context.Origin;
 
                 if (!string.IsNullOrWhiteSpace(origin))
                 {
@@ -189,8 +189,7 @@ namespace Datadog.Trace.Propagators
                     sb.Length--;
                 }
 
-                // additional tracestate from other vendors
-                var additionalState = context.TraceContext?.AdditionalW3CTraceState;
+                var additionalState = context.AdditionalW3CTraceState;
 
                 if (!string.IsNullOrWhiteSpace(additionalState))
                 {

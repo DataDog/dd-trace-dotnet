@@ -138,6 +138,7 @@ internal class MockActivity5 : MockW3CActivity, IActivity5
     public IEnumerable<KeyValuePair<string, object>> TagObjects => _activity.TagObjects!;
     public Datadog.Trace.Activity.DuckTypes.ActivitySource Source { get; }
     public IEnumerable Events => _activity.Events;
+    public IEnumerable Links => _activity.Links;
 
     object IActivity5.AddTag(string key, object value)
     {
