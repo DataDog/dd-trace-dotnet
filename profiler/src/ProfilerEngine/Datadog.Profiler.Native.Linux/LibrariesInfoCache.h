@@ -21,5 +21,5 @@ private:
     std::vector<DlPhdrInfoWrapper> LibrariesInfo;
 
     static LibrariesInfoCache* s_instance;
-    unsigned int NbCallsToDlopenDlclose;
+    unsigned long long NbCallsToDlopenDlclose;
 };

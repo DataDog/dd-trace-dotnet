@@ -29,6 +29,7 @@ void LibrariesInfoCache::UpdateCache()
     if (nbCallsToDlopenDlclose != NbCallsToDlopenDlclose)
     {
         NbCallsToDlopenDlclose = nbCallsToDlopenDlclose;
+        LibrariesInfo.clear();
         dl_iterate_phdr([](struct dl_phdr_info* info, std::size_t size, void* data) {
             auto* instance = static_cast<LibrariesInfoCache*>(data);
             instance->LibrariesInfo.push_back(DlPhdrInfoWrapper(info, size));

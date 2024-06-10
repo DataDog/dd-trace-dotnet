@@ -339,7 +339,7 @@ int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void
  */
 
 __attribute__((visibility("hidden")))
-atomic_uint __dd_dlopen_dlcose_calls_counter = 0;
+atomic_ullong __dd_dlopen_dlcose_calls_counter = 0;
 
 unsigned long long dd_nb_calls_to_dlopen_dlclose()
 {

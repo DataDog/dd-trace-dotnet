@@ -44,7 +44,6 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
 
 LinuxStackFramesCollector::~LinuxStackFramesCollector()
 {
-    unw_set_iterate_phdr_function(unw_local_addr_space, dl_iterate_phdr);
     _errorStatistics.Log();
 }
 
