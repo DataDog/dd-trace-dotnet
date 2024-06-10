@@ -625,6 +625,10 @@ namespace Datadog.Trace.ClrProfiler
                         sw.Restart();
                     }
                 }
+                else
+                {
+                    Log.Error("No CallSite Dataflow Aspects have been registered");
+                }
             }
         }
 
