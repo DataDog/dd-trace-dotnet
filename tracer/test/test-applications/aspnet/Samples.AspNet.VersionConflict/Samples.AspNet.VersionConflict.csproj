@@ -27,8 +27,8 @@
     <TargetFrameworkProfile />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Datadog.Trace, Version=2.255.246.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\..\packages\Datadog.Trace.2.255.246\lib\net461\Datadog.Trace.dll</HintPath>
+    <Reference Include="Datadog.Trace, Version=2.41.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\..\packages\Datadog.Trace.2.41.0\lib\net461\Datadog.Trace.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\..\..\..\..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>

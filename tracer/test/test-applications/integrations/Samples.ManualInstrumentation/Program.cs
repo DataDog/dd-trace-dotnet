@@ -24,9 +24,23 @@ server.RequestHandler = HandleHttpRequests;
 GlobalSettings.SetDebugEnabled(true);
 LogCurrentSettings(Tracer.Instance, "Initial");
 
+// verify instrumentation
+var runInstrumentationChecks = SampleHelpers.IsProfilerAttached();
+ThrowIf(string.IsNullOrEmpty(Tracer.Instance.DefaultServiceName));
+
 // Manual + automatic before reconfiguration
-using (Tracer.Instance.StartActive($"Manual-{++count}.Initial"))
+var firstOperationName = $"Manual-{++count}.Initial";
+using (var scope = Tracer.Instance.StartActive(firstOperationName))
 {
+    // All these should be satisfied when we're instrumented
+    Expect(Tracer.Instance.ActiveScope is not null);
+    Expect(scope.Span.OperationName == firstOperationName);
+    Expect(scope.Span.SpanId != 0);
+    Expect(scope.Span.TraceId != 0);
+    scope.Span.SetTag("Temp", "TempTest");
+    Expect(scope.Span.GetTag("Temp") == "TempTest");
+    scope.Span.SetTag("Temp", null);
+
     await SendHttpRequest("Initial");
 }
 await Tracer.Instance.ForceFlushAsync();
@@ -209,6 +223,27 @@ static void LogCurrentSettings(Tracer tracer, string step)
     }
 }
 
+void Expect(bool condition, [CallerArgumentExpression(nameof(condition))] string description = null)
+{
+    if (runInstrumentationChecks && !condition)
+    {
+        throw new InstrumentationErrorException(description, expected: true);
+    }
+}
+
+void ThrowIf(bool condition, [CallerArgumentExpression(nameof(condition))] string description = null)
+{
+    if (runInstrumentationChecks && condition)
+    {
+        throw new InstrumentationErrorException(description, expected: false);
+    }
+}
+
 class CustomException : Exception
+{
+}
+
+class InstrumentationErrorException(string condition, bool expected)
+    : Exception($"Instrumentation of manual API error: {condition} should be {expected} when automatic instrumentation is running correctly, but was {!expected}")
 {
 }

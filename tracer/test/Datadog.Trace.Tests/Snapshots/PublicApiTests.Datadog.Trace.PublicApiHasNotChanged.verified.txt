@@ -387,12 +387,12 @@ namespace Datadog.Trace
     {
         Datadog.Trace.ISpanContext Context { get; }
         bool Error { get; set; }
-        string OperationName { get; set; }
-        string ResourceName { get; set; }
-        string ServiceName { get; set; }
+        string? OperationName { get; set; }
+        string? ResourceName { get; set; }
+        string? ServiceName { get; set; }
         ulong SpanId { get; }
         ulong TraceId { get; }
-        string Type { get; set; }
+        string? Type { get; set; }
         void Finish();
         void Finish(System.DateTimeOffset finishTimestamp);
         string? GetTag(string key);
