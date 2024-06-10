@@ -71,8 +71,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                       + ".Integrated"
                       + (enableRouteTemplateExpansion ? ".WithExpansion" :
                         (enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF"));
-
-            EnvironmentHelper.DebugModeEnabled = true;
         }
 
         public static TheoryData<string, int, int> Data() => new()
