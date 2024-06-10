@@ -41,3 +41,9 @@ void DlPhdrInfoWrapper::DeepCopy(struct dl_phdr_info& destination, struct dl_phd
     destination.dlpi_tls_modid = 0;
     destination.dlpi_tls_data = nullptr;
 }
+
+bool DlPhdrInfoWrapper::IsSame(struct dl_phdr_info* other) const
+{
+    return strcmp(_info.dlpi_name, other->dlpi_name) == 0 &&
+           _info.dlpi_addr == other->dlpi_addr;
+}

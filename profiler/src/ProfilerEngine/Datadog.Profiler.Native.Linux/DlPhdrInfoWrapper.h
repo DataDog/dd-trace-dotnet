@@ -20,6 +20,8 @@ public:
 
     std::pair<struct dl_phdr_info*, std::size_t> Get();
 
+    bool IsSame(struct dl_phdr_info* other) const;
+
 private:
     void DeepCopy(struct dl_phdr_info& destination, struct dl_phdr_info* source);
 

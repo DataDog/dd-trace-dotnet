@@ -3,6 +3,8 @@
 
 #include "LibrariesInfoCache.h"
 
+#include <string.h>
+
 LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
 
 // This function is exposed by the ld_preload wrapper library.
@@ -23,19 +25,52 @@ LibrariesInfoCache::~LibrariesInfoCache()
     s_instance = nullptr;
 }
 
+struct IterationData
+{
+public:
+    std::size_t Index;
+    LibrariesInfoCache* Cache;
+};
+
 void LibrariesInfoCache::UpdateCache()
 {
     auto nbCallsToDlopenDlclose = dd_nb_calls_to_dlopen_dlclose != nullptr ? dd_nb_calls_to_dlopen_dlclose() : NbCallsToDlopenDlclose;
     if (nbCallsToDlopenDlclose != NbCallsToDlopenDlclose)
     {
         NbCallsToDlopenDlclose = nbCallsToDlopenDlclose;
-        LibrariesInfo.clear();
-        dl_iterate_phdr([](struct dl_phdr_info* info, std::size_t size, void* data) {
-            auto* instance = static_cast<LibrariesInfoCache*>(data);
-            instance->LibrariesInfo.push_back(DlPhdrInfoWrapper(info, size));
-            return 0;
-        },
-                        this);
+        IterationData x = {.Index = 0, .Cache = this};
+        dl_iterate_phdr(
+            [](struct dl_phdr_info* info, std::size_t size, void* data) {
+                auto* iterationData = static_cast<IterationData*>(data);
+                auto* cache = iterationData->Cache;
+
+                if (cache->LibrariesInfo.size() <= iterationData->Index)
+                {
+                    cache->LibrariesInfo.push_back(DlPhdrInfoWrapper(info, size));
+                    iterationData->Index++;
+                    return 0;
+                }
+
+                auto& current = cache->LibrariesInfo[iterationData->Index];
+                if (current.IsSame(info))
+                {
+                    iterationData->Index++;
+                    return 0;
+                }
+
+                DlPhdrInfoWrapper wrappedInfo(info, size);
+                if (iterationData->Index < cache->LibrariesInfo.size())
+                {
+                    cache->LibrariesInfo[iterationData->Index] = std::move(wrappedInfo);
+                }
+                else
+                {
+                    cache->LibrariesInfo.push_back(std::move(wrappedInfo));
+                }
+                iterationData->Index++;
+                return 0;
+            },
+            this);
     }
 }
 
