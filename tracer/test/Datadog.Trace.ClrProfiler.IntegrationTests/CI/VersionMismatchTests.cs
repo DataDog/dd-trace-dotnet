@@ -33,7 +33,6 @@ public class VersionMismatchTests : TestingFrameworkEvpTest
     {
         SetServiceName("version-mismatch-tests");
         SetServiceVersion("1.0.0");
-        EnvironmentHelper.DebugModeEnabled = true;
     }
 
     [SkippableFact]
