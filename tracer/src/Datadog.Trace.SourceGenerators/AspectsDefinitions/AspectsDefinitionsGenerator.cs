@@ -144,24 +144,25 @@ namespace Datadog.Trace.ClrProfiler
 
     private void GenerateNative(string tfm, in string destFolder, in ImmutableArray<ClassAspects> aspectClasses, SourceProductionContext context)
     {
+        var tfmName = tfm.Replace(".", "_");
         var sb = new StringBuilder();
         sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeaderCpp);
         sb.AppendLine("""
-#pragma once
-#include "../../Datadog.Tracer.Native/generated_definitions.h"
+            #pragma once
+            #include "../../Datadog.Tracer.Native/generated_definitions.h"
 
-namespace trace
-{
+            namespace trace
+            {
 
-""");
+            """);
         GenerateCallSites(aspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal));
         sb.AppendLine();
         GenerateCallSites(aspectClasses.Where(p => p.AspectClass.Contains(",RaspIastSink,")).OrderBy(p => p.AspectClass, StringComparer.Ordinal), "_Rasp");
         sb.AppendLine("""
-}
-""");
+            }
+            """);
 
-        var filePath = Path.Combine(Path.Combine(destFolder, "Generated"), $"generated_callSites_{GetTFMName()}.h".ToLower());
+        var filePath = Path.Combine(Path.Combine(destFolder, "Generated"), $"generated_callSites_{tfmName}.h".ToLower());
         WriteAdditionalFile(filePath, sb.ToString());
 
         string FormatLine(string line)
@@ -169,14 +170,9 @@ namespace trace
             return $"(WCHAR*)WStr(\"{line.Replace("\"", "\\\"").Replace("RaspIastSink", "Sink")}\"),";
         }
 
-        string GetTFMName()
-        {
-            return tfm.Replace(".", "_");
-        }
-
         string GetFieldName(string suffix = "")
         {
-            return $"std::vector<WCHAR*> g_callSites_{GetTFMName() + suffix}=";
+            return $"std::vector<WCHAR*> g_callSites_{tfmName + suffix}=";
         }
 
         void GenerateCallSites(IEnumerable<ClassAspects> aspectClasses, string suffix = "")
