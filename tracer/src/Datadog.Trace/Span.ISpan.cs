@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 
 namespace Datadog.Trace
@@ -16,21 +18,21 @@ namespace Datadog.Trace
     internal partial class Span : ISpan
     {
         /// <inheritdoc />
-        string ISpan.OperationName
+        string? ISpan.OperationName
         {
             get => OperationName;
             set => OperationName = value;
         }
 
         /// <inheritdoc />
-        string ISpan.ResourceName
+        string? ISpan.ResourceName
         {
             get => ResourceName;
             set => ResourceName = value;
         }
 
         /// <inheritdoc />
-        string ISpan.Type
+        string? ISpan.Type
         {
             get => Type;
             set => Type = value;
@@ -44,7 +46,7 @@ namespace Datadog.Trace
         }
 
         /// <inheritdoc />
-        string ISpan.ServiceName
+        string? ISpan.ServiceName
         {
             get => ServiceName;
             set => ServiceName = value;
@@ -61,7 +63,7 @@ namespace Datadog.Trace
         ISpanContext ISpan.Context => Context;
 
         /// <inheritdoc />
-        ISpan ISpan.SetTag(string key, string value) => SetTag(key, value);
+        ISpan ISpan.SetTag(string key, string? value) => SetTag(key, value);
 
         /// <inheritdoc />
         void ISpan.Finish() => Finish();
