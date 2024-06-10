@@ -198,8 +198,8 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<RaspRuleType>("rasp.timeout", isCommon: true, NS.ASM)] RaspTimeout,
 
-    #endregion
-    #region Iast Namespace
+#endregion
+#region Iast Namespace
 
     /// <summary>
     /// Counts the number of source methods that have been called

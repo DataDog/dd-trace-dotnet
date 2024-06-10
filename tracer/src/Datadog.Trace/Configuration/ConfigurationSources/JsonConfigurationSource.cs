@@ -214,6 +214,14 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
+        bool ITelemeteredConfigurationSource.IsPresent(string key)
+        {
+            JToken? token = SelectToken(key);
+
+            return token is not null;
+        }
+
+        /// <inheritdoc />
         ConfigurationResult<string>? ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {
             var token = SelectToken(key);
@@ -366,11 +374,11 @@ namespace Datadog.Trace.Configuration
 
         /// <inheritdoc />
         ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
-            => GetDictionary(key, telemetry, validator, allowOptionalMappings: false);
+            => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
-            => GetDictionary(key, telemetry, validator, allowOptionalMappings);
+        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+            => GetDictionary(key, telemetry, validator, allowOptionalMappings, separator);
 
         private protected virtual JToken? SelectToken(string key) => _configuration?.SelectToken(key, errorWhenNoMatch: false);
 
@@ -379,7 +387,7 @@ namespace Datadog.Trace.Configuration
             return token.ToObject<ConcurrentDictionary<string, string>>();
         }
 
-        private ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
+        private ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
         {
             var token = SelectToken(key);
             if (token == null)
@@ -416,7 +424,7 @@ namespace Datadog.Trace.Configuration
                     }
                 }
 
-                var result = StringConfigurationSource.ParseCustomKeyValuesInternal(tokenAsString, allowOptionalMappings);
+                var result = StringConfigurationSource.ParseCustomKeyValuesInternal(tokenAsString, allowOptionalMappings, separator);
                 return Validate(result);
             }
             catch (InvalidCastException)

@@ -22,6 +22,7 @@ using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -107,7 +108,7 @@ namespace Datadog.Trace.Configuration
 
             ServiceNameInternal = config
                          .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
-                         .AsString();
+                         .AsStringWithOpenTelemetryMapping(ConfigurationKeys.OpenTelemetry.ServiceName);
 
             ServiceVersionInternal = config
                             .WithKeys(ConfigurationKeys.ServiceVersion)
@@ -127,7 +128,12 @@ namespace Datadog.Trace.Configuration
 
             TraceEnabledInternal = config
                           .WithKeys(ConfigurationKeys.TraceEnabled)
-                          .AsBool(defaultValue: true);
+                          .AsBoolWithOpenTelemetryMapping(
+                            defaultValue: true,
+                            openTelemetryKey: ConfigurationKeys.OpenTelemetry.TracesExporter,
+                            openTelemetryConverter: value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
+                                                             ? ParsingResult<bool>.Success(result: false)
+                                                             : ParsingResult<bool>.Failure());
 
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
@@ -159,7 +165,9 @@ namespace Datadog.Trace.Configuration
             GlobalTagsInternal = config
                         // backwards compatibility for names used in the past
                         .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
-                        .AsDictionary(() => new Dictionary<string, string>())
+                        .AsDictionaryWithOpenTelemetryMapping(
+                            getDefaultValue: () => new Dictionary<string, string>(),
+                            openTelemetryKey: ConfigurationKeys.OpenTelemetry.ResourceAttributes)
                        // Filter out tags with empty keys or empty values, and trim whitespace
                        ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                         .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
@@ -203,7 +211,16 @@ namespace Datadog.Trace.Configuration
 
             StatsComputationInterval = config.WithKeys(ConfigurationKeys.StatsComputationInterval).AsInt32(defaultValue: 10);
 
-            RuntimeMetricsEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool(defaultValue: false);
+            RuntimeMetricsEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
+                                          .AsBoolWithOpenTelemetryMapping(
+                                              defaultValue: false,
+                                              openTelemetryKey: ConfigurationKeys.OpenTelemetry.MetricsExporter,
+                                              openTelemetryConverter: value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
+                                                                               ? ParsingResult<bool>.Success(result: false)
+                                                                               : ParsingResult<bool>.Failure());
+
+            // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
+            // When we do, we can insert that here
 
             CustomSamplingRulesInternal = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 
@@ -213,7 +230,7 @@ namespace Datadog.Trace.Configuration
                                                    converter: value =>
                                                    {
                                                        // We intentionally report invalid values as "valid" in the converter,
-                                                       // because we don't want to automatically fallback to the
+                                                       // because we don't want to automatically fall back to the
                                                        // default value.
                                                        if (!SamplingRulesFormat.IsValid(value, out var normalizedFormat))
                                                        {
@@ -236,7 +253,7 @@ namespace Datadog.Trace.Configuration
 
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
-            GlobalSamplingRateInternal = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble();
+            GlobalSamplingRateInternal = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsOpenTelemetrySampleRate();
 
             // We need to record a default value for configuration reporting
             // However, we need to keep GlobalSamplingRateInternal null because it changes the behavior of the tracer in subtle ways
@@ -314,7 +331,12 @@ namespace Datadog.Trace.Configuration
 
             IsActivityListenerEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
-                                       .AsBool(false);
+                                       .AsBoolWithOpenTelemetryMapping(
+                                            defaultValue: false,
+                                            openTelemetryKey: ConfigurationKeys.OpenTelemetry.SdkDisabled,
+                                            openTelemetryConverter: value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                                                                             ? ParsingResult<bool>.Success(result: false)
+                                                                             : ParsingResult<bool>.Failure());
 
             OpenTelemetryLegacyOperationNameEnabled = config
                                                      .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled)
@@ -327,7 +349,13 @@ namespace Datadog.Trace.Configuration
                                              new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext },
                                              $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}"),
                                          validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
-                                         converter: style => TrimSplitString(style, commaSeparator));
+                                         converter: style => TrimSplitString(style, commaSeparator),
+                                         openTelemetryKey: ConfigurationKeys.OpenTelemetry.Propagators,
+                                         openTelemetryConverter: style => TrimSplitString(style, commaSeparator)
+                                                                          .Select(s => string.Equals(s, "b3", StringComparison.OrdinalIgnoreCase)
+                                                                              ? ContextPropagationHeaderStyle.B3SingleHeader // OTEL's "b3" maps to "b3 single header"
+                                                                              : s)
+                                                                          .ToArray());
 
             PropagationStyleExtract = config
                                      .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
@@ -336,7 +364,13 @@ namespace Datadog.Trace.Configuration
                                               new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext },
                                               $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}"),
                                           validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
-                                          converter: style => TrimSplitString(style, commaSeparator));
+                                          converter: style => TrimSplitString(style, commaSeparator),
+                                          openTelemetryKey: ConfigurationKeys.OpenTelemetry.Propagators,
+                                          openTelemetryConverter: style => TrimSplitString(style, commaSeparator)
+                                                                          .Select(s => string.Equals(s, "b3", StringComparison.OrdinalIgnoreCase)
+                                                                              ? ContextPropagationHeaderStyle.B3SingleHeader // OTEL's "b3" maps to "b3 single header"
+                                                                              : s)
+                                                                          .ToArray());
 
             PropagationExtractFirstOnly = config
                                          .WithKeys(ConfigurationKeys.PropagationExtractFirstOnly)
@@ -417,6 +451,10 @@ namespace Datadog.Trace.Configuration
             telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
             telemetry.Record(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted, ConfigurationOrigins.Default);
             telemetry.Record(ConfigTelemetryData.ManagedTracerTfm, value: ConfigTelemetryData.ManagedTracerTfmValue, recordValue: true, ConfigurationOrigins.Default);
+
+            // these are SSI variables that would be useful for correlation purposes
+            telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED"), recordValue: true, ConfigurationOrigins.EnvVars);
+            telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECT_FORCE"), recordValue: true, ConfigurationOrigins.EnvVars);
 
             if (AzureAppServiceMetadata is not null)
             {

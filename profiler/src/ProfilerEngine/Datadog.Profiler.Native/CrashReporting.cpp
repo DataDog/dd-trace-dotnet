@@ -155,9 +155,9 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
     *isSuspicious = false;
 
-    for (auto threadId : threads)
+    for (auto thread : threads)
     {
-        auto frames = GetThreadFrames(threadId, resolveCallback, context);
+        auto frames = GetThreadFrames(thread.first, resolveCallback, context);
 
         ddog_prof_Slice_StackFrame stackTrace;
 
@@ -175,9 +175,14 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
         {
             auto frame = frames.at(i);
 
-            if (threadId == crashingThreadId && frame.isSuspicious)
+            if (thread.first == crashingThreadId)
             {
-                *isSuspicious = true;
+                // Mark the callstack as suspicious if one of the frames is suspicious
+                // or the thread name begins with DD_
+                if (frame.isSuspicious || thread.second.rfind("DD_", 0) == 0)
+                {
+                    *isSuspicious = true;
+                }
             }
 
             strings[i] = frame.method;
@@ -206,7 +211,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             };
         }
 
-        auto threadIdStr = std::to_string(threadId);
+        auto threadIdStr = std::to_string(thread.first);
 
         auto result = ddog_crashinfo_set_stacktrace(&_crashInfo, { threadIdStr.c_str(), threadIdStr.length() }, stackTrace);
 
@@ -218,7 +223,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
         successfulThreads++;
 
-        if (threadId == crashingThreadId)
+        if (thread.first == crashingThreadId)
         {
             // Setting the default stacktrace
             result = ddog_crashinfo_set_stacktrace(&_crashInfo, { nullptr, 0 }, stackTrace);
@@ -273,16 +278,6 @@ int32_t CrashReporting::Send()
 {
     ddog_prof_CrashtrackerConfiguration config{};
 
-    // TODO: This should be done by libdatadog
-    auto agentUrl = shared::Trim(shared::GetEnvironmentValue(WStr("DD_TRACE_AGENT_URL")));
-
-    // If agent is not set, default to localhost
-    if (agentUrl.empty())
-    {
-        agentUrl = WStr("http://127.0.0.1:8126");
-    }
-
-    config.endpoint = ddog_prof_Endpoint_agent(libdatadog::FfiHelper::StringToCharSlice(shared::ToString(agentUrl)));
     config.timeout_secs = 10;
 
     auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, config);

@@ -19,31 +19,46 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 public abstract class TestingFrameworkEvpTest : TestHelper
 {
+    private readonly GacFixture _gacFixture;
+
     protected TestingFrameworkEvpTest(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
         : base(sampleAppName, samplePathOverrides, output)
     {
         SetCIEnvironmentValues();
+        _gacFixture = new GacFixture();
+        _gacFixture.AddAssembliesToGac();
     }
 
     protected TestingFrameworkEvpTest(string sampleAppName, string samplePathOverrides, ITestOutputHelper output, bool prependSamplesToAppName)
         : base(sampleAppName, samplePathOverrides, output, prependSamplesToAppName)
     {
         SetCIEnvironmentValues();
+        _gacFixture = new GacFixture();
+        _gacFixture.AddAssembliesToGac();
     }
 
     protected TestingFrameworkEvpTest(string sampleAppName, ITestOutputHelper output)
         : base(sampleAppName, output)
     {
         SetCIEnvironmentValues();
+        _gacFixture = new GacFixture();
+        _gacFixture.AddAssembliesToGac();
     }
 
     protected TestingFrameworkEvpTest(EnvironmentHelper environmentHelper, ITestOutputHelper output)
         : base(environmentHelper, output)
     {
         SetCIEnvironmentValues();
+        _gacFixture = new GacFixture();
+        _gacFixture.AddAssembliesToGac();
     }
 
     protected object? CIValues { get; private set; }
+
+    public override void Dispose()
+    {
+        _gacFixture.RemoveAssembliesFromGac();
+    }
 
     protected virtual void WriteSpans(List<MockCIVisibilityTest>? tests)
     {

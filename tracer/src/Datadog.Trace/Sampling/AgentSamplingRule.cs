@@ -28,11 +28,6 @@ namespace Datadog.Trace.Sampling
                                             Datadog.Trace.Sampling.SamplingMechanism.Default :
                                             Datadog.Trace.Sampling.SamplingMechanism.AgentRate;
 
-        /// <summary>
-        /// Gets the lowest possible priority
-        /// </summary>
-        public int Priority => int.MinValue;
-
         public bool IsMatch(Span span) => true;
 
         public float GetSamplingRate(Span span)

@@ -982,6 +982,19 @@ namespace Samples.Security.AspNetCore5.Controllers
             ViewData["XSS"] = escapedText;
             return View("ReflectedXss");
         }
+        
+        [HttpGet("TestJsonTagSizeExceeded")]
+        [Route("TestJsonTagSizeExceeded")]
+        public IActionResult TestJsonTagSizeExceeded(string tainted)
+        {
+            // Generate manually a lot of different vulnerabilities
+            for (var i = 0; i < 30; i++)
+            {
+                ExecuteCommandInternal(i.ToString() + "-" + tainted, i.ToString() + "-" + tainted);
+            }
+            
+            return Content("TestJsonTagSizeExceeded");
+        }
 
         static string CopyStringAvoidTainting(string original)
         {

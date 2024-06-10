@@ -26,9 +26,29 @@ namespace Samples.Console_
                 var exception = args[0] == "crash-datadog" ? (Exception)new BadImageFormatException("Expected") : new InvalidOperationException("Expected");
 
                 // Add an indirection to have a BCL type on the callstack, to properly test obfuscation
-                SynchronizationContext.SetSynchronizationContext(new DummySynchronizationContext());
-                IProgress<Exception> progress = new Progress<Exception>(DumpCallstackAndThrow);
-                progress.Report(exception);
+                void DoCrash()
+                {
+                    SynchronizationContext.SetSynchronizationContext(new DummySynchronizationContext());
+                    IProgress<Exception> progress = new Progress<Exception>(DumpCallstackAndThrow);
+                    progress.Report(exception);
+                }
+
+                if (args[0] == "crash-thread")
+                {
+                    var thread = new Thread(
+                        () =>
+                        {
+                            Thread.CurrentThread.Name = "DD_thread";
+                            DoCrash();
+                        });
+
+                    thread.Start();
+                    thread.Join();
+                }
+                else
+                {
+                    DoCrash();
+                }
             }
             else
             {

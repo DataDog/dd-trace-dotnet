@@ -47,6 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "telemetry.sdk.name",
             "telemetry.sdk.language",
             "telemetry.sdk.version",
+            "http.status_code",
             // excluding all OperationName mapping tags
             "http.request.method",
             "db.system",
@@ -100,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 35;
+                const int expectedSpanCount = 36;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
@@ -152,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 35;
+                const int expectedSpanCount = 36;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();

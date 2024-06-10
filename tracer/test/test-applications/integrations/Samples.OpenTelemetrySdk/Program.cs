@@ -50,6 +50,7 @@ public static class Program
             RunSetAttributeOverloads(span);
             RunAddEventOverloads(span);
             RunSpanUpdateMethods(span);
+            RunSpecialTagRemappers(span);
 
             TelemetrySpan otherSpan = null;
             using (otherSpan = _otherLibraryTracer.StartActiveSpan("Response"))
@@ -156,6 +157,14 @@ public static class Program
         span.AddEvent("event-messageWithDateTime", new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero));
         span.AddEvent("event-messageWithAttributes", attributes);
         span.AddEvent("event-messageWithDateTimeAndAttributes", new DateTimeOffset(1970, 1, 1, 0, 0, 1, TimeSpan.Zero), attributes);
+    }
+
+    private static void RunSpecialTagRemappers(TelemetrySpan span)
+    {
+        using (var httpSpan = _tracer.StartActiveSpan("SomeHttpSpan"))
+        {
+            httpSpan.SetAttribute("http.response.status_code", 404);
+        }
     }
 
     private static void RunSpanUpdateMethods(TelemetrySpan span)
