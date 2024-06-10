@@ -35,8 +35,6 @@ public class GetActiveScopeIntegration
         var tracer = (Datadog.Trace.Tracer)instance.AutomaticTracer;
         var scope = tracer.ActiveScope;
 
-        // The manual instrumentation returns null by default, so can re-use the return value here
-        // (Not ideal for clarity, but generics prevent returning null directly)
-        return new CallTargetReturn<TReturn>(state.Scope.DuckCast<TReturn>());
+        return new CallTargetReturn<TReturn>(scope.DuckCast<TReturn>());
     }
 }
