@@ -42,8 +42,32 @@ public static class XUnitTestClassRunnerRunAsyncIntegration
 
         if (TestModule.Current is { } testModule)
         {
-            var classRunnerInstance = instance.DuckCast<TestClassRunnerStruct>();
-            return new CallTargetState(null, testModule.InternalGetOrCreateSuite(classRunnerInstance.TestClass.Class.Name ?? string.Empty));
+            var classRunnerInstance = instance.DuckCast<ITestClassRunner>();
+            var suiteName = classRunnerInstance.TestClass.Class.Name ?? string.Empty;
+            if (classRunnerInstance.TestCases is { } testCases)
+            {
+                var skipped = 0;
+                var nonSkipped = 0;
+                foreach (var tCase in testCases)
+                {
+                    if (tCase.TryDuckCast<ITestMethodTestCase>(out var tmCase) &&
+                        tmCase.Method.TryDuckCast<IReflectionMethodInfo>(out var reflectionMethodInfo) &&
+                        reflectionMethodInfo is { Name: { } methodName, MethodInfo: not null })
+                    {
+                        if (Common.ShouldSkip(suiteName, methodName, tmCase.TestMethodArguments, reflectionMethodInfo.MethodInfo.GetParameters()))
+                        {
+                            skipped++;
+                            continue;
+                        }
+                    }
+
+                    nonSkipped++;
+                }
+
+                Common.Log.Warning<string, int, int>("Suite: {Suite} | Skipable/NonSkippable: {Skip} / {NoSkip}", suiteName, skipped, nonSkipped);
+            }
+
+            return new CallTargetState(null, testModule.InternalGetOrCreateSuite(suiteName));
         }
 
         Common.Log.Warning("Test module cannot be found.");
