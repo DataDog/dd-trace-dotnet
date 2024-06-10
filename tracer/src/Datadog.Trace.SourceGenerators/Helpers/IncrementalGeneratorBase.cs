@@ -46,7 +46,8 @@ namespace Helpers
             foreach (AttributeData attribute in classSymbol.GetAttributes())
             {
                 if (attribute.AttributeClass is null) { continue; }
-                if (attribute.AttributeClass.Name == "TargetFrameworkMonikerAttribute")
+                if (attribute.AttributeClass.Name == "TargetFrameworkMonikerAttribute"
+                  && attribute.ConstructorArguments.Length == 1)
                 {
                     tfm = attribute.ConstructorArguments[0].Value?.ToString() ?? "ERROR";
                     break;
