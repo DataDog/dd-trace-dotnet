@@ -24,6 +24,28 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData("true", "info", true)]
+        [InlineData("true", "debug", true)]
+        [InlineData("false", "info", false)]
+        [InlineData("false", "debug", false)]
+        [InlineData("A", "info", false)]
+        [InlineData("A", "debug", false)]
+        [InlineData(null, "info", false)]
+        [InlineData(null, "debug", true)]
+        [InlineData("", "info", false)]
+        [InlineData("", "debug", false)]
+        public void OtelLogLevelDebugSetsDebugEnabled(string value, string otelValue, bool expected)
+        {
+            const string otelKey = ConfigurationKeys.OpenTelemetry.LogLevel;
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.DebugEnabled, value),
+                (otelKey, otelValue));
+            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
+
+            settings.DebugEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), true)]
         public void DiagnosticSourceEnabled(string value, bool expected)
         {

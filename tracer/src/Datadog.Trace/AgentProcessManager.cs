@@ -74,7 +74,16 @@ namespace Datadog.Trace
                     return;
                 }
 
-                var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
+                bool automaticTraceEnabled = true;
+                if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty) is string stringValue)
+                {
+                    automaticTraceEnabled = stringValue.ToBoolean() ?? true;
+                }
+                else if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.OpenTelemetry.TracesExporter, string.Empty) is string otelTraceExporter
+                    && string.Equals(otelTraceExporter, "none", StringComparison.OrdinalIgnoreCase))
+                {
+                    automaticTraceEnabled = false;
+                }
 
                 var profilingManuallyEnabled = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled);
                 var profilingSsiDeployed = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.SsiDeployed);
@@ -84,6 +93,7 @@ namespace Datadog.Trace
                     null => profilingSsiDeployed != null,
                     _ => profilingManuallyEnabled.ToBoolean() ?? false
                 };
+
 
                 if (azureAppServiceSettings.CustomTracingEnabled || automaticTraceEnabled || automaticProfilingEnabled)
                 {

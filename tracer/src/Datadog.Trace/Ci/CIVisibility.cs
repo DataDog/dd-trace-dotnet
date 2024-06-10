@@ -12,10 +12,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
@@ -425,48 +427,57 @@ namespace Datadog.Trace.Ci
         internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings tracerSettings, TimeSpan timeout)
         {
             IApiRequestFactory? factory = null;
-
-#if NETCOREAPP
-            Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            factory = new HttpClientRequestFactory(
-                tracerSettings.ExporterInternal.AgentUriInternal,
-                AgentHttpHeaderNames.DefaultHeaders,
-                handler: new System.Net.Http.HttpClientHandler
-                {
-                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-                },
-                timeout: timeout);
-#else
-            Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            factory = new ApiWebRequestFactory(tracerSettings.ExporterInternal.AgentUriInternal, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
-#endif
-
-            var settings = Settings;
-            if (!string.IsNullOrWhiteSpace(settings.ProxyHttps))
+            var exporterSettings = tracerSettings.ExporterInternal;
+            if (exporterSettings.TracesTransport != TracesTransportType.Default)
             {
-                var proxyHttpsUriBuilder = new UriBuilder(settings.ProxyHttps);
-
-                var userName = proxyHttpsUriBuilder.UserName;
-                var password = proxyHttpsUriBuilder.Password;
-
-                proxyHttpsUriBuilder.UserName = string.Empty;
-                proxyHttpsUriBuilder.Password = string.Empty;
-
-                if (proxyHttpsUriBuilder.Scheme == "https")
+                factory = AgentTransportStrategy.Get(
+                    exporterSettings,
+                    productName: "CI Visibility",
+                    tcpTimeout: null,
+                    AgentHttpHeaderNames.DefaultHeaders,
+                    () => new TraceAgentHttpHeaderHelper(),
+                    uri => uri);
+            }
+            else
+            {
+#if NETCOREAPP
+                Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
+                factory = new HttpClientRequestFactory(
+                    exporterSettings.AgentUriInternal,
+                    AgentHttpHeaderNames.DefaultHeaders,
+                    handler: new System.Net.Http.HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, },
+                    timeout: timeout);
+#else
+                Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
+                factory = new ApiWebRequestFactory(tracerSettings.ExporterInternal.AgentUriInternal, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
+#endif
+                var settings = Settings;
+                if (!string.IsNullOrWhiteSpace(settings.ProxyHttps))
                 {
-                    // HTTPS proxy is not supported by .NET BCL
-                    Log.Error("HTTPS proxy is not supported. ({ProxyHttpsUriBuilder})", proxyHttpsUriBuilder);
-                    return factory;
-                }
+                    var proxyHttpsUriBuilder = new UriBuilder(settings.ProxyHttps);
 
-                NetworkCredential? credential = null;
-                if (!string.IsNullOrWhiteSpace(userName))
-                {
-                    credential = new NetworkCredential(userName, password);
-                }
+                    var userName = proxyHttpsUriBuilder.UserName;
+                    var password = proxyHttpsUriBuilder.Password;
 
-                Log.Information("Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
-                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, settings.ProxyNoProxy, credential), credential);
+                    proxyHttpsUriBuilder.UserName = string.Empty;
+                    proxyHttpsUriBuilder.Password = string.Empty;
+
+                    if (proxyHttpsUriBuilder.Scheme == "https")
+                    {
+                        // HTTPS proxy is not supported by .NET BCL
+                        Log.Error("HTTPS proxy is not supported. ({ProxyHttpsUriBuilder})", proxyHttpsUriBuilder);
+                        return factory;
+                    }
+
+                    NetworkCredential? credential = null;
+                    if (!string.IsNullOrWhiteSpace(userName))
+                    {
+                        credential = new NetworkCredential(userName, password);
+                    }
+
+                    Log.Information("Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
+                    factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, settings.ProxyNoProxy, credential), credential);
+                }
             }
 
             return factory;
@@ -608,7 +619,8 @@ namespace Datadog.Trace.Ci
                         Environment.CommandLine.IndexOf("dotnet.dll\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
                         Environment.CommandLine.IndexOf("dotnet.dll' test", StringComparison.OrdinalIgnoreCase) == -1 &&
                         Environment.CommandLine.IndexOf(" test ", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("datacollector", StringComparison.OrdinalIgnoreCase) == -1)
+                        Environment.CommandLine.IndexOf("datacollector", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("vstest.console.dll", StringComparison.OrdinalIgnoreCase) == -1)
                     {
                         Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
                         return false;

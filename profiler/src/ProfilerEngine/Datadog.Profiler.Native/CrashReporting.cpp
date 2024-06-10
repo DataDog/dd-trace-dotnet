@@ -278,16 +278,6 @@ int32_t CrashReporting::Send()
 {
     ddog_prof_CrashtrackerConfiguration config{};
 
-    // TODO: This should be done by libdatadog
-    auto agentUrl = shared::Trim(shared::GetEnvironmentValue(WStr("DD_TRACE_AGENT_URL")));
-
-    // If agent is not set, default to localhost
-    if (agentUrl.empty())
-    {
-        agentUrl = WStr("http://127.0.0.1:8126");
-    }
-
-    config.endpoint = ddog_prof_Endpoint_agent(libdatadog::FfiHelper::StringToCharSlice(shared::ToString(agentUrl)));
     config.timeout_secs = 10;
 
     auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, config);

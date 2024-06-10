@@ -13,6 +13,14 @@ namespace Datadog.Trace
     public static partial class Tags
     {
         /// <summary>
+        /// The name of the instrumented service. Its value is usually constant for the lifetime of a process,
+        /// but can technically change for each trace if the user sets it manually.
+        /// This tag is added during MessagePack serialization using the value from <see cref="SpanContext.ServiceName"/>
+        /// or <see cref="Tracer.DefaultServiceName"/>.
+        /// </summary>
+        internal const string Service = "service";
+
+        /// <summary>
         /// The environment of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.Environment"/>.
@@ -602,6 +610,11 @@ namespace Datadog.Trace
         /// Should contain the vulnerability json
         /// </summary>
         internal const string IastJson = "_dd.iast.json";
+
+        /// <summary>
+        /// Indicates if the vulnerability json has been truncated because it exceeds the maximum tag size
+        /// </summary>
+        internal const string IastJsonTagSizeExceeded = "_dd.iast.json.tag.size.exceeded";
 
         /// <summary>
         /// Indicates at the end of a request if IAST analisys has been performned

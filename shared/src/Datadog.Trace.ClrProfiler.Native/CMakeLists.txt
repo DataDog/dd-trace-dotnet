@@ -144,6 +144,8 @@ endif()
 # ******************************************************
 add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         cor_profiler.cpp
+        process_helper.cpp
+        single_step_guard_rails.cpp
         cor_profiler_class_factory.cpp
         dynamic_dispatcher.cpp
         dynamic_instance.cpp

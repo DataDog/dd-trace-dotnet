@@ -49,7 +49,9 @@ public class ConfigurationTests
         "DD_DOTNET_TRACER_HOME",
         "DD_INSTRUMENTATION_INSTALL_ID",
         "DD_INSTRUMENTATION_INSTALL_TYPE",
-        "DD_INSTRUMENTATION_INSTALL_TIME"
+        "DD_INSTRUMENTATION_INSTALL_TIME",
+        "DD_INJECTION_ENABLED",
+        "DD_INJECT_FORCE",
     };
 
     [Fact]
@@ -75,7 +77,7 @@ public class ConfigurationTests
         var configKeyStrings = GetConfigurationKeyStrings();
 
         var allPotentialConfigKeys = assemblyStrings
-                                    .Where(x => (x.StartsWith("DD_") || x.StartsWith("_DD") || x.StartsWith("DATADOG_")) && !x.Contains(" "))
+                                    .Where(x => (x.StartsWith("DD_") || x.StartsWith("_DD") || x.StartsWith("DATADOG_") || x.StartsWith("OTEL_")) && !x.Contains(" "))
                                     .Concat(configKeyStrings)
                                     .Where(x => !x.Contains("{0}")) // exclude the format string ones
                                     .Distinct()
