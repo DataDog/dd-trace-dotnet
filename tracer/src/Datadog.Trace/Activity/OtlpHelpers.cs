@@ -234,7 +234,7 @@ namespace Datadog.Trace.Activity
                 }
 
                 var traceParentSample = duckLink.Context.TraceFlags > 0;
-                var traceState = W3CTraceContextPropagator.ParseTraceState(duckLink.Context.TraceState ?? string.Empty);
+                var traceState = W3CTraceContextPropagator.ParseTraceState(duckLink.Context.TraceState);
                 var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
                 var samplingPriority = traceParentSample switch
                 {

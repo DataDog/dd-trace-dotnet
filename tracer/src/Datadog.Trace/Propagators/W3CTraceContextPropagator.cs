@@ -322,7 +322,7 @@ namespace Datadog.Trace.Propagators
             return true;
         }
 
-        internal static W3CTraceState ParseTraceState(string header)
+        internal static W3CTraceState ParseTraceState(string? header)
         {
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
             if (string.IsNullOrWhiteSpace(header))
@@ -330,7 +330,7 @@ namespace Datadog.Trace.Propagators
                 return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null);
             }
 
-            SplitTraceStateValues(header, out var ddValues, out var additionalValues);
+            SplitTraceStateValues(header!, out var ddValues, out var additionalValues);
 
             if (ddValues is null or { Length: < 6 })
             {
