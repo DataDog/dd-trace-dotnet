@@ -31,17 +31,17 @@ namespace Helpers
         /// <param name="context"> Ctx </param>
         public abstract void Initialize(IncrementalGeneratorInitializationContext context);
 
-        internal static Result<string> GetTfm(GeneratorAttributeSyntaxContext context, CancellationToken ct)
+        internal static string GetTfm(GeneratorAttributeSyntaxContext context, CancellationToken ct)
         {
+            var tfm = "ERROR";
+
             INamedTypeSymbol? classSymbol = context.TargetSymbol as INamedTypeSymbol;
             if (classSymbol is null)
             {
-                return new Result<string>("ERROR", default);
+                return tfm;
             }
 
             ct.ThrowIfCancellationRequested();
-
-            var tfm = "ERROR";
 
             foreach (AttributeData attribute in classSymbol.GetAttributes())
             {
@@ -54,7 +54,7 @@ namespace Helpers
                 }
             }
 
-            return new Result<string>(tfm, default);
+            return tfm;
         }
 
         internal static IncrementalValuesProvider<string> RegisterPlaceholder(IncrementalGeneratorInitializationContext context)
@@ -76,7 +76,6 @@ namespace Helpers
                             predicate: (node, _) => node is ClassDeclarationSyntax,
                             transform: GetTfm)
                         .Where(static m => m is not null)
-                        .Select(static (x, _) => x.Value)
                         .WithTrackingName(TrackingNames.Tfm);
             return tfm;
         }

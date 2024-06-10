@@ -753,39 +753,35 @@ public class InstrumentationDefinitionsGenerator : IncrementalGeneratorBase
 
     private void GenerateNative(string tfm, string destFolder, IEnumerable<CallTargetDefinitionSource> orderedDefinitions, SourceProductionContext context)
     {
+        var tfmName = tfm.Replace(".", "_");
         var sb = new StringBuilder();
         sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeaderCpp);
         sb.AppendLine("""
-#pragma once
-#include "../../Datadog.Tracer.Native/generated_definitions.h"
+            #pragma once
+            #include "../../Datadog.Tracer.Native/generated_definitions.h"
 
-namespace trace
-{
-extern WCHAR* assemblyName;
+            namespace trace
+            {
+            extern WCHAR* assemblyName;
 
-""");
+            """);
         GenerateSignatures(orderedDefinitions);
         GenerateCallTargets(orderedDefinitions);
         sb.AppendLine("""
-}
-""");
+            }
+            """);
 
-        var filePath = Path.Combine(Path.Combine(destFolder, "Generated"), $"generated_callTargets_{GetTFMName()}.h".ToLower());
+        var filePath = Path.Combine(Path.Combine(destFolder, "Generated"), $"generated_callTargets_{tfmName}.h".ToLower());
         WriteAdditionalFile(filePath, sb.ToString());
-
-        string GetTFMName()
-        {
-            return tfm.Replace(".", "_");
-        }
 
         string GetFieldName()
         {
-            return $"std::vector<CallTargetDefinition2> g_callTargets_{GetTFMName()}=";
+            return $"std::vector<CallTargetDefinition2> g_callTargets_{tfmName}=";
         }
 
         string GetSignatureName(int index)
         {
-            return $"g_callTargets_{GetTFMName()}_Sig_{index}";
+            return $"g_callTargets_{tfmName}_Sig_{index}";
         }
 
         string GetSignatureField(CallTargetDefinitionSource definition, int index)
