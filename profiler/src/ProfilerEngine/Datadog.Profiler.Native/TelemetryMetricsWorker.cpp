@@ -7,6 +7,7 @@
 #include "ISsiManager.h"
 #include "Log.h"
 #include "ProfileExporter.h"
+#include "ScopeFinalizer.h"
 #include "Tags.h"
 #include "TagsImpl.hpp"
 
@@ -107,6 +108,8 @@ bool TelemetryMetricsWorker::Start(
     auto endpointUrl = agentUrl + TelemetryMetricsEndPoint;
     auto endpoint_char = FfiHelper::StringToCharSlice(endpointUrl);
     auto* endpoint = ddog_endpoint_from_url(endpoint_char);
+    on_leave { ddog_endpoint_drop(endpoint); };
+
     result = ddog_telemetry_builder_with_endpoint_config_endpoint(builder, endpoint);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
@@ -114,8 +117,6 @@ bool TelemetryMetricsWorker::Start(
         Log::Debug("Failed to configure telemetry builder agent endpoint: ", error.message());
         return false;
     }
-
-    ddog_endpoint_drop(endpoint);
 
     // other builder configuration
     auto runtime_id = FfiHelper::StringToCharSlice(runtimeId);
@@ -154,6 +155,8 @@ bool TelemetryMetricsWorker::Start(
 
     // start the worker
     // NOTE: builder is consummed after the call so no need to drop it
+    // TODO: we need to update libdatadog to avoid taking the ownership of the builder
+    //       and explicitly drop it in all cases
     result = ddog_telemetry_builder_run(builder, &_impl->_pHandle);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
@@ -183,7 +186,6 @@ bool TelemetryMetricsWorker::Start(
                                   {"enablement_choice", enablementTagValue}},
                                  false);
 
-    // TODO: see if we need to also emit ssi_heuristic.number_of_runtime_id
     auto numberOfProfilesMetricName = FfiHelper::StringToCharSlice("ssi_heuristic.number_of_profiles");
 
     _impl->_numberOfProfilesKey = ddog_telemetry_handle_register_metric_context(

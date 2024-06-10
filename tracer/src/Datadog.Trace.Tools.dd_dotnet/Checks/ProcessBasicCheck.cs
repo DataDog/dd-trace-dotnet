@@ -243,6 +243,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
                 AnsiConsole.WriteLine(ContinuousProfilerCheck());
 
+                // check if loaded in case of SSI (could be enabled but with a delay)
                 bool isContinuousProfilerEnabled;
 
                 var hasValue = process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled);
@@ -265,7 +266,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                     isContinuousProfilerEnabled = process.EnvironmentVariables.TryGetValue("DD_INJECTION_ENABLED", out var _);
                     if (isContinuousProfilerEnabled)
                     {
-                        Utils.WriteInfo(ContinuousProfilerSsiEnabled);
+                        Utils.WriteInfo(ContinuousProfilerSsiDeployed);
                     }
                     else
                     {

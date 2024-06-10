@@ -15,8 +15,8 @@
 
 static void StartProfiling(ISsiLifetime* pSsiLifetime)
 {
-    static std::once_flag spanCreated;
-    std::call_once(spanCreated, [pSsiLifetime]() {
+    static std::once_flag heuristicsAreTriggered;
+    std::call_once(heuristicsAreTriggered, [pSsiLifetime]() {
         pSsiLifetime->OnStartDelayedProfiling();
     });
 }
@@ -39,7 +39,7 @@ SsiManager::~SsiManager()
 void SsiManager::OnShortLivedEnds()
 {
     _isLongLived = true;
-    if (_hasSpan && _deploymentMode == DeploymentMode::SingleStepInstrumentation)
+    if (_hasSpan && _enablementStatus == EnablementStatus::SsiEnabled)
     {
         StartProfiling(_pSsiLifetime);
     }
@@ -48,7 +48,7 @@ void SsiManager::OnShortLivedEnds()
 void SsiManager::OnSpanCreated()
 {
     _hasSpan = true;
-    if (_isLongLived && _deploymentMode == DeploymentMode::SingleStepInstrumentation)
+    if (_isLongLived && _enablementStatus == EnablementStatus::SsiEnabled)
     {
         StartProfiling(_pSsiLifetime);
     }
@@ -90,7 +90,7 @@ void SsiManager::ProcessStart()
     // TODO the doc again to know when we need the timer.
     // currently it's disabled in ssi deployed AND not manually enabled nor ssi enabled
     // I guess we still have to start the timer when ssi enabled
-    if (_deploymentMode == DeploymentMode::SingleStepInstrumentation && _enablementStatus == EnablementStatus::SsiEnabled)
+    if (_deploymentMode == DeploymentMode::SingleStepInstrumentation)
     {
         // This timer *must* be created only AND only if it's a SSI deployment
         // we have to check if this is what we want. In CorProfilerCallback.cpp l.1239, we start the service

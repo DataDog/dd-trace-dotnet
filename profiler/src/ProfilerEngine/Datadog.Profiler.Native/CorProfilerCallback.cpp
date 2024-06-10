@@ -569,9 +569,29 @@ void CorProfilerCallback::OnStartDelayedProfiling()
         return;
     }
 
-    StartServices();
+    if (StartServices())
+    {
+        Log::Info("Profiler is started after a delay.");
 
-    Log::Info("Profiler is started after a delay.");
+        StartEtwCommunication();
+    }
+    else
+    {
+        Log::Error("Profiler failed to start after a delay.");
+    }
+}
+
+void CorProfilerCallback::StartEtwCommunication()
+{
+    _isETWStarted = true;
+    auto success = _pEtwEventsManager->Start();
+    if (!success)
+    {
+        Log::Error("Failed to contact the Datadog Agent named pipe dedicated to profiling. Try to install the latest version.");
+
+        _pEtwEventsManager->Stop();
+        _pEtwEventsManager = nullptr;
+    }
 }
 
 bool CorProfilerCallback::StartServices()
@@ -1217,7 +1237,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         }
     }
 
-    // TODO/FIX : shouldn't this be moved avec the check on the profiler enabled ?
     // the Tracer needs to know that the Profiler is here to enable code hotspots
     _isInitialized.store(true);
     ProfilerEngineStatus::WriteIsProfilerEngineActive(true);
@@ -1249,6 +1268,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
             return E_FAIL;
         }
+    }
+    else if (_pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled)
+    {
+        Log::Info("Profiler is enabled by SSI. Services will be started later.");
     }
 
     return S_OK;
@@ -1470,15 +1493,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
     // ETW listening is not started in SSI deployment mode
     if (_pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled && !_isETWStarted && (_pEtwEventsManager != nullptr))
     {
-        _isETWStarted = true;
-        auto success = _pEtwEventsManager->Start();
-        if (!success)
-        {
-            Log::Error("Failed to the contact Datadog Agent named pipe dedicated to profiling. Try to install the latest version.");
-
-            _pEtwEventsManager->Stop();
-            _pEtwEventsManager = nullptr;
-        }
+        StartEtwCommunication();
     }
 
     if (_pThreadLifetimeProvider != nullptr)

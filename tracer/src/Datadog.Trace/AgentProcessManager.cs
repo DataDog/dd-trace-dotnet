@@ -94,7 +94,6 @@ namespace Datadog.Trace
                     _ => profilingManuallyEnabled.ToBoolean() ?? false
                 };
 
-
                 if (azureAppServiceSettings.CustomTracingEnabled || automaticTraceEnabled || automaticProfilingEnabled)
                 {
                     if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))

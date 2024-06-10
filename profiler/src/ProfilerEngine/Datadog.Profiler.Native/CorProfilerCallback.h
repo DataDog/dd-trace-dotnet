@@ -200,6 +200,7 @@ public:
     // for SSI, the services need to be started after the runtime is initialized
     void OnStartDelayedProfiling() override;
 
+
 // Access to global services
 // All services are allocated/started and stopped/deleted by the CorProfilerCallback (no need to use unique_ptr/shared_ptr)
 // Their lifetime lasts between Initialize() and Shutdown()
@@ -287,7 +288,7 @@ private:
     bool DisposeServices();
     bool StartServices();
     bool StopServices();
-
+    void StartEtwCommunication();
 
     template <class T, typename... ArgTypes>
     T* RegisterService(ArgTypes&&... args)
