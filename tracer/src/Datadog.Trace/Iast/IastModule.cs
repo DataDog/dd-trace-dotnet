@@ -64,6 +64,33 @@ internal static partial class IastModule
         return evidence;
     }
 
+    internal static string? OnUnvalidatedRedirectPath(string? path)
+    {
+        try
+        {
+            if (Iast.Instance.Settings.Enabled || path is null)
+            {
+                return path;
+            }
+
+            // Check if the path is tainted
+            var tainted = IastModule.GetIastContext()?.GetTainted(path);
+            if (tainted is null)
+            {
+                return path;
+            }
+
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.UnvalidatedRedirect);
+            GetScope(path, IntegrationId.UnvalidatedRedirect, VulnerabilityTypeName.UnvalidatedRedirect, OperationNameUnvalidatedRedirect);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for Unvalidated Redirect.");
+        }
+
+        return path;
+    }
+
     internal static IastModuleResponse OnUnvalidatedRedirect(string evidence, IntegrationId integrationId)
     {
         bool HasInvalidOrigin(TaintedObject tainted)

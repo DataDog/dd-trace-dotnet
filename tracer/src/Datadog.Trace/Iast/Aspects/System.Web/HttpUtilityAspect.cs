@@ -28,4 +28,20 @@ public class HttpUtilityAspect
     {
         return IastModule.OnXssEscape(parameter);
     }
+
+    /// <summary>
+    /// Launches an Unvalidated Redirect vulnerability if the url is tainted
+    /// </summary>
+    /// <param name="path">the sensitive parameter of the method</param>
+    /// <returns>the path</returns>
+    [AspectMethodInsertBefore("System.Web.HttpUtility::Transfer(System.String)", 0)]
+    [AspectMethodInsertBefore("System.Web.HttpUtility::Transfer(System.String,System.Boolean)", 1)]
+    [AspectMethodInsertBefore("System.Web.HttpUtility::Execute(System.String)", 0)]
+    [AspectMethodInsertBefore("System.Web.HttpUtility::Execute(System.String,System.Boolean)", 1)]
+    [AspectMethodInsertBefore("System.Web.HttpUtility::Execute(System.String,System.TextWriter)", 1)]
+    [AspectMethodInsertBefore("System.Web.HttpUtility::Execute(System.String,System.TextWriter,System.Boolean)", 2)]
+    public static string? PathBasedAction(string? path)
+    {
+        return IastModule.OnUnvalidatedRedirectPath(path);
+    }
 }
