@@ -97,6 +97,7 @@ Also note that the implementation types from all public APIs have changed. For e
 Several settings have changed their default values:
 - `DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED` now defaults to `true`. This setting provides a better experience in the majority of cases.
 - `DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED` now defaults to `true`. This setting provides a better experience in the majority of cases.
+- `DD_TRACE_SAMPLING_RULES_FORMAT` now defaults to `glob` instead of `regex`. This setting is consistent with other language client libraries. 
 
 #### What action should you take?
 We recommend using the new settings if possible. If this is not possible, you can manually change the value for each setting to it's previous value, for example: `DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED=false`
