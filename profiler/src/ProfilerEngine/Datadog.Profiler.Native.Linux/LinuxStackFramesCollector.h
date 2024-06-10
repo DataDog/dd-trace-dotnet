@@ -8,6 +8,7 @@
 #include "corprof.h"
 // end
 
+#include "LibrariesInfoCache.h"
 #include "StackFramesCollectorBase.h"
 
 #include <atomic>
@@ -87,7 +88,5 @@ private:
 
     ErrorStatistics _errorStatistics;
     bool _useBacktrace2;
-
-    struct LibrariesInfoCache;
-    std::unique_ptr<LibrariesInfoCache> _pLibrariesInfoCacheInstance;
+    LibrariesInfoCache _plibrariesInfo;
 };
