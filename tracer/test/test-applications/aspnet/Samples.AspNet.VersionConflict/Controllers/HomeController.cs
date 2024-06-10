@@ -12,7 +12,7 @@ namespace Samples.AspNet.VersionConflict.Controllers
 {
     public class HomeController : Controller
     {
-        private static readonly Version _manualTracingVersion = new Version("2.255.0.0");
+        private static readonly Version _manualTracingVersion = new Version("2.41.0.0");
 
         public ActionResult Index()
         {
@@ -130,7 +130,7 @@ namespace Samples.AspNet.VersionConflict.Controllers
         private static IDisposable StartAutomaticTrace(string operationName)
         {
             // Get the Datadog.Trace.Tracer type from the automatic instrumentation assembly
-            Assembly automaticAssembly = AppDomain.CurrentDomain.GetAssemblies().Single(asm => asm.GetName().Name.Equals("Datadog.Trace") && asm.GetName().Version < _manualTracingVersion);
+            Assembly automaticAssembly = AppDomain.CurrentDomain.GetAssemblies().Single(asm => asm.GetName().Name.Equals("Datadog.Trace") && asm.GetName().Version > _manualTracingVersion);
             Type tracerType = automaticAssembly.GetType("Datadog.Trace.Tracer");
 
             // Invoke 'Tracer.Instance'
