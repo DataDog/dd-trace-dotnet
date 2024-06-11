@@ -121,21 +121,21 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
                     TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
 
-                    var raspEnabled = Security.Instance.Settings.RaspEnabled;
-                    var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
+                    var raspEnabled = Security.Instance.RaspEnabled;
+                    var iastEnabled = Iast.Iast.Instance.Enabled;
 
                     if (raspEnabled || iastEnabled)
                     {
                         InstrumentationCategory category = 0;
                         if (iastEnabled)
                         {
-                            Log.Debug("Enabling Iast call target category");
+                            Log.Debug("Enabling IAST call target category");
                             category |= InstrumentationCategory.Iast;
                         }
 
                         if (raspEnabled)
                         {
-                            Log.Debug("Enabling Rasp");
+                            Log.Debug("Enabling RASP");
                         }
 
                         EnableTracerInstrumentations(category, raspEnabled: raspEnabled);
