@@ -185,8 +185,8 @@ void SingleStepGuardRails::RecordBootstrapError(const std::string& runtimeName, 
         return;
     }
 
-    const std::string points = "[{\\\"name\\\": \\\"library_entrypoint.error\\\", \\\"tags\\\": [\\\"error_type:"
-                              + errorType + "\\\"]}]";
+    const std::string points = "[{\"name\": \"library_entrypoint.error\", \"tags\": [\"error_type:"
+                              + errorType + "\"]}]";
     SendTelemetry(runtimeName, runtimeVersion, points);
 }
 
@@ -203,8 +203,8 @@ void SingleStepGuardRails::RecordBootstrapSuccess(const RuntimeInformation& runt
     const auto runtimeVersion = runtimeInformation.description();
 
     const std::string isForced = m_isForcedExecution ? "true" : "false";
-    const std::string points = "[{\\\"name\\\": \\\"library_entrypoint.complete\\\", \\\"tags\\\": [\\\"injection_forced:"
-                              + isForced + "\\\"]}]";
+    const std::string points = "[{\"name\": \"library_entrypoint.complete\", \"tags\": [\"injection_forced:"
+                              + isForced + "\"]}]";
 
     SendTelemetry(runtimeName, runtimeVersion, points);
 }
@@ -218,9 +218,9 @@ void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, co
 
     const std::string reason = isEol ? "eol_runtime" : "incompatible_runtime";  // possible reasons [”eol_runtime”,””incompatible_runtime”, ”integration”, ”package_manager”]
 
-    const std::string abort = "{\\\"name\\\": \\\"library_entrypoint.abort\\\", \\\"tags\\\": [\\\"reason:"
-                              + reason + "\\\"]}";
-    const std::string abort_runtime = "{\\\"name\\\": \\\"library_entrypoint.abort.runtime\\\"}";
+    const std::string abort = "{\"name\": \"library_entrypoint.abort\", \"tags\": [\"reason:"
+                              + reason + "\"]}";
+    const std::string abort_runtime = "{\"name\": \"library_entrypoint.abort.runtime\"}";
     
     const std::string points = "[" + abort + "," + abort_runtime + "]";
 
@@ -254,27 +254,22 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
     }
 
     const std::string metadata =
-        "{\\\"metadata\\\":{\\\"runtime_name\\\": \\\"" + runtimeName
-        + "\\\",\\\"runtime_version\\\": \\\"" + runtimeVersion
-        + "\\\",\\\"language_name\\\": \\\"dotnet\\\",\\\"language_version\\\": \\\"" + runtimeVersion
-        + "\\\",\\\"tracer_version\\\": \\\"" + PROFILER_VERSION
-        + "\\\",\\\"pid\\\":" + std::to_string(GetPID())
-        + "},\\\"points\\\": " + points + "}";
+        "{\"metadata\":{\"runtime_name\": \"" + runtimeName
+        + "\",\"runtime_version\": \"" + runtimeVersion
+        + "\",\"language_name\": \"dotnet\",\"language_version\": \"" + runtimeVersion
+        + "\",\"tracer_version\": \"" + PROFILER_VERSION
+        + "\",\"pid\":" + std::to_string(GetPID())
+        + "},\"points\": " + points + "}";
 
     const auto processPath = ToString(forwarderPath);
 
     // The telemetry forwarder expects the first argument to be the execution type:
     const std::string initialArg = "library_entrypoint";
-#ifdef _WIN32
-    const std::vector args = {initialArg, metadata};
-#else
-    // linux and mac require different escaping, so just regex remove the \ for now
-    const auto linuxMetadata = std::regex_replace(metadata, std::regex("\\\\"), "");
-    const std::vector args = {initialArg, linuxMetadata};
-#endif
+    const std::vector args = {initialArg};
 
-    Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", initialArg, "and metadata " , args[1]);
-    const auto success = ProcessHelper::RunProcess(processPath, args);
+    Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", initialArg, "and metadata " , metadata);
+    const auto success = ProcessHelper::RunProcess(processPath, args, metadata);
+
     if(success)
     {
         Log::Debug("SingleStepGuardRails::SendTelemetry: Telemetry sent to forwarder");
