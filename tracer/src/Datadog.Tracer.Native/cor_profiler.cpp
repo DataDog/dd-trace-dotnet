@@ -346,31 +346,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    // iast stuff
-    
-    bool isRaspEnabled = IsRaspEnabled();
-    bool isIastEnabled = IsIastEnabled();
-
-    Logger::Info(isIastEnabled ? "IAST Callsite instrumentation is enabled."
-                               : "IAST Callsite instrumentation is disabled.");
-
-    Logger::Info(isRaspEnabled ? "RASP Callsite instrumentation is enabled."
-                               : "RASP Callsite instrumentation is disabled.");
-
-    if (isIastEnabled || isRaspEnabled)
-    {
-        _dataflow = new iast::Dataflow(info_, rejit_handler);
-        if (FAILED(_dataflow->Init()))
-        {
-            Logger::Error("Callsite Dataflow failed to initialize");
-            DEL(_dataflow);
-        }
-    }
-    else
-    {
-        Logger::Info("Callsite instrumentation is disabled.");
-    }
-
     // we're in!
     Logger::Info("Profiler filepath: ", currentModuleFileName);
     Logger::Info("Profiler attached.");
@@ -2017,6 +1992,15 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
 int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+    if (!_dataflow)
+    {
+        _dataflow = new iast::Dataflow(info_);
+        if (FAILED(_dataflow->Init()))
+        {
+            Logger::Error("Callsite Dataflow failed to initialize");
+            DEL(_dataflow);
+        }
+    }
 
     if (_dataflow != nullptr)
     {
@@ -2030,7 +2014,6 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
     }
     return 0;
 }
-
 
 void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
                                                    WCHAR* integration_type_name_ptr)

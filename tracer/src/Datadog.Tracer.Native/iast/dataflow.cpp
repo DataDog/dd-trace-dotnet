@@ -509,7 +509,13 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     {
         return found->second;
     }
-    return nullptr;
+
+    ModuleInfo* pModuleInfo = nullptr;
+    if (SUCCEEDED(ModuleLoaded(id, &pModuleInfo)))
+    {
+        _modules[id] = pModuleInfo;
+    }
+    return pModuleInfo;
 }
 ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId, bool lookInSharedRepos)
 {
