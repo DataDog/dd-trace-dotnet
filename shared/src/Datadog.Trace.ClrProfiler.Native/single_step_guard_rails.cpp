@@ -72,7 +72,7 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
             const auto runtime = std::to_string(runtimeInformation.major_version) + "." +
                                  std::to_string(runtimeInformation.minor_version) + "." +
                                  std::to_string(runtimeInformation.build_version);
-            return HandleUnsupportedNetCoreVersion(eol, runtime);
+            return HandleUnsupportedNetCoreVersion(eol, runtime, false); // not eol, just incompatible
         }
 
         // Unsupported EOL version, but _which_ version
@@ -83,18 +83,18 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
         {
             // we can't get this exact runtime version from cor profiler unfortunately
             tstVerProfilerInfo->Release();
-            return HandleUnsupportedNetCoreVersion(eol, "3.0.0");
+            return HandleUnsupportedNetCoreVersion(eol, "3.0.0", true);
         }
 
         if (S_OK == pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**) &tstVerProfilerInfo))
         {
             // no way of detecting 2.2 from here AFAIK, so we treat 2.1 and 2.2 the same
             tstVerProfilerInfo->Release();
-            return HandleUnsupportedNetCoreVersion(eol, "2.1.0");
+            return HandleUnsupportedNetCoreVersion(eol, "2.1.0", true);
         }
 
         // Only remaining EOL version that we can instrument is 2.0.0
-        return HandleUnsupportedNetCoreVersion(eol, "2.0.0");
+        return HandleUnsupportedNetCoreVersion(eol, "2.0.0", true);
     }
 
     // For .NET Framework, we require .NET Framework 4.6.1 or higher
@@ -106,28 +106,28 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
         return S_OK;
     }
 
-    return HandleUnsupportedNetFrameworkVersion(".NET Framework 4.6.0 or lower", "4.6.0");
+    return HandleUnsupportedNetFrameworkVersion(".NET Framework 4.6.0 or lower", "4.6.0", true);
 }
 
-HRESULT SingleStepGuardRails::HandleUnsupportedNetCoreVersion(const std::string& unsupportedDescription, const std::string& runtimeVersion)
+HRESULT SingleStepGuardRails::HandleUnsupportedNetCoreVersion(const std::string& unsupportedDescription, const std::string& runtimeVersion, const bool isEol)
 {
     if(ShouldForceInstrumentationOverride(unsupportedDescription))
     {
         return S_OK;
     }
 
-    SendAbortTelemetry(NetCoreRuntime, runtimeVersion);
+    SendAbortTelemetry(NetCoreRuntime, runtimeVersion, isEol);
     return E_FAIL;
 }
 
-HRESULT SingleStepGuardRails::HandleUnsupportedNetFrameworkVersion(const std::string& unsupportedDescription, const std::string& runtimeVersion)
+HRESULT SingleStepGuardRails::HandleUnsupportedNetFrameworkVersion(const std::string& unsupportedDescription, const std::string& runtimeVersion, const bool isEol)
 {
     if(ShouldForceInstrumentationOverride(unsupportedDescription))
     {
         return S_OK;
     }
 
-    SendAbortTelemetry(NetFrameworkRuntime, runtimeVersion);
+    SendAbortTelemetry(NetFrameworkRuntime, runtimeVersion, isEol);
     return E_FAIL;
 }
 
@@ -209,14 +209,14 @@ void SingleStepGuardRails::RecordBootstrapSuccess(const RuntimeInformation& runt
     SendTelemetry(runtimeName, runtimeVersion, points);
 }
 
-void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, const std::string& runtimeVersion) const
+void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, const std::string& runtimeVersion, const bool isEol) const
 {
     if(!m_isRunningInSingleStep)
     {
         return;
     }
 
-    const std::string reason = "eol_runtime";  // possible reasons [”eol_runtime”,””incompatible_runtime”, ”integration”, ”package_manager”]
+    const std::string reason = isEol ? "eol_runtime" : "incompatible_runtime";  // possible reasons [”eol_runtime”,””incompatible_runtime”, ”integration”, ”package_manager”]
 
     const std::string abort = "{\\\"name\\\": \\\"library_entrypoint.abort\\\", \\\"tags\\\": [\\\"reason:"
                               + reason + "\\\"]}";

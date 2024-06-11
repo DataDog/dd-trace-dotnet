@@ -12,10 +12,10 @@ private:
     bool m_isForcedExecution = false;
 
     bool ShouldForceInstrumentationOverride(const std::string& eolDescription);
-    HRESULT HandleUnsupportedNetCoreVersion(const std::string& unsupportedDescription, const std::string& runtimeVersion);
-    HRESULT HandleUnsupportedNetFrameworkVersion(const std::string& unsupportedDescription, const std::string& runtimeVersion);
+    HRESULT HandleUnsupportedNetCoreVersion(const std::string& unsupportedDescription, const std::string& runtimeVersion, const bool isEol);
+    HRESULT HandleUnsupportedNetFrameworkVersion(const std::string& unsupportedDescription, const std::string& runtimeVersion, const bool isEol);
 
-    void SendAbortTelemetry(const std::string& runtimeName, const std::string& runtimeVersion) const;
+    void SendAbortTelemetry(const std::string& runtimeName, const std::string& runtimeVersion, const bool isEol) const;
     void SendTelemetry(const std::string& runtimeName, const std::string& runtimeVersion, const std::string& telemetryPoints) const;
 public:
     inline static const std::string NetFrameworkRuntime = ".NET Framework";
