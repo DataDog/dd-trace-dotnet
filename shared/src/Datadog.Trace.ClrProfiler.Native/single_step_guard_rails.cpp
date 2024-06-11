@@ -116,7 +116,7 @@ HRESULT SingleStepGuardRails::HandleUnsupportedNetCoreVersion(const std::string&
         return S_OK;
     }
 
-    SendAbortTelemetry(NetCoreRuntime, runtimeVersion, MinNetCoreVersion, MaxNetCoreVersion);
+    SendAbortTelemetry(NetCoreRuntime, runtimeVersion);
     return E_FAIL;
 }
 
@@ -127,7 +127,7 @@ HRESULT SingleStepGuardRails::HandleUnsupportedNetFrameworkVersion(const std::st
         return S_OK;
     }
 
-    SendAbortTelemetry(NetFrameworkRuntime, runtimeVersion, MinNetFrameworkVersion, MaxNetFrameworkVersion);
+    SendAbortTelemetry(NetFrameworkRuntime, runtimeVersion);
     return E_FAIL;
 }
 
@@ -209,8 +209,7 @@ void SingleStepGuardRails::RecordBootstrapSuccess(const RuntimeInformation& runt
     SendTelemetry(runtimeName, runtimeVersion, points);
 }
 
-void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, const std::string& runtimeVersion,
-                                              const std::string& minVersion, const std::string& maxVersion) const
+void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, const std::string& runtimeVersion) const
 {
     if(!m_isRunningInSingleStep)
     {
@@ -221,9 +220,7 @@ void SingleStepGuardRails::SendAbortTelemetry(const std::string& runtimeName, co
 
     const std::string abort = "{\\\"name\\\": \\\"library_entrypoint.abort\\\", \\\"tags\\\": [\\\"reason:"
                               + reason + "\\\"]}";
-    const std::string abort_runtime =
-        "{\\\"name\\\": \\\"library_entrypoint.abort.runtime\\\", \\\"tags\\\": [\\\"min_supported_version:"
-        + minVersion + "\\\",\\\"max_supported_version:" + maxVersion + "\\\"]}";
+    const std::string abort_runtime = "{\\\"name\\\": \\\"library_entrypoint.abort.runtime\\\"}";
     
     const std::string points = "[" + abort + "," + abort_runtime + "]";
 
