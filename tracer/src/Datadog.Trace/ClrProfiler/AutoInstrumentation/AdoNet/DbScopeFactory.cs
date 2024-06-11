@@ -133,13 +133,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         }
 
         public static bool TryGetIntegrationDetails(
-            string commandTypeFullName,
+            string? commandTypeFullName,
             [NotNullWhen(true)] out IntegrationId? integrationId,
             [NotNullWhen(true)] out string? dbType)
         {
             // TODO: optimize this switch
             switch (commandTypeFullName)
             {
+                case null:
+                    integrationId = null;
+                    dbType = null;
+                    return false;
                 case "System.Data.SqlClient.SqlCommand" or "Microsoft.Data.SqlClient.SqlCommand":
                     integrationId = IntegrationId.SqlClient;
                     dbType = DbType.SqlServer;
@@ -196,8 +200,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             // ReSharper disable StaticMemberInGenericType
             // Static fields used intentionally to cache a different set of values for each TCommand.
             private static readonly Type CommandType;
-            private static readonly string DbTypeName;
-            private static readonly string OperationName;
+            private static readonly string? DbTypeName;
+            private static readonly string? OperationName;
             private static readonly IntegrationId IntegrationId;
 
             // ServiceName cache
@@ -211,18 +215,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 CommandType = typeof(TCommand);
 
-                if (TryGetIntegrationDetails(CommandType.FullName ?? string.Empty, out var integrationId, out var dbTypeName))
+                if (TryGetIntegrationDetails(CommandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     // cache values for this TCommand type
                     DbTypeName = dbTypeName;
                     OperationName = $"{DbTypeName}.query";
                     IntegrationId = integrationId.Value;
-                }
-                else
-                {
-                    DbTypeName = "Unknown";
-                    OperationName = "Database.query";
-                    IntegrationId = IntegrationId.AdoNet;
                 }
             }
 
@@ -230,9 +228,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 var commandType = command.GetType();
 
-                if (commandType == CommandType)
+                if (commandType == CommandType && DbTypeName is not null && OperationName is not null)
                 {
                     // use the cached values if command.GetType() == typeof(TCommand)
+                    // and we successfully called TryGetIntegrationDetails() in the ctor
                     var tagsFromConnectionString = GetTagsFromConnectionString(command);
                     return DbScopeFactory.CreateDbCommandScope(
                         tracer: tracer,
@@ -246,7 +245,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
                 // defined in a base class like DbCommand and we can't use the cached values
-                if (TryGetIntegrationDetails(commandType.FullName ?? string.Empty, out var integrationId, out var dbTypeName))
+                if (TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     var operationName = $"{dbTypeName}.query";
                     var tagsFromConnectionString = GetTagsFromConnectionString(command);
