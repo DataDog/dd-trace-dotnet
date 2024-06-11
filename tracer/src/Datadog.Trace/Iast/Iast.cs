@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Threading;
 using Datadog.Trace.Configuration;
@@ -19,15 +21,11 @@ namespace Datadog.Trace.Iast;
 internal class Iast
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Iast>();
-    private static Iast _instance;
+    private static Iast? _instance;
     private static bool _globalInstanceInitialized;
     private static object _globalInstanceLock = new();
     private readonly IastSettings _settings;
     private readonly OverheadController _overheadController;
-
-    static Iast()
-    {
-    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Iast"/> class with default settings.
@@ -37,7 +35,7 @@ internal class Iast
     {
     }
 
-    internal Iast(IastSettings settings = null)
+    internal Iast(IastSettings? settings = null)
     {
         _settings = settings ?? IastSettings.FromDefaultSources();
         if (_settings.Enabled)
@@ -57,7 +55,7 @@ internal class Iast
     /// </summary>
     public static Iast Instance
     {
-        get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
+        get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock)!;
 
         set
         {
@@ -68,4 +66,6 @@ internal class Iast
             }
         }
     }
+
+    internal bool Enabled => _settings.Enabled;
 }
