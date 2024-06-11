@@ -39,7 +39,6 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         private static int _firstInitialization = 1;
         private static int _firstNonNativePartsInitialization = 1;
-        private static bool _useEmbeddedDefinitions = true;
 
         /// <summary>
         /// Gets the CLSID for the Datadog .NET profiler
@@ -99,6 +98,7 @@ namespace Datadog.Trace.ClrProfiler
             legacyMode = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
             if (legacyMode)
             {
+                Log.Information("Version mismatch detected. Initializing in legacy mode. Native: {Native} Managed: {Managed}", GetNativeTracerVersion(), TracerConstants.ThreePartVersion);
                 InitializeLegacy();
             }
             else
@@ -107,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 try
                 {
-                    Log.Debug("Enabling CallTarget integration definitions in native library.");
+                    Log.Debug("Enabling CallTarget integration definitions embedded in native library.");
 
                     InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
                     if (Security.Instance.Enabled)
@@ -116,9 +116,7 @@ namespace Datadog.Trace.ClrProfiler
                         enabledCategories |= InstrumentationCategory.AppSec;
                     }
 
-                    var defs = _useEmbeddedDefinitions ?
-                                    NativeMethods.InitEmbeddedCallTargetDefinitions(ConfigTelemetryData.ManagedTracerTfmValue, (uint)enabledCategories) :
-                                    NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
+                    var defs = NativeMethods.InitEmbeddedCallTargetDefinitions(ConfigTelemetryData.ManagedTracerTfmValue, (uint)enabledCategories);
 
                     Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
                     TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
@@ -588,10 +586,10 @@ namespace Datadog.Trace.ClrProfiler
 
             if (isIast || raspEnabled)
             {
-                Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
                 int aspects = 0;
-                if (_useEmbeddedDefinitions)
+                if (!legacyMode)
                 {
+                    Log.Debug("Initializing {DebugMsg} Callsite Dataflow Aspects embedded into native library.", debugMsg);
                     string platform = ConfigTelemetryData.ManagedTracerTfmValue;
                     if (!isIast) { platform += "_Rasp"; }
 
@@ -599,6 +597,7 @@ namespace Datadog.Trace.ClrProfiler
                 }
                 else
                 {
+                    Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
                     string[] inputAspects = isIast ? AspectDefinitions.GetAspects() : AspectDefinitions.GetRaspAspects();
                     if (inputAspects != null)
                     {
@@ -627,7 +626,7 @@ namespace Datadog.Trace.ClrProfiler
                 }
                 else
                 {
-                    Log.Error("No CallSite Dataflow Aspects have been registered");
+                    Log.Error("No CallSite Dataflow Aspects have been registered ({DebugMsg})", debugMsg);
                 }
             }
         }
