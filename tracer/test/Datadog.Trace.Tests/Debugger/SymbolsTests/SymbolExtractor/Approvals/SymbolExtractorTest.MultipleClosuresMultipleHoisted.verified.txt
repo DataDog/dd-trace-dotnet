@@ -39,6 +39,12 @@
               },
               "symbols": [
                 {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleClosuresMultipleHoisted",
+                  "symbol_type": "arg",
+                  "line": 0
+                },
+                {
                   "name": "argument1",
                   "type": "System.Int32",
                   "symbol_type": "arg",
@@ -68,6 +74,12 @@
                   },
                   "symbols": [
                     {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleClosuresMultipleHoisted+<>c",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
                       "name": "t1",
                       "type": "System.Int32",
                       "symbol_type": "arg",
@@ -90,6 +102,12 @@
                     "end_column": 999
                   },
                   "symbols": [
+                    {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleClosuresMultipleHoisted+<>c",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
                     {
                       "name": "t2",
                       "type": "System.Int32",
@@ -114,6 +132,12 @@
                   },
                   "symbols": [
                     {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleClosuresMultipleHoisted+<>c",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
                       "name": "i1",
                       "type": "System.Int32",
                       "symbol_type": "arg",
@@ -137,6 +161,12 @@
                   },
                   "symbols": [
                     {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleClosuresMultipleHoisted+<>c",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
                       "name": "i2",
                       "type": "System.Int32",
                       "symbol_type": "arg",
@@ -159,6 +189,12 @@
                     "end_column": 999
                   },
                   "symbols": [
+                    {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleClosuresMultipleHoisted+<>c",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
                     {
                       "name": "i3",
                       "type": "System.Int32",
@@ -188,6 +224,12 @@
                     "end_column": 999
                   },
                   "symbols": [
+                    {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleClosuresMultipleHoisted+<>c__DisplayClass0_0",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
                     {
                       "name": "i5",
                       "type": "System.Int32",
@@ -226,7 +268,15 @@
                   "sanitized"
                 ],
                 "return_type": "System.Void"
-              }
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleClosuresMultipleHoisted",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ]
             }
           ]
         }

@@ -60,7 +60,15 @@
                   "async"
                 ],
                 "return_type": "System.Threading.Tasks.Task"
-              }
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ]
             },
             {
               "scope_type": "method",
@@ -80,6 +88,12 @@
                 "end_column": 999
               },
               "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine",
+                  "symbol_type": "arg",
+                  "line": 0
+                },
                 {
                   "name": "id",
                   "type": "System.Int32",
@@ -111,6 +125,14 @@
                     "start_column": 999,
                     "end_column": 999
                   },
+                  "symbols": [
+                    {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+<DoAsyncWork>d__3",
+                      "symbol_type": "arg",
+                      "line": 0
+                    }
+                  ],
                   "scopes": [
                     {
                       "scope_type": "local",
@@ -162,7 +184,15 @@
                   "sanitized"
                 ],
                 "return_type": "System.Void"
-              }
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ]
             },
             {
               "scope_type": "class",
@@ -243,6 +273,12 @@
                   },
                   "symbols": [
                     {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Person",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
                       "name": "Name",
                       "type": "System.String",
                       "symbol_type": "arg",
@@ -278,7 +314,15 @@
                     "return_type": "System.String",
                     "start_column": 999,
                     "end_column": 999
-                  }
+                  },
+                  "symbols": [
+                    {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Person",
+                      "symbol_type": "arg",
+                      "line": 0
+                    }
+                  ]
                 }
               ]
             },
@@ -347,6 +391,12 @@
                   },
                   "symbols": [
                     {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Address",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
                       "name": "Name",
                       "type": "System.String",
                       "symbol_type": "arg",
@@ -376,7 +426,15 @@
                     "return_type": "System.String",
                     "start_column": 999,
                     "end_column": 999
-                  }
+                  },
+                  "symbols": [
+                    {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Address",
+                      "symbol_type": "arg",
+                      "line": 0
+                    }
+                  ]
                 }
               ]
             }
