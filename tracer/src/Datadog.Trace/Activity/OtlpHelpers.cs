@@ -315,6 +315,13 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
+            // remap keys as needed regardless of datatype
+            if (key == "http.response.status_code")
+            {
+                span.SetTag(Tags.HttpStatusCode, value.ToString());
+                return;
+            }
+
             switch (value)
             {
                 case char c:
@@ -338,17 +345,8 @@ namespace Datadog.Trace.Activity
                 case ushort us:
                     span.SetMetric(key, us);
                     break;
-                case int i: // TODO: Can't get here from OTEL API, test with Activity API
-                    // special case where we need to remap "http.response.status_code"
-                    if (key == "http.response.status_code")
-                    {
-                        span.SetTag(Tags.HttpStatusCode, i.ToString(CultureInfo.InvariantCulture));
-                    }
-                    else
-                    {
-                        span.SetMetric(key, i);
-                    }
-
+                case int i:
+                    span.SetMetric(key, i);
                     break;
                 case uint ui:
                     span.SetMetric(key, ui);
