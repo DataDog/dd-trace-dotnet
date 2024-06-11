@@ -1760,7 +1760,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
         return S_OK;
     }
 
-    if (_pConfiguration->IsExceptionProfilingEnabled() && _pSsiManager->IsProfilerActivated())
+    if (_pConfiguration->IsExceptionProfilingEnabled() && _pSsiManager->IsProfilerStarted())
     {
         _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
     }
@@ -1975,7 +1975,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
                                                                        ULONG numStackFrames,
                                                                        UINT_PTR stackFrames[])
 {
-    if (_pEventPipeEventsManager != nullptr && _pSsiManager->IsProfilerActivated())
+    if (_pEventPipeEventsManager != nullptr && _pSsiManager->IsProfilerStarted())
     {
         _pEventPipeEventsManager->ParseEvent(
             provider,

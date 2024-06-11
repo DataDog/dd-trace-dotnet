@@ -29,7 +29,7 @@ public:
     bool IsSpanCreated() const override;
     bool IsLongLived() const override;
     bool IsProfilerEnabled() override;
-    bool IsProfilerActivated() override;
+    bool IsProfilerStarted() override;
 
     // send metrics
     void ProcessStart() override;

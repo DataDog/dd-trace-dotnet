@@ -50,7 +50,7 @@ class ContentionProvider;
 class IService;
 class IThreadsCpuManager;
 class IManagedThreadList;
-class IStackSamplerLoopManager;
+class StackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
 class RuntimeIdStore;
@@ -208,7 +208,7 @@ public:
     IThreadsCpuManager* GetThreadsCpuManager() { return _pThreadsCpuManager; }
     IManagedThreadList* GetManagedThreadList() { return _pManagedThreadList; }
     IManagedThreadList* GetCodeHotspotThreadList() { return _pCodeHotspotsThreadList; }
-    IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
+    //IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
     IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
     IExporter* GetExporter() { return _pExporter.get(); }
     SamplesCollector* GetSamplesCollector() { return _pSamplesCollector; }
@@ -233,7 +233,7 @@ private :
     // The pointer here are observable pointer which means that they are used only to access the data.
     // Their lifetime is managed by the _services vector.
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
-    IStackSamplerLoopManager* _pStackSamplerLoopManager = nullptr;
+    StackSamplerLoopManager* _pStackSamplerLoopManager = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;
     IManagedThreadList* _pCodeHotspotsThreadList = nullptr;
     IApplicationStore* _pApplicationStore = nullptr;

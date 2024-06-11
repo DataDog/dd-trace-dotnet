@@ -4,6 +4,7 @@
 #pragma once
 #include "IApplicationStore.h"
 #include "ApplicationInfo.h"
+#include "ServiceBase.h"
 
 #include <memory>
 #include <mutex>
@@ -22,7 +23,10 @@ class TelemetryMetricsWorker;
 /// <summary>
 /// Stores the application information (name, environment, version) per runtime id
 /// </summary>
-class ApplicationStore : public IApplicationStore
+class ApplicationStore
+    :
+    public IApplicationStore,
+    public ServiceBase
 {
 public:
     ApplicationStore(IConfiguration* configuration, IRuntimeInfo* runtimeInfo, ISsiManager* ssiManager);

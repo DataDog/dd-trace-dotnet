@@ -8,8 +8,8 @@
 #include "IExporter.h"
 #include "IMetricsSender.h"
 #include "ISamplesCollector.h"
-#include "ServiceBase.h"
 #include "IThreadsCpuManager.h"
+#include "ServiceBase.h"
 
 #include <forward_list>
 #include <mutex>
@@ -19,7 +19,9 @@
 using namespace std::chrono_literals;
 
 class SamplesCollector
-    : public ISamplesCollector, public ServiceBase
+    :
+    public ISamplesCollector,
+    public ServiceBase
 {
 public:
     SamplesCollector(IConfiguration* configuration, IThreadsCpuManager* pThreadsCpuManager, IExporter* exporter, IMetricsSender* metricsSender);

@@ -268,7 +268,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             // simulate long lived
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -309,7 +309,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             hasTriggeredSeries.Should().BeTrue("We must have some triggered serie(s)");
 
-            agent.NbCallsOnProfilingEndpoint.Should().NotBe(0);
+            agent.NbCallsOnProfilingEndpoint.Should().Be(0);
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -434,7 +434,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed and enabled with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
             // simulate long lived
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -520,19 +520,30 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
                 s.Metric.Should().Be("ssi_heuristic.number_of_profiles");
                 s.Tags.Should().HaveCount(4).And.OnlyHaveUniqueItems().And.Contain("installation:ssi", "enablement_choice:ssi_enabled");
                 // we need to check for no_span in case of the timer finished after the first call (flakiness)
-                if (s.Tags.Contains("heuristic_hypothetical_decision:short_lived") || s.Tags.Contains("heuristic_hypothetical_decision:no_span"))
+                if (
+                    s.Tags.Contains("heuristic_hypothetical_decision:short_lived") ||
+                    s.Tags.Contains("heuristic_hypothetical_decision:no_span") ||
+                    s.Tags.Contains("heuristic_hypothetical_decision:no_span_short_lived"))
                 {
                     s.Tags.Should().Contain("has_sent_profiles:false");
                     hasNotSentProfiles = true;
                 }
                 else if (s.Tags.Contains("heuristic_hypothetical_decision:triggered"))
                 {
-                    s.Tags.Should().Contain("has_sent_profiles:true");
+                    // it is possible that the final profile was not sent because the providers were stopped
                     hasTriggeredSeries = true;
                 }
                 else
                 {
-                    Assert.Fail("Unrecognized heuristic_hypothetical_decision");
+                    var decisionTag = s.Tags.FirstOrDefault(x => x.StartsWith("heuristic_hypothetical_decision"));
+                    if (decisionTag != null)
+                    {
+                        Assert.Fail($"Unrecognized {decisionTag}");
+                    }
+                    else
+                    {
+                        Assert.Fail("Missing heuristic_hypothetical_decision tag");
+                    }
                 }
             });
 

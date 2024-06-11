@@ -17,6 +17,7 @@ static void StartProfiling(ISsiLifetime* pSsiLifetime)
 {
     static std::once_flag heuristicsAreTriggered;
     std::call_once(heuristicsAreTriggered, [pSsiLifetime]() {
+        Log::Info("Profiling delayed start");
         pSsiLifetime->OnStartDelayedProfiling();
     });
 }
@@ -77,10 +78,10 @@ bool SsiManager::IsProfilerEnabled()
 // the profiler is activated either if:
 //     - the profiler is enabled in the configuration
 //  or - is enabled via SSI + runs for more than 30 seconds + has at least one span
-bool SsiManager::IsProfilerActivated()
+bool SsiManager::IsProfilerStarted()
 {
     return _enablementStatus == EnablementStatus::ManuallyEnabled ||
-           (_deploymentMode == DeploymentMode::SingleStepInstrumentation && IsLongLived() && IsSpanCreated());
+           (_enablementStatus == EnablementStatus::SsiEnabled && IsLongLived() && IsSpanCreated());
 }
 
 void SsiManager::ProcessStart()

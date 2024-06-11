@@ -22,8 +22,8 @@ public:
     // enabled by configuration (DD_PROFILING_ENABLED=true) / SSI (DD_INJECTION_ENABLED contains "profiler")
     virtual bool IsProfilerEnabled() = 0;
 
-    // activated manually (DD_PROFILING_ENABLED=true) or by heuristics (long lived + spans)
-    virtual bool IsProfilerActivated() = 0;
+    // started if manually enabled (DD_PROFILING_ENABLED=true) or enabled by SII and triggered heuristics (long lived + spans)
+    virtual bool IsProfilerStarted() = 0;
 
     // send metrics
     virtual void ProcessStart() = 0;

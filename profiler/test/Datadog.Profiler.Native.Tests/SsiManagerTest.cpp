@@ -96,7 +96,7 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_NotDeployedAsSSI)
 
     SsiManager manager(configuration.get(), &lifetime);
 
-    ASSERT_EQ(manager.IsProfilerActivated(), false);
+    ASSERT_EQ(manager.IsProfilerStarted(), false);
 }
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSI)
@@ -108,7 +108,7 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSI)
 
     SsiManager manager(&configuration, &lifetime);
 
-    ASSERT_EQ(manager.IsProfilerActivated(), false);
+    ASSERT_EQ(manager.IsProfilerStarted(), false);
 }
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndDisabled)
@@ -121,7 +121,7 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndDisabled
 
     SsiManager manager(&configuration, &lifetime);
 
-    ASSERT_EQ(manager.IsProfilerActivated(), false);
+    ASSERT_EQ(manager.IsProfilerStarted(), false);
 }
 
 TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndEnabled)
@@ -145,7 +145,7 @@ TEST(SsiManagerTest, Should_ProfilerBeActivated_When_NotDeployedAsSSIAndEnabled)
 
     SsiManager manager(&configuration, &lifetime);
 
-    ASSERT_EQ(manager.IsProfilerActivated(), true);
+    ASSERT_EQ(manager.IsProfilerStarted(), true);
 }
 
 TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndSpanAndLongLived)
@@ -164,7 +164,7 @@ TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndSpanAndLong
     // wait for the timer to finish
     std::this_thread::sleep_for(100ms);
 
-    ASSERT_EQ(manager.IsProfilerActivated(), true);
+    ASSERT_EQ(manager.IsProfilerStarted(), true);
     ASSERT_EQ(manager.IsProfilerEnabled(), true);
 }
 
@@ -181,7 +181,7 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndSpanOnly
     manager.ProcessStart();
     manager.OnSpanCreated();
 
-    ASSERT_EQ(manager.IsProfilerActivated(), false);
+    ASSERT_EQ(manager.IsProfilerStarted(), false);
 }
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndLongLivedOnly)
@@ -196,5 +196,5 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndLongLive
 
     SsiManager manager(configuration.get(), &lifetime);
 
-    ASSERT_EQ(manager.IsProfilerActivated(), false);
+    ASSERT_EQ(manager.IsProfilerStarted(), false);
 }
