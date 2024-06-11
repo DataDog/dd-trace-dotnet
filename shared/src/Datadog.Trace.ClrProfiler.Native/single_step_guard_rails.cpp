@@ -273,7 +273,7 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
     const std::vector args = {initialArg, linuxMetadata};
 #endif
 
-    Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", args[0]);
+    Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", initialArg, "and metadata " , args[1]);
     const auto success = ProcessHelper::RunProcess(processPath, args);
     if(success)
     {
