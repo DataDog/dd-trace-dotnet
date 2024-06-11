@@ -2438,6 +2438,9 @@ partial class Build
 
            // This one is caused by the intentional crash in the crash tracking smoke test
            knownPatterns.Add(new("Application threw an unhandled exception: System.BadImageFormatException: Expected", RegexOptions.Compiled));
+
+           // We intentionally set the variables for smoke tests which means we get this warning on <= .NET Core 3.0
+           knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET Core 3.0 or lower", RegexOptions.Compiled));
            
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
