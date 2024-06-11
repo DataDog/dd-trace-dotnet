@@ -100,7 +100,6 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
     int read_fd = pipefd[0];
     int write_fd = pipefd[1];
 
-    bool success = true;
     pid_t processId = fork();
 
     if (processId == 0)
@@ -144,7 +143,7 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
     int status;
     waitpid(processId, &status, 0);
 
-    return success;
+    return true;
 }
 
 #endif
