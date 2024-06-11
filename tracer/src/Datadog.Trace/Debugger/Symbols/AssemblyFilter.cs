@@ -19,13 +19,23 @@ namespace Datadog.Trace.Debugger.Symbols
         internal static bool ShouldSkipAssembly(Assembly assembly, HashSet<string>? includeList = null)
         {
             var assemblyName = assembly.GetName().Name;
-            return string.IsNullOrWhiteSpace(assemblyName) ||
-                   assembly.IsDynamic ||
-                   assembly.ManifestModule.IsResource() ||
-                   string.IsNullOrWhiteSpace(assembly.Location) ||
-                   IsDatadogAssembly(assemblyName) ||
-                   IsThirdPartyCode(assemblyName) ||
-                   (includeList != null && !IsInIncludeList(assemblyName, includeList));
+
+            var shouldSkip = string.IsNullOrWhiteSpace(assemblyName) ||
+                             assembly.IsDynamic ||
+                             assembly.ManifestModule.IsResource() ||
+                             string.IsNullOrWhiteSpace(assembly.Location);
+
+            if (shouldSkip)
+            {
+                return true;
+            }
+
+            if (IsInIncludeList(assemblyName, includeList))
+            {
+                return false;
+            }
+
+            return IsDatadogAssembly(assemblyName) || IsThirdPartyCode(assemblyName);
         }
 
         private static bool IsThirdPartyCode(string assemblyName)
