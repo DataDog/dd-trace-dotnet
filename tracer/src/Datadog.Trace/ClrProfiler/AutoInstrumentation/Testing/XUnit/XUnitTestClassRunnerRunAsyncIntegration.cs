@@ -40,34 +40,19 @@ public static class XUnitTestClassRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (TestModule.Current is { } testModule)
+        if (TestModule.Current is { } testModule &&
+            instance.TryDuckCast<ITestClassRunner>(out var classRunnerInstance))
         {
-            var classRunnerInstance = instance.DuckCast<ITestClassRunner>();
-            var suiteName = classRunnerInstance.TestClass.Class.Name ?? string.Empty;
-            if (classRunnerInstance.TestCases is { } testCases)
+            if (XUnitIntegration.CheckIfSuiteIsSkippable(classRunnerInstance) || true)
             {
-                var skipped = 0;
-                var nonSkipped = 0;
-                foreach (var tCase in testCases)
-                {
-                    if (tCase.TryDuckCast<ITestMethodTestCase>(out var tmCase) &&
-                        tmCase.Method.TryDuckCast<IReflectionMethodInfo>(out var reflectionMethodInfo) &&
-                        reflectionMethodInfo is { Name: { } methodName, MethodInfo: not null })
-                    {
-                        if (Common.ShouldSkip(suiteName, methodName, tmCase.TestMethodArguments, reflectionMethodInfo.MethodInfo.GetParameters()))
-                        {
-                            skipped++;
-                            continue;
-                        }
-                    }
-
-                    nonSkipped++;
-                }
-
-                Common.Log.Warning<string, int, int>("Suite: {Suite} | Skipable/NonSkippable: {Skip} / {NoSkip}", suiteName, skipped, nonSkipped);
+                var messageBus = classRunnerInstance.MessageBus;
+                var duckMessageBus = messageBus.DuckCast<IMessageBus>();
+                var messageBusInterfaceType = messageBus.GetType().GetInterface("IMessageBus")!;
+                var suiteSkipMessageBus = new SuiteSkipMessageBus(duckMessageBus);
+                classRunnerInstance.MessageBus = suiteSkipMessageBus.DuckImplement(messageBusInterfaceType);
             }
 
-            return new CallTargetState(null, testModule.InternalGetOrCreateSuite(suiteName));
+            return new CallTargetState(null, testModule.InternalGetOrCreateSuite(classRunnerInstance.TestClass.Class.Name ?? string.Empty));
         }
 
         Common.Log.Warning("Test module cannot be found.");
@@ -116,5 +101,59 @@ public static class XUnitTestClassRunnerRunAsyncIntegration
         }
 
         return returnValue;
+    }
+
+    internal class SuiteSkipMessageBus : IMessageBus
+    {
+        private readonly IMessageBus _innerMessageBus;
+
+        public SuiteSkipMessageBus(IMessageBus innerMessageBus)
+        {
+            _innerMessageBus = innerMessageBus;
+        }
+
+        [DuckReverseMethod]
+        public void Dispose()
+        {
+            _innerMessageBus.Dispose();
+        }
+
+        [DuckReverseMethod]
+        public bool QueueMessage(object? message)
+        {
+            _innerMessageBus.QueueMessage(message);
+
+            if (message is null)
+            {
+                return false;
+            }
+
+            var messageType = message.GetType();
+            if (messageType.Name == "TestClassStarting" &&
+                message.TryDuckCast<TestClassStartingStruct>(out var testClassStarting))
+            {
+                if (messageType.Assembly.GetType("Xunit.Sdk.TestClassFinished") is { } testClassFinishedType)
+                {
+                    var classFinishedMessage = Activator.CreateInstance(
+                        testClassFinishedType,
+                        testClassStarting.TestCases,
+                        testClassStarting.TestClass,
+                        0M,
+                        0,
+                        0,
+                        10);
+                    _innerMessageBus.QueueMessage(classFinishedMessage);
+                }
+            }
+
+            return false;
+        }
+
+        [DuckCopy]
+        internal struct TestClassStartingStruct
+        {
+            public object? TestCases;
+            public object? TestClass;
+        }
     }
 }

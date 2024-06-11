@@ -31,7 +31,7 @@ internal interface ITestClassRunner : IDuckType
     /// <summary>
     /// Gets or sets the message bus to report run status to.
     /// </summary>
-    IMessageBus MessageBus { get; set; }
+    object MessageBus { get; set; }
 }
 
 internal interface ITestMethodTestCase : IDuckType

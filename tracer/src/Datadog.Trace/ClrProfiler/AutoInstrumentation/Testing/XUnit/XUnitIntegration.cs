@@ -10,6 +10,7 @@ using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
@@ -197,5 +198,43 @@ internal static class XUnitIntegration
     internal static void IncrementTotalTestCases()
     {
         Interlocked.Increment(ref _totalTestCases);
+    }
+
+    internal static bool CheckIfSuiteIsSkippable(ITestClassRunner? classRunnerInstance)
+    {
+        if (classRunnerInstance is null)
+        {
+            return false;
+        }
+
+        var suiteName = classRunnerInstance.TestClass.Class.Name ?? string.Empty;
+        if (classRunnerInstance.TestCases is { } testCases)
+        {
+            var skipped = 0;
+            var nonSkipped = 0;
+            foreach (var tCase in testCases)
+            {
+                if (tCase.TryDuckCast<ITestMethodTestCase>(out var tmCase) &&
+                    tmCase.Method.TryDuckCast<IReflectionMethodInfo>(out var reflectionMethodInfo) &&
+                    reflectionMethodInfo is { Name: { } methodName, MethodInfo: not null })
+                {
+                    if (Common.ShouldSkip(suiteName, methodName, tmCase.TestMethodArguments, reflectionMethodInfo.MethodInfo.GetParameters()))
+                    {
+                        skipped++;
+                        continue;
+                    }
+                }
+
+                nonSkipped++;
+            }
+
+            Common.Log.Warning<string, int, int>("Suite: {Suite} | Skipable/NonSkippable: {Skip} / {NoSkip}", suiteName, skipped, nonSkipped);
+            if (nonSkipped == 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
