@@ -177,7 +177,7 @@ namespace Datadog.Trace.ClrProfiler
 
         void GenerateCallSites(IEnumerable<ClassAspects> aspectClasses, string suffix = "")
         {
-            sb.AppendLine($"{GetFieldName(suffix)}");
+            sb.AppendLine(GetFieldName(suffix));
             sb.AppendLine("{");
             foreach (var aspectClass in aspectClasses)
             {

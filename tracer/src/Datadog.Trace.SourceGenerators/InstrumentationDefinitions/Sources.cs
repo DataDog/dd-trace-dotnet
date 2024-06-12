@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.ClrProfiler;
+using Helpers;
 
 namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
 {
@@ -112,6 +113,7 @@ namespace Datadog.Trace.ClrProfiler
                                     .ThenBy(static x => x.AssemblyName)
                                     .ThenBy(static x => x.TargetTypeName)
                                     .ThenBy(static x => x.TargetMethodName)
+                                    .ThenBy(static x => x.TargetParameterTypes, StringArrayComparer.Comparer)
                                     .ToList();
 
             BuildInstrumentationDefinitions(sb, orderedDefinitions, InstrumentationsCollectionName);
