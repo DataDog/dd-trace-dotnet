@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not BlockException)
             {
                 Log.Error(ex, "Error creating or populating scope.");
                 return scope;
@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                 }
             }
-            catch (Exception ex) when (ex is not BlockException)
+            catch (Exception ex)
             {
                 Log.Error(ex, "Error propagating span data for DBM");
             }
