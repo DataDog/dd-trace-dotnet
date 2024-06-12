@@ -78,3 +78,8 @@ bool ServiceBase::Stop()
 
     return result;
 }
+
+ServiceBase::State ServiceBase::GetState() const
+{
+    return _currentState;
+}

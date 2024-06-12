@@ -32,8 +32,6 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     _samplingInterval{pConfiguration->GetCpuProfilingInterval()}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
-
-    Instance = this;
 }
 
 TimerCreateCpuProfiler::~TimerCreateCpuProfiler()
@@ -43,64 +41,27 @@ TimerCreateCpuProfiler::~TimerCreateCpuProfiler()
 
 void TimerCreateCpuProfiler::RegisterThread(std::shared_ptr<ManagedThreadInfo> threadInfo)
 {
-    if (_serviceState != ServiceState::Started)
+    std::shared_lock(_registerLock);
+
+    if (GetState() != SeriveBase::State::Started)
     {
         return;
     }
 
-    auto tid = threadInfo->GetOsThreadId();
-    Log::Debug("Creating timer for thread ", tid);
-
-    struct sigevent sev;
-    sev.sigev_value.sival_ptr = nullptr;
-    sev.sigev_signo = _pSignalManager->GetSignal();
-    sev.sigev_notify = SIGEV_THREAD_ID;
-    ((int*)&sev.sigev_notify)[1] = tid;
-
-    // Use raw syscalls, since libc wrapper allows only predefined clocks
-    clockid_t clock = ((~tid) << 3) | 6; // CPUCLOCK_SCHED | CPUCLOCK_PERTHREAD_MASK thread_cpu_clock(tid);
-    int timerId;
-    if (syscall(__NR_timer_create, clock, &sev, &timerId) < 0)
-    {
-        Log::Error("Call to timer_create failed for thread ", tid);
-        return;
-    }
-
-    auto oldTimerId = threadInfo->SetTimerId(timerId);
-
-    // In case of SSI:
-    // There is a race when Start() and RegisterThread :
-    // The thread can be added while lookping over the in the managed threads list
-    // and a call being made to RegisterThread
-    // In that case, just keep the first timer id and delete the other
-    if (oldTimerId != -1)
-    {
-        // delete the newly created timer
-        syscall(__NR_timer_delete, timerId);
-        threadInfo->SetTimerId(oldTimerId);
-        return;
-    }
-
-    std::int32_t _interval = std::chrono::duration_cast<std::chrono::nanoseconds>(_samplingInterval).count();
-    struct itimerspec ts;
-    ts.it_interval.tv_sec = (time_t)(_interval / 1000000000);
-    ts.it_interval.tv_nsec = _interval % 1000000000;
-    ts.it_value = ts.it_interval;
-    syscall(__NR_timer_settime, timerId, 0, &ts, nullptr);
+    RegisterThreadImpl(threadInfo.get());
 }
 
 void TimerCreateCpuProfiler::UnregisterThread(std::shared_ptr<ManagedThreadInfo> threadInfo)
 {
-    if (_serviceState != ServiceState::Started)
-    {
-        Log::Debug("timer_create-based cpu profiler is not started. Cannot unregister thread.");
-        return;
-    }
+    std::shared_lock lock(_registerLock);
 
     auto timerId = threadInfo->SetTimerId(-1);
 
-    Log::Debug("Unregister timer for thread ", threadInfo->GetOsThreadId());
-    syscall(__NR_timer_delete, timerId);
+    if (timerId != -1)
+    {
+        Log::Debug("Unregister timer for thread ", threadInfo->GetOsThreadId());
+        syscall(__NR_timer_delete, timerId);
+    }
 }
 
 const char* TimerCreateCpuProfiler::GetName()
@@ -108,73 +69,44 @@ const char* TimerCreateCpuProfiler::GetName()
     return "timer_create-based Cpu Profiler";
 }
 
-bool TimerCreateCpuProfiler::Start()
+bool TimerCreateCpuProfiler::StartImpl()
 {
-    if (_serviceState.exchange(ServiceState::Started) == ServiceState::Started)
-    {
-        Log::Debug("timer_create-based Cpu profiler has already been started.");
-        return true;
-    }
-
     // If the signal is higjacked, what to do?
     auto registered = _pSignalManager->RegisterHandler(TimerCreateCpuProfiler::CollectStackSampleSignalHandler);
 
-    auto it = _pManagedThreadsList->CreateIterator();
-
-    ManagedThreadInfo* first = nullptr;
-
-    auto current = _pManagedThreadsList->LoopNext(it);
-    while (current != nullptr && current.get() != first)
+    if (registered)
     {
-        if (first == nullptr)
-        {
-            first = current.get();
-        }
+        std::unique_lock lock(_registerLock);
+        Instance = this;
 
-        if (current->GetTimerId() != -1)
-        {
-            continue;
-        }
-
-        RegisterThread(current);
-        current = _pManagedThreadsList->LoopNext(it);
+        // Create and start timer for all threads
+        _pManagedThreadsList->ForEach([this](ManagedThreadList* thread) { RegisterImpl(thread); });
     }
 
     return registered;
 }
 
-bool TimerCreateCpuProfiler::Stop()
+bool TimerCreateCpuProfiler::StopImpl()
 {
-    auto old = _serviceState.exchange(ServiceState::Stopped);
-    if (old == ServiceState::Initialized)
-    {
-        Log::Debug("Cannot call Stop on the timer_create-based Cpu profiler since it was not started yet.");
-        return false;
-    }
-
-    if (old == ServiceState::Stopped)
-    {
-        Log::Debug("timer_create-based Cpu profiler was already stopped.");
-        return true;
-    }
-
     _pSignalManager->UnRegisterHandler();
+    Instance = nullptr;
 
     return true;
 }
 
 bool TimerCreateCpuProfiler::CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext)
 {
-    return Instance->Collect(ucontext);
+    auto instance = Instance;
+    if (instance == nullptr)
+    {
+        return;
+    }
+
+    return instance->Collect(ucontext);
 }
 
 bool TimerCreateCpuProfiler::Collect(void* ctx)
 {
-    if (_serviceState == ServiceState::Stopped)
-    {
-        return false;
-    }
-
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
     if (threadInfo == nullptr)
     {
@@ -213,4 +145,40 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     _pProvider->Add(std::move(rawCpuSample));
 
     return true;
+}
+
+void TimerCreateCpuProfiler::RegisterThreadImpl(ManagedThreadInfo* threadInfo)
+{
+    auto timerId = threadInfo->GetTimerId();
+    auto tid = threadInfo->GetOsThreadId();
+
+    if (timerId != -1)
+    {
+        // already register (lost the race)
+        Log::Debug("Timer was already created for thread ", tid);
+        return;
+    }
+
+    Log::Debug("Creating timer for thread ", tid);
+
+    struct sigevent sev;
+    sev.sigev_value.sival_ptr = nullptr;
+    sev.sigev_signo = _pSignalManager->GetSignal();
+    sev.sigev_notify = SIGEV_THREAD_ID;
+    ((int*)&sev.sigev_notify)[1] = tid;
+
+    // Use raw syscalls, since libc wrapper allows only predefined clocks
+    clockid_t clock = ((~tid) << 3) | 6; // CPUCLOCK_SCHED | CPUCLOCK_PERTHREAD_MASK thread_cpu_clock(tid);
+    if (syscall(__NR_timer_create, clock, &sev, &timerId) < 0)
+    {
+        Log::Error("Call to timer_create failed for thread ", tid);
+        return;
+    }
+
+    std::int32_t _interval = std::chrono::duration_cast<std::chrono::nanoseconds>(_samplingInterval).count();
+    struct itimerspec ts;
+    ts.it_interval.tv_sec = (time_t)(_interval / 1000000000);
+    ts.it_interval.tv_nsec = _interval % 1000000000;
+    ts.it_value = ts.it_interval;
+    syscall(__NR_timer_settime, timerId, 0, &ts, nullptr);
 }
