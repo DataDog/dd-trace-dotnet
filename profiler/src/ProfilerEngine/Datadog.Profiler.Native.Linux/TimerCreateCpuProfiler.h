@@ -3,15 +3,16 @@
 
 #pragma once
 
-#include "IService.h"
-#include "ManagedThreadInfo.h"
 #include "CallstackProvider.h"
+#include "ManagedThreadInfo.h"
+#include "ServiceBase.h"
 
 #include <signal.h>
 
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <shared_mutex>
 #include <unordered_set>
 
 class IConfiguration;
@@ -21,7 +22,7 @@ class ProfilerSignalManager;
 class CpuTimeProvider;
 class CallstackProvider;
 
-class TimerCreateCpuProfiler : public IService
+class TimerCreateCpuProfiler : public ServiceBase
 {
 public:
     TimerCreateCpuProfiler(
@@ -37,14 +38,16 @@ public:
     void UnregisterThread(std::shared_ptr<ManagedThreadInfo> threadInfo);
 
     const char* GetName() override;
-    bool Start() override;
-    bool Stop() override;
 
 private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
     static TimerCreateCpuProfiler* Instance;
 
     bool Collect(void* ucontext);
+    void RegisterThreadImpl(ManagedThreadInfo* thread);
+
+    bool StartImpl() override;
+    bool StopImp() override;
 
     enum class ServiceState
     {
@@ -59,4 +62,5 @@ private:
     CallstackProvider _callstackProvider;
     std::atomic<ServiceState> _serviceState;
     std::chrono::milliseconds _samplingInterval;
+    std::shared_mutex _registerLock;
 };
