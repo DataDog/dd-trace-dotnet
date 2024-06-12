@@ -67,6 +67,11 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args, lastTime);
     }
 
+    public bool HasContext()
+    {
+        return _httpTransport.Context is not null;
+    }
+
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
     {
         LogAddressIfDebugEnabled(args);
