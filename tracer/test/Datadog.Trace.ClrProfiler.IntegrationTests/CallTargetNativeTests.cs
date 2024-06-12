@@ -34,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [MemberData(nameof(MethodArgumentsData))]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath)
         {
             SetInstrumentationVerification();
@@ -86,6 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task MethodRefArguments()
         {
             SetInstrumentationVerification();
@@ -117,6 +119,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task MethodOutArguments()
         {
             SetInstrumentationVerification();
@@ -147,6 +150,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task MethodAbstract()
         {
             SetInstrumentationVerification();
@@ -177,6 +181,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task MethodInterface()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -205,6 +210,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task RemoveIntegrations()
         {
             SetInstrumentationVerification();
@@ -228,6 +234,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task ExtraIntegrations()
         {
             SetInstrumentationVerification();
@@ -248,6 +255,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task CallTargetBubbleUpExceptionIntegrations()
         {
             SetInstrumentationVerification();
@@ -262,6 +270,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task CategorizedCallTargetIntegrations()
         {
             SetInstrumentationVerification();
@@ -283,6 +292,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task MethodRefStructArguments()
         {
             SetInstrumentationVerification();
