@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System.Reflection;
@@ -43,24 +44,24 @@ internal static class SymbolsExtensions
         switch (handle)
         {
             case { Kind: HandleKind.TypeDefinition }:
-                {
-                    return ((TypeDefinitionHandle)handle).FullName(metadataReader);
-                }
+            {
+                return ((TypeDefinitionHandle)handle).FullName(metadataReader);
+            }
 
             case { Kind: HandleKind.TypeReference }:
-                {
-                    return ((TypeReferenceHandle)handle).FullName(metadataReader, false);
-                }
+            {
+                return ((TypeReferenceHandle)handle).FullName(metadataReader, false);
+            }
 
             case { Kind: HandleKind.TypeSpecification }:
-                {
-                    return ((TypeSpecificationHandle)handle).FullName(metadataReader);
-                }
+            {
+                return ((TypeSpecificationHandle)handle).FullName(metadataReader);
+            }
 
             default:
-                {
-                    return "Unknown";
-                }
+            {
+                return "Unknown";
+            }
         }
     }
 
@@ -68,5 +69,15 @@ internal static class SymbolsExtensions
     {
         var typeAttributes = typeDefinition.Attributes;
         return (typeAttributes & TypeAttributes.Interface) == TypeAttributes.Interface;
+    }
+
+    internal static bool IsHiddenThis(this Parameter parameter)
+    {
+        return parameter.SequenceNumber == -2;
+    }
+
+    internal static bool IsStaticMethod(this MethodDefinition method)
+    {
+        return (method.Attributes & System.Reflection.MethodAttributes.Static) > 0;
     }
 }

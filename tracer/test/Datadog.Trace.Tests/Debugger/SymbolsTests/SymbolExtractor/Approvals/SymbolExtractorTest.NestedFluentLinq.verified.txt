@@ -37,6 +37,14 @@
                 "start_column": 999,
                 "end_column": 999
               },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ],
               "scopes": [
                 {
                   "scope_type": "closure",
@@ -53,6 +61,12 @@
                     "end_column": 999
                   },
                   "symbols": [
+                    {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq+<>c",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
                     {
                       "name": "a",
                       "type": "System.Int32",
@@ -77,6 +91,12 @@
                   },
                   "symbols": [
                     {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq+<>c",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
                       "name": "b",
                       "type": "System.Int32",
                       "symbol_type": "arg",
@@ -99,6 +119,12 @@
                     "end_column": 999
                   },
                   "symbols": [
+                    {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq+<>c",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
                     {
                       "name": "c",
                       "type": "System.Int32",
@@ -123,6 +149,12 @@
                   },
                   "symbols": [
                     {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq+<>c",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
                       "name": "d",
                       "type": "System.Int32",
                       "symbol_type": "arg",
@@ -146,6 +178,12 @@
                   },
                   "symbols": [
                     {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq+<>c",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
                       "name": "e",
                       "type": "System.Int32",
                       "symbol_type": "arg",
@@ -168,6 +206,12 @@
                     "end_column": 999
                   },
                   "symbols": [
+                    {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq+<>c",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
                     {
                       "name": "f",
                       "type": "System.Int32",
@@ -212,7 +256,15 @@
                   "sanitized"
                 ],
                 "return_type": "System.Void"
-              }
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ]
             }
           ]
         }

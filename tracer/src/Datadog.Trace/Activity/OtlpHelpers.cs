@@ -9,14 +9,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Activity
 {
@@ -42,7 +42,6 @@ namespace Datadog.Trace.Activity
             var w3cActivity = activity as IW3CActivity;
             var activity5 = activity as IActivity5;
             var activity6 = activity as IActivity6;
-
             span.ResourceName = null; // Reset the resource name, it will be repopulated via the Datadog trace agent logic
             span.OperationName = null; // Reset the operation name, it will be repopulated
 
@@ -204,6 +203,98 @@ namespace Datadog.Trace.Activity
             {
                 span.Type = activity5 is null ? SpanTypes.Custom : AgentSpanKind2Type(activity5.Kind, span);
             }
+
+            // extract any ActivityLinks
+            ExtractActivityLinks<TInner>(span, activity5);
+        }
+
+        private static void ExtractActivityLinks<TInner>(Span span, IActivity5? activity5)
+            where TInner : IActivity
+        {
+            if (activity5 is null)
+            {
+                return;
+            }
+
+            foreach (var link in (activity5.Links))
+            {
+                if (!link.TryDuckCast<IActivityLink>(out var duckLink)
+                 || duckLink.Context.TraceId.TraceId is null
+                 || duckLink.Context.SpanId.SpanId is null)
+                {
+                    continue;
+                }
+
+                var parsedTraceId = HexString.TryParseTraceId(duckLink.Context.TraceId.TraceId, out var newActivityTraceId);
+                var parsedSpanId = HexString.TryParseUInt64(duckLink.Context.SpanId.SpanId, out var newActivitySpanId);
+
+                if (!parsedTraceId || !parsedSpanId)
+                {
+                    continue;
+                }
+
+                var traceParentSample = duckLink.Context.TraceFlags > 0;
+                var traceState = W3CTraceContextPropagator.ParseTraceState(duckLink.Context.TraceState);
+                var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
+                var samplingPriority = traceParentSample switch
+                {
+                    true when traceState.SamplingPriority != null && SamplingPriorityValues.IsKeep(traceState.SamplingPriority.Value) => traceState.SamplingPriority.Value,
+                    true => SamplingPriorityValues.AutoKeep,
+                    false when traceState.SamplingPriority != null && SamplingPriorityValues.IsDrop(traceState.SamplingPriority.Value) => traceState.SamplingPriority.Value,
+                    false => SamplingPriorityValues.AutoReject
+                };
+
+                if (traceParentSample && SamplingPriorityValues.IsDrop(samplingPriority))
+                {
+                    traceTags.SetTag(Tags.Propagated.DecisionMaker, "-0");
+                }
+                else if (!traceParentSample && SamplingPriorityValues.IsKeep(samplingPriority))
+                {
+                    traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
+                }
+
+                var spanContext = new SpanContext(
+                    newActivityTraceId,
+                    newActivitySpanId,
+                    samplingPriority: samplingPriority,
+                    serviceName: null,
+                    origin: traceState.Origin,
+                    isRemote: duckLink.Context.IsRemote);
+
+                spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
+                spanContext.LastParentId = traceState.LastParent;
+                spanContext.PropagatedTags = traceTags;
+
+                var extractedSpan = new Span(spanContext, DateTimeOffset.Now, new CommonTags());
+                var spanLink = span.AddSpanLink(extractedSpan);
+
+                if (duckLink.Tags is not null)
+                {
+                    foreach (var kvp in duckLink.Tags)
+                    {
+                        if (!string.IsNullOrEmpty(kvp.Key)
+                         && IsAllowedAtributeType(kvp.Value))
+                        {
+                            if (kvp.Value is Array array)
+                            {
+                                int index = 0;
+                                foreach (var item in array)
+                                {
+                                    if (item?.ToString() is { } value)
+                                    {
+                                        spanLink.AddAttribute($"{kvp.Key}.{index}", value);
+                                        index++;
+                                    }
+                                }
+                            }
+                            else if (kvp.Value?.ToString() is { } kvpValue)
+                            {
+                                spanLink.AddAttribute(kvp.Key, kvpValue);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         internal static string GetSpanKind(ActivityKind activityKind) =>
@@ -216,7 +307,7 @@ namespace Datadog.Trace.Activity
                 _ => SpanKinds.Internal,
             };
 
-        internal static void SetTagObject(Span span, string key, object? value)
+        internal static void SetTagObject(Span span, string key, object? value, bool allowUnrolling = true)
         {
             if (value is null)
             {
@@ -226,7 +317,7 @@ namespace Datadog.Trace.Activity
 
             switch (value)
             {
-                case char c: // TODO: Can't get here from OTEL API, test with Activity API
+                case char c:
                     AgentSetOtlpTag(span, key, c.ToString());
                     break;
                 case string s:
@@ -235,16 +326,16 @@ namespace Datadog.Trace.Activity
                 case bool b:
                     AgentSetOtlpTag(span, key, b ? "true" : "false");
                     break;
-                case byte b: // TODO: Can't get here from OTEL API, test with Activity API
+                case byte b:
                     span.SetMetric(key, b);
                     break;
-                case sbyte sb: // TODO: Can't get here from OTEL API, test with Activity API
+                case sbyte sb:
                     span.SetMetric(key, sb);
                     break;
-                case short sh: // TODO: Can't get here from OTEL API, test with Activity API
+                case short sh:
                     span.SetMetric(key, sh);
                     break;
-                case ushort us: // TODO: Can't get here from OTEL API, test with Activity API
+                case ushort us:
                     span.SetMetric(key, us);
                     break;
                 case int i: // TODO: Can't get here from OTEL API, test with Activity API
@@ -259,23 +350,44 @@ namespace Datadog.Trace.Activity
                     }
 
                     break;
-                case uint ui: // TODO: Can't get here from OTEL API, test with Activity API
+                case uint ui:
                     span.SetMetric(key, ui);
                     break;
-                case long l: // TODO: Can't get here from OTEL API, test with Activity API
+                case long l:
                     span.SetMetric(key, l);
                     break;
-                case ulong ul: // TODO: Can't get here from OTEL API, test with Activity API
+                case ulong ul:
                     span.SetMetric(key, ul);
                     break;
-                case float f: // TODO: Can't get here from OTEL API, test with Activity API
+                case float f:
                     span.SetMetric(key, f);
                     break;
                 case double d:
                     span.SetMetric(key, d);
                     break;
                 case IEnumerable enumerable:
-                    AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(enumerable));
+                    if (allowUnrolling)
+                    {
+                        var index = 0;
+                        foreach (var element in (enumerable))
+                        {
+                            // we are only supporting a single level of unrolling
+                            SetTagObject(span, $"{key}.{index}", element, allowUnrolling: false);
+                            index++;
+                        }
+
+                        if (index == 0)
+                        {
+                            // indicates that it was an empty array, we need to add the tag
+                            AgentSetOtlpTag(span, key, "[]");
+                        }
+                    }
+                    else
+                    {
+                        // we've already unrolled once, don't do it again for IEnumerable values
+                        AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(value));
+                    }
+
                     break;
                 default:
                     AgentSetOtlpTag(span, key, value.ToString());
@@ -506,6 +618,53 @@ namespace Datadog.Trace.Activity
             }
 
             return null;
+        }
+
+        private static bool IsAllowedAtributeType(object? value)
+        {
+            if (value is null)
+            {
+                return false;
+            }
+
+            if (value is Array array)
+            {
+                if (array.Length == 0 ||
+                    array.Rank > 1)
+                {
+                    // Newtonsoft doesn't seem to support multidimensional arrays (e.g., [,]), but does support jagged (e.g., [][])
+                    return false;
+                }
+
+                if (value.GetType() is { } type
+                 && type.IsArray
+                 && type.GetElementType() == typeof(object))
+                {
+                    // Arrays may only have a primitive type, not 'object'
+                    return false;
+                }
+
+                value = array.GetValue(0);
+
+                if (value is null)
+                {
+                    return false;
+                }
+            }
+
+            return (value is string or bool ||
+                    value is char ||
+                    value is sbyte ||
+                    value is byte ||
+                    value is ushort ||
+                    value is short ||
+                    value is uint ||
+                    value is int ||
+                    value is ulong ||
+                    value is long ||
+                    value is float ||
+                    value is double ||
+                    value is decimal);
         }
     }
 }

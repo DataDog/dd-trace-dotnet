@@ -55,6 +55,12 @@
               },
               "symbols": [
                 {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals",
+                  "symbol_type": "arg",
+                  "line": 0
+                },
+                {
                   "name": "service",
                   "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals+IService",
                   "symbol_type": "arg",
@@ -80,6 +86,12 @@
                 "end_column": 999
               },
               "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals",
+                  "symbol_type": "arg",
+                  "line": 0
+                },
                 {
                   "name": "name",
                   "type": "System.String",
@@ -117,6 +129,14 @@
                     "start_column": 999,
                     "end_column": 999
                   },
+                  "symbols": [
+                    {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals+<AssignRoom>d__3",
+                      "symbol_type": "arg",
+                      "line": 0
+                    }
+                  ],
                   "scopes": [
                     {
                       "scope_type": "local",
@@ -168,6 +188,12 @@
               },
               "symbols": [
                 {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals",
+                  "symbol_type": "arg",
+                  "line": 0
+                },
+                {
                   "name": "name",
                   "type": "System.String",
                   "symbol_type": "arg",
@@ -196,6 +222,12 @@
                 "end_column": 999
               },
               "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals",
+                  "symbol_type": "arg",
+                  "line": 0
+                },
                 {
                   "name": "name",
                   "type": "System.String",
@@ -239,6 +271,12 @@
                   },
                   "symbols": [
                     {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals+Service",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
                       "name": "person",
                       "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine+Person",
                       "symbol_type": "arg",
@@ -262,7 +300,15 @@
                       "sanitized"
                     ],
                     "return_type": "System.Void"
-                  }
+                  },
+                  "symbols": [
+                    {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals+Service",
+                      "symbol_type": "arg",
+                      "line": 0
+                    }
+                  ]
                 }
               ]
             }

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -25,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
         private static bool _dbCommandCachingLogged = false;
 
-        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
+        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
             {
@@ -33,12 +35,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return null;
             }
 
-            Scope scope = null;
-            string commandText = command.CommandText;
+            Scope? scope = null;
+            SqlTags tags;
+            var commandText = command.CommandText ?? string.Empty;
 
             try
             {
-                Span parent = tracer.InternalActiveScope?.Span;
+                var parent = tracer.InternalActiveScope?.Span;
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     HasDbType(parent, dbType) &&
@@ -58,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 // We might block the SQL call from RASP depending on the query
                 RaspModule.OnSqlI(commandText, integrationId);
 
-                SqlTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
+                tags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
                 tags.DbType = dbType;
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
                 tags.DbName = tagsFromConnectionString.DbName;
@@ -72,7 +75,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 scope.Span.ResourceName = commandText;
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+                return scope;
+            }
 
+            try
+            {
                 if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled
                     && command.CommandType != CommandType.StoredProcedure)
                 {
@@ -111,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
             catch (Exception ex) when (ex is not BlockException)
             {
-                Log.Error(ex, "Error creating or populating scope.");
+                Log.Error(ex, "Error propagating span data for DBM");
             }
 
             return scope;
@@ -128,13 +139,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         }
 
         public static bool TryGetIntegrationDetails(
-            string commandTypeFullName,
+            string? commandTypeFullName,
             [NotNullWhen(true)] out IntegrationId? integrationId,
-            [NotNullWhen(true)] out string dbType)
+            [NotNullWhen(true)] out string? dbType)
         {
             // TODO: optimize this switch
             switch (commandTypeFullName)
             {
+                case null:
+                    integrationId = null;
+                    dbType = null;
+                    return false;
                 case "System.Data.SqlClient.SqlCommand" or "Microsoft.Data.SqlClient.SqlCommand":
                     integrationId = IntegrationId.SqlClient;
                     dbType = DbType.SqlServer;
@@ -157,7 +172,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     dbType = DbType.Sqlite;
                     return true;
                 default:
-                    string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".") + 1);
+                    string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal) + 1);
                     if (commandTypeName == "InterceptableDbCommand" || commandTypeName == "ProfiledDbCommand")
                     {
                         integrationId = null;
@@ -166,7 +181,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
 
                     const string commandSuffix = "Command";
-                    int lastIndex = commandTypeFullName.LastIndexOf(".");
+                    int lastIndex = commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal);
                     string namespaceName = lastIndex > 0 ? commandTypeFullName.Substring(0, lastIndex) : string.Empty;
                     integrationId = IntegrationId.AdoNet;
                     dbType = commandTypeName switch
@@ -191,8 +206,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             // ReSharper disable StaticMemberInGenericType
             // Static fields used intentionally to cache a different set of values for each TCommand.
             private static readonly Type CommandType;
-            private static readonly string DbTypeName;
-            private static readonly string OperationName;
+            private static readonly string? DbTypeName;
+            private static readonly string? OperationName;
             private static readonly IntegrationId IntegrationId;
 
             // ServiceName cache
@@ -204,25 +219,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             static Cache()
             {
-                var commandType = typeof(TCommand);
+                CommandType = typeof(TCommand);
 
-                if (TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
+                if (TryGetIntegrationDetails(CommandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     // cache values for this TCommand type
-                    CommandType = commandType;
                     DbTypeName = dbTypeName;
                     OperationName = $"{DbTypeName}.query";
                     IntegrationId = integrationId.Value;
                 }
             }
 
-            public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
+            public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command)
             {
                 var commandType = command.GetType();
 
-                if (commandType == CommandType)
+                if (commandType == CommandType && DbTypeName is not null && OperationName is not null)
                 {
                     // use the cached values if command.GetType() == typeof(TCommand)
+                    // and we successfully called TryGetIntegrationDetails() in the ctor
                     var tagsFromConnectionString = GetTagsFromConnectionString(command);
                     return DbScopeFactory.CreateDbCommandScope(
                         tracer: tracer,
@@ -255,7 +270,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             private static string GetServiceName(Tracer tracer, string dbTypeName)
             {
-                if (!tracer.CurrentTraceSettings.ServiceNames.TryGetValue(dbTypeName, out string serviceName))
+                if (!tracer.CurrentTraceSettings.ServiceNames.TryGetValue(dbTypeName, out var serviceName))
                 {
                     if (DbTypeName != dbTypeName)
                     {
@@ -285,7 +300,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(IDbCommand command)
             {
-                string connectionString = null;
+                string? connectionString = null;
                 try
                 {
                     if (command.GetType().FullName == "System.Data.Common.DbDataSource.DbCommandWrapper")
