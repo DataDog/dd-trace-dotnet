@@ -16,7 +16,7 @@ public static class RefStructOneParametersVoidIntegration
             ref var readOnlySpanValue = ref callTargetRefStruct.DangerousGetReadOnlySpan<char>(out success);
             if (success)
             {
-                readOnlySpanValue = "Hello World";
+                readOnlySpanValue = "Hello World".AsSpan();
                 return returnValue;
             }
             
