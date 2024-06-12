@@ -391,6 +391,15 @@ namespace Datadog.Trace.Security.Unit.Tests
             Assert.Empty(result);
         }
 
+        [Fact]
+        public void TestNullValues()
+        {
+            TestObject testObject = new TestObject();
+            testObject.Test = new();
+            var result = ObjectExtractor.Extract(testObject);
+            result.Should().NotBeNull();
+        }
+
         private static void PopulateNestedTarget(TestNestedPropertiesPoco target, int count)
         {
             var current = target;
@@ -533,5 +542,17 @@ namespace Datadog.Trace.Security.Unit.Tests
     public class TestNestedDictionaryPoco
     {
         public Dictionary<string, TestNestedDictionaryPoco> TestDictionary { get; set; } = new Dictionary<string, TestNestedDictionaryPoco>();
+    }
+
+    public class TestObject
+    {
+        public TestObject Test { get; set; }
+
+        public object Prop { get; set; }
+
+        public override int GetHashCode()
+        {
+            return Test.GetHashCode() + Prop.GetHashCode();
+        }
     }
 }
