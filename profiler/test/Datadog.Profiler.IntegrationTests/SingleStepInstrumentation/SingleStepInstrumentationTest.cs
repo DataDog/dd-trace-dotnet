@@ -177,7 +177,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Run(agent);
 
             var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:no_span_short_lived", "installation:ssi", "enablement_choice:not_enabled" };
-            runtimeIdSerie.Tags.Should().BeEquivalentTo(expectedTags);
+            runtimeIdSerie?.Tags.Should().BeEquivalentTo(expectedTags);
             nbProfilesSeries.Should().AllSatisfy(x => x.Tags.Should().BeEquivalentTo(expectedTags));
 
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
@@ -216,7 +216,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Run(agent);
 
             var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:no_span", "installation:ssi", "enablement_choice:not_enabled" };
-            runtimeIdSerie.Tags.Should().BeEquivalentTo(expectedTags);
+            runtimeIdSerie?.Tags.Should().BeEquivalentTo(expectedTags);
             nbProfilesSeries.Should().AllSatisfy(x => x.Tags.Should().BeEquivalentTo(expectedTags));
 
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
@@ -254,7 +254,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:short_lived", "installation:ssi", "enablement_choice:not_enabled" };
             string error = string.Empty;
-            Assert.True(ContainTags(runtimeIdSerie.Tags, expectedTags, ref error), $"{error}");
+            Assert.True(ContainTags(runtimeIdSerie?.Tags, expectedTags, ref error), $"{error}");
             nbProfilesSeries.Should().AllSatisfy(x => Assert.True(ContainTags(x.Tags, expectedTags, ref error), $"{error}"));
 
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
@@ -344,7 +344,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Run(agent);
 
             var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:no_span_short_lived", "installation:ssi", "enablement_choice:ssi_enabled" };
-            runtimeIdSerie.Tags.Should().BeEquivalentTo(expectedTags);
+            runtimeIdSerie?.Tags.Should().BeEquivalentTo(expectedTags);
             nbProfilesSeries.Should().AllSatisfy(x => x.Tags.Should().BeEquivalentTo(expectedTags));
 
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
@@ -383,7 +383,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Run(agent);
 
             var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:no_span", "installation:ssi", "enablement_choice:ssi_enabled" };
-            runtimeIdSerie.Tags.Should().BeEquivalentTo(expectedTags);
+            runtimeIdSerie?.Tags.Should().BeEquivalentTo(expectedTags);
             nbProfilesSeries.Should().AllSatisfy(x => x.Tags.Should().BeEquivalentTo(expectedTags));
 
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
@@ -420,7 +420,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Run(agent);
 
             var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:short_lived", "installation:ssi", "enablement_choice:ssi_enabled" };
-            runtimeIdSerie.Tags.Should().BeEquivalentTo(expectedTags);
+            runtimeIdSerie?.Tags.Should().BeEquivalentTo(expectedTags);
             nbProfilesSeries.Should().AllSatisfy(x => x.Tags.Should().BeEquivalentTo(expectedTags));
 
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
@@ -597,6 +597,12 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         // ex: "heuristic_hypothetical_decision:no_span_short_live", "heuristic_hypothetical_decision:short_live" return true
         private static bool ContainTags(string[] tags, string[] containedTags, ref string error)
         {
+            if (tags == null)
+            {
+                error = "tags is null";
+                return false;
+            }
+
             Dictionary<string, string> containedRefs = new Dictionary<string, string>();
             foreach (var tag in containedTags)
             {
