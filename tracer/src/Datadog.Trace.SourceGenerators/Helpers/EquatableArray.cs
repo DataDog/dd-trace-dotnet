@@ -20,7 +20,7 @@ public readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnume
     /// <summary>
     /// The underlying <typeparamref name="T"/> array.
     /// </summary>
-    private readonly T[]? _array;
+    internal readonly T[]? _array;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EquatableArray{T}"/> struct.
