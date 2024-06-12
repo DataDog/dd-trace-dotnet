@@ -336,11 +336,15 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     WCHAR wszName[1024];
 
     DWORD dwModuleFlags;
-    HRESULT hr = _profiler->GetModuleInfo2(moduleId, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId,
-                                           &dwModuleFlags);
+    HRESULT hr = _profiler->GetModuleInfo2(moduleId, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId, &dwModuleFlags);
+    if (hr == CORPROF_E_DATAINCOMPLETE)
+    {
+        trace::Logger::Debug("Data for ModuleId ", moduleId, " was incomplete");
+        return hr;
+    }
     if (FAILED(hr))
     {
-        trace::Logger::Error("GetModuleInfo2 failed for ModuleId ", moduleId);
+        trace::Logger::Error("GetModuleInfo2 failed for ModuleId: ", moduleId, " hr:", hr);
         return hr;
     }
     if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
@@ -352,7 +356,7 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     hr = _profiler->GetAssemblyInfo(assemblyId, 1024, nullptr, wszName, &appDomainId, &modIDDummy);
     if (FAILED(hr))
     {
-        trace::Logger::Error("GetAssemblyInfo failed for ModuleId ", moduleId, " AssemblyId ", assemblyId);
+        trace::Logger::Error("GetAssemblyInfo failed for ModuleId ", moduleId, " AssemblyId ", assemblyId, " hr: ", hr);
         return hr;
     }
 
