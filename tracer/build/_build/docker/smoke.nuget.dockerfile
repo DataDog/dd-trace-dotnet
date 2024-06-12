@@ -40,6 +40,11 @@ ENV DD_PROFILING_ENABLED=1
 ENV DD_APPSEC_ENABLED=1
 ENV DD_TRACE_DEBUG=1
 
+## SSI variables
+ENV DD_INJECTION_ENABLED=tracer
+ENV DD_INJECT_FORCE=1
+ENV DD_TELEMETRY_FORWARDER_PATH=/bin/true
+
 ENV ASPNETCORE_URLS=http://localhost:5000
 
 # Set a random env var we should ignore
@@ -52,5 +57,6 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 ENV COMPlus_DbgEnableMiniDump=1
 ENV COMPlus_DbgMiniDumpType=4
 ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+
 
 ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
