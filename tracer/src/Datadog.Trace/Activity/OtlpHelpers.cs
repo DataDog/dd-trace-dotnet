@@ -315,8 +315,14 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            // remap keys as needed regardless of datatype
-            if (key == "http.response.status_code")
+            // remap the http.response.status_code if it is some int-like type
+            if (key == "http.response.status_code" && (
+                value is short ||
+                value is ushort ||
+                value is int ||
+                value is uint ||
+                value is long ||
+                value is ulong))
             {
                 span.SetTag(Tags.HttpStatusCode, value.ToString());
                 return;
