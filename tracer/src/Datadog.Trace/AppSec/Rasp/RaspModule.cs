@@ -83,6 +83,7 @@ internal static class RaspModule
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, rootSpan);
 
+        // We need a context for RASP
         if (!securityCoordinator.HasContext())
         {
             return;

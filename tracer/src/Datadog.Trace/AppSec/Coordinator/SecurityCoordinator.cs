@@ -74,6 +74,11 @@ internal readonly partial struct SecurityCoordinator
 
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
     {
+        if (!HasContext())
+        {
+            return null;
+        }
+
         LogAddressIfDebugEnabled(args);
         IResult? result = null;
         try
