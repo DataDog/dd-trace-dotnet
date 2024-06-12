@@ -259,7 +259,7 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
         + "\\\",\\\"language_name\\\": \\\"dotnet\\\",\\\"language_version\\\": \\\"" + runtimeVersion
         + "\\\",\\\"tracer_version\\\": \\\"" + PROFILER_VERSION
         + "\\\",\\\"pid\\\":" + std::to_string(GetPID())
-        + ",},\\\"points\\\": " + points + "}";
+        + "},\\\"points\\\": " + points + "}";
 
     const auto processPath = ToString(forwarderPath);
 
