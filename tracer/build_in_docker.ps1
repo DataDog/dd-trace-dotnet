@@ -4,6 +4,8 @@ Param(
     [string[]]$BuildArguments
 )
 
+$ErrorActionPreference = "Stop"
+
 # in case we are being run from outside this directory
 Set-Location $PSScriptRoot
 
