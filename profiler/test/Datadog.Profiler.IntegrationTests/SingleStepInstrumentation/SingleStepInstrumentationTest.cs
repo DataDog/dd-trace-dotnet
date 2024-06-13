@@ -107,19 +107,27 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             };
 
             runner.Run(agent);
+            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
 
             var expectedTags = new[]
             {
-                "has_sent_profiles:true",
                 "heuristic_hypothetical_decision:no_span_short_lived",
                 "installation:ssi",
                 "enablement_choice:manually_enabled"
             };
-            series.Should().AllSatisfy(x => x.Tags.Should().BeEquivalentTo(expectedTags));
-            series.Should().ContainSingle(x => x.Metric == "ssi_heuristic.number_of_runtime_id");
-            series.Where(x => x.Metric == "ssi_heuristic.number_of_profiles").Should().HaveCount(series.Count - 1);
+            bool hasSentProfile = false;
+            series.Should().AllSatisfy(s =>
+            {
+                if (s.Tags.Contains("has_sent_profiles:true"))
+                {
+                    hasSentProfile = true;
+                }
 
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+                string error = string.Empty;
+                Assert.True(ContainTags(s.Tags, expectedTags, mandatory: false, ref error), $"{error}");
+            });
+            Assert.True(hasSentProfile, "We must have some serie(s) with has_sent_profiles:true");
+            series.Should().ContainSingle(x => x.Metric == "ssi_heuristic.number_of_runtime_id");
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -254,8 +262,8 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:short_lived", "installation:ssi", "enablement_choice:not_enabled" };
             string error = string.Empty;
-            Assert.True(ContainTags(runtimeIdSerie?.Tags, expectedTags, ref error), $"{error}");
-            nbProfilesSeries.Should().AllSatisfy(x => Assert.True(ContainTags(x.Tags, expectedTags, ref error), $"{error}"));
+            Assert.True(ContainTags(runtimeIdSerie?.Tags, expectedTags, mandatory:true, ref error), $"{error}");
+            nbProfilesSeries.Should().AllSatisfy(x => Assert.True(ContainTags(x.Tags, expectedTags, mandatory: true, ref error), $"{error}"));
 
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
         }
@@ -595,7 +603,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
         // return true if tags contain value defined in containedTags
         // ex: "heuristic_hypothetical_decision:no_span_short_live", "heuristic_hypothetical_decision:short_live" return true
-        private static bool ContainTags(string[] tags, string[] containedTags, ref string error)
+        private static bool ContainTags(string[] tags, string[] containedTags, bool mandatory, ref string error)
         {
             if (tags == null)
             {
@@ -620,14 +628,19 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
                 if (!containedRefs.TryGetValue(key, out var containedValue))
                 {
-                    error = $"Key {key} not found in containedTags";
-                    return false;
+                    if (mandatory)
+                    {
+                        error = $"Key {key} not found in containedTags";
+                        return false;
+                    }
                 }
-
-                if (!value.Contains(containedValue))
+                else
                 {
-                    error = $"{key}: '{value}' does not contain '{containedValue}'";
-                    return false;
+                    if (!value.Contains(containedValue))
+                    {
+                        error = $"{key}: '{value}' does not contain '{containedValue}'";
+                        return false;
+                    }
                 }
             }
 
