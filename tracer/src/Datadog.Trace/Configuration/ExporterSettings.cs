@@ -489,6 +489,6 @@ namespace Datadog.Trace.Configuration
         }
 
         private void RecordTraceTransport(string transport, ConfigurationOrigins origin = ConfigurationOrigins.Default)
-            => _telemetry.Record(ConfigTelemetryData.AgentTraceTransport, transport, recordValue: true, ConfigurationOrigins.Default);
+            => _telemetry.Record(ConfigTelemetryData.AgentTraceTransport, transport, recordValue: true, origin);
     }
 }
