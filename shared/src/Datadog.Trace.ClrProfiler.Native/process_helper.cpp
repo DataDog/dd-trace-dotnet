@@ -45,7 +45,7 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
     SECURITY_ATTRIBUTES sa;
 
     sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-    sa.bInheritHandle = TRUE;
+    sa.bInheritHandle = FALSE;
     sa.lpSecurityDescriptor = NULL;
 
     HANDLE hStdinRead, hStdinWrite;
@@ -58,7 +58,7 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
     }
 
     // Ensure the write handle to the pipe for STDIN is not inherited.
-    if (!SetHandleInformation(hStdinWrite, HANDLE_FLAG_INHERIT, 0)) {
+    if (!SetHandleInformation(hStdinRead, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT)) {
         Log::Warn("ProcessHelper::RunProcess: Failed to set handle information");
         CloseHandle(hStdinRead);
         CloseHandle(hStdinWrite);
