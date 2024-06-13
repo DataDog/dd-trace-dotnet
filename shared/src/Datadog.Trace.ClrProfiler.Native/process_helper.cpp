@@ -93,7 +93,7 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
     int pipefd[2];
     if (pipe(pipefd) == -1)
     {
-        Log::Warn("SingleStepGuardRails::SendTelemetry: Failed to initialize the pipe");
+        Log::Warn("ProcessHelper::RunProcess: Failed to initialize the pipe");
         return false;
     }
 
@@ -135,7 +135,8 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
     }
     else
     {
-        Log::Warn("SingleStepGuardRails::SendTelemetry: Error calling telemetry forwarder");
+        Log::Warn("ProcessHelper::RunProcess: Error starting ", processPath);
+        return false;
     }
 
     // .NET sets a handler for the SIGCHLD signal and ignores the processes it didn't start,
