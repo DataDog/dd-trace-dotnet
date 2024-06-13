@@ -39,6 +39,7 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsUdpIsConfigured(settings, "someurl");
         }
 
+#if NETCOREAPP3_1_OR_GREATER
         [Theory]
         [InlineData(@"C:\temp\someval")]
         // [InlineData(@"\\temp\someval")] // network path doesn't work with uris, so we don't support it :/
@@ -53,6 +54,20 @@ namespace Datadog.Trace.Tests.Configuration
             // Without additional settings, metrics defaults to UDP even if DD_TRACE_AGENT_URL is UDS
             AssertMetricsUdpIsConfigured(settingsFromSource);
         }
+#else
+        [Theory]
+        [InlineData(@"C:\temp\someval")]
+        public void UnixAgentUriOnWindows_UdsUnsupported_UsesDefaultHttp(string path)
+        {
+            var settingsFromSource = Setup(FileExistsMock(path.Replace("\\", "/")), $"DD_TRACE_AGENT_URL:unix://{path}");
+            var expectedUri = new Uri($"http://127.0.0.1:8126");
+            AssertHttpIsConfigured(settingsFromSource, expectedUri);
+            settingsFromSource.AgentUri.Should().Be(expectedUri);
+            settingsFromSource.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
+            // Without additional settings, metrics defaults to UDP even if DD_TRACE_AGENT_URL is UDS
+            AssertMetricsUdpIsConfigured(settingsFromSource);
+        }
+#endif
 
         [Fact]
         public void InvalidAgentUrlShouldNotThrow()
@@ -63,6 +78,7 @@ namespace Datadog.Trace.Tests.Configuration
             settingsFromSource.ValidationWarnings.Should().Contain($"The Uri: '{param}' is not valid. It won't be taken into account to send traces. Note that only absolute urls are accepted.");
         }
 
+#if NETCOREAPP3_1_OR_GREATER
         [Theory]
         [InlineData("unix://some/socket.soc", "/socket.soc")]
         [InlineData("unix://./socket.soc", "/socket.soc")]
@@ -91,6 +107,7 @@ namespace Datadog.Trace.Tests.Configuration
             settingsFromSource.ValidationWarnings.Should().Contain($"The provided Uri {uri.AbsoluteUri} contains a relative path which may not work. This is the path to the socket that will be used: {expectedSocket}");
             settingsFromSource.ValidationWarnings.Should().Contain($"The socket provided {expectedSocket} cannot be found. The tracer will still rely on this socket to send traces.");
         }
+#endif
 
         [Fact]
         public void AgentHost()
@@ -202,6 +219,7 @@ namespace Datadog.Trace.Tests.Configuration
             Assert.Throws<ArgumentException>(() => new ExporterSettings() { PartialFlushMinSpans = param });
         }
 
+#if NETCOREAPP3_1_OR_GREATER
         [Fact]
         public void UnixDomainSocketPathWellFormed()
         {
@@ -227,6 +245,36 @@ namespace Datadog.Trace.Tests.Configuration
             // Uses UDP by default
             AssertMetricsUdpIsConfigured(settings);
         }
+#else
+        [Fact]
+        public void UnixDomainSocketPathWellFormed_UdsUnsupported_UsesDefaultHttp()
+        {
+            var settingsFromSource = Setup("DD_TRACE_AGENT_URL", "unix:///var/datadog/myscocket.soc");
+            var expectedUri = new Uri("http://127.0.0.1:8126/");
+            AssertHttpIsConfigured(settingsFromSource, expectedUri);
+            AssertMetricsUdpIsConfigured(settingsFromSource);
+            settingsFromSource.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
+
+            var settings = new ExporterSettings();
+            AssertHttpIsConfigured(settings, expectedUri);
+            AssertMetricsUdpIsConfigured(settingsFromSource);
+
+            settings.AgentUri = new Uri("unix:///var/datadog/myscocket.soc");
+            AssertHttpIsConfigured(settings, expectedUri);
+            AssertMetricsUdpIsConfigured(settingsFromSource);
+            settings.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
+        }
+
+        [Fact]
+        public void Traces_SocketFilesExist_NoExplicitConfig_UdsUnsupported_UsesDefaultTcp()
+        {
+            var expectedUri = new Uri($"http://127.0.0.1:8126");
+            var settings = Setup(DefaultTraceSocketFilesExist());
+            AssertHttpIsConfigured(settings, expectedUri);
+            // Uses UDP by default
+            AssertMetricsUdpIsConfigured(settings);
+        }
+#endif
 
         [Fact]
         public void Traces_SocketFilesExist_ExplicitAgentHost_UsesDefaultTcp()
