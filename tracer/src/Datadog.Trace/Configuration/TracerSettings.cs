@@ -98,7 +98,7 @@ namespace Datadog.Trace.Configuration
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
             }
 
-            var profilingManuallyEnabled = config.WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled).AsBool();
+            var profilingManuallyEnabled = config.WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled).AsBool(defaultValue: false);
             var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
 
             ProfilingEnabledInternal = profilingManuallyEnabled switch
