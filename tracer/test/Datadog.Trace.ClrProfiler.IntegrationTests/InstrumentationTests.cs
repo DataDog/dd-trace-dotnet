@@ -237,8 +237,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                "name": "library_entrypoint.abort", 
                                "tags": ["reason:eol_runtime"]
                              },{
-                               "name": "library_entrypoint.abort.runtime",
-                               "tags": ["min_supported_version:3.1.0", "max_supported_version:8.0.0"]
+                               "name": "library_entrypoint.abort.runtime"
                              }]
                              """;
             AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
