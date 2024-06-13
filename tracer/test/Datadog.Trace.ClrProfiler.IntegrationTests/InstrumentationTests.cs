@@ -451,14 +451,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var program = $"""
                                using System;
                                using System.IO;
+                               using System.Text;
                                using System.Reflection;
 
                                var logsFolder = Environment.GetEnvironmentVariable("{ConfigurationKeys.LogDirectory}");
-                               var cmdLine = string.Join(" ", args);
+
+                               var sb = new StringBuilder();
+                               sb.Append(string.Join(" ", args));
+                               sb.Append(" ");
+
+                               string line;
+                               while ((line = Console.In.ReadLine()) != null)
+                                   sb.AppendLine(line);
+
+                               var data = sb.ToString();
+
                                var path = Path.Combine(logsFolder, "{LogFileName}");
 
-                               Console.WriteLine(cmdLine);
-                               File.WriteAllText(path, cmdLine);
+                               Console.WriteLine(data);
+                               File.WriteAllText(path, data);
                                """;
                 File.WriteAllText(Path.Combine(_workingDir, "Program.cs"), program);
 
