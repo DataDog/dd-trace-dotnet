@@ -30,7 +30,6 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
                                std::string input)
 {
 #if _WIN32
-    /*
     // For windows we combine the processPath and args into a single, space separated, string
     // and pass null for the application name
     // We assume that all the required escaping has been done etc
@@ -43,9 +42,37 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
 
     auto commandLine = ToWSTRING(combined);
 
+    SECURITY_ATTRIBUTES sa;
+
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.bInheritHandle = TRUE;
+    sa.lpSecurityDescriptor = NULL;
+
+    HANDLE hStdinRead, hStdinWrite;
+
+    // Create a pipe for the child process's STDIN
+    if (!CreatePipe(&hStdinRead, &hStdinWrite, &sa, 0))
+    {
+        Log::Warn("ProcessHelper::RunProcess: Failed to initialize the pipe");
+        return false;
+    }
+
+    // Ensure the write handle to the pipe for STDIN is not inherited.
+    if (!SetHandleInformation(hStdinWrite, HANDLE_FLAG_INHERIT, 0)) {
+        Log::Warn("ProcessHelper::RunProcess: Failed to set handle information");
+        CloseHandle(hStdinRead);
+        CloseHandle(hStdinWrite);
+        return false;
+    }
+
     STARTUPINFO si;
     SecureZeroMemory(&si, sizeof(STARTUPINFO));
     si.cb = sizeof(STARTUPINFO);
+
+    si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+    si.hStdInput = hStdinRead;
+    si.dwFlags |= STARTF_USESTDHANDLES;
 
     // as it's not REQUIRED right now (the child inherits the caller's env vars),
     // and the docs show that it's a PITA:
@@ -59,27 +86,35 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
     // Because the equal sign is a separator, it must not be used in the name of an environment variable.
 
     PROCESS_INFORMATION pi;
-    if (CreateProcess(
+    if (!CreateProcess(
         nullptr,                  // lpApplicationName
         commandLine.data(),       // lpCommandLine
         nullptr,                  // lpProcessAttributes
         nullptr,                  // lpThreadAttributes
-        FALSE,                    // bInheritHandles
+        TRUE,                     // bInheritHandles
         CREATE_NEW_PROCESS_GROUP, // dwCreationFlags (don't create as a child)
         nullptr,                  // lpEnvironment
         nullptr,                  // lpCurrentDirectory
         &si,                      // lpStartupInfo
         &pi))                     // lpProcessInformation
     {
-        // we don't need to wait for it to finish, so just free-up resources 
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        return true;
-    }
+        Log::Warn("ProcessHelper::RunProcess: Error starting ", processPath);
+        CloseHandle(hStdinRead);
+        CloseHandle(hStdinWrite);
+        return false;
+    }    
 
-     */
-    // Error starting
-    return false;
+    // we don't need to wait for it to finish, so just free-up resources 
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
+    DWORD written;
+    WriteFile(hStdinWrite, input.c_str(), input.length(), &written, nullptr);
+
+    CloseHandle(hStdinRead);
+    CloseHandle(hStdinWrite);
+
+    return true;
 }
 #else
     // The args include the path as the first argument

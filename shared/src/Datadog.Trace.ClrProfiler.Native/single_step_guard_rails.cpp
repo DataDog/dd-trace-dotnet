@@ -268,15 +268,19 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
     const std::vector args = {initialArg};
 
     Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", initialArg, "and metadata " , metadata);
-    const auto success = ProcessHelper::RunProcess(processPath, args, metadata);
 
-    if(success)
+    std::thread([processPath, args, metadata]()
     {
-        Log::Debug("SingleStepGuardRails::SendTelemetry: Telemetry sent to forwarder");
-    }
-    else
-    {
-        Log::Warn("SingleStepGuardRails::SendTelemetry: Error calling telemetry forwarder");
-    }
+        const auto success = ProcessHelper::RunProcess(processPath, args, metadata);
+
+        if (success)
+        {
+            Log::Debug("SingleStepGuardRails::SendTelemetry: Telemetry sent to forwarder");
+        }
+        else
+        {
+            Log::Warn("SingleStepGuardRails::SendTelemetry: Error calling telemetry forwarder");
+        }
+    }).detach();
 }
 } // namespace datadog::shared::nativeloader
