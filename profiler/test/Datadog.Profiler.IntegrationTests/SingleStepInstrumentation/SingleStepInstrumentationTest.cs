@@ -162,6 +162,8 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            // short lived
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -238,6 +240,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             // short lived with span
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -262,7 +265,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:short_lived", "installation:ssi", "enablement_choice:not_enabled" };
             string error = string.Empty;
-            Assert.True(ContainTags(runtimeIdSerie?.Tags, expectedTags, mandatory:true, ref error), $"{error}");
+            Assert.True(ContainTags(runtimeIdSerie?.Tags, expectedTags, mandatory: true, ref error), $"{error}");
             nbProfilesSeries.Should().AllSatisfy(x => Assert.True(ContainTags(x.Tags, expectedTags, mandatory: true, ref error), $"{error}"));
 
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
@@ -327,8 +330,8 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             // deployed and enabled with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
-            // No need to tweak the SsiShortLivedThreshold env variable to simulate a shortlived app.
-            // This app runs for ~10s and the threshold is 30s.
+            // short lived
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -405,6 +408,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed and enabled with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
             // short lived with span
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
