@@ -6,9 +6,6 @@ Param(
 
 $ErrorActionPreference = "Stop"
 
-# in case we are being run from outside this directory
-Set-Location $PSScriptRoot
-
 $ROOT_DIR="$PSScriptRoot/.."
 $BUILD_DIR="$ROOT_DIR/tracer/build/_build"
 $IMAGE_NAME="dd-trace-dotnet/alpine-base"
