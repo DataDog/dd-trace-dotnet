@@ -61,23 +61,23 @@ bool IsProfilingEnabled(Configuration const& configuration)
 
     Log::Info(".NET Profiler deployment mode: ", to_string(deploymentMode));
 
-
     if (enablementStatus == EnablementStatus::NotSet || enablementStatus == EnablementStatus::SsiEnabled)
     {
         auto isSsiDeployed = deploymentMode == DeploymentMode::SingleStepInstrumentation;
         if (isSsiDeployed)
         {
-            Log::Info(".NET Profiler is enabled using Single Step Instrumentation limited activation.");
+            Log::Info(".NET Profiler is deployed using Single Step Instrumentation.");
         }
         else
         {
             assert(enablementStatus != EnablementStatus::SsiEnabled);
             Log::Info(".NET Profiler environment variable '", EnvironmentVariables::ProfilerEnabled, "' was not set. The .NET profiler will be disabled.");
         }
-        return isSsiDeployed;
+
+        // delay start with SSI is not supported yet so we don't override manually enabled status
     }
 
-    auto isEnabled = enablementStatus == EnablementStatus::ManuallyEnabled;
+    auto isEnabled = (enablementStatus == EnablementStatus::ManuallyEnabled);
     Log::Info(".NET Profiler is ", std::boolalpha, (isEnabled ? "enabled." : "disabled."));
 
     return isEnabled;
