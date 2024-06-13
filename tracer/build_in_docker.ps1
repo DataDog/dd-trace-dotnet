@@ -18,7 +18,7 @@ $IMAGE_NAME="dd-trace-dotnet/alpine-base"
    "$BUILD_DIR"
 
 &docker run -it --rm `
-    --mount type=bind,source="$ROOT_DIR",target=/project `
+    --mount "type=bind,source=$ROOT_DIR,target=/project" `
     --env NugetPackageDirectory=/project/packages `
     --env artifacts=/project/tracer/bin/artifacts `
     --env DD_INSTRUMENTATION_TELEMETRY_ENABLED=0 `
