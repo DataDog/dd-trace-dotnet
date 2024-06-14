@@ -54,6 +54,19 @@ namespace Samples.Console_
             {
                 AsyncMain(args).GetAwaiter().GetResult();
             }
+
+            var fileToWatch = Environment.GetEnvironmentVariable("DD_INTERNAL_TEST_FILE_TO_WATCH");
+
+            if (fileToWatch != null)
+            {
+                // Wait for up to 1 minute for the file to be created
+                var start = DateTime.UtcNow;
+
+                while (!File.Exists(fileToWatch) && (DateTime.UtcNow - start) < TimeSpan.FromMinutes(1))
+                {
+                    Thread.Sleep(500);
+                }
+            }
         }
 
         // Can't use a "real" async Main because it messes up the callstack for the crash-report tests
