@@ -98,14 +98,30 @@ namespace Datadog.Trace.Configuration
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
             }
 
-            var profilingManuallyEnabled = config.WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled).AsBool(defaultValue: false);
-            var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
-
-            ProfilingEnabledInternal = profilingManuallyEnabled switch
+            // With SSI, beyond ContinuousProfiler.ConfigurationKeys.ProfilingEnabled (true/false),
+            // the profiler could be enabled via ContinuousProfiler.ConfigurationKeys.SsiDeployed:
+            //  - if it contains "profiler", the profiler is enabled after 30 seconds + at least 1 span
+            //  - if not, the profiler needed to be loaded by the CLR but no profiling will be done, only telemetry metrics will be sent
+            // So, for the Tracer, the profiler should be seen as enabled if ContinuousProfiler.ConfigurationKeys.SsiDeployed has a value
+            // (even without "profiler") so that spans will be sent to the profiler.
+            bool isProfilingEnabledSet = true;
+            bool GetProfilingEnabledDefaultValue()
             {
-                null => profilingSsiDeployed != null,
-                _ => profilingManuallyEnabled.Value
-            };
+                isProfilingEnabledSet = false;
+                return false;  // default value
+            }
+
+            var profilingManuallyEnabled =
+                config.WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled).AsBool(GetProfilingEnabledDefaultValue, null);
+            if (isProfilingEnabledSet)
+            {
+                ProfilingEnabledInternal = profilingManuallyEnabled.Value;
+            }
+            else
+            {
+                var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
+                ProfilingEnabledInternal = (profilingSsiDeployed != null);
+            }
 
             EnvironmentInternal = config
                          .WithKeys(ConfigurationKeys.Environment)
