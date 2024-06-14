@@ -10,7 +10,7 @@ OUTPUT_DIR_ABS="$ROOT_DIR/$OUTPUT_DIR_REL"
 docker build \
    --build-arg DOTNETSDK_VERSION=8.0.100 \
    --tag $IMAGE_NAME \
-   --file "$BUILD_DIR/tracer/build/_build/docker/debian.dockerfile" \
+   --file "$ROOT_DIR/tracer/build/_build/docker/debian.dockerfile" \
    --target local_builder \
    "$ROOT_DIR"
 
