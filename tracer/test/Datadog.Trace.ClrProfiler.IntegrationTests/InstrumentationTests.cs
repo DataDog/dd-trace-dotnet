@@ -1,4 +1,4 @@
-﻿// <copyright file="InstrumentationTests.cs" company="Datadog">
+// <copyright file="InstrumentationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -240,7 +240,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                "name": "library_entrypoint.abort.runtime"
                              }]
                              """;
-            AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
+            await AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
         }
 
         [SkippableFact]
@@ -268,7 +268,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                "tags": ["injection_forced:true"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
+            await AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
         }
 
 #endif
@@ -301,7 +301,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                "tags": ["injection_forced:false"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
+            await AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
         }
 #endif
 
@@ -367,10 +367,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             nativeLoaderLogFiles.Should().Contain(log => log.Contains(requiredLog));
         }
 
-        private void AssertHasExpectedTelemetry(string logDir, ProcessResult processResult, string pointsJson)
+        private async Task AssertHasExpectedTelemetry(string logDir, ProcessResult processResult, string pointsJson)
         {
             var echoLogFileName = Path.Combine(logDir, TelemetryReporterFixture.LogFileName);
             using var s = new AssertionScope();
+
+            var start = DateTime.UtcNow;
+
+            while (!File.Exists(echoLogFileName) && (DateTime.UtcNow - start) < TimeSpan.FromMinutes(1))
+            {
+                await Task.Delay(500);
+            }
+
             File.Exists(echoLogFileName).Should().BeTrue();
             var echoLogContent = File.ReadAllText(echoLogFileName);
             s.AddReportable(echoLogFileName, echoLogContent);
