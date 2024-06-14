@@ -4,16 +4,17 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci
 {
     internal class CodeOwners
     {
         private readonly IGrouping<string, Entry>[] _sections;
+        private readonly ConcurrentDictionary<string, Entry?> _matchCache = new();
 
         public CodeOwners(string filePath)
         {
@@ -85,96 +86,101 @@ namespace Datadog.Trace.Ci
 
         public Entry? Match(string value)
         {
-            var lstEntries = new List<Entry>();
-            foreach (var section in _sections)
-            {
-                foreach (var entry in section)
+            return _matchCache.GetOrAdd(
+                value,
+                val =>
                 {
-                    var pattern = entry.Pattern;
-                    var finalPattern = pattern;
-
-                    bool includeAnythingBefore;
-                    bool includeAnythingAfter;
-
-                    if (pattern.StartsWith("/"))
+                    var lstEntries = new List<Entry>();
+                    foreach (var section in _sections)
                     {
-                        includeAnythingBefore = false;
-                    }
-                    else
-                    {
-                        if (finalPattern.StartsWith("*"))
+                        foreach (var entry in section)
                         {
-                            finalPattern = finalPattern.Substring(1);
-                        }
+                            var pattern = entry.Pattern;
+                            var finalPattern = pattern;
 
-                        includeAnythingBefore = true;
-                    }
+                            bool includeAnythingBefore;
+                            bool includeAnythingAfter;
 
-                    if (pattern.EndsWith("/"))
-                    {
-                        includeAnythingAfter = true;
-                    }
-                    else if (pattern.EndsWith("/*"))
-                    {
-                        includeAnythingAfter = true;
-                        finalPattern = finalPattern.Substring(0, finalPattern.Length - 1);
-                    }
-                    else
-                    {
-                        includeAnythingAfter = false;
-                    }
-
-                    if (includeAnythingAfter)
-                    {
-                        var found = includeAnythingBefore ? value.Contains(finalPattern) : value.StartsWith(finalPattern);
-                        if (!found)
-                        {
-                            continue;
-                        }
-
-                        if (!pattern.EndsWith("/*"))
-                        {
-                            lstEntries.Add(entry);
-                            break;
-                        }
-
-                        var patternEnd = value.IndexOf(finalPattern, StringComparison.Ordinal);
-                        if (patternEnd != -1)
-                        {
-                            patternEnd += finalPattern.Length;
-                            var remainingString = value.Substring(patternEnd);
-                            if (remainingString.IndexOf("/", StringComparison.Ordinal) == -1)
+                            if (pattern.StartsWith("/"))
                             {
-                                lstEntries.Add(entry);
-                                break;
+                                includeAnythingBefore = false;
+                            }
+                            else
+                            {
+                                if (finalPattern.StartsWith("*"))
+                                {
+                                    finalPattern = finalPattern.Substring(1);
+                                }
+
+                                includeAnythingBefore = true;
+                            }
+
+                            if (pattern.EndsWith("/"))
+                            {
+                                includeAnythingAfter = true;
+                            }
+                            else if (pattern.EndsWith("/*"))
+                            {
+                                includeAnythingAfter = true;
+                                finalPattern = finalPattern.Substring(0, finalPattern.Length - 1);
+                            }
+                            else
+                            {
+                                includeAnythingAfter = false;
+                            }
+
+                            if (includeAnythingAfter)
+                            {
+                                var found = includeAnythingBefore ? val.Contains(finalPattern) : val.StartsWith(finalPattern);
+                                if (!found)
+                                {
+                                    continue;
+                                }
+
+                                if (!pattern.EndsWith("/*"))
+                                {
+                                    lstEntries.Add(entry);
+                                    break;
+                                }
+
+                                var patternEnd = val.IndexOf(finalPattern, StringComparison.Ordinal);
+                                if (patternEnd != -1)
+                                {
+                                    patternEnd += finalPattern.Length;
+                                    var remainingString = val.Substring(patternEnd);
+                                    if (remainingString.IndexOf("/", StringComparison.Ordinal) == -1)
+                                    {
+                                        lstEntries.Add(entry);
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (includeAnythingBefore)
+                                {
+                                    if (val.EndsWith(finalPattern))
+                                    {
+                                        lstEntries.Add(entry);
+                                        break;
+                                    }
+                                }
+                                else if (val == finalPattern)
+                                {
+                                    lstEntries.Add(entry);
+                                    break;
+                                }
                             }
                         }
                     }
-                    else
-                    {
-                        if (includeAnythingBefore)
-                        {
-                            if (value.EndsWith(finalPattern))
-                            {
-                                lstEntries.Add(entry);
-                                break;
-                            }
-                        }
-                        else if (value == finalPattern)
-                        {
-                            lstEntries.Add(entry);
-                            break;
-                        }
-                    }
-                }
-            }
 
-            return lstEntries.Count switch
-            {
-                0 => null,
-                1 => lstEntries[0],
-                _ => lstEntries.Aggregate((a, b) => new Entry($"{a.Pattern} | {b.Pattern}", a.Owners.Concat(b.Owners).ToArray(), $"{a.Section} | {b.Section}"))
-            };
+                    return lstEntries.Count switch
+                    {
+                        0 => null,
+                        1 => lstEntries[0],
+                        _ => lstEntries.Aggregate((a, b) => new Entry($"{a.Pattern} | {b.Pattern}", a.Owners.Concat(b.Owners).ToArray(), $"{a.Section} | {b.Section}"))
+                    };
+                });
         }
 
         internal readonly struct Entry

@@ -5,12 +5,11 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
@@ -22,7 +21,7 @@ namespace Datadog.Trace.Pdb
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MethodSymbolResolver));
         private static readonly Lazy<MethodSymbolResolver> _instance = new(() => new MethodSymbolResolver());
 
-        private readonly Dictionary<Module, ModuleDefMD?> _modulesDefMDs = new();
+        private readonly ConcurrentDictionary<Module, ModuleDefMD?> _modulesDefMDs = new();
 
         private MethodSymbolResolver()
         {
@@ -162,11 +161,11 @@ namespace Datadog.Trace.Pdb
         /// <returns>dnLib ModuleDefMD instance</returns>
         public ModuleDefMD? GetModuleDef(Module module)
         {
-            ModuleDefMD? moduleDef;
-            lock (_modulesDefMDs)
-            {
-                if (!_modulesDefMDs.TryGetValue(module, out moduleDef))
+            return _modulesDefMDs.GetOrAdd(
+                module,
+                mod =>
                 {
+                    ModuleDefMD? moduleDef = null;
                     var options = new ModuleCreationOptions(ThreadSafeModuleContext.GetModuleContext());
                     try
                     {
@@ -196,11 +195,8 @@ namespace Datadog.Trace.Pdb
                         Log.Error(ex, "Error loading method symbols.");
                     }
 
-                    _modulesDefMDs.Add(module, moduleDef);
-                }
-            }
-
-            return moduleDef;
+                    return moduleDef;
+                });
         }
 
         /// <summary>
@@ -208,18 +204,15 @@ namespace Datadog.Trace.Pdb
         /// </summary>
         public void Clear()
         {
-            lock (_modulesDefMDs)
+            foreach (var modulesDefMd in _modulesDefMDs)
             {
-                foreach (var modulesDefMd in _modulesDefMDs)
+                if (modulesDefMd.Value is { } moduleDef)
                 {
-                    if (modulesDefMd.Value is { } moduleDef)
-                    {
-                        moduleDef.Dispose();
-                    }
+                    moduleDef.Dispose();
                 }
-
-                _modulesDefMDs.Clear();
             }
+
+            _modulesDefMDs.Clear();
         }
 
         /// <summary>
