@@ -20,7 +20,15 @@ internal class AsmFeaturesProduct : IAsmConfigUpdater
             var asmFeatures = new NamedRawFile(file.Path, file.Contents).Deserialize<AsmFeatures>();
             if (asmFeatures.TypedFile != null)
             {
-                configurationStatus.AsmFeaturesByFile[file.Path.Path] = asmFeatures.TypedFile.Asm;
+                if (asmFeatures.TypedFile.Asm?.Enabled is not null)
+                {
+                    configurationStatus.AsmFeaturesByFile[file.Path.Path] = asmFeatures.TypedFile.Asm;
+                }
+
+                if (asmFeatures.TypedFile.AutoUserInstrum?.Mode is not null)
+                {
+                    configurationStatus.AutoUserInstrumByFile[file.Path.Path] = asmFeatures.TypedFile.AutoUserInstrum;
+                }
             }
 
             configurationStatus.IncomingUpdateState.SignalSecurityStateChange();
@@ -32,6 +40,7 @@ internal class AsmFeaturesProduct : IAsmConfigUpdater
         foreach (var removedConfig in removedConfigsForThisProduct)
         {
             configurationStatus.AsmFeaturesByFile.Remove(removedConfig.Path);
+            configurationStatus.AutoUserInstrumByFile.Remove(removedConfig.Path);
         }
 
         configurationStatus.IncomingUpdateState.SignalSecurityStateChange();

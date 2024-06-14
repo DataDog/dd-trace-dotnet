@@ -19,8 +19,13 @@ namespace Datadog.Trace.AppSec
 {
     internal class SecuritySettings
     {
-        public const string UserTrackingExtendedMode = "extended";
-        public const string UserTrackingSafeMode = "safe";
+        public const string UserTrackingDisabled = "disabled";
+        public const string UserTrackingIdentMode = "identification";
+        public const string UserTrackingIdentShortMode = "ident";
+        public const string UserTrackingAnonMode = "anonymization";
+        public const string UserTrackingAnonShortMode = "anon";
+        private const string DeprecatedUserTrackingExtendedMode = "extended";
+        private const string DeprecatedUserTrackingSafeMode = "safe";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecuritySettings>();
 
         public SecuritySettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
@@ -55,7 +60,7 @@ namespace Datadog.Trace.AppSec
             WafTimeoutMicroSeconds = (ulong)config
                                            .WithKeys(ConfigurationKeys.AppSec.WafTimeout)
                                            .GetAs<int>(
-                                                getDefaultValue: () => 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
+                                                getDefaultValue: _ => 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
                                                 converter: ParseWafTimeout,
                                                 validator: wafTimeout => wafTimeout > 0);
 
@@ -67,15 +72,40 @@ namespace Datadog.Trace.AppSec
                                             .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex)
                                             .AsString(SecurityConstants.ObfuscationParameterValueRegexDefault, x => !string.IsNullOrWhiteSpace(x));
 
-            UserEventsAutomatedTracking = config
-                                         .WithKeys(ConfigurationKeys.AppSec.UserEventsAutomatedTracking)
-                                         .AsString(
-                                              UserTrackingSafeMode,
-                                              val =>
-                                                  val.Equals("disabled", StringComparison.OrdinalIgnoreCase)
-                                               || val.Equals(UserTrackingSafeMode, StringComparison.OrdinalIgnoreCase)
-                                               || val.Equals(UserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase))
-                                         .ToLowerInvariant();
+            string GetLegacyUserTracking() =>
+                config
+                   .WithKeys(ConfigurationKeys.AppSec.UserEventsAutomatedTracking)
+                   .AsString(
+                        isPresent => isPresent ? UserTrackingDisabled : UserTrackingIdentMode,
+                        val =>
+                            val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
+                         || val.Equals(DeprecatedUserTrackingSafeMode, StringComparison.OrdinalIgnoreCase)
+                         || val.Equals(DeprecatedUserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase))
+                   .ToLowerInvariant();
+
+            UserEventsAutoInstrumentationMode = config
+                                               .WithKeys(ConfigurationKeys.AppSec.UserEventsAutoInstrumentationMode)
+                                               .AsString(
+                                                    isPresent => isPresent ? UserTrackingDisabled : GetLegacyUserTracking(),
+                                                    val =>
+                                                        val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
+                                                     || val.Equals(UserTrackingIdentMode, StringComparison.OrdinalIgnoreCase)
+                                                     || val.Equals(UserTrackingIdentShortMode, StringComparison.OrdinalIgnoreCase)
+                                                     || val.Equals(UserTrackingAnonMode, StringComparison.OrdinalIgnoreCase)
+                                                     || val.Equals(UserTrackingAnonShortMode, StringComparison.OrdinalIgnoreCase))
+                                               .ToLowerInvariant();
+
+            if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingSafeMode
+                || UserEventsAutoInstrumentationMode == UserTrackingAnonShortMode)
+            {
+                UserEventsAutoInstrumentationMode = UserTrackingAnonMode;
+            }
+
+            if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingExtendedMode
+                || UserEventsAutoInstrumentationMode == UserTrackingIdentShortMode)
+            {
+                UserEventsAutoInstrumentationMode = UserTrackingIdentMode;
+            }
 
             ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEnabled, "DD_EXPERIMENTAL_API_SECURITY_ENABLED")
                                        .AsBool(false);
@@ -182,9 +212,9 @@ namespace Datadog.Trace.AppSec
         public string? BlockedHtmlTemplatePath { get; }
 
         /// <summary>
-        /// Gets the automatic tracking of user events mode. Values can be disabled, safe or extended.
+        /// Gets the Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
         /// </summary>
-        public string UserEventsAutomatedTracking { get; }
+        public string UserEventsAutoInstrumentationMode { get; }
 
         /// <summary>
         /// Gets the response template for Json content. This template is used in combination with the status code to craft and send a response upon blocking the request.

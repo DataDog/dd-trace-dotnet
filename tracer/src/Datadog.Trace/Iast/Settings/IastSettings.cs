@@ -74,7 +74,7 @@ internal class IastSettings
         TelemetryVerbosity = config
             .WithKeys(ConfigurationKeys.Iast.TelemetryVerbosity)
             .GetAs(
-                getDefaultValue: () => IastMetricsVerbosityLevel.Information,
+                getDefaultValue: _ => IastMetricsVerbosityLevel.Information,
                 converter: value => value.ToLowerInvariant() switch
                 {
                     "off" => IastMetricsVerbosityLevel.Off,
