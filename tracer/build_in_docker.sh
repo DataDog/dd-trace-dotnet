@@ -3,22 +3,20 @@ set -euox pipefail
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ROOT_DIR="$(dirname -- "$SCRIPT_DIR" )"
-BUILD_DIR="$ROOT_DIR/tracer/build/_build"
-IMAGE_NAME="dd-trace-dotnet/alpine-base"
+IMAGE_NAME="dd-trace-dotnet/debian-local-builder"
+OUTPUT_DIR_REL="shared/bin/monitoring-home"
+OUTPUT_DIR_ABS="$ROOT_DIR/$OUTPUT_DIR_REL"
 
 docker build \
    --build-arg DOTNETSDK_VERSION=8.0.100 \
    --tag $IMAGE_NAME \
-   --file "$BUILD_DIR/docker/alpine.dockerfile" \
-   "$BUILD_DIR"
+   --file "$BUILD_DIR/tracer/build/_build/docker/debian.dockerfile" \
+   --target local_builder \
+   "$ROOT_DIR"
 
 docker run -it --rm \
-    --mount type=bind,source="$ROOT_DIR",target=/project \
-    --env NugetPackageDirectory=/project/packages \
+    --mount "type=bind,source=$OUTPUT_DIR_ABS,target=/project/$OUTPUT_DIR_REL" \
     --env artifacts=/project/tracer/bin/artifacts \
-    --env DD_INSTRUMENTATION_TELEMETRY_ENABLED=0 \
     --env NUKE_TELEMETRY_OPTOUT=1 \
-    -p 5003:5003 \
-    -v /var/log/datadog:/var/log/datadog/dotnet \
     $IMAGE_NAME \
-    dotnet /build/bin/Debug/_build.dll "$@"
+    dotnet /project/tracer/build/_build/bin/Debug/_build.dll "$@"
