@@ -75,9 +75,11 @@ ENV \
     CXX=clang++ \
     CC=clang
 
+##################################################
+
 FROM base as builder
 
-# Copy the build project in and build it
+# Copy the Nuke build project in and build it
 COPY *.csproj *.props *.targets /build/
 RUN dotnet restore /build
 COPY . /build
@@ -85,7 +87,9 @@ RUN dotnet build /build --no-restore
 
 WORKDIR /project
 
-FROM base as tester
+##################################################
+
+FROM builder as tester
 
 # Install ASP.NET Core runtimes using install script
 # There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
@@ -104,10 +108,16 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
+##################################################
+# used from "build_in_docker.ps1" for local builds, not in CI
+# keep this stage last to avoid running it on legacy builders which don't skip unreferenced stages
 
-# Copy the build project in and build it
-COPY *.csproj *.props *.targets /build/
-RUN dotnet restore /build
-COPY . /build
-RUN dotnet build /build --no-restore
+FROM base as local_builder
+
+# Copy the Nuke project and build it
+COPY tracer/build/_build/ /project/tracer/build/_build/
+RUN dotnet build /project/tracer/build/_build/
+
+# Copy the rest of the files
+COPY . /project
 WORKDIR /project
