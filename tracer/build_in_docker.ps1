@@ -25,6 +25,7 @@ docker build `
 # Run Nuke with build arguments
 docker run -it --rm `
     --mount "type=bind,source=$OUTPUT_DIR_ABS,target=/project/$OUTPUT_DIR_REL" `
+    --env artifacts=/project/tracer/bin/artifacts `
     --env NUKE_TELEMETRY_OPTOUT=1 `
     $IMAGE_NAME `
     dotnet /project/tracer/build/_build/bin/Debug/_build.dll $BuildArguments
