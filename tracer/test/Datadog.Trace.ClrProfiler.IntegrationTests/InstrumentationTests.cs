@@ -1,4 +1,4 @@
-﻿// <copyright file="InstrumentationTests.cs" company="Datadog">
+// <copyright file="InstrumentationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class InstrumentationTests : TestHelper, IClassFixture<InstrumentationTests.TelemetryReporterFixture>
     {
+        private const string WatchFileEnvironmentVariable = "DD_INTERNAL_TEST_FILE_TO_WATCH";
         private readonly TelemetryReporterFixture _fixture;
 
         public InstrumentationTests(ITestOutputHelper output, TelemetryReporterFixture fixture)
@@ -225,6 +226,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
             SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, echoApp);
 
             var logDir = SetLogDirectory();
 
@@ -254,6 +256,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
             SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
             SetEnvironmentVariable("DD_INJECT_FORCE", "true");
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, echoApp);
 
             var logDir = SetLogDirectory();
 
@@ -287,6 +290,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
             // this value doesn't matter, should have same result, and _shouldn't_ change the metrics
             SetEnvironmentVariable("DD_INJECT_FORCE", isOverriden);
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, echoApp);
 
             var logDir = SetLogDirectory($"_{isOverriden}");
 
@@ -451,14 +455,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var program = $"""
                                using System;
                                using System.IO;
+                               using System.Text;
                                using System.Reflection;
 
                                var logsFolder = Environment.GetEnvironmentVariable("{ConfigurationKeys.LogDirectory}");
-                               var cmdLine = string.Join(" ", args);
+
+                               var sb = new StringBuilder();
+                               sb.Append(string.Join(" ", args));
+                               sb.Append(" ");
+
+                               string line;
+                               while ((line = Console.In.ReadLine()) != null)
+                                   sb.AppendLine(line);
+
+                               var data = sb.ToString();
+
                                var path = Path.Combine(logsFolder, "{LogFileName}");
 
-                               Console.WriteLine(cmdLine);
-                               File.WriteAllText(path, cmdLine);
+                               Console.WriteLine(data);
+                               File.WriteAllText(path, data);
                                """;
                 File.WriteAllText(Path.Combine(_workingDir, "Program.cs"), program);
 
