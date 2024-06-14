@@ -14,6 +14,7 @@ $IMAGE_NAME = "dd-trace-dotnet/debian-local-builder"
 $OUTPUT_DIR_REL = "shared/bin/monitoring-home"
 $OUTPUT_DIR_ABS = "$ROOT_DIR/$OUTPUT_DIR_REL"
 
+# Build the local builder image, and pre-build the Nuke project
 docker build `
     --build-arg DOTNETSDK_VERSION=8.0.100 `
     --tag $IMAGE_NAME `
@@ -21,8 +22,9 @@ docker build `
     --target local_builder `
     "$ROOT_DIR"
 
+# Run Nuke with build arguments
 docker run -it --rm `
-    --mount "type=bind,source=$OUTPUT_DIR_ABS,target=/src/$OUTPUT_DIR_REL" `
+    --mount "type=bind,source=$OUTPUT_DIR_ABS,target=/project/$OUTPUT_DIR_REL" `
     --env NUKE_TELEMETRY_OPTOUT=1 `
     $IMAGE_NAME `
-    dotnet /src/tracer/build/_build/bin/Debug/_build.dll $BuildArguments
+    dotnet /project/tracer/build/_build/bin/Debug/_build.dll $BuildArguments

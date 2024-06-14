@@ -109,12 +109,12 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && rm dotnet-install.sh
 
 ##################################################
-# used from "build_in_docker.ps1" for local builds, not in CI
-# keep this stage last to avoid running it on legacy builders which don't skip unreferenced stages
+# Used from "build_in_docker.ps1" for local builds, not in CI.
+# Keep this stage last to avoid running it on legacy builders which don't skip unreferenced stages.
 
 FROM base as local_builder
 
-# Copy the Nuke project and build it
+# Copy the Nuke project and pre-build it for later
 COPY tracer/build/_build/ /project/tracer/build/_build/
 RUN dotnet build /project/tracer/build/_build/
 
