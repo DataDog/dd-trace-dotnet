@@ -104,15 +104,13 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
         return false;
     }    
 
-    // we don't need to wait for it to finish, so just free-up resources 
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
-
     DWORD written;
     WriteFile(hStdinWrite, input.c_str(), input.length(), &written, nullptr);
 
     CloseHandle(hStdinRead);
     CloseHandle(hStdinWrite);
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
 
     return true;
 }
