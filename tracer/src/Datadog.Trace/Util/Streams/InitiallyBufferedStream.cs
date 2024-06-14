@@ -22,7 +22,6 @@ internal class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDelegating
     internal const int MaxInitialBufferSize = 128;
 
     private ArraySegment<byte>? _buffer = null;
-    private int _offset = 0;
 
     public string? GetBufferedContent()
     {
@@ -43,65 +42,21 @@ internal class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDelegating
 
     public override int Read(byte[] buffer, int offset, int count)
     {
-        if (_offset >= _buffer?.Count)
-        {
-            // already "used up" the local buffer
-            return base.Read(buffer, offset, count);
-        }
+        var bytesRead = base.Read(buffer, offset, count);
 
         if (_buffer is null)
         {
-            // First read, populate the temp buffer
-            var bufferSize = Math.Min(MaxInitialBufferSize, count);
-            var localBuffer = GetBuffer(bufferSize);
-            var bytesRead = base.Read(localBuffer, offset: 0, count: bufferSize);
-            _buffer = new ArraySegment<byte>(localBuffer, offset: 0, count: bytesRead);
+            SaveToLocalBuffer(buffer, offset, bytesRead);
         }
 
-        // Copy from the temp buffer to the output
-        var bytesToCopy = Math.Min(count, _buffer.Value.Count - _offset);
-        Array.Copy(
-            sourceArray: _buffer.Value.Array!,
-            sourceIndex: _offset,
-            destinationArray: buffer!,
-            destinationIndex: offset,
-            length: bytesToCopy);
-
-        _offset += bytesToCopy;
-        return bytesToCopy;
+        return bytesRead;
     }
 
     public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
     {
-        if (_offset >= _buffer?.Count)
-        {
-            // already "used up" the local buffer
-            return base.ReadAsync(buffer, offset, count, cancellationToken);
-        }
-
-        return PopulateBufferAsync();
-
-        async Task<int> PopulateBufferAsync()
-        {
-            if (_buffer is null)
-            {
-                var bufferSize = Math.Min(MaxInitialBufferSize, count);
-                var localBuffer = GetBuffer(bufferSize);
-                var bytesRead = await base.ReadAsync(localBuffer, offset: 0, count: bufferSize, cancellationToken).ConfigureAwait(false);
-                _buffer = new ArraySegment<byte>(localBuffer, offset: 0, count: bytesRead);
-            }
-
-            var bytesToCopy = Math.Min(count, _buffer.Value.Count - _offset);
-            Array.Copy(
-                sourceArray: _buffer.Value.Array!,
-                sourceIndex: _offset,
-                destinationArray: buffer!,
-                destinationIndex: offset,
-                length: bytesToCopy);
-
-            _offset += bytesToCopy;
-            return bytesToCopy;
-        }
+        return _buffer is null
+                   ? ReadAndSaveBufferAsync(buffer, offset, count, cancellationToken)
+                   : base.ReadAsync(buffer, offset, count, cancellationToken);
     }
 
     protected override void Dispose(bool disposing)
@@ -118,9 +73,27 @@ internal class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDelegating
     }
 #endif
 
-    private byte[] GetBuffer(int size)
+    private async Task<int> ReadAndSaveBufferAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
     {
-        return ArrayPool<byte>.Shared.Rent(size);
+        var bytesRead = await base.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+        SaveToLocalBuffer(buffer, offset, bytesRead);
+        return bytesRead;
+    }
+
+    private void SaveToLocalBuffer(byte[] buffer, int offset, int bytesRead)
+    {
+        var bufferSize = Math.Min(MaxInitialBufferSize, bytesRead);
+        var localBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+
+        // Copy from the output buffer into our saved buffer
+        Array.Copy(
+            sourceArray: buffer,
+            sourceIndex: offset,
+            destinationArray: localBuffer,
+            destinationIndex: 0,
+            length: bufferSize);
+
+        _buffer = new ArraySegment<byte>(localBuffer, offset: 0, count: bufferSize);
     }
 
     private void ReturnBuffer()
