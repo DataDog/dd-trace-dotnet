@@ -395,7 +395,7 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc)
             std::lock_guard<std::mutex> lock(_typesLock);
 
             // it is possible that another thread already added the type description while we were building it
-            auto typeEntry = _types.find(classId);
+            auto typeEntry = _types.find(originalClassId);
             if (typeEntry != _types.end())
             {
                 pTypeDesc = &typeEntry->second;
