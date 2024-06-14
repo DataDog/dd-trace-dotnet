@@ -63,7 +63,9 @@ public static class UserManagerCreateIntegration
     {
         var security = Security.Instance;
         var user = state.State as IIdentityUser;
-        if (security.TrackUserEvents && state.Scope is { Span: { } span })
+        if (security.TrackUserEvents
+            && state.Scope is { Span: { } span }
+            && UserEventsCommon.GetId(user) is { } id)
         {
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
@@ -71,31 +73,29 @@ public static class UserManagerCreateIntegration
             if (returnValue.Succeeded)
             {
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessTrack, "true");
-                setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, security.Settings.UserEventsAutomatedTracking);
-                if (security.IsExtendedUserTrackingEnabled)
+                setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, security.Settings.UserEventsAutoInstrumentationMode);
+                if (security.IsAnonUserTrackingMode)
                 {
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, user!.Id?.ToString());
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessEmail, user.Email);
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserName, user.UserName);
+                    var anonId = UserEventsCommon.GetAnonId(id);
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, anonId);
                 }
-                else if (user?.Id is Guid || Guid.TryParse(user?.Id?.ToString(), out _))
+                else
                 {
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, user!.Id!.ToString());
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, id);
                 }
             }
             else
             {
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureTrack, "true");
-                setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
-                if (security.IsExtendedUserTrackingEnabled)
+                setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, security.Settings.UserEventsAutoInstrumentationMode);
+                if (security.IsAnonUserTrackingMode)
                 {
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, user!.Id?.ToString());
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureEmail, user.Email);
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserName, user.UserName);
+                    var anonId = UserEventsCommon.GetAnonId(id);
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, anonId);
                 }
-                else if (user?.Id is Guid || Guid.TryParse(user?.Id?.ToString(), out _))
+                else
                 {
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, user!.Id!.ToString());
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, id);
                 }
             }
 

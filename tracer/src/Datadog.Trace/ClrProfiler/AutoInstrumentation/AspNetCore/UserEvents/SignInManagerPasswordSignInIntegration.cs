@@ -61,18 +61,25 @@ public static class SignInManagerPasswordSignInIntegration
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TReturn : ISignInResult
     {
-        if (!returnValue.Succeeded && Security.Instance is { TrackUserEvents: true } security && state.Scope is { Span: { } span })
+        if (!returnValue.Succeeded
+            && Security.Instance is { TrackUserEvents: true } security
+            && state is { Scope: { Span: { } span }, State: string id })
         {
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
 
             setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
             tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, "false");
-            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
-            if (security.IsExtendedUserTrackingEnabled)
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutoInstrumentationMode);
+
+            if (security.IsAnonUserTrackingMode)
             {
-                // if we get here and the tag doesn't exist, the user doesn't exist, we dont have an ID but a username that doesn't exist
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserName, state.State!.ToString());
+                var anonId = UserEventsCommon.GetAnonId(id);
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+            }
+            else
+            {
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, id);
             }
 
             security.SetTraceSamplingPriority(span);

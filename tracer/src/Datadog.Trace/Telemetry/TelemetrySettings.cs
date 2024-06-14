@@ -101,7 +101,7 @@ namespace Datadog.Trace.Telemetry
                 var agentlessUri = config
                                   .WithKeys(ConfigurationKeys.Telemetry.Uri)
                                   .AsString(
-                                       getDefaultValue: () =>
+                                       getDefaultValue: _ =>
                                        {
                                            // use the default intake. Use DD_SITE if provided, otherwise use default
                                            // TODO: we already fetch this, so this will overwrite the telemetry.... Need a solution to that...

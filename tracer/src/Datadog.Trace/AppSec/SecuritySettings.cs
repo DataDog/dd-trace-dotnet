@@ -19,8 +19,11 @@ namespace Datadog.Trace.AppSec
 {
     internal class SecuritySettings
     {
-        public const string UserTrackingExtendedMode = "extended";
-        public const string UserTrackingSafeMode = "safe";
+        public const string UserTrackingDisabled = "disabled";
+        public const string UserTrackingIdentMode = "ident";
+        public const string UserTrackingAnonMode = "anon";
+        private const string DeprecatedUserTrackingExtendedMode = "extended";
+        private const string DeprecatedUserTrackingSafeMode = "safe";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecuritySettings>();
 
         public SecuritySettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
@@ -75,15 +78,26 @@ namespace Datadog.Trace.AppSec
                                             .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex)
                                             .AsString(SecurityConstants.ObfuscationParameterValueRegexDefault, x => !string.IsNullOrWhiteSpace(x));
 
-            UserEventsAutomatedTracking = config
-                                         .WithKeys(ConfigurationKeys.AppSec.UserEventsAutomatedTracking)
-                                         .AsString(
-                                              UserTrackingSafeMode,
-                                              val =>
-                                                  val.Equals("disabled", StringComparison.OrdinalIgnoreCase)
-                                               || val.Equals(UserTrackingSafeMode, StringComparison.OrdinalIgnoreCase)
-                                               || val.Equals(UserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase))
-                                         .ToLowerInvariant();
+            string GetLegacyUserTracking() =>
+                config
+                   .WithKeys(ConfigurationKeys.AppSec.UserEventsAutomatedTracking)
+                   .AsString(
+                        isPresent => isPresent ? UserTrackingDisabled : DeprecatedUserTrackingSafeMode,
+                        val =>
+                            val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
+                         || val.Equals(DeprecatedUserTrackingSafeMode, StringComparison.OrdinalIgnoreCase)
+                         || val.Equals(DeprecatedUserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase))
+                   .ToLowerInvariant();
+
+            UserEventsAutoInstrumentationMode = config
+                                               .WithKeys(ConfigurationKeys.AppSec.UserEventsAutoInstrumentationMode)
+                                               .AsString(
+                                                    isPresent => isPresent ? UserTrackingDisabled : GetLegacyUserTracking(),
+                                                    val =>
+                                                        val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
+                                                     || val.Equals(UserTrackingIdentMode, StringComparison.OrdinalIgnoreCase)
+                                                     || val.Equals(UserTrackingAnonMode, StringComparison.OrdinalIgnoreCase))
+                                               .ToLowerInvariant();
 
             ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEnabled, "DD_EXPERIMENTAL_API_SECURITY_ENABLED")
                                        .AsBool(false);
@@ -190,9 +204,9 @@ namespace Datadog.Trace.AppSec
         public string BlockedHtmlTemplate { get; }
 
         /// <summary>
-        /// Gets the automatic tracking of user events mode. Values can be disabled, safe or extended.
+        /// Gets the Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
         /// </summary>
-        public string UserEventsAutomatedTracking { get; }
+        public string UserEventsAutoInstrumentationMode { get; }
 
         /// <summary>
         /// Gets the response template for Json content. This template is used in combination with the status code to craft and send a response upon blocking the request.

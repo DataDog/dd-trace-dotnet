@@ -54,37 +54,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         {
             var claimsPrincipal = state.State as ClaimsPrincipal;
             // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-            var claimsToTestInSafeMode = new[] { ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub" };
+            var claimsToTest = new[] { ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub", ClaimTypes.Email, ClaimTypes.Name, };
             if (claimsPrincipal?.Claims != null && Security.Instance is { TrackUserEvents: true } security)
             {
                 var span = state.Scope.Span;
                 var setTag = TaggingUtils.GetSpanSetter(span, out _);
                 var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
-                setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, Security.Instance.Settings.UserEventsAutomatedTracking);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, Security.Instance.Settings.UserEventsAutoInstrumentationMode);
                 foreach (var claim in claimsPrincipal.Claims)
                 {
-                    if (security.IsExtendedUserTrackingEnabled)
+                    if (claimsToTest.Contains(claim.Type))
                     {
-                        switch (claim.Type)
+                        if (security.IsAnonUserTrackingMode)
                         {
-                            case ClaimTypes.NameIdentifier or "sub":
-                                tryAddTag(Tags.User.Id, claim.Value);
-                                break;
-                            case ClaimTypes.Email:
-                                tryAddTag(Tags.User.Email, claim.Value);
-                                break;
-                            case ClaimTypes.Name:
-                                tryAddTag(Tags.User.Name, claim.Value);
-                                break;
+                            var anonId = UserEventsCommon.GetAnonId(claim.Value);
+                            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
                         }
-                    }
-                    else if (claimsToTestInSafeMode.Contains(claim.Type))
-                    {
-                        if (Guid.TryParse(claim.Value, out _))
+                        else
                         {
-                            tryAddTag(Tags.User.Id, claim.Value);
-                            break;
+                            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, claim.Value);
                         }
                     }
                 }

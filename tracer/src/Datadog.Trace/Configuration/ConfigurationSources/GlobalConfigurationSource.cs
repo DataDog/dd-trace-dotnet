@@ -57,7 +57,7 @@ internal class GlobalConfigurationSource
             var configurationFileName = new ConfigurationBuilder(configurationSource, telemetry)
                                        .WithKeys(ConfigurationKeys.ConfigurationFileName, "DD_DOTNET_TRACER_CONFIG_FILE")
                                        .AsString(
-                                            getDefaultValue: () => Path.Combine(baseDirectory ?? GetCurrentDirectory(), "datadog.json"),
+                                            getDefaultValue: _ => Path.Combine(baseDirectory ?? GetCurrentDirectory(), "datadog.json"),
                                             validator: null);
 
             if (string.Equals(Path.GetExtension(configurationFileName), ".JSON", StringComparison.OrdinalIgnoreCase) &&

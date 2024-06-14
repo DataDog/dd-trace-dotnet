@@ -136,9 +136,9 @@ namespace Datadog.Trace.AppSec
 
         internal string? DdlibWafVersion => _waf?.Version;
 
-        internal bool TrackUserEvents => Enabled && Settings.UserEventsAutomatedTracking != "disabled";
+        internal bool TrackUserEvents => Enabled && Settings.UserEventsAutoInstrumentationMode != SecuritySettings.UserTrackingDisabled;
 
-        internal bool IsExtendedUserTrackingEnabled => Settings.UserEventsAutomatedTracking == SecuritySettings.UserTrackingExtendedMode;
+        internal bool IsAnonUserTrackingMode => Settings.UserEventsAutoInstrumentationMode == SecuritySettings.UserTrackingAnonMode;
 
         internal ApiSecurity ApiSecurity { get; }
 
