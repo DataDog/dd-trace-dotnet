@@ -2,8 +2,9 @@
 FROM mcr.microsoft.com/dotnet/runtime-deps:5.0-buster-slim as base
 ARG DOTNETSDK_VERSION
 
-# Based on https://github.com/dotnet/dotnet-docker/blob/34c81d5f9c8d56b36cc89da61702ccecbf00f249/src/sdk/6.0/bullseye-slim/amd64/Dockerfile
-# and https://github.com/dotnet/dotnet-docker/blob/1eab4cad6e2d42308bd93d3f0cc1f7511ac75882/src/sdk/5.0/buster-slim/amd64/Dockerfile
+# Based on
+# - https://github.com/dotnet/dotnet-docker/blob/34c81d5f9c8d56b36cc89da61702ccecbf00f249/project/sdk/6.0/bullseye-slim/amd64/Dockerfile
+# - https://github.com/dotnet/dotnet-docker/blob/1eab4cad6e2d42308bd93d3f0cc1f7511ac75882/project/sdk/5.0/buster-slim/amd64/Dockerfile
 ENV \
     # Unset ASPNETCORE_URLS from aspnet base image
     ASPNETCORE_URLS= \
@@ -39,7 +40,7 @@ RUN apt-get update \
         liblzma-dev \
         gdb \
         cppcheck \
-		zlib1g-dev \
+        zlib1g-dev \
         \
         # required to install clang
         lsb-release \
@@ -66,7 +67,7 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
     && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm ./dotnet-install.sh \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
-# Trigger first run experience by running arbitrary cmd
+    # Trigger first run experience by running arbitrary cmd
     && dotnet help
 
 ENV \
