@@ -1273,7 +1273,12 @@ stages:
           condition: succeededOrFailed()
 
 - stage: integration_tests_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
+    )
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1410,7 +1415,12 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_windows_iis
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition:  >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
+    )
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1470,7 +1480,12 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_windows_iis_security
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition:  >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
+    )
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1530,6 +1545,11 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_azure_functions
+  condition: >
+    and(
+      succeeded(),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
+    )
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1731,7 +1751,12 @@ stages:
       continueOnError: true
 
 - stage: msi_integration_tests_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition:  >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
+    )
   dependsOn: [build_windows_tracer, package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1814,7 +1839,12 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_linux
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition:  >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
+    )
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -2303,14 +2333,16 @@ stages:
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
-        eq(variables.isMainOrReleaseBranch, true),
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
       )
     )
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    RunOnlyTestsWithTracer: $[ and(eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False'),
+                                   eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True'))]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2354,7 +2386,7 @@ stages:
         archiveFilePatterns: '$(Agent.TempDirectory)/windows-tracer-home.zip'
         destinationFolder: $(monitoringHome)
 
-    - script: tracer\build.cmd BuildProfilerSamples BuildAndRunProfilerIntegrationTests --TargetPlatform $(targetPlatform)
+    - script: tracer\build.cmd BuildProfilerSamples BuildAndRunProfilerIntegrationTests --TargetPlatform $(targetPlatform) --RunOnlyTestsWithTracer $(RunOnlyTestsWithTracer)
       displayName: Run Profiler Integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2377,14 +2409,16 @@ stages:
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
-        eq(variables.isMainOrReleaseBranch, true),
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
       )
     )
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    RunOnlyTestsWithTracer: $[ and(eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False'),
+                                   eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True'))]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2439,7 +2473,7 @@ stages:
       parameters:
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildAndRunProfilerCpuLimitTests"
+        command: "BuildAndRunProfilerCpuLimitTests --RunOnlyTestsWithTracer $(RunOnlyTestsWithTracer)"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -2447,7 +2481,7 @@ stages:
       parameters:
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildAndRunProfilerCpuLimitTests"
+        command: "BuildAndRunProfilerCpuLimitTests --RunOnlyTestsWithTracer $(RunOnlyTestsWithTracer)"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -2458,7 +2492,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) ProfilerIntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) ProfilerIntegrationTests --RunOnlyTestsWithTracer $(RunOnlyTestsWithTracer)
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2625,7 +2659,12 @@ stages:
       continueOnError: false
 
 - stage: integration_tests_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition:  >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'False')
+    )
   dependsOn: [package_arm64, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
