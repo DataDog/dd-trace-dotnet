@@ -25,7 +25,7 @@ namespace iast
         mdTypeDef _id = 0;
     public:
         mdTypeDef GetTypeDef();
-        WSTRING GetName();
+        WSTRING& GetName();
     };
 
     class MemberRefInfo
@@ -39,7 +39,6 @@ namespace iast
         ModuleInfo* _module = nullptr;
         WSTRING _name = EmptyWStr;
         WSTRING _fullName = EmptyWStr;
-        WSTRING _memberName = EmptyWStr;
 
         mdTypeDef _typeDef = 0;
         TypeInfo* _typeInfo = nullptr;
@@ -56,11 +55,10 @@ namespace iast
         mdTypeDef GetTypeDef();
 
         ModuleInfo* GetModuleInfo();
-        WSTRING GetName();
-        WSTRING GetMemberName();
-        WSTRING GetFullName();
+        WSTRING& GetName();
+        WSTRING& GetFullName();
         WSTRING GetFullNameWithReturnType();
-        WSTRING GetTypeName();
+        WSTRING& GetTypeName();
         virtual SignatureInfo* GetSignature();
         ULONG GetParameterCount();
         CorElementType GetReturnCorType();
@@ -118,7 +116,7 @@ namespace iast
     private:
         DWORD _methodAttributes;
 
-        int _isExcluded = -1;
+        bool _isExcluded = false;
         bool _isProcessed = false;
         bool _allowRestoreOnSecondJit = false;
         bool _disableInlining = false;
@@ -133,13 +131,11 @@ namespace iast
         ILRewriter* _rewriter = nullptr;
         std::string _applyMessage = "";
     private:
-        // LPBYTE AllocBuffer(DWORD size);
         void FreeBuffer();
     public:
         MethodInfo(ModuleInfo* pModuleInfo, mdMethodDef methodDef);
         ~MethodInfo() override;
 
-        WSTRING GetMethodName();
         WSTRING GetKey(FunctionID functionID = 0);
         mdMethodDef GetMethodDef();
 
