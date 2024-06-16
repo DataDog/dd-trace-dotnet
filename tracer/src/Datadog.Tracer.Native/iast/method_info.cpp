@@ -44,8 +44,7 @@ namespace iast
 
     //----------------------------
 
-    MemberRefInfo::MemberRefInfo(ModuleInfo* pModuleInfo, mdMemberRef memberRef) : 
-        _fullNameCounterLock(0)
+    MemberRefInfo::MemberRefInfo(ModuleInfo* pModuleInfo, mdMemberRef memberRef)
     {
         this->_module = pModuleInfo;
         this->_id = memberRef;
@@ -96,7 +95,8 @@ namespace iast
     {
         if (_fullName.size() == 0)
         {
-            if (_fullNameCounterLock.fetch_add(1, std::memory_order_acquire) == 0) // First thread to calculate full name
+            CSGuard lock(&_module->_cs);
+            if (_fullName.size() == 0)
             {
                 auto fullName = GetTypeName() + WStr("::") + _name;
                 auto signature = GetSignature();
@@ -105,14 +105,6 @@ namespace iast
                     fullName = signature->CharacterizeMember(fullName);
                 }
                 _fullName = fullName;
-                _fullNameCounterLock++;
-            }
-            else // Second thread. Wait for first thread to finish
-            {
-                while (_fullNameCounterLock < 2)
-                {
-                    Sleep(1);
-                }
             }
         }
         return _fullName;

@@ -63,9 +63,6 @@ namespace iast
         ULONG GetParameterCount();
         CorElementType GetReturnCorType();
         virtual std::vector<WSTRING> GetCustomAttributes();
-
-    private:
-        std::atomic<unsigned char> _fullNameCounterLock;
     };
 
     class MethodSpec : public MemberRefInfo
