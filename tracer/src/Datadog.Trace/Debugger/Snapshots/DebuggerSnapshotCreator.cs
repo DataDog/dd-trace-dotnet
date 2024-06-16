@@ -42,10 +42,11 @@ namespace Datadog.Trace.Debugger.Snapshots
         private CaptureBehaviour _captureBehaviour;
         private string _message;
         private List<EvaluationError> _errors;
-        private string _snapshotId;
+        private readonly string _snapshotId;
 
         public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo)
         {
+            _snapshotId ??= LastSnapshotId = Guid.NewGuid().ToString();
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
             _jsonUnderlyingString = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
@@ -71,7 +72,6 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             get
             {
-                _snapshotId ??= LastSnapshotId = Guid.NewGuid().ToString();
                 return _snapshotId;
             }
         }
