@@ -42,7 +42,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                          .AsInt32(DefaultRateLimitSeconds, x => x > 0)
                          .Value;
 
-            RateLimit = TimeSpan.FromSeconds(seconds);
+            RateLimit = TimeSpan.FromSeconds(0); // for the demo. @Matan Green - we need a way to set this to the value from the config, for demo purposes.
 
             MaxExceptionAnalysisLimit = config
                                        .WithKeys(ConfigurationKeys.Debugger.MaxExceptionAnalysisLimit)
