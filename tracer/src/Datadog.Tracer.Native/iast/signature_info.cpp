@@ -46,22 +46,26 @@ namespace iast
             hr = ParseMethodSignature(pSig, nSig, (ULONG*)&_callingConvention, &_returnType, &_params, &_genericParamCount, &cbRead);
         }
 
-        std::basic_stringstream<WCHAR, std::char_traits<WCHAR>, std::allocator<WCHAR>> buffer;
-        buffer << WStr("(");
         if (_params.size() > 0)
         {
+            std::stringstream buffer;
+            buffer << "(";
             int count = 0;
             for (auto p : _params)
             {
                 if (count++ > 0)
                 {
-                    buffer << WStr(",");
+                    buffer << ",";
                 }
-                buffer << p->GetName();
+                buffer << ToString(p->GetName());
             }
+            buffer << ")";
+            _paramsString = ToWSTRING(buffer.str());
         }
-        buffer << WStr(")");
-        _paramsString = buffer.str();
+        else
+        {
+            _paramsString = WStr("()");
+        }
 
         if (_returnType)
         {
