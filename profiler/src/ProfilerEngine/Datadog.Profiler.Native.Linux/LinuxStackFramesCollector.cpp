@@ -38,7 +38,10 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     _errorStatistics{},
     _useBacktrace2{configuration->UseBacktrace2()}
 {
-    _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
+    if (_signalManager != nullptr)
+    {
+        _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
+    }
 }
 
 LinuxStackFramesCollector::~LinuxStackFramesCollector()
@@ -87,6 +90,10 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 {
     long errorCode;
 
+    // If there a timer associated to the managed thread, we have to disarm it.
+    // Otherwise, the CPU consumption to collect the callstack, will be accounted as "user app CPU time"
+    auto timerId = pThreadInfo->GetTimerId();
+
     if (selfCollect)
     {
         // In case we are self-unwinding, we do not want to be interrupted by the signal-based profilers (walltime and cpu)
@@ -103,15 +110,12 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
     }
     else
     {
-        if (!_signalManager->IsHandlerInPlace())
+        if (_signalManager == nullptr || !_signalManager->IsHandlerInPlace())
         {
             *pHR = E_FAIL;
             return GetStackSnapshotResult();
         }
 
-        // If there a timer associated to the managed thread, we have to disarm it.
-        // Otherwise, the CPU consumption to collect the callstack, will be accounted as "user app CPU time"
-        auto timerId = pThreadInfo->GetTimerId();
         struct itimerspec old;
 
         if (timerId != -1)
