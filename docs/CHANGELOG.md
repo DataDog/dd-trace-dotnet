@@ -1,5 +1,43 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+
+## [Release 2.54.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.54.0)
+
+## Summary
+
+- Fix crash at shutdown when runtime metrics enabled due to bug in the .NET runtime
+- Fix occasional crash with Continuous Profiler
+- Various other minor bug fixes
+
+## Changes
+
+### Tracer
+* Handle `NullReferenceException` in EF6 (#5668)
+* Don't allow enabling UDS on < .NET Core 3.1 and .NET Framework (#5686)
+* Prevent `NullReferenceException` when `Activity` IDs are `null` (#5690)
+
+### ASM
+* [ASM] Fix Null reference exception error (#5664)
+* [ASM] Protect NativeLibrary.CloseLibrary (#5682)
+* [ASM] Fix null exception security coordinator (#5685)
+* [ASM] Fix Security module failed error (#5694)
+
+### Continuous Profiler
+* [Profiler] Fix possible crash when SSI deployed (#5684)
+* [Profiler] Fix crash when different threads are trying to set a class description (#5691)
+* [Profiler] Fix typo in crash fix (#5692)
+
+### Miscellaneous
+* [SSI] Fix some of the single step injection forwarder code (#5678)
+* Single-step guard rails: Use stdin instead of args to invoke telemetry (#5677)
+* Fix crash at shutdown in runtime metrics (#5696)
+* [CrashTracking] Add more exception types  (#5697)
+
+### Build / Test
+* Single-step guard rails: Fix the path of the log file in tests (#5700)
+
+[Changes since 2.53.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.53.0...v2.53.1)
+
 ## [Release 2.53.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.53.0)
 
 ## Summary
