@@ -32,8 +32,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-// There's nothing .NET 8 specific here, it's just that it's an identical test for all runtimes
-// so there's not really any point in testing it repeatedly
+        // There's nothing .NET 8 specific here, it's just that it's an identical test for all runtimes
+        // so there's not really any point in testing it repeatedly
 #if NET8_0
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
@@ -226,9 +226,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
             SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
-            SetEnvironmentVariable(WatchFileEnvironmentVariable, echoApp);
 
             var logDir = SetLogDirectory();
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, Path.Combine(logDir, TelemetryReporterFixture.LogFileName));
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
@@ -256,9 +256,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
             SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
             SetEnvironmentVariable("DD_INJECT_FORCE", "true");
-            SetEnvironmentVariable(WatchFileEnvironmentVariable, echoApp);
 
             var logDir = SetLogDirectory();
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, Path.Combine(logDir, TelemetryReporterFixture.LogFileName));
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
@@ -290,9 +290,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
             // this value doesn't matter, should have same result, and _shouldn't_ change the metrics
             SetEnvironmentVariable("DD_INJECT_FORCE", isOverriden);
-            SetEnvironmentVariable(WatchFileEnvironmentVariable, echoApp);
 
             var logDir = SetLogDirectory($"_{isOverriden}");
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, Path.Combine(logDir, TelemetryReporterFixture.LogFileName));
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
