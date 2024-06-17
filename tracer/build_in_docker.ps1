@@ -9,9 +9,9 @@ Param(
 $ErrorActionPreference = "Stop"
 
 $ROOT_DIR = "$PSScriptRoot/.."
+$MONITORING_HOME_DIR = "shared/bin/monitoring-home"
+$ARTIFACTS_DIR = "bin/artifacts"
 $IMAGE_NAME = "dd-trace-dotnet/debian-local-builder"
-$OUTPUT_DIR_REL = "shared/bin/monitoring-home"
-$OUTPUT_DIR_ABS = "$ROOT_DIR/$OUTPUT_DIR_REL"
 
 # Build the local builder image, and pre-build the Nuke project
 docker build `
@@ -23,8 +23,8 @@ docker build `
 
 # Run Nuke with build arguments
 docker run -it --rm `
-    --mount "type=bind,source=$OUTPUT_DIR_ABS,target=/project/$OUTPUT_DIR_REL" `
-    --env artifacts=/project/tracer/bin/artifacts `
+    --mount "type=bind,source=$ROOT_DIR/$MONITORING_HOME_DIR,target=/project/$MONITORING_HOME_DIR" `
+    --mount "type=bind,source=$ROOT_DIR/$ARTIFACTS_DIR,target=/project/$ARTIFACTS_DIR" `
     --env NUKE_TELEMETRY_OPTOUT=1 `
     $IMAGE_NAME `
     dotnet /project/tracer/build/_build/bin/Debug/_build.dll $BuildArguments
