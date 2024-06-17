@@ -47,7 +47,7 @@ private:
     void RegisterThreadImpl(ManagedThreadInfo* thread);
 
     bool StartImpl() override;
-    bool StopImp() override;
+    bool StopImpl() override;
 
     enum class ServiceState
     {

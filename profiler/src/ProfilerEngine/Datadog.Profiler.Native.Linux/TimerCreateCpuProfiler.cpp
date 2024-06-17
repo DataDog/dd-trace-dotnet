@@ -41,9 +41,9 @@ TimerCreateCpuProfiler::~TimerCreateCpuProfiler()
 
 void TimerCreateCpuProfiler::RegisterThread(std::shared_ptr<ManagedThreadInfo> threadInfo)
 {
-    std::shared_lock(_registerLock);
+    std::shared_lock lock(_registerLock);
 
-    if (GetState() != SeriveBase::State::Started)
+    if (GetState() != ServiceBase::State::Started)
     {
         return;
     }
@@ -71,7 +71,7 @@ const char* TimerCreateCpuProfiler::GetName()
 
 bool TimerCreateCpuProfiler::StartImpl()
 {
-    // If the signal is higjacked, what to do?
+    // If the signal is highjacked, what to do?
     auto registered = _pSignalManager->RegisterHandler(TimerCreateCpuProfiler::CollectStackSampleSignalHandler);
 
     if (registered)
@@ -79,8 +79,8 @@ bool TimerCreateCpuProfiler::StartImpl()
         std::unique_lock lock(_registerLock);
         Instance = this;
 
-        // Create and start timer for all threads
-        _pManagedThreadsList->ForEach([this](ManagedThreadList* thread) { RegisterImpl(thread); });
+        // Create and start timer for all threads.
+        _pManagedThreadsList->ForEach([this](ManagedThreadInfo* thread) { RegisterThreadImpl(thread); });
     }
 
     return registered;
@@ -99,7 +99,7 @@ bool TimerCreateCpuProfiler::CollectStackSampleSignalHandler(int sig, siginfo_t*
     auto instance = Instance;
     if (instance == nullptr)
     {
-        return;
+        return false;
     }
 
     return instance->Collect(ucontext);

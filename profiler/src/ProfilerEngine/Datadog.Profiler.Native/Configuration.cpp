@@ -581,7 +581,6 @@ CpuProfilerType Configuration::GetCpuProfilerType() const
     return _cpuProfilerType;
 }
 
-=======
 std::chrono::milliseconds Configuration::GetCpuProfilingInterval() const
 {
     return _cpuProfilingInterval;

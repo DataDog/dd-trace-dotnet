@@ -64,10 +64,8 @@ StackSamplerLoop::StackSamplerLoop(
     _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
     _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
-    _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled()},
-    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()}
     _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled() && pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime},
-    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()},
+    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
     Log::Info("Processor cores = ", _nbCores);
