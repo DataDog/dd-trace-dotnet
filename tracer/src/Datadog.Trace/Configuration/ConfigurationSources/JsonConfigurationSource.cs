@@ -244,7 +244,7 @@ namespace Datadog.Trace.Configuration
             catch (Exception)
             {
                 telemetry.Record(key, token?.ToString(), recordValue, _origin, TelemetryErrorCode.JsonStringError);
-                throw; // Exising behaviour
+                throw; // Existing behaviour
             }
 
             return null;
