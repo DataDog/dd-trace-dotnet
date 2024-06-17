@@ -3,6 +3,8 @@
 
 #include "LibrariesInfoCache.h"
 
+#include "Log.h"
+
 #include <string.h>
 
 LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
@@ -38,7 +40,8 @@ void LibrariesInfoCache::UpdateCache()
     if (nbCallsToDlopenDlclose != NbCallsToDlopenDlclose)
     {
         NbCallsToDlopenDlclose = nbCallsToDlopenDlclose;
-        IterationData x = {.Index = 0, .Cache = this};
+        IterationData data = {.Index = 0, .Cache = this};
+        LibrariesInfo.clear();
         dl_iterate_phdr(
             [](struct dl_phdr_info* info, std::size_t size, void* data) {
                 auto* iterationData = static_cast<IterationData*>(data);
@@ -59,18 +62,15 @@ void LibrariesInfoCache::UpdateCache()
                 }
 
                 DlPhdrInfoWrapper wrappedInfo(info, size);
-                if (iterationData->Index < cache->LibrariesInfo.size())
-                {
-                    cache->LibrariesInfo[iterationData->Index] = std::move(wrappedInfo);
-                }
-                else
-                {
-                    cache->LibrariesInfo.push_back(std::move(wrappedInfo));
-                }
+                cache->LibrariesInfo[iterationData->Index] = std::move(wrappedInfo);
                 iterationData->Index++;
                 return 0;
             },
-            this);
+            &data);
+
+            // erase the remaining (closed) libraries if any
+            Libraries.pop_back();
+            Libraries.erase(Libraries.begin() + iterationData.Index, Libraries.end());
     }
 }
 

@@ -11,8 +11,8 @@
 // So we have to deep-copy them to avoid a potential crash:
 // dlclose is happening when libunwind is calling our custom dl_iterate_phdr.
 // The pointers will be invalidated and a crash can happen.
-DlPhdrInfoWrapper::DlPhdrInfoWrapper(struct dl_phdr_info* info, std::size_t size) :
-    _size(size), _name{nullptr, &std::free}
+DlPhdrInfoWrapper::DlPhdrInfoWrapper(struct dl_phdr_info const* info, std::size_t size) :
+    _info{0}, _phdr{nullptr}, _name{nullptr, &std::free}, _size(size)
 {
     DeepCopy(_info, info);
 }
@@ -22,7 +22,7 @@ std::pair<struct dl_phdr_info*, std::size_t> DlPhdrInfoWrapper::Get()
     return {&_info, _size};
 }
 
-void DlPhdrInfoWrapper::DeepCopy(struct dl_phdr_info& destination, struct dl_phdr_info* source)
+void DlPhdrInfoWrapper::DeepCopy(struct dl_phdr_info& destination, struct dl_phdr_info const* source)
 {
     // first copy all fields
     destination = *source;
@@ -42,7 +42,7 @@ void DlPhdrInfoWrapper::DeepCopy(struct dl_phdr_info& destination, struct dl_phd
     destination.dlpi_tls_data = nullptr;
 }
 
-bool DlPhdrInfoWrapper::IsSame(struct dl_phdr_info* other) const
+bool DlPhdrInfoWrapper::IsSame(struct dl_phdr_info const * other) const
 {
     return strcmp(_info.dlpi_name, other->dlpi_name) == 0 &&
            _info.dlpi_addr == other->dlpi_addr;

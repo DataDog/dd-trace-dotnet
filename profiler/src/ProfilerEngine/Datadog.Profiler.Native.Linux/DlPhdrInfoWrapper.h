@@ -1,5 +1,6 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+#pragma once
 
 #include <link.h>
 
@@ -16,14 +17,14 @@
 class DlPhdrInfoWrapper
 {
 public:
-    DlPhdrInfoWrapper(struct dl_phdr_info* info, std::size_t size);
+    DlPhdrInfoWrapper(struct dl_phdr_info const* info, std::size_t size);
 
     std::pair<struct dl_phdr_info*, std::size_t> Get();
 
-    bool IsSame(struct dl_phdr_info* other) const;
+    bool IsSame(struct dl_phdr_info const * other) const;
 
 private:
-    void DeepCopy(struct dl_phdr_info& destination, struct dl_phdr_info* source);
+    void DeepCopy(struct dl_phdr_info& destination, struct dl_phdr_info const * source);
 
     struct dl_phdr_info _info;
     std::unique_ptr<ElfW(Phdr)[]> _phdr;
