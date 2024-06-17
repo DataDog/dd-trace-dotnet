@@ -41,7 +41,6 @@ void LibrariesInfoCache::UpdateCache()
     {
         NbCallsToDlopenDlclose = nbCallsToDlopenDlclose;
         IterationData data = {.Index = 0, .Cache = this};
-        LibrariesInfo.clear();
         dl_iterate_phdr(
             [](struct dl_phdr_info* info, std::size_t size, void* data) {
                 auto* iterationData = static_cast<IterationData*>(data);
@@ -68,9 +67,7 @@ void LibrariesInfoCache::UpdateCache()
             },
             &data);
 
-            // erase the remaining (closed) libraries if any
-            Libraries.pop_back();
-            Libraries.erase(Libraries.begin() + iterationData.Index, Libraries.end());
+            LibrariesInfo.erase(LibrariesInfo.begin() + data.Index, LibrariesInfo.end());
     }
 }
 

@@ -10,7 +10,7 @@
 
 #include "IThreadInfo.h"
 #include "ScopedHandle.h"
-#include "Semaphore2.h"
+#include "Semaphore.h"
 #include "shared/src/native-src/string.h"
 
 #include <atomic>
