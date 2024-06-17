@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         public RuntimeMetricsShutdownSmokeTest(ITestOutputHelper output)
             : base(output, "RuntimeMetricsShutdown")
         {
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "true");
         }
 
         [SkippableFact]
