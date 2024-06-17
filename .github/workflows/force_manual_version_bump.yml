@@ -31,12 +31,15 @@ jobs:
           dotnet-version: '8.0.100'
 
       - name: "Bump Version"
-        id: versions
-        run: .\tracer\build.ps1 UpdateVersion OutputCurrentVersionToGitHub
+        run: .\tracer\build.ps1 UpdateVersion
 
       - name: "Verify Changes"
         id: changes
         run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
+
+      - name: "Output Version"
+        id: versions
+        run: .\tracer\build.ps1 OutputCurrentVersionToGitHub
 
       - name: Create Pull Request
         id: pr
