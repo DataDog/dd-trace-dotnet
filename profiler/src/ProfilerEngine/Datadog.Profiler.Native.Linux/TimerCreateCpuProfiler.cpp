@@ -71,7 +71,14 @@ const char* TimerCreateCpuProfiler::GetName()
 
 bool TimerCreateCpuProfiler::StartImpl()
 {
-    // If the signal is highjacked, what to do?
+    if (_pSignalManager == nullptr)
+    {
+        Log::Info("Profiler Signal manager was not correctly initialized (see previous messages).",
+                  "timer_create-based CPU profiler is disabled.");
+        return false;
+    }
+
+    // If the signal is hijacked, what to do?
     auto registered = _pSignalManager->RegisterHandler(TimerCreateCpuProfiler::CollectStackSampleSignalHandler);
 
     if (registered)

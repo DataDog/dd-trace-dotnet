@@ -37,7 +37,8 @@ ProfilerSignalManager* ProfilerSignalManager::Get(int signal)
 
     if (signal < 1 || signal > 31)
     {
-        throw std::invalid_argument(std::string("Signal argument is invalid ") + "(" + std::to_string(signal) + "). Value must be: 1 <= signal <= 31");
+        Log::Info("Signal argument is invalid (", std::to_string(signal), " aka ", strsignal(signal), "). Value must be: 1 <= signal <= 31");
+        return nullptr;
     }
 
     auto* manager = &signalManagers[signal - 1]; // 0-based array
@@ -88,6 +89,7 @@ bool ProfilerSignalManager::UnRegisterHandler()
         return false;
     }
 
+    _isHandlerInPlace = false;
     return true;
 }
 

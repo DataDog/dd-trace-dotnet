@@ -973,6 +973,12 @@ TEST(ConfigurationTest, CheckDefaultCpuProfilerType)
     ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
 }
 
+TEST(ConfigurationTest, CheckDefaultCpuProfilerTypeWhenEnvVarNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+}
+
 TEST(ConfigurationTest, CheckUnknownCpuProfilerType)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("UnknownCpuProfilerType"));
