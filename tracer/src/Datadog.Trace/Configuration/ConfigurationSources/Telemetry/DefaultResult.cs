@@ -4,6 +4,8 @@
 // </copyright>
 
 #nullable enable
+using System.Collections.Generic;
+
 namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 
 internal readonly record struct DefaultResult<T>
@@ -24,5 +26,8 @@ internal readonly record struct DefaultResult<T>
     /// </summary>
     public string? TelemetryValue { get; }
 
-    public static implicit operator DefaultResult<T>(T result) => new(result, telemetryValue: null);
+    public static implicit operator DefaultResult<T>(T result)
+        => result is IDictionary<string, string>
+               ? new(result, telemetryValue: string.Empty) // we don't want to call ToString() on these
+               : new(result, null);
 }

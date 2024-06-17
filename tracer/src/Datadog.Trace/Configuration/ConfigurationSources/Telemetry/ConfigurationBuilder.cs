@@ -489,10 +489,10 @@ internal readonly struct ConfigurationBuilder
         // Dictionary accessors
         // ****************
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(Func<IDictionary<string, string>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
+        public IDictionary<string, string>? AsDictionary(Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<IDictionary<string, string>>? getDefaultValue = null)
+        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
             var result = GetDictionaryResult(allowOptionalMappings, separator: ':');
@@ -505,18 +505,15 @@ internal readonly struct ConfigurationBuilder
 
             if (getDefaultValue != null)
             {
-                // Horrible that we have to stringify the dictionary, but that's all that's available in the telemetry api
                 var defaultValue = getDefaultValue();
-                var defaultValueAsString = defaultValue.Count == 0 ? string.Empty : string.Join(", ", defaultValue!.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
-
-                Telemetry.Record(Key, defaultValueAsString, true, ConfigurationOrigins.Default);
-                return defaultValue;
+                Telemetry.Record(Key, defaultValue.TelemetryValue, true, ConfigurationOrigins.Default);
+                return defaultValue.Result;
             }
 
             return null;
         }
 
-        public IDictionary<string, string>? AsDictionaryWithOpenTelemetryMapping(string openTelemetryKey, Func<IDictionary<string, string>>? getDefaultValue = null)
+        public IDictionary<string, string>? AsDictionaryWithOpenTelemetryMapping(string openTelemetryKey, Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
             var result = GetDictionaryResult(allowOptionalMappings: false, separator: ':');
@@ -582,12 +579,9 @@ internal readonly struct ConfigurationBuilder
 
             if (getDefaultValue != null)
             {
-                // Horrible that we have to stringify the dictionary, but that's all that's available in the telemetry api
                 var defaultValue = getDefaultValue();
-                var defaultValueAsString = defaultValue.Count == 0 ? string.Empty : string.Join(", ", defaultValue!.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
-
-                Telemetry.Record(Key, defaultValueAsString, true, ConfigurationOrigins.Default);
-                return defaultValue;
+                Telemetry.Record(Key, defaultValue.TelemetryValue, true, ConfigurationOrigins.Default);
+                return defaultValue.Result;
             }
 
             return null;
