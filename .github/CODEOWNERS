@@ -1,18 +1,12 @@
 # See https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-on-github/about-code-owners
 
+# Order is important! The last matching pattern takes the most precedence.
+
 # By default every team is owner
 *                                         @DataDog/apm-dotnet
 
 # Tracer
 /tracer/                                  @DataDog/tracing-dotnet
-
-# Common Files
-Datadog.Trace.Trimming.xml                @DataDog/apm-dotnet
-missing-nullability-files.csv             @DataDog/apm-dotnet
-/tracer/src/Datadog.Trace/Generated/      @DataDog/apm-dotnet
-/tracer/src/Datadog.Trace/Configuration/IntegrationId.cs @DataDog/apm-dotnet
-/tracer/src/Datadog.Trace/Telemetry/Metrics/MetricTags.cs @DataDog/apm-dotnet
-/tracer/src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs @DataDog/apm-dotnet
 
 # CI
 /tracer/src/Datadog.Trace/Ci/             @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
@@ -44,7 +38,6 @@ AspectsDefinitions.g.cs 				@DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/StackTraceLeak/  @DataDog/asm-dotnet
 /tracer/test/test-applications/integrations/Samples.ProcessStart  @DataDog/asm-dotnet
-
 
 # Profiler
 /profiler/                                @DataDog/profiling-dotnet
@@ -156,3 +149,12 @@ docker-compose.serverless.yml                                      @DataDog/trac
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TracerFlareTests.cs                             @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TracingIntegrationTest.cs                       @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TransportTests.cs                               @DataDog/tracing-dotnet
+
+# Common Files
+Datadog.Trace.Trimming.xml                @DataDog/apm-dotnet
+Directory.Build.props                     @DataDog/apm-dotnet
+missing-nullability-files.csv             @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace/Generated/      @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace/Configuration/IntegrationId.cs @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace/Telemetry/Metrics/MetricTags.cs @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs @DataDog/apm-dotnet
