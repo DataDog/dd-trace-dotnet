@@ -112,7 +112,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
 # Used from "build_in_docker.ps1" for local builds, not in CI.
 # Keep this stage last to avoid running it on legacy builders which don't skip unreferenced stages.
 
-FROM base as local_builder
+FROM base as local-builder
 
 # Copy the Nuke project and pre-build it for later
 COPY tracer/build/_build/ /project/tracer/build/_build/

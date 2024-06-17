@@ -18,7 +18,7 @@ docker build `
     --build-arg DOTNETSDK_VERSION=8.0.100 `
     --tag $IMAGE_NAME `
     --file "$ROOT_DIR/tracer/build/_build/docker/debian.dockerfile" `
-    --target local_builder `
+    --target local-builder `
     "$ROOT_DIR"
 
 # Run Nuke with build arguments
