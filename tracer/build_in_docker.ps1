@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 
 $ROOT_DIR = "$PSScriptRoot/.."
 $MONITORING_HOME_DIR = "shared/bin/monitoring-home"
-$ARTIFACTS_DIR = "bin/artifacts"
+$ARTIFACTS_DIR = "tracer/bin/artifacts"
 $IMAGE_NAME = "dd-trace-dotnet/debian-local-builder"
 
 # Build the local builder image, and pre-build the Nuke project
