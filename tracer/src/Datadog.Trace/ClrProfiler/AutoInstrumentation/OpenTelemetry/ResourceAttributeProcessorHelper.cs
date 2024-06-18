@@ -9,7 +9,6 @@ using System;
 using System.Reflection.Emit;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
