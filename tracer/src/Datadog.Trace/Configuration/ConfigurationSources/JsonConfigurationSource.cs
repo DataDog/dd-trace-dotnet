@@ -350,7 +350,7 @@ namespace Datadog.Trace.Configuration
                     {
                         JTokenType.Null or JTokenType.None or JTokenType.Undefined => null,
                         JTokenType.String => token.Value<string>(),
-                        _ => token.ToString()
+                        _ => token.ToString(Formatting.None) // serialize back into json
                     }
                 };
 
