@@ -343,7 +343,7 @@ namespace Datadog.Trace.Configuration
 
             try
             {
-                var valueAsString = JTokenToString<T>(token);
+                var valueAsString = JTokenToString(token);
 
                 if (valueAsString is not null)
                 {
