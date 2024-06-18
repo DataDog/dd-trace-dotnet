@@ -11,6 +11,8 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Logger = Serilog.Log;
 using Nuke.Common.Tools.NuGet;
+using static PrepareRelease.SetAllVersions;
+using System.Runtime.InteropServices;
 
 partial class Build
 {
@@ -77,11 +79,14 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var workingDirectory = SharedTestsDirectory / FileNames.NativeLoaderTests / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
-            var testsResultFile = BuildDataDirectory / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
-            var exePath = workingDirectory / $"{FileNames.NativeLoaderTests}.exe";
-            var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
+            foreach (var architecture in ArchitecturesForPlatformForTracer)
+            {
+                var workingDirectory = NativeLoaderTestsProject.Directory / "bin" / BuildConfiguration / architecture.ToString();
+                var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
+                var exePath = workingDirectory / $"{FileNames.NativeLoaderTests}.exe";
+                var testExe = ToolResolver.GetLocalTool(exePath);
+                testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
+            }
         });
 
     Target CompileNativeLoaderLinux => _ => _
@@ -124,8 +129,10 @@ partial class Build
             var exePath = workingDirectory / FileNames.NativeLoaderTests;
             Chmod.Value.Invoke("+x " + exePath);
 
+            var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
+
             var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
         });
 
     Target CompileNativeLoaderOsx => _ => _
@@ -227,14 +234,6 @@ partial class Build
                              $"{NativeLoaderProject.Name}.pdb";
                 dest = SymbolsDirectory / archFolder;
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-
-                source = NativeLoaderTestsProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                         $"{NativeLoaderTestsProject.Name}.exe";
-
-                dest = SharedDirectory / "bin" / "test" / archFolder;
-                EnsureExistingDirectory(dest);
-
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 
@@ -253,15 +252,6 @@ partial class Build
             source = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{ext}";
             dest = MonitoringHomeDirectory / arch;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-
-            var workingDirectory = SharedTestsDirectory / FileNames.NativeLoaderTests / "bin";
-            EnsureExistingDirectory(workingDirectory);
-
-            var exePath = workingDirectory / FileNames.NativeLoaderTests;
-            dest = SharedDirectory / "bin" / "test";
-            EnsureExistingDirectory(dest);
-
-            CopyFileToDirectory(exePath, dest, FileExistsPolicy.Overwrite);
         });
 
     Target PublishNativeLoaderOsx => _ => _

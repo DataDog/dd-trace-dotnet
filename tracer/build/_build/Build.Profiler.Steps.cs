@@ -99,7 +99,7 @@ partial class Build
 
             // LD_PRELOAD must be set for this test library to validate that it works correctly.
             var (arch, _) = GetUnixArchitectureAndExtension();
-            var envVars = new[] { $"LD_PRELOAD={SharedDirectory / "bin" /"test" / LinuxApiWrapperLibrary}" };
+            var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / LinuxApiWrapperLibrary}" };
             RunProfilerUnitTests("Datadog.Linux.ApiWrapper.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None, envVars);
         });
 
@@ -141,7 +141,10 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            RunProfilerUnitTests("Datadog.Profiler.Native.Tests", BuildConfiguration, TargetPlatform);
+            foreach (var architecture in ArchitecturesForPlatformForProfiler)
+            {
+                RunProfilerUnitTests("Datadog.Profiler.Native.Tests", BuildConfiguration, architecture);
+            }
         });
 
     Target PublishProfiler => _ => _
@@ -159,7 +162,6 @@ partial class Build
             var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
             EnsureExistingDirectory(SymbolsDirectory / arch);
-            EnsureExistingDirectory(SharedDirectory / "bin" / "test");
 
             var files = new[] { "Datadog.Profiler.Native.so", LinuxApiWrapperLibrary };
             foreach (var file in files)
@@ -168,18 +170,6 @@ partial class Build
                 var dest = MonitoringHomeDirectory / arch / file;
                 CopyFile(source, dest, FileExistsPolicy.Overwrite);
             }
-
-            var testSource = ProfilerOutputDirectory / "bin" / "Datadog.Profiler.Native.Tests" / "Datadog.Profiler.Native.Tests";
-            var testDest = SharedDirectory / "bin" / "test";
-
-            CopyFileToDirectory(testSource, testDest, FileExistsPolicy.Overwrite);
-
-            testSource = ProfilerOutputDirectory / "bin" / "Datadog.Linux.ApiWrapper.Tests" / "Datadog.Linux.ApiWrapper.Tests";
-            CopyFileToDirectory(testSource, testDest, FileExistsPolicy.Overwrite);
-
-            // To unit tests the wrapper library too
-            testSource = sourceDir / LinuxApiWrapperLibrary;
-            CopyFileToDirectory(testSource, testDest, FileExistsPolicy.Overwrite);
         });
 
     Target PublishProfilerWindows => _ => _
@@ -188,7 +178,6 @@ partial class Build
         .After(CompileProfilerNativeSrcAndTests)
         .Executes(() =>
         {
-
             foreach (var architecture in ArchitecturesForPlatformForProfiler)
             {
                 var sourceDir = ProfilerDeployDirectory / $"win-{architecture}";
@@ -199,14 +188,6 @@ partial class Build
                 source = sourceDir / "Datadog.Profiler.Native.pdb";
                 dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
                 CopyFile(source, dest, FileExistsPolicy.Overwrite);
-
-
-                source = ProfilerOutputDirectory / "bin" / $"{BuildConfiguration}-{architecture}" / "profiler" / "test" / "Datadog.Profiler.Native.Tests" / "Datadog.Profiler.Native.Tests.exe";
-
-                dest = SharedDirectory / "bin" / "test" / $"win-{architecture}";
-                EnsureExistingDirectory(dest);
-
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 
@@ -775,12 +756,13 @@ partial class Build
 
     void RunProfilerUnitTests(string testLibrary, Configuration configuration, MSBuildTargetPlatform platform, SanitizerKind sanitizer = SanitizerKind.None, string[] additionalEnvVars = null)
     {
-        var workingDirectory = SharedDirectory / "bin" / "test";
+        var intermediateDirPath =
+            IsWin
+            ? (RelativePath)$"{configuration}-{platform}" / "profiler" / "test"
+            : string.Empty;
 
-        if (IsWin)
-        {
-            workingDirectory /= $"win-{platform}";
-        }
+        var workingDirectory = ProfilerOutputDirectory / "bin" / intermediateDirPath / testLibrary;
+        EnsureExistingDirectory(workingDirectory);
 
         // Nuke.Tool creates a Process and run the executable inside.
         // If not set, the process will have no environment variables.
@@ -819,7 +801,7 @@ partial class Build
 
         AddExtraEnvVariables(envVars, additionalEnvVars);
 
-        var testsResultFile = ProfilerBuildDataDirectory / $"{testLibrary}.Results.{Platform}.{configuration}.{platform}.xml";
+        var testsResultFile = ProfilerBuildDataDirectory / "tests" / $"{testLibrary}.Results.{Platform}.{configuration}.{platform}.xml";
         var testExe = ToolResolver.GetLocalTool(exePath);
         testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory, environmentVariables: envVars);
     }

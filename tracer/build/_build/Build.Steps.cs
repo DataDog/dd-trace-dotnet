@@ -656,18 +656,6 @@ partial class Build
                              $"{NativeTracerProject.Name}.dll";
                 var dest = MonitoringHomeDirectory / $"win-{architecture}";
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-
-                var nativeTestFolder = NativeTracerTestsProject.Directory / "bin" / BuildConfiguration / architecture.ToString();
-
-                source = nativeTestFolder / $"{NativeTracerTestsProject.Name}.exe";
-                dest = SharedDirectory / "bin" / "test" / $"win-{architecture}";
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-
-                source = nativeTestFolder / "Samples.ExampleLibrary.dll";
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-
-                source = nativeTestFolder / "Samples.ExampleLibraryTracer.dll";
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 
@@ -683,11 +671,6 @@ partial class Build
             CopyFileToDirectory(
                 NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
                 MonitoringHomeDirectory / arch,
-                FileExistsPolicy.Overwrite);
-
-            CopyFileToDirectory(
-                TracerDirectory / "test" / "Datadog.Tracer.Native.Tests" / "bin" / "Datadog.Tracer.Native.Tests",
-                SharedDirectory / "bin" / "test",
                 FileExistsPolicy.Overwrite);
 
         });
@@ -1076,13 +1059,12 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var platforms = ArchitecturesForPlatformForTracer;
-            foreach (var platform in platforms)
+            foreach (var platform in ArchitecturesForPlatformForTracer)
             {
-                var workingDirectory = SharedDirectory / "bin" / "test" / $"win-{platform}";
+                var workingDirectory = TestsDirectory / "Datadog.Tracer.Native.Tests" / "bin" / BuildConfiguration.ToString() / platform;
                 var exePath = workingDirectory / "Datadog.Tracer.Native.Tests.exe";
 
-                var testsResultFile = BuildDataDirectory / $"Datadog.Tracer.Native.Tests.Results.{BuildConfiguration}.{platform}.xml";
+                var testsResultFile = BuildDataDirectory / "tests" / $"Datadog.Tracer.Native.Tests.Results.{BuildConfiguration}.{platform}.xml";
                 var testExe = ToolResolver.GetLocalTool(exePath);
                 testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
             }
@@ -1100,7 +1082,7 @@ partial class Build
             var exePath = workingDirectory / FileNames.NativeTracerTests;
             Chmod.Value.Invoke("+x " + exePath);
 
-            var testsResultFile = BuildDataDirectory / $"{FileNames.NativeTracerTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
+            var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeTracerTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
             var testExe = ToolResolver.GetLocalTool(exePath);
 
             testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
@@ -1108,10 +1090,22 @@ partial class Build
 
     Target RunNativeTests => _ => _
         .Unlisted()
+        .DependsOn(RunTracerNativeTests)
+        .DependsOn(RunNativeLoaderNativeTests)
+        .DependsOn(RunProfilerNativeTests);
+
+    Target RunTracerNativeTests => _ => _
+        .Unlisted()
         .DependsOn(RunTracerNativeTestsWindows)
-        .DependsOn(RunTracerNativeTestsLinux)
+        .DependsOn(RunTracerNativeTestsLinux);
+
+    Target RunNativeLoaderNativeTests => _ => _
+        .Unlisted()
         .DependsOn(RunNativeLoaderTestsWindows)
-        .DependsOn(RunNativeLoaderTestsLinux)
+        .DependsOn(RunNativeLoaderTestsLinux);
+
+    Target RunProfilerNativeTests => _ => _
+        .Unlisted()
         .DependsOn(RunProfilerNativeUnitTestsWindows)
         .DependsOn(RunProfilerNativeUnitTestsLinux);
 
