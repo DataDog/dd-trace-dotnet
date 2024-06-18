@@ -55,12 +55,6 @@ partial class Build
                     ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
                     : new[] { MSBuildTargetPlatform.x86 };
 
-
-            NuGetTasks.NuGetRestore(s => s
-                .SetTargetPath(NativeLoaderTestsProject)
-                .SetVerbosity(NuGetVerbosity.Normal)
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackagesDirectory(NugetPackageDirectory)));
-
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native profiler assets
             MSBuild(s => s
