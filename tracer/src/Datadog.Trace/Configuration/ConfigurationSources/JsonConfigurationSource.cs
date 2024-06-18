@@ -343,7 +343,17 @@ namespace Datadog.Trace.Configuration
 
             try
             {
-                var valueAsString = token?.Value<string>();
+                var valueAsString = token switch
+                {
+                    null => null,
+                    _ => token.Type switch
+                    {
+                        JTokenType.Null or JTokenType.None or JTokenType.Undefined => null,
+                        JTokenType.String => token.Value<string>(),
+                        _ => token.ToString()
+                    }
+                };
+
                 if (valueAsString is not null)
                 {
                     var value = converter(valueAsString);
