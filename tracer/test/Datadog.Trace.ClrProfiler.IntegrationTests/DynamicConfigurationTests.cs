@@ -213,7 +213,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // json["debug"]?.Value<bool>().Should().Be(expectedConfig.DebugLogsEnabled);
                 json["log_injection_enabled"]?.Value<bool>().Should().Be(expectedConfig.LogInjectionEnabled);
                 json["sample_rate"]?.Value<double?>().Should().Be(expectedConfig.TraceSampleRate);
-                json["remote_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.TraceSamplingRules);
+                json["remote_sampling_rules"]?.ToString(Formatting.None).Should().Be(expectedConfig.TraceSamplingRules);
                 // json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
                 // json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
                 FlattenJsonArray(json["header_tags"]).Should().Be(expectedConfig.TraceHeaderTags ?? string.Empty);
