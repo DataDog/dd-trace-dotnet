@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
             where TTarget : IApplicationBuilder
         {
-            
+
             var methodProbes = GetMethodProbeLocations(instance);
 
             if (methodProbes.Any())
@@ -77,8 +77,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
             return default;
         }
-        
-           private static List<Tuple<string, MethodInfo>> GetMethodProbeLocations<TTarget>(TTarget instance) where TTarget : IApplicationBuilder
+
+        private static List<Tuple<string, MethodInfo>> GetMethodProbeLocations<TTarget>(TTarget instance) where TTarget : IApplicationBuilder
         {
             var service = (IEnumerable<IConfigureOptions<RouteOptions>>)instance.ApplicationServices.GetService(typeof(IEnumerable<IConfigureOptions<RouteOptions>>));
 
@@ -154,6 +154,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             }
 
             return methodProbes;
+        }
+
+        private static PropertyInfo GetProperty(object obj, string propertyName)
+        {
+            return obj.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         }
     }
 }
