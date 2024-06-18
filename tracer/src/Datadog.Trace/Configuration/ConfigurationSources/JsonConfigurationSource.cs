@@ -15,7 +15,6 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -244,7 +243,7 @@ namespace Datadog.Trace.Configuration
             catch (Exception)
             {
                 telemetry.Record(key, token?.ToString(), recordValue, _origin, TelemetryErrorCode.JsonStringError);
-                throw; // Exising behaviour
+                throw; // Existing behaviour
             }
 
             return null;
@@ -344,7 +343,8 @@ namespace Datadog.Trace.Configuration
 
             try
             {
-                var valueAsString = token?.Value<string>();
+                var valueAsString = JTokenToString(token);
+
                 if (valueAsString is not null)
                 {
                     var value = converter(valueAsString);
@@ -370,6 +370,20 @@ namespace Datadog.Trace.Configuration
             }
 
             return null;
+        }
+
+        internal static string? JTokenToString(JToken? token)
+        {
+            return token switch
+            {
+                null => null,
+                _ => token.Type switch
+                {
+                    JTokenType.Null or JTokenType.None or JTokenType.Undefined => null, // handle null-like values
+                    JTokenType.String => token.Value<string>(), // return the underlying string value
+                    _ => token.ToString(Formatting.None) // serialize back into json
+                }
+            };
         }
 
         /// <inheritdoc />
