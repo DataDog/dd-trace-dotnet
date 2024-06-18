@@ -343,16 +343,7 @@ namespace Datadog.Trace.Configuration
 
             try
             {
-                var valueAsString = token switch
-                {
-                    null => null,
-                    _ => token.Type switch
-                    {
-                        JTokenType.Null or JTokenType.None or JTokenType.Undefined => null,
-                        JTokenType.String => token.Value<string>(),
-                        _ => token.ToString(Formatting.None) // serialize back into json
-                    }
-                };
+                var valueAsString = JTokenToString<T>(token);
 
                 if (valueAsString is not null)
                 {
@@ -379,6 +370,20 @@ namespace Datadog.Trace.Configuration
             }
 
             return null;
+        }
+
+        internal static string? JTokenToString(JToken? token)
+        {
+            return token switch
+            {
+                null => null,
+                _ => token.Type switch
+                {
+                    JTokenType.Null or JTokenType.None or JTokenType.Undefined => null, // handle null-like values
+                    JTokenType.String => token.Value<string>(), // return the underlying string value
+                    _ => token.ToString(Formatting.None) // serialize back into json
+                }
+            };
         }
 
         /// <inheritdoc />

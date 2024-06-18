@@ -209,25 +209,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     return string.Empty;
                 }
 
-                static string JTokenToString(JToken token)
-                {
-                    return token switch
-                    {
-                        null => null,
-                        _ => token.Type switch
-                        {
-                            JTokenType.Null or JTokenType.None or JTokenType.Undefined => null,
-                            JTokenType.String => token.Value<string>(),
-                            _ => token.ToString(Formatting.None) // serialize back into json
-                        }
-                    };
-                }
-
                 // json["runtime_metrics_enabled"]?.Value<bool>().Should().Be(expectedConfig.RuntimeMetricsEnabled);
                 // json["debug"]?.Value<bool>().Should().Be(expectedConfig.DebugLogsEnabled);
                 json["log_injection_enabled"]?.Value<bool>().Should().Be(expectedConfig.LogInjectionEnabled);
                 json["sample_rate"]?.Value<double?>().Should().Be(expectedConfig.TraceSampleRate);
-                JTokenToString(json["remote_sampling_rules"]).Should().Be(expectedConfig.TraceSamplingRules);
+                JsonConfigurationSource.JTokenToString(json["remote_sampling_rules"]).Should().Be(expectedConfig.TraceSamplingRules);
                 // json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
                 // json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
                 FlattenJsonArray(json["header_tags"]).Should().Be(expectedConfig.TraceHeaderTags ?? string.Empty);
