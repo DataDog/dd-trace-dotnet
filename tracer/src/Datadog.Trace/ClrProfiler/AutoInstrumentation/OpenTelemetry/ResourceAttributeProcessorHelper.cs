@@ -60,7 +60,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                                 {
                                     var resourceServiceName = attribute.Value.ToString();
 
-                                    if (string.IsNullOrEmpty(resourceServiceName) || resourceServiceName.Contains("unknown_service"))
+                                    if (string.IsNullOrEmpty(resourceServiceName)
+                                     || string.Equals(resourceServiceName, "unknown_service", StringComparison.Ordinal)
+                                     || resourceServiceName.StartsWith("unknown_service:", StringComparison.Ordinal))
                                     {
                                         resourceServiceName = Tracer.Instance.DefaultServiceName;
 
