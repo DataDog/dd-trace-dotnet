@@ -255,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // (ConfigurationKeys.DebugEnabled, config.DebugLogsEnabled),
                 (ConfigurationKeys.LogsInjectionEnabled, config.LogInjectionEnabled),
                 (ConfigurationKeys.GlobalSamplingRate, config.TraceSampleRate),
-                (ConfigurationKeys.CustomSamplingRules, config.TraceSamplingRules),
+                (ConfigurationKeys.CustomSamplingRules, config.TraceSamplingRules == null ? null : JToken.Parse(config.TraceSamplingRules).ToString()),
                 // (ConfigurationKeys.SpanSamplingRules, config.SpanSamplingRules),
                 // (ConfigurationKeys.DataStreamsMonitoring.Enabled, config.DataStreamsEnabled),
                 (ConfigurationKeys.HeaderTags, config.TraceHeaderTags == null ? null : JToken.Parse(config.TraceHeaderTags).ToString()),
@@ -355,6 +355,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             public double? TraceSampleRate { get; init; }
 
             [JsonProperty("tracing_sampling_rules")]
+            [JsonConverter(typeof(PlainJsonStringConverter))]
             public string TraceSamplingRules { get; init; }
 
             // [JsonProperty("span_sampling_rules")]
