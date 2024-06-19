@@ -191,37 +191,22 @@ internal readonly struct ConfigurationBuilder
             => AsString(() => defaultValue, validator, recordValue: true);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator)
+        public string? AsString(Func<DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator)
             => AsString(getDefaultValue, validator, recordValue: true);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>> converter)
+        public string? AsString(Func<DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>> converter)
             => AsString(getDefaultValue, validator, converter, recordValue: true);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, bool recordValue)
+        private string? AsString(Func<DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator, bool recordValue)
             => AsString(getDefaultValue, validator, converter: null, recordValue);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
+        private string? AsString(Func<DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
         {
             var result = GetStringResult(validator, converter, recordValue);
-
-            // We have a valid value
-            if (result is { Result: { } value, IsValid: true })
-            {
-                return value;
-            }
-
-            // don't have a valid value
-            if (getDefaultValue is null)
-            {
-                return null;
-            }
-
-            var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue, recordValue, ConfigurationOrigins.Default);
-            return defaultValue;
+            return TryHandleResult(Telemetry, Key, result, recordValue, getDefaultValue, out var value) ? value : null;
         }
 
         // We have to use different methods for class/struct when we _don't_ have a null value, because NRTs don't work properly otherwise
@@ -265,29 +250,14 @@ internal readonly struct ConfigurationBuilder
             => AsBool(() => defaultValue, validator).Value;
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
-        public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator)
+        public bool? AsBool(Func<DefaultResult<bool>>? getDefaultValue, Func<bool, bool>? validator)
             => AsBool(getDefaultValue, validator, converter: null);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
-        public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
+        public bool? AsBool(Func<DefaultResult<bool>>? getDefaultValue, Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
         {
             var result = GetBoolResult(validator, converter);
-
-            // We have a valid value
-            if (result is { Result: { } value, IsValid: true })
-            {
-                return value;
-            }
-
-            // don't have a default value
-            if (getDefaultValue is null)
-            {
-                return null;
-            }
-
-            var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue, ConfigurationOrigins.Default);
-            return defaultValue;
+            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value) ? value : null;
         }
 
         // ****************
@@ -307,21 +277,8 @@ internal readonly struct ConfigurationBuilder
         public int? AsInt32(int? defaultValue, Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
         {
             var result = GetInt32Result(validator, converter);
-
-            // We have a valid value
-            if (result is { Result: { } value, IsValid: true })
-            {
-                return value;
-            }
-
-            // don't have a default value
-            if (defaultValue is null)
-            {
-                return null;
-            }
-
-            Telemetry.Record(Key, defaultValue.Value, ConfigurationOrigins.Default);
-            return defaultValue.Value;
+            Func<DefaultResult<int>>? getDefaultValue = defaultValue.HasValue ? () => defaultValue.Value : null;
+            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value) ? value : null;
         }
 
         public double? AsDouble() => AsDouble(defaultValue: null, validator: null);
@@ -338,21 +295,8 @@ internal readonly struct ConfigurationBuilder
         public double? AsDouble(double? defaultValue, Func<double, bool>? validator, Func<string, ParsingResult<double>>? converter)
         {
             var result = GetDoubleResult(validator, converter);
-
-            // We have a valid value
-            if (result is { Result: { } value, IsValid: true })
-            {
-                return value;
-            }
-
-            // don't have a default value
-            if (defaultValue is null)
-            {
-                return null;
-            }
-
-            Telemetry.Record(Key, defaultValue.Value, ConfigurationOrigins.Default);
-            return defaultValue.Value;
+            Func<DefaultResult<double>>? getDefaultValue = defaultValue.HasValue ? () => defaultValue.Value : null;
+            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value) ? value : null;
         }
 
         // ****************
@@ -366,21 +310,7 @@ internal readonly struct ConfigurationBuilder
         {
             // TODO: Handle/allow default values + validation?
             var result = GetDictionaryResult(allowOptionalMappings, separator: ':');
-
-            // We have a valid value
-            if (result is { Result: { } value, IsValid: true })
-            {
-                return value;
-            }
-
-            if (getDefaultValue != null)
-            {
-                var defaultValue = getDefaultValue();
-                Telemetry.Record(Key, defaultValue.TelemetryValue, true, ConfigurationOrigins.Default);
-                return defaultValue.Result;
-            }
-
-            return null;
+            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value) ? value : null;
         }
 
         // ****************
