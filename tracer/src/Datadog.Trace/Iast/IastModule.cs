@@ -632,9 +632,9 @@ internal static partial class IastModule
         {
             if (isRequest)
             {
-                if (traceContext?.RootSpan is not null)
+                if (traceContext?.RootSpan is { } rootSpan)
                 {
-                    Security.Instance?.SetTraceSamplingPriority(traceContext.RootSpan);
+                    Security.Instance?.SetTraceSamplingPriority(rootSpan);
                 }
 
                 traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
