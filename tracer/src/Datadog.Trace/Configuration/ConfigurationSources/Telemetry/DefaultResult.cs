@@ -10,10 +10,12 @@ namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 
 internal readonly record struct DefaultResult<T>
 {
+    private readonly string? _telemetryValue;
+
     public DefaultResult(T result, string? telemetryValue)
     {
         Result = result;
-        TelemetryValue = telemetryValue ?? result?.ToString();
+        _telemetryValue = telemetryValue;
     }
 
     /// <summary>
@@ -24,7 +26,7 @@ internal readonly record struct DefaultResult<T>
     /// <summary>
     /// Gets a string representation of the result to use in telemetry.
     /// </summary>
-    public string? TelemetryValue { get; }
+    public string? TelemetryValue => _telemetryValue ?? Result?.ToString();
 
     public static implicit operator DefaultResult<T>(T result)
         => result is IDictionary<string, string>
