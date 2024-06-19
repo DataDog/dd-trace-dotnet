@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 2.53.1)
+project("Datadog.Tracer.Native" VERSION 2.53.2)
 
 # ******************************************************
 # Environment detection
