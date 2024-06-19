@@ -245,26 +245,32 @@ internal readonly struct ConfigurationBuilder
             return defaultValue;
         }
 
+        // We have to use different methods for class/struct when we _don't_ have a null value, because NRTs don't work properly otherwise
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public T? GetAs<T>(Func<DefaultResult<T>>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+        public T GetAs<T>(Func<DefaultResult<T>> getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
         {
             var result = GetAs(validator, converter);
+            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value)
+                       ? value
+                       : default!; // TryHandleResult always returns true as getDefaultValue != null
+        }
 
-            // We have a valid value
-            if (result is { Result: { } value, IsValid: true })
-            {
-                return value;
-            }
+        public T? GetAsClass<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+            where T : class
+        {
+            var result = GetAs(validator, converter);
+            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue: null, out var value)
+                       ? value
+                       : null;
+        }
 
-            // don't have a valid value
-            if (getDefaultValue is null)
-            {
-                return default;
-            }
-
-            var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue.TelemetryValue, recordValue: true, ConfigurationOrigins.Default);
-            return defaultValue.Result!;
+        public T? GetAsStruct<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+            where T : struct
+        {
+            var result = GetAs(validator, converter);
+            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue: null, out var value)
+                       ? value
+                       : null;
         }
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]

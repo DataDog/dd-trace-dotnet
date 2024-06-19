@@ -627,10 +627,9 @@ public class ConfigurationBuilderTests
 
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
-                        .GetAs(
-                             getDefaultValue: null,
+                        .GetAsStruct(
                              validator: null,
-                             converter: _nullableConverter);
+                             converter: _converter);
 
             actual.Should().BeNull();
         }
