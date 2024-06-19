@@ -566,7 +566,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Yarp.DistributedTra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MSTestTests2", "tracer\test\test-applications\integrations\Samples.MSTestTests2\Samples.MSTestTests2.csproj", "{0F1D9FB5-4415-40F1-B7B0-6DD5A3BAB0C4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Selenium", "tracer\test\test-applications\integrations\Samples.Selenium\Samples.Selenium.csproj", "{32193A01-04DD-463B-A84A-9A93167958A4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Selenium", "tracer\test\test-applications\integrations\Samples.Selenium\Samples.Selenium.csproj", "{32193A01-04DD-463B-A84A-9A93167958A4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.CIVisibilityIpc", "tracer\test\test-applications\integrations\Samples.CIVisibilityIpc\Samples.CIVisibilityIpc.csproj", "{BA9613FB-8458-4C78-98DE-AA45BBE62F64}"
 EndProject
@@ -574,18 +574,22 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.CIVisibilityVersion
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeMetricsShutdown", "tracer\test\test-applications\regression\RuntimeMetricsShutdown\RuntimeMetricsShutdown.csproj", "{C4ABF344-3263-45D5-A074-03FB206FF309}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.AotProcessor", "tracer\src\Datadog.Trace.Tools.AotProcessor\Datadog.Trace.Tools.AotProcessor.csproj", "{744FB3A4-8155-48F3-8A8A-71C07FAA494A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.AotProcessor.SourceGenerator", "tracer\src\Datadog.Trace.Tools.AotProcessor.SourceGenerator\Datadog.Trace.Tools.AotProcessor.SourceGenerator.csproj", "{2850DFB4-88DC-48A5-9494-2E549CF25F5D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{91B6272F-5780-4C94-8071-DBBA7B4F67F3}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{91B6272F-5780-4C94-8071-DBBA7B4F67F3}.Debug|Any CPU.Build.0 = Debug|Win32
+		{91B6272F-5780-4C94-8071-DBBA7B4F67F3}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{91B6272F-5780-4C94-8071-DBBA7B4F67F3}.Debug|Any CPU.Build.0 = Debug|x64
 		{91B6272F-5780-4C94-8071-DBBA7B4F67F3}.Release|Any CPU.ActiveCfg = Release|Win32
 		{91B6272F-5780-4C94-8071-DBBA7B4F67F3}.Release|Any CPU.Build.0 = Release|Win32
-		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}.Debug|Any CPU.Build.0 = Debug|Win32
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}.Debug|Any CPU.Build.0 = Debug|x64
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}.Release|Any CPU.ActiveCfg = Release|Win32
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}.Release|Any CPU.Build.0 = Release|Win32
 		{5DFDF781-F24C-45B1-82EF-9125875A80A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -1378,6 +1382,14 @@ Global
 		{C4ABF344-3263-45D5-A074-03FB206FF309}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4ABF344-3263-45D5-A074-03FB206FF309}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C4ABF344-3263-45D5-A074-03FB206FF309}.Release|Any CPU.Build.0 = Release|Any CPU
+		{744FB3A4-8155-48F3-8A8A-71C07FAA494A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{744FB3A4-8155-48F3-8A8A-71C07FAA494A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{744FB3A4-8155-48F3-8A8A-71C07FAA494A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{744FB3A4-8155-48F3-8A8A-71C07FAA494A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2850DFB4-88DC-48A5-9494-2E549CF25F5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2850DFB4-88DC-48A5-9494-2E549CF25F5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2850DFB4-88DC-48A5-9494-2E549CF25F5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2850DFB4-88DC-48A5-9494-2E549CF25F5D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1602,30 +1614,20 @@ Global
 		{BA9613FB-8458-4C78-98DE-AA45BBE62F64} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{0D996EEE-7C04-4888-AF48-9C1E2F261A00} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{C4ABF344-3263-45D5-A074-03FB206FF309} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{744FB3A4-8155-48F3-8A8A-71C07FAA494A} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{2850DFB4-88DC-48A5-9494-2E549CF25F5D} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{3c6dd42e-9214-4747-92ba-78de29aace59}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{463a6fb2-1abe-4b92-a470-97134d0bbc7e}*SharedItemsImports = 5
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{472dba92-4fea-4b9a-ba70-0e97b942e12d}*SharedItemsImports = 5
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5a806f4b-39e7-4f38-b36f-f5cfc4f8760a}*SharedItemsImports = 13
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{65492dd4-ccd9-437a-b383-e7eb7ab872d2}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{65a66859-2735-4dd6-a927-b416b7a62d0f}*SharedItemsImports = 5
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{6d86109f-b7c9-477d-86d7-45735a3a0818}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{6f38b456-1d16-4842-aee5-e74564fb506a}*SharedItemsImports = 5
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{7b0822f6-80de-4b49-8125-93975678d0d5}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{95613224-c1d7-4d4a-8926-f70da26371ca}*SharedItemsImports = 5
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{99a62ccf-8e7f-4d57-8383-d38c371c8087}*SharedItemsImports = 4
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{b417e258-a21f-4546-b78f-8a7a4879472a}*SharedItemsImports = 4
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{b6a98887-4a47-4c19-9c6f-d833e24f4b1c}*SharedItemsImports = 4
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{bbb60b0f-bf01-4499-936a-4a299a9acfd4}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{bc44a41f-1bed-4438-9f66-0ea5607906d5}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c4abf344-3263-45d5-a074-03fb206ff309}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{cb56ac5a-d2c1-40de-99d5-dcf9f44c9482}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{deacde01-95fe-4777-b70a-f20a96aabea7}*SharedItemsImports = 5
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{f5582f54-e911-4258-b419-5e894d338c5b}*SharedItemsImports = 4
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{fab2b108-e5be-4647-869b-1dc5d362252e}*SharedItemsImports = 4
 	EndGlobalSection
 EndGlobal

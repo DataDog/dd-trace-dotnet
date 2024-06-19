@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Datadog.Trace.Tools.AotProcessor": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
