@@ -20,9 +20,14 @@ partial class Build
         .Unlisted()
         .Description("Compiles the native loader")
         .DependsOn(CompileNativeLoaderWindows)
-        .DependsOn(CompileNativeLoaderTestsWindows)
         .DependsOn(CompileNativeLoaderLinux)
         .DependsOn(CompileNativeLoaderOsx);
+
+    Target CompileNativeLoaderNativeTests => _ => _
+        .Unlisted()
+        .Description("Compiles the native loader native test")
+        .DependsOn(CompileNativeLoaderTestsWindows)
+        .DependsOn(CompileNativeLoaderTestsLinux);
 
     Target CompileNativeLoaderWindows => _ => _
         .Unlisted()
@@ -93,7 +98,7 @@ partial class Build
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
-                arguments: $"--build . --parallel {Environment.ProcessorCount} --target all-native-loader",
+                arguments: $"--build . --parallel {Environment.ProcessorCount} --target native-loader",
                 workingDirectory: NativeBuildDirectory);
         });
 

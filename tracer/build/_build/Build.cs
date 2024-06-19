@@ -162,8 +162,7 @@ partial class Build : NukeBuild
         .Description("Builds the native src ")
         .After(Clean, CompileManagedLoader)
         .DependsOn(CreateRequiredDirectories)
-        .DependsOn(CompileTracerNativeSrcAndTests)
-        .DependsOn(BuildNativeLoader)
+        .DependsOn(CompileTracerNativeSrc)
         .DependsOn(PublishNativeTracer);
 
 
@@ -188,7 +187,7 @@ partial class Build : NukeBuild
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
         .After(Clean)
-        .DependsOn(CompileProfilerNativeSrcAndTests)
+        .DependsOn(CompileProfilerNativeSrc)
         .DependsOn(PublishProfiler);
 
     Target BuildNativeLoader => _ => _

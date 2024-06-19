@@ -260,9 +260,15 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: tracer\build.cmd BuildTracerHome BuildNativeLoader RunTracerNativeTests RunNativeLoaderNativeTests
+    - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
       retryCountOnTaskFailure: 1
+
+    - script: tracer\build.cmd CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests
+      displayName: Build and run tracer and native loader native tests
+      retryCountOnTaskFailure: 1
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - publish: $(monitoringHome)
       displayName: Upload Windows tracer home directory
@@ -296,9 +302,15 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: tracer\build.cmd BuildProfilerHome RunProfilerNativeTests
+    - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
       retryCountOnTaskFailure: 1
+
+    - script: tracer\build.cmd CompileProfilerNativeTests RunProfilerNativeTests
+      displayName: Build and run profiler native tests
+      retryCountOnTaskFailure: 1
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - publish: $(monitoringHome)
       displayName: Upload Windows profiler home directory
@@ -360,8 +372,9 @@ stages:
         target: builder
         baseImage: $(nativeBaseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildNativeTracerHome BuildNativeLoader RunTracerNativeTests RunNativeLoaderNativeTests"
+        command: "BuildNativeTracerHome BuildNativeLoader CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests"
         retryCountForRunCommand: 1
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -424,8 +437,9 @@ stages:
         target: builder
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "Clean BuildProfilerHome RunProfilerNativeTests ExtractDebugInfoLinux"
+        command: "Clean BuildProfilerHome CompileProfilerNativeTests RunProfilerNativeTests ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
@@ -674,7 +688,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader CompileTracerNativeSrcAndTests PublishNativeTracer
+    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome
       displayName: Build native-tracer
       retryCountOnTaskFailure: 1
 
