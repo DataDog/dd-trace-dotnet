@@ -19,6 +19,7 @@ using Datadog.Trace.Iast.SensitiveData;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
@@ -634,7 +635,7 @@ internal static partial class IastModule
             {
                 if (traceContext?.RootSpan is { } rootSpan)
                 {
-                    Security.Instance?.SetTraceSamplingPriority(rootSpan);
+                    rootSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
                 }
 
                 traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
@@ -691,7 +692,7 @@ internal static partial class IastModule
         var scope = tracer.StartActiveInternal(operationName, tags: tags);
         scope.Span.Type = SpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-        Security.Instance?.SetTraceSamplingPriority(scope.Span);
+        scope.Span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
         return new IastModuleResponse(scope);
     }
 
