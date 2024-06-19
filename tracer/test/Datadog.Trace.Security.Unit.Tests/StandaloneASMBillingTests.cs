@@ -18,10 +18,10 @@ public class StandaloneASMBillingTests
     {
         var settings = new CustomSettingsForTests(new Dictionary<string, object>()
         {
-            { ConfigurationKeys.ExperimentalAppsecStandaloneEnabled, true }
+            { ConfigurationKeys.AppsecStandaloneEnabled, true }
         });
         var tracerSettings = new TracerSettings(settings, NullConfigurationTelemetry.Instance);
-        Assert.True(tracerSettings.ExperimentalAppsecStandaloneEnabled);
+        Assert.True(tracerSettings.AppsecStandaloneEnabledInternal);
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public class StandaloneASMBillingTests
     {
         var settings = new CustomSettingsForTests(new Dictionary<string, object>()
         {
-            { ConfigurationKeys.ExperimentalAppsecStandaloneEnabled, true },
+            { ConfigurationKeys.AppsecStandaloneEnabled, true },
             { ConfigurationKeys.StatsComputationEnabled, true }
         });
         var tracerSettings = new TracerSettings(settings, NullConfigurationTelemetry.Instance);

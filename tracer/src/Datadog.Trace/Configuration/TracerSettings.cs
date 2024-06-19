@@ -153,8 +153,8 @@ namespace Datadog.Trace.Configuration
                                   .AsBoolResult()
                                   .OverrideWith(in otelTraceEnabled, defaultValue: true);
 
-            ExperimentalAppsecStandaloneEnabledInternal = config
-                          .WithKeys(ConfigurationKeys.ExperimentalAppsecStandaloneEnabled)
+            AppsecStandaloneEnabledInternal = config
+                          .WithKeys(ConfigurationKeys.AppsecStandaloneEnabled)
                           .AsBool(defaultValue: false);
 
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
@@ -452,7 +452,7 @@ namespace Datadog.Trace.Configuration
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
                                      .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan));
-            if (ExperimentalAppsecStandaloneEnabledInternal)
+            if (AppsecStandaloneEnabledInternal)
             {
                 StatsComputationEnabledInternal = false;
             }
@@ -572,12 +572,8 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether Appsec standalone is enabled.
         /// Default is <c>false</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.ExperimentalAppsecStandaloneEnabled"/>
-        [GeneratePublicApi(
-            PublicApiUsage.TracerSettings_ExperimentalAppsecStandaloneEnabled_Get,
-            PublicApiUsage.TracerSettings_ExperimentalAppsecStandaloneEnabled_Set)]
-        [ConfigKey(ConfigurationKeys.ExperimentalAppsecStandaloneEnabled)]
-        internal bool ExperimentalAppsecStandaloneEnabledInternal { get; private set; }
+        /// <seealso cref="ConfigurationKeys.AppsecStandaloneEnabled"/>
+        internal bool AppsecStandaloneEnabledInternal { get; }
 
         /// <summary>
         /// Gets a value indicating whether profiling is enabled.
