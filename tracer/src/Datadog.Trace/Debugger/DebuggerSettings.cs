@@ -58,21 +58,21 @@ namespace Datadog.Trace.Debugger
                                          .AsInt32(DefaultSymbolBatchSizeInBytes, batchSize => batchSize > 0)
                                          .Value;
 
-            var includeLibraries = config
-                                     .WithKeys(ConfigurationKeys.Debugger.ThirdPartyDetectionIncludes)
+            var symDb3rdPartyIncludeLibraries = config
+                                     .WithKeys(ConfigurationKeys.Debugger.SymDbThirdPartyDetectionIncludes)
                                      .AsString()?
                                      .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                       Enumerable.Empty<string>();
 
-            ThirdPartyDetectionIncludes = new HashSet<string>(includeLibraries, StringComparer.OrdinalIgnoreCase);
+            SymDbThirdPartyDetectionIncludes = new HashSet<string>(symDb3rdPartyIncludeLibraries, StringComparer.OrdinalIgnoreCase);
 
-            var excludeLibraries = config
-                                  .WithKeys(ConfigurationKeys.Debugger.ThirdPartyDetectionExcludes)
-                                  .AsString()?
-                                  .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
-                                   Enumerable.Empty<string>();
+            var symDb3rdPartyExcludeLibraries = config
+                                               .WithKeys(ConfigurationKeys.Debugger.SymDbThirdPartyDetectionExcludes)
+                                               .AsString()?
+                                               .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                                Enumerable.Empty<string>();
 
-            ThirdPartyDetectionExcludes = new HashSet<string>(excludeLibraries, StringComparer.OrdinalIgnoreCase);
+            SymDbThirdPartyDetectionExcludes = new HashSet<string>(symDb3rdPartyExcludeLibraries, StringComparer.OrdinalIgnoreCase);
 
             DiagnosticsIntervalSeconds = config
                                         .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
@@ -113,9 +113,9 @@ namespace Datadog.Trace.Debugger
 
         public int SymbolDatabaseBatchSizeInBytes { get; }
 
-        public HashSet<string> ThirdPartyDetectionIncludes { get; }
+        public HashSet<string> SymDbThirdPartyDetectionIncludes { get; }
 
-        public HashSet<string> ThirdPartyDetectionExcludes { get; }
+        public HashSet<string> SymDbThirdPartyDetectionExcludes { get; }
 
         public int DiagnosticsIntervalSeconds { get; }
 

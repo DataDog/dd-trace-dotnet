@@ -58,13 +58,13 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for a separated comma list of libraries to include in the 3rd party detection
             /// Default value is empty.
             /// </summary>
-            public const string ThirdPartyDetectionIncludes = "DD_THIRD_PARTY_DETECTION_INCLUDES";
+            public const string SymDbThirdPartyDetectionIncludes = "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES";
 
             /// <summary>
             /// Configuration key for a separated comma list of libraries to include in the 3rd party detection
             /// Default value is empty.
             /// </summary>
-            public const string ThirdPartyDetectionExcludes = "DD_THIRD_PARTY_DETECTION_EXCLUDES";
+            public const string SymDbThirdPartyDetectionExcludes = "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_EXCLUDES";
 
             /// <summary>
             /// Configuration key for the interval (in seconds) between sending probe statuses.
