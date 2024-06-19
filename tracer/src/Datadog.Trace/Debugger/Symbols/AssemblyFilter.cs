@@ -58,9 +58,9 @@ namespace Datadog.Trace.Debugger.Symbols
             return includeList?.Contains(assemblyName) == true;
         }
 
-        private static bool IsInExcludeList(string assemblyName, HashSet<string>? ecludeList)
+        private static bool IsInExcludeList(string assemblyName, HashSet<string>? excludeList)
         {
-            return ecludeList?.Contains(assemblyName) == true;
+            return excludeList?.Contains(assemblyName) == true;
         }
 
         private static string? GetAssemblyNameWithoutExtension(string assemblyName)
