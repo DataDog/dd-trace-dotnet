@@ -73,7 +73,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ProcessId);
 
-        private readonly byte[] _apmEnabledBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.ApmEnabled);
+        private readonly byte[] _apmEnabledBytes = StringEncoding.UTF8.GetBytes(Metrics.ApmEnabled);
 
         // Azure App Service tag names and values
         private byte[] _aasSiteNameTagNameBytes;
