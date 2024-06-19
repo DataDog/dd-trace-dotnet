@@ -63,6 +63,11 @@ namespace Datadog.Trace
         internal const string RedisDatabaseIndex = "db.redis.database_index";
 
         /// <summary>
+        /// A boolean indicating whether APM tracing is disabled when set to 0.
+        /// </summary>
+        internal const string ApmEnabled = "_dd.apm.enabled";
+
+        /// <summary>
         /// Whether the libraries application security features are enabled.
         /// </summary>
         public const string AppSecEnabled = "_dd.appsec.enabled";
