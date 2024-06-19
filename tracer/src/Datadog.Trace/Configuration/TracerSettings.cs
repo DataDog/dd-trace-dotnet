@@ -42,7 +42,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         [PublicApi]
         public TracerSettings()
-            : this(null, new ConfigurationTelemetry())
+            : this(null, new ConfigurationTelemetry(), new OverrideErrorLog())
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor);
         }
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Configuration
         /// the default sources such as environment variables etc. If <c>false</c>, uses the default values.</param>
         [PublicApi]
         public TracerSettings(bool useDefaultSources)
-            : this(useDefaultSources ? GlobalConfigurationSource.Instance : null, new ConfigurationTelemetry())
+            : this(useDefaultSources ? GlobalConfigurationSource.Instance : null, new ConfigurationTelemetry(), new OverrideErrorLog())
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor_UseDefaultSources);
         }
@@ -73,16 +73,17 @@ namespace Datadog.Trace.Configuration
         /// </remarks>
         [PublicApi]
         public TracerSettings(IConfigurationSource? source)
-        : this(source, new ConfigurationTelemetry())
+        : this(source, new ConfigurationTelemetry(), new OverrideErrorLog())
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor_Source);
         }
 
-        internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
+        internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog)
         {
             var commaSeparator = new[] { ',' };
             source ??= NullConfigurationSource.Instance;
             _telemetry = telemetry;
+            ErrorLog = errorLog;
             var config = new ConfigurationBuilder(source, _telemetry);
 
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
@@ -110,7 +111,7 @@ namespace Datadog.Trace.Configuration
             ServiceNameInternal = config
                                  .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
                                  .AsStringResult()
-                                 .OverrideWith(in otelServiceName);
+                                 .OverrideWith(in otelServiceName, ErrorLog);
 
             ServiceVersionInternal = config
                             .WithKeys(ConfigurationKeys.ServiceVersion)
@@ -137,7 +138,7 @@ namespace Datadog.Trace.Configuration
             TraceEnabledInternal = config
                                   .WithKeys(ConfigurationKeys.TraceEnabled)
                                   .AsBoolResult()
-                                  .OverrideWith(in otelTraceEnabled, defaultValue: true);
+                                  .OverrideWith(in otelTraceEnabled, ErrorLog, defaultValue: true);
 
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
@@ -176,6 +177,7 @@ namespace Datadog.Trace.Configuration
                                 .AsDictionaryResult()
                                 .OverrideWith(
                                      RemapOtelTags(in otelTags),
+                                     ErrorLog,
                                      () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
                                  // Filter out tags with empty keys or empty values, and trim whitespace
                                 .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
@@ -227,7 +229,7 @@ namespace Datadog.Trace.Configuration
             RuntimeMetricsEnabled = config
                                    .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
                                    .AsBoolResult()
-                                   .OverrideWith(in otelRuntimeMetricsEnabled, defaultValue: false);
+                                   .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
 
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
@@ -263,7 +265,7 @@ namespace Datadog.Trace.Configuration
 
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
-            GlobalSamplingRateInternal = BuildSampleRate(in config);
+            GlobalSamplingRateInternal = BuildSampleRate(ErrorLog, in config);
 
             // We need to record a default value for configuration reporting
             // However, we need to keep GlobalSamplingRateInternal null because it changes the behavior of the tracer in subtle ways
@@ -348,7 +350,7 @@ namespace Datadog.Trace.Configuration
             IsActivityListenerEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
                                        .AsBoolResult()
-                                       .OverrideWith(in otelActivityListenerEnabled, defaultValue: false);
+                                       .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
 
             OpenTelemetryLegacyOperationNameEnabled = config
                                                      .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled)
@@ -379,14 +381,14 @@ namespace Datadog.Trace.Configuration
                                     .GetAsClassResult(
                                          validator: injectionValidator, // invalid individual values are rejected later
                                          converter: style => TrimSplitString(style, commaSeparator))
-                                    .OverrideWith(in otelPropagation, getDefaultPropagationHeaders);
+                                    .OverrideWith(in otelPropagation, ErrorLog, getDefaultPropagationHeaders);
 
             PropagationStyleExtract = config
                                      .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
                                      .GetAsClassResult(
                                           validator: injectionValidator, // invalid individual values are rejected later
                                           converter: style => TrimSplitString(style, commaSeparator))
-                                     .OverrideWith(in otelPropagation, getDefaultPropagationHeaders);
+                                     .OverrideWith(in otelPropagation, ErrorLog, getDefaultPropagationHeaders);
 
             PropagationExtractFirstOnly = config
                                          .WithKeys(ConfigurationKeys.PropagationExtractFirstOnly)
@@ -482,6 +484,8 @@ namespace Datadog.Trace.Configuration
             // Take a snapshot of the "original" settings, so that we can record any subsequent changes in code
             _initialSettings = new TracerSettingsSnapshot(this);
         }
+
+        internal OverrideErrorLog ErrorLog { get; }
 
 #pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
         /// <summary>
@@ -1031,7 +1035,7 @@ namespace Datadog.Trace.Configuration
         }
 
         internal static TracerSettings FromDefaultSourcesInternal()
-            => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry());
+            => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry(), new());
 
         /// <summary>
         /// Sets the HTTP status code that should be marked as errors for client integrations.
@@ -1238,7 +1242,7 @@ namespace Datadog.Trace.Configuration
         }
 
         internal static TracerSettings Create(Dictionary<string, object?> settings)
-            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry());
+            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry(), new());
 
         internal void CollectTelemetry(IConfigurationTelemetry destination)
         {
@@ -1257,9 +1261,9 @@ namespace Datadog.Trace.Configuration
             }
         }
 
-        private static double? BuildSampleRate(in ConfigurationBuilder config)
+        private static double? BuildSampleRate(OverrideErrorLog log, in ConfigurationBuilder config)
         {
-            // The "overriding" is complex, so we can't use the usual `OverrideWith(in )` approach
+            // The "overriding" is complex, so we can't use the usual `OverrideWith()` approach
             var ddSampleRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
             var otelSampleType = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSampler).AsStringResult();
             var otelSampleRate = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSamplerArg).AsDoubleResult();
@@ -1271,12 +1275,12 @@ namespace Datadog.Trace.Configuration
             {
                 if (otelSampleType.ConfigurationResult.IsPresent)
                 {
-                    // TODO Log to user and report "otel.env.hiding" telemetry metric
+                    log.LogDuplicateConfiguration(ddSampleRate.Key, otelSampleType.Key);
                 }
 
                 if (otelSampleRate.ConfigurationResult.IsPresent)
                 {
-                    // TODO Log to user and report "otel.env.hiding" telemetry metric
+                    log.LogDuplicateConfiguration(ddSampleRate.Key, otelSampleRate.Key);
                 }
             }
             else if (otelSampleType.ConfigurationResult is { IsValid: true, Result: { } samplerName })
@@ -1298,13 +1302,13 @@ namespace Datadog.Trace.Configuration
 
                 if (supportedSamplerName is null)
                 {
-                    // TODO log warning that the OpenTelemetry value is invalid
+                    log.LogUnsupportedConfiguration(otelSampleType.Key, samplerName, ddSampleRate.Key);
                     return ddResult;
                 }
 
                 if (!string.Equals(samplerName, supportedSamplerName, StringComparison.OrdinalIgnoreCase))
                 {
-                    // TODO log warning that the configuration is not supported
+                    log.LogUnsupportedConfiguration(otelSampleType.Key, samplerName, supportedSamplerName);
                 }
 
                 var openTelemetrySampleRateResult = supportedSamplerName switch
@@ -1320,7 +1324,7 @@ namespace Datadog.Trace.Configuration
                     return sampleRateResult;
                 }
 
-                // TODO Log to user and report "otel.env.invalid" telemetry metric
+                log.LogInvalidConfiguration(otelSampleRate.Key);
             }
 
             return ddResult;
