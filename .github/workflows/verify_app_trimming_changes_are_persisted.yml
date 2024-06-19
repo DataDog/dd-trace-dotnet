@@ -24,8 +24,6 @@ jobs:
 
       - name: "Regenerating Datadog.Trace.Trimming.xml"
         run: .\tracer\build.ps1 BuildTracerHome CreateRootDescriptorsFile
-        env:
-          NugetPackageDirectory: "${{ github.workspace }}\\packages"
 
       - name: "Verify no changes in Datadog.Trace.Trimming.xml"
         run: |
