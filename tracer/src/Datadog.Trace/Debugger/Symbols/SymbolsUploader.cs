@@ -69,8 +69,8 @@ namespace Datadog.Trace.Debugger.Symbols
             _discoveryServiceSemaphore = new SemaphoreSlim(0);
             _enablementSemaphore = new SemaphoreSlim(0);
             _thresholdInBytes = settings.SymbolDatabaseBatchSizeInBytes;
-            _symDb3rdPartyIncludes = settings.ThirdPartyDetectionIncludes;
-            _symDb3rdPartyExcludes = settings.ThirdPartyDetectionExcludes;
+            _symDb3rdPartyIncludes = settings.SymDbThirdPartyDetectionIncludes;
+            _symDb3rdPartyExcludes = settings.SymDbThirdPartyDetectionExcludes;
             _cancellationToken = new CancellationTokenSource();
             _jsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             _discoveryService.SubscribeToChanges(ConfigurationChanged);
