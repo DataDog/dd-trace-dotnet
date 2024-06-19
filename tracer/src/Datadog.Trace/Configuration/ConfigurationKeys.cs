@@ -71,7 +71,7 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for enabling Standalone ASM, thus disabling APM tracing and its billing.
         /// Default is value is false (disabled).
         /// </summary>
-        public const string ExperimentalAppsecStandaloneEnabled = "DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED";
+        public const string AppsecStandaloneEnabled = "DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED";
 
         /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.

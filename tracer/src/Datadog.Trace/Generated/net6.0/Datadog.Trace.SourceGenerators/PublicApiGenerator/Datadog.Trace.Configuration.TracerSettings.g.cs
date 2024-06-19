@@ -98,28 +98,6 @@ partial class TracerSettings
     }
 
         /// <summary>
-        /// Gets a value indicating whether Appsec standalone is enabled.
-        /// Default is <c>false</c>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.ExperimentalAppsecStandaloneEnabled"/>
-    [Datadog.Trace.SourceGenerators.PublicApi]
-    public bool ExperimentalAppsecStandaloneEnabled
-    {
-        get
-        {
-            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)132);
-            return ExperimentalAppsecStandaloneEnabledInternal;
-        }
-        set
-        {
-            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)133);
-            ExperimentalAppsecStandaloneEnabledInternal = value;
-        }
-    }
-
-        /// <summary>
         /// Gets or sets the names of disabled integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
@@ -336,13 +314,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)134);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)132);
             return TracerMetricsEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)135);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)133);
             TracerMetricsEnabledInternal = value;
         }
     }
