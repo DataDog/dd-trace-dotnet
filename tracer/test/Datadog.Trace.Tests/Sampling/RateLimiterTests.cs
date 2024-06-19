@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tests.Sampling
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
             var span = new Span(spanContext, null);
-            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null, intervalMilliseconds: null);
+            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null);
             var allowed = rateLimiter.Allowed(span);
             Assert.True(allowed);
         }
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public async Task Only_100_Allowed_In_500_Burst_For_Default()
         {
-            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null, intervalMilliseconds: null);
+            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null);
             var allowedCount = await AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
             Assert.Equal(expected: DefaultLimitPerSecond, actual: allowedCount);
         }
