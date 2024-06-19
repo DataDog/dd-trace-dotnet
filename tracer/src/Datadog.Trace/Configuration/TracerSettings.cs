@@ -452,8 +452,9 @@ namespace Datadog.Trace.Configuration
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
                                      .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan));
-            if (AppsecStandaloneEnabledInternal)
+            if (AppsecStandaloneEnabledInternal && StatsComputationEnabledInternal)
             {
+                telemetry.Record(ConfigurationKeys.StatsComputationEnabled, false, ConfigurationOrigins.Calculated);
                 StatsComputationEnabledInternal = false;
             }
 
