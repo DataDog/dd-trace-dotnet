@@ -59,12 +59,20 @@ namespace Datadog.Trace.Debugger
                                          .Value;
 
             var includeLibraries = config
-                                     .WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseIncludes)
+                                     .WithKeys(ConfigurationKeys.Debugger.ThirdPartyDetectionIncludes)
                                      .AsString()?
                                      .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                       Enumerable.Empty<string>();
 
-            SymbolDatabaseIncludes = new HashSet<string>(includeLibraries, StringComparer.OrdinalIgnoreCase);
+            ThirdPartyDetectionIncludes = new HashSet<string>(includeLibraries, StringComparer.OrdinalIgnoreCase);
+
+            var excludeLibraries = config
+                                  .WithKeys(ConfigurationKeys.Debugger.ThirdPartyDetectionExcludes)
+                                  .AsString()?
+                                  .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                   Enumerable.Empty<string>();
+
+            ThirdPartyDetectionExcludes = new HashSet<string>(excludeLibraries, StringComparer.OrdinalIgnoreCase);
 
             DiagnosticsIntervalSeconds = config
                                         .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
@@ -105,7 +113,9 @@ namespace Datadog.Trace.Debugger
 
         public int SymbolDatabaseBatchSizeInBytes { get; }
 
-        public HashSet<string> SymbolDatabaseIncludes { get; }
+        public HashSet<string> ThirdPartyDetectionIncludes { get; }
+
+        public HashSet<string> ThirdPartyDetectionExcludes { get; }
 
         public int DiagnosticsIntervalSeconds { get; }
 

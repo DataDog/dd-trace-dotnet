@@ -16,7 +16,7 @@ namespace Datadog.Trace.Debugger.Symbols
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AssemblyFilter));
 
-        internal static bool ShouldSkipAssembly(Assembly assembly, HashSet<string>? includeList = null)
+        internal static bool ShouldSkipAssembly(Assembly assembly, HashSet<string>? excludeList = null, HashSet<string>? includeList = null)
         {
             var assemblyName = assembly.GetName().Name;
 
@@ -30,12 +30,17 @@ namespace Datadog.Trace.Debugger.Symbols
                 return true;
             }
 
-            if (IsInIncludeList(assemblyName, includeList))
+            if (IsInExcludeList(assemblyName!, excludeList))
             {
                 return false;
             }
 
-            return IsDatadogAssembly(assemblyName) || IsThirdPartyCode(assemblyName);
+            if (IsInIncludeList(assemblyName!, includeList))
+            {
+                return true;
+            }
+
+            return IsDatadogAssembly(assemblyName) || IsThirdPartyCode(assemblyName!);
         }
 
         private static bool IsThirdPartyCode(string assemblyName)
@@ -51,6 +56,11 @@ namespace Datadog.Trace.Debugger.Symbols
         private static bool IsInIncludeList(string assemblyName, HashSet<string>? includeList)
         {
             return includeList?.Contains(assemblyName) == true;
+        }
+
+        private static bool IsInExcludeList(string assemblyName, HashSet<string>? ecludeList)
+        {
+            return ecludeList?.Contains(assemblyName) == true;
         }
 
         private static string? GetAssemblyNameWithoutExtension(string assemblyName)
