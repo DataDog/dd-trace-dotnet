@@ -1,5 +1,28 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+
+## [Release 2.54.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.54.0)
+
+## Summary
+
+- Fixes a bug in remote sampling rules
+- Fixes a rare bug in runtime metrics when calling `GetType()` throws
+
+## Changes
+
+### Tracer
+* Avoid infinite recursion in RuntimeMetricsWriter.FirstChanceException (#5704)
+* Fix reading JSON-formatted settings in remote config (#5705)
+
+### Miscellaneous
+* [CrashTracking] Fix the heuristic to filter out BlockingMiddleware (#5708)
+
+### Build / Test
+* Minor fixes for hotfix workflows (#5702)
+* Fix syntax error in version-bump GitHub Action (#5706)
+
+[Changes since 2.53.1](https://github.com/DataDog/dd-trace-dotnet/compare/v2.53.1...v2.53.2)
+
 ## [Release 2.53.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.53.0)
 
 ## Summary
