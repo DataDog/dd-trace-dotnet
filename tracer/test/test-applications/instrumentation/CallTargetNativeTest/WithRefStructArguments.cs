@@ -155,19 +155,19 @@ internal class WithRefStructArguments
     public void Void2ReadOnlySpanMethod(ReadOnlySpan<char> arg1, ReadOnlySpan<char> arg2)
     {
         if (!arg1.SequenceEqual("Hello".AsSpan())) throw new Exception("Error modifying arg1 value.");
-        if (arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
+        if (!arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
     }
 
     public void Void2ReadOnlySpanMethod(ref ReadOnlySpan<char> arg1, ref ReadOnlySpan<char> arg2)
     {
         if (!arg1.SequenceEqual("Hello".AsSpan())) throw new Exception("Error modifying arg1 value.");
-        if (arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
+        if (!arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
     }
 
     public void Void2ReadOnlySpanMethod(ReadOnlySpan<char> arg1, ref ReadOnlySpan<char> arg2)
     {
         if (!arg1.SequenceEqual("Hello".AsSpan())) throw new Exception("Error modifying arg1 value.");
-        if (arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
+        if (!arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
     }
     
     // *** Span<char> arguments ***
