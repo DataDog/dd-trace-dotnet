@@ -8,11 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Configuration.Telemetry;
 
@@ -202,9 +198,6 @@ internal readonly struct ConfigurationBuilder
         public string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>> converter)
             => AsString(getDefaultValue, validator, converter, recordValue: true);
 
-        public string? AsStringWithOpenTelemetryMapping(string openTelemetryKey, Func<string, ParsingResult<string>>? openTelemetryConverter = null)
-            => AsString(getDefaultValue: null, validator: null, recordValue: true, openTelemetryKey, openTelemetryConverter);
-
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, bool recordValue)
             => AsString(getDefaultValue, validator, converter: null, recordValue);
@@ -218,50 +211,6 @@ internal readonly struct ConfigurationBuilder
             if (result is { Result: { } value, IsValid: true })
             {
                 return value;
-            }
-
-            // don't have a valid value
-            if (getDefaultValue is null)
-            {
-                return null;
-            }
-
-            var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue, recordValue, ConfigurationOrigins.Default);
-            return defaultValue;
-        }
-
-        [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, bool recordValue, string openTelemetryKey, Func<string, ParsingResult<string>>? openTelemetryConverter)
-        {
-            var datadogConfigResult = GetResult(AsStringSelector, validator, recordValue);
-
-            // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
-            if (datadogConfigResult.IsPresent && Source.IsPresent(openTelemetryKey))
-            {
-                // TODO Log to user and report "otel.env.hiding" telemetry metric
-            }
-            else if (Source.IsPresent(openTelemetryKey))
-            {
-                var openTelemetryResult = openTelemetryConverter switch
-                {
-                    null => Source.GetString(openTelemetryKey, Telemetry, validator, recordValue),
-                    _ => Source.GetAs(openTelemetryKey, Telemetry, openTelemetryConverter, validator, recordValue),
-                };
-
-                if (openTelemetryResult is { Result: { } openTelemetryValue, IsValid: true })
-                {
-                    return openTelemetryValue;
-                }
-                else
-                {
-                    // TODO Log to user and report "otel.env.invalid" telemetry metric
-                }
-            }
-
-            if (datadogConfigResult.IsValid)
-            {
-                return datadogConfigResult.Result;
             }
 
             // don't have a valid value
@@ -303,46 +252,6 @@ internal readonly struct ConfigurationBuilder
                        : null;
         }
 
-        [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public T? GetAs<T>(Func<DefaultResult<T>>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter, string openTelemetryKey, Func<string, ParsingResult<T>> openTelemetryConverter)
-        {
-            var datadogConfigResult = GetAs(validator, converter);
-
-            // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
-            if (datadogConfigResult.IsPresent && Source.IsPresent(openTelemetryKey))
-            {
-                // TODO Log to user and report "otel.env.hiding" telemetry metric
-            }
-            else if (Source.IsPresent(openTelemetryKey))
-            {
-                var openTelemetryResult = Source.GetAs(openTelemetryKey, Telemetry, openTelemetryConverter, validator, recordValue: true); // replace with null telemetry
-
-                if (openTelemetryResult is { Result: { } openTelemetryValue, IsValid: true })
-                {
-                    return openTelemetryValue;
-                }
-                else
-                {
-                    // TODO Log to user and report "otel.env.invalid" telemetry metric
-                }
-            }
-
-            if (datadogConfigResult.IsValid)
-            {
-                return datadogConfigResult.Result;
-            }
-
-            // don't have a valid value
-            if (getDefaultValue is null)
-            {
-                return default;
-            }
-
-            var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue.TelemetryValue, recordValue: true, ConfigurationOrigins.Default);
-            return defaultValue.Result!;
-        }
-
         // ****************
         // Bool accessors
         // ****************
@@ -354,9 +263,6 @@ internal readonly struct ConfigurationBuilder
 
         public bool AsBool(bool defaultValue, Func<bool, bool>? validator)
             => AsBool(() => defaultValue, validator).Value;
-
-        public bool AsBoolWithOpenTelemetryMapping(bool defaultValue, string openTelemetryKey, Func<string, ParsingResult<bool>>? openTelemetryConverter = null)
-            => AsBool(() => defaultValue, validator: null, openTelemetryKey, openTelemetryConverter).Value;
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
         public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator)
@@ -371,50 +277,6 @@ internal readonly struct ConfigurationBuilder
             if (result is { Result: { } value, IsValid: true })
             {
                 return value;
-            }
-
-            // don't have a default value
-            if (getDefaultValue is null)
-            {
-                return null;
-            }
-
-            var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue, ConfigurationOrigins.Default);
-            return defaultValue;
-        }
-
-        [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
-        public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator, string openTelemetryKey, Func<string, ParsingResult<bool>>? openTelemetryConverter = null)
-        {
-            var datadogConfigResult = GetResult(AsBoolSelector, validator, recordValue: true);
-
-            // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
-            if (datadogConfigResult.IsPresent && Source.IsPresent(openTelemetryKey))
-            {
-                // TODO Log to user and report "otel.env.hiding" telemetry metric
-            }
-            else if (Source.IsPresent(openTelemetryKey))
-            {
-                var openTelemetryResult = openTelemetryConverter switch
-                {
-                    null => Source.GetBool(openTelemetryKey, Telemetry, validator),
-                    _ => Source.GetAs(openTelemetryKey, Telemetry, openTelemetryConverter, validator, recordValue: true), // replace with null telemetry
-                };
-
-                if (openTelemetryResult is { Result: { } openTelemetryValue, IsValid: true })
-                {
-                    return openTelemetryValue;
-                }
-                else
-                {
-                    // TODO Log to user and report "otel.env.invalid" telemetry metric
-                }
-            }
-
-            if (datadogConfigResult.IsValid)
-            {
-                return datadogConfigResult.Result;
             }
 
             // don't have a default value
@@ -493,83 +355,6 @@ internal readonly struct ConfigurationBuilder
             return defaultValue.Value;
         }
 
-        public double? AsOpenTelemetrySampleRate()
-        {
-            var openTelemetryKey = ConfigurationKeys.OpenTelemetry.TracesSampler;
-            var openTelemetryArgKey = ConfigurationKeys.OpenTelemetry.TracesSamplerArg;
-
-            var datadogConfigResult = GetResult(AsDoubleSelector, validator: null, recordValue: true);
-
-            double? returnValue = datadogConfigResult.IsValid
-                                      ? datadogConfigResult.Result
-                                      : null;
-
-            // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
-            var samplerKeyPresent = Source.IsPresent(openTelemetryKey);
-            var samplerArgKeyPresent = Source.IsPresent(openTelemetryArgKey);
-            if (datadogConfigResult.IsPresent)
-            {
-                if (samplerKeyPresent)
-                {
-                    // TODO Log to user and report "otel.env.hiding" telemetry metric
-                }
-
-                if (samplerArgKeyPresent)
-                {
-                    // TODO Log to user and report "otel.env.hiding" telemetry metric
-                }
-            }
-            else if (samplerKeyPresent)
-            {
-                var samplerResult = Source.GetString(openTelemetryKey, Telemetry, validator: null, recordValue: true);
-
-                // Emit a telemetry warning that we saw both configurations
-                if (samplerResult is { Result: { } samplerName, IsValid: true })
-                {
-                    string? supportedSamplerName = samplerName switch
-                    {
-                        "parentbased_always_on" => "parentbased_always_on",
-                        "always_on" => "parentbased_always_on",
-                        "parentbased_always_off" => "parentbased_always_off",
-                        "always_off" => "parentbased_always_off",
-                        "parentbased_traceidratio" => "parentbased_traceidratio",
-                        "traceidratio" => "parentbased_traceidratio",
-                        _ => null,
-                    };
-
-                    if (supportedSamplerName is null)
-                    {
-                        // TODO log warning that the OpenTelemetry value is invalid
-                        return returnValue;
-                    }
-                    else if (!string.Equals(samplerName, supportedSamplerName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        // TODO log warning that the configuration is not supported
-                    }
-
-                    var samplerArgResult = Source.GetDouble(openTelemetryArgKey, NullConfigurationTelemetry.Instance, validator: null);
-                    ConfigurationResult<double>? openTelemetrySampleRateResult = supportedSamplerName switch
-                    {
-                        "parentbased_always_on" => ConfigurationResult<double>.Valid(1.0),
-                        "parentbased_always_off" => ConfigurationResult<double>.Valid(0.0),
-                        "parentbased_traceidratio" => samplerArgResult,
-                        _ => null,
-                    };
-
-                    if (openTelemetrySampleRateResult is { Result: { } sampleRateResult, IsValid: true })
-                    {
-                        return sampleRateResult;
-                    }
-                    else
-                    {
-                        // TODO Log to user and report "otel.env.invalid" telemetry metric
-                    }
-                }
-            }
-
-            return returnValue;
-        }
-
         // ****************
         // Dictionary accessors
         // ****************
@@ -586,80 +371,6 @@ internal readonly struct ConfigurationBuilder
             if (result is { Result: { } value, IsValid: true })
             {
                 return value;
-            }
-
-            if (getDefaultValue != null)
-            {
-                var defaultValue = getDefaultValue();
-                Telemetry.Record(Key, defaultValue.TelemetryValue, true, ConfigurationOrigins.Default);
-                return defaultValue.Result;
-            }
-
-            return null;
-        }
-
-        public IDictionary<string, string>? AsDictionaryWithOpenTelemetryMapping(string openTelemetryKey, Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null)
-        {
-            // TODO: Handle/allow default values + validation?
-            var result = GetDictionaryResult(allowOptionalMappings: false, separator: ':');
-
-            IDictionary<string, string>? returnValue = null;
-            bool datadogConfigurationIsPresent = false;
-            if (result is { Result: { } value, IsValid: { } resultIsValid })
-            {
-                datadogConfigurationIsPresent = true;
-                if (resultIsValid)
-                {
-                    returnValue = value;
-                }
-            }
-            else
-            {
-                datadogConfigurationIsPresent = Source.IsPresent(Key)
-                                             || (FallbackKey1 is null ? false : Source.IsPresent(FallbackKey1))
-                                             || (FallbackKey2 is null ? false : Source.IsPresent(FallbackKey2))
-                                             || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
-            }
-
-            // OpenTelemetry key must always be checked so we can warn the user about the conflicting variables
-            var openTelemetryResult = Source.GetDictionary(openTelemetryKey, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings: false, separator: '=');
-
-            // Emit a telemetry warning that we saw both configurations
-            if (openTelemetryResult is { Result: { } openTelemetryValue, IsValid: { } openTelemetryResultIsValid })
-            {
-                if (datadogConfigurationIsPresent)
-                {
-                    // TODO emit telemetry warning that we saw both
-                }
-                else if (openTelemetryResultIsValid)
-                {
-                    // Update well-known service information resources
-                    if (openTelemetryValue.TryGetValue("deployment.environment", out var envValue))
-                    {
-                        openTelemetryValue.Remove("deployment.environment");
-                        openTelemetryValue.Add(Tags.Env, envValue);
-                    }
-
-                    if (openTelemetryValue.TryGetValue("service.name", out var serviceValue))
-                    {
-                        openTelemetryValue.Remove("service.name");
-                        openTelemetryValue.Add("service", serviceValue);
-                    }
-
-                    if (openTelemetryValue.TryGetValue("service.version", out var versionValue))
-                    {
-                        openTelemetryValue.Remove("service.version");
-                        openTelemetryValue.Add(Tags.Version, versionValue);
-                    }
-
-                    // TODO emit telemetry success
-                    return openTelemetryValue;
-                }
-            }
-
-            if (returnValue is not null)
-            {
-                return returnValue;
             }
 
             if (getDefaultValue != null)
