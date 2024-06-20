@@ -1,19 +1,59 @@
-tracer/test/
-tracer/deploy/
-
-.circleci/
-
+.git/
 .github/
+.gitlab/
 **/.vs/
 **/.vscode/
-packages/
+**/.idea/
 **/bin/
 **/obj/
+**/*.user
+.nuke/temp/
+exploration-tests/
+packages/
 
-!tracer/test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/
-!tracer/src/WindowsInstaller/bin/
+# Tracer deployment artifacts
+tracer/deploy/linux/
+tracer/deploy/AzureAppServices/
+tracer/src/Datadog.Trace.Bundle/home
+tracer/build_data/
 
-!tracer/test/Datadog.Trace.TestHelpers/
-!tracer/test/agent/
-!tracer/test/Directory.Build.props
-!tracer/test/GlobalSuppressions.cs
+# native tracer build files
+tracer/src/Datadog.Tracer.Native/build/
+tracer/src/Datadog.Tracer.Native/deps/
+tracer/src/Datadog.Tracer.Native/CMakeFiles/
+tracer/src/Datadog.Tracer.Native/tmp.*
+tracer/src/Datadog.Tracer.Native/Makefile
+tracer/src/Datadog.Tracer.Native/CMakeCache.txt
+tracer/src/Datadog.Tracer.Native/cmake_install.cmake
+
+# shared loader build files
+shared/src/Datadog.Trace.ClrProfiler.Native/build/
+shared/src/Datadog.Trace.ClrProfiler.Native/deps/
+shared/src/Datadog.Trace.ClrProfiler.Native/CMakeFiles/
+shared/src/Datadog.Trace.ClrProfiler.Native/tmp.*
+shared/src/Datadog.Trace.ClrProfiler.Native/Makefile
+shared/src/Datadog.Trace.ClrProfiler.Native/CMakeCache.txt
+shared/src/Datadog.Trace.ClrProfiler.Native/cmake_install.cmake
+shared/src/Datadog.Trace.ClrProfiler.Native/cmake-build-debug/
+cmake-build-debug/*
+
+#profiler build files
+profiler/_build/
+profiler/build_data/
+
+# global build folder
+obj/*
+obj_arm64/*
+obj_x86_64/*
+
+# cmake build files
+.ionide/
+CMakeCache.txt
+Makefile
+_deps/
+CMakeFiles/
+lib/
+libdatadog-*/
+*-prefix/
+cmake-build-debug/
+.cmake/
