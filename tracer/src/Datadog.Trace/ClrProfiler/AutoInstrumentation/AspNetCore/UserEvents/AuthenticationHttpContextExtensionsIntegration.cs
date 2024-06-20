@@ -11,6 +11,7 @@ using System.Security.Claims;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 {
@@ -60,8 +61,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                 var span = state.Scope.Span;
                 var setTag = TaggingUtils.GetSpanSetter(span, out _);
                 var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-                setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
-                setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, Security.Instance.Settings.UserEventsAutoInstrumentationMode);
+
+                var foundUserId = false;
+
                 foreach (var claim in claimsPrincipal.Claims)
                 {
                     if (claimsToTest.Contains(claim.Type))
@@ -69,16 +71,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                         if (security.IsAnonUserTrackingMode)
                         {
                             var anonId = UserEventsCommon.GetAnonId(claim.Value);
-                            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                            tryAddTag(Tags.User.Id, anonId);
                         }
                         else
                         {
-                            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, claim.Value);
+                            tryAddTag(Tags.User.Id, claim.Value);
                         }
+
+                        foundUserId = true;
+
+                        break;
                     }
                 }
 
-                security.SetTraceSamplingPriority(span);
+                if (foundUserId)
+                {
+                    security.SetTraceSamplingPriority(span);
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, Security.Instance.Settings.UserEventsAutoInstrumentationMode);
+                }
+                else
+                {
+                    TelemetryFactory.Metrics.RecordCountMissingUserId();
+                }
             }
 
             return returnValue;

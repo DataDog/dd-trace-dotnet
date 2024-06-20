@@ -11,6 +11,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Telemetry;
 
 #if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
@@ -70,6 +71,7 @@ public static class SignInManagerPasswordSignInUserIntegration
 
             if (id == null)
             {
+                TelemetryFactory.Metrics.RecordCountMissingUserId();
                 return returnValue;
             }
 

@@ -10,6 +10,7 @@ using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 
 #if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
@@ -64,9 +65,15 @@ public static class UserManagerCreateIntegration
         var security = Security.Instance;
         var user = state.State as IIdentityUser;
         if (security.TrackUserEvents
-            && state.Scope is { Span: { } span }
-            && UserEventsCommon.GetId(user) is { } id)
+            && state.Scope is { Span: { } span })
         {
+            var id = UserEventsCommon.GetId(user);
+            if (id is null)
+            {
+                TelemetryFactory.Metrics.RecordCountMissingUserId();
+                return returnValue;
+            }
+
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
 

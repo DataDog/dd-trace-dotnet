@@ -10,6 +10,7 @@ using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 
 #if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
@@ -63,8 +64,14 @@ public static class SignInManagerPasswordSignInIntegration
     {
         if (!returnValue.Succeeded
             && Security.Instance is { TrackUserEvents: true } security
-            && state is { Scope: { Span: { } span }, State: string id })
+            && state is { Scope: { Span: { } span } })
         {
+            if (state.State is not string id)
+            {
+                TelemetryFactory.Metrics.RecordCountMissingUserId();
+                return returnValue;
+            }
+
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
 
