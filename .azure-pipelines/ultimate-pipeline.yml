@@ -1,3 +1,6 @@
+# Change the default BuildId to not include a '.' in the name (use '_' instead)
+name: $(Date:yyyyMMdd)_$(Rev:rr)
+
 trigger:
   branches:
     include:
