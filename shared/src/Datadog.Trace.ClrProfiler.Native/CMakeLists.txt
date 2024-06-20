@@ -1,25 +1,20 @@
 cmake_minimum_required (VERSION 3.8..3.19)
 cmake_policy(SET CMP0015 NEW)
 
-option(UNIVERSAL "Build as Universal binary" OFF)
-
-message(STATUS "Building Native Loader as Univeral binary: " ${UNIVERSAL})
-
-if (UNIVERSAL)
-   if (ISARM64)
-      include ("${CMAKE_SOURCE_DIR}/build/cmake/Toolchain.cmake.aarch64")
-   else()
-      include ("${CMAKE_SOURCE_DIR}/build/cmake/Toolchain.cmake.x86_64")
-   endif()
-   find_package(GlibcCompat REQUIRED)
-   message(STATUS "Glibc Compat objects")
-endif()
-
 # ******************************************************
 # Project definition
 # ******************************************************
 
 project("Datadog.Trace.ClrProfiler.Native" VERSION 3.0.0)
+
+if (TOOLCHAIN_FILE)
+   include (${TOOLCHAIN_FILE})
+endif()
+
+if (UNIVERSAL)
+   find_package(GlibcCompat REQUIRED)
+   message(STATUS "Glibc Compat objects")
+endif()
 
 # ******************************************************
 # Environment detection
@@ -124,7 +119,7 @@ add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 if (UNIVERSAL)
     add_compile_options(-stdlib=libc++ -DUNIVERSAL)
 elseif (ISMACOS)
-    add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations)
+    add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations -fvisibility=hidden)
 else()
     add_compile_options(-stdlib=libstdc++)
 endif()
@@ -197,7 +192,7 @@ if (ISMACOS)
         spdlog-headers
     )
 elseif(ISLINUX)
-    set(dd_profiling_linker_script "${CMAKE_CURRENT_SOURCE_DIR}/datadog_profiling.version")
+    set(dd_profiling_linker_script "${CMAKE_CURRENT_SOURCE_DIR}/native_loader.version")
     find_library(LIBPTHREAD pthread)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
         -static-libgcc
@@ -234,7 +229,6 @@ set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 
 # Define linker libraries
 target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static")
-
 
 if (UNIVERSAL)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native"
