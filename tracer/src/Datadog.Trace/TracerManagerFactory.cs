@@ -264,7 +264,7 @@ namespace Datadog.Trace
             // The first rule that matches will be used to determine the sampling rate.
             var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
 
-            // sampling rules
+            // sampling rules (remote value overrides local value)
             var samplingRulesJson = settings.CustomSamplingRulesInternal;
 
             // check if the rules are remote or local because they have different JSON schemas
