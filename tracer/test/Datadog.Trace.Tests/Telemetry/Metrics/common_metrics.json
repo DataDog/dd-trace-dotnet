@@ -464,6 +464,28 @@
       "description": "Number of times the libdatadog trace exporter isn't used and we fallback on the previous implementation",
       "send_to_user": false,
       "user_tags": []
+    },
+    "otel.env.hiding": {
+      "tags": [
+        "config.opentelemetry",
+        "config.datadog"
+      ],
+      "metric_type": "count",
+      "data_type": "instances",
+      "description": "The number of times a Datadog configuration is set while a corresponding OpenTelemetry configuration is set, thus `hiding` the OpenTelemetry configuration.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "otel.env.invalid": {
+      "tags": [
+        "config.opentelemetry",
+        "config.datadog"
+      ],
+      "metric_type": "count",
+      "data_type": "instances",
+      "description": "The number of times an OpenTelemetry configuration has a mapping to a Datadog configuration but it cannot be mapped correctly",
+      "send_to_user": false,
+      "user_tags": []
     }
   },
   "telemetry": {
