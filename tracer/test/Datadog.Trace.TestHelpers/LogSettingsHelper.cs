@@ -5,6 +5,7 @@
 
 using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 
@@ -13,7 +14,7 @@ namespace Datadog.Trace.TestHelpers
     internal class LogSettingsHelper
     {
         public static LogFormatter GetFormatter() => new(
-            new ImmutableTracerSettings(new TracerSettings(null, Configuration.Telemetry.NullConfigurationTelemetry.Instance)),
+            new ImmutableTracerSettings(new TracerSettings(null, Configuration.Telemetry.NullConfigurationTelemetry.Instance, new OverrideErrorLog())),
             GetValidSettings(),
             aasSettings: null,
             serviceName: "MyTestService",
