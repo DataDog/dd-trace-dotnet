@@ -22,6 +22,17 @@ static float ceilf_local(float x)
         __asm__ ("frintp %s0, %s1" : "=w"(x) : "w"(x));
         return x;
 }
+
+double ceil(double x) {
+    double result;
+    __asm__(
+        "frintp %d0, %d1\n"
+        : "=w" (result)
+        : "w" (x)
+    );
+    return result;
+}
+
 #else
 #if defined(__x86_64__)
 static float ceilf_local_sse41(float x)
@@ -34,6 +45,17 @@ static float ceilf_local_sse41(float x)
     );
     return result;
 }
+
+double ceil(double x) {
+    double result;
+    __asm__(
+        "roundsd $0x0A, %[x], %[result]"
+        : [result] "=x" (result)
+        : [x] "x" (x)
+    );
+    return result;
+}
+
 #endif
 /* fp_force_eval ensures that the input value is computed when that's
    otherwise unused.  To prevent the constant folding of the input
@@ -109,16 +131,6 @@ int lstat (const char *file, void *buf)
 {
     int __lxstat(int, const char*, void*);
   return __lxstat (0, file, buf);
-}
-
-double ceil(double x) {
-    double result;
-    __asm__(
-        "roundsd $0x0A, %[x], %[result]"
-        : [result] "=x" (result)
-        : [x] "x" (x)
-    );
-    return result;
 }
 
 #define unlikely(x)    __builtin_expect(!!(x), 0)

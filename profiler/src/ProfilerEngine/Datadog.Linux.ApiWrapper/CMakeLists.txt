@@ -17,7 +17,11 @@ if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
 endif()
 
 if (UNIVERSAL)
-   include ("${CMAKE_SOURCE_DIR}/build/cmake/Toolchain")
+   if (ISARM64)
+      include ("${CMAKE_SOURCE_DIR}/build/cmake/Toolchain.cmake.aarch64")
+   else()
+      include ("${CMAKE_SOURCE_DIR}/build/cmake/Toolchain.cmake.x86_64")
+   endif()
 endif()
 
 # ******************************************************
