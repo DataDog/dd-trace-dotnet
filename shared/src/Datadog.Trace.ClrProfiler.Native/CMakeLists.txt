@@ -184,7 +184,6 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
 
 target_compile_definitions("Datadog.Trace.ClrProfiler.Native.static" PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
 
-set_target_properties("Datadog.Trace.ClrProfiler.Native.static" PROPERTIES PREFIX "")
 
 # Define linker libraries
 if (ISMACOS)
@@ -206,7 +205,6 @@ elseif(ISLINUX)
         -Wl,--build-id
         -Wl,-version-script=${dd_profiling_linker_script}
         -Wl,--no-undefined
-        -Wl,-version-script=${dd_profiling_linker_script}
         -lm
         -lc
     )
