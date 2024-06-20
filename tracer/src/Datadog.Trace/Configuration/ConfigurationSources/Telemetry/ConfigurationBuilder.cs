@@ -63,6 +63,32 @@ internal readonly struct ConfigurationBuilder
 
     public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2, string fallbackKey3) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2, fallbackKey3);
 
+    private static bool TryHandleOverrides<T>(
+        ConfigurationResult<T> datadogConfigResult,
+        ConfigurationResult<T> otelConfigResult,
+        [NotNullWhen(true)] out T? value)
+    {
+        if (datadogConfigResult.IsPresent && otelConfigResult.IsPresent)
+        {
+            // TODO Log to user and report "otel.env.hiding" telemetry metric
+        }
+        else if (otelConfigResult is { IsPresent: true } config)
+        {
+            if (config is { Result: { } openTelemetryValue, IsValid: true })
+            {
+                {
+                    value = openTelemetryValue;
+                    return true;
+                }
+            }
+
+            // TODO Log to user and report "otel.env.invalid" telemetry metric
+        }
+
+        value = default;
+        return false;
+    }
+
     private static bool TryHandleResult<T>(
         IConfigurationTelemetry telemetry,
         string key,
@@ -858,6 +884,32 @@ internal readonly struct ConfigurationBuilder
 
             return default; // should never be invoked because we have a value for getDefaultValue
         }
+
+        public T? OverrideWith(in StructConfigurationResultWithKey<T> otelConfig)
+            => CalculateOverrides(in otelConfig, getDefaultValue: null);
+
+        public T OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, T defaultValue)
+            => CalculateOverrides(in otelConfig, getDefaultValue: () => defaultValue).Value;
+
+        public T OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, Func<DefaultResult<T>> getDefaultValue)
+            => CalculateOverrides(in otelConfig, getDefaultValue).Value;
+
+        [return: NotNullIfNotNull(nameof(getDefaultValue))]
+        private T? CalculateOverrides(in StructConfigurationResultWithKey<T> otelConfig, Func<DefaultResult<T>>? getDefaultValue)
+        {
+            if (TryHandleOverrides(ConfigurationResult, otelConfig.ConfigurationResult, out var overridden))
+            {
+                return overridden;
+            }
+
+            if (TryHandleResult(Telemetry, Key, ConfigurationResult, RecordValue, getDefaultValue, out var value))
+            {
+                return value;
+            }
+
+            // need to return default/default value here depending on whether it's a struct
+            return null;
+        }
     }
 
     internal readonly struct ClassConfigurationResultWithKey<T>(IConfigurationTelemetry telemetry, string key, bool recordValue, ConfigurationResult<T> configurationResult)
@@ -879,6 +931,32 @@ internal readonly struct ConfigurationBuilder
             }
 
             return default!; // should never be invoked because we have a value for getDefaultValue
+        }
+
+        public T? OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig)
+            => CalculateOverrides(in otelConfig, getDefaultValue: null);
+
+        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, T defaultValue)
+            => CalculateOverrides(in otelConfig, getDefaultValue: () => defaultValue);
+
+        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, Func<DefaultResult<T>> getDefaultValue)
+            => CalculateOverrides(in otelConfig, getDefaultValue);
+
+        [return: NotNullIfNotNull(nameof(getDefaultValue))]
+        private T? CalculateOverrides(in ClassConfigurationResultWithKey<T> otelConfig, Func<DefaultResult<T>>? getDefaultValue)
+        {
+            if (TryHandleOverrides(ConfigurationResult, otelConfig.ConfigurationResult, out var overridden))
+            {
+                return overridden;
+            }
+
+            if (TryHandleResult(Telemetry, Key, ConfigurationResult, RecordValue, getDefaultValue, out var value))
+            {
+                return value;
+            }
+
+            // need to return default/default value here depending on whether it's a struct
+            return null;
         }
     }
 }
