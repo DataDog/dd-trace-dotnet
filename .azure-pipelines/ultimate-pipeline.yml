@@ -135,6 +135,7 @@ variables:
   IncludeAllTestFrameworks: $[or(eq(variables['run_all_test_frameworks'], 'true'), and(or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/')), not(eq(variables['Build.Reason'], 'Schedule'))))]
   IntegrationTestSampleName:  $(TEST_SAMPLE_NAME)
   IntegrationTestFilter:  $(TEST_FILTER)
+  DockerComposeProjectName: ddtrace_$(Build.BuildNumber)
   # Logger variables
   DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
@@ -1865,7 +1866,7 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
           run --no-deps --rm -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
           -e runCodeCoverage=$(runCodeCoverage) \
@@ -1943,8 +1944,8 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
-        docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
+        docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
+        docker-compose -p $(DockerComposeProjectName) run --rm StartDependencies
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
@@ -1955,7 +1956,7 @@ stages:
       retryCountOnTaskFailure: 5
 
     - script: |
-        docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
           run --rm -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
           -e runCodeCoverage=$(runCodeCoverage) \
@@ -1967,7 +1968,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - script: docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) down
+    - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) down
       displayName: docker-compose stop services
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2058,7 +2059,7 @@ stages:
         
     - script: |
         # Include the serverless dockerfile
-        docker-compose -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -p $(DockerComposeProjectName) \
           -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
           -f docker-compose.serverless.yml \
           build \
@@ -2067,14 +2068,14 @@ stages:
           --build-arg runCodeCoverage=$(runCodeCoverage) \
           IntegrationTests.Serverless
 
-        docker-compose -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -p $(DockerComposeProjectName) \
           -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
           -f docker-compose.serverless.yml \
           --build-arg runCodeCoverage=$(runCodeCoverage) \
           --build-arg framework=$(publishTargetFramework) \
           pull --include-deps StartDependencies.Serverless
 
-        docker-compose -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -p $(DockerComposeProjectName) \
           -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
           -f docker-compose.serverless.yml \
           run --rm StartDependencies.Serverless
@@ -2087,7 +2088,7 @@ stages:
       retryCountOnTaskFailure: 5
 
     - script: |
-        docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
           run --rm \ 
           -e baseImage=$(baseImage) \ 
           -e framework=$(publishTargetFramework) \ 
@@ -2101,7 +2102,7 @@ stages:
     - script: |
         mkdir -p tracer/build_data/docker
 
-        docker-compose -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -p $(DockerComposeProjectName) \
           -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
           -f docker-compose.serverless.yml \
           logs \
@@ -2146,7 +2147,7 @@ stages:
       condition: succeededOrFailed()
       retryCountOnTaskFailure: 5
 
-    - script: docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) down
+    - script: docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) down
       displayName: docker-compose stop services
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2236,7 +2237,7 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
           run --no-deps --rm \ 
           -e baseImage=$(baseImage) \ 
           -e framework=$(publishTargetFramework) \ 
@@ -2430,7 +2431,7 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - script: |
-        docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
           run --rm \
           -e baseImage=$(baseImage) \
           ProfilerIntegrationTests
@@ -2653,7 +2654,7 @@ stages:
             path: $(monitoringHome)
 
         - script: |
-            docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) \
+            docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
               run --no-deps --rm \ 
               -e baseImage=$(baseImage) \ 
               -e framework=$(publishTargetFramework) \ 
@@ -2729,8 +2730,8 @@ stages:
             path: $(monitoringHome)
 
         - script: |
-            docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) IntegrationTests.ARM64
-            docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64
+            docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) IntegrationTests.ARM64
+            docker-compose -p $(DockerComposeProjectName) run --rm StartDependencies.ARM64
           env:
             baseImage: $(baseImage)
             framework: $(publishTargetFramework)
@@ -2741,7 +2742,7 @@ stages:
           retryCountOnTaskFailure: 5
 
         - script: |
-            docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) \
+            docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
               run --rm \
               -e baseImage=$(baseImage) \
               -e framework=$(publishTargetFramework) \
@@ -2750,12 +2751,12 @@ stages:
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
               IntegrationTests.ARM64 \
-              projectName: ddtrace_$(Build.BuildNumber)
+              projectName: $(DockerComposeProjectName)
           displayName: docker-compose run IntegrationTests
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-        - script: docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) down
+        - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) down
           displayName: docker-compose stop services
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2837,7 +2838,7 @@ stages:
             path: $(monitoringHome)
 
         - script: |
-            docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) \
+            docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
               run --no-deps --rm \
               -e baseImage=$(baseImage) \
               -e framework=$(publishTargetFramework) \
@@ -2989,7 +2990,7 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - script: |
-          docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p ddtrace_$(Build.BuildNumber) \
+          docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p $(DockerComposeProjectName) \
           build \
           --build-arg baseImage=$(baseImage) \ 
           --build-arg explorationTestUseCase=$(explorationTestUseCase) \ 
@@ -3004,7 +3005,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - script: |
-        docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p $(DockerComposeProjectName) \
           run --rm \
           -e DD_AGENT_HOST=dd_agent \
           -e baseImage=$(baseImage) \
@@ -3018,7 +3019,7 @@ stages:
         azdo_network: $(agent.containernetwork)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - script: docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p ddtrace_$(Build.BuildNumber) down
+    - script: docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p $(DockerComposeProjectName) down
       displayName: docker-compose stop services
       condition: succeededOrFailed()
       continueOnError: true
@@ -4679,7 +4680,7 @@ stages:
 
     # Run the "normal" installer smoke tests
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -4698,7 +4699,7 @@ stages:
 
     # Run the "dd-dotnet" installer smoke tests
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -4759,7 +4760,7 @@ stages:
 
         # Run the "normal" installer smoke tests
         - script: |
-            docker-compose -p ddtrace_$(Build.BuildNumber) build \
+            docker-compose -p $(DockerComposeProjectName) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -4777,7 +4778,7 @@ stages:
         
         # Run the "dd-dotnet" installer smoke tests
         - script: |
-            docker-compose -p ddtrace_$(Build.BuildNumber) build \
+            docker-compose -p $(DockerComposeProjectName) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -4843,7 +4844,7 @@ stages:
       displayName: create test data directories
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -4861,7 +4862,7 @@ stages:
         snapshotPrefix: "smoke_test"
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -4927,7 +4928,7 @@ stages:
       displayName: create test data directories
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -4995,7 +4996,7 @@ stages:
       displayName: create test data directories and extract tool
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5072,7 +5073,7 @@ stages:
       displayName: create test data directories and extract tool
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5138,7 +5139,7 @@ stages:
 
         # Run the "normal" installer smoke tests 
         - script: |
-            docker-compose -p ddtrace_$(Build.BuildNumber) build \
+            docker-compose -p $(DockerComposeProjectName) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5156,7 +5157,7 @@ stages:
 
         # Run the "dd-dotnet" installer smoke tests
         - script: |
-            docker-compose -p ddtrace_$(Build.BuildNumber) build \
+            docker-compose -p $(DockerComposeProjectName) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5217,7 +5218,7 @@ stages:
 
         # Run the "normal" installer smoke tests 
         - script: |
-            docker-compose -p ddtrace_$(Build.BuildNumber) build \
+            docker-compose -p $(DockerComposeProjectName) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5235,7 +5236,7 @@ stages:
         
         # Run the "dd-dotnet" installer smoke tests
         - script: |
-            docker-compose -p ddtrace_$(Build.BuildNumber) build \
+            docker-compose -p $(DockerComposeProjectName) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5301,7 +5302,7 @@ stages:
       displayName: create test data directories
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5319,7 +5320,7 @@ stages:
         snapshotPrefix: "smoke_test"
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5384,7 +5385,7 @@ stages:
       displayName: create test data directories and extract tool
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5454,7 +5455,7 @@ stages:
       displayName: create test data directories
 
     - bash: |
-        docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5473,7 +5474,7 @@ stages:
         isLinux: false
 
     - bash: |
-        docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5541,7 +5542,7 @@ stages:
       displayName: Create test data directories
 
     - bash: |
-        docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5608,7 +5609,7 @@ stages:
       displayName: Create test data directories
 
     - bash: |
-        docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5679,7 +5680,7 @@ stages:
           displayName: Create test data directories
 
         - bash: |
-            docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
+            docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5744,7 +5745,7 @@ stages:
         path: $(smokeTestAppDir)/artifacts
 
     - bash: |
-        docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
+        docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
