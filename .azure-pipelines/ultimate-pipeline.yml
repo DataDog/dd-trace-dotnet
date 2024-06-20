@@ -2655,13 +2655,13 @@ stages:
 
         - script: |
             docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
-              run --no-deps --rm \ 
-              -e baseImage=$(baseImage) \ 
-              -e framework=$(publishTargetFramework) \ 
-              -e runCodeCoverage=$(runCodeCoverage) \ 
-              -e IncludeTestsRequiringDocker=false \ 
-              -e Filter=$(IntegrationTestFilter) \ 
-              -e SampleName=$(IntegrationTestSampleName) \ 
+              run --no-deps --rm \
+              -e baseImage=$(baseImage) \
+              -e framework=$(publishTargetFramework) \
+              -e runCodeCoverage=$(runCodeCoverage) \
+              -e IncludeTestsRequiringDocker=false \
+              -e Filter=$(IntegrationTestFilter) \
+              -e SampleName=$(IntegrationTestSampleName) \
               IntegrationTests.ARM64
           displayName: docker-compose run --no-deps IntegrationTests
           env:
