@@ -158,7 +158,6 @@ if (ISMACOS)
     SET(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
 endif()
 
-set(dd_profiling_linker_script "${CMAKE_CURRENT_SOURCE_DIR}/datadog_profiling.version")
 
 # ******************************************************
 # Define target
@@ -195,6 +194,7 @@ if (ISMACOS)
         spdlog-headers
     )
 elseif(ISLINUX)
+    set(dd_profiling_linker_script "${CMAKE_CURRENT_SOURCE_DIR}/datadog_profiling.version")
     find_library(LIBPTHREAD pthread)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
         -static-libgcc
@@ -204,12 +204,15 @@ elseif(ISLINUX)
         coreclr
         spdlog-headers
         -Wl,--build-id
+        -Wl,-version-script=${dd_profiling_linker_script}
         -Wl,--no-undefined
         -Wl,-version-script=${dd_profiling_linker_script}
         -lm
         -lc
     )
 endif()
+
+set_target_properties("Datadog.Trace.ClrProfiler.Native.static" PROPERTIES PREFIX "")
 
 add_dependencies("Datadog.Trace.ClrProfiler.Native.static" coreclr spdlog-headers)
 
