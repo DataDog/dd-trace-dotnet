@@ -9,11 +9,7 @@ using Nuke.Common.Tools.MSBuild;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
-using Logger = Serilog.Log;
 using Nuke.Common.Tools.NuGet;
-using static PrepareRelease.SetAllVersions;
-using System.Runtime.InteropServices;
-using System.Collections;
 
 partial class Build
 {
@@ -96,19 +92,15 @@ partial class Build
         {
             EnsureExistingDirectory(NativeBuildDirectory);
 
-            var entries = Environment.GetEnvironmentVariables().Cast<DictionaryEntry>();
-            var env = entries.ToDictionary(e => (string)e.Key, e => (string)e.Value);
             var additionalArgs = string.Empty;
 
             if (AsUniversal)
             {
                 additionalArgs += "-DUNIVERSAL=ON";
-                env.Add("IsAlpine", "true");
             }
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} {additionalArgs}",
-                environmentVariables: env);
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} {additionalArgs}");
             CMake.Value(
                 arguments: $"--build . --parallel {Environment.ProcessorCount} --target native-loader",
                 workingDirectory: NativeBuildDirectory);

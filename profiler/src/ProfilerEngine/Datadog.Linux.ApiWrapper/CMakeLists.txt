@@ -16,6 +16,10 @@ if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
     add_compile_options(-DDD_ALPINE)
 endif()
 
+if (UNIVERSAL)
+   include ("${CMAKE_SOURCE_DIR}/build/cmake/Toolchain")
+endif()
+
 # ******************************************************
 # Environment detection
 # ******************************************************

@@ -348,13 +348,11 @@ stages:
           managedBaseImage: debian
           useNativeSdkVersion: true
           artifactSuffix: linux-x64
-          targetAlpine: "false"
         alpine:
           nativeBaseImage: alpine
           managedBaseImage: alpine
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
-          targetAlpine: "true"
     pool:
       name: azure-linux-scale-set-2
 
@@ -382,21 +380,6 @@ stages:
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
-    # set the version from the package name
-    - bash: sudo rm -rf $(System.DefaultWorkingDirectory)/obj
-      displayName: Delete obj folder
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        target: builder
-        baseImage: "universal"
-        useNativeSdkVersion: $(useNativeSdkVersion)
-        # Since we do not run in an alpine container, we need to tell to Nuke where to publish
-        # the binary
-        command: "BuildNativeLoader --AsUniversal true --IsAlpine $(targetAlpine)"
-        retryCountForRunCommand: 1
-
     - template: steps/run-in-docker.yml
       parameters:
         target: builder
@@ -419,6 +402,45 @@ stages:
     - publish: tracer/build_data/tests
       displayName: publish tracer and native loader test results
       artifact: build_linux_tracer_unit_tests_results_$(artifactSuffix)_$(System.JobAttempt)
+
+- stage: build_linux_universal
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    pool:
+      name: azure-linux-scale-set-2
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: "universal"
+        useNativeSdkVersion: true
+        command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
+
+    - publish: $(monitoringHome)
+      displayName: Uploading universal artifacts
+      artifact: linux-universal-home-linux-x64
+
+    - publish: $(symbols)
+      displayName: Upload linux tracer symbols
+      artifact: linux-universal-symbols-linux-x64
 
 - stage: build_linux_profiler
   dependsOn: [merge_commit_id]
@@ -2470,15 +2492,6 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: "universal"
-        useNativeSdkVersion: true
-        command: "BuildNativeLoader"
-        retryCountForRunCommand: 1
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        target: builder
         baseImage: debian
         command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -2561,15 +2574,6 @@ stages:
         useNativeSdkVersion: true
         command: "BuildProfilerUbsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        target: builder
-        baseImage: "universal"
-        useNativeSdkVersion: true
-        command: "BuildNativeLoader"
-        retryCountForRunCommand: 1
 
     - template: steps/run-in-docker.yml
       parameters:

@@ -199,6 +199,12 @@ partial class Build : NukeBuild
         .DependsOn(CompileNativeLoader)
         .DependsOn(PublishNativeLoader);
 
+    Target BuildNativeWrapper => _ => _
+        .Description("")
+        .After(Clean)
+        .DependsOn(CompileNativeWrapper)
+        .DependsOn(PublishNativeWrapper);
+
     Target PackageTracerHome => _ => _
         .Description("Builds NuGet packages, MSIs, and zip files, from already built source")
         .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
