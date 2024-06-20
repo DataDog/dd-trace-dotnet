@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Globalization;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
@@ -796,6 +797,29 @@ namespace Datadog.Trace.Tests.Propagators
                            IsRemote = true,
                            LastParentId = w3CHeaderFirst ? ZeroLastParentId : null,
                        });
+        }
+
+        [Theory]
+        [InlineData("dd=s:2;p:000000003ade68b1,foo=1", "1", "987654321", 987654321, null)]
+        [InlineData("dd=s:2;p:000000000000000a,foo=1", "2", "10", 10, null)]
+        [InlineData("dd=s:2;p:000000000000000a,foo=1", "1", "10", 987654321, "000000000000000a")]
+        [InlineData("dd=s:2,foo=1", "1", "10", 987654321, "000000000000000a")]
+        [InlineData("dd=s:2;p:8fffffffffffffff,foo=1", "1", "10", 987654321, "8fffffffffffffff")]
+        public void Datadog_W3C_TraceState_ParentExtracted(string tracestate, string traceId, string parentId, ulong expectedSpanId, string expectedParentTag)
+        {
+            // headers1 equivalent from system-tests
+            var headers = new NameValueHeadersCollection(new NameValueCollection());
+
+            headers.Add("traceparent", "00-00000000000000000000000000000001-000000003ade68b1-01");
+            headers.Add("tracestate", tracestate);
+            headers.Add("x-datadog-trace-id", traceId);
+            headers.Add("x-datadog-parent-id", parentId);
+
+            var result = DatadogW3CPropagatorExtractFirstFalse.Extract(headers);
+
+            result.Should().NotBeNull();
+            result?.SpanId.Should().Be(expectedSpanId);
+            result?.LastParentId.Should().Be(expectedParentTag);
         }
 
         private SpanContextPropagator GetPropagatorToTest(bool extractFirst, bool w3CHeaderFirst)

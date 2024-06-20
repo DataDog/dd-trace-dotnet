@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.Propagators
 {
@@ -170,6 +171,20 @@ namespace Datadog.Trace.Propagators
                         if (localSpanContext.RawTraceId == spanContext.RawTraceId)
                         {
                             localSpanContext.AdditionalW3CTraceState += spanContext.AdditionalW3CTraceState;
+
+                            if (localSpanContext.RawSpanId != spanContext.RawSpanId)
+                            {
+                                if (!string.IsNullOrEmpty(spanContext.LastParentId) && spanContext.LastParentId != W3CTraceContextPropagator.ZeroLastParent)
+                                {
+                                    localSpanContext.LastParentId = spanContext.LastParentId;
+                                }
+                                else
+                                {
+                                    localSpanContext.LastParentId = $"{localSpanContext.SpanId:x16}";
+                                }
+
+                                localSpanContext.SpanId = spanContext.SpanId;
+                            }
                         }
                     }
 

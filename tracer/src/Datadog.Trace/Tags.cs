@@ -719,6 +719,12 @@ namespace Datadog.Trace
             /// lower-case hexadecimal string with no zero-padding or `0x` prefix.
             /// </summary>
             internal const string TraceIdUpper = "_dd.p.tid";
+
+            /// <summary>
+            /// Tag used to propagate the unsigned  64 bits last parent Id
+            /// lower-case 16 characters hexadecimal string
+            /// </summary>
+            internal const string LastParentId = "_dd.parent_id";
         }
     }
 }

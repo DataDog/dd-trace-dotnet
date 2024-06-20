@@ -199,7 +199,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the span id.
         /// </summary>
-        public ulong SpanId { get; }
+        public ulong SpanId { get; internal set; }
 
         /// <summary>
         /// Gets or sets the service name to propagate to child spans.
