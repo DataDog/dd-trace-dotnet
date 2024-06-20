@@ -480,7 +480,7 @@ stages:
         target: builder
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "Clean BuildProfilerHome CompileProfilerNativeTests RunProfilerNativeTests ExtractDebugInfoLinux"
+        command: "Clean BuildProfilerHome BuildNativeWrapper CompileProfilerNativeTests RunProfilerNativeTests CompileNativeWrapperNativeTests RunNativeWrapperNativeTests ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -633,7 +633,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
+        command: "Clean BuildProfilerHome BuildNativeWrapper ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build

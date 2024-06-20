@@ -159,7 +159,15 @@ partial class Build
         .Executes(() =>
         {
             RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None);
+        });
 
+    Target RunNativeWrapperNativeTests => _ => _
+        .Unlisted()
+        .Description("Run native wrapper unit tests")
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileNativeWrapperNativeTests)
+        .Executes(() =>
+        {
             // LD_PRELOAD must be set for this test library to validate that it works correctly.
             var (arch, _) = GetUnixArchitectureAndExtension();
             var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / LinuxApiWrapperLibrary}" };
@@ -551,6 +559,8 @@ partial class Build
         .DependsOn(BuildNativeLoader)
         .DependsOn(CompileProfilerWithAsanLinux)
         .DependsOn(CompileProfilerWithAsanWindows)
+        .DependsOn(BuildNativeWrapper)
+        .DependsOn(PublishNativeWrapper)
         .DependsOn(PublishProfiler);
 
     Target RunProfilerAsanTest => _ => _
@@ -694,6 +704,8 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .DependsOn(BuildNativeLoader)
         .DependsOn(CompileProfilerWithUbsanLinux)
+        .DependsOn(BuildNativeWrapper)
+        .DependsOn(PublishNativeWrapper)
         .DependsOn(PublishProfiler);
 
     Target RunProfilerUbsanTest => _ => _
