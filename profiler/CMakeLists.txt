@@ -118,5 +118,8 @@ add_subdirectory(src/ProfilerEngine/Datadog.Linux.ApiWrapper)
 enable_testing()
 add_subdirectory(test)
 
+add_custom_target(profiler-wrapper)
+add_dependencies(profiler-wrapper Datadog.Profiler.Native Datadog.Linux.ApiWrapper.x64)
+
 add_custom_target(all-profiler)
-add_dependencies(all-profiler Datadog.Profiler.Native Datadog.Linux.ApiWrapper.x64 profiler-native-tests)
+add_dependencies(all-profiler profiler-wrapper profiler-native-tests)

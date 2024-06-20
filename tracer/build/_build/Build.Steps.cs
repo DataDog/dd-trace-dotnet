@@ -82,6 +82,7 @@ partial class Build
 
     readonly string[] WafWindowsArchitectureFolders = { "win-x86", "win-x64" };
     Project NativeTracerProject => Solution.GetProject(Projects.ClrProfilerNative);
+    Project NativeTracerTestsProject => Solution.GetProject(Projects.NativeTracerNativeTests);
     Project NativeLoaderProject => Solution.GetProject(Projects.NativeLoader);
     Project NativeLoaderTestsProject => Solution.GetProject(Projects.NativeLoaderNativeTests);
 
@@ -245,7 +246,7 @@ partial class Build
             }
         });
 
-    Target CompileNativeSrcWindows => _ => _
+    Target CompileTracerNativeSrcWindows => _ => _
         .Unlisted()
         .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsWin)
@@ -282,6 +283,20 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}");
+        });
+
+    Target CompileTracerNativeTestsLinux => _ => _
+        .Unlisted()
+        .After(CompileManagedLoader)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(NativeBuildDirectory);
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracerTests}");
         });
 
     Target CompileNativeSrcMacOs => _ => _
@@ -346,12 +361,18 @@ partial class Build
             Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
         });
 
-    Target CompileNativeSrc => _ => _
+    Target CompileTracerNativeSrc => _ => _
         .Unlisted()
-        .Description("Compiles the native loader")
-        .DependsOn(CompileNativeSrcWindows)
+        .Description("Compiles the native tracer assets")
+        .DependsOn(CompileTracerNativeSrcWindows)
         .DependsOn(CompileNativeSrcMacOs)
         .DependsOn(CompileTracerNativeSrcLinux);
+
+    Target CompileTracerNativeTests => _ => _
+        .Unlisted()
+        .Description("Compiles the native tracer tests assets")
+        .DependsOn(CompileTracerNativeTestsWindows)
+        .DependsOn(CompileTracerNativeTestsLinux);
 
     Target CppCheckNativeSrcUnix => _ => _
         .Unlisted()
@@ -413,7 +434,6 @@ partial class Build
 
     Target CompileTracerNativeTestsWindows => _ => _
         .Unlisted()
-        .After(CompileNativeSrc)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -434,29 +454,6 @@ partial class Build
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
         });
-
-    Target CompileTracerNativeTestsLinux => _ => _
-        .Unlisted()
-        .After(CompileNativeSrc)
-        .OnlyWhenStatic(() => IsLinux)
-        .Executes(() =>
-        {
-            EnsureExistingDirectory(NativeBuildDirectory);
-
-            CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
-            CMake.Value(
-                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracerTests}");
-        });
-
-    Target CompileNativeTests => _ => _
-        .Unlisted()
-        .Description("Compiles the native unit tests (native loader, profiler)")
-        .DependsOn(CompileTracerNativeTestsWindows)
-        .DependsOn(CompileTracerNativeTestsLinux)
-        .DependsOn(CompileNativeLoaderTestsWindows)
-        .DependsOn(CompileNativeLoaderTestsLinux)
-        .DependsOn(CompileProfilerNativeTestsWindows);
 
     Target DownloadLibDdwaf => _ => _.Unlisted().After(CreateRequiredDirectories).Executes(() => DownloadWafVersion());
 
@@ -628,7 +625,7 @@ partial class Build
     Target PublishNativeSymbolsWindows => _ => _
       .Unlisted()
       .OnlyWhenStatic(() => IsWin)
-      .After(CompileNativeSrc, PublishManagedTracer)
+      .After(CompileTracerNativeSrc, PublishManagedTracer)
       .Executes(() =>
        {
            foreach (var architecture in ArchitecturesForPlatformForTracer)
@@ -654,7 +651,7 @@ partial class Build
     Target PublishNativeTracerWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
-        .After(CompileNativeSrc, PublishManagedTracer)
+        .After(CompileTracerNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
             foreach (var architecture in ArchitecturesForPlatformForTracer)
@@ -670,7 +667,7 @@ partial class Build
     Target PublishNativeTracerUnix => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
-        .After(CompileNativeSrc, PublishManagedTracer)
+        .After(CompileTracerNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
             var (arch, extension) = GetUnixArchitectureAndExtension();
@@ -680,12 +677,13 @@ partial class Build
                 NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
                 MonitoringHomeDirectory / arch,
                 FileExistsPolicy.Overwrite);
+
         });
 
     Target PublishNativeTracerOsx => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsOsx)
-        .After(CompileNativeSrc, PublishManagedTracer)
+        .After(CompileTracerNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
             // Copy the universal binary to the output folder
@@ -1066,10 +1064,15 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var workingDirectory = TestsDirectory / "Datadog.Tracer.Native.Tests" / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
-            var exePath = workingDirectory / "Datadog.Tracer.Native.Tests.exe";
-            var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+            foreach (var platform in ArchitecturesForPlatformForTracer)
+            {
+                var workingDirectory = TestsDirectory / "Datadog.Tracer.Native.Tests" / "bin" / BuildConfiguration.ToString() / platform;
+                var exePath = workingDirectory / "Datadog.Tracer.Native.Tests.exe";
+
+                var testsResultFile = BuildDataDirectory / "tests" / $"Datadog.Tracer.Native.Tests.Results.{BuildConfiguration}.{platform}.xml";
+                var testExe = ToolResolver.GetLocalTool(exePath);
+                testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
+            }
         });
 
     Target RunTracerNativeTestsLinux => _ => _
@@ -1084,18 +1087,35 @@ partial class Build
             var exePath = workingDirectory / FileNames.NativeTracerTests;
             Chmod.Value.Invoke("+x " + exePath);
 
+            var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeTracerTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
             var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+
+            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
         });
 
     Target RunNativeTests => _ => _
         .Unlisted()
+        .DependsOn(RunTracerNativeTests)
+        .DependsOn(RunNativeLoaderNativeTests)
+        .DependsOn(RunProfilerNativeTests);
+
+    Target RunTracerNativeTests => _ => _
+        .Unlisted()
         .DependsOn(RunTracerNativeTestsWindows)
         .DependsOn(RunTracerNativeTestsLinux)
+        .After(CompileTracerNativeTests);
+
+    Target RunNativeLoaderNativeTests => _ => _
+        .Unlisted()
         .DependsOn(RunNativeLoaderTestsWindows)
         .DependsOn(RunNativeLoaderTestsLinux)
+        .After(CompileNativeLoaderNativeTests);
+
+    Target RunProfilerNativeTests => _ => _
+        .Unlisted()
         .DependsOn(RunProfilerNativeUnitTestsWindows)
-        .DependsOn(RunProfilerNativeUnitTestsLinux);
+        .DependsOn(RunProfilerNativeUnitTestsLinux)
+        .After(CompileProfilerNativeTests);
 
     Target CompileDependencyLibs => _ => _
         .Unlisted()
