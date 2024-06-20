@@ -1866,14 +1866,17 @@ stages:
         path: $(monitoringHome)
 
     - script: |
+        baseImage=$(baseImage) # for interpolation in the docker-compose file
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
-          run --no-deps --rm -e baseImage=$(baseImage) \
+          run --no-deps --rm \
+          -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
           -e runCodeCoverage=$(runCodeCoverage) \
           -e IncludeTestsRequiringDocker=false  \
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
           IntegrationTests
+      displayName: docker-compose run IntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -1956,8 +1959,10 @@ stages:
       retryCountOnTaskFailure: 5
 
     - script: |
+        baseImage=$(baseImage) # for interpolation in the docker-compose file
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
-          run --rm -e baseImage=$(baseImage) \
+          run --rm \
+          -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
           -e runCodeCoverage=$(runCodeCoverage) \
           -e IncludeTestsRequiringDocker=true \
@@ -2088,10 +2093,11 @@ stages:
       retryCountOnTaskFailure: 5
 
     - script: |
+        baseImage=$(baseImage) # for interpolation in the docker-compose file
         docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
-          run --rm \ 
-          -e baseImage=$(baseImage) \ 
-          -e framework=$(publishTargetFramework) \ 
+          run --rm \
+          -e baseImage=$(baseImage) \
+          -e framework=$(publishTargetFramework) \
           -e lambdaBaseImage=$(lambdaBaseImage) \
           -e runCodeCoverage=$(runCodeCoverage) \
           IntegrationTests.Serverless
@@ -2237,10 +2243,11 @@ stages:
         path: $(monitoringHome)
 
     - script: |
+        baseImage=$(baseImage) # for interpolation in the docker-compose file
         docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
-          run --no-deps --rm \ 
-          -e baseImage=$(baseImage) \ 
-          -e framework=$(publishTargetFramework) \ 
+          run --no-deps --rm \
+          -e baseImage=$(baseImage) \
+          -e framework=$(publishTargetFramework) \
           -e runCodeCoverage=$(runCodeCoverage) \
           IntegrationTests.Debugger
       displayName: docker-compose run --no-deps IntegrationTests.Debugger
@@ -2654,6 +2661,7 @@ stages:
             path: $(monitoringHome)
 
         - script: |
+            baseImage=$(baseImage) # for interpolation in the docker-compose file
             docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
               run --no-deps --rm \
               -e baseImage=$(baseImage) \
@@ -2742,6 +2750,7 @@ stages:
           retryCountOnTaskFailure: 5
 
         - script: |
+            baseImage=$(baseImage) # for interpolation in the docker-compose file
             docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
               run --rm \
               -e baseImage=$(baseImage) \
@@ -2751,7 +2760,6 @@ stages:
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
               IntegrationTests.ARM64 \
-              projectName: $(DockerComposeProjectName)
           displayName: docker-compose run IntegrationTests
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2838,6 +2846,7 @@ stages:
             path: $(monitoringHome)
 
         - script: |
+            baseImage=$(baseImage) # for interpolation in the docker-compose file
             docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
               run --no-deps --rm \
               -e baseImage=$(baseImage) \
@@ -2990,11 +2999,12 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - script: |
-          docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p $(DockerComposeProjectName) \
+        baseImage=$(baseImage) # for interpolation in the docker-compose file
+        docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p $(DockerComposeProjectName) \
           build \
-          --build-arg baseImage=$(baseImage) \ 
-          --build-arg explorationTestUseCase=$(explorationTestUseCase) \ 
-          --build-arg explorationTestName=$(explorationTestName) \ 
+          --build-arg baseImage=$(baseImage) \
+          --build-arg explorationTestUseCase=$(explorationTestUseCase) \
+          --build-arg explorationTestName=$(explorationTestName) \
           --build-arg framework=$(publishTargetFramework) \
           --build-arg runCodeCoverage=$(runCodeCoverage) \
           ExplorationTests
@@ -3005,6 +3015,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - script: |
+        baseImage=$(baseImage) # for interpolation in the docker-compose file
         docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p $(DockerComposeProjectName) \
           run --rm \
           -e DD_AGENT_HOST=dd_agent \
