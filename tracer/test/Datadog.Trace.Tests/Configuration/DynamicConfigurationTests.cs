@@ -114,7 +114,8 @@ namespace Datadog.Trace.Tests.Configuration
             TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
 
             // sampling rules is null by default
-            TracerManager.Instance.Settings.RemoteSamplingRules.Should().BeNull();
+            TracerManager.Instance.Settings.CustomSamplingRulesInternal.Should().BeNull();
+            TracerManager.Instance.Settings.CustomSamplingRulesInternalIsRemote.Should().BeFalse();
 
             var singleAgentRuleOnly = ((TraceSampler)TracerManager.Instance.PerTraceSettings.TraceSampler)!.GetRules();
             singleAgentRuleOnly.Should().ContainSingle().And.AllBeOfType<AgentSamplingRule>();
@@ -129,7 +130,9 @@ namespace Datadog.Trace.Tests.Configuration
 
             // set sampling rules "remotely"
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_sampling_rules", samplingRulesConfig)));
-            TracerManager.Instance.Settings.RemoteSamplingRules.Should().Be(samplingRulesJson);
+            TracerManager.Instance.Settings.CustomSamplingRulesInternal.Should().Be(samplingRulesJson);
+            TracerManager.Instance.Settings.CustomSamplingRulesInternalIsRemote.Should().BeTrue();
+
             var rules = ((TraceSampler)TracerManager.Instance.PerTraceSettings.TraceSampler)!.GetRules();
 
             rules.Should()
