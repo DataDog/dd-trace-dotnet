@@ -52,6 +52,12 @@ RUN apt-get update \
     && gem install --version 1.14.2 --minimal-deps --no-document fpm \
     && rm -rf /var/lib/apt/lists/*
 
+# We need to set this environment variable to make sure
+# that compiling/linking will act as if it was on Alpine
+ENV IsAlpine=true \
+## This dockerfile is meant to build universal binaries
+    AsUniversal=true
+
 # Install the .NET SDK
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
     && chmod +x ./dotnet-install.sh \

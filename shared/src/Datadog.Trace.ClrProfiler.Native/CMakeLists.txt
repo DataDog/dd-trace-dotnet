@@ -9,7 +9,6 @@ if (UNIVERSAL)
    include ("${CMAKE_SOURCE_DIR}/build/cmake/Toolchain")
    find_package(GlibcCompat REQUIRED)
    message(STATUS "Glibc Compat objects")
-
 endif()
 
 # ******************************************************

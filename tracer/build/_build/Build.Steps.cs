@@ -774,7 +774,7 @@ partial class Build
 
     Target ExtractDebugInfoLinux => _ => _
         .Unlisted()
-        .After(BuildProfilerHome, BuildTracerHome, BuildNativeLoader)
+        .After(BuildProfilerHome, BuildTracerHome, BuildNativeLoader, BuildNativeWrapper)
         .Executes(() =>
         {
             // extract debug info from everything in monitoring home and copy it to the linux symbols directory

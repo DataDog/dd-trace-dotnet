@@ -105,7 +105,7 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
 
             CMake.Value(
-                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target profiler-wrapper");
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target profiler");
 
             if (IsAlpine)
             {
@@ -113,6 +113,42 @@ partial class Build
                 // Make the whole folder and its content accessible by everyone to make sure the upload process does not fail
                 Chmod.Value.Invoke(" -R 777 " + NativeBuildDirectory);
             }
+        });
+
+    Target CompileNativeWrapper => _ => _
+        .Unlisted()
+        .Description("Compile Native wrapper")
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(NativeBuildDirectory);
+            var additionalArgs = string.Empty;
+
+            if (AsUniversal)
+            {
+                additionalArgs += "-DUNIVERSAL=ON";
+            }
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} {additionalArgs}");
+
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target wrapper");
+        });
+
+    Target CompileNativeWrapperNativeTests => _ => _
+        .Unlisted()
+        .Description("Compile Native wrapper unit tests")
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(NativeBuildDirectory);
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target wrapper-native-tests");
         });
 
     Target RunProfilerNativeUnitTestsLinux => _ => _
@@ -132,6 +168,7 @@ partial class Build
 
     Target CompileProfilerNativeTestsWindows => _ => _
         .Unlisted()
+        .After(CompileProfilerNativeSrcWindows)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -184,17 +221,36 @@ partial class Build
         .After(CompileProfilerNativeSrc)
         .Executes(() =>
         {
-            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var (arch, _) = GetUnixArchitectureAndExtension();
             var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
-            EnsureExistingDirectory(SymbolsDirectory / arch);
 
-            var files = new[] { "Datadog.Profiler.Native.so", LinuxApiWrapperLibrary };
+            var files = new[] { "Datadog.Profiler.Native.so" };
             foreach (var file in files)
             {
                 var source = sourceDir / file;
                 var dest = MonitoringHomeDirectory / arch / file;
                 CopyFile(source, dest, FileExistsPolicy.Overwrite);
+            }
+        });
+
+    Target PublishNativeWrapper => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileNativeWrapper)
+        .Executes(() =>
+        {
+            var (arch, _) = GetUnixArchitectureAndExtension();
+            var sourceDir = ProfilerDeployDirectory / arch;
+            EnsureExistingDirectory(MonitoringHomeDirectory / arch);
+
+            var source = sourceDir / LinuxApiWrapperLibrary;
+            var dest = MonitoringHomeDirectory / arch / LinuxApiWrapperLibrary;
+            CopyFile(source, dest, FileExistsPolicy.Overwrite);
+
+            if (AsUniversal)
+            {
+                PatchElf.Value.Invoke($"--remove-needed libc.musl-x86_64.so.1 {dest} --remove-rpath");
             }
         });
 
@@ -492,6 +548,7 @@ partial class Build
     Target BuildProfilerAsanTest => _ => _
         .Unlisted()
         .Description("Compile the profiler with Clang Address sanitizer")
+        .DependsOn(BuildNativeLoader)
         .DependsOn(CompileProfilerWithAsanLinux)
         .DependsOn(CompileProfilerWithAsanWindows)
         .DependsOn(PublishProfiler);
@@ -635,6 +692,7 @@ partial class Build
         .Unlisted()
         .Description("Compile the profiler with Clang Undefined-behavior sanitizer")
         .OnlyWhenStatic(() => IsLinux)
+        .DependsOn(BuildNativeLoader)
         .DependsOn(CompileProfilerWithUbsanLinux)
         .DependsOn(PublishProfiler);
 
