@@ -237,7 +237,7 @@ namespace iast
         if (SUCCEEDED(hr))
         {
             MemberRefInfo* targetMemberRefInfo = nullptr;
-            //Look for our method based uppon the signature representation
+            //Look for our method based upon the signature representation
             for (auto candidate : targetMethodRefCandidates)
             {
                 if (auto memberRefInfo = module->GetMemberRefInfo(candidate))

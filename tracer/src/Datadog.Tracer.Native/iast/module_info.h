@@ -58,10 +58,9 @@ namespace iast
         std::unordered_map<mdMethodSpec, MethodSpec*> _specs;
         std::unordered_map<mdSignature, SignatureInfo*> _signatures;
 
-        CS _cs;
-        //std::map<mdMethodDef, std::function<HRESULT(MethodInfo*, Dataflow*)>> _jitHooks;
 
     protected:
+        CS _cs;
         Dataflow* _dataflow = nullptr;
         IMetaDataImport2* _metadataImport = nullptr;
         IMetaDataEmit2* _metadataEmit = nullptr;

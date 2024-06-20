@@ -32,7 +32,7 @@ namespace iast
     {
         return _id;
     }
-    WSTRING TypeInfo::GetName()
+    WSTRING& TypeInfo::GetName()
     {
         if (_name.size() == 0)
         {
@@ -44,8 +44,7 @@ namespace iast
 
     //----------------------------
 
-    MemberRefInfo::MemberRefInfo(ModuleInfo* pModuleInfo, mdMemberRef memberRef) : 
-        _fullNameCounterLock(0)
+    MemberRefInfo::MemberRefInfo(ModuleInfo* pModuleInfo, mdMemberRef memberRef)
     {
         this->_module = pModuleInfo;
         this->_id = memberRef;
@@ -87,42 +86,26 @@ namespace iast
     {
         return _module;
     }
-    WSTRING MemberRefInfo::GetName()
+    WSTRING& MemberRefInfo::GetName()
     {
         return _name;
     }
-    WSTRING MemberRefInfo::GetMemberName()
-    {
-        if (_memberName.size() == 0)
-        {
-            auto pos = _name.find(WStr("("));
-            if (pos != WSTRING::npos)
-            {
-                _memberName = _name.substr(0, pos);
-            }
-            else
-            {
-                _memberName = _name;
-            }
-        }
-        return _memberName;
-    }
 
-    WSTRING MemberRefInfo::GetFullName()
+    WSTRING& MemberRefInfo::GetFullName()
     {
         if (_fullName.size() == 0)
         {
-            auto fullName = GetTypeName() + WStr("::") + _name;
-            auto signature = GetSignature();
-            if (signature != nullptr)
+            CSGuard lock(&_module->_cs);
+            if (_fullName.size() == 0)
             {
-                fullName = signature->CharacterizeMember(fullName, false);
-            }
-            if (_fullNameCounterLock.fetch_add(1, std::memory_order_acquire) == 0)
-            {
+                auto fullName = GetTypeName() + WStr("::") + _name;
+                auto signature = GetSignature();
+                if (signature != nullptr)
+                {
+                    fullName = signature->CharacterizeMember(fullName);
+                }
                 _fullName = fullName;
             }
-            return fullName;
         }
         return _fullName;
     }
@@ -136,7 +119,7 @@ namespace iast
         }
         return res;
     }
-    WSTRING MemberRefInfo::GetTypeName()
+    WSTRING& MemberRefInfo::GetTypeName()
     {
         auto type = GetTypeInfo();
         if (type) { return type->GetName(); }
@@ -245,6 +228,19 @@ namespace iast
             _name = methodName;
         }
         _allowRestoreOnSecondJit = GetRestoreOnSecondJitConfigValue();
+
+        _isExcluded = _module->_dataflow->IsMethodExcluded(GetFullName());
+        if (!_isExcluded && _module->_dataflow->HasMethodAttributeExclusions())
+        {
+            for (auto methodAttribute : GetCustomAttributes())
+            {
+                if (_module->_dataflow->IsMethodAttributeExcluded(methodAttribute))
+                {
+                    _isExcluded = true;
+                    break;
+                }
+            }
+        }
     }
     MethodInfo::~MethodInfo()
     {
@@ -255,10 +251,6 @@ namespace iast
     mdMethodDef MethodInfo::GetMethodDef()
     {
         return _id;
-    }
-    WSTRING MethodInfo::GetMethodName()
-    {
-        return GetMemberName();
     }
 
 
@@ -287,22 +279,6 @@ namespace iast
 
     bool MethodInfo::IsExcluded()
     {
-        if (_isExcluded < 0)
-        {
-            _isExcluded = _module->_dataflow->IsMethodExcluded(GetFullName());
-            if (!_isExcluded && _module->_dataflow->HasMethodAttributeExclusions())
-            {
-                for (auto methodAttribute : GetCustomAttributes())
-                {
-                    if (_module->_dataflow->IsMethodAttributeExcluded(methodAttribute))
-                    {
-                        _isExcluded = true;
-                        break;
-                    }
-                }
-            
-            }
-        }
         return _isExcluded;
     }
     bool MethodInfo::IsProcessed()

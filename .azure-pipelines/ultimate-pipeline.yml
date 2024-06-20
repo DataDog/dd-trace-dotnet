@@ -264,6 +264,12 @@ stages:
       displayName: Build tracer home
       retryCountOnTaskFailure: 1
 
+    - script: tracer\build.cmd CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests
+      displayName: Build and run tracer and native loader native tests
+      retryCountOnTaskFailure: 1
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
     - publish: $(monitoringHome)
       displayName: Upload Windows tracer home directory
       artifact: windows-tracer-home
@@ -271,6 +277,10 @@ stages:
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
+
+    - publish: tracer/build_data/tests
+      displayName: publish tracer and native loader test results
+      artifact: build_windows_tracer_unit_tests_results_$(System.JobAttempt)
 
 - stage: build_windows_profiler
   dependsOn: [merge_commit_id]
@@ -296,6 +306,12 @@ stages:
       displayName: Build profiler home
       retryCountOnTaskFailure: 1
 
+    - script: tracer\build.cmd CompileProfilerNativeTests RunProfilerNativeTests
+      displayName: Build and run profiler native tests
+      retryCountOnTaskFailure: 1
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
     - publish: $(monitoringHome)
       displayName: Upload Windows profiler home directory
       artifact: windows-profiler-home
@@ -304,9 +320,9 @@ stages:
       displayName: Upload Windows profiler symbols
       artifact: windows-profiler-symbols
 
-    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
-      displayName: Upload Windows profiler directory
-      artifact: windows-profiler-binaries
+    - publish: profiler/build_data/tests
+      displayName: publish profiler test results
+      artifact: build_windows_profiler_unit_tests_results_$(System.JobAttempt)
 
 - stage: build_linux_tracer
   dependsOn: [merge_commit_id]
@@ -356,8 +372,9 @@ stages:
         target: builder
         baseImage: $(nativeBaseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildNativeTracerHome"
+        command: "BuildNativeTracerHome BuildNativeLoader CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests"
         retryCountForRunCommand: 1
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -377,6 +394,10 @@ stages:
     - publish: $(symbols)
       displayName: Upload linux tracer symbols
       artifact: linux-tracer-symbols-$(artifactSuffix)
+
+    - publish: tracer/build_data/tests
+      displayName: publish tracer and native loader test results
+      artifact: build_linux_tracer_unit_tests_results_$(artifactSuffix)_$(System.JobAttempt)
 
 - stage: build_linux_profiler
   dependsOn: [merge_commit_id]
@@ -416,12 +437,9 @@ stages:
         target: builder
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
+        command: "Clean BuildProfilerHome CompileProfilerNativeTests RunProfilerNativeTests ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
-
-    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
-      displayName: Uploading linux profiler output build folder
-      artifact: linux-profiler-binaries-$(artifactSuffix)
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
@@ -430,6 +448,10 @@ stages:
     - publish: $(symbols)
       displayName: Upload linux profiler symbols
       artifact: linux-profiler-symbols-$(artifactSuffix)
+
+    - publish: profiler/build_data/tests
+      displayName: publish profiler test results
+      artifact: build_linux_profiler_unit_tests_results_$(artifactSuffix)_$(System.JobAttempt)
 
 - stage: package_linux
   dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler, build_dd_dotnet_linux]
@@ -666,7 +688,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader CompileNativeSrc PublishNativeTracer
+    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome
       displayName: Build native-tracer
       retryCountOnTaskFailure: 1
 
@@ -1027,7 +1049,7 @@ stages:
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
-        jobs: [managed, native]
+        jobs: [managed]
 
     - job: managed
       timeoutInMinutes: 60 #default value
@@ -1054,29 +1076,6 @@ stages:
         inputs:
           testResultsFormat: VSTest
           testResultsFiles: tracer/build_data/results/**/*.trx
-        condition: succeededOrFailed()
-
-    - job: native
-      timeoutInMinutes: 60 #default value
-      steps:
-      - template: steps/clone-repo.yml
-        parameters:
-          targetShaId: $(targetShaId)
-          targetBranch: $(targetBranch)
-      - template: steps/install-dotnet.yml
-      - template: steps/restore-working-directory.yml
-
-      - script: tracer\build.cmd BuildAndRunNativeUnitTests
-        displayName: Build and Test
-        env:
-          DD_LOGGER_DD_API_KEY: $(ddApiKey)
-
-      - task: PublishTestResults@2
-        displayName: publish test results
-        inputs:
-          testResultsFiles: |
-            tracer/test/**/test*.xml
-            profiler/build_data/*.xml
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
@@ -1138,7 +1137,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [managed, native]
+      jobs: [managed]
 
   - job: managed
     timeoutInMinutes: 60 #default value
@@ -1180,51 +1179,6 @@ stages:
       inputs:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
-      condition: succeededOrFailed()
-
-  - job: native
-    timeoutInMinutes: 60 #default value
-    strategy:
-      matrix:
-        x64:
-          baseImage: centos7
-          useNativeSdkVersion: true
-          artifactSuffix: linux-x64
-        alpine:
-          baseImage: alpine
-          useNativeSdkVersion: ""
-          artifactSuffix: linux-musl-x64
-    pool:
-      name: azure-linux-scale-set-2
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - template: steps/restore-working-directory.yml
-      parameters:
-        artifact: build-$(artifactSuffix)-working-directory
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux profiler binaries
-      inputs:
-        artifact: linux-profiler-binaries-$(artifactSuffix)
-        path: $(System.DefaultWorkingDirectory)/profiler/_build
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: $(baseImage)
-        useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildAndRunNativeUnitTests"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
-
-    - task: PublishTestResults@2
-      displayName: publish profiler test results
-      inputs:
-        testResultsFiles: profiler/build_data/*.xml
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64
