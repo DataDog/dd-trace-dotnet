@@ -258,7 +258,8 @@ partial class Build
 
             if (AsUniversal)
             {
-                PatchElf.Value.Invoke($"--remove-needed libc.musl-x86_64.so.1 {dest} --remove-rpath");
+                var libc = IsArm64 ? "libc.musl-aarch64.so.1" : "libc.musl-x86_64.so.1";
+                PatchElf.Value.Invoke($"--remove-needed {libc} {dest} --remove-rpath");
             }
         });
 

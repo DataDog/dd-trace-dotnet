@@ -498,7 +498,7 @@ stages:
       artifact: build_linux_profiler_unit_tests_results_$(artifactSuffix)_$(System.JobAttempt)
 
 - stage: package_linux
-  dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler, build_dd_dotnet_linux]
+  dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler, build_dd_dotnet_linux, build_linux_universal]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -598,7 +598,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
+        command: "Clean BuildTracerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
@@ -640,7 +640,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildProfilerHome BuildNativeWrapper ExtractDebugInfoLinux"
+        command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
@@ -655,8 +655,48 @@ stages:
       displayName: Upload linux profiler symbols
       artifact: linux-profiler-symbols-linux-arm64
 
+- stage: build_arm64_universal
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    pool:
+      name: aws-arm64-auto-scaling
+    workspace:
+      clean: all
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: "universal"
+        useNativeSdkVersion: true
+        command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
+
+    - publish: $(monitoringHome)/linux-musl-arm64
+      displayName: Uploading linux universal arm64 artifacts
+      artifact: linux-universal-home-linux-arm64
+
+    - publish: $(symbols)/linux-musl-arm64
+      displayName: Upload linux universal arm64 symbols
+      artifact: linux-universal-symbols-linux-arm64
+
 - stage: package_arm64
-  dependsOn: [merge_commit_id, build_arm64_tracer, build_arm64_profiler, build_dd_dotnet_linux_arm64]
+  dependsOn: [merge_commit_id, build_arm64_tracer, build_arm64_profiler, build_dd_dotnet_linux_arm64, build_arm64_universal]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -698,6 +738,12 @@ stages:
     - script: |
         chmod +x $(monitoringHome)/linux-arm64/dd-dotnet
       displayName: chmod dd-dotnet
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download universal native binaries
+      inputs:
+        artifact: linux-universal-home-linux-arm64
+        path: $(monitoringHome)/linux-arm64
 
     - template: steps/run-in-docker.yml
       parameters:
