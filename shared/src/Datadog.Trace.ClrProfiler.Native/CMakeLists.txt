@@ -195,9 +195,11 @@ if (ISMACOS)
         spdlog-headers
     )
 elseif(ISLINUX)
+    find_library(LIBPTHREAD pthread)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
         -static-libgcc
         -static-libstdc++
+        $<$<BOOL:${LIBPTHREAD}>:pthread>
         ${CMAKE_DL_LIBS}
         coreclr
         spdlog-headers
@@ -225,21 +227,9 @@ add_library("Datadog.Trace.ClrProfiler.Native" SHARED
   
 set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 
-find_library(LIBPTHREAD pthread)
-
 # Define linker libraries
-target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static"
-    -static-libgcc
-    -static-libstdc++
-    $<$<BOOL:${LIBPTHREAD}>:pthread>
-    ${CMAKE_DL_LIBS}
-    coreclr
-    spdlog-headers
-    -Wl,--build-id
-    -Wl,--no-undefined
-    -Wl,-version-script=${dd_profiling_linker_script}
-    -lm
-    -lc)
+target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static")
+
 
 if (UNIVERSAL)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native"
