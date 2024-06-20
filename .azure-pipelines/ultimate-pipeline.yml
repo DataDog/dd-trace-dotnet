@@ -1866,7 +1866,6 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        baseImage=$(baseImage) # for interpolation in the docker-compose file
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
           run --no-deps --rm \
           -e baseImage=$(baseImage) \
@@ -1879,6 +1878,7 @@ stages:
       displayName: docker-compose run IntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
 
     - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
@@ -1959,7 +1959,6 @@ stages:
       retryCountOnTaskFailure: 5
 
     - script: |
-        baseImage=$(baseImage) # for interpolation in the docker-compose file
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
           run --rm \
           -e baseImage=$(baseImage) \
@@ -1972,6 +1971,7 @@ stages:
       displayName: docker-compose run IntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
 
     - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) down
       displayName: docker-compose stop services
@@ -2093,7 +2093,6 @@ stages:
       retryCountOnTaskFailure: 5
 
     - script: |
-        baseImage=$(baseImage) # for interpolation in the docker-compose file
         docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
           run --rm \
           -e baseImage=$(baseImage) \
@@ -2104,6 +2103,7 @@ stages:
       displayName: docker-compose run IntegrationTests.Serverless
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
 
     - script: |
         mkdir -p tracer/build_data/docker
@@ -2243,7 +2243,6 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        baseImage=$(baseImage) # for interpolation in the docker-compose file
         docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
           run --no-deps --rm \
           -e baseImage=$(baseImage) \
@@ -2253,6 +2252,7 @@ stages:
       displayName: docker-compose run --no-deps IntegrationTests.Debugger
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
 
     - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
@@ -2661,7 +2661,6 @@ stages:
             path: $(monitoringHome)
 
         - script: |
-            baseImage=$(baseImage) # for interpolation in the docker-compose file
             docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
               run --no-deps --rm \
               -e baseImage=$(baseImage) \
@@ -2674,6 +2673,7 @@ stages:
           displayName: docker-compose run --no-deps IntegrationTests
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
+            baseImage: $(baseImage) # for interpolation in the docker-compose file
 
         - publish: tracer/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -2750,7 +2750,6 @@ stages:
           retryCountOnTaskFailure: 5
 
         - script: |
-            baseImage=$(baseImage) # for interpolation in the docker-compose file
             docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
               run --rm \
               -e baseImage=$(baseImage) \
@@ -2763,6 +2762,7 @@ stages:
           displayName: docker-compose run IntegrationTests
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
+            baseImage: $(baseImage) # for interpolation in the docker-compose file
 
         - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) down
           displayName: docker-compose stop services
@@ -2846,7 +2846,6 @@ stages:
             path: $(monitoringHome)
 
         - script: |
-            baseImage=$(baseImage) # for interpolation in the docker-compose file
             docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
               run --no-deps --rm \
               -e baseImage=$(baseImage) \
@@ -2856,6 +2855,7 @@ stages:
           displayName: docker-compose run --no-deps IntegrationTests.ARM64.Debugger
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
+            baseImage: $(baseImage) # for interpolation in the docker-compose file
 
         - publish: tracer/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -2999,7 +2999,6 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - script: |
-        baseImage=$(baseImage) # for interpolation in the docker-compose file
         docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p $(DockerComposeProjectName) \
           build \
           --build-arg baseImage=$(baseImage) \
@@ -3010,12 +3009,11 @@ stages:
           ExplorationTests
       displayName: docker-compose build ExplorationTests
       env:
-        baseImage: $(baseImage)
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
         azdo_network: $(agent.containernetwork)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - script: |
-        baseImage=$(baseImage) # for interpolation in the docker-compose file
         docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p $(DockerComposeProjectName) \
           run --rm \
           -e DD_AGENT_HOST=dd_agent \
@@ -3027,6 +3025,7 @@ stages:
           ExplorationTests
       displayName: docker-compose run ExplorationTests
       env:
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
         azdo_network: $(agent.containernetwork)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
