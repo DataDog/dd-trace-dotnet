@@ -1864,19 +1864,15 @@ stages:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
-    - task: DockerCompose@0
-      displayName: docker-compose run --no-deps IntegrationTests
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeFileArgs: |
-          baseImage=$(baseImage)
-          framework=$(publishTargetFramework)
-          runCodeCoverage=$(runCodeCoverage)
-          Filter=$(IntegrationTestFilter)
-          SampleName=$(IntegrationTestSampleName)
-          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=false  -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests
-        projectName: ddtrace_$(Build.BuildNumber)
+    - script: |
+        docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) \
+          run --no-deps --rm -e baseImage=$(baseImage) \
+          -e framework=$(publishTargetFramework) \
+          -e runCodeCoverage=$(runCodeCoverage) \
+          -e IncludeTestsRequiringDocker=false  \
+          -e Filter=$(IntegrationTestFilter) \
+          -e SampleName=$(IntegrationTestSampleName) \
+          IntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -1958,28 +1954,21 @@ stages:
       displayName: docker-compose build IntegrationTests and run StartDependencies
       retryCountOnTaskFailure: 5
 
-    - task: DockerCompose@0
+    - script: |
+        docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) \
+          run --rm -e baseImage=$(baseImage) \
+          -e framework=$(publishTargetFramework) \
+          -e runCodeCoverage=$(runCodeCoverage) \
+          -e IncludeTestsRequiringDocker=true \
+          -e Filter=$(IntegrationTestFilter) \
+          -e SampleName=$(IntegrationTestSampleName) \
+          IntegrationTests
       displayName: docker-compose run IntegrationTests
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeFileArgs: |
-          baseImage=$(baseImage)
-          runCodeCoverage=$(runCodeCoverage)
-          framework=$(publishTargetFramework)
-          Filter=$(IntegrationTestFilter)
-          SampleName=$(IntegrationTestSampleName)
-          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests
-        projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - task: DockerCompose@0
+    - script: docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) down
       displayName: docker-compose stop services
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: down
-        projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
@@ -2097,20 +2086,15 @@ stages:
       displayName: docker-compose build IntegrationTests.Serverless and run StartDependencies.Serverless
       retryCountOnTaskFailure: 5
 
-    - task: DockerCompose@0
+    - script: |
+        docker-compose -f $(COMPOSE_PATH) -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) \
+          run --rm \ 
+          -e baseImage=$(baseImage) \ 
+          -e framework=$(publishTargetFramework) \ 
+          -e lambdaBaseImage=$(lambdaBaseImage) \
+          -e runCodeCoverage=$(runCodeCoverage) \
+          IntegrationTests.Serverless
       displayName: docker-compose run IntegrationTests.Serverless
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeFileArgs: |
-          baseImage=$(baseImage)
-          framework=$(publishTargetFramework)
-          lambdaBaseImage=$(lambdaBaseImage)
-          runCodeCoverage=$(runCodeCoverage)
-          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) IntegrationTests.Serverless
-        additionalDockerComposeFiles: |
-          docker-compose.serverless.yml
-        projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -2162,14 +2146,8 @@ stages:
       condition: succeededOrFailed()
       retryCountOnTaskFailure: 5
 
-    - task: DockerCompose@0
+    - script: docker-compose -f $(COMPOSE_PATH) -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) down
       displayName: docker-compose stop services
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: down
-        projectName: ddtrace_$(Build.BuildNumber)
-        additionalDockerComposeFiles: |
-          docker-compose.serverless.yml
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
@@ -2257,17 +2235,14 @@ stages:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
-    - task: DockerCompose@0
+    - script: |
+        docker-compose -f $(COMPOSE_PATH) -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) \
+          run --no-deps --rm \ 
+          -e baseImage=$(baseImage) \ 
+          -e framework=$(publishTargetFramework) \ 
+          -e runCodeCoverage=$(runCodeCoverage) \
+          IntegrationTests.Debugger
       displayName: docker-compose run --no-deps IntegrationTests.Debugger
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeFileArgs: |
-          baseImage=$(baseImage)
-          framework=$(publishTargetFramework)
-          runCodeCoverage=$(runCodeCoverage)
-          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) IntegrationTests.Debugger
-        projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -2454,15 +2429,12 @@ stages:
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
-    - task: DockerCompose@0
+    - script: |
+        docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) \
+          run --rm \
+          -e baseImage=$(baseImage) \
+          ProfilerIntegrationTests
       displayName: docker-compose run --no-deps ProfilerIntegrationTests
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeFileArgs: |
-          baseImage=$(baseImage)
-          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) ProfilerIntegrationTests
-        projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -2680,19 +2652,17 @@ stages:
             artifact: linux-monitoring-home-linux-arm64
             path: $(monitoringHome)
 
-        - task: DockerCompose@0
+        - script: |
+            docker-compose -f $(COMPOSE_PATH) -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) \
+              run --no-deps --rm \ 
+              -e baseImage=$(baseImage) \ 
+              -e framework=$(publishTargetFramework) \ 
+              -e runCodeCoverage=$(runCodeCoverage) \ 
+              -e IncludeTestsRequiringDocker=false \ 
+              -e Filter=$(IntegrationTestFilter) \ 
+              -e SampleName=$(IntegrationTestSampleName) \ 
+              IntegrationTests.ARM64
           displayName: docker-compose run --no-deps IntegrationTests
-          inputs:
-            containerregistrytype: Container Registry
-            dockerComposeFileArgs: |
-              baseImage=$(baseImage)
-              framework=$(publishTargetFramework)
-              Filter=$(IntegrationTestFilter)
-              SampleName=$(IntegrationTestSampleName)
-              runCodeCoverage=$(runCodeCoverage)
-              DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=false -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests.ARM64
-            projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -2770,28 +2740,23 @@ stages:
           displayName: docker-compose build IntegrationTests and run StartDependencies
           retryCountOnTaskFailure: 5
 
-        - task: DockerCompose@0
+        - script: |
+            docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) \
+              run --rm \
+              -e baseImage=$(baseImage) \
+              -e framework=$(publishTargetFramework) \
+              -e runCodeCoverage=$(runCodeCoverage) \
+              -e IncludeTestsRequiringDocker=true \
+              -e Filter=$(IntegrationTestFilter) \
+              -e SampleName=$(IntegrationTestSampleName) \
+              IntegrationTests.ARM64 \
+              projectName: ddtrace_$(Build.BuildNumber)
           displayName: docker-compose run IntegrationTests
-          inputs:
-            containerregistrytype: Container Registry
-            dockerComposeFileArgs: |
-              baseImage=$(baseImage)
-              framework=$(publishTargetFramework)
-              Filter=$(IntegrationTestFilter)
-              SampleName=$(IntegrationTestSampleName)
-              runCodeCoverage=$(runCodeCoverage)
-              DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests.ARM64
-            projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-        - task: DockerCompose@0
+        - script: docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) down
           displayName: docker-compose stop services
-          inputs:
-            containerregistrytype: Container Registry
-            dockerComposeCommand: down
-            projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
           condition: succeededOrFailed()
@@ -2871,17 +2836,14 @@ stages:
             artifact: linux-monitoring-home-linux-arm64
             path: $(monitoringHome)
 
-        - task: DockerCompose@0
+        - script: |
+            docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) \
+              run --no-deps --rm \
+              -e baseImage=$(baseImage) \
+              -e framework=$(publishTargetFramework) \
+              -e runCodeCoverage=$(runCodeCoverage) \
+              IntegrationTests.ARM64.Debugger
           displayName: docker-compose run --no-deps IntegrationTests.ARM64.Debugger
-          inputs:
-            containerregistrytype: Container Registry
-            dockerComposeFileArgs: |
-              baseImage=$(baseImage)
-              framework=$(publishTargetFramework)
-              runCodeCoverage=$(runCodeCoverage)
-              DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) IntegrationTests.ARM64.Debugger
-            projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -3026,39 +2988,38 @@ stages:
         command: "SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) --explorationTestName $(explorationTestName) --framework $(publishTargetFramework)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
-    - task: DockerCompose@0
+    - script: |
+          docker-compose -f $(COMPOSE_PATH) -f docker-compose.ci.azdo.yml -p ddtrace_$(Build.BuildNumber) \
+          build \
+          --build-arg baseImage=$(baseImage) \ 
+          --build-arg explorationTestUseCase=$(explorationTestUseCase) \ 
+          --build-arg explorationTestName=$(explorationTestName) \ 
+          --build-arg framework=$(publishTargetFramework) \
+          --build-arg runCodeCoverage=$(runCodeCoverage) \
+          ExplorationTests
       displayName: docker-compose build ExplorationTests
       env:
         baseImage: $(baseImage)
         azdo_network: $(agent.containernetwork)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-      inputs:
-        containerregistrytype: Container Registry
-        additionalDockerComposeFiles: docker-compose.ci.azdo.yml
-        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) ExplorationTests
 
-    - task: DockerCompose@0
+    - script: |
+        docker-compose -f $(COMPOSE_PATH) -f docker-compose.ci.azdo.yml -p ddtrace_$(Build.BuildNumber) \
+          run --rm \
+          -e DD_AGENT_HOST=dd_agent \
+          -e baseImage=$(baseImage) \
+          -e explorationTestUseCase=$(explorationTestUseCase) \
+          -e explorationTestName=$(explorationTestName) \
+          -e framework=$(publishTargetFramework) \
+          -e runCodeCoverage=$(runCodeCoverage) \
+          ExplorationTests
       displayName: docker-compose run ExplorationTests
       env:
         azdo_network: $(agent.containernetwork)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-      inputs:
-        containerregistrytype: Container Registry
-        additionalDockerComposeFiles: docker-compose.ci.azdo.yml
-        dockerComposeFileArgs: |
-          baseImage=$(baseImage)
-          framework=$(publishTargetFramework)
-          runCodeCoverage=$(runCodeCoverage)
-          explorationTestUseCase=$(explorationTestUseCase)
-          explorationTestName=$(explorationTestName)
-        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) ExplorationTests
 
-    - task: DockerCompose@0
+    - script: docker-compose -f $(COMPOSE_PATH) -f docker-compose.ci.azdo.yml -p ddtrace_$(Build.BuildNumber) down
       displayName: docker-compose stop services
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: down
-        projectName: ddtrace_$(Build.BuildNumber)
       condition: succeededOrFailed()
       continueOnError: true
 
