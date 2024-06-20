@@ -1865,7 +1865,7 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) \
           run --no-deps --rm -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
           -e runCodeCoverage=$(runCodeCoverage) \
@@ -1955,7 +1955,7 @@ stages:
       retryCountOnTaskFailure: 5
 
     - script: |
-        docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) \
           run --rm -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
           -e runCodeCoverage=$(runCodeCoverage) \
@@ -1967,7 +1967,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - script: docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) down
+    - script: docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) down
       displayName: docker-compose stop services
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2087,7 +2087,7 @@ stages:
       retryCountOnTaskFailure: 5
 
     - script: |
-        docker-compose -f $(COMPOSE_PATH) -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) \
           run --rm \ 
           -e baseImage=$(baseImage) \ 
           -e framework=$(publishTargetFramework) \ 
@@ -2146,7 +2146,7 @@ stages:
       condition: succeededOrFailed()
       retryCountOnTaskFailure: 5
 
-    - script: docker-compose -f $(COMPOSE_PATH) -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) down
+    - script: docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) down
       displayName: docker-compose stop services
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2236,7 +2236,7 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        docker-compose -f $(COMPOSE_PATH) -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) \
           run --no-deps --rm \ 
           -e baseImage=$(baseImage) \ 
           -e framework=$(publishTargetFramework) \ 
@@ -2430,7 +2430,7 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - script: |
-        docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) \
           run --rm \
           -e baseImage=$(baseImage) \
           ProfilerIntegrationTests
@@ -2653,7 +2653,7 @@ stages:
             path: $(monitoringHome)
 
         - script: |
-            docker-compose -f $(COMPOSE_PATH) -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) \
+            docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p ddtrace_$(Build.BuildNumber) \
               run --no-deps --rm \ 
               -e baseImage=$(baseImage) \ 
               -e framework=$(publishTargetFramework) \ 
@@ -2741,7 +2741,7 @@ stages:
           retryCountOnTaskFailure: 5
 
         - script: |
-            docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) \
+            docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) \
               run --rm \
               -e baseImage=$(baseImage) \
               -e framework=$(publishTargetFramework) \
@@ -2755,7 +2755,7 @@ stages:
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-        - script: docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) down
+        - script: docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) down
           displayName: docker-compose stop services
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2837,7 +2837,7 @@ stages:
             path: $(monitoringHome)
 
         - script: |
-            docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) \
+            docker-compose -f docker-compose.yml -p ddtrace_$(Build.BuildNumber) \
               run --no-deps --rm \
               -e baseImage=$(baseImage) \
               -e framework=$(publishTargetFramework) \
@@ -2989,7 +2989,7 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - script: |
-          docker-compose -f $(COMPOSE_PATH) -f docker-compose.ci.azdo.yml -p ddtrace_$(Build.BuildNumber) \
+          docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p ddtrace_$(Build.BuildNumber) \
           build \
           --build-arg baseImage=$(baseImage) \ 
           --build-arg explorationTestUseCase=$(explorationTestUseCase) \ 
@@ -3004,7 +3004,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - script: |
-        docker-compose -f $(COMPOSE_PATH) -f docker-compose.ci.azdo.yml -p ddtrace_$(Build.BuildNumber) \
+        docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p ddtrace_$(Build.BuildNumber) \
           run --rm \
           -e DD_AGENT_HOST=dd_agent \
           -e baseImage=$(baseImage) \
@@ -3018,7 +3018,7 @@ stages:
         azdo_network: $(agent.containernetwork)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - script: docker-compose -f $(COMPOSE_PATH) -f docker-compose.ci.azdo.yml -p ddtrace_$(Build.BuildNumber) down
+    - script: docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p ddtrace_$(Build.BuildNumber) down
       displayName: docker-compose stop services
       condition: succeededOrFailed()
       continueOnError: true
