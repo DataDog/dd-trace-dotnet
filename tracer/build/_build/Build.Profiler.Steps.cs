@@ -30,7 +30,6 @@ partial class Build
         .Unlisted()
         .Description("Compiles the native profiler assets")
         .DependsOn(CompileProfilerNativeSrcWindows)
-        .DependsOn(CompileProfilerNativeTestsWindows)
         .DependsOn(CompileProfilerNativeSrcLinux);
 
     Target CompileProfilerNativeTests => _ => _

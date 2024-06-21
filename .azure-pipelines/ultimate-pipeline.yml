@@ -116,7 +116,7 @@ variables:
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
   # Only run code coverage when requested
   # Coverlet relies on IL rewriting, which currently breaks tests which explictly check the IL
-  runCodeCoverage: $[eq(variables['run_code_coverage'], 'true')]
+  CodeCoverageEnabled: $[eq(variables['run_code_coverage'], 'true')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
@@ -1065,7 +1065,7 @@ stages:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
-      - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
+      - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage-enabled $(CodeCoverageEnabled)
         displayName: Build and Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1114,7 +1114,7 @@ stages:
           artifact: build-macos-native_tracer
           path: $(monitoringHome)
 
-      - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
+      - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage-enabled $(CodeCoverageEnabled)
         displayName: Build and Test
         retryCountOnTaskFailure: 1
         env:
@@ -1170,7 +1170,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)"
+        command: "BuildAndRunManagedUnitTests --code-coverage-enabled $(CodeCoverageEnabled)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: tracer/build_data
@@ -1274,7 +1274,7 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage $(runCodeCoverage)
+    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1338,7 +1338,7 @@ stages:
 
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage $(runCodeCoverage)
+    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1398,7 +1398,7 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
+    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1458,7 +1458,7 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
+    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: RunWindowsIisSecurityIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1530,7 +1530,7 @@ stages:
       workingDirectory: $(Pipeline.Workspace)
       retryCountOnTaskFailure: 5
 
-    - script: tracer\build.cmd BuildAndRunWindowsAzureFunctionsTests -Framework $(framework) --code-coverage $(runCodeCoverage)
+    - script: tracer\build.cmd BuildAndRunWindowsAzureFunctionsTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run Azure Functions tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1737,7 +1737,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
+    - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: RunWindowsIisIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1824,7 +1824,7 @@ stages:
           run --no-deps --rm \
           -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
-          -e runCodeCoverage=$(runCodeCoverage) \
+          -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
           -e IncludeTestsRequiringDocker=false  \
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
@@ -1901,7 +1901,7 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
+        docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
         docker-compose -p $(DockerComposeProjectName) run --rm StartDependencies
       env:
         baseImage: $(baseImage)
@@ -1917,7 +1917,7 @@ stages:
           run --rm \
           -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
-          -e runCodeCoverage=$(runCodeCoverage) \
+          -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
           -e IncludeTestsRequiringDocker=true \
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
@@ -2024,13 +2024,13 @@ stages:
           build \
           --build-arg baseImage=$(baseImage) \
           --build-arg framework=$(publishTargetFramework) \
-          --build-arg runCodeCoverage=$(runCodeCoverage) \
+          --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) \
           IntegrationTests.Serverless
 
         docker-compose -p $(DockerComposeProjectName) \
           -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
           -f docker-compose.serverless.yml \
-          --build-arg runCodeCoverage=$(runCodeCoverage) \
+          --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) \
           --build-arg framework=$(publishTargetFramework) \
           pull --include-deps StartDependencies.Serverless
 
@@ -2052,7 +2052,7 @@ stages:
           -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
           -e lambdaBaseImage=$(lambdaBaseImage) \
-          -e runCodeCoverage=$(runCodeCoverage) \
+          -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
           IntegrationTests.Serverless
       displayName: docker-compose run IntegrationTests.Serverless
       env:
@@ -2201,7 +2201,7 @@ stages:
           run --no-deps --rm \
           -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
-          -e runCodeCoverage=$(runCodeCoverage) \
+          -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
           IntegrationTests.Debugger
       displayName: docker-compose run --no-deps IntegrationTests.Debugger
       env:
@@ -2399,6 +2399,7 @@ stages:
       displayName: docker-compose run --no-deps ProfilerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -2619,7 +2620,7 @@ stages:
               run --no-deps --rm \
               -e baseImage=$(baseImage) \
               -e framework=$(publishTargetFramework) \
-              -e runCodeCoverage=$(runCodeCoverage) \
+              -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
               -e IncludeTestsRequiringDocker=false \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
@@ -2692,7 +2693,7 @@ stages:
             path: $(monitoringHome)
 
         - script: |
-            docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) IntegrationTests.ARM64
+            docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) IntegrationTests.ARM64
             docker-compose -p $(DockerComposeProjectName) run --rm StartDependencies.ARM64
           env:
             baseImage: $(baseImage)
@@ -2708,7 +2709,7 @@ stages:
               run --rm \
               -e baseImage=$(baseImage) \
               -e framework=$(publishTargetFramework) \
-              -e runCodeCoverage=$(runCodeCoverage) \
+              -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
               -e IncludeTestsRequiringDocker=true \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
@@ -2804,7 +2805,7 @@ stages:
               run --no-deps --rm \
               -e baseImage=$(baseImage) \
               -e framework=$(publishTargetFramework) \
-              -e runCodeCoverage=$(runCodeCoverage) \
+              -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
               IntegrationTests.ARM64.Debugger
           displayName: docker-compose run --no-deps IntegrationTests.ARM64.Debugger
           env:
@@ -2959,7 +2960,7 @@ stages:
           --build-arg explorationTestUseCase=$(explorationTestUseCase) \
           --build-arg explorationTestName=$(explorationTestName) \
           --build-arg framework=$(publishTargetFramework) \
-          --build-arg runCodeCoverage=$(runCodeCoverage) \
+          --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) \
           ExplorationTests
       displayName: docker-compose build ExplorationTests
       env:
@@ -2975,7 +2976,7 @@ stages:
           -e explorationTestUseCase=$(explorationTestUseCase) \
           -e explorationTestName=$(explorationTestName) \
           -e framework=$(publishTargetFramework) \
-          -e runCodeCoverage=$(runCodeCoverage) \
+          -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
           ExplorationTests
       displayName: docker-compose run ExplorationTests
       env:
@@ -2984,6 +2985,9 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - script: docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p $(DockerComposeProjectName) down
+      env:
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
+        azdo_network: $(agent.containernetwork)
       displayName: docker-compose stop services
       condition: succeededOrFailed()
       continueOnError: true
