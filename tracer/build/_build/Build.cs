@@ -80,7 +80,7 @@ partial class Build : NukeBuild
     readonly string BenchmarkCategory;
 
     [Parameter("Enables code coverage")]
-    readonly bool CodeCoverage;
+    readonly bool CodeCoverageEnabled;
 
     [Parameter("Enable or Disable fast developer loop")]
     readonly bool FastDevLoop;

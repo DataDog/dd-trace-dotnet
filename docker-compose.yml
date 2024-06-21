@@ -439,7 +439,7 @@ services:
       - Filter=${Filter:- } #optional
       - SampleName=${SampleName:- } #optional
       - baseImage=${baseImage:-default}
-      - CodeCoverage=${runCodeCoverage:-true}
+      - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
@@ -531,7 +531,7 @@ services:
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
       - targetplatform=${targetplatform:-x64}
-      - CodeCoverage=${runCodeCoverage:-true}
+      - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
@@ -582,7 +582,7 @@ services:
       - baseImage=${baseImage:-default}
       - Filter=${Filter:-Category=Lambda}
       - File=${filter:-Category=Lambda}
-      - CodeCoverage=${runCodeCoverage:-true}
+      - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
@@ -634,7 +634,7 @@ services:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
-      - CodeCoverage=${runCodeCoverage:-true}
+      - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - explorationTestUseCase=${explorationTestUseCase:-debugger}
       - explorationTestName=${explorationTestName:-eshoponweb}
       - baseImage=${baseImage:-default}
@@ -709,7 +709,7 @@ services:
       - framework=${framework:-netcoreapp3.1}
       - Filter=${Filter:-} #optional
       - SampleName=${SampleName:- } #optional
-      - CodeCoverage=${runCodeCoverage:-true}
+      - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - baseImage=${baseImage:-debian}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
