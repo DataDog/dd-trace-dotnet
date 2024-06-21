@@ -110,7 +110,7 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
     {
         return;
     }
-
+    
     const auto& module_info = GetModuleInfo(m_corProfiler->info_, module_id);
     const auto assembly_name = module_info.assembly.name;
 
@@ -144,8 +144,9 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
         if (FAILED(hr))
         {
             Logger::Warn(
-                " * DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded: The method signature: ",
-                caller.method_signature.str(), " cannot be parsed.");
+                    "    * DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded: [MethodDef=", shared::TokenStr(&function_token),
+                    ", Type=", caller.type.name, ", Method=", caller.name, "]", ": could not parse method signature.");
+            Logger::Debug("    Method signature is: ", caller.method_signature.str());
             return;
         }
 
@@ -182,7 +183,8 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
         const auto numReJITs = m_debugger_rejit_preprocessor->RequestRejitForLoadedModules(
             std::vector{module_id}, std::vector{methodProbe},
             /* enqueueInSameThread */ true);
-        Logger::Debug("Instrument-All: Total number of ReJIT Requested: ", numReJITs);
+
+        Logger::Debug("Instrument-All: ReJIT Requested for: ", methodProbe->target_method.method_name, ". ProbeId:", methodProbe->probeId);
     }
 }
 
