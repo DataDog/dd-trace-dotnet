@@ -157,7 +157,7 @@ namespace Datadog.Trace.Configuration
 
         /// <inheritdoc />
         [PublicApi]
-        public IDictionary<string, string>? GetDictionary(string key)
+        public IDictionary<string, string?>? GetDictionary(string key)
         {
             return _sources.Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null))
                            .FirstOrDefault(value => value != null)?.Result;
@@ -165,7 +165,7 @@ namespace Datadog.Trace.Configuration
 
         /// <inheritdoc />
         [PublicApi]
-        public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
+        public IDictionary<string, string?>? GetDictionary(string key, bool allowOptionalMappings)
         {
             return _sources.Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings, separator: ':'))
                            .FirstOrDefault(value => value != null)?.Result;
@@ -192,11 +192,11 @@ namespace Datadog.Trace.Configuration
             => _sources.Select(source => source.GetBool(key, telemetry, validator)).FirstOrDefault(value => value != null);
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        ConfigurationResult<IDictionary<string, string?>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator)
             => _sources.Select(source => source.GetDictionary(key, telemetry, validator)).FirstOrDefault(value => value != null);
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        ConfigurationResult<IDictionary<string, string?>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator, bool allowOptionalMappings, char separator)
             => _sources.Select(source => source.GetDictionary(key, telemetry, validator, allowOptionalMappings, separator)).FirstOrDefault(value => value != null);
 
         /// <inheritdoc />

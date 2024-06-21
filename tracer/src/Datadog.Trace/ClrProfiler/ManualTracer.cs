@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
@@ -18,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler
 
         private readonly IAutomaticTracer _parent;
 
-        internal ManualTracer(IAutomaticTracer parent)
+        internal ManualTracer(IAutomaticTracer? parent)
         {
             if (parent is null)
             {
@@ -31,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler
 
         bool IDistributedTracer.IsChildTracer => true;
 
-        IScope IDistributedTracer.GetActiveScope()
+        IScope? IDistributedTracer.GetActiveScope()
         {
             var activeTrace = _parent.GetDistributedTrace();
 
@@ -62,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler
 
         IReadOnlyDictionary<string, string> IDistributedTracer.GetSpanContextRaw() => _parent.GetDistributedTrace();
 
-        SpanContext IDistributedTracer.GetSpanContext()
+        SpanContext? IDistributedTracer.GetSpanContext()
         {
             var values = _parent.GetDistributedTrace();
 
@@ -76,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        void IDistributedTracer.SetSpanContext(IReadOnlyDictionary<string, string> value)
+        void IDistributedTracer.SetSpanContext(IReadOnlyDictionary<string, string>? value)
         {
             _parent.SetDistributedTrace(value);
         }

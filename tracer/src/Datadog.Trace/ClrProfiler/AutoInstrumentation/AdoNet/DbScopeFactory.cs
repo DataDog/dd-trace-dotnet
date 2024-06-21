@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -22,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
         private static bool _dbCommandCachingLogged = false;
 
-        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
+        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
             {
@@ -30,12 +32,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
             string commandText = command.CommandText;
 
             try
             {
-                Span parent = tracer.InternalActiveScope?.Span;
+                Span? parent = tracer.InternalActiveScope?.Span;
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     HasDbType(parent, dbType) &&
@@ -124,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         public static bool TryGetIntegrationDetails(
             string commandTypeFullName,
             [NotNullWhen(true)] out IntegrationId? integrationId,
-            [NotNullWhen(true)] out string dbType)
+            [NotNullWhen(true)] out string? dbType)
         {
             // TODO: optimize this switch
             switch (commandTypeFullName)
@@ -182,6 +184,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         public static class Cache<TCommand>
         {
+#nullable disable
             // ReSharper disable StaticMemberInGenericType
             // Static fields used intentionally to cache a different set of values for each TCommand.
             private static readonly Type CommandType;
@@ -318,5 +321,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return tags;
             }
         }
+#nullable enable
     }
 }

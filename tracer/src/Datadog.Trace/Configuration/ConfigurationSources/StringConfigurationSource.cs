@@ -35,7 +35,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="data">A string containing key-value pairs which are comma-separated, and for which the key and value are colon-separated.</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> of key value pairs.</returns>
         [PublicApi]
-        public static IDictionary<string, string>? ParseCustomKeyValues(string? data)
+        public static IDictionary<string, string?>? ParseCustomKeyValues(string? data)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues);
             return ParseCustomKeyValuesInternal(data, allowOptionalMappings: false);
@@ -50,18 +50,18 @@ namespace Datadog.Trace.Configuration
         /// <returns><see cref="IDictionary{TKey, TValue}"/> of key value pairs.</returns>
         [PublicApi]
         [return: NotNullIfNotNull(nameof(data))]
-        public static IDictionary<string, string>? ParseCustomKeyValues(string? data, bool allowOptionalMappings)
+        public static IDictionary<string, string?>? ParseCustomKeyValues(string? data, bool allowOptionalMappings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues_AllowOptionalMappings);
             return ParseCustomKeyValuesInternal(data, allowOptionalMappings);
         }
 
         [return: NotNullIfNotNull(nameof(data))]
-        internal static IDictionary<string, string>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings)
+        internal static IDictionary<string, string?>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings)
             => ParseCustomKeyValuesInternal(data, allowOptionalMappings, ':');
 
         [return: NotNullIfNotNull(nameof(data))]
-        internal static IDictionary<string, string>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings, char separator)
+        internal static IDictionary<string, string?>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings, char separator)
         {
             // A null return value means the key was not present,
             // and CompositeConfigurationSource depends on this behavior
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Configuration
                 return null;
             }
 
-            var dictionary = new ConcurrentDictionary<string, string>();
+            var dictionary = new ConcurrentDictionary<string, string?>();
 
             if (string.IsNullOrWhiteSpace(data))
             {
@@ -163,7 +163,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="key">The key</param>
         /// <returns><see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
         [PublicApi]
-        public IDictionary<string, string>? GetDictionary(string key)
+        public IDictionary<string, string?>? GetDictionary(string key)
         {
             return ParseCustomKeyValuesInternal(GetString(key), allowOptionalMappings: false);
         }
@@ -175,7 +175,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
         /// <returns><see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
         [PublicApi]
-        public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
+        public IDictionary<string, string?>? GetDictionary(string key, bool allowOptionalMappings)
         {
             return ParseCustomKeyValuesInternal(GetString(key), allowOptionalMappings);
         }
@@ -315,14 +315,14 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        ConfigurationResult<IDictionary<string, string?>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        ConfigurationResult<IDictionary<string, string?>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator, bool allowOptionalMappings, char separator)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings, separator);
 
-        private ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        private ConfigurationResult<IDictionary<string, string?>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator, bool allowOptionalMappings, char separator)
         {
             var value = GetString(key);
 
@@ -339,11 +339,11 @@ namespace Datadog.Trace.Configuration
             if (validator is null || validator(result))
             {
                 telemetry.Record(key, value, recordValue: true, Origin);
-                return ConfigurationResult<IDictionary<string, string>>.Valid(result);
+                return ConfigurationResult<IDictionary<string, string?>>.Valid(result);
             }
 
             telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
-            return ConfigurationResult<IDictionary<string, string>>.Invalid(result);
+            return ConfigurationResult<IDictionary<string, string?>>.Invalid(result);
         }
     }
 }

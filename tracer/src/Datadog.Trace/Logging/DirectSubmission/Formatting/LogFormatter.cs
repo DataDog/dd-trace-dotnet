@@ -62,7 +62,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
         internal string? Tags { get; private set; }
 
-        private static string StringifyGlobalTags(IReadOnlyDictionary<string, string> globalTags)
+        private static string StringifyGlobalTags(IReadOnlyDictionary<string, string?> globalTags)
         {
             if (globalTags.Count == 0)
             {

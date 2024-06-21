@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -234,13 +235,13 @@ namespace Datadog.Trace.ClrProfiler
             Log.Debug("Legacy Initialization finished.");
         }
 
-        private static void RunShutdown(Exception ex)
+        private static void RunShutdown(Exception? ex)
         {
             InstrumentationDefinitions.Dispose();
             NativeCallTargetUnmanagedMemoryHelper.Free();
         }
 
-        internal static void InitializeNoNativeParts(Stopwatch sw = null)
+        internal static void InitializeNoNativeParts(Stopwatch? sw = null)
         {
             if (Interlocked.Exchange(ref _firstNonNativePartsInitialization, 0) != 1)
             {
@@ -560,7 +561,7 @@ namespace Datadog.Trace.ClrProfiler
             TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
         }
 
-        internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null, bool raspEnabled = false)
+        internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch? sw = null, bool raspEnabled = false)
         {
             if (legacyMode)
             {
@@ -574,7 +575,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        private static void EnableCallSiteInstrumentations(InstrumentationCategory categories, Stopwatch sw, bool raspEnabled = false)
+        private static void EnableCallSiteInstrumentations(InstrumentationCategory categories, Stopwatch? sw, bool raspEnabled = false)
         {
             // Since we have no RASP especific instrumentations for now, we will only filter callsite aspects if RASP is
             // enabled and IAST is disabled. We don't expect RASP only instrumentation to be used in the near future.
@@ -583,7 +584,7 @@ namespace Datadog.Trace.ClrProfiler
 
             if (isIast || raspEnabled)
             {
-                string[] inputAspects = null;
+                string[]? inputAspects = null;
 
                 inputAspects = isIast ? AspectDefinitions.GetAspects() : AspectDefinitions.GetRaspAspects();
 
@@ -613,7 +614,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        internal static void DisableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
+        internal static void DisableTracerInstrumentations(InstrumentationCategory categories, Stopwatch? sw = null)
         {
             if (legacyMode)
             {
@@ -625,7 +626,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        private static void InitializeInstrumentationsLegacy(InstrumentationCategory categories, Stopwatch sw = null)
+        private static void InitializeInstrumentationsLegacy(InstrumentationCategory categories, Stopwatch? sw = null)
         {
             if (categories.HasFlag(InstrumentationCategory.Tracing))
             {

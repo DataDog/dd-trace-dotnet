@@ -81,7 +81,7 @@ namespace Datadog.Trace.AppSec
                 var securityTransport = new Coordinator.SecurityCoordinator(security, scope.Span!);
                 if (!securityTransport.IsBlocked)
                 {
-                    var inputData = new Dictionary<string, object>();
+                    var inputData = new Dictionary<string, object?>();
                     if (requestBody is not null)
                     {
                         inputData.Add(AddressesConstants.RequestBody, requestBody);

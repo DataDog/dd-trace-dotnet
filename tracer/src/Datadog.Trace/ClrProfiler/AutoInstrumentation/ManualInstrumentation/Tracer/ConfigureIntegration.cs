@@ -180,7 +180,7 @@ public class ConfigureIntegration
                     break;
 
                 case TracerSettingKeyConstants.ServiceNameMappingsKey:
-                    if (setting.Value is Dictionary<string, string> mappings)
+                    if (setting.Value is Dictionary<string, string?> mappings)
                     {
                         TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetServiceNameMappings);
                         tracerSettings.SetServiceNameMappingsInternal(mappings);

@@ -26,9 +26,9 @@ internal class NullConfigurationSource : IConfigurationSource, ITelemeteredConfi
 
     public bool? GetBool(string key) => null;
 
-    public IDictionary<string, string>? GetDictionary(string key) => null;
+    public IDictionary<string, string?>? GetDictionary(string key) => null;
 
-    public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) => null;
+    public IDictionary<string, string?>? GetDictionary(string key, bool allowOptionalMappings) => null;
 
     public ConfigurationResult<string>? GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         => null;
@@ -42,10 +42,10 @@ internal class NullConfigurationSource : IConfigurationSource, ITelemeteredConfi
     public ConfigurationResult<bool>? GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
         => null;
 
-    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+    public ConfigurationResult<IDictionary<string, string?>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator)
         => null;
 
-    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+    public ConfigurationResult<IDictionary<string, string?>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator, bool allowOptionalMappings, char separator)
         => null;
 
     public ConfigurationResult<T>? GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)

@@ -19,9 +19,9 @@ namespace Datadog.Trace.Configuration.Schema
         private readonly bool _peerServiceTagsEnabled;
         private readonly bool _removeClientServiceNamesEnabled;
         private readonly string _defaultServiceName;
-        private readonly IReadOnlyDictionary<string, string>? _serviceNameMappings;
+        private readonly IReadOnlyDictionary<string, string?>? _serviceNameMappings;
 
-        public DatabaseSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
+        public DatabaseSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string?>? serviceNameMappings)
         {
             _version = version;
             _peerServiceTagsEnabled = peerServiceTagsEnabled;
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Configuration.Schema
 
         public string GetServiceName(string databaseType)
         {
-            if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(databaseType, out var mappedServiceName))
+            if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(databaseType, out var mappedServiceName) && mappedServiceName != null)
             {
                 return mappedServiceName;
             }

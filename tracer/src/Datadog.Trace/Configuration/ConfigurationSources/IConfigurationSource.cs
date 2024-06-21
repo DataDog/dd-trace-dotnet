@@ -58,7 +58,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         [PublicApi]
-        IDictionary<string, string>? GetDictionary(string key);
+        IDictionary<string, string?>? GetDictionary(string key);
 
         /// <summary>
         /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
@@ -68,6 +68,6 @@ namespace Datadog.Trace.Configuration
         /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         [PublicApi]
-        IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings);
+        IDictionary<string, string?>? GetDictionary(string key, bool allowOptionalMappings);
     }
 }
