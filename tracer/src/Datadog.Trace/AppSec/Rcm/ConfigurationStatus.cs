@@ -48,6 +48,8 @@ internal record ConfigurationStatus
 
     internal bool? EnableAsm { get; set; } = null;
 
+    internal string? AutoUserInstrumMode { get; set; } = null;
+
     internal Dictionary<string, RuleOverride[]> RulesOverridesByFile { get; } = new();
 
     internal Dictionary<string, RuleData[]> RulesDataByFile { get; } = new();
@@ -57,6 +59,8 @@ internal record ConfigurationStatus
     internal Dictionary<string, RuleSet> RulesByFile { get; } = new();
 
     internal Dictionary<string, AsmFeature> AsmFeaturesByFile { get; } = new();
+
+    internal Dictionary<string, AutoUserInstrum> AutoUserInstrumByFile { get; } = new();
 
     internal Dictionary<string, JArray> CustomRulesByFile { get; } = new();
 
@@ -231,9 +235,24 @@ internal record ConfigurationStatus
                 }
 
                 // only treat asm_features as it will decide if asm gets toggled on and if we deserialize all the others
+                // (the enable of auto user instrumentation as added to asm_features)
                 _asmFeatureProduct.ProcessUpdates(this, asmFeaturesToUpdate);
                 _asmFeatureProduct.ProcessRemovals(this, asmFeaturesToRemove);
+
                 EnableAsm = !AsmFeaturesByFile.IsEmpty() && AsmFeaturesByFile.All(a => a.Value.Enabled == true);
+
+                var autoUserInstrumMode = AutoUserInstrumByFile.Values.FirstOrDefault();
+
+                // empty, one value, or all values the same are valid states, anything else is an error
+                if (autoUserInstrumMode == null ||
+                    AutoUserInstrumByFile.All(x => x.Value?.Mode == autoUserInstrumMode?.Mode))
+                {
+                    AutoUserInstrumMode = autoUserInstrumMode?.Mode?.ToLowerInvariant();
+                }
+                else
+                {
+                    AutoUserInstrumMode = "unknown value";
+                }
             }
         }
 

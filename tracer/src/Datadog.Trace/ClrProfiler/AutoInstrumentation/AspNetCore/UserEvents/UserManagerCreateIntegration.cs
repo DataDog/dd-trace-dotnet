@@ -49,7 +49,7 @@ public static class UserManagerCreateIntegration
         where TUser : IIdentityUser
     {
         var security = Security.Instance;
-        if (security.TrackUserEvents)
+        if (security.IsTrackUserEventsEnabled)
         {
             var tracer = Tracer.Instance;
             var scope = tracer.InternalActiveScope;
@@ -64,7 +64,7 @@ public static class UserManagerCreateIntegration
     {
         var security = Security.Instance;
         var user = state.State as IIdentityUser;
-        if (security.TrackUserEvents
+        if (security.IsTrackUserEventsEnabled
             && state.Scope is { Span: { } span })
         {
             var id = UserEventsCommon.GetId(user);

@@ -49,7 +49,7 @@ public static class SignInManagerPasswordSignInIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string user, string password, bool isPersistent, bool lockoutOnFailure)
     {
         var security = Security.Instance;
-        if (security.TrackUserEvents)
+        if (security.IsTrackUserEventsEnabled)
         {
             var tracer = Tracer.Instance;
             var scope = tracer.InternalActiveScope;
@@ -63,7 +63,7 @@ public static class SignInManagerPasswordSignInIntegration
         where TReturn : ISignInResult
     {
         if (!returnValue.Succeeded
-            && Security.Instance is { TrackUserEvents: true } security
+            && Security.Instance is { IsTrackUserEventsEnabled: true } security
             && state is { Scope: { Span: { } span } })
         {
             if (state.State is not string id)

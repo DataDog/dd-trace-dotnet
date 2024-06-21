@@ -50,7 +50,7 @@ public static class SignInManagerPasswordSignInUserIntegration
         where TUser : IIdentityUser
     {
         var security = Security.Instance;
-        if (security.TrackUserEvents)
+        if (security.IsTrackUserEventsEnabled)
         {
             var tracer = Tracer.Instance;
             var scope = tracer.InternalActiveScope;
@@ -63,7 +63,7 @@ public static class SignInManagerPasswordSignInUserIntegration
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TReturn : ISignInResult
     {
-        if (Security.Instance is { TrackUserEvents: true } security && state.Scope is { Span: { } span })
+        if (Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { Span: { } span })
         {
             var userExists = (state.State as IDuckType)?.Instance is not null;
             var user = state.State as IIdentityUser;

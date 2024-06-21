@@ -136,11 +136,37 @@ namespace Datadog.Trace.AppSec
 
         internal string? DdlibWafVersion => _waf?.Version;
 
-        internal bool TrackUserEvents => Enabled && Settings.UserEventsAutoInstrumentationMode != SecuritySettings.UserTrackingDisabled;
+        internal bool IsTrackUserEventsEnabled =>
+            Enabled && CalculateIsTrackUserEventsEnabled(_configurationStatus.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
 
-        internal bool IsAnonUserTrackingMode => Settings.UserEventsAutoInstrumentationMode == SecuritySettings.UserTrackingAnonMode;
+        internal bool IsAnonUserTrackingMode => CalculateIsTrackUserEventsEnabled(_configurationStatus.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
 
         internal ApiSecurity ApiSecurity { get; }
+
+        internal static bool CalculateIsTrackUserEventsEnabled(string? remote, string local)
+        {
+            if (remote is SecuritySettings.UserTrackingIdentMode or SecuritySettings.UserTrackingAnonMode)
+            {
+                return true;
+            }
+
+            if (remote is SecuritySettings.UserTrackingDisabled or not null)
+            {
+                return false;
+            }
+
+            return local is SecuritySettings.UserTrackingIdentMode or SecuritySettings.UserTrackingAnonMode;
+        }
+
+        internal static bool CalculateIsAnonUserTrackingMode(string? remote, string local)
+        {
+            if (remote == SecuritySettings.UserTrackingAnonMode)
+            {
+                return true;
+            }
+
+            return local == SecuritySettings.UserTrackingAnonMode;
+        }
 
         internal void SubscribeToChanges(params string[] productNames)
         {
@@ -373,6 +399,9 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmTrustedIps, _noLocalRules);
+            // follows a different pattern to rest of ASM remote config, if available it's the RC value
+            // that takes precedence. This follows what other products do.
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmAutoUserInstrumentationMode, true);
         }
 
         private void InitWafAndInstrumentations(bool configurationFromRcm = false)

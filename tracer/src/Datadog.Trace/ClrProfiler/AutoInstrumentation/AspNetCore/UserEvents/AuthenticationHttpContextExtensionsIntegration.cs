@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         internal static CallTargetState OnMethodBegin<TTarget>(object httpContext, string scheme, ClaimsPrincipal claimPrincipal, object authProperties)
         {
             var security = Security.Instance;
-            if (security.TrackUserEvents)
+            if (security.IsTrackUserEventsEnabled)
             {
                 var tracer = Tracer.Instance;
                 var scope = tracer.InternalActiveScope;
@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
             var claimsPrincipal = state.State as ClaimsPrincipal;
             // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
             var claimsToTest = new[] { ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub", ClaimTypes.Email, ClaimTypes.Name, };
-            if (claimsPrincipal?.Claims != null && Security.Instance is { TrackUserEvents: true } security)
+            if (claimsPrincipal?.Claims != null && Security.Instance is { IsTrackUserEventsEnabled: true } security)
             {
                 var span = state.Scope.Span;
                 var setTag = TaggingUtils.GetSpanSetter(span, out _);
