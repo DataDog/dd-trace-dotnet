@@ -58,7 +58,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             {
                 using var context = waf.CreateContext();
                 var result = context.Run(args, TimeoutMicroSeconds);
-                result.Timeout.Should().BeFalse();
+                result.Timeout.Should().BeFalse("Timeout should be false");
                 result.ReturnCode.Should().Be(WafReturnCode.Match);
                 var jsonString = JsonConvert.SerializeObject(result.Data);
                 var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
@@ -142,7 +142,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
             var result = context.Run(args, TimeoutMicroSeconds);
-            result.Timeout.Should().BeFalse();
+            result.Timeout.Should().BeFalse("Timeout should be false");
             if (isAttack)
             {
                 result.ReturnCode.Should().Be(WafReturnCode.Match);

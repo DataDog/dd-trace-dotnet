@@ -35,7 +35,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, value } };
         var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
         resultEph.BlockInfo["status_code"].Should().Be("403");
-        resultEph.Timeout.Should().BeFalse();
+        resultEph.Timeout.Should().BeFalse("Timeout should be false");
         var jsonString = JsonConvert.SerializeObject(resultEph.Data);
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
         resultData.Rule.Id.Should().Be(rule);
@@ -50,7 +50,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         context = waf.CreateContext();
         context.Run(args, TimeoutMicroSeconds);
         var resultEphNew = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
-        resultEphNew.Timeout.Should().BeFalse();
+        resultEphNew.Timeout.Should().BeFalse("Timeout should be false");
         resultEphNew.BlockInfo["status_code"].Should().Be("500");
         resultEphNew.AggregatedTotalRuntimeRasp.Should().BeGreaterThan(0);
         resultEphNew.AggregatedTotalRuntimeWithBindingsRasp.Should().BeGreaterThan(0);
@@ -105,7 +105,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         waf.Should().NotBeNull();
         var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
-        result.Timeout.Should().BeFalse();
+        result.Timeout.Should().BeFalse("Timeout should be false");
         return context;
     }
 
@@ -121,7 +121,7 @@ public class RaspWafTests : WafLibraryRequiredTest
 
     private void CheckResult(string rule, string expectedAction, IResult result, string actionType)
     {
-        result.Timeout.Should().BeFalse();
+        result.Timeout.Should().BeFalse("Timeout should be false");
         result.ReturnCode.Should().Be(WafReturnCode.Match);
         result.Actions.ContainsKey(actionType).Should().BeTrue();
         var jsonString = JsonConvert.SerializeObject(result.Data);

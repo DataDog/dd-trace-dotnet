@@ -38,7 +38,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
         waf.Should().NotBeNull();
         using var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
-        result.Timeout.Should().BeFalse();
+        result.Timeout.Should().BeFalse("Timeout should be false");
         result.BlockInfo["status_code"].Should().Be("403");
         var jsonString = JsonConvert.SerializeObject(result.Data);
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
@@ -52,7 +52,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
         res.Success.Should().BeTrue();
         using var contextNew = waf.CreateContext();
         result = contextNew.Run(args, TimeoutMicroSeconds);
-        result.Timeout.Should().BeFalse();
+        result.Timeout.Should().BeFalse("Timeout should be false");
         if (actionType == BlockingAction.BlockRequestType)
         {
             result.BlockInfo["status_code"].Should().Be(newStatus.ToString());
@@ -83,7 +83,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
 
         using var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
-        result.Timeout.Should().BeFalse();
+        result.Timeout.Should().BeFalse("Timeout should be false");
         result.BlockInfo["status_code"].Should().Be("500");
     }
 

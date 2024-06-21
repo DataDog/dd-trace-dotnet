@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Xunit;
 
@@ -19,6 +20,8 @@ public class WafLibraryRequiredTest
 
     static WafLibraryRequiredTest()
     {
+        Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
+        Environment.SetEnvironmentVariable("DD_APPSEC_WAF_DEBUG", "true");
         var result = WafLibraryInvoker.Initialize();
         WafLibraryInvoker = result.WafLibraryInvoker;
     }
