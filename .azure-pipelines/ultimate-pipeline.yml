@@ -264,12 +264,12 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
+    - script: tracer\build.cmd BuildTracerHome
       displayName: Build tracer home
       retryCountOnTaskFailure: 1
 
-    - script: tracer\build.cmd CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests
-      displayName: Build and run tracer and native loader native tests
+    - script: tracer\build.cmd CompileTracerNativeTests RunTracerNativeTests
+      displayName: Build and run tracer native tests
       retryCountOnTaskFailure: 1
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -306,12 +306,12 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: tracer\build.cmd BuildProfilerHome
+    - script: tracer\build.cmd BuildProfilerHome BuildNativeLoader
       displayName: Build profiler home
       retryCountOnTaskFailure: 1
 
-    - script: tracer\build.cmd CompileProfilerNativeTests RunProfilerNativeTests
-      displayName: Build and run profiler native tests
+    - script: tracer\build.cmd CompileProfilerNativeTests RunProfilerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests
+      displayName: Build and run profiler and native loader native tests
       retryCountOnTaskFailure: 1
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -376,7 +376,7 @@ stages:
         target: builder
         baseImage: $(nativeBaseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests"
+        command: "BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests"
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -435,11 +435,11 @@ stages:
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)/linux-musl-x64
-      displayName: Uploading universal artifacts
+      displayName: Uploading linux universal artifacts
       artifact: linux-universal-home-linux-x64
 
     - publish: $(symbols)/linux-musl-x64
-      displayName: Upload linux tracer symbols
+      displayName: Upload linux universal symbols
       artifact: linux-universal-symbols-linux-x64
 
 - stage: build_linux_profiler
@@ -481,7 +481,7 @@ stages:
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
         # We only need the native wrapper for the unit tests but we do not want to publish it (universal binary)
-        command: "Clean BuildProfilerHome CompileNativeWrapper CompileProfilerNativeTests RunProfilerNativeTests CompileNativeWrapperNativeTests RunNativeWrapperNativeTests ExtractDebugInfoLinux"
+        command: "Clean BuildProfilerHome CompileNativeWrapper CompileProfilerNativeTests RunProfilerNativeTests CompileNativeWrapperNativeTests RunNativeWrapperNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
