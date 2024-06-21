@@ -126,7 +126,7 @@ namespace Datadog.Trace.Tests.Configuration
             TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
 
             TracerManager.Instance.Settings.CustomSamplingRulesInternal.Should().Be(localSamplingRulesJson);
-            TracerManager.Instance.Settings.CustomSamplingRulesInternalIsRemote.Should().BeFalse();
+            TracerManager.Instance.Settings.CustomSamplingRulesIsRemote.Should().BeFalse();
 
             var rules = ((TraceSampler)TracerManager.Instance.PerTraceSettings.TraceSampler)!.GetRules();
 
@@ -157,7 +157,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var remoteSamplingRulesJson = JsonConvert.SerializeObject(remoteSamplingRulesConfig);
             TracerManager.Instance.Settings.CustomSamplingRulesInternal.Should().Be(remoteSamplingRulesJson);
-            TracerManager.Instance.Settings.CustomSamplingRulesInternalIsRemote.Should().BeTrue();
+            TracerManager.Instance.Settings.CustomSamplingRulesIsRemote.Should().BeTrue();
 
             rules = ((TraceSampler)TracerManager.Instance.PerTraceSettings.TraceSampler)!.GetRules();
 

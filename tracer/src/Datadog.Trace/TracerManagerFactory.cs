@@ -268,7 +268,7 @@ namespace Datadog.Trace
             var samplingRulesJson = settings.CustomSamplingRulesInternal;
 
             // check if the rules are remote or local because they have different JSON schemas
-            if (settings.CustomSamplingRulesInternalIsRemote)
+            if (settings.CustomSamplingRulesIsRemote)
             {
                 // remote sampling rules
                 if (!string.IsNullOrWhiteSpace(samplingRulesJson))

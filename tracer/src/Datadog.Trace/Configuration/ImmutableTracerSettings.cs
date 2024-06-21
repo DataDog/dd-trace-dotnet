@@ -38,7 +38,7 @@ namespace Datadog.Trace.Configuration
         private readonly IReadOnlyDictionary<string, string> _globalTags;
         private readonly double? _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
-        private readonly string? _customSamplingRulesInternal;
+        private readonly string? _customSamplingRules;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class
@@ -99,7 +99,7 @@ namespace Datadog.Trace.Configuration
             AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
 #pragma warning restore 618
             MaxTracesSubmittedPerSecondInternal = settings.MaxTracesSubmittedPerSecondInternal;
-            _customSamplingRulesInternal = settings.CustomSamplingRulesInternal;
+            _customSamplingRules = settings.CustomSamplingRulesInternal;
             CustomSamplingRulesFormat = settings.CustomSamplingRulesFormat;
             SpanSamplingRules = settings.SpanSamplingRules;
             _globalSamplingRate = settings.GlobalSamplingRateInternal;
@@ -299,9 +299,9 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_CustomSamplingRules_Get)]
-        internal string? CustomSamplingRulesInternal => DynamicSettings.SamplingRules ?? _customSamplingRulesInternal;
+        internal string? CustomSamplingRulesInternal => DynamicSettings.SamplingRules ?? _customSamplingRules;
 
-        internal bool CustomSamplingRulesInternalIsRemote => DynamicSettings.SamplingRules != null;
+        internal bool CustomSamplingRulesIsRemote => DynamicSettings.SamplingRules != null;
 
         /// <summary>
         /// Gets a value indicating the format for custom sampling rules ("regex" or "glob").
