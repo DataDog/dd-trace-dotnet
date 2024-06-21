@@ -253,9 +253,7 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
             }
             else
             {
-                std::vector<std::shared_ptr<LineProbeDefinition>> lineProbeDefinitions;
                 auto key = std::make_pair(ToString(mvid), function_token);
-                std::vector<int> bytecodeOffsets;
                 auto it = lineProbesDict.find(key);
                 if (it == lineProbesDict.end())
                 {
@@ -263,7 +261,8 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
                 }
                 else
                 {
-                    bytecodeOffsets = it->second;
+                    std::vector<std::shared_ptr<LineProbeDefinition>> lineProbeDefinitions;
+                    auto bytecodeOffsets = it->second;
                     for (const auto& offset : bytecodeOffsets)
                     {
                         const auto& lineProbe = std::make_shared<LineProbeDefinition>(LineProbeDefinition(
