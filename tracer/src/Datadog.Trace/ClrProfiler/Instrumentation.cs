@@ -524,6 +524,10 @@ namespace Datadog.Trace.ClrProfiler
 
                         await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
                     }
+                    else
+                    {
+                        Log.Warning("Live Debugger could not be initialized. Reason: Discovery service.");
+                    }
                 });
         }
 
