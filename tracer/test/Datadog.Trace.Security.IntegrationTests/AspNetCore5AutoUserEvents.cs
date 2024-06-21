@@ -85,6 +85,22 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 
+    public class AspNetCore5AutoUserEventsIndentModeSecurityEnabled : AspNetCore5AutoUserEvents
+    {
+        public AspNetCore5AutoUserEventsIndentModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, true, "ident")
+        {
+        }
+    }
+
+    public class AspNetCore5AutoUserEventsAnonModeSecurityEnabled : AspNetCore5AutoUserEvents
+    {
+        public AspNetCore5AutoUserEventsAnonModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, true, "anon")
+        {
+        }
+    }
+
     public class AspNetCore5AutoUserEventsExtendedModeSecurityDisabled : AspNetCore5AutoUserEvents
     {
         public AspNetCore5AutoUserEventsExtendedModeSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
