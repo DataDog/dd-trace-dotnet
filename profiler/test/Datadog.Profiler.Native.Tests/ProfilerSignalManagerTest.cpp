@@ -103,20 +103,20 @@ TEST_F(ProfilerSignalManagerFixture, CheckTwoDifferentSignalsInstallation)
 
 TEST_F(ProfilerSignalManagerFixture, CheckThrowIfSignalAbove31)
 {
-    ASSERT_NO_THROW(ProfilerSignalManager::Get(SIGUSR1));
-    ASSERT_NO_THROW(ProfilerSignalManager::Get(SIGPROF));
+    ASSERT_NE(ProfilerSignalManager::Get(SIGUSR1), nullptr);
+    ASSERT_NE(ProfilerSignalManager::Get(SIGPROF), nullptr);
 
-    ASSERT_THROW(ProfilerSignalManager::Get(-1), std::invalid_argument);
-    ASSERT_THROW(ProfilerSignalManager::Get(0), std::invalid_argument);
-    ASSERT_THROW(ProfilerSignalManager::Get(32), std::invalid_argument);
-    ASSERT_THROW(ProfilerSignalManager::Get(33), std::invalid_argument);
-    ASSERT_THROW(ProfilerSignalManager::Get(100), std::invalid_argument);
+    ASSERT_EQ(ProfilerSignalManager::Get(-1), nullptr);
+    ASSERT_EQ(ProfilerSignalManager::Get(0), nullptr);
+    ASSERT_EQ(ProfilerSignalManager::Get(32), nullptr);
+    ASSERT_EQ(ProfilerSignalManager::Get(33), nullptr);
+    ASSERT_EQ(ProfilerSignalManager::Get(100), nullptr);
 }
 
 TEST_F(ProfilerSignalManagerFixture, CheckSignalDeRegistration)
 {
     ProfilerSignalManager* manager = nullptr;
-    ASSERT_NO_THROW(manager = ProfilerSignalManager::Get(SIGPROF));
+    ASSERT_NE(manager = ProfilerSignalManager::Get(SIGPROF), nullptr);
 
     ASSERT_TRUE(manager->UnRegisterHandler());
 
