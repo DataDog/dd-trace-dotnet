@@ -240,19 +240,6 @@ internal record ConfigurationStatus
                 _asmFeatureProduct.ProcessRemovals(this, asmFeaturesToRemove);
 
                 EnableAsm = !AsmFeaturesByFile.IsEmpty() && AsmFeaturesByFile.All(a => a.Value.Enabled == true);
-
-                var autoUserInstrumMode = AutoUserInstrumByFile.Values.FirstOrDefault();
-
-                // empty, one value, or all values the same are valid states, anything else is an error
-                if (autoUserInstrumMode == null ||
-                    AutoUserInstrumByFile.All(x => x.Value?.Mode == autoUserInstrumMode?.Mode))
-                {
-                    AutoUserInstrumMode = autoUserInstrumMode?.Mode?.ToLowerInvariant();
-                }
-                else
-                {
-                    AutoUserInstrumMode = "unknown value";
-                }
             }
         }
 

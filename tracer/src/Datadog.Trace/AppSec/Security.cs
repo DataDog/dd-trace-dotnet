@@ -136,8 +136,7 @@ namespace Datadog.Trace.AppSec
 
         internal string? DdlibWafVersion => _waf?.Version;
 
-        internal bool IsTrackUserEventsEnabled =>
-            Enabled && CalculateIsTrackUserEventsEnabled(_configurationStatus.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
+        internal bool IsTrackUserEventsEnabled => Enabled && Settings.UserEventsAutoInstrumentationMode != SecuritySettings.UserTrackingDisabled;
 
         internal bool IsAnonUserTrackingMode => CalculateIsTrackUserEventsEnabled(_configurationStatus.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
 
@@ -145,16 +144,6 @@ namespace Datadog.Trace.AppSec
 
         internal static bool CalculateIsTrackUserEventsEnabled(string? remote, string local)
         {
-            if (remote is SecuritySettings.UserTrackingIdentMode or SecuritySettings.UserTrackingAnonMode)
-            {
-                return true;
-            }
-
-            if (remote is SecuritySettings.UserTrackingDisabled or not null)
-            {
-                return false;
-            }
-
             return local is SecuritySettings.UserTrackingIdentMode or SecuritySettings.UserTrackingAnonMode;
         }
 
