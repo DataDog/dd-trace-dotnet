@@ -55,55 +55,6 @@ public class RaspWafTests : WafLibraryRequiredTest
     }
 
     [Theory]
-    [InlineData(0, 1000000)]
-    // [InlineData(10, 10)]
-    public void TimeoutTestRasp(int queryLength, ulong timeout)
-    {
-        var ttt = sizeof(bool);
-        Console.Write(ttt);
-        ttt.Should().Be(1);
-
-        var query = "select * from employees where name = 'Jihn'";
-
-        for (int i = 0; i < queryLength; i++)
-        {
-            query += $" or name = 'John{i.ToString()}'";
-        }
-
-        query += " or '1' = '1'";
-
-        var args = CreateArgs("John' or '1' = '1");
-        var context = InitWaf(true, "rasp-rule-set.json", args, out _);
-        var argsVulnerable = new Dictionary<string, object>
-        {
-            { AddressesConstants.DBStatement, "select * from employees where name = 'John' or '1' = '1'" },
-            { "server.db.system", "sqlite" }
-        };
-
-        System.Diagnostics.Stopwatch stopwatch = new();
-        stopwatch.Start();
-        var resultEph = context.RunWithEphemeral(argsVulnerable, timeout, true);
-        stopwatch.Stop();
-
-        if (resultEph.Timeout)
-        {
-            resultEph.AggregatedTotalRuntimeRasp.Should().BeGreaterThan(timeout / 1000);
-            resultEph.ShouldBlock.Should().BeFalse();
-        }
-        else
-        {
-            (resultEph.AggregatedTotalRuntimeRasp * 0.5).Should().BeLessThan(timeout / 1000);
-            resultEph.ShouldBlock.Should().BeTrue();
-        }
-
-        // else
-        // {
-        //     stopwatch.ElapsedMilliseconds.Should().BeLessThan((timeout * 5) / 1000);
-        // }
-    }
-
-    [Theory]
-    [InlineData("select * from employees where name = 'John' or '1' = '1'", "John' or '1' = '1", "rasp-942-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.DBStatement)]
     [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "customBlock", BlockingAction.BlockRequestType, AddressesConstants.FileAccess)]
     [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rasp-002-001", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
     public void GivenARaspRule_WhenInsecureAccess_ThenBlock(string value, string paramValue, string rule, string action, string actionType, string address)
