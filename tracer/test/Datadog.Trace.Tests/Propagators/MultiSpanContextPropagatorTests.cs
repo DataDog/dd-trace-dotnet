@@ -692,11 +692,11 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        [InlineData(false, false)]
-        [InlineData(false, true)]
-        [InlineData(true, false)]
-        [InlineData(true, true)]
-        public void TraceContextPrecedence_ConsistentBehaviour_WithDifferentParentId(bool extractFirst, bool w3CHeaderFirst)
+        [InlineData(false, false, "0123456789abcdef", 987654321)]
+        [InlineData(false, true, "000000003ade68b1", 3540)]
+        [InlineData(true, false, null, 3540)]
+        [InlineData(true, true, "0123456789abcdef", 987654321)]
+        public void TraceContextPrecedence_ConsistentBehaviour_WithDifferentParentId(bool extractFirst, bool w3CHeaderFirst, string lastParentId, ulong updatedSpanId)
         {
             // headers4 equivalent from system-tests
             var headers = new Mock<IHeadersCollection>();
@@ -731,7 +731,7 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId128 = new TraceId(0x1111111111111111, 4),
                            TraceId = 4,
-                           SpanId = (ulong)(w3CHeaderFirst ? 987654321 : 3540),
+                           SpanId = updatedSpanId,
                            RawTraceId = "11111111111111110000000000000004",
                            RawSpanId = w3CHeaderFirst ? "000000003ade68b1" : "0000000000000dd4",
                            SamplingPriority = 2,
@@ -740,7 +740,7 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
+                           LastParentId = lastParentId,
                        });
         }
 
