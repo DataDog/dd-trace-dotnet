@@ -17,7 +17,7 @@ using FluentAssertions;
 using Xunit;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
-namespace Datadog.Trace.Rasp.Unit.Tests;
+namespace Datadog.Trace.Security.Unit.Tests;
 
 public class RaspWafTests : WafLibraryRequiredTest
 {
@@ -35,6 +35,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, value } };
         var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
         resultEph.BlockInfo["status_code"].Should().Be("403");
+        resultEph.Timeout.Should().BeFalse();
         var jsonString = JsonConvert.SerializeObject(resultEph.Data);
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
         resultData.Rule.Id.Should().Be(rule);
@@ -49,6 +50,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         context = waf.CreateContext();
         context.Run(args, TimeoutMicroSeconds);
         var resultEphNew = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
+        resultEphNew.Timeout.Should().BeFalse();
         resultEphNew.BlockInfo["status_code"].Should().Be("500");
         resultEphNew.AggregatedTotalRuntimeRasp.Should().BeGreaterThan(0);
         resultEphNew.AggregatedTotalRuntimeWithBindingsRasp.Should().BeGreaterThan(0);

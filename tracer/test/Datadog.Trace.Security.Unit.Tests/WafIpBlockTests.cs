@@ -37,6 +37,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             res.HasErrors.Should().BeFalse();
             using var context = initResult.Waf.CreateContext();
             var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, WafTests.TimeoutMicroSeconds);
+            result!.Timeout.Should().BeFalse();
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(WafReturnCode.Match);
             result!.Actions.Should().NotBeEmpty();
@@ -44,6 +45,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
                 WafTests.TimeoutMicroSeconds);
+            result!.Timeout.Should().BeFalse();
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(WafReturnCode.Ok);
             result.Actions.Should().BeEmpty();
@@ -87,6 +89,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var result = context!.Run(
                 new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
                 WafTests.TimeoutMicroSeconds);
+            result!.Timeout.Should().BeFalse();
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(WafReturnCode.Match);
             result.Actions.Should().NotBeEmpty();

@@ -37,6 +37,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.UserId, "user3" } },
                 WafTests.TimeoutMicroSeconds);
+            result!.Timeout.Should().BeFalse();
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(WafReturnCode.Match);
             result!.Actions.Should().NotBeEmpty();
@@ -44,6 +45,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.UserId, "user4" } },
                 WafTests.TimeoutMicroSeconds);
+            result!.Timeout.Should().BeFalse();
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(WafReturnCode.Ok);
             result!.Actions.Should().BeEmpty();
