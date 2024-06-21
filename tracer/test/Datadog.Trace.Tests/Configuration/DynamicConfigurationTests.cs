@@ -117,10 +117,12 @@ namespace Datadog.Trace.Tests.Configuration
             };
 
             var localSamplingRulesJson = JsonConvert.SerializeObject(localSamplingRulesConfig);
-            var configValues = new Dictionary<string, string> { { "DD_TRACE_SAMPLING_RULES", localSamplingRulesJson } };
 
-            IConfigurationSource configSource = new DictionaryConfigurationSource(configValues);
-            var tracerSettings = new TracerSettings(configSource);
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { "DD_TRACE_SAMPLING_RULES", localSamplingRulesJson }
+            });
+
             TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
 
             TracerManager.Instance.Settings.CustomSamplingRulesInternal.Should().Be(localSamplingRulesJson);
