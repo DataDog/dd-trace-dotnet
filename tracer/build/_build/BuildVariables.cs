@@ -20,7 +20,7 @@ partial class Build
         {
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES", "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
-            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH", Path.Combine(testRootPath, _lineProbesFileName));
+            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH", Path.Combine(testRootPath, LineProbesFileName));
         }
 
         envVars.Add("COMPlus_DbgEnableMiniDump", "1");
