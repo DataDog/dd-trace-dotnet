@@ -10,6 +10,10 @@
           "type": "string",
           "description": "The location to place NuGet packages and other packages. Default is ./bin/artifacts "
         },
+        "Attach": {
+          "type": "boolean",
+          "description": "Indicates if the process should wait for debugger attach"
+        },
         "AZURE_DEVOPS_PIPELINE_ID": {
           "type": "integer",
           "description": "Azure Devops pipeline id"
@@ -88,6 +92,7 @@
             "automapper",
             "cake",
             "eShopOnWeb",
+            "ilspy",
             "paket",
             "polly",
             "protobuf",
@@ -200,7 +205,7 @@
           "type": "boolean",
           "description": "Whether the current build version is a prerelease(for packaging purposes)"
         },
-        "LineScenario": {
+        "LineProbes": {
           "type": "boolean",
           "description": "Indicates whether the line probe scenario should run"
         },
@@ -227,6 +232,10 @@
         "Optimize": {
           "type": "boolean",
           "description": "Optimize generated code. Used for debugger integrations tests"
+        },
+        "Overwrite": {
+          "type": "boolean",
+          "description": "Indicates whether to overwrite existing exploration test directory or not"
         },
         "Partition": {
           "type": "string",
@@ -258,6 +267,10 @@
         "PullRequestNumber": {
           "type": "integer",
           "description": "The Pull Request number for GitHub Actions"
+        },
+        "RejitVerify": {
+          "type": "boolean",
+          "description": "Indicates whether the profiler should output files for diagnostic the instrumentation"
         },
         "Root": {
           "type": "string",
