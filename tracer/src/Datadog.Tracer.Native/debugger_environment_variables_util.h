@@ -11,6 +11,7 @@ namespace debugger
 bool IsDebuggerEnabled();
 bool IsExceptionDebuggingEnabled();
 bool IsDebuggerInstrumentAllEnabled();
+bool IsDebuggerInstrumentAllLinesEnabled();
 
 } // namespace debugger
 
