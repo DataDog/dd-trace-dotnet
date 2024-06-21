@@ -2399,6 +2399,7 @@ stages:
       displayName: docker-compose run --no-deps ProfilerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -2984,6 +2985,9 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - script: docker-compose -f docker-compose.yml -f docker-compose.ci.azdo.yml -p $(DockerComposeProjectName) down
+      env:
+        baseImage: $(baseImage) # for interpolation in the docker-compose file
+        azdo_network: $(agent.containernetwork)
       displayName: docker-compose stop services
       condition: succeededOrFailed()
       continueOnError: true
