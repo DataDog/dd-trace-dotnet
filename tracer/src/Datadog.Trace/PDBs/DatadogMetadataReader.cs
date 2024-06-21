@@ -76,7 +76,7 @@ namespace Datadog.Trace.Pdb
             if (peReader.TryOpenAssociatedPortablePdb(assembly.Location, File.OpenRead, out var metadataReaderProvider, out var pdbPath))
             {
                 pdbReader = metadataReaderProvider!.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
-                return new DatadogMetadataReader(peReader, metadataReader, pdbReader, pdbPath, null, null);
+                return new DatadogMetadataReader(peReader, metadataReader, pdbReader, pdbPath ?? assembly.Location, null, null);
             }
 
             if (!TryFindPdbFile(assembly.Location, out var pdbFullPath))
@@ -366,6 +366,12 @@ namespace Datadog.Trace.Pdb
 
             if (PdbReader != null)
             {
+                var normalizeFilePath = GetNormalizedPath(filePath);
+                if (string.IsNullOrEmpty(normalizeFilePath))
+                {
+                    return null;
+                }
+
                 const int methodDefTablePrefix = 0x06000000;
                 foreach (MethodDefinitionHandle methodDefinitionHandle in MetadataReader.MethodDefinitions)
                 {
@@ -373,7 +379,13 @@ namespace Datadog.Trace.Pdb
 
                     foreach (VendoredMicrosoftCode.System.Reflection.Metadata.SequencePoint sequencePoint in methodDebugInformation.GetSequencePoints())
                     {
-                        if (sequencePoint.IsHidden || GetDocumentName(sequencePoint.Document) != filePath)
+                        var normalizeDocumentPath = GetNormalizedPath(GetDocumentName(sequencePoint.Document));
+                        if (!string.Equals(normalizeDocumentPath, normalizeFilePath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            break;
+                        }
+
+                        if (sequencePoint.IsHidden)
                         {
                             continue;
                         }
@@ -390,6 +402,11 @@ namespace Datadog.Trace.Pdb
             }
 
             return null;
+
+            string? GetNormalizedPath(string? path)
+            {
+                return path == null ? null : Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            }
         }
 
         internal IList<string>? GetDocuments()
