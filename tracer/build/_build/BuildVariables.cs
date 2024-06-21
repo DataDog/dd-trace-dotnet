@@ -1,26 +1,26 @@
 using System.Collections.Generic;
 using System.IO;
 using Nuke.Common;
-using Logger = Serilog.Log;
 
 partial class Build
 {
-    public void AddDebuggerEnvironmentVariables(Dictionary<string, string> envVars)
+    public void AddDebuggerEnvironmentVariables(Dictionary<string, string> envVars, ExplorationTestDescription description, TargetFramework framework)
     {
         AddTracerEnvironmentVariables(envVars);
 
-        if (!DisableDynamicInstrumentationProduct)
+        if (DisableDynamicInstrumentationProduct)
         {
-            envVars.Add("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "1");
-            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
+            return;
         }
 
-        if (LineScenario)
-        {
-            var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
+        envVars.Add("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "1");
+        envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
 
+        if (LineProbes)
+        {
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES", "1");
-            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH", $"{ExplorationTestsDirectory}/{testDescription.Name}/lineprobes");
+            var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
+            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH", Path.Combine(testRootPath, _lineProbesFileName));
         }
 
         envVars.Add("COMPlus_DbgEnableMiniDump", "1");
@@ -61,6 +61,12 @@ partial class Build
         {
             var (arch, ext) = GetUnixArchitectureAndExtension();
             envVars.Add("CORECLR_PROFILER_PATH", MonitoringHomeDirectory / arch / $"{FileNames.NativeLoader}.{ext}");
+        }
+
+        if (RejitVerify)
+        {
+            envVars.Add("DD_WRITE_INSTRUMENTATION_TO_DISK", "1");
+            envVars.Add("CopyingOriginalModulesEnabled", "1");
         }
     }
 
