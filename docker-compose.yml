@@ -427,7 +427,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter ${Filter:- } --SampleName ${SampleName:- } --code-coverage ${runCodeCoverage:-true}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -439,7 +439,7 @@ services:
       - Filter=${Filter:- } #optional
       - SampleName=${SampleName:- } #optional
       - baseImage=${baseImage:-default}
-      - runCodeCoverage=${runCodeCoverage:-true}
+      - CodeCoverage=${runCodeCoverage:-true}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
@@ -520,7 +520,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true} --targetplatform x64
+    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -530,7 +530,8 @@ services:
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
-      - runCodeCoverage=${runCodeCoverage:-true}
+      - targetplatform=${targetplatform:-x64}
+      - CodeCoverage=${runCodeCoverage:-true}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
@@ -569,7 +570,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-net6.0} --filter Category=Lambda --code-coverage ${runCodeCoverage:-true}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -577,9 +578,11 @@ services:
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
-      - framework=${framework:-netcoreapp3.1}
+      - framework=${framework:-net6.0}
       - baseImage=${baseImage:-default}
-      - runCodeCoverage=${runCodeCoverage:-true}
+      - Filter=${Filter:-Category=Lambda}
+      - File=${filter:-Category=Lambda}
+      - CodeCoverage=${runCodeCoverage:-true}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
@@ -622,7 +625,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true}
+    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
     cap_add:
@@ -631,7 +634,7 @@ services:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
-      - runCodeCoverage=${runCodeCoverage:-true}
+      - CodeCoverage=${runCodeCoverage:-true}
       - explorationTestUseCase=${explorationTestUseCase:-debugger}
       - explorationTestName=${explorationTestName:-eshoponweb}
       - baseImage=${baseImage:-default}
@@ -695,7 +698,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --filter ${Filter:- } --SampleName ${SampleName:- }  --framework ${framework:-netcoreapp3.1}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -704,8 +707,9 @@ services:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
-      - Filter=${Filter:- } #optional
+      - Filter=${Filter:-} #optional
       - SampleName=${SampleName:- } #optional
+      - CodeCoverage=${runCodeCoverage:-true}
       - baseImage=${baseImage:-debian}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
@@ -790,7 +794,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --targetplatform x64
+    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -800,6 +804,7 @@ services:
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-debian}
+      - targetplatform=${targetplatform:-x64}
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
