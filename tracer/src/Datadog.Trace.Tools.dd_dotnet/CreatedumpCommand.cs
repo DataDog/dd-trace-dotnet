@@ -346,7 +346,7 @@ internal class CreatedumpCommand : Command
 
             if (typeName != null)
             {
-                if (typeName.EndsWith("BlockingMiddleware"))
+                if (typeName.Contains("BlockingMiddleware"))
                 {
                     return false;
                 }

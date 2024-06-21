@@ -116,30 +116,21 @@ namespace Datadog.Trace.Tests.Configuration
             // sampling rules is null by default
             TracerManager.Instance.Settings.RemoteSamplingRules.Should().BeNull();
 
-            var traceSampler = TracerManager.Instance.PerTraceSettings.TraceSampler as TraceSampler;
-            traceSampler!.GetRules().Should().ContainSingle().And.AllBeOfType<AgentSamplingRule>();
+            var singleAgentRuleOnly = ((TraceSampler)TracerManager.Instance.PerTraceSettings.TraceSampler)!.GetRules();
+            singleAgentRuleOnly.Should().ContainSingle().And.AllBeOfType<AgentSamplingRule>();
 
-            const string samplingRulesJson = """
-                                             [{
-                                                "sample_rate": 0.5,
-                                                "provenance": "customer",
-                                                "service": "Service1",
-                                                "resource": "Resource1"
-                                             },
-                                             {
-                                                "sample_rate": 0.1,
-                                                "provenance": "dynamic",
-                                                "service": "Service2",
-                                                "resource": "Resource2"
-                                             }]
-                                             """;
+            var samplingRulesConfig = new[]
+            {
+                new { sample_rate = 0.5, provenance = "customer", service = "Service1", resource = "Resource1", },
+                new { sample_rate = 0.1, provenance = "dynamic", service = "Service2", resource = "Resource2", }
+            };
+
+            var samplingRulesJson = JsonConvert.SerializeObject(samplingRulesConfig);
 
             // set sampling rules "remotely"
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_sampling_rules", samplingRulesJson)));
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_sampling_rules", samplingRulesConfig)));
             TracerManager.Instance.Settings.RemoteSamplingRules.Should().Be(samplingRulesJson);
-
-            traceSampler = TracerManager.Instance.PerTraceSettings.TraceSampler as TraceSampler;
-            var rules = traceSampler!.GetRules();
+            var rules = ((TraceSampler)TracerManager.Instance.PerTraceSettings.TraceSampler)!.GetRules();
 
             rules.Should()
                  .BeEquivalentTo(

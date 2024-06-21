@@ -30,7 +30,14 @@ partial class Build
         .Unlisted()
         .Description("Compiles the native profiler assets")
         .DependsOn(CompileProfilerNativeSrcWindows)
-        .DependsOn(CompileProfilerNativeSrcAndTestLinux);
+        .DependsOn(CompileProfilerNativeTestsWindows)
+        .DependsOn(CompileProfilerNativeSrcLinux);
+
+    Target CompileProfilerNativeTests => _ => _
+        .Unlisted()
+        .Description("Compiles the native profiler assets")
+        .DependsOn(CompileProfilerNativeTestsWindows)
+        .DependsOn(CompileProfilerNativeTestsLinux);
 
     Target CompileProfilerNativeSrcWindows => _ => _
         .Unlisted()
@@ -65,7 +72,7 @@ partial class Build
                     .SetTargetPlatform(platform)));
         });
 
-    Target CompileProfilerNativeSrcAndTestLinux => _ => _
+    Target CompileProfilerNativeTestsLinux => _ => _
         .Unlisted()
         .Description("Compile Profiler native code")
         .OnlyWhenStatic(() => IsLinux)
@@ -77,7 +84,29 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
 
             CMake.Value(
-                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target profiler-native-tests");
+
+            if (IsAlpine)
+            {
+                // On Alpine, we do not have permission to access the file libunwind-prefix/src/libunwind/config/config.guess
+                // Make the whole folder and its content accessible by everyone to make sure the upload process does not fail
+                Chmod.Value.Invoke(" -R 777 " + NativeBuildDirectory);
+            }
+        });
+
+    Target CompileProfilerNativeSrcLinux => _ => _
+        .Unlisted()
+        .Description("Compile Profiler native code")
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(NativeBuildDirectory);
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target profiler-wrapper");
 
             if (IsAlpine)
             {
@@ -91,7 +120,7 @@ partial class Build
         .Unlisted()
         .Description("Run profiler native unit tests")
         .OnlyWhenStatic(() => IsLinux)
-        .After(CompileProfilerNativeSrcAndTestLinux)
+        .After(CompileProfilerNativeTestsLinux)
         .Executes(() =>
         {
             RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None);
@@ -104,7 +133,6 @@ partial class Build
 
     Target CompileProfilerNativeTestsWindows => _ => _
         .Unlisted()
-        .After(CompileProfilerNativeSrc)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -140,7 +168,10 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            RunProfilerUnitTests("Datadog.Profiler.Native.Tests", BuildConfiguration, TargetPlatform);
+            foreach (var architecture in ArchitecturesForPlatformForProfiler)
+            {
+                RunProfilerUnitTests("Datadog.Profiler.Native.Tests", BuildConfiguration, architecture);
+            }
         });
 
     Target PublishProfiler => _ => _
@@ -797,7 +828,7 @@ partial class Build
 
         AddExtraEnvVariables(envVars, additionalEnvVars);
 
-        var testsResultFile = ProfilerBuildDataDirectory / $"{testLibrary}.Results.{Platform}.{configuration}.{platform}.xml";
+        var testsResultFile = ProfilerBuildDataDirectory / "tests" / $"{testLibrary}.Results.{Platform}.{configuration}.{platform}.xml";
         var testExe = ToolResolver.GetLocalTool(exePath);
         testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory, environmentVariables: envVars);
     }
