@@ -7,6 +7,8 @@
 #include "debugger_members.h"
 #include "fault_tolerant_method_duplicator.h"
 
+#include <map>
+
 // forward declaration
 
 namespace fault_tolerant
@@ -28,6 +30,7 @@ private:
     std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
     std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> m_fault_tolerant_method_duplicator = nullptr;
     bool is_debugger_or_exception_debugging_enabled = false;
+    std::map<std::pair<std::string, int>, std::vector<int>> explorationTestLineProbes;
 
     static bool IsCoreLibOr3rdParty(const WSTRING& assemblyName);
     static WSTRING GenerateRandomProbeId();
@@ -54,6 +57,7 @@ public:
                    debugger::DebuggerRemoveProbesDefinition* removeProbes, int removeProbesLength);
     static int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
     void PerformInstrumentAllIfNeeded(const ModuleID& module_id, const mdToken& function_token);
+    std::map<std::pair<std::string, int>, std::vector<int>> GetExplorationLineProbesFromFile(const WSTRING& filename);
     const std::vector<std::shared_ptr<ProbeDefinition>>& GetProbes() const;
     DebuggerRejitPreprocessor* GetPreprocessor();
     void RequestRejitForLoadedModule(ModuleID moduleId);
