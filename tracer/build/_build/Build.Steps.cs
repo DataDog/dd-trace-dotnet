@@ -886,7 +886,7 @@ partial class Build
             loaderConfContents = Regex.Replace(
                 input: loaderConfContents,
                 pattern: @";(linux-.*?);\.\/Datadog\.",
-                replacement: $@";$1;./{arch}/Datadog.");
+                replacement: $@";$1;./$1/Datadog.");
             File.WriteAllText(assetsDirectory / FileNames.LoaderConf, contents: loaderConfContents);
 
             // Copy createLogPath.sh script and set the permissions
