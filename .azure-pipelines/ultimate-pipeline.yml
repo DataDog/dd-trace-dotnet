@@ -3777,6 +3777,12 @@ stages:
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64/linux-musl-x64
 
         - task: DownloadPipelineArtifact@2
+          displayName: Download linux universal libraries linux arm64 symbols
+          inputs:
+            artifact: linux-universal-symbols-linux-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64/linux-arm64
+
+        - task: DownloadPipelineArtifact@2
           displayName: Download dd-dotnet linux-x64 symbols
           inputs:
             artifact: dd-dotnet-symbols-linux-x64
