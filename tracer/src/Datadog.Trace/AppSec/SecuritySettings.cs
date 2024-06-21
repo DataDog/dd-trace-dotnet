@@ -99,6 +99,16 @@ namespace Datadog.Trace.AppSec
                                                      || val.Equals(UserTrackingAnonMode, StringComparison.OrdinalIgnoreCase))
                                                .ToLowerInvariant();
 
+            if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingSafeMode)
+            {
+                UserEventsAutoInstrumentationMode = UserTrackingAnonMode;
+            }
+
+            if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingExtendedMode)
+            {
+                UserEventsAutoInstrumentationMode = UserTrackingIdentMode;
+            }
+
             ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEnabled, "DD_EXPERIMENTAL_API_SECURITY_ENABLED")
                                        .AsBool(false);
 
