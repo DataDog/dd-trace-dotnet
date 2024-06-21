@@ -572,6 +572,10 @@ namespace Datadog.Trace.ClrProfiler
                     {
                         Log.Error(ex, "Error initializing live debugger.");
                     }
+                    else
+                    {
+                        Log.Warning("Live Debugger could not be initialized. Reason: Discovery service.");
+                    }
                 });
         }
 
