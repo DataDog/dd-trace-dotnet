@@ -2505,7 +2505,7 @@ partial class Build
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
                              && nativeTracerFiles.Count > 0
-                             && nativeProfilerFiles.Count > 0
+                             && (nativeProfilerFiles.Count > 0 || IsOsx) // profiler doesn't support mac 
                              && nativeLoaderFiles.Count > 0);
 
         if (hasRequiredFiles

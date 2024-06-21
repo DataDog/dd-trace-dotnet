@@ -5740,6 +5740,146 @@ stages:
     - script: tracer\build.cmd CheckSmokeTestsForErrors
       displayName: CheckSmokeTestsForErrors
 
+- stage: dotnet_tool_nuget_smoke_tests_macos
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [macos]
+
+    - job: macos
+      timeoutInMinutes: 45 # should take ~5 mins
+      strategy:
+        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_nuget_installer_macos_smoke_tests_matrix'] ]
+      variables:
+        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+        snapshotSrcDir: "$(System.DefaultWorkingDirectory)/tracer/build/smoke_test_snapshots"
+        snapshotOutputDir: "$(System.DefaultWorkingDirectory)/tracer/build_data/snapshots"
+      pool:
+        vmImage: $(vmImage)
+      
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - template: steps/install-dotnet.yml
+          parameters:
+            packageType: sdk # have to install the SDK (instead of runtime) so we get the aspnetcore runtime
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download tool runner-dotnet-tool
+          inputs:
+            artifact: runner-dotnet-tool
+            path: $(smokeTestAppDir)/artifacts
+            buildType: 'specific'
+            project: 'dd-trace-dotnet'
+            definition: 54
+            buildVersionToDownload: 'specific'
+            pipelineId: 159827
+
+
+        - script: |
+            mkdir -p tracer/build_data/snapshots
+            mkdir -p tracer/build_data/logs
+            mkdir $(smokeTestAppDir)/publish
+          displayName: create test data directories
+
+        - script: |
+            python --version
+            pip install ddapm-test-agent
+
+            # copied from run-snapshot-test
+            echo "##vso[task.setvariable variable=TOKEN]$(System.JobId)"
+            echo "##vso[task.setvariable variable=START_ENDPOINT]/test/session/start?test_session_token=$(System.JobId)"
+            echo "##vso[task.setvariable variable=TRACE_DUMP_ENDPOINT]/test/session/traces?test_session_token=$(System.JobId)"
+            echo "##vso[task.setvariable variable=STATS_DUMP_ENDPOINT]/test/session/stats?test_session_token=$(System.JobId)"
+            echo "##vso[task.setvariable variable=REQUESTS_DUMP_ENDPOINT]/test/session/requests?test_session_token=$(System.JobId)"
+            snapshotfile="smoke_test_snapshots"
+            echo "##vso[task.setvariable variable=VERIFY_ENDPOINT]/test/session/snapshot?test_session_token=$(System.JobId)&file=$(snapshotSrcDir)/$snapshotfile"
+            echo "##vso[task.setvariable variable=CURL_COMMAND]/usr/bin/curl"
+          displayName: install test agent and set variables
+
+        - script: |
+            cd $(smokeTestAppDir)
+            dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $(publishFramework) -o $(smokeTestAppDir)/publish
+          displayName: Build app
+          failOnStderr: true
+
+        - script: |
+            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/.
+          displayName: Install tracer
+
+        - script: |
+            ddapm-test-agent --port=8126 &
+            agent_pid=$(echo $!)
+            echo "##vso[task.setvariable variable=AGENT_PID]$agent_pid"
+            echo "Agent PID: $agent_pid, waiting for startup"
+
+            while ! nc -z localhost 8126; do   
+              sleep 0.1 # wait for 1/10 of the second before check again
+            done
+
+            echo "Sending initialisation request"
+            $(CURL_COMMAND) --fail "http://localhost:8126$(START_ENDPOINT)"
+          displayName: run test agent
+          env:
+            ENABLED_CHECKS: trace_count_header,meta_tracer_version_header,trace_content_length
+            SNAPSHOT_DIR: $(System.DefaultWorkingDirectory)/tracer/build/smoke_test_snapshots
+            SNAPSHOT_CI: 1
+            # ignoring 'http.client_ip' and 'network.client.ip' because it's set to '::1' here instead of expected '127.0.0.1'
+            SNAPSHOT_IGNORED_ATTRS: span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.git.commit.sha,meta._dd.git.repository_url,meta.http.client_ip,meta.network.client.ip
+
+        - script: |
+            # Based on variables set in smoke.dotnet-tool.nuget.dockerfile
+            DD_PROFILING_ENABLED=1 \
+            DD_APPSEC_ENABLED=1 \
+            DD_TRACE_DEBUG=1 \
+            ASPNETCORE_URLS=http://localhost:5000 \
+            SUPER_SECRET_CANARY=MySuperSecretCanary \
+            DD_INTERNAL_WORKAROUND_77973_ENABLED=1 \
+            COMPlus_DbgEnableMiniDump=1 \
+            COMPlus_DbgMiniDumpType=4 \
+            DOTNET_DbgMiniDumpName=$(System.DefaultWorkingDirectory)/tracer/build_data/dumps/coredump.%t.%p \
+            DD_INJECTION_ENABLED=tracer \
+            DD_INJECT_FORCE=1 \
+            DD_TELEMETRY_FORWARDER_PATH=/usr/bin/true \
+            DD_TRACE_LOG_DIRECTORY=$(System.DefaultWorkingDirectory)/tracer/build_data/logs \
+            $(smokeTestAppDir)/publish/dd-trace dotnet $(smokeTestAppDir)/publish/AspNetCoreSmokeTest.dll
+          displayName: Run the app
+
+        - script: |
+            echo "Dumping traces"
+            $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_traces.json "http://localhost:8126$(TRACE_DUMP_ENDPOINT)"
+            
+            echo "Dumping stats"
+            $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_stats.json "http://localhost:8126$(STATS_DUMP_ENDPOINT)"
+            
+            echo "Dumping all requests"
+            $(CURL_COMMAND) -o $(snapshotOutputDir)/smoke_test_requests.json "http://localhost:8126$(REQUESTS_DUMP_ENDPOINT)"
+
+            echo "Verifying snapshot session (fail on mis-match)"
+            $(CURL_COMMAND) --fail-with-body "http://localhost:8126$(VERIFY_ENDPOINT)"
+          displayName: check snapshots
+
+        - publish: tracer/build_data
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - script: ./tracer/build.sh CheckSmokeTestsForErrors
+          displayName: CheckSmokeTestsForErrors
+
+        - script: kill -15 $(AGENT_PID)
+          displayName: Close test agent
+          condition: succeededOrFailed()
+          continueOnError: true
+
 - stage: dd_dotnet_installer_failure_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [generate_variables, merge_commit_id]
@@ -5938,6 +6078,7 @@ stages:
     - nuget_installer_smoke_tests_arm64
     - nuget_installer_smoke_tests_windows
     - dotnet_tool_nuget_smoke_tests_linux
+    - dotnet_tool_nuget_smoke_tests_macos
     - dotnet_tool_smoke_tests_linux
     - dotnet_tool_self_instrument_smoke_tests_linux
     - dotnet_tool_smoke_tests_arm64
