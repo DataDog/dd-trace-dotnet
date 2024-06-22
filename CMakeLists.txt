@@ -18,14 +18,8 @@ project("Datadog.APM.Native" VERSION 2.18.0)
 option(UNIVERSAL "Build as Universal binary" OFF)
 message(STATUS "Building Native Loader and Wrapper as Universal binary: " ${UNIVERSAL})
 
-if (UNIVERSAL)
-   if (ISARM64)
-      set(TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/build/cmake/Toolchain.cmake.aarch64")
-   else()
-      set(TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/build/cmake/Toolchain.cmake.x86_64")
-   endif()
-
-   message(STATUS "Using toolchain file ${TOOLCHAIN_FILE}")
+if (CMAKE_TOOLCHAIN_FILE)
+    message(STATUS "Using toolchain file ${CMAKE_TOOLCHAIN_FILE}")
 endif()
 
 SET(OSX_ARCH ${CMAKE_OSX_ARCHITECTURES})

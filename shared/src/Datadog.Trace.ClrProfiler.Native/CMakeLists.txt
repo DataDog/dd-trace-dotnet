@@ -7,10 +7,6 @@ cmake_policy(SET CMP0015 NEW)
 
 project("Datadog.Trace.ClrProfiler.Native" VERSION 3.0.0)
 
-if (TOOLCHAIN_FILE)
-   include (${TOOLCHAIN_FILE})
-endif()
-
 if (UNIVERSAL)
    find_package(GlibcCompat REQUIRED)
    message(STATUS "Glibc Compat objects")
@@ -112,7 +108,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 # ******************************************************
 
 # Sets compiler options
-add_compile_options(-std=c++20 -fPIC -fms-extensions -g -O3)
+add_compile_options(-std=c++20 -fPIC -fms-extensions -g)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 
@@ -157,7 +153,6 @@ if (ISMACOS)
     SET(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
 endif()
 
-
 # ******************************************************
 # Define target
 # ******************************************************
@@ -184,10 +179,12 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
 target_compile_definitions("Datadog.Trace.ClrProfiler.Native.static" PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
 
 
+find_library(LIBDL dl)
+
 # Define linker libraries
 if (ISMACOS)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
-        ${CMAKE_DL_LIBS}
+        $<$<BOOL:${LIBDL}>:dl>
         coreclr
         spdlog-headers
     )
@@ -198,14 +195,12 @@ elseif(ISLINUX)
         -static-libgcc
         -static-libstdc++
         $<$<BOOL:${LIBPTHREAD}>:pthread>
-        ${CMAKE_DL_LIBS}
+        $<$<BOOL:${LIBDL}>:dl>
         coreclr
         spdlog-headers
         -Wl,--build-id
         -Wl,-version-script=${dd_profiling_linker_script}
         -Wl,--no-undefined
-        -lm
-        -lc
     )
 endif()
 

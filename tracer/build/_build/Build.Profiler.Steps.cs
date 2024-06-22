@@ -126,7 +126,7 @@ partial class Build
 
             if (AsUniversal)
             {
-                additionalArgs += "-DUNIVERSAL=ON";
+                additionalArgs = $"-DUNIVERSAL=ON -DCMAKE_TOOLCHAIN_FILE=./build/cmake/Universal.cmake.{(IsArm64 ? "aarch64" : "x86_64")}";
             }
 
             CMake.Value(
