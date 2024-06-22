@@ -16,7 +16,8 @@ set(CMAKE_C_FLAGS ${c_cxx_flags})
 set(CMAKE_CXX_COMPILER_TARGET ${triple})
 set(CMAKE_CXX_FLAGS "-stdlib=libc++ ${c_cxx_flags}")
 
-set(linker_flags "-v -fuse-ld=lld-16 -nodefaultlibs -Wl,-Bstatic -lc++ -lc++abi ${sysroot}/usr/lib/libclang_rt.builtins.a -lunwind -Wl,-Bdynamic -lc ${sysroot}/usr/lib/libclang_rt.builtins.a -Wl,--dynamic-linker,${sysroot}/lib/${interpreter} -Wl,-rpath=${sysroot} -resource-dir ${sysroot}/usr/lib/resource_dir -Wl,--gc-sections -Wl,--discard-all -Wl,--icf=safe -Wl,--print-icf-sections")
+# To debug linker add -v
+set(linker_flags "-fuse-ld=lld-16 -nodefaultlibs -Wl,-Bstatic -lc++ -lc++abi ${sysroot}/usr/lib/libclang_rt.builtins.a -lunwind -Wl,-Bdynamic -lc ${sysroot}/usr/lib/libclang_rt.builtins.a -Wl,--dynamic-linker,${sysroot}/lib/${interpreter} -Wl,-rpath=${sysroot} -resource-dir ${sysroot}/usr/lib/resource_dir -Wl,--gc-sections -Wl,--discard-all -Wl,--icf=safe -Wl,--print-icf-sections")
 set(CMAKE_EXE_LINKER_FLAGS_INIT "${linker_flags} -Wl,--dynamic-linker,${sysroot}/lib/${interpreter}")
 set(CMAKE_SHARED_LINKER_FLAGS_INIT ${linker_flags})
 

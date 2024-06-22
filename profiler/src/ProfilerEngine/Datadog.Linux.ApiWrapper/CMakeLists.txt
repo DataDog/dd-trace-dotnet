@@ -16,10 +16,6 @@ if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
     add_compile_options(-DDD_ALPINE)
 endif()
 
-if (TOOLCHAIN_FILE)
-   include (${TOOLCHAIN_FILE})
-endif()
-
 # ******************************************************
 # Environment detection
 # ******************************************************
