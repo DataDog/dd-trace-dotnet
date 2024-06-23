@@ -264,12 +264,12 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: tracer\build.cmd BuildTracerHome
+    - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
       retryCountOnTaskFailure: 1
 
-    - script: tracer\build.cmd CompileTracerNativeTests RunTracerNativeTests
-      displayName: Build and run tracer native tests
+    - script: tracer\build.cmd CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests
+      displayName: Build and run tracer and native loader native tests
       retryCountOnTaskFailure: 1
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -306,12 +306,12 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: tracer\build.cmd BuildProfilerHome BuildNativeLoader
+    - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
       retryCountOnTaskFailure: 1
 
-    - script: tracer\build.cmd CompileProfilerNativeTests RunProfilerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests
-      displayName: Build and run profiler and native loader native tests
+    - script: tracer\build.cmd CompileProfilerNativeTests RunProfilerNativeTests
+      displayName: Build and run profiler native tests
       retryCountOnTaskFailure: 1
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -3300,7 +3300,7 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, build_windows_profiler, build_linux_tracer, build_linux_profiler, build_arm64_tracer, build_arm64_profiler, build_macos, build_dd_dotnet_windows, build_dd_dotnet_linux, build_dd_dotnet_linux_arm64, merge_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_profiler, build_linux_tracer, build_linux_profiler, build_arm64_tracer, build_arm64_profiler, build_linux_universal, build_arm64_universal, build_macos, build_dd_dotnet_windows, build_dd_dotnet_linux, build_dd_dotnet_linux_arm64, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -3424,6 +3424,24 @@ stages:
       inputs:
         artifact: dd-dotnet-linux-arm64
         path: $(monitoringHome)/linux-arm64
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux universal artifacts 
+      inputs:
+        artifact: linux-universal-home-linux-x64
+        path: $(monitoringHome)/linux-x64
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux universal artifacts 
+      inputs:
+        artifact: linux-universal-home-linux-x64
+        path: $(monitoringHome)/linux-musl-x64
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux universal artifacts 
+      inputs:
+        artifact: linux-universal-home-linux-arm64
+        path: $(monitoringHome)/linux-x64
 
     - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
       displayName: Build Bundle, Benchmark NuGet and tools
@@ -3583,14 +3601,17 @@ stages:
           baseImage: debian
           artifactSuffix: linux-x64
           poolName: azure-linux-scale-set-2
+          targetArch: x64
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
           poolName: azure-linux-scale-set-2
+          targetArch: x64
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
           poolname: aws-arm64-auto-scaling
+          targetArch: arm64
 
     pool:
       name: $(poolName)
