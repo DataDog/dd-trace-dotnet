@@ -93,6 +93,7 @@ Configuration::Configuration()
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _enablementStatus = ExtractEnablementStatus();
     _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
+    _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -692,4 +693,9 @@ std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const
     if (value < 0ms)
         return defaultValue;
     return std::chrono::milliseconds(value);
+}
+
+bool Configuration::IsTelemetryToDiskEnabled() const
+{
+    return _isTelemetryToDiskEnabled;
 }

@@ -12,6 +12,7 @@
 #include "TagsImpl.hpp"
 
 #include "FfiHelper.h"
+#include "FileHelper.h"
 
 extern "C"
 {
@@ -105,8 +106,26 @@ bool TelemetryMetricsWorker::Start(
         return false;
     }
 
-    auto endpointUrl = agentUrl + TelemetryMetricsEndPoint;
-    auto endpoint_char = FfiHelper::StringToCharSlice(endpointUrl);
+    std::string endpointUrl;
+    ddog_CharSlice endpoint_char;
+    auto& outputDirectory = pConfiguration->GetProfilesOutputDirectory();
+    if ((pConfiguration->IsTelemetryToDiskEnabled()) && (!outputDirectory.empty()))
+    {
+#ifdef _WIN32
+        std::string separator = "\\";
+ #else
+        std::string separator = "//";
+#endif
+        std::string pathname = FileHelper::GenerateFilename("telemetry", ".json", serviceName, runtimeId);
+        endpointUrl = "file://" + outputDirectory.generic_string() + separator + pathname;
+        endpoint_char = FfiHelper::StringToCharSlice(endpointUrl);
+    }
+    else
+    {
+        endpointUrl = agentUrl + TelemetryMetricsEndPoint;
+        endpoint_char = FfiHelper::StringToCharSlice(endpointUrl);
+    }
+
     auto* endpoint = ddog_endpoint_from_url(endpoint_char);
     on_leave { ddog_endpoint_drop(endpoint); };
 

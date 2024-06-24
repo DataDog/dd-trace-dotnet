@@ -29,5 +29,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string SsiDeployed = "DD_INJECTION_ENABLED";
         public const string EtwEnabled = "DD_INTERNAL_PROFILING_ETW_ENABLED";
         public const string SsiShortLivedThreshold = "DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD";
+        public const string TelemetryToDiskEnabled = "DD_INTERNAL_PROFILING_TELEMETRY_TO_DISK_ENABLED";
     }
 }

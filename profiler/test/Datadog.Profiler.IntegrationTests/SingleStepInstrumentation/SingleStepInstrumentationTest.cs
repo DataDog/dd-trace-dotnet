@@ -26,7 +26,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckManuallyDeployedAndProfilingEnvVarNotSet(string appName, string framework, string appAssembly)
+        public void CheckManualAndProfilingEnvVarNotSet(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
@@ -47,7 +47,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckManuallyDeployedAndProfilingEnvVarSetToTrue(string appName, string framework, string appAssembly)
+        public void CheckManualAndProfilingEnvVarSetToTrue(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
 
@@ -68,7 +68,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckManuallyDeployedAndProfilingEnvVarSetToFalse(string appName, string framework, string appAssembly)
+        public void CheckManualAndProfilingEnvVarSetToFalse(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
@@ -90,7 +90,33 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckSsiDeployedAndProfilingEnvVarSetToTrue(string appName, string framework, string appAssembly)
+        public void SsiAndProfilingEnvVarSetToTrue(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            runner.Run(agent);
+            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+
+            var parser = TelemetryMetricsFileParser.LoadFromDirectory(runner.Environment.PprofDir);
+
+            var expectedTags = new[]
+            {
+                "heuristic_hypothetical_decision:no_span_short_lived",
+                "installation:ssi",
+                "enablement_choice:manually_enabled"
+            };
+            bool hasSentProfile = parser.HasSentProfile();
+            Assert.True(hasSentProfile, "We must have some serie(s) with has_sent_profiles:true");
+            Assert.True(parser.RuntimeIds.Count == 1);
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckSsiAndProfilingEnvVarSetToTrue(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
 
@@ -131,7 +157,25 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckSsiDeployedAndProfilingEnvVarSetToFalse(string appName, string framework, string appAssembly)
+        public void SsiAndProfilingEnvVarSetToFalse(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
+            runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            runner.Run(agent);
+            agent.NbCallsOnProfilingEndpoint.Should().Be(0);
+
+            var parser = TelemetryMetricsFileParser.LoadFromDirectory(runner.Environment.PprofDir);
+            Assert.True(parser == null);
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckSsiAndProfilingEnvVarSetToFalse(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
@@ -156,7 +200,30 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckSsiDeployedAndProfilingNotSsiEnabled_ShortLivedAndNoSpan(string appName, string framework, string appAssembly)
+        public void SsiAndProfilingNotSsiEnabled_ShortLivedAndNoSpan(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            // short lived
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
+            runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            runner.Run(agent);
+
+            var parser = TelemetryMetricsFileParser.LoadFromDirectory(runner.Environment.PprofDir);
+            Assert.True(parser.RuntimeIds.Count == 1, "There must be only one 'ssi_heuristic.number_of_runtime_id' serie'");
+
+            var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:no_span_short_lived", "installation:ssi", "enablement_choice:not_enabled" };
+            parser.ShouldContainTags(expectedTags);
+
+            agent.NbCallsOnProfilingEndpoint.Should().Be(0);
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckSsiAndProfilingNotSsiEnabled_ShortLivedAndNoSpan(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
@@ -194,7 +261,31 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckSsiDeployedAndProfilingNotSsiEnabled_NoSpan(string appName, string framework, string appAssembly)
+        public void SsiAndProfilingNotSsiEnabled_NoSpan(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+
+            // simulate long lived
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            runner.Run(agent);
+
+            var parser = TelemetryMetricsFileParser.LoadFromDirectory(runner.Environment.PprofDir);
+            Assert.True(parser.RuntimeIds.Count == 1, "There must be only one 'ssi_heuristic.number_of_runtime_id' serie'");
+
+            var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:no_span", "installation:ssi", "enablement_choice:not_enabled" };
+            parser.ShouldContainTags(expectedTags);
+
+            agent.NbCallsOnProfilingEndpoint.Should().Be(0);
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckSsiAndProfilingNotSsiEnabled_NoSpan(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
@@ -233,7 +324,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.BuggyBits")]
-        public void CheckSsiDeployedAndProfilingNotSsiEnabled_ShortLived(string appName, string framework, string appAssembly)
+        public void CheckSsiAndProfilingNotSsiEnabled_ShortLived(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
 
@@ -272,7 +363,45 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.BuggyBits")]
-        public void CheckSsiDeployedAndProfilingNotSsiEnabled_AllTriggered(string appName, string framework, string appAssembly)
+        public void SsiAndProfilingNotSsiEnabled_AllTriggered(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
+
+            // deployed with SSI
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            // simulate long lived
+            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            var parser = TelemetryMetricsFileParser.LoadFromDirectory(runner.Environment.PprofDir);
+            Assert.True(parser.RuntimeIds.Count == 1, "There must be only one 'ssi_heuristic.number_of_runtime_id' serie'");
+
+            var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:triggered", "installation:ssi", "enablement_choice:not_enabled" };
+            parser.RuntimeIds.ShouldContainTags(expectedTags);
+
+            var hasTriggeredSeries = false;
+            parser.RuntimeIds.Should().AllSatisfy(tm =>
+            {
+                tm.Tags.Should().HaveCount(4).And.OnlyHaveUniqueItems();
+                tm.AssertTagsContains("installation", "ssi");
+                tm.AssertTagsContains("enablement_choice", "not_enabled");
+                if (tm.Tags.Contains("has_sent_profiles", "false"))
+                {
+                    tm.AssertTagsContains("heuristic_hypothetical_decision", "triggered");
+                    hasTriggeredSeries = true;
+                }
+            });
+            hasTriggeredSeries.Should().BeTrue("We must have some triggered serie(s)");
+
+            agent.NbCallsOnProfilingEndpoint.Should().Be(0);
+        }
+
+        [TestAppFact("Samples.BuggyBits")]
+        public void CheckSsiAndProfilingNotSsiEnabled_AllTriggered(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
 
@@ -324,7 +453,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckSsiDeployedAndProfilingSsiEnabled_ShortLivedAndNoSpan(string appName, string framework, string appAssembly)
+        public void CheckSsiAndProfilingSsiEnabled_ShortLivedAndNoSpan(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
@@ -362,7 +491,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckSsiDeployedAndProfilingSsiEnabled_NoSpan(string appName, string framework, string appAssembly)
+        public void CheckSsiAndProfilingSsiEnabled_NoSpan(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
@@ -401,7 +530,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.BuggyBits")]
-        public void CheckSsiDeployedAndProfilingSsiEnabled_ShortLived(string appName, string framework, string appAssembly)
+        public void CheckSsiAndProfilingSsiEnabled_ShortLived(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
 
@@ -409,6 +538,9 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
             // short lived with span
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
+
+            // save telemetry metrics to disk instead of sending them to agent to avoid flackiness
+            runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -439,7 +571,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.BuggyBits")]
-        public void CheckSsiDeployedAndProfilingSsiEnabled_AllTriggered(string appName, string framework, string appAssembly)
+        public void CheckSsiAndProfilingSsiEnabled_AllTriggered(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
 
@@ -491,7 +623,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.BuggyBits")]
-        public void CheckSsiDeployedAndProfilingSsiEnabled_Delayed(string appName, string framework, string appAssembly)
+        public void CheckSsiAndProfilingSsiEnabled_Delayed(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
 

@@ -73,6 +73,7 @@ public:
     EnablementStatus GetEnablementStatus() const override;
     DeploymentMode GetDeploymentMode() const override;
     std::chrono::milliseconds GetSsiLongLivedThreshold() const override;
+    bool IsTelemetryToDiskEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -162,4 +163,5 @@ private:
     bool _isEtwLoggingEnabled;
     EnablementStatus _enablementStatus;
     std::chrono::milliseconds _ssiLongLivedThreshold;
+    bool _isTelemetryToDiskEnabled;
 };
