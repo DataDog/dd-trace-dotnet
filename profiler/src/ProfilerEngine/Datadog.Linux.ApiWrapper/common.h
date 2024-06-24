@@ -1,4 +1,6 @@
 
+#include <pthread.h>
+
 #define END(...) END_(__VA_ARGS__)
 // cppcheck-suppress preprocessorErrorDirective
 #define END_(...) __VA_ARGS__##_END
@@ -26,9 +28,12 @@
 #endif
 #endif
 
+int __dd_pthread_once(pthread_once_t *control, void (*init)(void));
+
 extern int (*volatile dd_set_shared_memory)(volatile int*);
 
 int is_interrupted_by_profiler(int rc, int error_code, int interrupted_by_profiler);
 int __dd_set_shared_memory(volatile int* mem);
 
 void *__dd_dlsym(void *handle, const char *symbol);
+void ensure_libpthread_is_loaded();
