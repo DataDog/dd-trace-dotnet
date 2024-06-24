@@ -83,7 +83,16 @@ internal readonly partial struct SecurityCoordinator
         IResult? result = null;
         try
         {
-            var additiveContext = _httpTransport.GetAdditiveContext();
+            IContext? additiveContext;
+            try
+            {
+                additiveContext = _httpTransport.GetAdditiveContext();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Context.Features is null and we can't access it
+                return null;
+            }
 
             if (additiveContext == null)
             {
