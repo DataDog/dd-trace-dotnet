@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
@@ -28,6 +29,8 @@ namespace Datadog.Trace.AppSec.Rcm;
 /// </summary>
 internal record ConfigurationStatus
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationStatus>();
+
     internal const string WafRulesKey = "rules";
     internal const string WafRulesOverridesKey = "rules_override";
     internal const string WafExclusionsKey = "exclusions";
@@ -242,17 +245,9 @@ internal record ConfigurationStatus
                 EnableAsm = !AsmFeaturesByFile.IsEmpty() && AsmFeaturesByFile.All(a => a.Value.Enabled == true);
 
                 var autoUserInstrumMode = AutoUserInstrumByFile.Values.FirstOrDefault();
-
-                // empty, one value, or all values the same are valid states, anything else is an error
-                if (autoUserInstrumMode == null ||
-                    AutoUserInstrumByFile.All(x => x.Value?.Mode == autoUserInstrumMode?.Mode))
-                {
-                    AutoUserInstrumMode = autoUserInstrumMode?.Mode?.ToLowerInvariant();
-                }
-                else
-                {
-                    AutoUserInstrumMode = "unknown value";
-                }
+                Log.Information("autoUserInstrumModes: {AutoUserInstrumMode}", string.Join(",", AutoUserInstrumByFile.Values.Select(x => x?.Mode)));
+                AutoUserInstrumMode = autoUserInstrumMode?.Mode?.ToLowerInvariant();
+                Log.Information("AutoUserInstrumMode: {AutoUserInstrumMode}", AutoUserInstrumMode);
             }
         }
 

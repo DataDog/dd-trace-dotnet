@@ -139,7 +139,7 @@ namespace Datadog.Trace.AppSec
         internal bool IsTrackUserEventsEnabled =>
             Enabled && CalculateIsTrackUserEventsEnabled(_configurationStatus.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
 
-        internal bool IsAnonUserTrackingMode => CalculateIsTrackUserEventsEnabled(_configurationStatus.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
+        internal bool IsAnonUserTrackingMode => CalculateIsAnonUserTrackingMode(_configurationStatus.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
 
         internal ApiSecurity ApiSecurity { get; }
 
@@ -160,11 +160,15 @@ namespace Datadog.Trace.AppSec
 
         internal static bool CalculateIsAnonUserTrackingMode(string? remote, string local)
         {
-            if (remote == SecuritySettings.UserTrackingAnonMode)
+            Log.Information("remote: {Remote}, local: {Local}", remote, local);
+
+            if (remote != null)
             {
-                return true;
+                Log.Information("CalculateIsAnonUserTrackingMode (remote == SecuritySettings.UserTrackingAnonMode): {Result}", local == SecuritySettings.UserTrackingAnonMode);
+                return remote is SecuritySettings.UserTrackingAnonMode;
             }
 
+            Log.Information("CalculateIsAnonUserTrackingMode (local == SecuritySettings.UserTrackingAnonMode): {Result}", local == SecuritySettings.UserTrackingAnonMode);
             return local == SecuritySettings.UserTrackingAnonMode;
         }
 
