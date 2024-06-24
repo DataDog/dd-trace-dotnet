@@ -284,7 +284,7 @@ stages:
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
 
-    - publish: tracer/build_data/tests
+    - publish: artifacts/build_data/tests
       displayName: publish tracer and native loader test results
       artifact: build_windows_tracer_unit_tests_results_$(System.JobAttempt)
 
@@ -401,7 +401,7 @@ stages:
       displayName: Upload linux tracer symbols
       artifact: linux-tracer-symbols-$(artifactSuffix)
 
-    - publish: tracer/build_data/tests
+    - publish: artifacts/build_data/tests
       displayName: publish tracer and native loader test results
       artifact: build_linux_tracer_unit_tests_results_$(artifactSuffix)_$(System.JobAttempt)
 
@@ -1185,7 +1185,7 @@ stages:
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-      - publish: tracer/build_data
+      - publish: artifacts/build_data
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
         condition: succeededOrFailed()
         continueOnError: true
@@ -1194,7 +1194,7 @@ stages:
         displayName: publish test results
         inputs:
           testResultsFormat: VSTest
-          testResultsFiles: tracer/build_data/results/**/*.trx
+          testResultsFiles: artifacts/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
@@ -1235,7 +1235,7 @@ stages:
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-      - publish: tracer/build_data
+      - publish: artifacts/build_data
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
         condition: succeededOrFailed()
         continueOnError: true
@@ -1244,7 +1244,7 @@ stages:
         displayName: publish test results
         inputs:
           testResultsFormat: VSTest
-          testResultsFiles: tracer/build_data/results/**/*.trx
+          testResultsFiles: artifacts/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
 - stage: unit_tests_linux
@@ -1288,7 +1288,7 @@ stages:
         command: "BuildAndRunManagedUnitTests --code-coverage-enabled $(CodeCoverageEnabled)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -1297,7 +1297,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64
@@ -1333,7 +1333,7 @@ stages:
             command: "BuildAndRunManagedUnitTests"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
-        - publish: tracer/build_data
+        - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
@@ -1342,7 +1342,7 @@ stages:
           displayName: publish test results
           inputs:
             testResultsFormat: VSTest
-            testResultsFiles: tracer/build_data/results/**/*.trx
+            testResultsFiles: artifacts/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
 - stage: integration_tests_windows
@@ -1401,10 +1401,10 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -1464,10 +1464,10 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_debugger tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -1524,10 +1524,10 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -1584,10 +1584,10 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -1656,10 +1656,10 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       displayName: Uploading tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -1861,7 +1861,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
     - script: docker compose down
@@ -1871,7 +1871,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_msi tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -1950,11 +1950,11 @@ stages:
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
     - script: |
-        sudo chmod -R 644 tracer/build_data/dumps/* || true
+        sudo chmod -R 644 artifacts/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -1963,7 +1963,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
     - publish: tracer/test/snapshots
@@ -2050,11 +2050,11 @@ stages:
       continueOnError: true
 
     - script: |
-        sudo chmod -R 644 tracer/build_data/dumps/* || true
+        sudo chmod -R 644 artifacts/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -2063,7 +2063,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
     - publish: tracer/test/snapshots
@@ -2175,7 +2175,7 @@ stages:
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
     - script: |
-        mkdir -p tracer/build_data/docker
+        mkdir -p artifacts/build_data/docker
 
         docker-compose -p $(DockerComposeProjectName) \
           -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
@@ -2230,11 +2230,11 @@ stages:
       continueOnError: true
 
     - script: |
-        sudo chmod -R 644 tracer/build_data/dumps/* || true
+        sudo chmod -R 644 artifacts/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -2243,7 +2243,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
     - publish: tracer/test/snapshots
@@ -2324,11 +2324,11 @@ stages:
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
     - script: |
-        sudo chmod -R 644 tracer/build_data/dumps/* || true
+        sudo chmod -R 644 artifacts/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -2337,7 +2337,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
     - publish: tracer/test/Datadog.Trace.Debugger.IntegrationTests/Approvals
@@ -2745,7 +2745,7 @@ stages:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
 
-        - publish: tracer/build_data
+        - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
@@ -2754,7 +2754,7 @@ stages:
           displayName: publish test results
           inputs:
             testResultsFormat: VSTest
-            testResultsFiles: tracer/build_data/results/**/*.trx
+            testResultsFiles: artifacts/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
         - publish: tracer/test/snapshots
@@ -2841,7 +2841,7 @@ stages:
           condition: succeededOrFailed()
           continueOnError: true
 
-        - publish: tracer/build_data
+        - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
@@ -2850,7 +2850,7 @@ stages:
           displayName: publish test results
           inputs:
             testResultsFormat: VSTest
-            testResultsFiles: tracer/build_data/results/**/*.trx
+            testResultsFiles: artifacts/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
         - publish: tracer/test/snapshots
@@ -2927,7 +2927,7 @@ stages:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
 
-        - publish: tracer/build_data
+        - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
@@ -2936,7 +2936,7 @@ stages:
           displayName: publish test results
           inputs:
             testResultsFormat: VSTest
-            testResultsFiles: tracer/build_data/results/**/*.trx
+            testResultsFiles: artifacts/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
         - publish: tracer/test/snapshots
@@ -3001,7 +3001,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       displayName: Uploading exploration_tests_windows tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -3107,7 +3107,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -3172,7 +3172,7 @@ stages:
         DD_API_KEY: $(ddApiKey)
         DD_DOTNET_TRACER_HOME: $(monitoringHome)
 
-    - publish: tracer/build_data/benchmarks
+    - publish: artifacts/build_data/benchmarks
       artifact: benchmarks_results_$(agent)
 
   - job: compare_benchmarks
@@ -3193,40 +3193,40 @@ stages:
       displayName: Download results BenchmarkAgent1
       inputs:
         artifact: benchmarks_results_BenchmarkAgent1
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks
 
     - task: DownloadPipelineArtifact@2
       displayName: Download results BenchmarkAgent2
       inputs:
         artifact: benchmarks_results_BenchmarkAgent2
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks
 
     - task: DownloadPipelineArtifact@2
       displayName: Download results BenchmarkAgent3
       inputs:
         artifact: benchmarks_results_BenchmarkAgent3
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks
 
     - task: DownloadPipelineArtifact@2
       displayName: Download results BenchmarkAgent4
       inputs:
         artifact: benchmarks_results_BenchmarkAgent4
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks
 
     - task: DownloadPipelineArtifact@2
       displayName: Download results BenchmarkAgent5
       inputs:
         artifact: benchmarks_results_BenchmarkAgent5
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks
 
     - task: DownloadPipelineArtifact@2
       displayName: Download results BenchmarkAgent6
       inputs:
         artifact: benchmarks_results_BenchmarkAgent6
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks
 
     # upload the combined results for simplicity in other pipelines
-    - publish: tracer/build_data/benchmarks
+    - publish: artifacts/build_data/benchmarks
       artifact: benchmarks_results
 
     - script: tracer\build.cmd CompareBenchmarksResults -BenchmarkCategory tracer
@@ -3289,7 +3289,7 @@ stages:
             DD_API_KEY: $(ddApiKey)
             DD_DOTNET_TRACER_HOME: $(monitoringHome)
 
-        - publish: tracer/build_data/benchmarks
+        - publish: artifacts/build_data/benchmarks
           artifact: benchmarks_results_$(agent)
 
     - job: compare_appsec_benchmarks
@@ -3310,10 +3310,10 @@ stages:
           displayName: Download results BenchmarkAgent7
           inputs:
             artifact: benchmarks_results_BenchmarkAgent7
-            path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+            path: $(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks
         
         # upload the combined results for simplicity in other pipelines
-        - publish: tracer/build_data/benchmarks
+        - publish: artifacts/build_data/benchmarks
           artifact: benchmarks_appsec_results
 
         - script: tracer\build.cmd CompareBenchmarksResults -BenchmarkCategory appsec
@@ -3595,7 +3595,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         enable_crash_dumps: true
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       displayName: Uploading tool_artifacts_tests_windows logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -3605,7 +3605,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
 - stage: tool_artifacts_tests_linux
@@ -3715,11 +3715,11 @@ stages:
         command: "BuildAndRunDdDotnetArtifactTests --framework net7.0"
 
     - script: |
-        sudo chmod -R 644 tracer/build_data/dumps/* || true
+        sudo chmod -R 644 artifacts/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -3728,7 +3728,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
+        testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
 - stage: store_ssi_artifacts
@@ -4460,13 +4460,13 @@ stages:
         DD_CIVISIBILITY_ITR_ENABLED: 0
 
     - powershell: |
-        mkdir -p $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
-        cp $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.$(sampleName)/results_*.json $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+        mkdir -p $(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks
+        cp $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.$(sampleName)/results_*.json $(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks
       displayName: Copy the results to benchmarks dir
       condition: succeededOrFailed()
       continueOnError: true
 
-    - publish: "$(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks"
+    - publish: "$(System.DefaultWorkingDirectory)/artifacts/build_data/benchmarks"
       displayName: Publish results
       artifact: execution_time_benchmarks_windows_x64_$(sampleName)_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -4490,13 +4490,13 @@ stages:
       displayName: Download HttpMessageHandler
       inputs:
         artifact: execution_time_benchmarks_windows_x64_HttpMessageHandler_1 #only download the first lot, ignores retries
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_HttpMessageHandler_1
+        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_HttpMessageHandler_1
 
     - task: DownloadPipelineArtifact@2
       displayName: Download FakeDbCommand
       inputs:
         artifact: execution_time_benchmarks_windows_x64_FakeDbCommand_1 #only download the first lot, ignores retries
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
+        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
 
     - script: tracer\build.cmd CompareExecutionTimeBenchmarkResults
       displayName: Compare execution-time results
@@ -4505,7 +4505,7 @@ stages:
         AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
         GITHUB_TOKEN: $(GITHUB_TOKEN)
 
-    - publish: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/execution_time_report.md
+    - publish: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/execution_time_report.md
       displayName: Upload report
       artifact: execution_time_report
 
@@ -4715,13 +4715,13 @@ stages:
     #   displayName: Download HttpMessageHandler
     #   inputs:
     #     artifact: profiler_execution_time_benchmarks_windows_x64_HttpMessageHandler_1 #only download the first lot, ignores retries
-    #     path: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_HttpMessageHandler_1
+    #     path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_HttpMessageHandler_1
 
     # - task: DownloadPipelineArtifact@2
     #   displayName: Download FakeDbCommand
     #   inputs:
     #     artifact: execution_time_benchmarks_windows_x64_FakeDbCommand_1 #only download the first lot, ignores retries
-    #     path: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
+    #     path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
 
     # - script: tracer\build.cmd CompareExecutionTimeBenchmarkResults
     #   displayName: Compare execution-time results
@@ -4730,7 +4730,7 @@ stages:
     #     AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
     #     GITHUB_TOKEN: $(GITHUB_TOKEN)
 
-    # - publish: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/execution_time_report.md
+    # - publish: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/execution_time_report.md
     #   displayName: Upload report
     #   artifact: execution_time_report
 
@@ -4875,8 +4875,8 @@ stages:
         path: $(smokeTestAppDir)/artifacts
 
     - script: |
-        mkdir -p tracer/build_data/snapshots
-        mkdir -p tracer/build_data/logs
+        mkdir -p artifacts/build_data/snapshots
+        mkdir -p artifacts/build_data/logs
       displayName: create test data directories
 
     # Run the "normal" installer smoke tests
@@ -4915,7 +4915,7 @@ stages:
       parameters:
         target: 'dd-dotnet-smoke-tests'
         snapshotPrefix: "smoke_test"
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -4996,7 +4996,7 @@ stages:
             target: 'dd-dotnet-chiseled-smoke-tests'
             snapshotPrefix: "smoke_test"
 
-        - publish: tracer/build_data
+        - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
@@ -5040,8 +5040,8 @@ stages:
         path: $(smokeTestAppDir)/artifacts
 
     - script: |
-        mkdir -p tracer/build_data/snapshots
-        mkdir -p tracer/build_data/logs
+        mkdir -p artifacts/build_data/snapshots
+        mkdir -p artifacts/build_data/logs
       displayName: create test data directories
 
     - script: |
@@ -5080,7 +5080,7 @@ stages:
         target: 'nuget-dddotnet-smoke-tests'
         snapshotPrefix: "smoke_test"
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -5124,8 +5124,8 @@ stages:
         path: $(smokeTestAppDir)/artifacts
 
     - script: |
-        mkdir -p tracer/build_data/snapshots
-        mkdir -p tracer/build_data/logs
+        mkdir -p artifacts/build_data/snapshots
+        mkdir -p artifacts/build_data/logs
       displayName: create test data directories
 
     - script: |
@@ -5144,7 +5144,7 @@ stages:
         target: 'dotnet-tool-nuget-smoke-tests'
         snapshotPrefix: "smoke_test"
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -5189,8 +5189,8 @@ stages:
         path: $(Agent.TempDirectory)
 
     - script: |
-        mkdir -p tracer/build_data/snapshots
-        mkdir -p tracer/build_data/logs
+        mkdir -p artifacts/build_data/snapshots
+        mkdir -p artifacts/build_data/logs
         mkdir -p $(smokeTestAppDir)/artifacts
         tar -xf $(Agent.TempDirectory)/dd-trace-$(platformSuffix).tar.gz -C $(smokeTestAppDir)/artifacts
         chmod +x $(smokeTestAppDir)/artifacts/dd-trace
@@ -5212,7 +5212,7 @@ stages:
         target: 'dotnet-tool-smoke-tests'
         snapshotPrefix: "smoke_test"
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -5267,8 +5267,8 @@ stages:
         path: $(Agent.TempDirectory)
 
     - script: |
-        mkdir -p tracer/build_data/snapshots
-        mkdir -p tracer/build_data/logs
+        mkdir -p artifacts/build_data/snapshots
+        mkdir -p artifacts/build_data/logs
         tar -xf $(Agent.TempDirectory)/dd-trace-$(platformSuffix).tar.gz -C $(smokeTestAppDir)/artifacts
         chmod +x $(smokeTestAppDir)/artifacts/dd-trace
       displayName: create test data directories and extract tool
@@ -5290,7 +5290,7 @@ stages:
         target: 'dotnet-tool-self-instrument-smoke-tests'
         snapshotPrefix: "smoke_test"
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -5334,8 +5334,8 @@ stages:
             path: $(smokeTestAppDir)/artifacts
 
         - script: |
-            mkdir -p tracer/build_data/snapshots
-            mkdir -p tracer/build_data/logs
+            mkdir -p artifacts/build_data/snapshots
+            mkdir -p artifacts/build_data/logs
           displayName: create test data directories
 
         # Run the "normal" installer smoke tests 
@@ -5374,7 +5374,7 @@ stages:
             target: 'dd-dotnet-smoke-tests'
             snapshotPrefix: "smoke_test"
 
-        - publish: tracer/build_data
+        - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
@@ -5454,7 +5454,7 @@ stages:
             target: 'dd-dotnet-chiseled-arm64-smoke-tests'
             snapshotPrefix: "smoke_test"
 
-        - publish: tracer/build_data
+        - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
@@ -5498,8 +5498,8 @@ stages:
         path: $(smokeTestAppDir)/artifacts
 
     - script: |
-        mkdir -p tracer/build_data/snapshots
-        mkdir -p tracer/build_data/logs
+        mkdir -p artifacts/build_data/snapshots
+        mkdir -p artifacts/build_data/logs
       displayName: create test data directories
 
     - script: |
@@ -5538,7 +5538,7 @@ stages:
         target: 'nuget-dddotnet-smoke-tests'
         snapshotPrefix: "smoke_test"
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -5578,8 +5578,8 @@ stages:
         path: $(Agent.TempDirectory)
 
     - script: |
-        mkdir -p tracer/build_data/snapshots
-        mkdir -p tracer/build_data/logs
+        mkdir -p artifacts/build_data/snapshots
+        mkdir -p artifacts/build_data/logs
         mkdir -p $(smokeTestAppDir)/artifacts
         tar -xf $(Agent.TempDirectory)/dd-trace-$(platformSuffix).tar.gz -C $(smokeTestAppDir)/artifacts
         chmod +x $(smokeTestAppDir)/artifacts/dd-trace
@@ -5601,7 +5601,7 @@ stages:
         target: 'dotnet-tool-smoke-tests'
         snapshotPrefix: "smoke_test"
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -5724,8 +5724,8 @@ stages:
         path: $(smokeTestAppDir)/artifacts
 
     - powershell: |
-        mkdir -p tracer/build_data/snapshots
-        mkdir -p tracer/build_data/logs
+        mkdir -p artifacts/build_data/snapshots
+        mkdir -p artifacts/build_data/logs
       displayName: create test data directories
 
     - bash: |
@@ -5766,7 +5766,7 @@ stages:
         snapshotPrefix: "smoke_test"
         isLinux: false
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -5809,8 +5809,8 @@ stages:
         path: $(Agent.TempDirectory)
 
     - powershell: |
-        mkdir -f -p tracer/build_data/snapshots
-        mkdir -f -p tracer/build_data/logs
+        mkdir -f -p artifacts/build_data/snapshots
+        mkdir -f -p artifacts/build_data/logs
         mkdir -f -p $(smokeTestAppDir)/artifacts
         mv $(Agent.TempDirectory)/*.zip $(smokeTestAppDir)/artifacts/dd-trace-win.zip
       displayName: Create test data directories
@@ -5833,7 +5833,7 @@ stages:
         snapshotPrefix: "smoke_test"
         isLinux: false
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -5876,8 +5876,8 @@ stages:
         path: $(Agent.TempDirectory)
 
     - powershell: |
-        mkdir -p tracer/build_data/snapshots
-        mkdir -p tracer/build_data/logs
+        mkdir -p artifacts/build_data/snapshots
+        mkdir -p artifacts/build_data/logs
         mkdir -p $(smokeTestAppDir)/artifacts
         mv $(Agent.TempDirectory)/*.msi $(smokeTestAppDir)/artifacts/datadog-apm.msi
       displayName: Create test data directories
@@ -5900,7 +5900,7 @@ stages:
         snapshotPrefix: "smoke_test"
         isLinux: false
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -5944,8 +5944,8 @@ stages:
             path: $(Agent.TempDirectory)
 
         - powershell: |
-            mkdir -p tracer/build_data/snapshots
-            mkdir -p tracer/build_data/logs
+            mkdir -p artifacts/build_data/snapshots
+            mkdir -p artifacts/build_data/logs
             mkdir -p $(smokeTestAppDir)/artifacts
             mv $(Agent.TempDirectory)/*.msi $(smokeTestAppDir)/artifacts/datadog-apm.msi
           displayName: Create test data directories
@@ -5968,7 +5968,7 @@ stages:
             snapshotPrefix: "smoke_test"
             isLinux: false
 
-        - publish: tracer/build_data
+        - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
@@ -6004,8 +6004,8 @@ stages:
         targetBranch: $(targetBranch)
 
     - powershell: |
-        mkdir -p tracer/build_data/snapshots
-        mkdir -p tracer/build_data/logs
+        mkdir -p artifacts/build_data/snapshots
+        mkdir -p artifacts/build_data/logs
         mkdir -p $(smokeTestAppDir)/artifacts
       displayName: Create test data directories
 
@@ -6034,7 +6034,7 @@ stages:
         snapshotPrefix: "smoke_test"
         isLinux: false
 
-    - publish: tracer/build_data
+    - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -6061,7 +6061,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
         snapshotSrcDir: "$(System.DefaultWorkingDirectory)/tracer/build/smoke_test_snapshots"
-        snapshotOutputDir: "$(System.DefaultWorkingDirectory)/tracer/build_data/snapshots"
+        snapshotOutputDir: "$(System.DefaultWorkingDirectory)/artifacts/build_data/snapshots"
       pool:
         vmImage: $(vmImage)
       
@@ -6082,8 +6082,8 @@ stages:
             path: $(smokeTestAppDir)/artifacts
 
         - script: |
-            mkdir -p tracer/build_data/snapshots
-            mkdir -p tracer/build_data/logs
+            mkdir -p artifacts/build_data/snapshots
+            mkdir -p artifacts/build_data/logs
             mkdir $(smokeTestAppDir)/publish
           displayName: create test data directories
 
@@ -6142,11 +6142,11 @@ stages:
             DD_INTERNAL_WORKAROUND_77973_ENABLED=1 \
             COMPlus_DbgEnableMiniDump=1 \
             COMPlus_DbgMiniDumpType=4 \
-            DOTNET_DbgMiniDumpName=$(System.DefaultWorkingDirectory)/tracer/build_data/dumps/coredump.%t.%p \
+            DOTNET_DbgMiniDumpName=$(System.DefaultWorkingDirectory)/artifacts/build_data/dumps/coredump.%t.%p \
             DD_INJECTION_ENABLED=tracer \
             DD_INJECT_FORCE=1 \
             DD_TELEMETRY_FORWARDER_PATH=/usr/bin/true \
-            DD_TRACE_LOG_DIRECTORY=$(System.DefaultWorkingDirectory)/tracer/build_data/logs \
+            DD_TRACE_LOG_DIRECTORY=$(System.DefaultWorkingDirectory)/artifacts/build_data/logs \
             $(smokeTestAppDir)/publish/dd-trace dotnet $(smokeTestAppDir)/publish/AspNetCoreSmokeTest.dll
           displayName: Run the app
 
@@ -6164,7 +6164,7 @@ stages:
             $(CURL_COMMAND) --fail-with-body "http://localhost:8126$(VERIFY_ENDPOINT)"
           displayName: check snapshots
 
-        - publish: tracer/build_data
+        - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
@@ -6310,21 +6310,21 @@ stages:
       continueOnError: true
       inputs:
         artifact: crank_linux_arm64_1
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_arm64_1
+        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/throughput/current/crank_linux_arm64_1
 
     - task: DownloadPipelineArtifact@2
       displayName: Download crank_linux_x64_1
       continueOnError: true
       inputs:
         artifact: crank_linux_x64_1
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_1
+        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/throughput/current/crank_linux_x64_1
 
     - task: DownloadPipelineArtifact@2
       displayName: Download crank_windows_x64_1
       continueOnError: true
       inputs:
         artifact: crank_windows_x64_1
-        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_windows_x64_1
+        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/throughput/current/crank_windows_x64_1
 
     - script: tracer\build.cmd CompareThroughputResults
       displayName: Compare Crank results
@@ -6333,7 +6333,7 @@ stages:
         AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
         GITHUB_TOKEN: $(GITHUB_TOKEN)
 
-    - publish: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/throughput_report.md
+    - publish: $(System.DefaultWorkingDirectory)/artifacts/build_data/throughput/throughput_report.md
       displayName: Upload report
       artifact: crank_throughput_report
 
