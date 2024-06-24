@@ -2250,12 +2250,16 @@ partial class Build
        .After(CompileSamplesLinuxOrOsx, CompileMultiApiPackageVersionSamples)
        .Executes(() =>
         {
-
-            var serverlessProjects = new List<string> { "Samples.AWS.Lambda.csproj", "Samples.Amazon.Lambda.RuntimeSupport.csproj" };
-            foreach (var target in serverlessProjects.Select(projectName => TracerDirectory.GlobFiles($"test/test-applications/integrations/*/{projectName}").FirstOrDefault())
-                                                     .Select(projectFile => projectFile / ".." / "bin" / "artifacts" / "monitoring-home"))
+            // This is a bit hacky, we can probably improve it once/if we output monitoring home into the BuildArtifactsDirectory too
+            var serverlessProjects = new List<string> { "Samples.AWS.Lambda", "Samples.Amazon.Lambda.RuntimeSupport" };
+            foreach (var project in serverlessProjects)
             {
-                CopyDirectoryRecursively(MonitoringHomeDirectory, target, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                var rootSampleFolder = BuildArtifactsDirectory / "bin" / project;
+                CopyDirectoryRecursively(MonitoringHomeDirectory, rootSampleFolder / "monitoring-home", DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                CopyFileToDirectory(
+                    source: TracerDirectory / "build" / "_build" / "docker" / "serverless.lambda.dockerfile",
+                    targetDirectory: rootSampleFolder,
+                    FileExistsPolicy.Skip);
             }
         });
 
