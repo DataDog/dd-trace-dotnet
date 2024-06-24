@@ -1604,8 +1604,7 @@ partial class Build
                         .SetProperty("BuildInParallel", "true")
                         .SetProperty("CheckEolTargetFramework", "false")
                         .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
-                        .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                        // .SetProcessArgumentConfigurator(arg => arg.Add($"/bl:build_{DateTime.UtcNow.Ticks}.binlog"))
+                        .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701").Add($"/bl:\"{(BuildDataDirectory / $"build_{DateTime.UtcNow.Ticks}.binlog")}\""))
                         .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     );

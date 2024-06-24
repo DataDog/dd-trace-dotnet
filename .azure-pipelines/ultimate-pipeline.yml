@@ -1568,6 +1568,12 @@ stages:
           displayName: Upload artifact samples (bin only)
           artifact: $(artifact)
 
+        - publish: artifacts/build_data
+          displayName: Uploading logs
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: failed()
+          continueOnError: true
+
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, build_samples]
