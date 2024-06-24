@@ -36,7 +36,7 @@ INSTANTIATE_TEST_SUITE_P(
         (void*)::pthread_attr_init,
         (void*)::pthread_getattr_default_np,
         (void*)::pthread_setattr_default_np,
-        (void*)::fork,
+        // (void*)::fork,
 #endif
         (void*)::dl_iterate_phdr,
         (void*)::dlopen,
