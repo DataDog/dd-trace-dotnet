@@ -15,6 +15,7 @@ using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
+using YamlDotNet.Core.Tokens;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.Security.Unit.Tests;
@@ -23,6 +24,31 @@ public class RaspWafTests : WafLibraryRequiredTest
 {
     public RaspWafTests()
     {
+    }
+
+    [Theory]
+    [InlineData(1, 1000000, false)]
+    [InlineData(1000, 1, true)]
+    public void GivenALfiRule_WhenInsecureAccess_TimeoutIsCorrect(int queryLength, ulong timeout, bool shouldRaiseTimeout)
+    {
+        var file = "folder";
+
+        for (int i = 0; i < queryLength; i++)
+        {
+            file += $"/folder";
+        }
+
+        var etcPasswd = "../../../../../../../../../etc/passwd";
+        file += etcPasswd;
+        var args = CreateArgs(etcPasswd);
+        var context = InitWaf(true, "rasp-rule-set.json", args, out _);
+        var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, file } };
+        var resultEph = context.RunWithEphemeral(argsVulnerable, timeout, true);
+        resultEph.Timeout.Should().Be(shouldRaiseTimeout);
+        if (!shouldRaiseTimeout)
+        {
+            resultEph.ShouldBlock.Should().BeTrue();
+        }
     }
 
     [Theory]
