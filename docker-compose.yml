@@ -11,7 +11,7 @@ services:
     ports:
       - "4566:4566"
     volumes:
-      - "./tracer/build_data/localstack:/tmp"
+      - "./artifacts/build_data/localstack:/tmp"
 
   elasticsearch7_arm64:
     image: elasticsearch:7.10.1
@@ -846,7 +846,7 @@ services:
     image: ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
     volumes:
     - ./tracer/build/smoke_test_snapshots:/snapshots
-    - ./tracer/build_data/snapshots:/debug_snapshots
+    - ./artifacts/build_data/snapshots:/debug_snapshots
     ports:
     - "8126:8126"
     environment:
@@ -867,8 +867,8 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-tester
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-    - ./tracer/build_data/dumps:/dumps
+    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -889,8 +889,8 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-    - ./tracer/build_data/dumps:/dumps
+    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -911,8 +911,8 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-    - ./tracer/build_data/dumps:/dumps
+    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -931,8 +931,8 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-tester
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-    - ./tracer/build_data/dumps:/dumps
+    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -952,8 +952,8 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-self-instrument-tester
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-    - ./tracer/build_data/dumps:/dumps
+    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -972,8 +972,8 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-nuget-tester
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-    - ./tracer/build_data/dumps:/dumps
+    - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+    - ./artifacts/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -993,8 +993,8 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-tester
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs:/var/log/datadog/dotnet
-      - ./tracer/build_data/dumps:/dumps
+      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1014,8 +1014,8 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-chiseled-tester
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs:/var/log/datadog/dotnet
-      - ./tracer/build_data/dumps:/dumps
+      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1036,8 +1036,8 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-chiseled-tester
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs:/var/log/datadog/dotnet
-      - ./tracer/build_data/dumps:/dumps
+      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1058,8 +1058,8 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-arm64-chiseled-tester
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs:/var/log/datadog/dotnet
-      - ./tracer/build_data/dumps:/dumps
+      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126

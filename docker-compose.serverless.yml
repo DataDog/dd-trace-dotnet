@@ -189,7 +189,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-no-param-sync:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-no-param-sync:/var/log/datadog/dotnet
 
   serverless-lambda-one-param-sync:
     build:
@@ -212,7 +212,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-one-param-sync:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-one-param-sync:/var/log/datadog/dotnet
 
   serverless-lambda-two-params-sync:
     build:
@@ -235,7 +235,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-two-params-sync:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-two-params-sync:/var/log/datadog/dotnet
 
   serverless-lambda-no-param-sync-with-context:
     build:
@@ -258,7 +258,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-no-param-sync-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-no-param-sync-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-one-param-sync-with-context:
     build:
@@ -281,7 +281,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-one-param-sync-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-one-param-sync-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-two-params-sync-with-context:
     build:
@@ -304,7 +304,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-two-params-sync-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-two-params-sync-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-no-param-async:
     build:
@@ -327,7 +327,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-no-param-async:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-no-param-async:/var/log/datadog/dotnet
 
   serverless-lambda-one-param-async:
     build:
@@ -350,7 +350,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-one-param-async:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-one-param-async:/var/log/datadog/dotnet
 
   serverless-lambda-two-params-async:
     build:
@@ -373,7 +373,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-two-params-async:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-two-params-async:/var/log/datadog/dotnet
 
   serverless-lambda-no-param-void:
     build:
@@ -396,7 +396,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-no-param-void:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-no-param-void:/var/log/datadog/dotnet
 
   serverless-lambda-one-param-void:
     build:
@@ -419,7 +419,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-one-param-void:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-one-param-void:/var/log/datadog/dotnet
 
   serverless-lambda-two-params-void:
     build:
@@ -442,7 +442,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-two-params-void:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-two-params-void:/var/log/datadog/dotnet
   
   serverless-lambda-base-no-param-sync:
     build:
@@ -465,7 +465,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-base-no-param-sync:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-base-no-param-sync:/var/log/datadog/dotnet
 
   serverless-lambda-base-two-params-sync:
     build:
@@ -488,7 +488,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-base-two-params-sync:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-base-two-params-sync:/var/log/datadog/dotnet
 
   serverless-lambda-base-one-param-sync-with-context:
     build:
@@ -511,7 +511,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-base-one-param-sync-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-base-one-param-sync-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-base-one-param-async:
     build:
@@ -534,7 +534,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-base-one-param-async:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-base-one-param-async:/var/log/datadog/dotnet
 
   serverless-lambda-base-two-params-void:
     build:
@@ -557,7 +557,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-base-two-params-void:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-base-two-params-void:/var/log/datadog/dotnet
 
   serverless-lambda-struct-param:
     build:
@@ -580,7 +580,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-struct-param:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-struct-param:/var/log/datadog/dotnet
 
   serverless-lambda-nested-class-param:
     build:
@@ -603,7 +603,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-nested-class-param:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-nested-class-param:/var/log/datadog/dotnet
 
   serverless-lambda-nested-struct-param:
     build:
@@ -626,7 +626,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-nested-struct-param:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-nested-struct-param:/var/log/datadog/dotnet
 
   serverless-lambda-generic-dict-param:
     build:
@@ -649,7 +649,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-generic-dict-param:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-generic-dict-param:/var/log/datadog/dotnet
 
   serverless-lambda-nested-generic-dict-param:
     build:
@@ -672,7 +672,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-nested-generic-dict-param:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-nested-generic-dict-param:/var/log/datadog/dotnet
 
   serverless-lambda-doubly-nested-generic-dict-param:
     build:
@@ -695,7 +695,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-doubly-nested-generic-dict-param:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-doubly-nested-generic-dict-param:/var/log/datadog/dotnet
 
   serverless-lambda-throwing:
     build:
@@ -718,7 +718,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-throwing:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-throwing:/var/log/datadog/dotnet
 
   serverless-lambda-throwing-async:
     build:
@@ -741,7 +741,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-throwing-async:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-throwing-async:/var/log/datadog/dotnet
 
   serverless-lambda-throwing-async-task:
     build:
@@ -764,7 +764,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-throwing-async-task:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-throwing-async-task:/var/log/datadog/dotnet
 
   serverless-lambda-throwing-with-context:
     build:
@@ -787,7 +787,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-throwing-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-throwing-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-throwing-async-with-context:
     build:
@@ -810,7 +810,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-throwing-async-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-throwing-async-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-throwing-async-task-with-context:
     build:
@@ -833,7 +833,7 @@ services:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs/serverless-lambda-throwing-async-task-with-context:/var/log/datadog/dotnet
+    - ./artifacts/build_data/logs/serverless-lambda-throwing-async-task-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-generic:
     build:
@@ -856,7 +856,7 @@ services:
       - "8080"
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs/serverless-lambda-generic:/var/log/datadog/dotnet
+      - ./artifacts/build_data/logs/serverless-lambda-generic:/var/log/datadog/dotnet
 
   serverless-lambda-generic-async:
     build:
@@ -879,7 +879,7 @@ services:
       - "8080"
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs/serverless-lambda-generic-async:/var/log/datadog/dotnet
+      - ./artifacts/build_data/logs/serverless-lambda-generic-async:/var/log/datadog/dotnet
 
   serverless-lambda-generic-virtual:
     build:
@@ -902,7 +902,7 @@ services:
       - "8080"
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs/serverless-lambda-generic-virtual:/var/log/datadog/dotnet
+      - ./artifacts/build_data/logs/serverless-lambda-generic-virtual:/var/log/datadog/dotnet
 
   serverless-lambda-generic-virtual-async:
     build:
@@ -925,7 +925,7 @@ services:
       - "8080"
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs/serverless-lambda-generic-virtual-async:/var/log/datadog/dotnet
+      - ./artifacts/build_data/logs/serverless-lambda-generic-virtual-async:/var/log/datadog/dotnet
 
   serverless-lambda-generic-abstract:
     build:
@@ -948,7 +948,7 @@ services:
       - "8080"
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs/serverless-lambda-generic-abstract:/var/log/datadog/dotnet
+      - ./artifacts/build_data/logs/serverless-lambda-generic-abstract:/var/log/datadog/dotnet
 
   serverless-lambda-generic-abstract-async:
     build:
@@ -971,7 +971,7 @@ services:
       - "8080"
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs/serverless-lambda-generic-abstract-async:/var/log/datadog/dotnet
+      - ./artifacts/build_data/logs/serverless-lambda-generic-abstract-async:/var/log/datadog/dotnet
 
   serverless-lambda-generic-complex:
     build:
@@ -994,7 +994,7 @@ services:
       - "8080"
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs/serverless-lambda-generic-complex:/var/log/datadog/dotnet
+      - ./artifacts/build_data/logs/serverless-lambda-generic-complex:/var/log/datadog/dotnet
 
   serverless-lambda-generic-complex-nested:
     build:
@@ -1017,7 +1017,7 @@ services:
       - "8080"
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs/serverless-lambda-generic-complex-nested:/var/log/datadog/dotnet
+      - ./artifacts/build_data/logs/serverless-lambda-generic-complex-nested:/var/log/datadog/dotnet
 
   serverless-lambda-toplevel-statement:
     build:
@@ -1040,7 +1040,7 @@ services:
       - "8080"
     volumes:
       - ./:/project
-      - ./tracer/build_data/logs/serverless-lambda-toplevel-statement:/var/log/datadog/dotnet
+      - ./artifacts/build_data/logs/serverless-lambda-toplevel-statement:/var/log/datadog/dotnet
 
   # The serverless function calls this API, which always returns 200 OK
   serverless-dummy-api:
