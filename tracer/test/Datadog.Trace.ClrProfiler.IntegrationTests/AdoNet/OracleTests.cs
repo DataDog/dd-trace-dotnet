@@ -42,13 +42,13 @@ public class OracleTests : TracingIntegrationTest
     {
         SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
         SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-        var expectedSpanCount = 89;
+        var expectedSpanCount = 110;
 
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
         using var process = await RunSampleAndWaitForExit(agent);
 
-        var spans = agent.WaitForSpans(expectedSpanCount, operationName: "oracle.query");
+        var spans = agent.WaitForSpans(expectedSpanCount);
 
         spans.Count.Should().Be(expectedSpanCount);
         telemetry.AssertIntegrationEnabled(IntegrationId.Oracle);
