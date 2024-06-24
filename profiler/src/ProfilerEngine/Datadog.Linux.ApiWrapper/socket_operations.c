@@ -31,7 +31,7 @@
     {                                                                             \
         if (__dd_real_##name == NULL)                                             \
         {                                                                         \
-            __dd_real_##name = dlsym(RTLD_NEXT, #name);                           \
+            __dd_real_##name = __dd_dlsym(RTLD_NEXT, #name);                      \
         }                                                                         \
         volatile int interrupted_by_profiler = 0;                                 \
         __dd_set_shared_memory(&interrupted_by_profiler);                         \
@@ -47,7 +47,7 @@
     static void load_symbols_##name() __attribute__((constructor));               \
     void load_symbols_##name()                                                    \
     {                                                                             \
-        __dd_real_##name = dlsym(RTLD_NEXT, #name);                               \
+        __dd_real_##name = __dd_dlsym(RTLD_NEXT, #name);                          \
     }
 
 WRAPPED_FUNCTION(int, select, (int, nfds)(fd_set*, readfds)(fd_set*, writefds)(fd_set*, exceptfds)(struct timeval*, timeout))
