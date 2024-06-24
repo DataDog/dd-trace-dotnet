@@ -129,6 +129,7 @@ partial class Build : NukeBuild
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             BundleHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
             BenchmarkHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
+            EnsureCleanDirectory(BuildArtifactsDirectory);
             EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
