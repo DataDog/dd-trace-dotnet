@@ -449,9 +449,35 @@ partial class Build : NukeBuild
                         dockerName: "andrewlock/dotnet-fedora"
                     );
 
+                    // Alpine tests with the default package
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "alpine",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
+                        },
+                        // currently we direct to the musl-specific package. Should we update this to point to the default artifact instead?
+                        installer: "datadog-dotnet-apm*-musl.tar.gz",
+                        installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.tar.gz",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-musl-x64",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    // Alpine tests with the musl-specific package
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "alpine_musl",
                         new SmokeTestImage[]
                         {
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
