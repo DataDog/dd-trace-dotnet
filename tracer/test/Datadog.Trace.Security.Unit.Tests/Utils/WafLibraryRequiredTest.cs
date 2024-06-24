@@ -20,8 +20,6 @@ public class WafLibraryRequiredTest
 
     static WafLibraryRequiredTest()
     {
-        Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
-        Environment.SetEnvironmentVariable("DD_APPSEC_WAF_DEBUG", "true");
         var result = WafLibraryInvoker.Initialize();
         WafLibraryInvoker = result.WafLibraryInvoker;
     }

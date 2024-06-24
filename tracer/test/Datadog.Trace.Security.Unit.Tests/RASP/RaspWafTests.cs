@@ -15,17 +15,13 @@ using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
-using YamlDotNet.Core.Tokens;
+
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
 public class RaspWafTests : WafLibraryRequiredTest
 {
-    public RaspWafTests()
-    {
-    }
-
     [Theory]
     [InlineData(1, 1000000, false)]
     [InlineData(1000, 1, true)]
@@ -125,8 +121,7 @@ public class RaspWafTests : WafLibraryRequiredTest
             string.Empty,
             string.Empty,
             useUnsafeEncoder: newEncoder,
-            embeddedRulesetPath: ruleFile,
-            wafDebugEnabled: true);
+            embeddedRulesetPath: ruleFile);
         waf = initResult.Waf;
         waf.Should().NotBeNull();
         var context = waf.CreateContext();
