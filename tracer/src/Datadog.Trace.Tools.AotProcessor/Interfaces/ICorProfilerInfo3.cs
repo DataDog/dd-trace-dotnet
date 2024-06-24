@@ -153,10 +153,10 @@ internal unsafe interface ICorProfilerInfo3 : ICorProfilerInfo2
      */
     HResult GetModuleInfo2(
                 ModuleId moduleId,
-                out byte* ppBaseLoadAddress,
+                nint* ppBaseLoadAddress,
                 uint cchName,
-                out uint pcchName,
+                uint* pcchName,
                 char* szName,
-                out AssemblyId pAssemblyId,
-                out int pdwModuleFlags);
+                AssemblyId* pAssemblyId,
+                int* pdwModuleFlags);
 }

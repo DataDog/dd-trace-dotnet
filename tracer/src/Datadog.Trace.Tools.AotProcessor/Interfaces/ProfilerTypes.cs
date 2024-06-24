@@ -1,3 +1,7 @@
+using System;
+using System.Runtime.InteropServices;
+using Datadog.Trace.Tools.AotProcessor.Interfaces;
+
 namespace Datadog.Trace.Tools.AotProcessor.Interfaces;
 
 #pragma warning disable SA1649 // File name should match first type name
@@ -6,170 +10,199 @@ namespace Datadog.Trace.Tools.AotProcessor.Interfaces;
 #pragma warning disable SA1401 // Fields should be private
 #pragma warning disable CS0649 // Field 'AppDomainId.Value' is never assigned to, and will always have its default value
 
-internal readonly struct ModuleId
+internal readonly struct ModuleId(nint value)
 {
-    public ModuleId(nint value)
-    {
-        Value = value;
-    }
-
-    public readonly nint Value;
+    public readonly nint Value = value;
 }
 
-internal readonly struct ObjectId
+internal readonly struct ObjectId(nint value)
 {
-    public readonly nint Value;
+    public readonly nint Value = value;
 }
 
-internal readonly struct GCHandleId
+internal readonly struct GCHandleId(nint value)
 {
-    public readonly nint Value;
+    public readonly nint Value = value;
 
     public override string ToString() => Value.ToString("x2");
 }
 
-internal readonly struct AppDomainId
+internal readonly struct AppDomainId(nint value)
 {
-    public readonly nint Value;
+    public readonly nint Value = value;
 }
 
-internal readonly struct AssemblyId
+internal readonly struct AssemblyId(nint value)
 {
-    public readonly nint Value;
+    public readonly nint Value = value;
 }
 
-internal readonly struct ClassId
+internal readonly struct ClassId(int value)
 {
-    public readonly nint Value;
+    public readonly int Value = value;
 
     public override string ToString() => Value.ToString("x2");
 }
 
-internal readonly struct FunctionId
+internal readonly struct FunctionId(nint value)
 {
-    public readonly nint Value;
+    public readonly nint Value = value;
 }
 
-internal readonly struct ReJITId
+internal readonly struct ReJITId(nint value)
 {
-    public readonly nint Value;
+    public readonly nint Value = value;
 }
 
-internal readonly struct ThreadId
+internal readonly struct ThreadId(nuint value)
 {
-    public readonly nuint Value;
-
+    public readonly nuint Value = value;
     public override string ToString() => Value.ToString("x2");
 }
 
-internal readonly struct ProcessId
+internal readonly struct ProcessId(nint value)
 {
-    public readonly nint Value;
+    public readonly nint Value = value;
 }
 
-internal readonly struct ContextId
+internal readonly struct ContextId(nint value)
 {
-    public readonly nint Value;
+    public readonly nint Value = value;
 }
 
-internal readonly struct MdToken
+internal readonly struct MdToken(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdModule
+internal readonly struct MdGenericParam(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdTypeDef
+internal readonly struct MdGenericParamConstraint(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdMethodDef
+internal readonly struct MdMethodSpec(int value)
 {
-    public MdMethodDef(MdToken token)
-    {
-        Value = token.Value;
-    }
-
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdFieldDef
+internal readonly struct MdAssembly(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdInterfaceImpl
+internal readonly struct MdAssemblyRef(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdTypeRef
+internal readonly struct MdModule(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdParamDef
+internal readonly struct MdTypeDef(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdMemberRef
+internal readonly struct MdMethodDef(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdPermission
+internal readonly struct MdFieldDef(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdProperty
+internal readonly struct MdInterfaceImpl(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdEvent
+internal readonly struct MdTypeRef(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdSignature
+internal readonly struct MdParamDef(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdModuleRef
+internal readonly struct MdMemberRef(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdTypeSpec
+internal readonly struct MdPermission(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdString
+internal readonly struct MdProperty(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct MdCustomAttribute
+internal readonly struct MdEvent(int value)
 {
-    public readonly int Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct CorElementType
+internal readonly struct MdSignature(int value)
 {
-    public readonly uint Value;
+    public readonly int Value = value;
 }
 
-internal readonly struct HCORENUM
+internal readonly struct MdModuleRef(int value)
 {
-    public readonly nint Value;
+    public readonly int Value = value;
+}
+
+internal readonly struct MdTypeSpec(int value)
+{
+    public readonly int Value = value;
+}
+
+internal readonly struct MdString(int value)
+{
+    public readonly int Value = value;
+}
+
+internal readonly struct MdCustomAttribute(int value)
+{
+    public readonly int Value = value;
+}
+
+internal readonly struct MdFile(int value)
+{
+    public readonly int Value = value;
+}
+
+internal readonly struct MdExportedType(int value)
+{
+    public readonly int Value = value;
+}
+
+internal readonly struct MdManifestResource(int value)
+{
+    public readonly int Value = value;
+}
+
+internal readonly struct CorElementType(uint value)
+{
+    public readonly uint Value = value;
+}
+
+internal readonly struct HCORENUM(nint value)
+{
+    public readonly nint Value = value;
 }
 
 internal readonly struct COR_FIELD_OFFSET
@@ -224,18 +257,51 @@ internal readonly struct COR_PRF_ELT_INFO
     public readonly nint Value;
 }
 
+[StructLayout(LayoutKind.Sequential)]
 internal readonly struct COR_PRF_FUNCTION_ARGUMENT_INFO
 {
-    public readonly uint NumRanges;                // number of chunks of arguments
-    public readonly uint TotalArgumentSize;    // total size of arguments
+    public readonly uint NumRanges;                 // number of chunks of arguments
+    public readonly uint TotalArgumentSize;         // total size of arguments
     public readonly COR_PRF_FUNCTION_ARGUMENT_RANGE range1;
     public readonly COR_PRF_FUNCTION_ARGUMENT_RANGE range2;
 }
 
+[StructLayout(LayoutKind.Sequential)]
 internal readonly struct COR_PRF_FUNCTION_ARGUMENT_RANGE
 {
     public readonly nint StartAddress;          // start address of the range
-    public readonly uint Length;                         // contiguous length of the range
+    public readonly uint Length;                // contiguous length of the range
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal readonly struct OSINFO
+{
+    public readonly int dwOSPlatformId;         // Operating system platform.
+    public readonly int dwOSMajorVersion;       // OS Major version.
+    public readonly int dwOSMinorVersion;       // OS Minor version.
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal readonly unsafe struct ASSEMBLYMETADATA(int maj, int min, int build, int rev)
+{
+    public readonly ushort usMajorVersion = (ushort)maj;          // Major Version.
+    public readonly ushort usMinorVersion = (ushort)min;          // Minor Version.
+    public readonly ushort usBuildNumber = (ushort)build;           // Build Number.
+    public readonly ushort usRevisionNumber = (ushort)rev;        // Revision Number.
+    public readonly char* szLocale;                 // Locale.
+    public readonly uint cbLocale;                  // [IN/OUT] Size of the buffer in wide chars/Actual size.
+    public readonly int* rProcessor;                // Processor ID array.
+    public readonly uint ulProcessor;               // [IN/OUT] Size of the Processor ID array/Actual # of entries filled in.
+    public readonly OSINFO* rOS;                    // OSINFO array.
+    public readonly uint ulOS;                      // [IN/OUT]Size of the OSINFO array/Actual # of entries filled in.
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal readonly struct COR_SECATTR
+{
+    public readonly MdMemberRef tkCtor;         // Ref to constructor of security attribute.
+    public readonly IntPtr pCustomAttribute;    // Blob describing ctor args and field/property values.
+    public readonly uint cbCustomAttribute;     // Length of the above blob.
 }
 
 [Flags]
@@ -436,6 +502,14 @@ internal enum CorILMethodFlags
     CorILMethod_TinyFormat1 = 0x0006,         // use this code if the code size is odd
 }
 
+internal enum CorSaveSize
+{
+    cssAccurate = 0x0000,                       // Find exact save size, accurate but slower.
+    cssQuick = 0x0001,                          // Estimate save size, may pad estimate, but faster.
+    cssDiscardTransientCAs = 0x0002,            // remove all of the CAs of discardable types
+}
+
+[Flags]
 internal enum COR_PRF_STATIC_TYPE
 {
     COR_PRF_FIELD_NOT_A_STATIC = 0,
@@ -493,6 +567,7 @@ internal enum COR_PRF_GC_ROOT_KIND
 /// COR_PRF_GC_ROOT_FLAGS describes properties of a GC root
 /// exposed by the RootReferences callback.
 /// </summary>
+[Flags]
 internal enum COR_PRF_GC_ROOT_FLAGS
 {
     COR_PRF_GC_ROOT_PINNING = 0x1,    // Prevents GC from moving the object
@@ -556,6 +631,18 @@ internal enum COR_PRF_HANDLE_TYPE
     COR_PRF_HANDLE_TYPE_WEAK = 0x1,
     COR_PRF_HANDLE_TYPE_STRONG = 0x2,
     COR_PRF_HANDLE_TYPE_PINNED = 0x3,
+}
+
+[Flags]
+internal enum COR_PRF_MODULE_FLAGS
+{
+    COR_PRF_MODULE_DISK = 0x00000001,
+    COR_PRF_MODULE_NGEN = 0x00000002,
+    COR_PRF_MODULE_DYNAMIC = 0x00000004,
+    COR_PRF_MODULE_COLLECTIBLE = 0x00000008,
+    COR_PRF_MODULE_RESOURCE = 0x00000010,
+    COR_PRF_MODULE_FLAT_LAYOUT = 0x00000020,
+    COR_PRF_MODULE_WINDOWS_RUNTIME = 0x00000040
 }
 
 internal readonly struct ObjectHandleId

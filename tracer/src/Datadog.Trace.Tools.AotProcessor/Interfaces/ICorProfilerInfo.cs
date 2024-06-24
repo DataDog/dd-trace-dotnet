@@ -210,11 +210,11 @@ internal unsafe interface ICorProfilerInfo : IUnknown
      */
     HResult GetModuleInfo(
                 ModuleId ModuleId,
-                out nint ppBaseLoadAddress,
+                nint* ppBaseLoadAddress,
                 uint cchName,
-                out uint pcchName,
+                uint* pcchName,
                 char* szName,
-                out AssemblyId pAssemblyId);
+                AssemblyId* pAssemblyId);
 
     /*
      * Get a metadata interface instance which maps to the given module.
@@ -249,8 +249,8 @@ internal unsafe interface ICorProfilerInfo : IUnknown
     HResult GetILFunctionBody(
                 ModuleId ModuleId,
                 MdMethodDef methodId,
-                out byte* ppMethodHeader,
-                out uint pcbMethodSize);
+                IntPtr* ppMethodHeader,
+                uint* pcbMethodSize);
 
     /*
      * IL method bodies must be located as RVA's to the loaded module, which
@@ -260,7 +260,7 @@ internal unsafe interface ICorProfilerInfo : IUnknown
      */
     HResult GetILFunctionBodyAllocator(
                 ModuleId ModuleId,
-                out void* ppMalloc);
+                IntPtr* ppMalloc);
 
     /*
      * Replaces the method body for a function in a module.  This will replace
@@ -273,7 +273,7 @@ internal unsafe interface ICorProfilerInfo : IUnknown
     HResult SetILFunctionBody(
                 ModuleId ModuleId,
                 MdMethodDef methodid,
-                byte pbNewILMethodHeader);
+                IntPtr pbNewILMethodHeader);
 
     /*
      * Retrieve app domain information given its id.
@@ -281,9 +281,9 @@ internal unsafe interface ICorProfilerInfo : IUnknown
     HResult GetAppDomainInfo(
                 AppDomainId appDomainId,
                 uint cchName,
-                out uint pcchName,
+                uint* pcchName,
                 char* szName,
-                out ProcessId pProcessId);
+                ProcessId* pProcessId);
 
     /*
      * Retrieve information about an assembly given its ID.
@@ -291,7 +291,7 @@ internal unsafe interface ICorProfilerInfo : IUnknown
     HResult GetAssemblyInfo(
                 AssemblyId assemblyId,
                 uint cchName,
-                out uint pcchName,
+                uint* pcchName,
                 char* szName,
                 out AppDomainId pAppDomainId,
                 out ModuleId pModuleId);
