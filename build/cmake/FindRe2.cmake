@@ -12,7 +12,7 @@ if (ISMACOS)
         CONFIGURE_COMMAND ""
         UPDATE_COMMAND ""
         BUILD_IN_SOURCE TRUE
-        BUILD_COMMAND ${CMAKE_COMMAND} -E env LDFLAGS=-arch\ ${OSX_ARCH} ARFLAGS=-r\ -s\ -c CXXFLAGS=-O3\ -g\ -fPIC\ -target\ ${OSX_ARCH}-apple-darwin${CMAKE_HOST_SYSTEM_VERSION}\ -D_GLIBCXX_USE_CXX11_ABI=0 make -j
+        BUILD_COMMAND ${CMAKE_COMMAND} -E env LDFLAGS=-arch\ ${OSX_ARCH} ARFLAGS=-r\ -s\ -c CXXFLAGS=-O3\ -g\ -fPIC\ -target\ ${OSX_ARCH}-apple-darwin${CMAKE_HOST_SYSTEM_VERSION}\ -Wno-unused-but-set-variable\ -D_GLIBCXX_USE_CXX11_ABI=0 $(MAKE) -j
         BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/re2-prefix/src/re2/obj/libre2.a
     )
 elseif(ISLINUX)
@@ -23,7 +23,7 @@ elseif(ISLINUX)
         CONFIGURE_COMMAND ""
         UPDATE_COMMAND ""
         BUILD_IN_SOURCE TRUE
-        BUILD_COMMAND ${CMAKE_COMMAND} -E env ARFLAGS=-r\ -s\ -c CXXFLAGS=-O3\ -g\ -fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0 make -j
+        BUILD_COMMAND ${CMAKE_COMMAND} -E env ARFLAGS=-r\ -s\ -c CXXFLAGS=-O3\ -g\ -fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0 $(MAKE) -j
         BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/re2-prefix/src/re2/obj/libre2.a
     )
 endif()

@@ -346,7 +346,7 @@ internal class CreatedumpCommand : Command
 
             if (typeName != null)
             {
-                if (typeName.EndsWith("BlockingMiddleware"))
+                if (typeName.Contains("BlockingMiddleware"))
                 {
                     return false;
                 }
@@ -514,7 +514,16 @@ internal class CreatedumpCommand : Command
             // The stacks aren't suspicious, but maybe the exception is
             var exceptionType = exception.Type.Name ?? string.Empty;
 
-            var suspiciousExceptionTypes = new[] { "System.InvalidProgramException", "System.Security.VerificationException", "System.MissingMethodException", "System.BadImageFormatException" };
+            var suspiciousExceptionTypes = new[]
+            {
+                "System.InvalidProgramException",
+                "System.Security.VerificationException",
+                "System.MissingMethodException",
+                "System.MissingFieldException",
+                "System.MissingMemberException",
+                "System.BadImageFormatException",
+                "System.TypeLoadException"
+            };
 
             if (exceptionType.StartsWith("Datadog", StringComparison.OrdinalIgnoreCase) || suspiciousExceptionTypes.Contains(exceptionType))
             {
@@ -666,7 +675,7 @@ internal class CreatedumpCommand : Command
 
         if (exception != null)
         {
-            tags = [..tags, ("exception", exception.ToString())];
+            tags = [.. tags, ("exception", exception.ToString())];
         }
 
         var bag = new List<IntPtr>();

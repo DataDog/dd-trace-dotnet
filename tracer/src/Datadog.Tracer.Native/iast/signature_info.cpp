@@ -45,6 +45,32 @@ namespace iast
         {
             hr = ParseMethodSignature(pSig, nSig, (ULONG*)&_callingConvention, &_returnType, &_params, &_genericParamCount, &cbRead);
         }
+
+        if (_params.size() > 0)
+        {
+            std::stringstream buffer;
+            buffer << "(";
+            int count = 0;
+            for (auto p : _params)
+            {
+                if (count++ > 0)
+                {
+                    buffer << ",";
+                }
+                buffer << ToString(p->GetName());
+            }
+            buffer << ")";
+            _paramsString = ToWSTRING(buffer.str());
+        }
+        else
+        {
+            _paramsString = WStr("()");
+        }
+
+        if (_returnType)
+        {
+            _returnTypeString = _returnType->GetName();
+        }
     }
 
     SignatureInfo::~SignatureInfo()
@@ -56,28 +82,13 @@ namespace iast
         }
         _params.clear();
     }
-    WSTRING SignatureInfo::GetReturnTypeString()
+    WSTRING& SignatureInfo::GetReturnTypeString()
     {
-        if (_returnType && _returnTypeString.length() == 0)
-        {
-            _returnTypeString = _returnType->GetName();
-        }
         return _returnTypeString;
     }
-    WSTRING SignatureInfo::GetParamsRepresentation()
+    WSTRING& SignatureInfo::GetParamsRepresentation()
     {
-        if (_params.size() > 0 && _paramsString.length() == 0)
-        {
-            int count = 0;
-            std::stringstream buffer;
-            for (auto p : _params)
-            {
-                if (count++ > 0) { buffer << ","; }
-                buffer << ToString(p->GetName());
-            }
-            _paramsString = ToWSTRING(buffer.str());
-        }
-        return WStr("(") + _paramsString + WStr(")");
+        return _paramsString;
     }
 
 
@@ -634,25 +645,12 @@ namespace iast
         return (int)res;
     }
 
-    WSTRING SignatureInfo::CharacterizeMember(WSTRING memberName, bool addReturyType)
+    WSTRING SignatureInfo::CharacterizeMember(WSTRING memberName)
     {
         if (_signatureType == SignatureTypes::Method)
         {
             auto paramsStr = GetParamsRepresentation();
-            if (addReturyType)
-            {
-                auto returnTypeStr = GetReturnTypeString();
-                //return Format("%s %s%s"_W, returnTypeStr.c_str(), memberName.c_str(), paramsStr.c_str());
-                return returnTypeStr + WStr(" ") + memberName +  paramsStr;
-            }
-            //return Format("%s%s"_W, memberName.c_str(), paramsStr.c_str());
             return memberName.c_str() + paramsStr;
-        }
-        else if (_signatureType == SignatureTypes::Field && addReturyType)
-        {
-            auto returnTypeStr = GetReturnTypeString();
-            //return Format("%s %s"_W, returnTypeStr.c_str(), memberName.c_str());
-            return returnTypeStr + WStr(" ") + memberName;
         }
         return memberName;
     }

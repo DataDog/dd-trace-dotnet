@@ -10,6 +10,9 @@ using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Logger = Serilog.Log;
+using Nuke.Common.Tools.NuGet;
+using static PrepareRelease.SetAllVersions;
+using System.Runtime.InteropServices;
 
 partial class Build
 {
@@ -19,6 +22,12 @@ partial class Build
         .DependsOn(CompileNativeLoaderWindows)
         .DependsOn(CompileNativeLoaderLinux)
         .DependsOn(CompileNativeLoaderOsx);
+
+    Target CompileNativeLoaderNativeTests => _ => _
+        .Unlisted()
+        .Description("Compiles the native loader native test")
+        .DependsOn(CompileNativeLoaderTestsWindows)
+        .DependsOn(CompileNativeLoaderTestsLinux);
 
     Target CompileNativeLoaderWindows => _ => _
         .Unlisted()
@@ -69,10 +78,14 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var workingDirectory = SharedTestsDirectory / FileNames.NativeLoaderTests / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
-            var exePath = workingDirectory / $"{FileNames.NativeLoaderTests}.exe";
-            var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+            foreach (var architecture in ArchitecturesForPlatformForTracer)
+            {
+                var workingDirectory = NativeLoaderTestsProject.Directory / "bin" / BuildConfiguration / architecture.ToString();
+                var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
+                var exePath = workingDirectory / $"{FileNames.NativeLoaderTests}.exe";
+                var testExe = ToolResolver.GetLocalTool(exePath);
+                testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
+            }
         });
 
     Target CompileNativeLoaderLinux => _ => _
@@ -85,7 +98,7 @@ partial class Build
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
-                arguments: $"--build . --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
+                arguments: $"--build . --parallel {Environment.ProcessorCount} --target native-loader",
                 workingDirectory: NativeBuildDirectory);
         });
 
@@ -115,8 +128,10 @@ partial class Build
             var exePath = workingDirectory / FileNames.NativeLoaderTests;
             Chmod.Value.Invoke("+x " + exePath);
 
+            var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
+
             var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
         });
 
     Target CompileNativeLoaderOsx => _ => _

@@ -163,6 +163,17 @@ namespace Datadog.Trace.Activity.Handlers
                 }
 
                 activityKey ??= activity.Id;
+
+                if (activityKey is null)
+                {
+                    // identified by Error Tracking
+                    // unsure how exactly this occurs after reading through the Activity source code
+                    // Activity.Id, Activity.SpanId and/or Activity.TraceId were null
+                    // if this is the case, just ignore the Activity
+                    activityMapping = default;
+                    return;
+                }
+
                 activityMapping = ActivityMappingById.GetOrAdd(activityKey, _ => new(activity.Instance!, CreateScopeFromActivity(activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId)));
             }
             catch (Exception ex)
@@ -208,6 +219,14 @@ namespace Datadog.Trace.Activity.Handlers
                     else
                     {
                         key = activity.Id;
+                    }
+
+                    if (key is null)
+                    {
+                        // Adding this as a protective measure as Error Tracking identified
+                        // instances where StartActivity had an Activity with null Id, SpanId, TraceId
+                        // In that case we just skip the Activity, so doing the same thing here.
+                        return;
                     }
 
                     if (ActivityMappingById.TryRemove(key, out ActivityMapping someValue) && someValue.Scope?.Span is not null)

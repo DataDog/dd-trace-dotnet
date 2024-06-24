@@ -116,7 +116,7 @@ partial class Build
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(GetResultsDirectory(DebuggerIntegrationTests))
                     .WithDatadogLogger()
                     .SetProjectFile(DebuggerIntegrationTests));
