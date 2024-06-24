@@ -145,6 +145,16 @@ namespace Datadog.Trace.AppSec
 
         internal static bool CalculateIsTrackUserEventsEnabled(string? remote, string local)
         {
+            if (remote is SecuritySettings.UserTrackingIdentMode or SecuritySettings.UserTrackingAnonMode)
+            {
+                return true;
+            }
+
+            if (remote is SecuritySettings.UserTrackingDisabled or not null)
+            {
+                return false;
+            }
+
             return local is SecuritySettings.UserTrackingIdentMode or SecuritySettings.UserTrackingAnonMode;
         }
 
