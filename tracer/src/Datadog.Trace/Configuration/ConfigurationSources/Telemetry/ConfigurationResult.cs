@@ -33,7 +33,7 @@ internal readonly record struct ConfigurationResult<T>
     /// <summary>
     /// Gets a value indicating whether the configuration loader should defer to a fallback key
     /// </summary>
-    public bool ShouldFallBack => LoadResult is not (ConfigurationLoadResult.Valid or ConfigurationLoadResult.ValidationFailure);
+    public bool ShouldFallBack => LoadResult is ConfigurationLoadResult.NotFound or ConfigurationLoadResult.ParsingError;
 
     /// <summary>
     /// Gets a value indicating whether the key was present in the configuration source.
