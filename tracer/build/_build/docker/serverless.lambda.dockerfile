@@ -6,14 +6,14 @@ RUN mkdir -p /var/log/datadog/dotnet && \
     chmod a+rwx /var/log/datadog/dotnet
 
 # Add Tracer
-COPY ./bin/artifacts/monitoring-home /opt/datadog
+COPY ./monitoring-home /opt/datadog
 
 ARG framework
 
 # Add Tests
-COPY ./bin/Release/$framework/*.dll /var/task/
-COPY ./bin/Release/$framework/*.deps.json /var/task/
-COPY ./bin/Release/$framework/*.runtimeconfig.json /var/task/
+COPY ./release_$framework/*.dll /var/task/
+COPY ./release_$framework/*.deps.json /var/task/
+COPY ./release_$framework/*.runtimeconfig.json /var/task/
 
 ENV DD_LOG_LEVEL="DEBUG"
 ENV DD_TRACE_ENABLED=true
