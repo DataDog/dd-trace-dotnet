@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <stdatomic.h>
 
+#include "common.h"
+
 /* dl_iterate_phdr wrapper
 The .NET profiler on Linux uses a classic signal-based approach to collect thread callstack.
 Which means that we send a signal (USR1 or USR2) to the thread we want to collect. When the thread handles the signal
@@ -321,7 +323,7 @@ int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void
 {
     if (__real_dl_iterate_phdr == NULL)
     {
-        __real_dl_iterate_phdr = dlsym(RTLD_NEXT, "dl_iterate_phdr");
+        __real_dl_iterate_phdr = __dd_dlsym(RTLD_NEXT, "dl_iterate_phdr");
     }
 
     ((char*)&functions_entered_counter)[ENTERED_DL_ITERATE_PHDR]++;
@@ -353,7 +355,7 @@ void* dlopen(const char* file, int mode)
 {
     if (__real_dlopen == NULL)
     {
-        __real_dlopen = dlsym(RTLD_NEXT, "dlopen");
+        __real_dlopen = __dd_dlsym(RTLD_NEXT, "dlopen");
     }
 
     ((char*)&functions_entered_counter)[ENTERED_DL_OPEN]++;
@@ -391,7 +393,7 @@ int dladdr(const void* addr_arg, Dl_info* info)
 {
     if (__real_dladdr == NULL)
     {
-        __real_dladdr = dlsym(RTLD_NEXT, "dladdr");
+        __real_dladdr = __dd_dlsym(RTLD_NEXT, "dladdr");
     }
 
     ((char*)&functions_entered_counter)[ENTERED_DL_ADDR]++;
@@ -411,7 +413,7 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
 {
     if (__real_execve == NULL)
     {
-        __real_execve = dlsym(RTLD_NEXT, "execve");
+        __real_execve = __dd_dlsym(RTLD_NEXT, "execve");
     }
 
 #pragma clang diagnostic push
@@ -489,7 +491,7 @@ int pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict attrp
 {
     if (__real_pthread_create == NULL)
     {
-        __real_pthread_create = dlsym(RTLD_NEXT, "pthread_create");
+        __real_pthread_create = __dd_dlsym(RTLD_NEXT, "pthread_create");
     }
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_CREATE]++;
@@ -509,7 +511,7 @@ int pthread_attr_init(pthread_attr_t* a)
 {
     if (__real_pthread_attr_init == NULL)
     {
-        __real_pthread_attr_init = dlsym(RTLD_NEXT, "pthread_attr_init");
+        __real_pthread_attr_init = __dd_dlsym(RTLD_NEXT, "pthread_attr_init");
     }
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_ATTR_INIT]++;
@@ -529,7 +531,7 @@ int pthread_getattr_default_np(pthread_attr_t* a)
 {
     if (__real_pthread_getattr_default_np == NULL)
     {
-        __real_pthread_getattr_default_np = dlsym(RTLD_NEXT, "pthread_getattr_default_np");
+        __real_pthread_getattr_default_np = __dd_dlsym(RTLD_NEXT, "pthread_getattr_default_np");
     }
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_GETATTR_DEFAULT_NP]++;
@@ -549,7 +551,7 @@ int pthread_setattr_default_np(const pthread_attr_t* a)
 {
     if (__real_pthread_setattr_default_np == NULL)
     {
-        __real_pthread_setattr_default_np = dlsym(RTLD_NEXT, "pthread_setattr_default_np");
+        __real_pthread_setattr_default_np = __dd_dlsym(RTLD_NEXT, "pthread_setattr_default_np");
     }
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_SETATTR_DEFAULT_NP]++;
@@ -569,7 +571,7 @@ pid_t fork()
 {
     if (__real_fork == NULL)
     {
-        __real_fork = dlsym(RTLD_NEXT, "fork");
+        __real_fork = __dd_dlsym(RTLD_NEXT, "fork");
     }
 
     ((char*)&functions_entered_counter)[ENTERED_FORK]++;
