@@ -21,14 +21,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="7.0.0" />
-    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\cecil\Mono.Cecil.csproj" />
     <ProjectReference Include="..\Datadog.Trace.Tools.AotProcessor.SourceGenerator\Datadog.Trace.Tools.AotProcessor.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="..\Datadog.Tracer.Native\Datadog.Tracer.Native.DLL.vcxproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 

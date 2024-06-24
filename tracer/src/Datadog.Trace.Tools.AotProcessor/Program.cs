@@ -3,12 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Microsoft.Extensions.DependencyModel;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Datadog.Trace.Tools.AotProcessor.Runtime;
 
 namespace Datadog.Trace.Tools.AotProcessor;
 
@@ -16,6 +11,18 @@ internal class Program
 {
     public static void Main(string[] args)
     {
-        ProfilerInterop.LoadProfiler();
+        using (var rewriter = new Rewriter())
+        {
+            if (!rewriter.Init())
+            {
+                Console.WriteLine("Failed to initialize rewriter");
+            }
+
+            var path = Path.GetFullPath("C:\\_DD\\Git\\dd-trace-dotnet\\tracer\\test\\test-applications\\aot\\Samples.Aot\\bin\\Debug\\net6.0\\Samples.Aot.dll");
+
+            rewriter.SetOutput("output");
+
+            rewriter.ProcessAssembly(path);
+        }
     }
 }
