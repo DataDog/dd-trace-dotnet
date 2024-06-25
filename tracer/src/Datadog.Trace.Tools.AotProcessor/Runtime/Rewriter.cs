@@ -281,6 +281,11 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
             *pAssemblyId = moduleInfo.Assembly.Id;
         }
 
+        if (pdwModuleFlags is not null)
+        {
+            *pdwModuleFlags = (int)moduleInfo.Flags;
+        }
+
         return HResult.S_OK;
     }
 

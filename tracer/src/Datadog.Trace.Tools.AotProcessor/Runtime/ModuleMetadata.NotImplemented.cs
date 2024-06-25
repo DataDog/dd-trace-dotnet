@@ -180,18 +180,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             throw new NotImplementedException();
         }
 
-        public unsafe HResult GetMemberRefProps(MdMemberRef mr, out MdToken ptk, char* szMember, uint cchMember, out uint pchMember, out nint* ppvSigBlob, out uint pbSig)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
-        public unsafe HResult EnumProperties(HCORENUM* phEnum, MdTypeDef td, MdProperty* rProperties, uint cMax, out uint pcProperties)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
         public unsafe HResult EnumEvents(HCORENUM* phEnum, MdTypeDef td, MdEvent* rEvents, uint cMax, out uint pcEvents)
         {
             System.Diagnostics.Debugger.Break();
@@ -276,12 +264,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             throw new NotImplementedException();
         }
 
-        public unsafe HResult GetUserString(MdString stk, char* szString, uint cchString, out uint pchString)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
         public unsafe HResult GetPinvokeMap(MdToken tk, out int pdwMappingFlags, char* szImportName, uint cchImportName, out uint pchImportName, out MdModuleRef pmrImportDLL)
         {
             System.Diagnostics.Debugger.Break();
@@ -312,18 +294,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             throw new NotImplementedException();
         }
 
-        public unsafe HResult EnumCustomAttributes(HCORENUM* phEnum, MdToken tk, MdToken tkType, MdCustomAttribute* rCustomAttributes, uint cMax, out uint pcCustomAttributes)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
-        public unsafe HResult GetCustomAttributeProps(MdCustomAttribute cv, out MdToken ptkObj, out MdToken ptkType, out void* ppBlob, out uint pcbSize)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
         public unsafe HResult FindTypeRef(MdToken tkResolutionScope, char* szName, out MdTypeRef ptr)
         {
             System.Diagnostics.Debugger.Break();
@@ -331,12 +301,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
         }
 
         public unsafe HResult GetFieldProps(MdFieldDef mb, MdTypeDef* pClass, char* szField, uint cchField, uint* pchField, int* pdwAttr, out nint* ppvSigBlob, out uint pcbSigBlob, out int pdwCPlusTypeFlag, out byte ppValue, out uint pcchValue)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
-        public unsafe HResult GetPropertyProps(MdProperty prop, out MdTypeDef pClass, char* szProperty, uint cchProperty, out uint pchProperty, out int pdwPropFlags, out nint* ppvSig, out uint pbSig, out int pdwCPlusTypeFlag, out byte ppDefaultValue, out uint pcchDefaultValue, out MdMethodDef pmdSetter, out MdMethodDef pmdGetter, out MdMethodDef rmdOtherMethod, uint cMax, out uint pcOtherMethod)
         {
             System.Diagnostics.Debugger.Break();
             throw new NotImplementedException();
