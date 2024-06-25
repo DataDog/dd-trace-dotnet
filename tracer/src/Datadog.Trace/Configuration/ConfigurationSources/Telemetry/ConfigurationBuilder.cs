@@ -89,7 +89,11 @@ internal readonly struct ConfigurationBuilder
         var defaultValue = getDefaultValue();
         RecordTelemetry(telemetry, key, recordValue, defaultValue);
 
-        value = defaultValue.Result!; // this must return non-null, so not sure why this is complaining, prob struct/class mismatch :thinking:
+        // The compiler complains about this, because technically you _could_ call it as `TryHandleResult<int?>` (for example)
+        // in which case Func<DefaultResult<T>> _could_ return a `null` value, so the `[NotNullIfNotNull]` annotation
+        // would be wrong. In practice, we control the calls to this method, and we know that T is always non-null
+        // so it's safe to use the dammit here.
+        value = defaultValue.Result!;
         return true;
     }
 
