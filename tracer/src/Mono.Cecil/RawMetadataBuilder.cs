@@ -97,6 +97,14 @@ namespace Mono.Cecil.Mono.Cecil {
 			return module.GetMemberReferences().OrderBy (i => i.MetadataToken.ToUInt32 ()).ToList ();
 		}
 
+		List<KeyValuePair<MetadataToken, byte[]>> GetAllStandaloneSigsSorted ()
+		{ 
+			return module.MetadataSystem.StandAloneSigs.OrderBy (i => i.Key.ToUInt32 ()).ToList();
+		}
+		List<KeyValuePair<RVA, string>> GetAllUserStringsSorted ()
+		{ 
+			return module.MetadataSystem.UserStrings.OrderBy (i => (uint)i.Key).ToList();
+		}
 
 		protected override void AttachTokens () 
 		{
@@ -105,7 +113,16 @@ namespace Mono.Cecil.Mono.Cecil {
 
 		protected override void AddTypes ()
 		{
-			foreach(var typeRef in GetAllTypeRefsSorted ())
+			foreach (var sig in GetAllStandaloneSigsSorted ()) {
+				var rva = GetBlobIndex (new SignatureWriter (sig.Value));
+				AddStandAloneSignature (rva);
+			}
+
+			foreach (var sig in GetAllUserStringsSorted ()) {
+				var rva = user_string_heap.GetStringIndex (sig.Value);
+			}
+
+			foreach (var typeRef in GetAllTypeRefsSorted ())
 				GetTypeRefToken (typeRef);
 
 			foreach (var typeRef in GetAllMemberRefsSorted ())
