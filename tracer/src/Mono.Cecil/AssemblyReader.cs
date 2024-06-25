@@ -194,24 +194,9 @@ namespace Mono.Cecil {
 				_ = module.GetMemberReferences (true);
 				_ = module.ModuleReferences;
 				_ = module.ReadStandAloneSigs ();
-				_ = ReadUserStrings (reader);
+				_ = module.ReadBlob ();
+				_ = module.ReadUserStrings ();
 			}
-		}
-
-		int ReadUserStrings (MetadataReader reader)
-		{
-			if (reader is null) {
-				return 0;
-			}
-
-			if(module.Image.UserStringHeap is null) {
-				return 0;
-			}
-
-			var heap = module.Image.UserStringHeap;
-			module.MetadataSystem.UserStrings = new Dictionary<RVA, string> (heap.Strings);
-
-			return module.ReadUserStrings ();
 		}
 
 		void ReadTypes (Collection<TypeDefinition> types)

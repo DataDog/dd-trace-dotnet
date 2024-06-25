@@ -77,12 +77,26 @@ namespace Mono.Cecil.Mono.Cecil {
 
 		List<TypeDefinition> GetAllTypesSorted ()
 		{
-			var res = new List<TypeDefinition> (module.Types);
+			var res = new List<TypeDefinition> (module.MetadataSystem.Types);
 			foreach (var type in module.Types) {
 				if (type.HasNestedTypes)
 					res.AddRange (type.NestedTypes);
 			}
 
+			res = res.OrderBy (i => i.MetadataToken.ToUInt32 ()).ToList ();
+			return res;
+		}
+
+		List<FieldDefinition> GetAllFieldsSorted ()
+		{
+			var res = new List<FieldDefinition> (module.MetadataSystem.Fields);
+			res = res.OrderBy (i => i.MetadataToken.ToUInt32 ()).ToList ();
+			return res;
+		}
+
+		List<MethodDefinition> GetAllMethodsSorted ()
+		{
+			var res = new List<MethodDefinition> (module.MetadataSystem.Methods);
 			res = res.OrderBy (i => i.MetadataToken.ToUInt32 ()).ToList ();
 			return res;
 		}
@@ -106,9 +120,22 @@ namespace Mono.Cecil.Mono.Cecil {
 			return module.MetadataSystem.UserStrings.OrderBy (i => (uint)i.Key).ToList();
 		}
 
+		List<KeyValuePair<RVA, byte []>> GetAllBlobsSorted ()
+		{
+			return module.Image.BlobHeap.Blobs.OrderBy (i => (uint)i.Key).ToList ();
+		}
+
 		protected override void AttachTokens () 
 		{
 			// All tokens should be already assigned
+		}
+
+		protected override void BuildAssembly ()
+		{
+			foreach (var blob in GetAllBlobsSorted ())
+				GetBlobIndex (blob.Value);
+
+			base.BuildAssembly ();
 		}
 
 		protected override void AddTypes ()
@@ -118,15 +145,20 @@ namespace Mono.Cecil.Mono.Cecil {
 				AddStandAloneSignature (rva);
 			}
 
-			foreach (var sig in GetAllUserStringsSorted ()) {
-				var rva = user_string_heap.GetStringIndex (sig.Value);
-			}
+			foreach (var sig in GetAllUserStringsSorted ())
+				user_string_heap.GetStringIndex (sig.Value);
 
 			foreach (var typeRef in GetAllTypeRefsSorted ())
 				GetTypeRefToken (typeRef);
 
 			foreach (var typeRef in GetAllMemberRefsSorted ())
 				GetMemberRefToken (typeRef);
+
+			foreach (var field in GetAllFieldsSorted ())
+				AddField (field);
+
+			foreach (var method in GetAllMethodsSorted ())
+				AddMethod (method);
 
 			foreach (var type in GetAllTypesSorted ())
 				AddType (type);
