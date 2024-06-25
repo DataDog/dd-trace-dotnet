@@ -531,14 +531,9 @@ namespace iast
         return &m_IL;
     }
 
-    HRESULT ILRewriter::Export(const std::string& applyMessage)
+    HRESULT ILRewriter::Export()
     {
         HRESULT hr = S_OK;
-
-        if (m_methodInfo && applyMessage.size() > 0)
-        {
-            m_methodInfo->_applyMessage += applyMessage + " ";
-        }
 
         if (!IsDirty())
         {

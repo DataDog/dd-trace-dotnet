@@ -10,6 +10,7 @@
 #include "clr_helpers.h"
 #include "debugger_tokens.h"
 #include "integration.h"
+#include "tracer_integration_definition.h"
 #include "tracer_tokens.h"
 #include "fault_tolerant_tokens.h"
 #include "../../../shared/src/native-src/com_ptr.h"
@@ -107,7 +108,8 @@ public:
     {
         std::call_once(tracer_tokens_once_flag,
             [this] {
-                tracerTokens = std::make_unique<TracerTokens>(this, enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
+            tracerTokens = std::make_unique<TracerTokens>(this, enable_by_ref_instrumentation,
+                                                                  enable_calltarget_state_by_ref);
             });
 
         return tracerTokens.get();

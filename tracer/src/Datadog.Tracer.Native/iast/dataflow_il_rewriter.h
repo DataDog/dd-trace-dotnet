@@ -107,7 +107,7 @@ namespace iast
         ILInstr* NewILInstr(OPCODE opcode = CEE_COUNT, ULONG32 arg = 0);
         ILInstr* InsertBefore(ILInstr* pWhere, ILInstr* pWhat, bool updateReferences = true);
         ILInstr* InsertAfter(ILInstr* pWhere, ILInstr* pWhat, bool updateReferences = true);
-        HRESULT Export(const std::string& applyMessage = "");
+        HRESULT Export();
         ILInstr* GetILList();
         ILInstr* GetInstrFromOffset(unsigned offset);
         std::vector<EHClause*> GetExceptionHandlers();
