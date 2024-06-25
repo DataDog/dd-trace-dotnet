@@ -39,6 +39,8 @@ namespace Datadog.Trace.Activity.DuckTypes
 
         IEnumerable<KeyValuePair<string, string>> Tags { get; }
 
+        ActivityIdFormatDuckType IdFormat { get; set; }
+
         object AddBaggage(string key, string value);
 
         object AddTag(string key, string value);

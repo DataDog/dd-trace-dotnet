@@ -104,8 +104,7 @@ namespace Datadog.Trace.Activity.Handlers
                 {
                     // We ensure the activity follows the same TraceId as the span
                     // And marks the ParentId the current spanId
-
-                    if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
+                    if ((activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime) && activity.IdFormat == ActivityIdFormatDuckType.W3C)
                     {
                         // TraceId (always 32 chars long even when using 64-bit ids)
                         w3cActivity.TraceId = activeSpan.Context.RawTraceId;
