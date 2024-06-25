@@ -47,7 +47,7 @@ internal static class RaspModule
 
         var rootSpan = Tracer.Instance.InternalActiveScope?.Root?.Span;
 
-        if (rootSpan is null)
+        if (rootSpan is null || rootSpan.IsFinished)
         {
             return;
         }
