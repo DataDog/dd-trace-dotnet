@@ -210,6 +210,28 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             return *pcTypeRefs > 0 ? HResult.S_OK : HResult.S_FALSE;
         }
 
+        public unsafe HResult EnumMemberRefs(HCORENUM* phEnum, MdToken tkParent, MdMemberRef* rMemberRefs, uint cMax, uint* pcTokens)
+        {
+            var typeRef = LookupToken(tkParent.Value) as TypeReference;
+            if (typeRef is null) { return HResult.E_INVALIDARG; }
+
+            Enumerator<MemberReference, MdMemberRef> enumerator;
+            if (phEnum is null || phEnum->Value == 0)
+            {
+                *phEnum = new HCORENUM(enumId++);
+                enumerator = new Enumerator<MemberReference, MdMemberRef>(Module.Definition.GetMemberReferences().Where(e => e.DeclaringType.MetadataToken == typeRef.MetadataToken).ToArray(), (i) => new MdMemberRef(i.MetadataToken.ToInt32()));
+                enumerators[phEnum->Value] = enumerator;
+            }
+            else
+            {
+                enumerator = (Enumerator<MemberReference, MdMemberRef>)enumerators[phEnum->Value];
+            }
+
+            *pcTokens = enumerator.Fetch(rMemberRefs, cMax);
+
+            return *pcTokens > 0 ? HResult.S_OK : HResult.S_FALSE;
+        }
+
         public unsafe HResult EnumCustomAttributes(HCORENUM* phEnum, MdToken tk, MdToken tkType, MdCustomAttribute* rCustomAttributes, uint cMax, uint* pcCustomAttributes)
         {
             var method = LookupToken(tk.Value) as MethodDefinition;
@@ -318,33 +340,26 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
                 *ptkResolutionScope = new MdToken((int)Module.Id.Value);
             }
 
-            typeRef.Name.CopyTo(cchName, szName, pchName);
+            typeRef.FullName.CopyTo(cchName, szName, pchName);
 
             return HResult.S_OK;
         }
 
         public unsafe HResult GetMemberRefProps(MdMemberRef mr, MdToken* ptk, char* szMember, uint cchMember, uint* pchMember, IntPtr* ppvSigBlob, uint* pbSig)
         {
-            var memberRef = LookupToken(mr.Value) as MemberReference;
-            if (memberRef is null) { return HResult.E_INVALIDARG; }
-
-            if (ptk is not null)
-            {
-                *ptk = new MdToken(memberRef.DeclaringType.MetadataToken.ToInt32());
-            }
-
-            memberRef.Name.CopyTo(cchMember, szMember, pchMember);
-
-            return HResult.S_OK;
+            return GetMemberProps(new MdToken(mr.Value), ptk, szMember, cchMember, pchMember, null, ppvSigBlob, pbSig, null, null, null, null, null);
         }
 
-        public unsafe HResult GetMemberProps(MdToken mb, MdTypeDef* pClass, char* szMember, uint cchMember, uint* pchMember, int* pdwAttr, IntPtr* ppvSigBlob, uint* pcbSigBlob, uint* pulCodeRVA, int* pdwImplFlags, int* pdwCPlusTypeFlag, char* ppValue, uint* pcchValue)
+        public unsafe HResult GetMemberProps(MdToken mb, MdToken* pClass, char* szMember, uint cchMember, uint* pchMember, int* pdwAttr, IntPtr* ppvSigBlob, uint* pcbSigBlob, uint* pulCodeRVA, int* pdwImplFlags, int* pdwCPlusTypeFlag, char* ppValue, uint* pcchValue)
         {
             var member = Module.GetMember(mb.Value);
             if (member is null) { return HResult.E_INVALIDARG; }
 
-            *pClass = member.DeclaringType;
-            member.Name.CopyTo(cchMember, szMember, pchMember);
+            if (pClass is not null)
+            {
+                *pClass = new MdToken(member.DeclaringType.Value);
+                member.Name.CopyTo(cchMember, szMember, pchMember);
+            }
 
             if (pdwAttr is not null)
             {
@@ -365,6 +380,25 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             if (pcchValue is not null)
             {
                 *pcchValue = 0;
+            }
+
+            return HResult.S_OK;
+        }
+
+        public unsafe HResult GetMethodSpecProps(MdMethodSpec mi, MdToken* tkParent, IntPtr* ppvSigBlob, uint* pcbSigBlob)
+        {
+            var methodSpec = Module.GetMember(mi.Value) as MethodSpecInfo;
+            if (methodSpec is null) { return HResult.E_INVALIDARG; }
+
+            if (tkParent is not null)
+            {
+                *tkParent = new MdToken(methodSpec.Definition.ElementMethod.MetadataToken.ToInt32());
+            }
+
+            if (ppvSigBlob is not null && pcbSigBlob is not null)
+            {
+                *ppvSigBlob = methodSpec.GetSignature();
+                *pcbSigBlob = methodSpec.SignatureLength;
             }
 
             return HResult.S_OK;
@@ -399,7 +433,7 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             return HResult.S_OK;
         }
 
-        public unsafe HResult GetMethodProps(MdMethodDef mb, MdTypeDef* pClass, char* szMethod, uint cchMethod, uint* pchMethod, int* pdwAttr, IntPtr* ppvSigBlob, uint* pcbSigBlob, uint* pulCodeRVA, int* pdwImplFlags)
+        public unsafe HResult GetMethodProps(MdMethodDef mb, MdToken* pClass, char* szMethod, uint cchMethod, uint* pchMethod, int* pdwAttr, IntPtr* ppvSigBlob, uint* pcbSigBlob, uint* pulCodeRVA, int* pdwImplFlags)
         {
             return GetMemberProps(new MdToken(mb.Value), pClass, szMethod, cchMethod, pchMethod, pdwAttr, ppvSigBlob, pcbSigBlob, pulCodeRVA, pdwImplFlags, null, null, null);
         }
@@ -610,6 +644,18 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
                 *pMetaData = new ASSEMBLYMETADATA(assemblyRef.Version.Major, assemblyRef.Version.Minor, assemblyRef.Version.Build, assemblyRef.Version.Revision);
             }
 
+            return HResult.S_OK;
+        }
+
+        public unsafe HResult FindTypeRef(MdToken tkResolutionScope, char* szName, MdTypeRef* ptr)
+        {
+            var name = System.Runtime.InteropServices.Marshal.PtrToStringAuto((IntPtr)szName);
+            if (string.IsNullOrEmpty(name)) { return HResult.E_INVALIDARG; }
+
+            var typeRef = Module.Definition.GetTypeReferences().FirstOrDefault(t => t.FullName == name);
+            if (typeRef is null) { return HResult.E_INVALIDARG; }
+
+            *ptr = new MdTypeRef(typeRef.MetadataToken.ToInt32());
             return HResult.S_OK;
         }
 

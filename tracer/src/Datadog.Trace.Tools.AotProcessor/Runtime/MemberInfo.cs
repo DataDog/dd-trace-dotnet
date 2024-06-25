@@ -11,6 +11,8 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
 {
     internal class MemberInfo : IDisposable
     {
+        private GCHandle signature = default;
+
         public MemberInfo(MemberReference definition, int id, ModuleInfo module)
         {
             Definition = definition;
@@ -21,6 +23,10 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
 
         public virtual void Dispose()
         {
+            if (!signature.IsAllocated)
+            {
+                signature.Free();
+            }
         }
 
         public MemberReference Definition { get; }
@@ -35,10 +41,20 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
 
         public virtual IntPtr GetSignature()
         {
-            return IntPtr.Zero;
+            if (Definition.RawSignature is null || Definition.RawSignature.Length == 0)
+            {
+                return IntPtr.Zero;
+            }
+
+            if (!signature.IsAllocated)
+            {
+                signature = GCHandle.Alloc(Definition.RawSignature, GCHandleType.Pinned);
+            }
+
+            return signature.AddrOfPinnedObject();
         }
 
-        public virtual uint SignatureLength => 0;
+        public virtual uint SignatureLength => (uint)(Definition.RawSignature?.Length ?? 0);
 
         public virtual IntPtr GetRawBody()
         {

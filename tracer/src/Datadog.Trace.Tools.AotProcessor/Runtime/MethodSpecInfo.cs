@@ -9,11 +9,11 @@ using Mono.Cecil;
 
 namespace Datadog.Trace.Tools.AotProcessor.Runtime
 {
-    internal class MethodInfo : MemberInfo
+    internal class MethodSpecInfo : MemberInfo
     {
         private GCHandle rawBody = default;
 
-        public MethodInfo(MethodDefinition definition, int id, ModuleInfo module)
+        public MethodSpecInfo(GenericInstanceMethod definition, int id, ModuleInfo module)
             : base(definition, id, module)
         {
             Definition = definition;
@@ -29,10 +29,9 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             base.Dispose();
         }
 
-        public new MethodDefinition Definition { get; }
+        public new GenericInstanceMethod Definition { get; }
 
-        public override int Attributes => (int)Definition.Attributes;
-
+/*
         public override IntPtr GetRawBody()
         {
             if (!rawBody.IsAllocated)
@@ -44,5 +43,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
         }
 
         public override uint RawBodyLength => (uint)Definition.Body.RawBody.Length;
+*/
     }
 }
