@@ -54,7 +54,7 @@ namespace Datadog.Trace.AppSec.Waf
                 AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
             }
 
-            Timeout = returnStruct.Timeout;
+            Timeout = returnStruct.Timeout > 0;
         }
 
         public WafReturnCode ReturnCode { get; }

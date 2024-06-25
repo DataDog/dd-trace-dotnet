@@ -107,6 +107,7 @@ public class ContextTests : WafLibraryRequiredTest
 
                         args.Add(AddressesConstants.RequestBody, new List<string> { "dog1", "dog2", "dog3", "dog4" });
                         result = context.Run(args, WafRunTimeoutMicroSeconds);
+                        result.Timeout.Should().BeFalse("Timeout should be false");
                         result.ReturnCode.Should().Be(WafReturnCode.Ok);
                         args.Clear();
 
@@ -118,6 +119,7 @@ public class ContextTests : WafLibraryRequiredTest
                         args.Add(AddressesConstants.RequestPathParams, new Dictionary<string, object> { { "controller", "Home" }, { "action", "Index" }, { "id", "appscan_fingerprint" } });
 #endif
                         result = context.Run(args, WafRunTimeoutMicroSeconds);
+                        result.Timeout.Should().BeFalse("Timeout should be false");
                         args.Clear();
 
 #if NETFRAMEWORK
@@ -126,12 +128,14 @@ public class ContextTests : WafLibraryRequiredTest
                         args.Add(AddressesConstants.RequestPathParams, new Dictionary<string, object> { { "id", "appscan_fingerprint" } });
 #endif
                         result = context.Run(args, WafRunTimeoutMicroSeconds);
+                        result.Timeout.Should().BeFalse("Timeout should be false");
                         args.Clear();
 
                         args.Add(AddressesConstants.ResponseBody, new List<object> { "dog1", true, 1.5, 1.40d, "dummy_rule", longArraylist, longArraylist });
                         args.Add(AddressesConstants.ResponseHeaderNoCookies, new Dictionary<string, ArrayList> { { "content-type", longArraylist } });
                         args.Add(AddressesConstants.ResponseStatus, "200");
                         result = context.Run(args, WafRunTimeoutMicroSeconds);
+                        result.Timeout.Should().BeFalse("Timeout should be false");
                         result.ReturnCode.Should().Be(WafReturnCode.Ok);
                         args.Clear();
                     }
