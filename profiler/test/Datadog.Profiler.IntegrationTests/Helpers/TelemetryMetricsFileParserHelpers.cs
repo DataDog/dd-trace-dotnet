@@ -23,25 +23,25 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return hasSentProfile;
         }
 
-        public static void ShouldContainTags(this TelemetryMetricsFileParser parser, string[] containedTags)
+        public static void ShouldContainTags(this TelemetryMetricsFileParser parser, string[] containedTags, bool mandatory = false)
         {
             string error = string.Empty;
             foreach (var metric in parser.Profiles)
             {
-                Assert.True(metric.ContainsTags(containedTags, false, ref error), $"{error}");
+                Assert.True(metric.ContainsTags(containedTags, mandatory, ref error), $"{error}");
             }
             foreach (var metric in parser.RuntimeIds)
             {
-                Assert.True(metric.ContainsTags(containedTags, false, ref error), $"{error}");
+                Assert.True(metric.ContainsTags(containedTags, mandatory, ref error), $"{error}");
             }
         }
 
-        public static void ShouldContainTags(this List<TelemetryMetric> metrics, string[] containedTags)
+        public static void ShouldContainTags(this List<TelemetryMetric> metrics, string[] containedTags, bool mandatory = false)
         {
             string error = string.Empty;
             foreach (var metric in metrics)
             {
-                Assert.True(metric.ContainsTags(containedTags, false, ref error), $"{error}");
+                Assert.True(metric.ContainsTags(containedTags, mandatory, ref error), $"{error}");
             }
         }
 
