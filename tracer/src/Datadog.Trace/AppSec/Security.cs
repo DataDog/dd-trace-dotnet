@@ -160,15 +160,11 @@ namespace Datadog.Trace.AppSec
 
         internal static bool CalculateIsAnonUserTrackingMode(string? remote, string local)
         {
-            Log.Information("remote: {Remote}, local: {Local}", remote, local);
-
             if (remote != null)
             {
-                Log.Information("CalculateIsAnonUserTrackingMode (remote == SecuritySettings.UserTrackingAnonMode): {Result}", local == SecuritySettings.UserTrackingAnonMode);
                 return remote is SecuritySettings.UserTrackingAnonMode;
             }
 
-            Log.Information("CalculateIsAnonUserTrackingMode (local == SecuritySettings.UserTrackingAnonMode): {Result}", local == SecuritySettings.UserTrackingAnonMode);
             return local == SecuritySettings.UserTrackingAnonMode;
         }
 

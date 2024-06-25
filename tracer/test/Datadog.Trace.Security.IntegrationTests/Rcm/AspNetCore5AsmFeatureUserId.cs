@@ -5,6 +5,9 @@
 
 #if NETCOREAPP3_0_OR_GREATER
 
+#pragma warning disable SA1402 // File may only contain a single class
+#pragma warning disable SA1649 // File name must match first type name
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -21,14 +24,15 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
-    public class AspNetCore5AsmFeatureUserId : RcmBase
-    {
-        public AspNetCore5AsmFeatureUserId(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmFeatureUserId))
-        {
-            // SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "true");
-        }
+    public class AspNetCore5AsmFeatureUserIdSecurityRemoteActivated(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : AspNetCore5AsmFeatureUserId(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmFeatureUserIdSecurityRemoteActivated));
 
+    public class AspNetCore5AsmFeatureUserIdSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : AspNetCore5AsmFeatureUserId(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmFeatureUserIdSecurityEnabled));
+
+    public abstract class AspNetCore5AsmFeatureUserId(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName)
+        : RcmBase(fixture, outputHelper, enableSecurity, testName)
+    {
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public async Task TestChangeUserIdCollection()
@@ -40,22 +44,29 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var active = ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection));
-            var request0 = await agent.SetupRcmAndWait(Output, new[] { active }, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
-            request0.Should().NotBeNull();
+            var active = ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection) + "Activate");
+            if (EnableSecurity is not true)
+            {
+                var request0 = await agent.SetupRcmAndWait(Output, new[] { active }, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
+                request0.Should().NotBeNull();
+            }
 
             var span0Ident = await SendRequestsAsync(agent, url, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
             await SendRequestsAsync(agent, "/account/reset-memory-db");
             await SendRequestsAsync(agent, "/account/logout");
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true }, AutoUserInstrum = new AutoUserInstrum { Mode = "anon" } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection)) }, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
+            var anonMode = ((object)new AsmFeatures { AutoUserInstrum = new AutoUserInstrum { Mode = "anon" } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection));
+            var request1Files = EnableSecurity is true ? new[] { anonMode } : new[] { active, anonMode };
+            var request1 = await agent.SetupRcmAndWait(Output, request1Files, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request1.Should().NotBeNull();
 
             var span1Anon = await SendRequestsAsync(agent, url, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
             await SendRequestsAsync(agent, "/account/reset-memory-db");
             await SendRequestsAsync(agent, "/account/logout");
 
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true }, AutoUserInstrum = new AutoUserInstrum { Mode = "disabled" } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection)) }, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
+            var disabledMode = ((object)new AsmFeatures { AutoUserInstrum = new AutoUserInstrum { Mode = "disabled" } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection));
+            var request2Files = EnableSecurity is true ? new[] { disabledMode } : new[] { active, disabledMode };
+            var request2 = await agent.SetupRcmAndWait(Output, request2Files, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request2.Should().NotBeNull();
 
             var spans2Disabled = await SendRequestsAsync(agent, url, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
