@@ -261,7 +261,9 @@ HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool
     return S_OK;
 }
 
-HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl)
+HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
+                                        ICorProfilerFunctionControl* pFunctionControl,
+                                        ICorProfilerInfo* pCorProfilerInfo)
 {
     const auto moduleId = moduleHandler->GetModuleId();
     const auto methodId = methodHandler->GetMethodDef();
@@ -331,7 +333,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
         Logger::Info("Applying ", methodProbes.size(), " method probes, ", lineProbes.size(), " line probes and ",
                      spanOnMethodProbes.size(), " span probes on methodDef: ", methodHandler->GetMethodDef());
 
-        auto hr = Rewrite(moduleHandler, methodHandler, pFunctionControl, methodProbes, lineProbes, spanOnMethodProbes);
+        auto hr = Rewrite(moduleHandler, methodHandler, pFunctionControl, pCorProfilerInfo, methodProbes, lineProbes,
+                          spanOnMethodProbes);
 
         if (hr == S_OK)
         {
@@ -2108,6 +2111,7 @@ void DebuggerMethodRewriter::MarkAllSpanOnMethodProbesAsError(SpanProbeOnMethodD
 HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                                         RejitHandlerModuleMethod* methodHandler,
                                         ICorProfilerFunctionControl* pFunctionControl,
+                                        ICorProfilerInfo* pCorProfilerInfo,
                                         MethodProbeDefinitions& methodProbes,
                                         LineProbeDefinitions& lineProbes,
                                         SpanProbeOnMethodDefinitions& spanOnMethodProbes) const
@@ -2157,7 +2161,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     }
 
     // *** Create rewriter
-    ILRewriter rewriter(m_corProfiler->info_, pFunctionControl, module_id, function_token);
+    ILRewriter rewriter(pCorProfilerInfo, pFunctionControl, module_id, function_token);
     auto hr = rewriter.Import();
     if (FAILED(hr))
     {

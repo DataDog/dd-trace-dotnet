@@ -26,7 +26,6 @@ private:
     std::unordered_map<trace::MethodIdentifier, std::set<shared::WSTRING>> _successfulInstrumentationIds;
     std::recursive_mutex _successfulInstrumentationIdsMutex;
 
-    void RequestRevert(ModuleID moduleId, mdMethodDef methodId, std::shared_ptr<RejitHandler> rejit_handler);
     void RequestRejit(ModuleID moduleId, mdMethodDef methodId, std::shared_ptr<RejitHandler> rejit_handler);
 
 public:
