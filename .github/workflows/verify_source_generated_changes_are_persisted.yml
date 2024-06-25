@@ -7,6 +7,8 @@ on:
 jobs:
   verify_source_generators:
     runs-on: windows-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Support longpaths

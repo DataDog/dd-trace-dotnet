@@ -14,6 +14,9 @@ on:
 jobs:
   bump_version:
     runs-on: windows-latest
+    permissions:
+      contents: write # Push branches
+      issues: write # change milestones 
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       NewVersion: "${{ github.event.inputs.version }}"
