@@ -242,12 +242,24 @@ internal record ConfigurationStatus
                 _asmFeatureProduct.ProcessUpdates(this, asmFeaturesToUpdate);
                 _asmFeatureProduct.ProcessRemovals(this, asmFeaturesToRemove);
 
-                EnableAsm = !AsmFeaturesByFile.IsEmpty() && AsmFeaturesByFile.All(a => a.Value.Enabled == true);
+                EnableAsm = !AsmFeaturesByFile.IsEmpty() && AsmFeaturesByFile.All(a => a.Value?.Enabled is null or true);
 
-                var autoUserInstrumMode = AutoUserInstrumByFile.Values.FirstOrDefault();
-                Log.Information("autoUserInstrumModes: {AutoUserInstrumMode}", string.Join(",", AutoUserInstrumByFile.Values.Select(x => x?.Mode)));
+                // empty, one value, or all values the same are valid states, anything else is an error
+                var autoUserInstrumMode = AutoUserInstrumByFile.Values.FirstOrDefault(x => x?.Mode is not null);
+                if (autoUserInstrumMode == null ||
+                    AutoUserInstrumByFile.All(x => x.Value?.Mode is null || x.Value?.Mode == autoUserInstrumMode?.Mode))
+                {
+                    AutoUserInstrumMode = autoUserInstrumMode?.Mode?.ToLowerInvariant();
+                }
+                else
+                {
+                    AutoUserInstrumMode = "unknown value";
+                    Log.Error(
+                        "AutoUserInstrumMode was 'unknown value', source data: {AutoUserInstrumByFile}",
+                        string.Join(",", AutoUserInstrumByFile.Values.Select(x => x?.Mode)));
+                }
+
                 AutoUserInstrumMode = autoUserInstrumMode?.Mode?.ToLowerInvariant();
-                Log.Information("AutoUserInstrumMode: {AutoUserInstrumMode}", AutoUserInstrumMode);
             }
         }
 

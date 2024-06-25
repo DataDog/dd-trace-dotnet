@@ -40,7 +40,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var active = ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true }, AutoUserInstrum = new AutoUserInstrum { Mode = "ident" } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection));
+            var active = ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection));
             var request0 = await agent.SetupRcmAndWait(Output, new[] { active }, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request0.Should().NotBeNull();
 

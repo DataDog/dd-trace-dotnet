@@ -77,16 +77,17 @@ public static class SignInManagerPasswordSignInIntegration
 
             setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
             tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, "false");
-            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutoInstrumentationMode);
 
             if (security.IsAnonUserTrackingMode)
             {
                 var anonId = UserEventsCommon.GetAnonId(id);
                 tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
             }
             else
             {
                 tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, id);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
             }
 
             security.SetTraceSamplingPriority(span);

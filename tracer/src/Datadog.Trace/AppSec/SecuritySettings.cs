@@ -82,7 +82,7 @@ namespace Datadog.Trace.AppSec
                 config
                    .WithKeys(ConfigurationKeys.AppSec.UserEventsAutomatedTracking)
                    .AsString(
-                        isPresent => isPresent ? UserTrackingDisabled : DeprecatedUserTrackingSafeMode,
+                        isPresent => isPresent ? UserTrackingDisabled : UserTrackingIdentMode,
                         val =>
                             val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
                          || val.Equals(DeprecatedUserTrackingSafeMode, StringComparison.OrdinalIgnoreCase)

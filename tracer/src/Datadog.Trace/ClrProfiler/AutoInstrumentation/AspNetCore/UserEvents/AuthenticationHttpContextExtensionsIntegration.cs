@@ -72,10 +72,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                         {
                             var anonId = UserEventsCommon.GetAnonId(claim.Value);
                             tryAddTag(Tags.User.Id, anonId);
+                            setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, SecuritySettings.UserTrackingAnonMode);
                         }
                         else
                         {
                             tryAddTag(Tags.User.Id, claim.Value);
+                            setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, SecuritySettings.UserTrackingIdentMode);
                         }
 
                         foundUserId = true;
@@ -88,7 +90,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                 {
                     security.SetTraceSamplingPriority(span);
                     setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, Security.Instance.Settings.UserEventsAutoInstrumentationMode);
                 }
                 else
                 {

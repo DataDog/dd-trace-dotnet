@@ -71,7 +71,7 @@ namespace Datadog.Trace.AppSec
                 }
 
                 var subscriptionsKeys = new List<string>();
-                if (_settings.CanBeToggled)
+                if (_settings.CanBeToggled || _settings.Enabled)
                 {
                     subscriptionsKeys.Add(RcmProducts.AsmFeatures);
                 }

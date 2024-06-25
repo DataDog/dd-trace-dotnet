@@ -80,29 +80,31 @@ public static class UserManagerCreateIntegration
             if (returnValue.Succeeded)
             {
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessTrack, "true");
-                setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, security.Settings.UserEventsAutoInstrumentationMode);
                 if (security.IsAnonUserTrackingMode)
                 {
                     var anonId = UserEventsCommon.GetAnonId(id);
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, anonId);
+                    setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, SecuritySettings.UserTrackingAnonMode);
                 }
                 else
                 {
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, id);
+                    setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, SecuritySettings.UserTrackingIdentMode);
                 }
             }
             else
             {
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureTrack, "true");
-                setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, security.Settings.UserEventsAutoInstrumentationMode);
                 if (security.IsAnonUserTrackingMode)
                 {
                     var anonId = UserEventsCommon.GetAnonId(id);
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, anonId);
+                    setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
                 }
                 else
                 {
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, id);
+                    setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
                 }
             }
 

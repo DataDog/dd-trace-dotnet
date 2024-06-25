@@ -24,7 +24,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       usr.id: Guid_2,
-      _dd.appsec.events.users.login.success.auto.mode: anon,
+      _dd.appsec.events.users.login.success.auto.mode: ident,
       _dd.runtime_family: dotnet
     },
     Metrics: {
