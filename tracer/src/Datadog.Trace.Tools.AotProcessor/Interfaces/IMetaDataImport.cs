@@ -105,7 +105,7 @@ internal unsafe interface IMetaDataImport : IUnknown
         MdToken tkParent,               // [IN] Parent token to scope the enumeration.
         MdMemberRef* rMemberRefs,          // [OUT] Put MemberRefs here.
         uint cMax,                   // [IN] Max MemberRefs to put.
-        out uint pcTokens);        // [OUT] Put # put here.
+        uint* pcTokens);        // [OUT] Put # put here.
 
     HResult EnumMethodImpls(             // S_OK, S_FALSE, or error
         HCORENUM* phEnum,                // [IN|OUT] Pointer to the enum.
@@ -153,7 +153,7 @@ internal unsafe interface IMetaDataImport : IUnknown
 
     HResult GetMethodProps(
         MdMethodDef mb,                     // The method for which to get props.
-        MdTypeDef* pClass,                // Put method's class here.
+        MdToken* pClass,                // Put method's class here.
         char* szMethod,               // Put method's name here.
         uint cchMethod,              // Size of szMethod buffer in wide chars.
         uint* pchMethod,             // Put actual size here
@@ -324,11 +324,11 @@ internal unsafe interface IMetaDataImport : IUnknown
     HResult FindTypeRef(
         MdToken tkResolutionScope,      // [IN] ModuleRef, AssemblyRef or TypeRef.
         char* szName,                 // [IN] TypeRef Name.
-        out MdTypeRef ptr);             // [OUT] matching TypeRef.
+        MdTypeRef* ptr);             // [OUT] matching TypeRef.
 
     HResult GetMemberProps(
         MdToken mb,                     // The member for which to get props.
-        MdTypeDef* pClass,              // Put member's class here.
+        MdToken* pClass,              // Put member's class here.
         char* szMember,                 // Put member's name here.
         uint cchMember,                 // Size of szMember buffer in wide chars.
         uint* pchMember,                // Put actual size here

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.AotProcessor.Interfaces;
@@ -54,16 +55,37 @@ internal class ModuleInfo
         return member;
     }
 
-    public MemberInfo? GetMember(int token)
+    public MemberInfo? GetMember(int tokenId)
     {
-        if (members.TryGetValue(token, out var res))
+        if (members.TryGetValue(tokenId, out var res))
         {
             return res;
         }
 
-        var definition = Definition.LookupToken(token) as MethodDefinition;
-        if (definition is null) { return null; }
+        var definition = Definition.LookupToken(tokenId);
 
-        return GetMember(definition);
+        if (definition is FieldDefinition fieldDef)
+        {
+            res = new FieldInfo(fieldDef, tokenId, this);
+        }
+        else if (definition is MethodDefinition methodDef)
+        {
+            res = new MethodInfo(methodDef, tokenId, this);
+        }
+        else if (definition is GenericInstanceMethod methodSpec)
+        {
+            res = new MethodSpecInfo(methodSpec, tokenId, this);
+        }
+        else if (definition is MethodReference methodRef)
+        {
+            res = new MemberInfo(methodRef, tokenId, this);
+        }
+
+        if (res is not null)
+        {
+            members[tokenId] = res;
+        }
+
+        return res;
     }
 }

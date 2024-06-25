@@ -24,12 +24,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             throw new NotImplementedException();
         }
 
-        public unsafe HResult GetMethodSpecProps(MdMethodSpec mi, out MdToken tkParent, out byte* ppvSigBlob, out uint pcbSigBlob)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
         public unsafe HResult EnumGenericParamConstraints(HCORENUM* phEnum, MdGenericParam tk, out MdGenericParamConstraint* rGenericParamConstraints, uint cMax, out uint pcGenericParamConstraints)
         {
             System.Diagnostics.Debugger.Break();
@@ -133,12 +127,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
         }
 
         public unsafe HResult EnumParams(HCORENUM* phEnum, MdMethodDef mb, MdParamDef* rParams, uint cMax, out uint pcTokens)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
-        public unsafe HResult EnumMemberRefs(HCORENUM* phEnum, MdToken tkParent, MdMemberRef* rMemberRefs, uint cMax, out uint pcTokens)
         {
             System.Diagnostics.Debugger.Break();
             throw new NotImplementedException();
@@ -289,12 +277,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
         }
 
         public HResult GetParamForMethodIndex(MdMethodDef md, uint ulParamSeq, out MdParamDef ppd)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
-        public unsafe HResult FindTypeRef(MdToken tkResolutionScope, char* szName, out MdTypeRef ptr)
         {
             System.Diagnostics.Debugger.Break();
             throw new NotImplementedException();

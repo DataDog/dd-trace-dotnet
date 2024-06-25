@@ -26,9 +26,9 @@ internal unsafe interface IMetaDataImport2 : IMetaDataImport
 
     HResult GetMethodSpecProps(
         MdMethodSpec mi,                        // [IN] The method instantiation
-        out MdToken tkParent,                   // [OUT] MethodDef or MemberRef
-        out byte* ppvSigBlob,                   // [OUT] point to the blob value of meta data
-        out uint pcbSigBlob);                   // [OUT] actual size of signature blob
+        MdToken* tkParent,                   // [OUT] MethodDef or MemberRef
+        IntPtr* ppvSigBlob,                   // [OUT] point to the blob value of meta data
+        uint* pcbSigBlob);                   // [OUT] actual size of signature blob
 
     HResult EnumGenericParamConstraints(
         HCORENUM* phEnum,                       // [IN|OUT] Pointer to the enum.
