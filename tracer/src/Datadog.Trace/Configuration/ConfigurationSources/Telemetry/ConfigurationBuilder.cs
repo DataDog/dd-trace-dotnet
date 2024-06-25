@@ -359,7 +359,7 @@ internal readonly struct ConfigurationBuilder
         [return: NotNullIfNotNull(nameof(defaultValue))] // This doesn't work with nullables, but it still expresses intent
         public int? AsInt32(int? defaultValue, Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
         {
-            var result = GetIntResult(validator, converter);
+            var result = GetInt32Result(validator, converter);
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
@@ -597,7 +597,7 @@ internal readonly struct ConfigurationBuilder
                    ? GetResult(AsBoolSelector, validator, recordValue: true)
                    : GetResult(AsBoolWithConverterSelector, validator, converter, recordValue: true);
 
-        private ConfigurationResult<int> GetIntResult(Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
+        private ConfigurationResult<int> GetInt32Result(Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
             => converter is null
                    ? GetResult(AsInt32Selector, validator, recordValue: true)
                    : GetResult(AsInt32WithConverterSelector, validator, converter, recordValue: true);
