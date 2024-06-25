@@ -5,6 +5,7 @@ using System.Runtime.Intrinsics.X86;
 using System.Xml.Linq;
 using Datadog.Trace.Tools.AotProcessor.Interfaces;
 using Mono.Cecil;
+using Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Tools.AotProcessor.Runtime
 {
@@ -98,6 +99,41 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             {
                 return Module.Definition.ModuleReferences.FirstOrDefault(r => r.MetadataToken.ToInt32() == tokenId);
             }
+            else if (token.TokenType == TokenType.Property)
+            {
+                foreach (var type in Module.Definition.Types)
+                {
+                    var property = type.Properties.FirstOrDefault(p => p.MetadataToken.ToInt32() == tokenId);
+                    if (property is not null) { return property; }
+                }
+            }
+
+            return null;
+        }
+
+        internal CustomAttribute? LookupToken(MdCustomAttribute tokenId)
+        {
+            var token = new MetadataToken((uint)tokenId.Value);
+            if (token.TokenType == TokenType.CustomAttribute)
+            {
+                foreach (var type in Module.Definition.Types)
+                {
+                    var attribute = type.CustomAttributes.FirstOrDefault(p => p.MetadataToken.ToInt32() == tokenId.Value);
+                    if (attribute is not null) { return attribute; }
+
+                    foreach (var method in type.Methods)
+                    {
+                        attribute = method.CustomAttributes.FirstOrDefault(p => p.MetadataToken.ToInt32() == tokenId.Value);
+                        if (attribute is not null) { return attribute; }
+                    }
+
+                    foreach (var property in type.Properties)
+                    {
+                        attribute = property.CustomAttributes.FirstOrDefault(p => p.MetadataToken.ToInt32() == tokenId.Value);
+                        if (attribute is not null) { return attribute; }
+                    }
+                }
+            }
 
             return null;
         }
@@ -171,21 +207,135 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
 
             *pcTypeRefs = enumerator.Fetch(rTypeRefs, cMax);
 
+            return *pcTypeRefs > 0 ? HResult.S_OK : HResult.S_FALSE;
+        }
+
+        public unsafe HResult EnumCustomAttributes(HCORENUM* phEnum, MdToken tk, MdToken tkType, MdCustomAttribute* rCustomAttributes, uint cMax, uint* pcCustomAttributes)
+        {
+            var method = LookupToken(tk.Value) as MethodDefinition;
+            if (method is null) { return HResult.E_INVALIDARG; }
+
+            Enumerator<CustomAttribute, MdCustomAttribute> enumerator;
+            if (phEnum is null || phEnum->Value == 0)
+            {
+                *phEnum = new HCORENUM(enumId++);
+                enumerator = new Enumerator<CustomAttribute, MdCustomAttribute>(method.CustomAttributes.ToArray(), (i) => new MdCustomAttribute(i.MetadataToken.ToInt32()));
+                enumerators[phEnum->Value] = enumerator;
+            }
+            else
+            {
+                enumerator = (Enumerator<CustomAttribute, MdCustomAttribute>)enumerators[phEnum->Value];
+            }
+
+            *pcCustomAttributes = enumerator.Fetch(rCustomAttributes, cMax);
+
+            return *pcCustomAttributes > 0 ? HResult.S_OK : HResult.S_FALSE;
+        }
+
+        public unsafe HResult EnumProperties(HCORENUM* phEnum, MdTypeDef td, MdProperty* rProperties, uint cMax, uint* pcProperties)
+        {
+            var typeDef = LookupToken(td.Value) as TypeDefinition;
+            if (typeDef is null) { return HResult.E_INVALIDARG; }
+
+            Enumerator<PropertyDefinition, MdProperty> enumerator;
+            if (phEnum is null || phEnum->Value == 0)
+            {
+                *phEnum = new HCORENUM(enumId++);
+                enumerator = new Enumerator<PropertyDefinition, MdProperty>(typeDef.Properties.ToArray(), (i) => new MdProperty(i.MetadataToken.ToInt32()));
+                enumerators[phEnum->Value] = enumerator;
+            }
+            else
+            {
+                enumerator = (Enumerator<PropertyDefinition, MdProperty>)enumerators[phEnum->Value];
+            }
+
+            *pcProperties = enumerator.Fetch(rProperties, cMax);
+
+            return *pcProperties > 0 ? HResult.S_OK : HResult.S_FALSE;
+        }
+
+        public unsafe HResult GetCustomAttributeProps(MdCustomAttribute cv, MdToken* ptkObj, MdToken* ptkType, IntPtr* ppBlob, uint* pcbSize)
+        {
+            var customAttribute = LookupToken(cv);
+            if (customAttribute is null) { return HResult.E_INVALIDARG; }
+
+            if (ptkObj is not null)
+            {
+                *ptkObj = new MdToken(customAttribute.Owner.MetadataToken.ToInt32());
+            }
+
+            if (ptkType is not null)
+            {
+                *ptkType = new MdToken(customAttribute.Constructor.MetadataToken.ToInt32());
+            }
+
+            return HResult.S_OK;
+        }
+
+        public unsafe HResult GetPropertyProps(MdProperty prop, MdTypeDef* pClass, char* szProperty, uint cchProperty, uint* pchProperty, int* pdwPropFlags, IntPtr* ppvSig, uint* pbSig, int* pdwCPlusTypeFlag, IntPtr* ppDefaultValue, uint* pcchDefaultValue, MdMethodDef* pmdSetter, MdMethodDef* pmdGetter, MdMethodDef* rmdOtherMethod, uint cMax, uint* pcOtherMethod)
+        {
+            var property = LookupToken(prop.Value) as PropertyDefinition;
+            if (property is null) { return HResult.E_INVALIDARG; }
+
+            if (pClass is not null)
+            {
+                *pClass = new MdTypeDef(property.DeclaringType.MetadataToken.ToInt32());
+            }
+
+            property.Name.CopyTo(cchProperty, szProperty, pchProperty);
+
+            if (pdwPropFlags is not null)
+            {
+                *pdwPropFlags = (int)property.Attributes;
+            }
+
+            if (pdwCPlusTypeFlag is not null)
+            {
+                *pdwCPlusTypeFlag = 0;
+            }
+
+            if (pmdSetter is not null)
+            {
+                *pmdSetter = new MdMethodDef(property.SetMethod?.MetadataToken.ToInt32() ?? 0);
+            }
+
+            if (pmdGetter is not null)
+            {
+                *pmdGetter = new MdMethodDef(property.GetMethod?.MetadataToken.ToInt32() ?? 0);
+            }
+
             return HResult.S_OK;
         }
 
         public unsafe HResult GetTypeRefProps(MdTypeRef tr, MdToken* ptkResolutionScope, char* szName, uint cchName, uint* pchName)
         {
-            var typeRef = Module.Definition.GetTypeReferences().FirstOrDefault(t => t.MetadataToken.ToInt32() == tr.Value);
-            if (typeRef is not null)
+            // var typeRef = Module.Definition.GetTypeReferences().FirstOrDefault(t => t.MetadataToken.ToInt32() == tr.Value);
+            var typeRef = LookupToken(tr.Value) as TypeReference;
+            if (typeRef is null) { return HResult.E_INVALIDARG; }
+
+            if (ptkResolutionScope is not null)
             {
                 *ptkResolutionScope = new MdToken((int)Module.Id.Value);
-                typeRef.Name.CopyTo(cchName, szName, pchName);
-
-                return HResult.S_OK;
             }
 
-            return HResult.E_INVALIDARG;
+            typeRef.Name.CopyTo(cchName, szName, pchName);
+
+            return HResult.S_OK;
+        }
+
+        public unsafe HResult GetMemberRefProps(MdMemberRef mr, MdToken* ptk, char* szMember, uint cchMember, uint* pchMember, IntPtr* ppvSigBlob, uint* pbSig)
+        {
+            var memberRef = LookupToken(mr.Value) as MemberReference;
+            if (memberRef is null) { return HResult.E_INVALIDARG; }
+
+            if (ptk is not null)
+            {
+                *ptk = new MdToken(memberRef.DeclaringType.MetadataToken.ToInt32());
+            }
+
+            memberRef.Name.CopyTo(cchMember, szMember, pchMember);
+
+            return HResult.S_OK;
         }
 
         public unsafe HResult GetMemberProps(MdToken mb, MdTypeDef* pClass, char* szMember, uint cchMember, uint* pchMember, int* pdwAttr, IntPtr* ppvSigBlob, uint* pcbSigBlob, uint* pulCodeRVA, int* pdwImplFlags, int* pdwCPlusTypeFlag, char* ppValue, uint* pcchValue)
@@ -252,6 +402,15 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
         public unsafe HResult GetMethodProps(MdMethodDef mb, MdTypeDef* pClass, char* szMethod, uint cchMethod, uint* pchMethod, int* pdwAttr, IntPtr* ppvSigBlob, uint* pcbSigBlob, uint* pulCodeRVA, int* pdwImplFlags)
         {
             return GetMemberProps(new MdToken(mb.Value), pClass, szMethod, cchMethod, pchMethod, pdwAttr, ppvSigBlob, pcbSigBlob, pulCodeRVA, pdwImplFlags, null, null, null);
+        }
+
+        public unsafe HResult GetUserString(MdString stk, char* szString, uint cchString, uint* pchString)
+        {
+            var userString = Module.Definition.GetUserString(new MetadataToken((uint)stk.Value));
+            if (userString is null) { return HResult.E_INVALIDARG; }
+
+            userString.CopyTo(cchString, szString, pchString);
+            return HResult.S_OK;
         }
 
         #endregion

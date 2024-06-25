@@ -165,19 +165,19 @@ internal unsafe interface IMetaDataImport : IUnknown
 
     HResult GetMemberRefProps(
         MdMemberRef mr,                     // [IN] given memberref
-        out MdToken ptk,                   // [OUT] Put classref or classdef here.
+        MdToken* ptk,                   // [OUT] Put classref or classdef here.
         char* szMember,               // [OUT] buffer to fill for member's name
         uint cchMember,              // [IN] the count of char of szMember
-        out uint pchMember,             // [OUT] actual count of char in member name
-        out nint* ppvSigBlob,        // [OUT] point to meta data blob value
-        out uint pbSig);           // [OUT] actual size of signature blob
+        uint* pchMember,             // [OUT] actual count of char in member name
+        IntPtr* ppvSigBlob,        // [OUT] point to meta data blob value
+        uint* pbSig);           // [OUT] actual size of signature blob
 
     HResult EnumProperties(              // S_OK, S_FALSE, or error.
         HCORENUM* phEnum,                // [IN|OUT] Pointer to the enum.
         MdTypeDef td,                     // [IN] TypeDef to scope the enumeration.
         MdProperty* rProperties,          // [OUT] Put Properties here.
         uint cMax,                   // [IN] Max properties to put.
-        out uint pcProperties);    // [OUT] Put # put here.
+        uint* pcProperties);    // [OUT] Put # put here.
 
     HResult EnumEvents(                  // S_OK, S_FALSE, or error.
         HCORENUM* phEnum,                // [IN|OUT] Pointer to the enum.
@@ -273,7 +273,7 @@ internal unsafe interface IMetaDataImport : IUnknown
         MdString stk,                    // [IN] String token.
         char* szString,               // [OUT] Copy of string.
         uint cchString,              // [IN] Max chars of room in szString.
-        out uint pchString);       // [OUT] How many chars in actual string.
+        uint* pchString);       // [OUT] How many chars in actual string.
 
     HResult GetPinvokeMap(
         MdToken tk,                     // [IN] FieldDef or MethodDef.
@@ -312,14 +312,14 @@ internal unsafe interface IMetaDataImport : IUnknown
         MdToken tkType,                 // [IN] Type of interest, 0 for all.
         MdCustomAttribute* rCustomAttributes, // [OUT] Put custom attribute tokens here.
         uint cMax,                   // [IN] Size of rCustomAttributes.
-        out uint pcCustomAttributes);  // [OUT, OPTIONAL] Put count of token values here.
+        uint* pcCustomAttributes);  // [OUT, OPTIONAL] Put count of token values here.
 
     HResult GetCustomAttributeProps(
         MdCustomAttribute cv,               // [IN] CustomAttribute token.
-        out MdToken ptkObj,                // [OUT, OPTIONAL] Put object token here.
-        out MdToken ptkType,               // [OUT, OPTIONAL] Put AttrType token here.
-        out void* ppBlob,               // [OUT, OPTIONAL] Put pointer to data here.
-        out uint pcbSize);         // [OUT, OPTIONAL] Put size of date here.
+        MdToken* ptkObj,                // [OUT, OPTIONAL] Put object token here.
+        MdToken* ptkType,               // [OUT, OPTIONAL] Put AttrType token here.
+        IntPtr* ppBlob,               // [OUT, OPTIONAL] Put pointer to data here.
+        uint* pcbSize);         // [OUT, OPTIONAL] Put size of date here.
 
     HResult FindTypeRef(
         MdToken tkResolutionScope,      // [IN] ModuleRef, AssemblyRef or TypeRef.
@@ -356,21 +356,21 @@ internal unsafe interface IMetaDataImport : IUnknown
 
     HResult GetPropertyProps(            // S_OK, S_FALSE, or error.
         MdProperty prop,                   // [IN] property token
-        out MdTypeDef pClass,                // [OUT] typedef containing the property declarion.
+        MdTypeDef* pClass,                // [OUT] typedef containing the property declarion.
         char* szProperty,             // [OUT] Property name
         uint cchProperty,            // [IN] the count of wchar of szProperty
-        out uint pchProperty,           // [OUT] actual count of wchar for property name
-        out int pdwPropFlags,          // [OUT] property flags.
-        out nint* ppvSig,            // [OUT] property type. pointing to meta data internal blob
-        out uint pbSig,                 // [OUT] count of bytes in *ppvSig
-        out int pdwCPlusTypeFlag,      // [OUT] flag for value type. selected ELEMENT_TYPE_*
-        out byte ppDefaultValue,      // [OUT] constant value
-        out uint pcchDefaultValue,      // [OUT] size of constant string in chars, 0 for non-strings.
-        out MdMethodDef pmdSetter,             // [OUT] setter method of the property
-        out MdMethodDef pmdGetter,             // [OUT] getter method of the property
-        out MdMethodDef rmdOtherMethod,       // [OUT] other method of the property
+        uint* pchProperty,           // [OUT] actual count of wchar for property name
+        int* pdwPropFlags,          // [OUT] property flags.
+        IntPtr* ppvSig,            // [OUT] property type. pointing to meta data internal blob
+        uint* pbSig,                 // [OUT] count of bytes in *ppvSig
+        int* pdwCPlusTypeFlag,      // [OUT] flag for value type. selected ELEMENT_TYPE_*
+        IntPtr* ppDefaultValue,      // [OUT] constant value
+        uint* pcchDefaultValue,      // [OUT] size of constant string in chars, 0 for non-strings.
+        MdMethodDef* pmdSetter,             // [OUT] setter method of the property
+        MdMethodDef* pmdGetter,             // [OUT] getter method of the property
+        MdMethodDef* rmdOtherMethod,       // [OUT] other method of the property
         uint cMax,                   // [IN] size of rmdOtherMethod
-        out uint pcOtherMethod);   // [OUT] total number of other method of this property
+        uint* pcOtherMethod);   // [OUT] total number of other method of this property
 
     HResult GetParamProps(
         MdParamDef tk,                     // [IN]The Parameter.
