@@ -150,6 +150,7 @@ TEST(ApplicationStoreTest, CheckTelemetryMetricsWorkerCreation)
     const std::string expectedGitRepository = "DefaultGitRepository";
     const std::string expectedGitCommitSha = "DefaultGitCommitSha";
     const std::string agentUrl = "http://localhost:8126";
+    const std::string emptyString = "";
 
     EXPECT_CALL(mockConfiguration, GetServiceName()).WillRepeatedly(ReturnRef(expectedServiceName));
     EXPECT_CALL(mockConfiguration, GetVersion()).WillRepeatedly(ReturnRef(expectedVersion));
@@ -158,6 +159,9 @@ TEST(ApplicationStoreTest, CheckTelemetryMetricsWorkerCreation)
     EXPECT_CALL(mockConfiguration, GetGitCommitSha()).WillRepeatedly(ReturnRef(expectedGitCommitSha));
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).WillRepeatedly(ReturnRef(agentUrl));
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::SsiEnabled));
+    // for telemetry metrics worker, profiles output directory and telemetry to disk flag are checked
+    EXPECT_CALL(mockConfiguration, IsTelemetryToDiskEnabled()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).WillRepeatedly(ReturnRef(emptyString));
 
     auto [ssiManager, mockSsiManager] = CreateSsiManager();
     EXPECT_CALL(mockSsiManager, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));

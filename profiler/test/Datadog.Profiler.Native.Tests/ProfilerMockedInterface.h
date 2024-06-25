@@ -76,6 +76,7 @@ public:
     MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
     MOCK_METHOD(bool, IsEtwLoggingEnabled, (), (const override));
     MOCK_METHOD(std::chrono::milliseconds, GetSsiLongLivedThreshold, (), (const override));
+    MOCK_METHOD(bool, IsTelemetryToDiskEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter
