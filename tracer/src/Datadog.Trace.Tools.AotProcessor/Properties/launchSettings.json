@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Datadog.Trace.Tools.AotProcessor": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_IAST_ENABLED": "true"
+      },
+      "nativeDebugging": true
+    }
+  }
+}

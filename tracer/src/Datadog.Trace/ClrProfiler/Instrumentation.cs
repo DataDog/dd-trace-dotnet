@@ -49,6 +49,8 @@ namespace Datadog.Trace.ClrProfiler
 
         private static bool legacyMode = false;
 
+        private static bool aotMode = false;
+
         /// <summary>
         /// Gets a value indicating whether Datadog's profiler is attached to the current process.
         /// </summary>
@@ -81,8 +83,11 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Initializes global instrumentation values.
         /// </summary>
-        public static void Initialize()
+        /// <param name="isAot"> AOT mode </param>
+        public static void Initialize(bool isAot = false)
         {
+            aotMode = isAot;
+
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
                 // Initialize() was already called before
@@ -95,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler
             Log.Debug("Initialization started.");
 
             var sw = Stopwatch.StartNew();
-            legacyMode = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
+            legacyMode = !isAot && GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
             if (legacyMode)
             {
                 InitializeLegacy();
