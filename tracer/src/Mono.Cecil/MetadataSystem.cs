@@ -67,6 +67,7 @@ namespace Mono.Cecil {
 
 		internal Dictionary<MetadataToken, byte []> StandAloneSigs = new Dictionary<MetadataToken, byte []>();
 		internal Dictionary<uint, string> UserStrings = new Dictionary<uint, string> ();
+		internal UserStringHeapBuffer UserStringsHeap = new UserStringHeapBuffer ();
 
 		static Dictionary<string, Row<ElementType, bool>> primitive_value_types;
 
@@ -381,5 +382,6 @@ namespace Mono.Cecil {
 
 			return null;
 		}
+
 	}
 }

@@ -20,6 +20,7 @@ using Mono.Cecil.PE;
 using Mono.Collections.Generic;
 using System.Reflection;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace Mono.Cecil {
 
@@ -284,12 +285,7 @@ namespace Mono.Cecil {
 
 		public MetadataToken AddRaw (string userString)
 		{
-			uint offset = 1;
-			if (MetadataSystem.UserStrings.Count > 0) {
-				var lastOffset = MetadataSystem.UserStrings.OrderByDescending (p => p.Key).First ();
-				offset = lastOffset.Key + (uint)lastOffset.Value.Length; // TODO : Figure out alignment
-			}
-
+			var offset = MetadataSystem.UserStringsHeap.GetStringIndex(userString);
 			MetadataSystem.UserStrings [offset] = userString;
 			return new MetadataToken (offset);
 		}
@@ -326,6 +322,7 @@ namespace Mono.Cecil {
 			var values = MetadataSystem.Fields.ToList ();
 			values.Add (value);
 			MetadataSystem.Fields = values.ToArray ();
+			value.DeclaringType.Fields.Add (value);
 			return value;
 		}
 
@@ -335,6 +332,7 @@ namespace Mono.Cecil {
 			var values = MetadataSystem.Methods.ToList ();
 			values.Add (value);
 			MetadataSystem.Methods = values.ToArray ();
+			value.DeclaringType.Methods.Add (value);
 			return value;
 		}
 
@@ -761,8 +759,36 @@ namespace Mono.Cecil {
 			return MetadataSystem.StandAloneSigs.Count;
 		}
 
+		public int ReadBlob ()
+		{
+			var heap = Image.BlobHeap;
+			if (heap is null) {
+				return 0;
+			}
+
+			uint index = 0;
+			while (true) {
+				byte [] buffer = heap.Read (index);
+				if(index > 0 && (buffer is null || buffer.Length == 0)) {
+					break;
+				}
+				index += (uint)buffer.Length + 1;
+			}
+
+			return heap.Blobs.Count;
+		}
+
 		public int ReadUserStrings ()
-		{ 
+		{
+			var heap = Image.UserStringHeap;
+			if (heap is null) {
+				return 0;
+			}
+
+			foreach(var userString in heap.Strings) {
+				_ = AddRaw(userString.Value);
+			}
+
 			return MetadataSystem.UserStrings.Count;
 		}
 

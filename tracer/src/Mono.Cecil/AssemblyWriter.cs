@@ -30,6 +30,7 @@ using GuidIndex = System.UInt32;
 using System.Runtime.CompilerServices;
 using System.Linq;
 using Mono.Cecil.Mono.Cecil;
+using System.Net;
 
 namespace Mono.Cecil {
 
@@ -899,6 +900,9 @@ namespace Mono.Cecil {
 		protected readonly Dictionary<ImportScopeRow, MetadataToken> import_scope_map;
 		protected readonly Dictionary<string, MetadataToken> document_map;
 
+		protected readonly Dictionary<MetadataToken, FieldDefinition> addedFields = new Dictionary<MetadataToken, FieldDefinition> ();
+		protected readonly Dictionary<MetadataToken, MethodDefinition> addedMethods = new Dictionary<MetadataToken, MethodDefinition> ();
+
 		public MetadataBuilder (ModuleDefinition module, string fq_name, uint timestamp, ISymbolWriterProvider symbol_writer_provider)
 		{
 			this.module = module;
@@ -1086,7 +1090,7 @@ namespace Mono.Cecil {
 				entry_point = LookupToken (module.EntryPoint);
 		}
 
-		protected void BuildAssembly ()
+		protected virtual void BuildAssembly ()
 		{
 			var assembly = module.Assembly;
 			var name = assembly.Name;
@@ -1621,6 +1625,12 @@ namespace Mono.Cecil {
 
 		protected void AddField (FieldDefinition field)
 		{
+			if (addedFields.ContainsKey (field.MetadataToken)) { 
+				return; 
+			}
+
+			addedFields[field.MetadataToken] = field;
+
 			var projection = WindowsRuntimeProjections.RemoveProjection (field);
 
 			field_table.AddRow (new FieldRow (
@@ -1683,6 +1693,12 @@ namespace Mono.Cecil {
 
 		protected void AddMethod (MethodDefinition method)
 		{
+			if (addedMethods.ContainsKey (method.MetadataToken)) {
+				return;
+			}
+
+			addedMethods [method.MetadataToken] = method;
+
 			var projection = WindowsRuntimeProjections.RemoveProjection (method);
 
 			method_table.AddRow (new MethodRow (
