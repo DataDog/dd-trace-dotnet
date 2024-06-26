@@ -3441,7 +3441,7 @@ stages:
       displayName: Download linux universal artifacts 
       inputs:
         artifact: linux-universal-home-linux-arm64
-        path: $(monitoringHome)/linux-x64
+        path: $(monitoringHome)/linux-arm64
 
     - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
       displayName: Build Bundle, Benchmark NuGet and tools
@@ -3648,6 +3648,12 @@ stages:
       displayName: Download dd-dotnet $(artifactSuffix)
       inputs:
         artifact: dd-dotnet-$(artifactSuffix)
+        path: $(monitoringHome)/$(artifactSuffix)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download universal native binaries
+      inputs:
+        artifact: linux-universal-home-linux-$(targetArch)
         path: $(monitoringHome)/$(artifactSuffix)
 
     - task: ExtractFiles@1
