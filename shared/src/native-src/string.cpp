@@ -145,4 +145,18 @@ namespace shared {
         return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
     }
 
+    bool icompare_pred(WCHAR a, WCHAR b)
+    {
+        return std::tolower(a) == std::tolower(b);
+    }
+
+    bool string_iequal(WSTRING const& s1, WSTRING const& s2)
+    {
+        if (s1.length() == s2.length())
+        {
+            return std::equal(s2.begin(), s2.end(), s1.begin(), icompare_pred);
+        }
+
+        return false;
+    }
 }  // namespace trace

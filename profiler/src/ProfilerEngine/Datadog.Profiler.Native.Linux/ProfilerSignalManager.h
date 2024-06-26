@@ -14,12 +14,14 @@ class ProfilerSignalManager
 public:
     using HandlerFn_t = std::add_pointer<bool(int, siginfo_t*, void*)>::type;
 
-    static ProfilerSignalManager* Get();
+    static ProfilerSignalManager* Get(int signal);
 
     bool RegisterHandler(HandlerFn_t handler);
+    bool UnRegisterHandler();
     int32_t SendSignal(pid_t threadId);
     bool CheckSignalHandler();
     bool IsHandlerInPlace() const;
+    int32_t GetSignal() const;
 
 #ifdef DD_TEST
     void Reset()
@@ -37,8 +39,8 @@ private:
     // prevent copy and move semantics.
     ProfilerSignalManager(ProfilerSignalManager&) noexcept = delete;
     ProfilerSignalManager& operator=(ProfilerSignalManager&) noexcept = delete;
-    ProfilerSignalManager(ProfilerSignalManager&&) noexcept = delete;
-    ProfilerSignalManager& operator=(ProfilerSignalManager&&) noexcept = delete;
+    ProfilerSignalManager(ProfilerSignalManager&& other) noexcept = delete;
+    ProfilerSignalManager& operator=(ProfilerSignalManager&& other) noexcept = delete;
 
     ~ProfilerSignalManager() noexcept;
 
@@ -46,6 +48,7 @@ private:
     bool SetupSignalHandler();
     bool CallCustomHandler(int32_t signal, siginfo_t* info, void* context);
     void CallOrignalHandler(int32_t signal, siginfo_t* info, void* context);
+    void SetSignal(int32_t signal);
 
     static void SignalHandler(int signal, siginfo_t* info, void* context);
 

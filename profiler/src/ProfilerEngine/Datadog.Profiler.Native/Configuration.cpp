@@ -15,8 +15,6 @@
 #include "shared/src/native-src/string.h"
 #include "shared/src/native-src/util.h"
 
-using namespace std::literals::chrono_literals;
-
 std::string const Configuration::DefaultDevSite = "datad0g.com";
 std::string const Configuration::DefaultProdSite = "datadoghq.com";
 std::string const Configuration::DefaultVersion = "Unspecified-Version";
@@ -26,6 +24,7 @@ int32_t const Configuration::DefaultAgentPort = 8126;
 std::string const Configuration::DefaultEmptyString = "";
 std::chrono::seconds const Configuration::DefaultDevUploadInterval = 20s;
 std::chrono::seconds const Configuration::DefaultProdUploadInterval = 60s;
+std::chrono::milliseconds const Configuration::DefaultCpuProfilingInterval = 9ms;
 
 Configuration::Configuration()
 {
@@ -77,6 +76,7 @@ Configuration::Configuration()
     // Check CI Visibility mode
     _isCIVisibilityEnabled = GetEnvironmentValue(EnvironmentVariables::CIVisibilityEnabled, false);
     _internalCIVisibilitySpanId = uint64_t{0};
+    _cpuProfilingInterval = ExtractCpuProfilingInterval();
     if (_isCIVisibilityEnabled)
     {
         // We cannot write 0ull instead of std::uint64_t{0} because on Windows, compiling in x64, std::uint64_t == unsigned long long.
@@ -86,12 +86,15 @@ Configuration::Configuration()
 
         // If we detect CI Visibility we allow to reduce the minimum ms in sampling rate down to 1ms.
         _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate(1);
+        // for timer_create based profiling
+        _cpuProfilingInterval = ExtractCpuProfilingInterval(1ms);
     }
 
     _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
     _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _enablementStatus = ExtractEnablementStatus();
+    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -456,6 +459,14 @@ std::chrono::seconds Configuration::ExtractUploadInterval()
     return GetDefaultUploadInterval();
 }
 
+std::chrono::milliseconds Configuration::ExtractCpuProfilingInterval(std::chrono::milliseconds minimum)
+{
+    // For normal path (no CI-visibility), 9ms is the default and lowest value we can have
+    // for CI-Visibility we allow it to be less
+    auto interval = GetEnvironmentValue(EnvironmentVariables::CpuProfilingInterval, DefaultCpuProfilingInterval);
+    return std::max(interval, minimum);
+}
+
 std::chrono::nanoseconds Configuration::ExtractCpuWallTimeSamplingRate(int minimum)
 {
     // default sampling rate is 9 ms; could be changed via env vars but down to a minimum of 5 ms
@@ -561,6 +572,16 @@ DeploymentMode Configuration::GetDeploymentMode() const
     return _deploymentMode;
 }
 
+CpuProfilerType Configuration::GetCpuProfilerType() const
+{
+    return _cpuProfilerType;
+}
+
+std::chrono::milliseconds Configuration::GetCpuProfilingInterval() const
+{
+    return _cpuProfilingInterval;
+}
+
 static bool convert_to(shared::WSTRING const& s, bool& result)
 {
     return shared::TryParseBooleanEnvironmentValue(s, result);
@@ -604,6 +625,17 @@ static bool convert_to(shared::WSTRING const& s, double& result)
 
     // Based on tests, numbers such as "0.1.2" are converted into 0.1 without error
     return (errno != ERANGE);
+}
+
+static bool convert_to(shared::WSTRING const& s, std::chrono::milliseconds& result)
+{
+    std::uint64_t value;
+    auto parsed = TryParse(s, value);
+    if (parsed)
+    {
+        result = std::chrono::milliseconds(value);
+    }
+    return parsed;
 }
 
 static bool convert_to(shared::WSTRING const& s, DeploymentMode& result)
