@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Util.Streams;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent
@@ -26,25 +27,42 @@ namespace Datadog.Trace.Agent
 
     internal static class ApiResponseExtensions
     {
+        private const int DefaultBufferSize = 1024;
+
         public static async Task<string> ReadAsStringAsync(this IApiResponse apiResponse)
         {
-            using var reader = await GetStreamReader(apiResponse).ConfigureAwait(false);
+            var stream = await apiResponse.GetStreamAsync().ConfigureAwait(false);
+            using var reader = GetStreamReader(apiResponse, stream);
             return await reader.ReadToEndAsync().ConfigureAwait(false);
         }
 
         public static async Task<T> ReadAsTypeAsync<T>(this IApiResponse apiResponse)
         {
-            using var sr = await GetStreamReader(apiResponse).ConfigureAwait(false);
-            using var jsonTextReader = new JsonTextReader(sr);
-            return JsonSerializer.Create().Deserialize<T>(jsonTextReader);
+            InitiallyBufferedStream bufferedStream = null;
+            try
+            {
+                var stream = await apiResponse.GetStreamAsync().ConfigureAwait(false);
+                bufferedStream = new InitiallyBufferedStream(stream);
+                // wrap the stream in an "initially buffering" stream, so that if deserialization fails completely, we can get some details
+                using var sr = GetStreamReader(apiResponse, bufferedStream);
+                using var jsonTextReader = new JsonTextReader(sr);
+                return JsonSerializer.Create().Deserialize<T>(jsonTextReader);
+            }
+            catch (JsonException ex) when (bufferedStream?.GetBufferedContent() is { } buffered)
+            {
+                throw new JsonException($"{ex.Message} Original content length {apiResponse.ContentLength} and content: '{buffered}'", ex);
+            }
+            finally
+            {
+                bufferedStream?.Dispose();
+            }
         }
 
-        private static async Task<StreamReader> GetStreamReader(IApiResponse apiResponse)
+        private static StreamReader GetStreamReader(IApiResponse apiResponse, Stream stream)
         {
-            var stream = await apiResponse.GetStreamAsync().ConfigureAwait(false);
             // Server may not send the content length, in that case we use a default value.
             // https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/IO/StreamReader.cs,25
-            var length = apiResponse.ContentLength > 0 ? (int)apiResponse.ContentLength : 1024;
+            var length = apiResponse.ContentLength is > 0 and < DefaultBufferSize ? (int)apiResponse.ContentLength : DefaultBufferSize;
             return new StreamReader(stream, apiResponse.ContentEncoding, detectEncodingFromByteOrderMarks: false, length, leaveOpen: true);
         }
 

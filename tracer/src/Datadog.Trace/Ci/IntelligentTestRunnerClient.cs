@@ -143,23 +143,22 @@ internal class IntelligentTestRunnerClient
         else
         {
             // Use Agent EVP Proxy
-            var agentUrl = _settings.TracerSettings.ExporterInternal.AgentUriInternal;
             _eventPlatformProxySupport = CIVisibility.EventPlatformProxySupport;
             switch (_eventPlatformProxySupport)
             {
                 case EventPlatformProxySupport.V2:
-                    _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{settingsUrlPath}");
-                    _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{searchCommitsUrlPath}");
-                    _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{packFileUrlPath}");
-                    _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{skippableTestsUrlPath}");
-                    _earlyFlakeDetectionTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{efdTestsUrlPath}");
+                    _settingsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{settingsUrlPath}");
+                    _searchCommitsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{searchCommitsUrlPath}");
+                    _packFileUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{packFileUrlPath}");
+                    _skippableTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{skippableTestsUrlPath}");
+                    _earlyFlakeDetectionTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{efdTestsUrlPath}");
                     break;
                 case EventPlatformProxySupport.V4:
-                    _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{settingsUrlPath}");
-                    _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{searchCommitsUrlPath}");
-                    _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{packFileUrlPath}");
-                    _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{skippableTestsUrlPath}");
-                    _earlyFlakeDetectionTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{efdTestsUrlPath}");
+                    _settingsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{settingsUrlPath}");
+                    _searchCommitsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{searchCommitsUrlPath}");
+                    _packFileUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{packFileUrlPath}");
+                    _skippableTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{skippableTestsUrlPath}");
+                    _earlyFlakeDetectionTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{efdTestsUrlPath}");
                     break;
                 default:
                     throw new NotSupportedException("Event platform proxy not supported by the agent.");

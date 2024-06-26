@@ -110,7 +110,7 @@
           "location": {
             "file": "StaticType.cs",
             "lines": [
-              23
+              "23"
             ]
           },
           "version": 0

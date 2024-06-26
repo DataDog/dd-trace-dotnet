@@ -23,8 +23,11 @@ internal class RaspTelemetryHelper
 
     public void GenerateRaspSpanMetricTags(ITags tags)
     {
-        tags.SetMetric(Metrics.RaspRuleEval, _raspRuleEval);
-        tags.SetMetric(Metrics.RaspWafDuration, _raspWafDuration);
-        tags.SetMetric(Metrics.RaspWafAndBindingsDuration, _raspWafAndBindingsDuration);
+        if (_raspRuleEval > 0)
+        {
+            tags.SetMetric(Metrics.RaspRuleEval, _raspRuleEval);
+            tags.SetMetric(Metrics.RaspWafDuration, _raspWafDuration);
+            tags.SetMetric(Metrics.RaspWafAndBindingsDuration, _raspWafAndBindingsDuration);
+        }
     }
 }

@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 set -euox pipefail
 
-# in case we are being run from outside this directory
-cd "$(dirname "$0")"
-
-ROOT_DIR="$(dirname $(pwd))"
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+ROOT_DIR="$(dirname -- "$SCRIPT_DIR" )"
 BUILD_DIR="$ROOT_DIR/tracer/build/_build"
 IMAGE_NAME="dd-trace-dotnet/alpine-base"
 

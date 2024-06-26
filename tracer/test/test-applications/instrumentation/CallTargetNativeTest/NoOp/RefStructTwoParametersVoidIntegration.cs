@@ -16,7 +16,7 @@ public static class RefStructTwoParametersVoidIntegration
             ref var readOnlySpanValue = ref callTargetRefStruct.DangerousGetReadOnlySpan<char>(out success);
             if (success)
             {
-                readOnlySpanValue = "Hello";
+                readOnlySpanValue = "Hello".AsSpan();
                 goto secondArgument;
             }
             
@@ -41,7 +41,7 @@ public static class RefStructTwoParametersVoidIntegration
             ref var readOnlySpanValue = ref callTargetRefStruct2.DangerousGetReadOnlySpan<char>(out success);
             if (success)
             {
-                readOnlySpanValue = "World";
+                readOnlySpanValue = "World".AsSpan();
                 goto returnValue;
             }
             

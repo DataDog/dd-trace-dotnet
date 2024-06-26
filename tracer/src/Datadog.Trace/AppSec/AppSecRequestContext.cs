@@ -67,7 +67,7 @@ internal class AppSecRequestContext
             {
                 _raspStackTraces.Add(ExploitStackKey, new());
             }
-            else if (_raspStackTraces[ExploitStackKey].Count >= maxStackTraces)
+            else if (maxStackTraces > 0 && _raspStackTraces[ExploitStackKey].Count >= maxStackTraces)
             {
                 return;
             }

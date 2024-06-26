@@ -40,4 +40,9 @@ ENV COMPlus_DbgEnableMiniDump=1
 ENV COMPlus_DbgMiniDumpType=4
 ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
 
+## SSI variables
+ENV DD_INJECTION_ENABLED=tracer
+ENV DD_INJECT_FORCE=1
+ENV DD_TELEMETRY_FORWARDER_PATH=/bin/true
+
 ENTRYPOINT ["/app/datadog/dd-dotnet.sh", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--",  "dotnet", "/app/AspNetCoreSmokeTest.dll"]

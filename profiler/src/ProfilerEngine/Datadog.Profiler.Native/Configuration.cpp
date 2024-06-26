@@ -89,8 +89,9 @@ Configuration::Configuration()
     }
 
     _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
-    ExtractSsiState(_isSsiDeployed, _isSsiActivated);
+    _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
+    _enablementStatus = ExtractEnablementStatus();
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -397,9 +398,10 @@ std::string const& Configuration::GetGitCommitSha() const
 // - replace shared::TryParse by this implementation
 // - add tests
 
-bool TryParse(shared::WSTRING const& s, int32_t& result)
+static bool TryParse(shared::WSTRING const& s, int32_t& result)
 {
-    if (s.empty())
+    auto r = shared::Trim(s);
+    if (r.empty())
     {
         result = 0;
         return false;
@@ -407,7 +409,7 @@ bool TryParse(shared::WSTRING const& s, int32_t& result)
 
     try
     {
-        result = std::stoi(shared::ToString(s));
+        result = std::stoi(shared::ToString(r));
         return true;
     }
     catch (std::exception const&)
@@ -418,9 +420,11 @@ bool TryParse(shared::WSTRING const& s, int32_t& result)
     return false;
 }
 
-bool TryParse(shared::WSTRING const& s, uint64_t& result)
+static bool TryParse(shared::WSTRING const& s, uint64_t& result)
 {
-    if (s.empty())
+    auto r = shared::Trim(s);
+
+    if (r.empty())
     {
         result = 0;
         return false;
@@ -428,7 +432,7 @@ bool TryParse(shared::WSTRING const& s, uint64_t& result)
 
     try
     {
-        auto str = shared::ToString(s);
+        auto str = shared::ToString(r);
         result = std::stoull(str);
         return true;
     }
@@ -538,16 +542,6 @@ bool Configuration::IsEtwEnabled() const
 #endif
 }
 
-bool Configuration::IsSsiDeployed() const
-{
-    return _isSsiDeployed;
-}
-
-bool Configuration::IsSsiActivated() const
-{
-    return _isSsiActivated;
-}
-
 bool Configuration::IsEtwLoggingEnabled() const
 {
 #ifdef LINUX
@@ -557,36 +551,46 @@ bool Configuration::IsEtwLoggingEnabled() const
 #endif
 }
 
-bool convert_to(shared::WSTRING const& s, bool& result)
+EnablementStatus Configuration::GetEnablementStatus() const
+{
+    return _enablementStatus;
+}
+
+DeploymentMode Configuration::GetDeploymentMode() const
+{
+    return _deploymentMode;
+}
+
+static bool convert_to(shared::WSTRING const& s, bool& result)
 {
     return shared::TryParseBooleanEnvironmentValue(s, result);
 }
 
-bool convert_to(shared::WSTRING const& s, std::string& result)
+static bool convert_to(shared::WSTRING const& s, std::string& result)
 {
-    result = shared::ToString(s);
+    result = shared::ToString(shared::Trim(s));
     return true;
 }
 
-bool convert_to(shared::WSTRING const& s, shared::WSTRING& result)
+static bool convert_to(shared::WSTRING const& s, shared::WSTRING& result)
 {
-    result = s;
+    result = shared::Trim(s);
     return true;
 }
 
-bool convert_to(shared::WSTRING const& s, int32_t& result)
+static bool convert_to(shared::WSTRING const& s, int32_t& result)
 {
     return TryParse(s, result);
 }
 
-bool convert_to(shared::WSTRING const& s, uint64_t& result)
+static bool convert_to(shared::WSTRING const& s, uint64_t& result)
 {
     return TryParse(s, result);
 }
 
-bool convert_to(shared::WSTRING const& s, double& result)
+static bool convert_to(shared::WSTRING const& s, double& result)
 {
-    auto str = shared::ToString(s);
+    auto str = shared::ToString(shared::Trim(s));
 
     char* endPtr = nullptr;
     const char* ptr = str.c_str();
@@ -602,13 +606,21 @@ bool convert_to(shared::WSTRING const& s, double& result)
     return (errno != ERANGE);
 }
 
+static bool convert_to(shared::WSTRING const& s, DeploymentMode& result)
+{
+    // if we reach here it means the env var exists
+    result = DeploymentMode::SingleStepInstrumentation;
+    return true;
+}
+
 template <typename T>
 T Configuration::GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue)
 {
-    auto r = shared::Trim(shared::GetEnvironmentValue(name));
-    if (r.empty()) return defaultValue;
+    if (!shared::EnvironmentExist(name)) return defaultValue;
+
     T result{};
-    if (!convert_to(r, result)) return std::move(defaultValue);
+    auto r = shared::GetEnvironmentValue(name);
+    if (!convert_to(r, result)) return defaultValue;
     return result;
 }
 
@@ -625,29 +637,36 @@ bool Configuration::IsEnvironmentValueSet(shared::WSTRING const& name, T& value)
     return true;
 }
 
-void Configuration::ExtractSsiState(bool& ssiDeployed, bool& ssiEnabled)
+EnablementStatus Configuration::ExtractEnablementStatus()
 {
-    // if the profiler has been deployed via Single Step Instrumentation,
-    // the DD_INJECTION_ENABLED env var exists.
-    // if the profiler has been activated via Single Step Instrumentation,
-    // the DD_INJECTION_ENABLED env var should contain "profiling" (it is a list of SSI installed products)
-    //
-    if (!shared::EnvironmentExist(EnvironmentVariables::SsiDeployed))
+    auto enabled = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
+
+    auto isEnabled = false;
+    auto parsed = shared::TryParseBooleanEnvironmentValue(enabled, isEnabled);
+    if (enabled.empty() || !parsed)
     {
-        ssiDeployed = false;
-        ssiEnabled = false;
-        return;
+        auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
+        auto pos = r.find(WStr("profiler"));
+        auto ssiEnabled = (pos != shared::WSTRING::npos);
+
+        if (ssiEnabled)
+        {
+            return EnablementStatus::SsiEnabled;
+        }
+        else
+        {
+            return EnablementStatus::NotSet;
+        }
     }
-
-    ssiDeployed = true;
-
-    auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
-    if (r.empty())
+    else
     {
-        ssiEnabled = false;
-        return;
+        if (isEnabled)
+        {
+            return EnablementStatus::ManuallyEnabled;
+        }
+        else
+        {
+            return EnablementStatus::ManuallyDisabled;
+        }
     }
-
-    auto pos = r.find(WStr("profiling"));
-    ssiEnabled = (pos != shared::WSTRING::npos);
 }

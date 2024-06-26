@@ -15,7 +15,7 @@ public class TraceContextTests_SetSamplingDecision
         [Theory]
         [InlineData(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default)]
         [InlineData(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate)]
-        [InlineData(SamplingPriorityValues.AutoReject, SamplingMechanism.TraceSamplingRule)]
+        [InlineData(SamplingPriorityValues.AutoReject, SamplingMechanism.LocalTraceSamplingRule)]
         [InlineData(SamplingPriorityValues.UserReject, SamplingMechanism.Manual)]
         [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm)]
         public void SetSamplingDecision(int samplingPriority, int samplingMechanism)

@@ -22,7 +22,7 @@ const char* const RuntimeIdStore::ServiceName = "RuntimeID Store";
 const char* const RuntimeIdStore::ExternalFunctionName = "GetRuntimeId";
 const char* const RuntimeIdStore::NativeLoaderFilename = "Datadog.Trace.ClrProfiler.Native" LIBRARY_FILE_EXTENSION;
 
-bool RuntimeIdStore::Start()
+bool RuntimeIdStore::StartImpl()
 {
     // should be set by native loader
     shared::WSTRING nativeLoaderPath = shared::GetEnvironmentValue(WStr("DD_INTERNAL_NATIVE_LOADER_PATH"));
@@ -67,7 +67,7 @@ bool RuntimeIdStore::Start()
     return _getIdFn != nullptr;
 }
 
-bool RuntimeIdStore::Stop()
+bool RuntimeIdStore::StopImpl()
 {
     if (_instance != nullptr)
     {

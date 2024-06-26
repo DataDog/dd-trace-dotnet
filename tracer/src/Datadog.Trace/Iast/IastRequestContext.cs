@@ -46,6 +46,11 @@ internal class IastRequestContext
             if (_vulnerabilityBatch != null)
             {
                 span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
+
+                if (_vulnerabilityBatch.IsTruncated())
+                {
+                    span.Tags.SetTag(Tags.IastJsonTagSizeExceeded, "1");
+                }
             }
 
             if (_executedTelemetryHelper != null)

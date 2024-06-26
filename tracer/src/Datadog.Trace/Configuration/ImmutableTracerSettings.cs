@@ -38,7 +38,7 @@ namespace Datadog.Trace.Configuration
         private readonly IReadOnlyDictionary<string, string> _globalTags;
         private readonly double? _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
-        private readonly string? _spanSamplingRules;
+        private readonly string? _customSamplingRules;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class
@@ -68,6 +68,9 @@ namespace Datadog.Trace.Configuration
         {
             // unused parameter is purely so we can avoid calling public APIs
 
+            // DD_SERVICE has precedence over DD_TAGS
+            ServiceNameInternal = GetExplicitSettingOrTag(settings.ServiceNameInternal, settings.GlobalTagsInternal, Tags.Service);
+
             // DD_ENV has precedence over DD_TAGS
             EnvironmentInternal = GetExplicitSettingOrTag(settings.EnvironmentInternal, settings.GlobalTagsInternal, Tags.Env);
 
@@ -84,22 +87,21 @@ namespace Datadog.Trace.Configuration
             // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
             // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
             var globalTags = settings.GlobalTagsInternal
-                                     .Where(kvp => kvp.Key is not (Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))
+                                     .Where(kvp => kvp.Key is not (Tags.Service or Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))
                                      .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
             _globalTags = new ReadOnlyDictionary<string, string>(globalTags);
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
-            ServiceNameInternal = settings.ServiceNameInternal;
             _traceEnabled = settings.TraceEnabledInternal;
             ExporterInternal = new ImmutableExporterSettings(settings.ExporterInternal, true);
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
 #pragma warning restore 618
             MaxTracesSubmittedPerSecondInternal = settings.MaxTracesSubmittedPerSecondInternal;
-            CustomSamplingRulesInternal = settings.CustomSamplingRulesInternal;
+            _customSamplingRules = settings.CustomSamplingRulesInternal;
             CustomSamplingRulesFormat = settings.CustomSamplingRulesFormat;
-            _spanSamplingRules = settings.SpanSamplingRules;
+            SpanSamplingRules = settings.SpanSamplingRules;
             _globalSamplingRate = settings.GlobalSamplingRateInternal;
             IntegrationsInternal = new ImmutableIntegrationSettingsCollection(settings.IntegrationsInternal, settings.DisabledIntegrationNamesInternal);
             _headerTags = new ReadOnlyDictionary<string, string>(settings.HeaderTagsInternal);
@@ -297,7 +299,9 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_CustomSamplingRules_Get)]
-        internal string? CustomSamplingRulesInternal { get; }
+        internal string? CustomSamplingRulesInternal => DynamicSettings.SamplingRules ?? _customSamplingRules;
+
+        internal bool CustomSamplingRulesIsRemote => DynamicSettings.SamplingRules != null;
 
         /// <summary>
         /// Gets a value indicating the format for custom sampling rules ("regex" or "glob").
@@ -309,7 +313,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the span sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
-        internal string? SpanSamplingRules => DynamicSettings.SpanSamplingRules ?? _spanSamplingRules;
+        internal string? SpanSamplingRules { get; }
 
         /// <summary>
         /// Gets a value indicating a global rate for sampling.

@@ -70,8 +70,8 @@ public:
     MOCK_METHOD(bool, IsCIVisibilityEnabled, (), (const override));
     MOCK_METHOD(std::uint64_t, GetCIVisibilitySpanId, (), (const override));
     MOCK_METHOD(bool, IsEtwEnabled, (), (const override));
-    MOCK_METHOD(bool, IsSsiDeployed, (), (const override));
-    MOCK_METHOD(bool, IsSsiActivated, (), (const override));
+    MOCK_METHOD(EnablementStatus, GetEnablementStatus, (), (const override));
+    MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
     MOCK_METHOD(bool, IsEtwLoggingEnabled, (), (const override));
 };
 
@@ -137,8 +137,8 @@ public:
     MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&), (override));
     MOCK_METHOD(void, SetGitMetadata, (std::string, std::string, std::string), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
-    MOCK_METHOD(bool, Start, (), (override));
-    MOCK_METHOD(bool, Stop, (), (override));
+    MOCK_METHOD(bool, StartImpl, (), (override));
+    MOCK_METHOD(bool, StopImpl, (), (override));
 };
 
 class MockRuntimeIdStore : public IRuntimeIdStore

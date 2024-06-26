@@ -153,7 +153,7 @@
           "location": {
             "file": "MethodThrowExceptionTest.cs",
             "lines": [
-              26
+              "26"
             ]
           },
           "version": 0

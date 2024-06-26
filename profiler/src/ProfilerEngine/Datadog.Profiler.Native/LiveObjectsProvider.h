@@ -12,9 +12,9 @@
 #include "IBatchedSamplesProvider.h"
 #include "IGarbageCollectionsListener.h"
 #include "ISampledAllocationsListener.h"
-#include "IService.h"
 #include "LiveObjectInfo.h"
 #include "Sample.h"
+#include "ServiceBase.h"
 
 class IManagedThreadList;
 class IFrameStore;
@@ -25,7 +25,7 @@ class IConfiguration;
 class ISampledAllocationsListener;
 class SampleValueTypeProvider;
 
-class LiveObjectsProvider : public IService,
+class LiveObjectsProvider : public ServiceBase,
                             public IBatchedSamplesProvider,
                             public ISampledAllocationsListener,
                             public IGarbageCollectionsListener
@@ -43,9 +43,6 @@ public:
         MetricsRegistry& metricsRegistry);
 
 public:
-    // Inherited via IService
-    bool Start() override;
-    bool Stop() override;
 
     // Inherited via IBatchedSamplesProvider
     std::unique_ptr<SamplesEnumerator> GetSamples() override;
@@ -70,12 +67,19 @@ public:
         bool isCompacting,
         uint64_t pauseDuration,
         uint64_t totalDuration,
-        uint64_t endTimestamp) override;
+        uint64_t endTimestamp,
+        uint64_t gen2Size,
+        uint64_t lohSize,
+        uint64_t pohSize) override;
 
 private:
     ObjectHandleID CreateWeakHandle(uintptr_t address) const;
     void CloseWeakHandle(ObjectHandleID handle) const;
     bool IsAlive(ObjectHandleID handle) const;
+
+    // Inherited via ServiceBase
+    bool StartImpl() override;
+    bool StopImpl() override;
 
 private:
     static std::vector<SampleValueType> SampleTypeDefinitions;

@@ -43,7 +43,7 @@
           "location": {
             "file": "LineProbesWithRevertTest.cs",
             "lines": [
-              55
+              "55"
             ]
           },
           "version": 0

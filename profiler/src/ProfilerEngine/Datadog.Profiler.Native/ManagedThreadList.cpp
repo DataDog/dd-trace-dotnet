@@ -47,13 +47,13 @@ const char* ManagedThreadList::GetName()
     return _serviceName;
 }
 
-bool ManagedThreadList::Start()
+bool ManagedThreadList::StartImpl()
 {
     // nothing special to start
     return true;
 }
 
-bool ManagedThreadList::Stop()
+bool ManagedThreadList::StopImpl()
 {
     // nothing special to stop
     return true;

@@ -68,7 +68,8 @@ namespace Datadog.Trace.AppSec.Waf
         {
             if (_disposed)
             {
-                ThrowHelper.ThrowException("Can't run WAF when context is disposed");
+                Log.Information("Can't run WAF when context is disposed");
+                return null;
             }
 
             DdwafResultStruct retNative = default;

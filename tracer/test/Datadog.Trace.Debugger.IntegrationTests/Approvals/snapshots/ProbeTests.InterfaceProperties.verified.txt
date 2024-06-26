@@ -242,7 +242,7 @@
           "location": {
             "file": "InterfaceProperties.cs",
             "lines": [
-              36
+              "36"
             ]
           },
           "version": 0

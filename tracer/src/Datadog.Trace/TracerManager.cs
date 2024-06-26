@@ -81,7 +81,7 @@ namespace Datadog.Trace
             DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
             DiscoveryService = discoveryService;
-            TraceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
+            TraceProcessors = traceProcessors ?? [];
             QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex);
             var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
             foreach (var traceProcessor in TraceProcessors)
@@ -705,8 +705,11 @@ namespace Datadog.Trace
                         await instance.Telemetry.DisposeAsync().ConfigureAwait(false);
                     }
 
+                    // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
+#if NETFRAMEWORK
                     Log.Debug("Disposing Runtime Metrics");
                     instance.RuntimeMetrics?.Dispose();
+#endif
 
                     Log.Debug("Finished waiting for disposals.");
                 }

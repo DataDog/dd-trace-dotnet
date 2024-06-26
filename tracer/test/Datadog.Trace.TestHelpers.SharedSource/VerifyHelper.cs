@@ -206,7 +206,9 @@ namespace Datadog.Trace.TestHelpers
                        kvp => kvp.Key switch
                        {
                            // scrub stack trace for errors
-                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
+                           Tags.ErrorStack => new(kvp.Key, ScrubStackTrace(kvp.Value)),
+                           // sort environment variables
+                           Tags.ProcessEnvironmentVariables => new(kvp.Key, string.Join("\n", kvp.Value.Split('\n').OrderBy(x => x.Split('=')[0]))),
                            _ => kvp
                        })
                   .OrderBy(x => x.Key)

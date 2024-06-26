@@ -82,6 +82,13 @@ internal static class RaspModule
     private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
     {
         var securityCoordinator = new SecurityCoordinator(Security.Instance, rootSpan);
+
+        // We need a context for RASP
+        if (!securityCoordinator.HasContext())
+        {
+            return;
+        }
+
         var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
 
         if (result is not null)
@@ -111,9 +118,31 @@ internal static class RaspModule
             Log.Error(ex, "RASP: Error while sending stack.");
         }
 
+        AddSpanId(result);
+
         // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
         // the blockings, so we report first and then block
         securityCoordinator.ReportAndBlock(result);
+    }
+
+    private static void AddSpanId(IResult? result)
+    {
+        if (result?.ReturnCode == WafReturnCode.Match && result?.Data is not null)
+        {
+            var spanId = Tracer.Instance.InternalActiveScope.Span.SpanId;
+
+            foreach (var item in result.Data)
+            {
+                // we know that the item is a dictionary because of the way we are deserializing the data
+                // Any item contained in the data list comes from the current RASP call, so
+                // it should be tagged with current span_id
+
+                if (item is Dictionary<string, object> dictionary)
+                {
+                    dictionary.Add("span_id", spanId);
+                }
+            }
+        }
     }
 
     private static void SendStack(Span rootSpan, string id)

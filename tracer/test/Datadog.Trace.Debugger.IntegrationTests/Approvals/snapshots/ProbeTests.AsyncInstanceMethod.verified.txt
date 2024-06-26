@@ -108,7 +108,7 @@
           "location": {
             "file": "AsyncInstanceMethod.cs",
             "lines": [
-              21
+              "21"
             ]
           },
           "version": 0

@@ -26,9 +26,9 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         return StartConsole(EnvironmentHelper, enableProfiler, "wait", environmentVariables);
     }
 
-    protected Task<ProcessHelper> StartConsoleWithArgs(string args, params (string Key, string Value)[] environmentVariables)
+    protected Task<ProcessHelper> StartConsoleWithArgs(string args, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
     {
-        return StartConsole(EnvironmentHelper, false, args, environmentVariables);
+        return StartConsole(EnvironmentHelper, enableProfiler, args, environmentVariables);
     }
 
     protected (string Executable, string Args) PrepareSampleApp(EnvironmentHelper environmentHelper)

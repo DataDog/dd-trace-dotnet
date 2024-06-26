@@ -39,6 +39,12 @@
               },
               "symbols": [
                 {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LocalConstants",
+                  "symbol_type": "arg",
+                  "line": 0
+                },
+                {
                   "name": "arg",
                   "type": "System.Double",
                   "symbol_type": "arg",
@@ -124,6 +130,12 @@
               },
               "symbols": [
                 {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LocalConstants",
+                  "symbol_type": "arg",
+                  "line": 0
+                },
+                {
                   "name": "result",
                   "type": "System.Double",
                   "symbol_type": "arg",
@@ -153,7 +165,15 @@
                   "sanitized"
                 ],
                 "return_type": "System.Void"
-              }
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LocalConstants",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ]
             }
           ]
         }

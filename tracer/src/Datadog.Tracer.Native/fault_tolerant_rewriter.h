@@ -18,13 +18,17 @@ private:
 
     HRESULT ApplyKickoffInstrumentation(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl);
     static HRESULT ApplyOriginalInstrumentation(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl);
-    HRESULT InjectSuccessfulInstrumentation(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl, LPCBYTE pMethodBytes) const;
-    HRESULT RewriteInternal(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl);
+    HRESULT InjectSuccessfulInstrumentation(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
+                                            ICorProfilerFunctionControl* pFunctionControl,
+                                            ICorProfilerInfo* pCorProfilerInfo, LPCBYTE pMethodBytes) const;
+    HRESULT RewriteInternal(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
+                            ICorProfilerFunctionControl* pFunctionControl, ICorProfilerInfo* pCorProfilerInfo);
 
 public:
     FaultTolerantRewriter(CorProfiler* corProfiler, std::unique_ptr<MethodRewriter> methodRewriter, std::shared_ptr<RejitHandler> rejit_handler);
 
-    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl) override;
+    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
+                    ICorProfilerFunctionControl* pFunctionControl, ICorProfilerInfo* pCorProfilerInfo) override;
     InstrumentingProducts GetInstrumentingProduct(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
     WSTRING GetInstrumentationId(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
 };

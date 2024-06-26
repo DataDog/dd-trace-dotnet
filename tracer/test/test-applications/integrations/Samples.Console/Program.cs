@@ -1,8 +1,9 @@
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,16 +18,54 @@ namespace Samples.Console_
             {
                 Ready();
 
+                if (args[0] == "crash-native")
+                {
+                    NativeCrash();
+                }
+
                 var exception = args[0] == "crash-datadog" ? (Exception)new BadImageFormatException("Expected") : new InvalidOperationException("Expected");
 
                 // Add an indirection to have a BCL type on the callstack, to properly test obfuscation
-                SynchronizationContext.SetSynchronizationContext(new DummySynchronizationContext());
-                IProgress<Exception> progress = new Progress<Exception>(DumpCallstackAndThrow);
-                progress.Report(exception);
+                void DoCrash()
+                {
+                    SynchronizationContext.SetSynchronizationContext(new DummySynchronizationContext());
+                    IProgress<Exception> progress = new Progress<Exception>(DumpCallstackAndThrow);
+                    progress.Report(exception);
+                }
+
+                if (args[0] == "crash-thread")
+                {
+                    var thread = new Thread(
+                        () =>
+                        {
+                            Thread.CurrentThread.Name = "DD_thread";
+                            DoCrash();
+                        });
+
+                    thread.Start();
+                    thread.Join();
+                }
+                else
+                {
+                    DoCrash();
+                }
             }
             else
             {
                 AsyncMain(args).GetAwaiter().GetResult();
+            }
+
+            var fileToWatch = Environment.GetEnvironmentVariable("DD_INTERNAL_TEST_FILE_TO_WATCH");
+
+            if (fileToWatch != null)
+            {
+                // Wait for up to 1 minute for the file to be created
+                var start = DateTime.UtcNow;
+
+                while (!File.Exists(fileToWatch) && (DateTime.UtcNow - start) < TimeSpan.FromMinutes(1))
+                {
+                    Thread.Sleep(500);
+                }
             }
         }
 
@@ -101,6 +140,55 @@ namespace Samples.Console_
         private static void Ready()
         {
             Console.WriteLine($"Waiting - PID: {Process.GetCurrentProcess().Id} - Profiler attached: {SampleHelpers.IsProfilerAttached()}");
+        }
+
+        private static unsafe void NativeCrash()
+        {
+            var iunknown = CreateCrashReport(0);
+
+            // Get the QueryInterface method
+            var vtable = *(IntPtr**)iunknown;
+            var queryInterface = (delegate* unmanaged[Stdcall]<IntPtr, in Guid, out IntPtr, int>)*vtable;
+
+            // Fetch the ICrashReport interface
+            var guid = new Guid("3B3BA8A9-F807-43BF-A3A9-55E369C0C532");
+            var result = queryInterface(iunknown, guid, out var crashReport);
+
+            if (result != 0)
+            {
+                throw new Win32Exception(result, "Failed to get ICrashReport");
+            }
+
+            // Get the CrashProcess method
+            var crashReportVtable = *(IntPtr**)crashReport;
+            var crashProcess = (delegate* unmanaged[Stdcall]<IntPtr, int>)*(crashReportVtable + 11);
+
+            Console.WriteLine("Crashing... (native)");
+
+            // Here comes nothing
+            result = crashProcess(crashReport);
+
+            // We're not supposed to be alive :(
+            throw new Exception("Failed to fail: " + result);
+        }
+
+        private static unsafe IntPtr CreateCrashReport(int pid)
+        {
+            var nativeLibraryType = Type.GetType("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary, Datadog.Trace", throwOnError: true);
+            var tryLoad = nativeLibraryType.GetMethod("TryLoad", BindingFlags.NonPublic | BindingFlags.Static);
+            var getExport = nativeLibraryType.GetMethod("GetExport", BindingFlags.NonPublic | BindingFlags.Static);
+            
+            var folder = Path.GetDirectoryName(Environment.GetEnvironmentVariable("CORECLR_PROFILER_PATH"));
+            var profilerPath = Path.Combine(folder, "Datadog.Profiler.Native" + (Environment.OSVersion.Platform == PlatformID.Win32NT ? ".dll" : ".so"));
+            
+            var arguments = new object[] { profilerPath, null };
+            tryLoad.Invoke(null, arguments);
+
+            var handle = (IntPtr)arguments[1];
+
+            var createCrashReport = (IntPtr)getExport.Invoke(null, [handle, "CreateCrashReport"]);
+
+            return ((delegate* unmanaged[Stdcall]<int, IntPtr>)createCrashReport)(pid);
         }
 
         private class DummySynchronizationContext : SynchronizationContext

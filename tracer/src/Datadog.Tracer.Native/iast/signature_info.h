@@ -24,8 +24,8 @@ namespace iast
         SignatureInfo(ModuleInfo* moduleInfo, PCCOR_SIGNATURE pSig, DWORD nSig);
         virtual ~SignatureInfo();
 
-        WSTRING GetReturnTypeString();
-        WSTRING GetParamsRepresentation();
+        WSTRING& GetReturnTypeString();
+        WSTRING& GetParamsRepresentation();
     protected:
         ModuleInfo* _module = nullptr;
 
@@ -58,7 +58,7 @@ namespace iast
         PCCOR_SIGNATURE GetSignature(DWORD* sigSize = nullptr);
         bool HasThis();
         int GetEffectiveParamCount();
-        WSTRING CharacterizeMember(WSTRING memberName, bool addReturyType);
+        WSTRING CharacterizeMember(WSTRING memberName);
 
     public:
         // Inherited via ISignatureBuilder

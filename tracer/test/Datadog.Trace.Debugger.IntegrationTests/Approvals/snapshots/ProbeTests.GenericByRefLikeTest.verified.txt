@@ -81,7 +81,7 @@
           "location": {
             "file": "GenericByRefLikeTest.cs",
             "lines": [
-              23
+              "23"
             ]
           },
           "version": 0
@@ -182,7 +182,7 @@
           "location": {
             "file": "GenericByRefLikeTest.cs",
             "lines": [
-              24
+              "24"
             ]
           },
           "version": 0
@@ -283,7 +283,7 @@
           "location": {
             "file": "GenericByRefLikeTest.cs",
             "lines": [
-              25
+              "25"
             ]
           },
           "version": 0
@@ -385,7 +385,7 @@
           "location": {
             "file": "GenericByRefLikeTest.cs",
             "lines": [
-              26
+              "26"
             ]
           },
           "version": 0
@@ -546,7 +546,7 @@
           "location": {
             "file": "GenericByRefLikeTest.cs",
             "lines": [
-              27
+              "27"
             ]
           },
           "version": 0
@@ -812,7 +812,7 @@
           "location": {
             "file": "GenericByRefLikeTest.cs",
             "lines": [
-              29
+              "29"
             ]
           },
           "version": 0
@@ -1078,7 +1078,7 @@
           "location": {
             "file": "GenericByRefLikeTest.cs",
             "lines": [
-              30
+              "30"
             ]
           },
           "version": 0
@@ -1344,7 +1344,7 @@
           "location": {
             "file": "GenericByRefLikeTest.cs",
             "lines": [
-              31
+              "31"
             ]
           },
           "version": 0
@@ -1610,7 +1610,7 @@
           "location": {
             "file": "GenericByRefLikeTest.cs",
             "lines": [
-              32
+              "32"
             ]
           },
           "version": 0
@@ -1876,7 +1876,7 @@
           "location": {
             "file": "GenericByRefLikeTest.cs",
             "lines": [
-              34
+              "34"
             ]
           },
           "version": 0
@@ -2142,7 +2142,7 @@
           "location": {
             "file": "GenericByRefLikeTest.cs",
             "lines": [
-              35
+              "35"
             ]
           },
           "version": 0

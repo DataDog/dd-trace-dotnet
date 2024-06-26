@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 2.53.0)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 2.54.0)
 
 # ******************************************************
 # Environment detection
@@ -144,6 +144,8 @@ endif()
 # ******************************************************
 add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         cor_profiler.cpp
+        process_helper.cpp
+        single_step_guard_rails.cpp
         cor_profiler_class_factory.cpp
         dynamic_dispatcher.cpp
         dynamic_instance.cpp

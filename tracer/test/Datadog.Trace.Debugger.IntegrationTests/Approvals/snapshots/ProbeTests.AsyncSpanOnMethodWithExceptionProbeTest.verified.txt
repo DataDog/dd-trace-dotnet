@@ -150,7 +150,7 @@
           "location": {
             "file": "AsyncSpanOnMethodWithExceptionProbeTest.cs",
             "lines": [
-              35
+              "35"
             ]
           },
           "version": 0
@@ -320,7 +320,7 @@
           "location": {
             "file": "AsyncSpanOnMethodWithExceptionProbeTest.cs",
             "lines": [
-              36
+              "36"
             ]
           },
           "version": 0
@@ -490,7 +490,7 @@
           "location": {
             "file": "AsyncSpanOnMethodWithExceptionProbeTest.cs",
             "lines": [
-              37
+              "37"
             ]
           },
           "version": 0
@@ -654,7 +654,7 @@
           "location": {
             "file": "AsyncSpanOnMethodWithExceptionProbeTest.cs",
             "lines": [
-              42
+              "42"
             ]
           },
           "version": 0

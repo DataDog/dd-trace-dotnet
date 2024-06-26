@@ -2,11 +2,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include "IService.h"
 #include "ManagedThreadInfo.h"
+#include "ServiceBase.h"
 
 
-class IStackSamplerLoopManager : public IService
+class IStackSamplerLoopManager : public ServiceBase
 {
 public:
     virtual bool AllowStackWalk(std::shared_ptr<ManagedThreadInfo> pThreadInfo) = 0;

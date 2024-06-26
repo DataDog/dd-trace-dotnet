@@ -22,13 +22,13 @@ const char* ThreadsCpuManager::GetName()
     return _serviceName;
 }
 
-bool ThreadsCpuManager::Start()
+bool ThreadsCpuManager::StartImpl()
 {
     // nothing special to start
     return true;
 }
 
-bool ThreadsCpuManager::Stop()
+bool ThreadsCpuManager::StopImpl()
 {
     // nothing special to stop
     return true;

@@ -96,6 +96,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     $"{testName}.SubmitsTracesOsx" :
                     $"{testName}.SubmitsTraces";
 
+            settings.AddSimpleScrubber($"LD_PRELOAD={EnvironmentHelper.GetApiWrapperPath()}", "LD_PRELOAD=path");
+
             if (collectCommands)
             {
                 // Make sure the PATH name is the same in span for all OS

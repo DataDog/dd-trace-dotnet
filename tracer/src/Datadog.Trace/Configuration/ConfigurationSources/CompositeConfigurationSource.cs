@@ -167,9 +167,13 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
         {
-            return _sources.Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings))
+            return _sources.Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings, separator: ':'))
                            .FirstOrDefault(value => value != null)?.Result;
         }
+
+        /// <inheritdoc />
+        bool ITelemeteredConfigurationSource.IsPresent(string key)
+            => _sources.Select(source => source.IsPresent(key)).FirstOrDefault(value => value);
 
         /// <inheritdoc />
         ConfigurationResult<string>? ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
@@ -192,8 +196,8 @@ namespace Datadog.Trace.Configuration
             => _sources.Select(source => source.GetDictionary(key, telemetry, validator)).FirstOrDefault(value => value != null);
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
-            => _sources.Select(source => source.GetDictionary(key, telemetry, validator, allowOptionalMappings)).FirstOrDefault(value => value != null);
+        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+            => _sources.Select(source => source.GetDictionary(key, telemetry, validator, allowOptionalMappings, separator)).FirstOrDefault(value => value != null);
 
         /// <inheritdoc />
         ConfigurationResult<T>? ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)

@@ -9,13 +9,6 @@ namespace Datadog.Trace.Sampling
 {
     internal interface ISamplingRule
     {
-        /// <summary>
-        /// Gets the rule priority.
-        /// Higher number means higher priority.
-        /// Not related to sampling priority.
-        /// </summary>
-        int Priority { get; }
-
         int SamplingMechanism { get; }
 
         bool IsMatch(Span span);

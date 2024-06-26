@@ -14,6 +14,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         public string Path { get; set; } = string.Empty;
 
         [JsonProperty("raw")]
-        public byte[] Raw { get; set; } = Array.Empty<byte>();
+        public byte[] Raw { get; set; } = [];
     }
 }

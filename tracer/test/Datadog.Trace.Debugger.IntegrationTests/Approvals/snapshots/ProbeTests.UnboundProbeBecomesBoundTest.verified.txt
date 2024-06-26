@@ -35,7 +35,7 @@
           "location": {
             "file": "UnreferencedExternalClass.cs",
             "lines": [
-              11
+              "11"
             ]
           },
           "version": 0
@@ -90,7 +90,7 @@
           "location": {
             "file": "UnreferencedExternalClass.cs",
             "lines": [
-              12
+              "12"
             ]
           },
           "version": 0

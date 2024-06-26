@@ -58,13 +58,13 @@ const char* ApplicationStore::GetName()
     return _serviceName;
 }
 
-bool ApplicationStore::Start()
+bool ApplicationStore::StartImpl()
 {
     // nothing special to start
     return true;
 }
 
-bool ApplicationStore::Stop()
+bool ApplicationStore::StopImpl()
 {
     // nothing special to stop
     return true;
