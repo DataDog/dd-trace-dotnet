@@ -16,7 +16,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet;
 
-#if NETCOREAPP3_0_OR_GREATER || NET462
 [Trait("RequiresDockerDependency", "true")]
 [UsesVerify]
 public class OracleTests : TracingIntegrationTest
@@ -70,4 +69,3 @@ public class OracleTests : TracingIntegrationTest
         return span.IsOracle(metadataSchemaVersion);
     }
 }
-#endif
