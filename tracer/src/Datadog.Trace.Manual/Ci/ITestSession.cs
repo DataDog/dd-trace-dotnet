@@ -5,11 +5,14 @@
 
 #nullable enable
 
+using Datadog.Trace.SourceGenerators;
+
 namespace Datadog.Trace.Ci;
 
 /// <summary>
 /// CI Visibility test session
 /// </summary>
+[DuckType("Datadog.Trace.Ci.TestSession", "Datadog.Trace")]
 public interface ITestSession
 {
     /// <summary>

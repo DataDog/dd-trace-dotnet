@@ -6,12 +6,14 @@
 #nullable enable
 
 using System.Reflection;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Ci;
 
 /// <summary>
 /// CI Visibility test
 /// </summary>
+[DuckType("Datadog.Trace.Ci.Test", "Datadog.Trace")]
 public interface ITest
 {
     /// <summary>
