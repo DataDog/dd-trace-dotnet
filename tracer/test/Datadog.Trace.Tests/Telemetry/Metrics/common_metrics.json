@@ -9,7 +9,10 @@
       "data_type": "milliseconds",
       "description": "The time it takes to import/initialize the tracer on startup. If this consists of multiple steps/components, tagged by the component/total e.g. `component:call_target`. Component tags will vary by language",
       "send_to_user": false,
-      "user_tags": []
+      "user_tags": [],
+      "aliases": [
+        "tracer_init_time"
+      ]
     },
     "logs_created": {
       "tags": [
@@ -42,7 +45,10 @@
       "data_type": "spans",
       "description": "The number of spans created by the tracer, tagged by automatic integration name (e.g. `integration_name:kafka`, `integration_name:rabbitmq`) or manual API (`integration_name:datadog`, `integration_name:otel` or `integration_name:opentracing`)",
       "send_to_user": false,
-      "user_tags": []
+      "user_tags": [],
+      "aliases": [
+        "span_created"
+      ]
     },
     "spans_finished": {
       "tags": [
@@ -52,7 +58,10 @@
       "data_type": "spans",
       "description": "The number of spans finished, optionally (if implementation allows) tagged by automatic integration name (e.g. `integration_name:kafka`, `integration_name:rabbitmq`) or manual API (`integration_name:datadog`, `integration_name:otel` or `integration_name:opentracing`)",
       "send_to_user": false,
-      "user_tags": []
+      "user_tags": [],
+      "aliases": [
+        "span_finished"
+      ]
     },
     "spans_enqueued_for_serialization": {
       "tags": [
@@ -128,7 +137,8 @@
     },
     "trace_chunks_dropped": {
       "tags": [
-        "reason"
+        "reason",
+        "src_library"
       ],
       "metric_type": "count",
       "data_type": "trace chunks",
@@ -137,7 +147,9 @@
       "user_tags": []
     },
     "trace_chunks_sent": {
-      "tags": [],
+      "tags": [
+        "src_library"
+      ],
       "metric_type": "count",
       "data_type": "trace chunks",
       "description": "The number of trace chunks attempted to be sent to the backend, regardless of response",
@@ -153,7 +165,9 @@
       "user_tags": []
     },
     "trace_api.requests": {
-      "tags": [],
+      "tags": [
+        "src_library"
+      ],
       "metric_type": "count",
       "data_type": "requests",
       "description": "The number of requests sent to the trace endopint in the agent, regardless of success",
@@ -161,7 +175,9 @@
       "user_tags": []
     },
     "trace_api.bytes": {
-      "tags": [],
+      "tags": [
+        "src_library"
+      ],
       "metric_type": "distribution",
       "data_type": "bytes",
       "description": "The size of the payload sent to the endpoint in bytes",
@@ -169,7 +185,9 @@
       "user_tags": []
     },
     "trace_api.ms": {
-      "tags": [],
+      "tags": [
+        "src_library"
+      ],
       "metric_type": "distribution",
       "data_type": "milliseconds",
       "description": "The time it takes to flush the trace payload to the agent. Note that this is not the per trace time, this is the per payload time",
@@ -178,7 +196,8 @@
     },
     "trace_api.responses": {
       "tags": [
-        "status_code"
+        "status_code",
+        "src_library"
       ],
       "metric_type": "count",
       "data_type": "responses",
@@ -188,7 +207,8 @@
     },
     "trace_api.errors": {
       "tags": [
-        "type"
+        "type",
+        "src_library"
       ],
       "metric_type": "count",
       "data_type": "requests",
@@ -297,23 +317,25 @@
     "host_lib_injection.success": {
       "tags": [
         "language",
-        "version"
+        "version",
+        "injecter_version"
       ],
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of successful host lib injection",
-      "send_to_user": false,
+      "send_to_user": true,
       "user_tags": []
     },
     "host_lib_injection.failure": {
       "tags": [
         "language",
-        "version"
+        "version",
+        "injecter_version"
       ],
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of failed host lib injection",
-      "send_to_user": false,
+      "send_to_user": true,
       "user_tags": []
     },
     "docker_lib_injection.success": {
@@ -324,7 +346,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of successful docker lib injection",
-      "send_to_user": false,
+      "send_to_user": true,
       "user_tags": []
     },
     "docker_lib_injection.failure": {
@@ -335,6 +357,111 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of failed docker lib injection",
+      "send_to_user": true,
+      "user_tags": []
+    },
+    "library_entrypoint.abort": {
+      "tags": [
+        "runtime_name",
+        "runtime_version",
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of injections aborted at library entrypoint due to checks not passing",
+      "send_to_user": true,
+      "user_tags": []
+    },
+    "library_entrypoint.abort.runtime": {
+      "tags": [
+        "runtime_name",
+        "runtime_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of injections aborted at library entrypoint due to runtime version not supported",
+      "send_to_user": true,
+      "user_tags": []
+    },
+    "library_entrypoint.abort.integration": {
+      "tags": [
+        "runtime_name",
+        "runtime_version",
+        "integration",
+        "integration_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of injections aborted at library entrypoint due to integration version not supported",
+      "send_to_user": true,
+      "user_tags": []
+    },
+    "library_entrypoint.error": {
+      "tags": [
+        "runtime_name",
+        "runtime_version",
+        "error_type",
+        "integration",
+        "integration_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of injections aborted at library entrypoint due to an error",
+      "send_to_user": true,
+      "user_tags": []
+    },
+    "library_entrypoint.complete": {
+      "tags": [
+        "runtime_name",
+        "runtime_version",
+        "injection_forced"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of successful library entrypoint injections",
+      "send_to_user": true,
+      "user_tags": []
+    },
+    "entry.process.running.1s": {
+      "tags": [
+        "runtime_name",
+        "runtime_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of injections that are still running after 1s",
+      "send_to_user": true,
+      "user_tags": []
+    },
+    "entry.process.running.5s": {
+      "tags": [
+        "runtime_name",
+        "runtime_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of injections that are still running after 5s",
+      "send_to_user": true,
+      "user_tags": []
+    },
+    "entry.process.running.10s": {
+      "tags": [
+        "runtime_name",
+        "runtime_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of injections that are still running after 10s",
+      "send_to_user": true,
+      "user_tags": []
+    },
+    "exporter_fallback": {
+      "tags": [
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "instances",
+      "description": "Number of times the libdatadog trace exporter isn't used and we fallback on the previous implementation",
       "send_to_user": false,
       "user_tags": []
     }
@@ -516,6 +643,16 @@
       "description": "Counts the number of times a timeout was hit when evaluating a specific rule type",
       "send_to_user": false,
       "user_tags": []
+    },
+    "instrum.user_auth.missing_user_id": {
+      "tags": [
+        "framework"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "Number of user events skipped due to not having a user id",
+      "send_to_user": false,
+      "user_tags": []
     }
   },
   "iast": {
@@ -627,6 +764,17 @@
     }
   },
   "civisibility": {
+    "test_session": {
+      "tags": [
+        "provider",
+        "auto_injected"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of test sessions started. Tagged with CI provider (15 possible values) and a boolean flag set to true if the session is run by a tracer that was auto-injected",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "event_created": {
       "tags": [
         "test_framework",
@@ -711,11 +859,12 @@
     },
     "endpoint_payload.requests": {
       "tags": [
-        "endpoint"
+        "endpoint",
+        "rq_compressed"
       ],
       "metric_type": "count",
       "data_type": "requests",
-      "description": "The number of requests sent to the endpoint, regardless of success, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
+      "description": "The number of requests sent to the endpoint, regardless of success, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`) and a boolean flag set to true if request body is compressed",
       "send_to_user": false,
       "user_tags": []
     },
@@ -742,11 +891,12 @@
     "endpoint_payload.requests_errors": {
       "tags": [
         "endpoint",
-        "error_type"
+        "error_type",
+        "status_code"
       ],
       "metric_type": "count",
       "data_type": "requests",
-      "description": "The number of requests sent to the endpoint that errored, tagget by the error type (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code`) and endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
+      "description": "The number of requests sent to the endpoint that errored, tagget by the error type (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code`) and endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`) and status code (400,401,403,404,408,429)",
       "send_to_user": false,
       "user_tags": []
     },
@@ -802,10 +952,12 @@
       "user_tags": []
     },
     "git_requests.search_commits": {
-      "tags": [],
+      "tags": [
+        "rq_compressed"
+      ],
       "metric_type": "count",
       "data_type": "requests",
-      "description": "The number of requests sent to the search commit endpoint, regardless of success",
+      "description": "The number of requests sent to the search commit endpoint, regardless of success. Tagged with a boolean flag set to true if request body is compressed",
       "send_to_user": false,
       "user_tags": []
     },
@@ -819,19 +971,22 @@
     },
     "git_requests.search_commits_errors": {
       "tags": [
-        "error_type"
+        "error_type",
+        "status_code"
       ],
       "metric_type": "count",
       "data_type": "requests",
-      "description": "The number of search commit requests sent to the endpoint that errored, tagget by the error type (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
+      "description": "The number of search commit requests sent to the endpoint that errored, tagget by the error type (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`) and status code (400,401,403,404,408,429)",
       "send_to_user": false,
       "user_tags": []
     },
     "git_requests.objects_pack": {
-      "tags": [],
+      "tags": [
+        "rq_compressed"
+      ],
       "metric_type": "count",
       "data_type": "requests",
-      "description": "The number of requests sent to the git object pack endpoint, regardless of success",
+      "description": "The number of requests sent to the git object pack endpoint, regardless of success. Tagged with a boolean flag set to true if request body is compressed",
       "send_to_user": false,
       "user_tags": []
     },
@@ -845,11 +1000,12 @@
     },
     "git_requests.objects_pack_errors": {
       "tags": [
-        "error_type"
+        "error_type",
+        "status_code"
       ],
       "metric_type": "count",
       "data_type": "requests",
-      "description": "The number of git object pack requests sent to the endpoint that errored, tagget by the error type (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
+      "description": "The number of git object pack requests sent to the endpoint that errored, tagget by the error type (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`) and status code (400,401,403,404,408,429)",
       "send_to_user": false,
       "user_tags": []
     },
@@ -870,10 +1026,12 @@
       "user_tags": []
     },
     "git_requests.settings": {
-      "tags": [],
+      "tags": [
+        "rq_compressed"
+      ],
       "metric_type": "count",
       "data_type": "requests",
-      "description": "The number of requests sent to the settings endpoint, regardless of success",
+      "description": "The number of requests sent to the settings endpoint, regardless of success. Tagged with a boolean flag set to true if request body is compressed",
       "send_to_user": false,
       "user_tags": []
     },
@@ -887,11 +1045,12 @@
     },
     "git_requests.settings_errors": {
       "tags": [
-        "error_type"
+        "error_type",
+        "status_code"
       ],
       "metric_type": "count",
       "data_type": "requests",
-      "description": "The number of settings requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
+      "description": "The number of settings requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`) and status code (400,401,403,404,408,429)",
       "send_to_user": false,
       "user_tags": []
     },
@@ -908,10 +1067,12 @@
       "user_tags": []
     },
     "itr_skippable_tests.request": {
-      "tags": [],
+      "tags": [
+        "rq_compressed"
+      ],
       "metric_type": "count",
       "data_type": "requests",
-      "description": "The number of requests sent to the itr skippable tests endpoint, regardless of success",
+      "description": "The number of requests sent to the itr skippable tests endpoint, regardless of success. Tagged with a boolean flag set to true if request body is compressed",
       "send_to_user": false,
       "user_tags": []
     },
@@ -925,19 +1086,22 @@
     },
     "itr_skippable_tests.request_errors": {
       "tags": [
-        "error_type"
+        "error_type",
+        "status_code"
       ],
       "metric_type": "count",
       "data_type": "requests",
-      "description": "The number of itr skippable tests requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
+      "description": "The number of itr skippable tests requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`) and status code (400,401,403,404,408,429)",
       "send_to_user": false,
       "user_tags": []
     },
     "itr_skippable_tests.response_bytes": {
-      "tags": [],
+      "tags": [
+        "rs_compressed"
+      ],
       "metric_type": "distribution",
       "data_type": "bytes",
-      "description": "The number of bytes received by the endpoint",
+      "description": "The number of bytes received by the endpoint. Tagged with a boolean flag set to true if response body is compressed",
       "send_to_user": false,
       "user_tags": []
     },
@@ -1012,10 +1176,12 @@
       "user_tags": []
     },
     "early_flake_detection.request": {
-      "tags": [],
+      "tags": [
+        "rq_compressed"
+      ],
       "metric_type": "count",
       "data_type": "requests",
-      "description": "The number of requests sent to the known tests endpoint, regardless of success",
+      "description": "The number of requests sent to the known tests endpoint, regardless of success. Tagged with a boolean flag set to true if request body is compressed",
       "send_to_user": false,
       "user_tags": []
     },
@@ -1029,19 +1195,22 @@
     },
     "early_flake_detection.request_errors": {
       "tags": [
-        "error_type"
+        "error_type",
+        "status_code"
       ],
       "metric_type": "count",
       "data_type": "requests",
-      "description": "The number of known tests requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
+      "description": "The number of known tests requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`) and status code (400,401,403,404,408,429)",
       "send_to_user": false,
       "user_tags": []
     },
     "early_flake_detection.response_bytes": {
-      "tags": [],
+      "tags": [
+        "rs_compressed"
+      ],
       "metric_type": "distribution",
       "data_type": "bytes",
-      "description": "The number of bytes received by the endpoint",
+      "description": "The number of bytes received by the endpoint. Tagged with a boolean flag set to true if response body is compressed",
       "send_to_user": false,
       "user_tags": []
     },

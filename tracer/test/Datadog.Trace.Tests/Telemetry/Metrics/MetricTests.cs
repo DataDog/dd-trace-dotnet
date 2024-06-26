@@ -27,6 +27,12 @@ public class MetricTests
         { "waf.updates", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
         { "waf.requests", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
         { "spans_finished", new[] { "integration_name" } }, // this is technically difficult for us, so we don't tag it
+        { "trace_chunks_dropped", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_chunks_sent", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_api.requests", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_api.bytes", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_api.responses", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_api.errors", ["src_library"] }, // this is optional, only added by the rust library
     };
 
     private static readonly Dictionary<string, string[]> OptionalTagsByMetricName = new()
