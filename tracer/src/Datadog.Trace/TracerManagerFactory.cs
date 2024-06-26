@@ -272,18 +272,6 @@ namespace Datadog.Trace
 
             var sampler = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: settings.MaxTracesSubmittedPerSecondInternal, intervalMilliseconds: null));
 
-            // remote sampling rules
-            var remoteSamplingRulesJson = settings.RemoteSamplingRules;
-
-            if (!string.IsNullOrWhiteSpace(remoteSamplingRulesJson))
-            {
-                var samplerStandalone = new TraceSampler(new TracerRateLimiter(1, 60_000));
-                samplerStandalone.RegisterRule(new GlobalSamplingRateRule(1.0f));
-                return samplerStandalone;
-            }
-
-            var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal, null));
-
             // sampling rules (remote value overrides local value)
             var samplingRulesJson = settings.CustomSamplingRulesInternal;
 
