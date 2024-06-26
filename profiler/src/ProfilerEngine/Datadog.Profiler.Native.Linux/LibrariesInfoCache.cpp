@@ -18,7 +18,7 @@ LibrariesInfoCache::LibrariesInfoCache()
     LibrariesInfo.reserve(100);
     NbCallsToDlopenDlclose = 0;
     s_instance = this;
-    unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::CustomDlIteratePhdr);
+    unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
 }
 
 LibrariesInfoCache* LibrariesInfoCache::Get()
@@ -81,7 +81,7 @@ void LibrariesInfoCache::UpdateCache()
     LibrariesInfo.erase(LibrariesInfo.begin() + data.Index, LibrariesInfo.end());
 }
 
-int LibrariesInfoCache::CustomDlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data)
+int LibrariesInfoCache::DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data)
 {
     int rc = 0;
     auto* instance = s_instance;

@@ -20,7 +20,7 @@ public:
 private:
     LibrariesInfoCache();
 
-    static int CustomDlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data);
+    static int DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data);
     int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
 
     std::shared_mutex _cacheLock;
