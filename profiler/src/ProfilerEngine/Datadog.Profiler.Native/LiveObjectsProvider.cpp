@@ -80,7 +80,10 @@ void LiveObjectsProvider::OnGarbageCollectionEnd(
     bool isCompacting,
     uint64_t pauseDuration,
     uint64_t totalDuration,
-    uint64_t endTimestamp)
+    uint64_t endTimestamp,
+    uint64_t gen2Size,
+    uint64_t lohSize,
+    uint64_t pohSize)
 {
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 
