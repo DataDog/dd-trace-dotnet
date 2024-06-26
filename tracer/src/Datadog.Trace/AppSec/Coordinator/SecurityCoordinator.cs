@@ -88,17 +88,7 @@ internal readonly partial struct SecurityCoordinator
         IResult? result = null;
         try
         {
-            IContext? additiveContext;
-            try
-            {
-                additiveContext = _httpTransport.GetAdditiveContext();
-            }
-            catch (ObjectDisposedException ex)
-            {
-                // This should not happen
-                Log.Error(ex, "Context has already been disposed");
-                return null;
-            }
+            var additiveContext = _httpTransport.GetAdditiveContext();
 
             if (additiveContext == null)
             {
