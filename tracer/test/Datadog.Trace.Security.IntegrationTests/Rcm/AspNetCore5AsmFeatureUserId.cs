@@ -11,6 +11,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
@@ -51,9 +52,16 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 request0.Should().NotBeNull();
             }
 
-            var span0Ident = await SendRequestsAsync(agent, url, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
             await SendRequestsAsync(agent, "/account/reset-memory-db");
             await SendRequestsAsync(agent, "/account/logout");
+
+            var span0Ident = await SendRequestsAsync(agent, url, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
+
+            await SendRequestsAsync(agent, "/account/reset-memory-db");
+            await SendRequestsAsync(agent, "/account/logout");
+
+            var span = span0Ident.First();
+            Output.WriteLine($"usr.id: {span.Tags["usr.id"]}");
 
             var anonMode = ((object)new AsmFeatures { AutoUserInstrum = new AutoUserInstrum { Mode = "anon" } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection));
             var request1Files = EnableSecurity is true ? new[] { anonMode } : new[] { active, anonMode };
@@ -61,6 +69,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             request1.Should().NotBeNull();
 
             var span1Anon = await SendRequestsAsync(agent, url, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
+
             await SendRequestsAsync(agent, "/account/reset-memory-db");
             await SendRequestsAsync(agent, "/account/logout");
 
@@ -70,8 +79,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             request2.Should().NotBeNull();
 
             var spans2Disabled = await SendRequestsAsync(agent, url, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
-            await SendRequestsAsync(agent, "/account/reset-memory-db");
-            await SendRequestsAsync(agent, "/account/logout");
 
             var spans = new List<MockSpan>();
             spans.AddRange(span0Ident);

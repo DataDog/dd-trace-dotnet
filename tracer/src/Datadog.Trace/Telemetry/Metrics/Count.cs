@@ -201,7 +201,7 @@ internal enum Count
     /// <summary>
     /// Counts the number of times a timeout was hit when evaluating a specific rule type.
     /// </summary>
-    [TelemetryMetric("instrum.user_auth.missing_user_id", isCommon: true, NS.ASM)] MissingUserId,
+    [TelemetryMetric<AuthenticationFramework>("instrum.user_auth.missing_user_id", isCommon: true, NS.ASM)] MissingUserId,
 
 #endregion
 #region Iast Namespace

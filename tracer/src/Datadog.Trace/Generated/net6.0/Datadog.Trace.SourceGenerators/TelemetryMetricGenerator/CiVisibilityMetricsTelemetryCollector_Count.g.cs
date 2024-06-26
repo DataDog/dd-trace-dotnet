@@ -148,7 +148,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountMissingUserId(int increment = 1)
+    public void RecordCountMissingUserId(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFramework tag, int increment = 1)
     {
     }
 

@@ -516,6 +516,16 @@
       "description": "Counts the number of times a timeout was hit when evaluating a specific rule type",
       "send_to_user": false,
       "user_tags":[]
+    },
+    "instrum.user_auth.missing_user_id": {
+      "tags": [
+        "framework"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "Number of user events skipped due to not having a user id",
+      "send_to_user": false,
+      "user_tags":[]
     }
   },
   "iast": {

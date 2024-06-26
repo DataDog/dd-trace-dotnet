@@ -50,13 +50,15 @@ public class UserEventsCommonTests
         id.Should().Be("my-username");
     }
 
-    [Fact]
-    public void GetAnonId_ExampleFromRfc()
+    [Theory]
+    [InlineData("zouzou@sansgluten.com", "anon_0c76692372ebf01a7da6e9570fb7d0a1")]
+    [InlineData("9245fe4a-d402-451c-b9ed-9c1a04247482", "anon_527ec0e4665a4327333a77b992cb64b6")]
+    [InlineData("bc98f685-9464-463d-ae66-e84b1ef7963e", "anon_7bcd1c9fc4f6e4c2460e0ad38d6ad0d9")]
+    public void GetAnonIdTests(string id, string expected)
     {
-        var id = "zouzou@sansgluten.com";
         var anonId = UserEventsCommon.GetAnonId(id);
 
-        anonId.Should().Be("anon_0c76692372ebf01a7da6e9570fb7d0a1");
+        anonId.Should().Be(expected);
     }
 
     private class User : IIdentityUser
