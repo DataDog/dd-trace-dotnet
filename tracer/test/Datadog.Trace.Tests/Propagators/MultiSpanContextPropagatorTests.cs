@@ -692,11 +692,11 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        [InlineData(false, false, "0123456789abcdef", 987654321)]
-        [InlineData(false, true, "000000003ade68b1", 3540)]
-        [InlineData(true, false, null, 3540)]
-        [InlineData(true, true, "0123456789abcdef", 987654321)]
-        public void TraceContextPrecedence_ConsistentBehaviour_WithDifferentParentId(bool extractFirst, bool w3CHeaderFirst, string lastParentId, ulong updatedSpanId)
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void TraceContextPrecedence_ConsistentBehaviour_WithDifferentParentId(bool extractFirst, bool w3CHeaderFirst)
         {
             // headers4 equivalent from system-tests
             var headers = new Mock<IHeadersCollection>();
@@ -723,6 +723,17 @@ namespace Datadog.Trace.Tests.Propagators
                 },
                 null);
 
+            string lastParentId = null;
+
+            if (extractFirst == w3CHeaderFirst)
+            {
+                lastParentId = "0123456789abcdef";
+            }
+            else if (w3CHeaderFirst)
+            {
+                lastParentId = "000000003ade68b1";
+            }
+
             result.Should()
                   .NotBeNull()
                   .And
@@ -731,7 +742,7 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId128 = new TraceId(0x1111111111111111, 4),
                            TraceId = 4,
-                           SpanId = updatedSpanId,
+                           SpanId = (ulong)(w3CHeaderFirst == extractFirst ? 987654321 : 3540),
                            RawTraceId = "11111111111111110000000000000004",
                            RawSpanId = w3CHeaderFirst ? "000000003ade68b1" : "0000000000000dd4",
                            SamplingPriority = 2,
