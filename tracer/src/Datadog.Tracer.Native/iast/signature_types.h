@@ -37,8 +37,9 @@ namespace iast
         virtual HRESULT AddToSignature(ISignatureBuilder* pSignatureBuilder);
         virtual bool IsPrimitive();
         virtual bool IsArray();
-        //bool IsClass() override;
-        //bool IsValueType() override;
+        virtual bool IsClass();
+        virtual bool IsValueType();
+        virtual bool IsByRef();
         virtual WSTRING GetName();
         virtual mdToken GetToken();
     public:

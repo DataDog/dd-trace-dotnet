@@ -210,14 +210,18 @@ namespace iast
     {
         return (_type == ELEMENT_TYPE_ARRAY) || (_type == ELEMENT_TYPE_SZARRAY);
     }
-    //bool CType::IsClass()
-    //{
-    //    return false;
-    //}
-    //bool CType::IsValueType()
-    //{
-    //    return false;
-    //}
+    bool SignatureType::IsClass()
+    {
+        return (_type == ELEMENT_TYPE_CLASS);
+    }
+    bool SignatureType::IsValueType()
+    {
+        return (_type == ELEMENT_TYPE_VALUETYPE);
+    }
+    bool SignatureType::IsByRef()
+    {
+        return (_type == ELEMENT_TYPE_BYREF);
+    }
 
 
     WSTRING SignatureType::GetName()
