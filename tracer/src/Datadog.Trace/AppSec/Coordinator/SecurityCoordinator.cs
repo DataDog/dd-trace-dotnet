@@ -72,6 +72,11 @@ internal readonly partial struct SecurityCoordinator
         return _httpTransport.Context is not null;
     }
 
+    public bool AdditiveContextDisposed()
+    {
+        return _httpTransport.AdditiveContextDisposed();
+    }
+
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
     {
         if (!HasContext())
@@ -88,9 +93,10 @@ internal readonly partial struct SecurityCoordinator
             {
                 additiveContext = _httpTransport.GetAdditiveContext();
             }
-            catch (ObjectDisposedException)
+            catch (ObjectDisposedException ex)
             {
-                // Context.Features is null and we can't access it
+                // This should not happen
+                Log.Error(ex, "Context has already been disposed");
                 return null;
             }
 
