@@ -2321,7 +2321,7 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
           run --no-deps --rm \
           -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
