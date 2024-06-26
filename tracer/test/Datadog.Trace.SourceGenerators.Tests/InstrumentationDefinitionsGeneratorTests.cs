@@ -1216,7 +1216,7 @@ public class KafkaProduceSyncIntegration
 
             const string expected = Constants.FileHeaderCpp + """
 #pragma once
-#include "../../Datadog.Tracer.Native/generated_definitions.h"
+#include "generated_definitions.h"
 
 namespace trace
 {
@@ -1241,7 +1241,7 @@ std::vector<CallTargetDefinition2> g_callTargets_TestTFM=
                 input);
 
             Assert.Empty(diagnostics);
-            Assert.Equal("generated_calltargets_testtfm.h", System.IO.Path.GetFileName(fileName));
+            Assert.Equal("generated_calltargets_testtfm.g.h", System.IO.Path.GetFileName(fileName));
             Assert.Equal(expected, fileContent);
         }
 

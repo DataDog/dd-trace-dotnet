@@ -9,7 +9,7 @@
 #include "cor_profiler.h"
 #include "logger.h"
 #include "iast/hardcoded_secrets_method_analyzer.h"
-#include "generated_definitions.h"
+#include "Generated/generated_definitions.h"
 #include <vector>
 
 #ifndef _WIN32

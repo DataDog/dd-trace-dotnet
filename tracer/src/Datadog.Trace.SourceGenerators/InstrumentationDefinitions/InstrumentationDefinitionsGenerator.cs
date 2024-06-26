@@ -34,8 +34,8 @@ public class InstrumentationDefinitionsGenerator : IncrementalGeneratorBase
     /// <inheritdoc />
     public override void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Get path of the compiling project using the placeholder additional file
-        var placeholderFile = RegisterPlaceholder(context);
+        // Get path of the compiling project using the 'folder_locator.json' generator additional file
+        var folderLocatorFile = RegisterFolderLocator(context);
 
         // Get the TFM from the TargetFrameworkMonikerAttribute
         var tfm = RegisterTfm(context);
@@ -113,7 +113,7 @@ public class InstrumentationDefinitionsGenerator : IncrementalGeneratorBase
                .Collect();
 
         context.RegisterSourceOutput(
-            tfm.Collect().Combine(placeholderFile.Collect())
+            tfm.Collect().Combine(folderLocatorFile.Collect())
             .Combine(allCallTargetDefinitions.Combine(allAdoNetDefinitions)),
             (spc, source) =>
                 Execute(source.Left, source.Right.Left, source.Right.Right, spc));
@@ -727,7 +727,7 @@ public class InstrumentationDefinitionsGenerator : IncrementalGeneratorBase
     }
 
     private void Execute(
-        in (ImmutableArray<string> Tfm, ImmutableArray<string> Placeholders) dest,
+        in (ImmutableArray<string> Tfm, ImmutableArray<string> FolderLocators) dest,
         in ImmutableArray<CallTargetDefinitionSource> definitions,
         in ImmutableArray<CallTargetDefinitionSource> adoNetDefinitions,
         SourceProductionContext context)
@@ -745,9 +745,9 @@ public class InstrumentationDefinitionsGenerator : IncrementalGeneratorBase
         string source = Sources.CreateCallTargetDefinitions(allDefinitions, out orderedDefinitions);
         context.AddSource("InstrumentationDefinitions.g.cs", SourceText.From(source, Encoding.UTF8));
 
-        if (dest.Tfm.Length > 0 && dest.Placeholders.Length > 0 && orderedDefinitions is not null)
+        if (dest.Tfm.Length > 0 && dest.FolderLocators.Length > 0 && orderedDefinitions is not null)
         {
-            GenerateNative(dest.Tfm[0], dest.Placeholders[0], orderedDefinitions, context);
+            GenerateNative(dest.Tfm[0], dest.FolderLocators[0], orderedDefinitions, context);
         }
     }
 
@@ -758,7 +758,7 @@ public class InstrumentationDefinitionsGenerator : IncrementalGeneratorBase
         sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeaderCpp);
         sb.AppendLine("""
             #pragma once
-            #include "../../Datadog.Tracer.Native/generated_definitions.h"
+            #include "generated_definitions.h"
 
             namespace trace
             {
@@ -771,7 +771,7 @@ public class InstrumentationDefinitionsGenerator : IncrementalGeneratorBase
             }
             """);
 
-        var filePath = Path.Combine(Path.Combine(destFolder, "Generated"), $"generated_callTargets_{tfmName}.h".ToLower());
+        var filePath = Path.GetFullPath(Path.Combine(Path.Combine(destFolder, "../Datadog.Tracer.Native/Generated"), $"generated_callTargets_{tfmName}.g.h".ToLower()));
         WriteAdditionalFile(filePath, sb.ToString());
 
         string GetFieldName()

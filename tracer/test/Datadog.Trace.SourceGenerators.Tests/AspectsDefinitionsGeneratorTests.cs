@@ -523,7 +523,7 @@ public class TestAspectClass
 
             const string expected = Constants.FileHeaderCpp + """"
 #pragma once
-#include "../../Datadog.Tracer.Native/generated_definitions.h"
+#include "generated_definitions.h"
 
 namespace trace
 {
@@ -548,7 +548,7 @@ std::vector<WCHAR*> g_callSites_TestTFM_Rasp=
                 SourceHelper.TFMAttribute,
                 input);
 
-            Assert.Equal("generated_callsites_testtfm.h", System.IO.Path.GetFileName(fileName));
+            Assert.Equal("generated_callsites_testtfm.g.h", System.IO.Path.GetFileName(fileName));
             Assert.Equal(expected, fileContent);
             Assert.Empty(diagnostics);
         }
@@ -899,7 +899,7 @@ namespace Datadog.Trace.Telemetry
         private class MyAdditionalText : AdditionalText
         {
 #pragma warning disable SYSLIB0012 // Assembly.CodeBase is obsolete
-            private static string _path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase).Replace(@"file:\", string.Empty), "Generated\\placeholder.json");
+            private static string _path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase).Replace(@"file:\", string.Empty), "Generated\\folder_locator.json");
 #pragma warning restore SYSLIB0012 // Assembly.CodeBase is obsolete
             private static Source _source = new Source();
 

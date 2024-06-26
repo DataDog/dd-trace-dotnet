@@ -39,7 +39,7 @@ public class AspectsDefinitionsGenerator : IncrementalGeneratorBase
         // RegisterSource(context, "AspectMethodReplaceAttribute");
 
         // Get path of the compiling project using the placeholder additional file
-        var placeholderFile = RegisterPlaceholder(context);
+        var folderLocatorFile = RegisterFolderLocator(context);
 
         // Get the TFM from the TargetFrameworkMonikerAttribute
         var tfm = RegisterTfm(context);
@@ -71,12 +71,12 @@ public class AspectsDefinitionsGenerator : IncrementalGeneratorBase
                .WithTrackingName(TrackingNames.Collected);
 
         context.RegisterSourceOutput(
-            tfm.Collect().Combine(placeholderFile.Collect())
+            tfm.Collect().Combine(folderLocatorFile.Collect())
             .Combine(allClassesToGenerate),
             (spc, classToGenerate) => Execute(in classToGenerate.Left, in classToGenerate.Right, spc));
     }
 
-    private void Execute(in (ImmutableArray<string> Tfm, ImmutableArray<string> Placeholders) dest, in ImmutableArray<ClassAspects> aspectClasses, SourceProductionContext context)
+    private void Execute(in (ImmutableArray<string> Tfm, ImmutableArray<string> FolderLocators) dest, in ImmutableArray<ClassAspects> aspectClasses, SourceProductionContext context)
     {
         var sb = new StringBuilder();
         sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeader);
@@ -131,9 +131,9 @@ namespace Datadog.Trace.ClrProfiler
 
         context.AddSource("AspectsDefinitions.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
 
-        if (dest.Tfm.Length > 0 && dest.Placeholders.Length > 0)
+        if (dest.Tfm.Length > 0 && dest.FolderLocators.Length > 0)
         {
-            GenerateNative(dest.Tfm[0], dest.Placeholders[0], aspectClasses, context);
+            GenerateNative(dest.Tfm[0], dest.FolderLocators[0], aspectClasses, context);
         }
 
         string FormatLine(string line)
@@ -149,7 +149,7 @@ namespace Datadog.Trace.ClrProfiler
         sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeaderCpp);
         sb.AppendLine("""
             #pragma once
-            #include "../../Datadog.Tracer.Native/generated_definitions.h"
+            #include "generated_definitions.h"
 
             namespace trace
             {
@@ -162,7 +162,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             """);
 
-        var filePath = Path.Combine(Path.Combine(destFolder, "Generated"), $"generated_callSites_{tfmName}.h".ToLower());
+        var filePath = Path.GetFullPath(Path.Combine(Path.Combine(destFolder, "../Datadog.Tracer.Native/Generated"), $"generated_callSites_{tfmName}.g.h".ToLower()));
         WriteAdditionalFile(filePath, sb.ToString());
 
         string FormatLine(string line)
