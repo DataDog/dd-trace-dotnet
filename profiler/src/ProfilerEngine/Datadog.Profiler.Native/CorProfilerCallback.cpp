@@ -451,7 +451,7 @@ bool CorProfilerCallback::InitializeServices()
         CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
 
 #ifdef LINUX
-    if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
+    if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
         auto const useMmap = true;
         _pCpuProfiler = RegisterService<TimerCreateCpuProfiler>(
@@ -1196,12 +1196,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
         COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[] =
             {
-                {WStr("Microsoft-Windows-DotNETRuntime"),
-                 activatedKeywords,
-                 verbosity,
-                 nullptr
-            }
-        };
+                {
+                    WStr("Microsoft-Windows-DotNETRuntime"),
+                    activatedKeywords,
+                    verbosity,
+                    nullptr
+                }
+            };
 
         hr = _pCorProfilerInfoEvents->EventPipeStartSession(
             sizeof(providers) / sizeof(providers[0]),

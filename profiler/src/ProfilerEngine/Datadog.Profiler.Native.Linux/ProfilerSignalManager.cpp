@@ -179,6 +179,12 @@ bool ProfilerSignalManager::SetupSignalHandler()
 void ProfilerSignalManager::SignalHandler(int signal, siginfo_t* info, void* context)
 {
     auto* signalManager = Get(signal);
+
+    if (signalManager == nullptr) [[unlikely]]
+    {
+        return;
+    }
+
     if (!signalManager->CallCustomHandler(signal, info, context))
     {
         signalManager->CallOrignalHandler(signal, info, context);

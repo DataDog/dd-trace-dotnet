@@ -49,18 +49,10 @@ private:
     bool StartImpl() override;
     bool StopImpl() override;
 
-    enum class ServiceState
-    {
-        Started,
-        Stopped,
-        Initialized
-    };
-
     ProfilerSignalManager* _pSignalManager;
     IManagedThreadList* _pManagedThreadsList;
     CpuTimeProvider* _pProvider;
     CallstackProvider _callstackProvider;
-    std::atomic<ServiceState> _serviceState;
     std::chrono::milliseconds _samplingInterval;
     std::shared_mutex _registerLock;
 };

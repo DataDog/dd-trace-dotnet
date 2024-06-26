@@ -28,10 +28,10 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
     _callstackProvider{std::move(callstackProvider)},
-    _serviceState{ServiceState::Initialized},
     _samplingInterval{pConfiguration->GetCpuProfilingInterval()}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
+    Log::Info("timer_create Cpu profiler is enabled");
 }
 
 TimerCreateCpuProfiler::~TimerCreateCpuProfiler()
