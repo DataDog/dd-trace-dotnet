@@ -153,6 +153,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
         }
 
+        // remove warnings for deserialization types
+#pragma warning disable SA1307 // Accessible fields should begin with upper-case letter
+#pragma warning disable SA1300 // Element should begin with upper-case letter
+#pragma warning disable SA1310 // Field names should not contain underscore
+#pragma warning disable SA1401 // Fields should be private
+#pragma warning disable CS0649
         // types used to deserialize the json file
         internal class TelemetryMetricObject
         {
@@ -177,5 +183,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             public List<string> tags { get; set; }
             public List<List<double>> points { get; set; }
         }
+#pragma warning restore CS0649
+#pragma warning restore SA1401 // Fields should be private
+#pragma warning restore SA1310 // Field names should not contain underscore
+#pragma warning restore SA1300 // Element should begin with upper-case letter
+#pragma warning restore SA1307 // Accessible fields should begin with upper-case letter
     }
 }

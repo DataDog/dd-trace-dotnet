@@ -30,6 +30,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             {
                 Assert.True(metric.ContainsTags(containedTags, mandatory, ref error), $"{error}");
             }
+
             foreach (var metric in parser.RuntimeIds)
             {
                 Assert.True(metric.ContainsTags(containedTags, mandatory, ref error), $"{error}");
