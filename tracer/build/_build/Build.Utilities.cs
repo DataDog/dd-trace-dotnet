@@ -456,6 +456,12 @@ partial class Build
 
                     bool IsTestApplication(Project x)
                     {
+                        // we explicitly don't build some of the regression samples:
+                        if (x.Name is "ExpenseItDemo" or "StackExchange.Redis.AssemblyConflict.LegacyProject")
+                        {
+                            return false;
+                        }
+
                         // Include test-applications, but exclude the following for now
                         // - test-applications/regression
                         // - test-applications/aspnet
@@ -463,11 +469,6 @@ partial class Build
                         var solutionFolder = x.SolutionFolder;
                         while (solutionFolder is not null)
                         {
-                            if(solutionFolder.Name == "regression" && solutionFolder.SolutionFolder?.Name == "test-applications")
-                            {
-                                return false;
-                            }
-
                             if(solutionFolder.Name == "aspnet" && solutionFolder.SolutionFolder?.Name == "test-applications")
                             {
                                 return false;
