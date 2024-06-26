@@ -1,4 +1,4 @@
-﻿// <copyright file="EquatableArray.cs" company="Datadog">
+// <copyright file="EquatableArray.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,7 +20,7 @@ public readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnume
     /// <summary>
     /// The underlying <typeparamref name="T"/> array.
     /// </summary>
-    internal readonly T[]? _array;
+    private readonly T[]? _array;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EquatableArray{T}"/> struct.
