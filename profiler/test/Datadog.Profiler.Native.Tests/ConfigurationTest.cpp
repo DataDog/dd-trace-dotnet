@@ -927,6 +927,14 @@ TEST(ConfigurationTest, CheckSsiIsDisabledIfEnvVarIsEmpty)
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
 }
 
+TEST(ConfigurationTest, CheckSsiIsActivatedIfProfilerEnvVarConstainsAuto)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("auto"));
+    auto configuration = Configuration{};
+    auto expectedValue = EnablementStatus::SsiEnabled;
+    ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
+}
+
 TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotSet)
 {
     auto configuration = Configuration{};

@@ -50,14 +50,9 @@ bool IsProfilingEnabled(Configuration const& configuration)
 {
     // If we are in this function, then the user has already configured profiling by setting CORECLR_ENABLE_PROFILING to 1
     // and by correctly pointing the CORECLR_PROFILER_XXX variables.
-    // However, we still want to respect the DD_PROFILING_ENABLED variable for:
-    //  - consistency with other profiling products;
-    //  - supporting scenarios where CORECLR_PROFILER_XXX point to the shared native loader, where some of the suit's products
-    //    are enabled, but profiling is explicitly disabled;
-    //  - supporting a scenario where CORECLR_PROFILER_XXX is set machine-wide and DD_PROFILING_ENABLED is set per service.
-
-    bool isEnabled = false;
-
+    // With Single Step Instrumentation deployment, it is possible that the profiler needs to be loaded (to emit telemetry metrics)
+    // but not started (i.e. no profiling) so this function will return true in that case.
+    //
     auto enablementStatus = configuration.GetEnablementStatus();
     auto deploymentMode = configuration.GetDeploymentMode();
 
@@ -95,6 +90,8 @@ bool IsProfilingEnabled(Configuration const& configuration)
         Log::Info(".NET Profiler environment variable '", EnvironmentVariables::ProfilerEnabled, "' was not set. The .NET profiler will be disabled.");
         return false;
     }
+
+    return false;
 }
 
 class __declspec(uuid("BD1A650D-AC5D-4896-B64F-D6FA25D6B26A")) CorProfilerCallback;
