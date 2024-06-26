@@ -111,6 +111,7 @@ variables:
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
+  outputDir: $(System.DefaultWorkingDirectory)/artifacts
   symbols: $(System.DefaultWorkingDirectory)/tracer/bin/symbols
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
@@ -1530,9 +1531,38 @@ stages:
             testResultsFiles: artifacts/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
+- stage: build_samples
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [build]
+
+    - job: build
+      timeoutInMinutes: 60 #default value
+      pool:
+        name: azure-windows-scale-set-3
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+        - template: steps/install-latest-dotnet-sdk.yml
+
+        - script: tracer\build.cmd CompileSamples
+          displayName: Build sample projects
+          retryCountOnTaskFailure: 1
+
+        - publish: $(outputDir)/bin
+          displayName: Upload artifact samples (bin only)
+          artifact: samples-bin
+
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1557,6 +1587,12 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+    - task: DownloadPipelineArtifact@2
+      displayName: Download samples
+      inputs:
+        artifact: samples-bin
+        path: $(outputDir)/bin
+      retryCountOnTaskFailure: 5
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
 #    - powershell: |
