@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
 /// <summary>
 /// Reverse duck type for Datadog.Trace.Ci.BenchmarkJobInfo in Datadog.Trace.Manual
 /// </summary>
+[DuckType("Datadog.Trace.Ci.BenchmarkJobInfo", "Datadog.Trace.Manual")]
 internal interface IBenchmarkJobInfo
 {
     [DuckField]
