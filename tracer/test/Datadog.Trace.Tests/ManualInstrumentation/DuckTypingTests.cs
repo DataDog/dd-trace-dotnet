@@ -6,6 +6,8 @@
 extern alias DatadogTraceManual;
 
 using System;
+using System.Linq;
+using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tagging;
@@ -16,6 +18,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Moq;
 using Xunit;
 using ManualBenchmarkDiscreteStats = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkDiscreteStats;
@@ -137,5 +140,65 @@ public class DuckTypingTests
         suite.Close();
         module.Close();
         session.Close(TestStatus.Pass);
+    }
+
+    [Fact]
+    public void CanDuckTypeAllAnnotatedTypesInDatadogTrace()
+    {
+        // This test ensures we can do the duck typing without needing to create an instance of the type
+        // it misses some checks compared to creating an instance and accessing the properties,
+        // but it's a good sanity check
+        var targetAssembly = typeof(ManualIScope).Assembly;
+        var proxiesAssembly = typeof(Tracer).Assembly;
+
+        TestDuckTypes(proxiesAssembly, targetAssembly);
+    }
+
+    [Fact]
+    public void CanDuckTypeAllAnnotatedTypesInDatadogTraceManual()
+    {
+        // This test ensures we can do the duck typing without needing to create an instance of the type
+        // it misses some checks compared to creating an instance and accessing the properties,
+        // but it's a good sanity check
+        var targetAssembly = typeof(Tracer).Assembly;
+        var proxiesAssembly = typeof(ManualIScope).Assembly;
+
+        TestDuckTypes(proxiesAssembly, targetAssembly);
+    }
+
+    private void TestDuckTypes(Assembly proxiesAssembly, Assembly targetAssembly)
+    {
+        var types = proxiesAssembly
+                   .GetTypes()
+                   .SelectMany(
+                        type => type.GetCustomAttributesData()
+                                    .Select(attr => GetTarget(attr, targetAssembly.GetName().Name))
+                                    .Where(target => target != null)
+                                    .Select(target => (type, target)));
+
+        foreach (var (type, target) in types)
+        {
+            var targetType = targetAssembly.GetType(target);
+            if (targetType is null)
+            {
+                throw new Exception($"Could not find target type: {target} in assembly {targetAssembly} required by duck type {type}");
+            }
+
+            var result = DuckType.GetOrCreateProxyType(type, targetType);
+
+            using var s = new AssertionScope();
+            s.AddReportable("proxy_type", () => type.ToString());
+            s.AddReportable("target_type", target);
+            result.Success.Should().BeTrue();
+            result.CanCreate().Should().BeTrue();
+            FluentActions.Invoking(() => result.ProxyType).Should().NotThrow();
+        }
+
+        static string GetTarget(CustomAttributeData attr, string assemblyName)
+            => (attr.AttributeType.Name is "DuckTypeAttribute" or "DuckCopyAttribute")
+            && attr.ConstructorArguments.Count == 2
+            && attr.ConstructorArguments[1].Value?.ToString() == assemblyName
+                   ? attr.ConstructorArguments[0].Value?.ToString()
+                   : null;
     }
 }
