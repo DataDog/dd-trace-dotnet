@@ -1254,7 +1254,7 @@ stages:
             artifactPath: /publish
             artifact: samples-bin-multi-package
       pool:
-        name: azure-windows-scale-set
+        name: azure-windows-scale-set-2
       steps:
         - template: steps/clone-repo.yml
           parameters:
