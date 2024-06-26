@@ -6,19 +6,24 @@
 
 #include <libunwind.h>
 #include <link.h>
+#include <shared_mutex>
 #include <vector>
 
 class LibrariesInfoCache
 {
 public:
-    LibrariesInfoCache();
+    static LibrariesInfoCache* Get();
     ~LibrariesInfoCache();
 
     void UpdateCache();
 
 private:
-    static int CustomDlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data);
+    LibrariesInfoCache();
 
+    static int CustomDlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data);
+    int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
+
+    std::shared_mutex _cacheLock;
     std::vector<DlPhdrInfoWrapper> LibrariesInfo;
 
     static LibrariesInfoCache* s_instance;

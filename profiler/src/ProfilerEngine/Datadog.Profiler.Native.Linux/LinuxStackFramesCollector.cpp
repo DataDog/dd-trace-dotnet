@@ -29,7 +29,8 @@ LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackW
 LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
     IConfiguration const* const configuration,
-    CallstackProvider* callstackProvider) :
+    CallstackProvider* callstackProvider,
+    LibrariesInfoCache* librariesCacheInfo) :
     StackFramesCollectorBase(configuration, callstackProvider),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
@@ -37,7 +38,7 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     _signalManager{signalManager},
     _errorStatistics{},
     _useBacktrace2{configuration->UseBacktrace2()},
-    _plibrariesInfo{}
+    _plibrariesInfo{librariesCacheInfo}
 {
     _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
 }
@@ -89,7 +90,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 {
     long errorCode;
 
-    _plibrariesInfo.UpdateCache();
+    _plibrariesInfo->UpdateCache();
 
     if (selfCollect)
     {

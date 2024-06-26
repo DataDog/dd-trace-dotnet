@@ -21,6 +21,12 @@ LibrariesInfoCache::LibrariesInfoCache()
     unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::CustomDlIteratePhdr);
 }
 
+LibrariesInfoCache* LibrariesInfoCache::Get()
+{
+    static LibrariesInfoCache Instance;
+    return &Instance;
+}
+
 LibrariesInfoCache::~LibrariesInfoCache()
 {
     unw_set_iterate_phdr_function(unw_local_addr_space, dl_iterate_phdr);
@@ -36,39 +42,43 @@ public:
 
 void LibrariesInfoCache::UpdateCache()
 {
-    auto nbCallsToDlopenDlclose = dd_nb_calls_to_dlopen_dlclose != nullptr ? dd_nb_calls_to_dlopen_dlclose() : NbCallsToDlopenDlclose;
-    if (nbCallsToDlopenDlclose != NbCallsToDlopenDlclose)
+    std::unique_lock l(_cacheLock);
+
+    auto nbCallsToDlopenDlclose = __builtin_expect(dd_nb_calls_to_dlopen_dlclose != nullptr, true) ? dd_nb_calls_to_dlopen_dlclose() : NbCallsToDlopenDlclose;
+    if (nbCallsToDlopenDlclose == NbCallsToDlopenDlclose)
     {
-        NbCallsToDlopenDlclose = nbCallsToDlopenDlclose;
-        IterationData data = {.Index = 0, .Cache = this};
-        dl_iterate_phdr(
-            [](struct dl_phdr_info* info, std::size_t size, void* data) {
-                auto* iterationData = static_cast<IterationData*>(data);
-                auto* cache = iterationData->Cache;
+        return;
+    }
 
-                if (cache->LibrariesInfo.size() <= iterationData->Index)
-                {
-                    cache->LibrariesInfo.push_back(DlPhdrInfoWrapper(info, size));
-                    iterationData->Index++;
-                    return 0;
-                }
+    NbCallsToDlopenDlclose = nbCallsToDlopenDlclose;
+    IterationData data = {.Index = 0, .Cache = this};
+    dl_iterate_phdr(
+        [](struct dl_phdr_info* info, std::size_t size, void* data) {
+            auto* iterationData = static_cast<IterationData*>(data);
+            auto* cache = iterationData->Cache;
 
-                auto& current = cache->LibrariesInfo[iterationData->Index];
-                if (current.IsSame(info))
-                {
-                    iterationData->Index++;
-                    return 0;
-                }
-
-                DlPhdrInfoWrapper wrappedInfo(info, size);
-                cache->LibrariesInfo[iterationData->Index] = std::move(wrappedInfo);
+            if (cache->LibrariesInfo.size() <= iterationData->Index)
+            {
+                cache->LibrariesInfo.push_back(DlPhdrInfoWrapper(info, size));
                 iterationData->Index++;
                 return 0;
-            },
-            &data);
+            }
 
-            LibrariesInfo.erase(LibrariesInfo.begin() + data.Index, LibrariesInfo.end());
-    }
+            auto& current = cache->LibrariesInfo[iterationData->Index];
+            if (current.IsSame(info))
+            {
+                iterationData->Index++;
+                return 0;
+            }
+
+            DlPhdrInfoWrapper wrappedInfo(info, size);
+            cache->LibrariesInfo[iterationData->Index] = std::move(wrappedInfo);
+            iterationData->Index++;
+            return 0;
+        },
+        &data);
+
+    LibrariesInfo.erase(LibrariesInfo.begin() + data.Index, LibrariesInfo.end());
 }
 
 int LibrariesInfoCache::CustomDlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data)
@@ -80,7 +90,15 @@ int LibrariesInfoCache::CustomDlIteratePhdr(unw_iterate_phdr_callback_t callback
         return rc;
     }
 
-    for (auto& wrappedInfo : instance->LibrariesInfo)
+    return instance->DlIteratePhdrImpl(callback, data);
+}
+
+int LibrariesInfoCache::DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data)
+{
+    std::shared_lock l(_cacheLock);
+
+    int rc = 0;
+    for (auto& wrappedInfo : LibrariesInfo)
     {
         auto [info, size] = wrappedInfo.Get();
         rc = callback(info, size, data);
