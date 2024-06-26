@@ -9,7 +9,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to import/initialize the tracer on startup. If this consists of multiple steps/components, tagged by the component/total e.g. `component:call_target`. Component tags will vary by language",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "logs_created": {
       "tags": [
@@ -19,7 +19,7 @@
       "data_type": "logs",
       "description": "The number of logs created with a given log level. Useful for calculating impact for other features (automatic sending of logs). Levels should be one of `debug`, `info`, `warn`, `error`, `critical`",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     }
   },
   "tracers": {
@@ -32,7 +32,7 @@
       "data_type": "instances",
       "description": "The number of errors/failures in the library integration, tagged by the integration name (e.g. `integration_name:kafka`, `integration_name:rabbitmq`) and ErrorType (e.g. `error:duck_type`, `error:runtime`). Both tags will vary by implementation language",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "spans_created": {
       "tags": [
@@ -42,7 +42,7 @@
       "data_type": "spans",
       "description": "The number of spans created by the tracer, tagged by automatic integration name (e.g. `integration_name:kafka`, `integration_name:rabbitmq`) or manual API (`integration_name:datadog`, `integration_name:otel` or `integration_name:opentracing`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "spans_finished": {
       "tags": [
@@ -52,7 +52,7 @@
       "data_type": "spans",
       "description": "The number of spans finished, optionally (if implementation allows) tagged by automatic integration name (e.g. `integration_name:kafka`, `integration_name:rabbitmq`) or manual API (`integration_name:datadog`, `integration_name:otel` or `integration_name:opentracing`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "spans_enqueued_for_serialization": {
       "tags": [
@@ -62,7 +62,7 @@
       "data_type": "spans",
       "description": "The number of spans enqueued for serialization/flushing. Tagged by one of `reason:p0_keep` (the span was part of a p0 trace that was kept for sending to the agent), `reason:single_span_sampling` (the span was selected via single_span_sampling, and otherwise would have been dropped as a p0 span), or `reason:default` - The tracer is not dropping p0 spans, so the span was enqueued 'by default' for sending to the trace-agent)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "spans_dropped": {
       "tags": [
@@ -72,7 +72,7 @@
       "data_type": "spans",
       "description": "The number of spans dropped and the reason for being dropped, for example `reason:p0_drop` (the span was part of a p0 trace that was droped by the tracer), `reason:overfull_buffer` (the local buffer was full, and the span had to be dropped), `reason:serialization_error` (there was an error serializing the span and it had to be dropped)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_segments_created": {
       "tags": [
@@ -82,7 +82,7 @@
       "data_type": "trace segments",
       "description": "The number of trace segments (local traces) created, tagged with new/continued depending on whether this is a new trace (no distributed context information) or continued (has distributed context).",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_chunks_enqueued": {
       "tags": [],
@@ -90,7 +90,7 @@
       "data_type": "trace chunks",
       "description": "The number of times a trace chunk is enqueued for sampling/serialization. In partial-flush scenarios, multiple trace chunks may be enququed per trace segment/local trace",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_chunk_size": {
       "tags": [],
@@ -98,7 +98,7 @@
       "data_type": "spans",
       "description": "The number of spans in the trace chunk when it is enqueued",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_chunk_serialization.bytes": {
       "tags": [],
@@ -106,7 +106,7 @@
       "data_type": "bytes",
       "description": "The size in bytes of the serialized trace chunk",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_chunk_serialization.ms": {
       "tags": [],
@@ -114,7 +114,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to serialize a trace chunk",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_chunks_enqueued_for_serialization": {
       "tags": [
@@ -124,7 +124,7 @@
       "data_type": "trace chunks",
       "description": "The number of trace chunks kept for serialization. Excludes single-span sampling spans. Tagged by one of `reason:p0_keep` (the trace was a p0 trace that was kept for sending to the agent) or `reason:default` - The tracer is not dropping p0 spans, so the span was enqueued 'by default' for sending to the trace-agent)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_chunks_dropped": {
       "tags": [
@@ -134,7 +134,7 @@
       "data_type": "trace chunks",
       "description": "the number of trace chunks dropped prior to serialization, tagged by reason. Includes traces which are dropped due to errors, overfull buffers, as well as due to sampling decision. For example `reason:p0_drop` (the span a p0 trace that was droped by the tracer), `reason:overfull_buffer` (the local buffer was full, and the trace chunk had to be dropped), `reason:serialization_error` (there was an error serializing the trace and it had to be dropped)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_chunks_sent": {
       "tags": [],
@@ -142,7 +142,7 @@
       "data_type": "trace chunks",
       "description": "The number of trace chunks attempted to be sent to the backend, regardless of response",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_segments_closed": {
       "tags": [],
@@ -150,7 +150,7 @@
       "data_type": "trace segments",
       "description": "The number of trace segments (local traces) closed. In non partial flush scenarios, trace_segments_closed == trace_chunks_enqueued",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_api.requests": {
       "tags": [],
@@ -158,7 +158,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to the trace endopint in the agent, regardless of success",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_api.bytes": {
       "tags": [],
@@ -166,7 +166,7 @@
       "data_type": "bytes",
       "description": "The size of the payload sent to the endpoint in bytes",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_api.ms": {
       "tags": [],
@@ -174,7 +174,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to flush the trace payload to the agent. Note that this is not the per trace time, this is the per payload time",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_api.responses": {
       "tags": [
@@ -184,7 +184,7 @@
       "data_type": "responses",
       "description": "The number of responses received from the trace endpoint, tagged with status code, e.g. `status_code:200`, `status_code:404`. May also use `status_code:5xx` for example as a catch-all for 2xx, 3xx, 4xx, 5xx responses",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_api.errors": {
       "tags": [
@@ -194,7 +194,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to the trace endpoint in the agent that errored, tagged by the error type (e.g. `type:timeout`, `type:network`, `type:status_code`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_partial_flush.count": {
       "tags": [
@@ -204,7 +204,7 @@
       "data_type": "instances",
       "description": "The number of times a partial flush (where a span is flushed separately from its local root span) is triggered, tagged by the reason the flush was triggered (`reason:large_trace`, `reason:single_span_ingestion`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_partial_flush.spans_closed": {
       "tags": [],
@@ -212,7 +212,7 @@
       "data_type": "spans",
       "description": "The number of spans included in the trace chunk when partial flush is triggered",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "trace_partial_flush.spans_remaining": {
       "tags": [],
@@ -220,7 +220,7 @@
       "data_type": "spans",
       "description": "The number of open spans remaining in the trace segment (local trace) when partial flush is triggered",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "context_header_style.injected": {
       "tags": [
@@ -230,7 +230,7 @@
       "data_type": "instances",
       "description": "The number of times distributed context is injected into an outgoing span, tagged by header style (`header_style:tracecontext`, `header_style:datadog`, `header_style:b3multi`, `header_style:b3single`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "context_header_style.extracted": {
       "tags": [
@@ -240,7 +240,7 @@
       "data_type": "instances",
       "description": "The number of times distributed context is successfully extracted from an outgoing span, tagged by header style (`header_style:tracecontext`, `header_style:datadog`, `header_style:b3multi`, `header_style:b3single`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "stats_buckets": {
       "tags": [],
@@ -248,7 +248,7 @@
       "data_type": "keys",
       "description": "The number of unique buckets created for stats aggregation",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "stats_api.requests": {
       "tags": [],
@@ -256,7 +256,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to the stats endopint in the agent, regardless of success",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "stats_api.bytes": {
       "tags": [],
@@ -264,7 +264,7 @@
       "data_type": "bytes",
       "description": "The size of the payload sent to the stats endpoint in bytes",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "stats_api.ms": {
       "tags": [],
@@ -272,7 +272,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to send the payload sent to the endpoint in ms",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "stats_api.responses": {
       "tags": [
@@ -282,7 +282,7 @@
       "data_type": "responses",
       "description": "The number of responses received from the endpoint, tagged with status code, e.g. `status_code:200`, `status_code:404`. May also use `status_code:5xx` for example as a catch-all for 2xx, 3xx, 4xx, 5xx responses",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "stats_api.errors": {
       "tags": [
@@ -292,7 +292,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. Timeout, NetworkError, StatusCode)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "host_lib_injection.success": {
       "tags": [
@@ -303,7 +303,7 @@
       "data_type": "requests",
       "description": "Number of successful host lib injection",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "host_lib_injection.failure": {
       "tags": [
@@ -314,7 +314,7 @@
       "data_type": "requests",
       "description": "Number of failed host lib injection",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "docker_lib_injection.success": {
       "tags": [
@@ -325,7 +325,7 @@
       "data_type": "requests",
       "description": "Number of successful docker lib injection",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "docker_lib_injection.failure": {
       "tags": [
@@ -336,7 +336,7 @@
       "data_type": "requests",
       "description": "Number of failed docker lib injection",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     }
   },
   "telemetry": {
@@ -348,7 +348,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to a telemetry endopint, regardless of success, tagged by the endpoint (`endpoint:agent`, `endpoint:agentless`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "telemetry_api.bytes": {
       "tags": [
@@ -358,7 +358,7 @@
       "data_type": "bytes",
       "description": "The size of the payload sent to the stats endpoint in bytes, tagged by the endpoint (`endpoint:agent`, `endpoint:agentless`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "telemetry_api.ms": {
       "tags": [],
@@ -366,7 +366,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to send the payload sent to the endpoint in ms, tagged by the endpoint (`endpoint:agent`, `endpoint:agentless`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "telemetry_api.responses": {
       "tags": [
@@ -377,7 +377,7 @@
       "data_type": "responses",
       "description": "The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. `type:timeout`, `type:network`, `type:status_code`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "telemetry_api.errors": {
       "tags": [
@@ -388,7 +388,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. `type:timeout`, `type:network`, `type:status_code`) and Endpoint (`endpoint:agent`, `endpoint:agentless`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     }
   },
   "appsec": {
@@ -401,7 +401,7 @@
       "data_type": "requests",
       "description": "Number of times we is initialized",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "waf.updates": {
       "tags": [
@@ -412,7 +412,7 @@
       "data_type": "requests",
       "description": "Number of times we reload the rules (startup + Remote Configuration)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "waf.duration": {
       "tags": [
@@ -423,7 +423,7 @@
       "data_type": "requests",
       "description": "Total WAF duration",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "waf.duration_ext": {
       "tags": [
@@ -434,7 +434,7 @@
       "data_type": "requests",
       "description": "Total WAF duration  including bindings",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "waf.requests": {
       "tags": [
@@ -449,7 +449,7 @@
       "data_type": "requests",
       "description": "Requests analyzed by ddwaf",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "waf.input_truncated": {
       "tags": [
@@ -459,7 +459,7 @@
       "data_type": "truncations",
       "description": "Count of times a WAF input was truncated",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "waf.truncated_value_size": {
       "tags": [
@@ -469,7 +469,7 @@
       "data_type": "bytes",
       "description": "Un-truncated size of truncated WAF inputs",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "waf.config_errors": {
       "tags": [
@@ -482,7 +482,7 @@
       "data_type": "errors",
       "description": "Count of errors reported by the WAF on about particular config item",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "rasp.rule.eval": {
       "tags": [
@@ -493,7 +493,7 @@
       "data_type": "requests",
       "description": "Counts the number of times a rule type is evaluated",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "rasp.rule.match": {
       "tags": [
@@ -504,7 +504,7 @@
       "data_type": "matches",
       "description": "Counts the number of times a rule type has a match",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "rasp.timeout": {
       "tags": [
@@ -515,7 +515,7 @@
       "data_type": "timeouts",
       "description": "Counts the number of times a timeout was hit when evaluating a specific rule type",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     }
   },
   "iast": {
@@ -527,7 +527,7 @@
       "data_type": "call sites",
       "description": "Number of source call sites instrumented",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "instrumented.propagation": {
       "tags": [],
@@ -535,7 +535,7 @@
       "data_type": "call sites",
       "description": "Number of propagation call sites instrumented",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "instrumented.sink": {
       "tags": [
@@ -545,7 +545,7 @@
       "data_type": "call sites",
       "description": "Number of sink call sites instrumented",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "executed.source": {
       "tags": [
@@ -555,7 +555,7 @@
       "data_type": "call sites",
       "description": "Number of source call sites executed",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "executed.propagation": {
       "tags": [],
@@ -563,7 +563,7 @@
       "data_type": "call sites",
       "description": "Number of propagation call sites executed",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "executed.sink": {
       "tags": [
@@ -573,7 +573,7 @@
       "data_type": "call sites",
       "description": "Number of sink call sites executed",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "executed.tainted": {
       "tags": [],
@@ -581,7 +581,7 @@
       "data_type": "operations",
       "description": "Number of taint operations triggered during a request",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "request.tainted": {
       "tags": [],
@@ -589,7 +589,7 @@
       "data_type": "values",
       "description": "Number of tainted values at the end of a request",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "json.tag.size.exceeded": {
       "tags": [],
@@ -597,7 +597,7 @@
       "data_type": "operations",
       "description": "Number of times that _dd.iast.json tag exceeds the maximum span tag size",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     }
   },
   "sidecar": {
@@ -607,7 +607,7 @@
       "data_type": "sessions",
       "description": "Number of sessions active in parallel",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "server.memory_usage": {
       "tags": [],
@@ -615,7 +615,7 @@
       "data_type": "bytes",
       "description": "Memory consumption of the sidecar",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "server.submitted_payloads": {
       "tags": [],
@@ -623,7 +623,7 @@
       "data_type": "payloads",
       "description": "Number of payloads the sidecar has processed",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     }
   },
   "civisibility": {
@@ -639,7 +639,7 @@
       "data_type": "events",
       "description": "The number of events created, tagged by event type (possible values are: `event_type:test`, `event_type:suite`, `event_type:module` or `event_type:session`), testing framework name (e.g. `test_framework:xunit`, `test_framework:nunit`, `test_framework:jest`) . Also, if the event_type is `session` two boolean tags will be set (has_codeowner and unsupported_ci), if the event_type is `test` a boolean `is_benchmark` flag will be set.",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "event_finished": {
       "tags": [
@@ -657,7 +657,7 @@
       "data_type": "events",
       "description": "The number of events finished, tagged by event type (possible values are: `event_type:test`, `event_type:suite`, `event_type:module` or `event_type:session`), testing framework name (e.g. `test_framework:xunit`, `test_framework:nunit`, `test_framework:jest`) . If the event_type is `session` two boolean tags will be set (`has_codeowner` and `unsupported_ci`) and additional string tag might be set (`early_flake_detection_abort_reason` if early flakiness detection feature was aborted for that particular session; currently has only one possible value: `faulty`). If the event_type is `test` boolean `is_benchmark`, `is_new`, `is_rum` flags will be set (if `is_rum` is set, additional `browser_driver` tag will be added, which currently has only one possible value; if `is_new` is set, additional `early_flake_detection_abort_reason` tag will be added, which currently has only one possible value).",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "code_coverage_started": {
       "tags": [
@@ -668,7 +668,7 @@
       "data_type": "coverages",
       "description": "The number of code coverage sessions started tagged by the code coverage library name (e.g. `library:custom`, `library:jacoco`, `library:builtin`) and testing framework name (e.g. `test_framework:xunit`, `test_framework:nunit`, `test_framework:jest`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "code_coverage_finished": {
       "tags": [
@@ -679,7 +679,7 @@
       "data_type": "coverages",
       "description": "The number of code coverage sessions finished, optionally (if implementation allows) tagget by the code coverage library name  (e.g. `library:custom`, `library:jacoco`, `library:builtin`) and testing framework name (e.g. `test_framework:xunit`, `test_framework:nunit`, `test_framework:jest`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "manual_api_events": {
       "tags": [
@@ -689,7 +689,7 @@
       "data_type": "events",
       "description": "The number of events created used by the manual api tagged by the event type (possible values are: `event_type:test`, `event_type:suite`, `event_type:module` or `event_type:session`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "events_enqueued_for_serialization": {
       "tags": [],
@@ -697,7 +697,7 @@
       "data_type": "events",
       "description": "The number of events enqueued for serialization",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "endpoint_payload.bytes": {
       "tags": [
@@ -707,7 +707,7 @@
       "data_type": "bytes",
       "description": "The size in bytes of the serialized payload, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "endpoint_payload.requests": {
       "tags": [
@@ -717,7 +717,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to the endpoint, regardless of success, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "endpoint_payload.dropped": {
       "tags": [
@@ -727,7 +727,7 @@
       "data_type": "requests",
       "description": "The number of payloads dropped after all retries, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "endpoint_payload.requests_ms": {
       "tags": [
@@ -737,7 +737,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to send the payload sent to the endpoint in ms, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "endpoint_payload.requests_errors": {
       "tags": [
@@ -748,7 +748,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to the endpoint that errored, tagget by the error type (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code`) and endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "endpoint_payload.events_count": {
       "tags": [
@@ -758,7 +758,7 @@
       "data_type": "events",
       "description": "The number of events included in the payload, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "endpoint_payload.events_serialization_ms": {
       "tags": [
@@ -768,7 +768,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to serialize the payload, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git.command": {
       "tags": [
@@ -778,7 +778,7 @@
       "data_type": "command",
       "description": "The number of git commands executed, tagged by command type (possible values are: `command:get_repository`, `command:get_branch`, `command:check_shallow`, `command:unshallow`, `command:get_local_commits`, `command:get_objects`, `command:pack_objects`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git.command_errors": {
       "tags": [
@@ -789,7 +789,7 @@
       "data_type": "command",
       "description": "The number of git command that errored, tagged by command type (possible values are: `command:get_repository`, `command:get_branch`, `command:check_shallow`, `command:unshallow`, `command:get_local_commits`, `command:get_objects`, `command:pack_objects`) and the exit code of the command.",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git.command_ms": {
       "tags": [
@@ -799,7 +799,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to execute the git command, tagged by command type (possible values are: `command:get_repository`, `command:get_branch`, `command:check_shallow`, `command:unshallow`, `command:get_local_commits`, `command:get_objects`, `command:pack_objects`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git_requests.search_commits": {
       "tags": [],
@@ -807,7 +807,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to the search commit endpoint, regardless of success",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git_requests.search_commits_ms": {
       "tags": [],
@@ -815,7 +815,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to get the response of the search commit request in ms",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git_requests.search_commits_errors": {
       "tags": [
@@ -825,7 +825,7 @@
       "data_type": "requests",
       "description": "The number of search commit requests sent to the endpoint that errored, tagget by the error type (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git_requests.objects_pack": {
       "tags": [],
@@ -833,7 +833,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to the git object pack endpoint, regardless of success",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git_requests.objects_pack_ms": {
       "tags": [],
@@ -841,7 +841,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to get the response of the git object pack request in ms",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git_requests.objects_pack_errors": {
       "tags": [
@@ -851,7 +851,7 @@
       "data_type": "requests",
       "description": "The number of git object pack requests sent to the endpoint that errored, tagget by the error type (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git_requests.objects_pack_bytes": {
       "tags": [],
@@ -859,7 +859,7 @@
       "data_type": "bytes",
       "description": "The sum of the sizes of the object pack files inside a single payload",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git_requests.objects_pack_files": {
       "tags": [],
@@ -867,7 +867,7 @@
       "data_type": "files",
       "description": "The number of files sent in the object pack payload",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git_requests.settings": {
       "tags": [],
@@ -875,7 +875,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to the settings endpoint, regardless of success",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git_requests.settings_ms": {
       "tags": [],
@@ -883,7 +883,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to get the response of the settings endpoint request in ms",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git_requests.settings_errors": {
       "tags": [
@@ -893,7 +893,7 @@
       "data_type": "requests",
       "description": "The number of settings requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "git_requests.settings_response": {
       "tags": [
@@ -905,7 +905,7 @@
       "data_type": "response",
       "description": "The number of settings responses from the endpoint tagged with `coverage_enabled`, `itrskip_enabled` or `early_flake_detection_enabled` flags (if corresponding boolean settings are set in the response)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "itr_skippable_tests.request": {
       "tags": [],
@@ -913,7 +913,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to the itr skippable tests endpoint, regardless of success",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "itr_skippable_tests.request_ms": {
       "tags": [],
@@ -921,7 +921,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to get the response of the itr skippable tests endpoint request in ms",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "itr_skippable_tests.request_errors": {
       "tags": [
@@ -931,7 +931,7 @@
       "data_type": "requests",
       "description": "The number of itr skippable tests requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "itr_skippable_tests.response_bytes": {
       "tags": [],
@@ -939,7 +939,7 @@
       "data_type": "bytes",
       "description": "The number of bytes received by the endpoint",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "itr_skippable_tests.response_tests": {
       "tags": [],
@@ -947,7 +947,7 @@
       "data_type": "tests",
       "description": "The number of tests to skip returned by the endpoint",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "itr_skippable_tests.response_suites": {
       "tags": [],
@@ -955,7 +955,7 @@
       "data_type": "suites",
       "description": "The number of suites to skip returned by the endpoint",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "itr_skipped": {
       "tags": [
@@ -965,7 +965,7 @@
       "data_type": "events",
       "description": "The number of tests or test suites skipped tagged by event type (possible values are: `event_type:test`, `event_type:suite`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "itr_unskippable": {
       "tags": [
@@ -975,7 +975,7 @@
       "data_type": "events",
       "description": "The number of tests or test suites that are seen as unskippable tagged by event type (possible values are: `event_type:test`, `event_type:suite`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "itr_forced_run": {
       "tags": [
@@ -985,7 +985,7 @@
       "data_type": "events",
       "description": "The number of tests or test suites that would've been skipped by ITR but were forced to run because of their unskippable status tagged by event type (possible values are: `event_type:test`, `event_type:suite`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "code_coverage.is_empty": {
       "tags": [],
@@ -993,7 +993,7 @@
       "data_type": "coverages",
       "description": "The number of successfully collected code coverages that are empty",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "code_coverage.files": {
       "tags": [],
@@ -1001,7 +1001,7 @@
       "data_type": "files",
       "description": "The number of files covered inside a coverage payload",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "code_coverage.errors": {
       "tags": [],
@@ -1009,7 +1009,7 @@
       "data_type": "coverages",
       "description": "The number of errors while processing code coverage",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "early_flake_detection.request": {
       "tags": [],
@@ -1017,7 +1017,7 @@
       "data_type": "requests",
       "description": "The number of requests sent to the known tests endpoint, regardless of success",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "early_flake_detection.request_ms": {
       "tags": [],
@@ -1025,7 +1025,7 @@
       "data_type": "milliseconds",
       "description": "The time it takes to get the response of the known tests endpoint request in ms",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "early_flake_detection.request_errors": {
       "tags": [
@@ -1035,7 +1035,7 @@
       "data_type": "requests",
       "description": "The number of known tests requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "early_flake_detection.response_bytes": {
       "tags": [],
@@ -1043,7 +1043,7 @@
       "data_type": "bytes",
       "description": "The number of bytes received by the endpoint",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "early_flake_detection.response_tests": {
       "tags": [],
@@ -1051,7 +1051,7 @@
       "data_type": "tests",
       "description": "The number of known tests returned by the endpoint",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     }
   },
   "profilers": {
@@ -1066,7 +1066,7 @@
       "data_type": "profiles",
       "description": "The number of profiles that would have been hypothetically emitted if SSI was enabled for profiling",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     },
     "ssi_heuristic.number_of_runtime_id": {
       "tags": [
@@ -1079,7 +1079,7 @@
       "data_type": "runtimes",
       "description": "The number of runtimes that would have been hypothetically profiled if SSI was enabled for profiling",
       "send_to_user": false,
-      "user_tags":[]
+      "user_tags": []
     }
   }
 }
