@@ -263,6 +263,10 @@
           "type": "string",
           "description": "The sample name to execute when running or building sample apps"
         },
+        "SamplesSolution": {
+          "type": "string",
+          "description": "Path to a solution file that is automatically loaded. Default is Datadog.Trace.Samples.g.sln"
+        },
         "Skip": {
           "type": "array",
           "description": "List of targets to be skipped. Empty list skips all dependencies",
@@ -355,6 +359,7 @@
               "CompileProfilerWithUbsanLinux",
               "CompileRegressionDependencyLibs",
               "CompileRegressionSamples",
+              "CompileSamples",
               "CompileSamplesLinuxOrOsx",
               "CompileSamplesWindows",
               "CompileTracerNativeSrc",
@@ -411,6 +416,7 @@
               "PublishProfiler",
               "PublishProfilerLinux",
               "PublishProfilerWindows",
+              "RegenerateSamplesSln",
               "RenameVNextMilestone",
               "Restore",
               "RunBenchmarks",
@@ -569,6 +575,7 @@
               "CompileProfilerWithUbsanLinux",
               "CompileRegressionDependencyLibs",
               "CompileRegressionSamples",
+              "CompileSamples",
               "CompileSamplesLinuxOrOsx",
               "CompileSamplesWindows",
               "CompileTracerNativeSrc",
@@ -625,6 +632,7 @@
               "PublishProfiler",
               "PublishProfilerLinux",
               "PublishProfilerWindows",
+              "RegenerateSamplesSln",
               "RenameVNextMilestone",
               "Restore",
               "RunBenchmarks",
