@@ -17,6 +17,7 @@ namespace iast
 #define OPCODEFLAGS_Method          0x0040
 #define OPCODEFLAGS_Field           0x0080
 #define OPCODEFLAGS_String          0x0100
+#define OPCODEFLAGS_Type            0x0200
 
     static const UINT16 _instructionFlags[] = {
     #define InlineNone           0
@@ -31,7 +32,7 @@ namespace iast
     #define InlineBrTarget       4 | OPCODEFLAGS_BranchTarget
     #define InlineMethod         4 | OPCODEFLAGS_Method
     #define InlineField          4 | OPCODEFLAGS_Field
-    #define InlineType           4
+    #define InlineType           4 | OPCODEFLAGS_Type
     #define InlineString         4 | OPCODEFLAGS_String
     #define InlineSig            4
     #define InlineRVA            4
@@ -656,6 +657,12 @@ namespace iast
     {
         return (h->m_Flags | COR_ILEXCEPTION_CLAUSE_FINALLY) == COR_ILEXCEPTION_CLAUSE_FINALLY;
     }
+    WSTRING GetTypeName(ILRewriter* body, mdToken token)
+    {
+        auto typeRef = body->GetMethodInfo()->GetModuleInfo()->GetTypeInfo(token);
+        WSTRING typeName = typeRef != nullptr ? typeRef->GetName() : WStr("Unknown");
+        return typeName;
+    }
     WSTRING GetMemberName(ILRewriter* body, mdToken token)
     {
         auto memberRef = body->GetMethodInfo()->GetModuleInfo()->GetMemberRefInfo(token);
@@ -694,6 +701,15 @@ namespace iast
             break;
         case 4 | OPCODEFLAGS_String:
             argument = "[" + Hex(instruction->m_Arg32) + "] \"" + GetString(body, instruction->m_Arg32) + "\"";
+            break;
+        case 4 | OPCODEFLAGS_Type:
+            memberName = shared::ToString(GetTypeName(body, instruction->m_Arg32));
+            argument = "[" + Hex(instruction->m_Arg32) + "] " + memberName;
+            if (instruction->IsDirty())
+            {
+                memberName = shared::ToString(GetTypeName(body, instruction->m_originalArg32));
+                argument = argument + " Original: [" + Hex(instruction->m_originalArg32) + "] " + memberName;
+            }
             break;
         case 4 | OPCODEFLAGS_Method:
         case 4 | OPCODEFLAGS_Field:
@@ -810,7 +826,7 @@ namespace iast
                         }
                     }
                 }
-                if (!written) { trace::Logger::Info(indent, ToString(_body, instruction)); }
+                if (!written) { trace::Logger::Info(indent, ToString(_body, instruction)); } // Write current instruction
                 if (instruction->m_opcode == CEE_ENDFILTER || instruction->m_opcode == CEE_ENDFINALLY || instruction->m_opcode == CEE_LEAVE || instruction->m_opcode == CEE_LEAVE_S)
                 {
                     if (nesting.size() > 0)
