@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdatomic.h>
 
 /* dl_iterate_phdr wrapper
 The .NET profiler on Linux uses a classic signal-based approach to collect thread callstack.
@@ -54,10 +55,13 @@ enum FUNCTION_ID
 // counters: one byte per function
 __thread unsigned long long functions_entered_counter = 0;
 
+__attribute__((visibility("hidden"))) 
+atomic_int is_app_crashing = 0;
+
 // this function is called by the profiler
 unsigned long long dd_inside_wrapped_functions()
 {
-    return functions_entered_counter;
+    return functions_entered_counter + is_app_crashing;
 }
 
 #if defined(__aarch64__)
@@ -392,6 +396,7 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
 
         if (length >= 11 && strcmp(pathname + length - 11, "/createdump") == 0)
         {
+            is_app_crashing = 1;
             // Execute the alternative crash handler, and prepend "createdump" to the arguments
 
             // Count the number of arguments (the list ends with a null pointer)
