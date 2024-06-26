@@ -1,6 +1,6 @@
 #pragma once
-#include "../../../shared/src/native-src/pal.h"
-#include "cor_profiler.h"
+#include "../../../../shared/src/native-src/pal.h"
+#include "../cor_profiler.h"
 #include <map>
 
 namespace trace

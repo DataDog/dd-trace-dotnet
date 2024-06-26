@@ -147,7 +147,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="placeholder.json" />
+    <AdditionalFiles Include="folder_locator.json" />
   </ItemGroup>
 
 </Project>

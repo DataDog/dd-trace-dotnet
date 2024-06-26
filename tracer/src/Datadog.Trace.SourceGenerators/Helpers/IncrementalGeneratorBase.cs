@@ -57,14 +57,14 @@ namespace Helpers
             return tfm;
         }
 
-        internal static IncrementalValuesProvider<string> RegisterPlaceholder(IncrementalGeneratorInitializationContext context)
+        internal static IncrementalValuesProvider<string> RegisterFolderLocator(IncrementalGeneratorInitializationContext context)
         {
-            // Get path of the compiling project using the placeholder additional file
-            var placeholderFile = context.AdditionalTextsProvider
-                .Where(a => a.Path.EndsWith("placeholder.json"))
+            // Get path of the compiling project using the 'folder_locator.json' generator additional file
+            var folderLocatorFile = context.AdditionalTextsProvider
+                .Where(a => a.Path.EndsWith("folder_locator.json"))
                 .Select((a, c) => Path.GetDirectoryName(a.Path))
                 .WithTrackingName(TrackingNames.Placeholder);
-            return placeholderFile;
+            return folderLocatorFile;
         }
 
         internal static IncrementalValuesProvider<string> RegisterTfm(IncrementalGeneratorInitializationContext context)

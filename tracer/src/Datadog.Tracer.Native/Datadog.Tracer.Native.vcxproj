@@ -283,7 +283,15 @@
     <ClInclude Include="fault_tolerant_rewriter.h" />
     <ClInclude Include="fault_tolerant_tracker.h" />
     <ClInclude Include="function_control_wrapper.h" />
-    <ClInclude Include="generated_definitions.h" />
+    <ClInclude Include="Generated\generated_callsites_net461.g.h" />
+    <ClInclude Include="Generated\generated_callsites_net6_0.g.h" />
+    <ClInclude Include="Generated\generated_callsites_netcoreapp3_1.g.h" />
+    <ClInclude Include="Generated\generated_callsites_netstandard2_0.g.h" />
+    <ClInclude Include="Generated\generated_calltargets_net461.g.h" />
+    <ClInclude Include="Generated\generated_calltargets_net6_0.g.h" />
+    <ClInclude Include="Generated\generated_calltargets_netcoreapp3_1.g.h" />
+    <ClInclude Include="Generated\generated_calltargets_netstandard2_0.g.h" />
+    <ClInclude Include="Generated\generated_definitions.h" />
     <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h" />
     <ClInclude Include="iast\app_domain_info.h" />
     <ClInclude Include="iast\aspect.h" />
@@ -366,7 +374,7 @@
     <ClCompile Include="fault_tolerant_rewriter.cpp" />
     <ClCompile Include="fault_tolerant_tracker.cpp" />
     <ClCompile Include="function_control_wrapper.cpp" />
-    <ClCompile Include="generated_definitions.cpp" />
+    <ClCompile Include="Generated\generated_definitions.cpp" />
     <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp" />
     <ClCompile Include="iast\aspect.cpp" />
     <ClCompile Include="iast\aspect_filter.cpp" />

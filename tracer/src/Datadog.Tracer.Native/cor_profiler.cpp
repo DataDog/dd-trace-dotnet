@@ -24,7 +24,7 @@
 #include "../../../shared/src/native-src/version.h"
 
 #include "iast/dataflow.h"
-#include "generated_definitions.h"
+#include "Generated/generated_definitions.h"
 
 #ifdef MACOS
 #include <mach-o/dyld.h>
