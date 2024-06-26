@@ -25,29 +25,31 @@ namespace Helpers
         /// <returns> -1, 0 or 1 </returns>
         public int Compare(EquatableArray<string> x, EquatableArray<string> y)
         {
-            if (x._array is null && y._array is null)
+            var xArray = x.AsArray();
+            var yArray = y.AsArray();
+            if (xArray is null && yArray is null)
             {
                 return 0;
             }
-            else if (x._array is null)
+            else if (xArray is null)
             {
                 return -1;
             }
-            else if (y._array is null)
+            else if (yArray is null)
             {
                 return 1;
             }
 
-            for (int i = 0; i < x._array.Length && i < y._array.Length; i++)
+            for (int i = 0; i < xArray.Length && i < yArray.Length; i++)
             {
-                int comparison = string.Compare(x._array[i], y._array[i], StringComparison.Ordinal);
+                int comparison = string.Compare(xArray[i], yArray[i], StringComparison.Ordinal);
                 if (comparison != 0)
                 {
                     return comparison;
                 }
             }
 
-            return x._array.Length.CompareTo(y._array.Length);
+            return xArray.Length.CompareTo(yArray.Length);
         }
     }
 }
