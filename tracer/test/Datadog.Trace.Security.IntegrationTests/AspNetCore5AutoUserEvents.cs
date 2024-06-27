@@ -27,7 +27,14 @@ namespace Datadog.Trace.Security.IntegrationTests
             _fixture.SetOutput(outputHelper);
             if (userTrackingMode != null)
             {
-                EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING", userTrackingMode);
+                if (userTrackingMode is "ident" or "anon")
+                {
+                    EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE", userTrackingMode);
+                }
+                else
+                {
+                    EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING", userTrackingMode);
+                }
             }
         }
 
