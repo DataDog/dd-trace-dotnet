@@ -561,6 +561,12 @@ internal static partial class IastModule
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
             traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
+
+            if (traceContext?.RootSpan is { } rootSpan)
+            {
+                rootSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+            }
+
             return IastModuleResponse.Vulnerable;
         }
 
