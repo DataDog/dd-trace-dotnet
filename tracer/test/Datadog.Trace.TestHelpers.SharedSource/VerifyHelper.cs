@@ -202,7 +202,7 @@ namespace Datadog.Trace.TestHelpers
                   // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
                   // no matter what. That means we have unstable snapshot results.
                   // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
-                  .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha && kvp.Key != Tags.Propagated.LastParentId)
+                  .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha && kvp.Key != Tags.LastParentId)
                   .Select(
                        kvp => kvp.Key switch
                        {
@@ -234,7 +234,7 @@ namespace Datadog.Trace.TestHelpers
                   // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
                   // no matter what. That means we have unstable snapshot results.
                   // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
-                  .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha && kvp.Key != Tags.Propagated.LastParentId)
+                  .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha && kvp.Key != Tags.LastParentId)
                   .Select(
                        kvp => kvp.Key switch
                        {
