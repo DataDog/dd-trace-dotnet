@@ -1994,11 +1994,15 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
     if (!_dataflow)
     {
-        _dataflow = new iast::Dataflow(info_, rejit_handler);
-        if (FAILED(_dataflow->Init()))
+        auto dataflow = new iast::Dataflow(info_, rejit_handler);
+        if (FAILED(dataflow->Init()))
         {
             Logger::Error("Callsite Dataflow failed to initialize");
-            DEL(_dataflow);
+            DEL(dataflow);
+        }
+        else
+        {
+            _dataflow = dataflow;
         }
     }
 
