@@ -416,13 +416,22 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wtautological-compare"
-    if (crashHandler != NULL && pathname != NULL)
+    
+    int isCallingCreatedump = 0;
+    
+    if (pathname != NULL)
     {
         size_t length = strlen(pathname);
+        isCallingCreatedump = length >= 11 && strcmp(pathname + length - 11, "/createdump") == 0;
+        is_app_crashing = isCallingCreatedump;
+    }
 
-        if (length >= 11 && strcmp(pathname + length - 11, "/createdump") == 0)
+    if (crashHandler != NULL && pathname != NULL)
+    {
+        //size_t length = strlen(pathname);
+
+        if (isCallingCreatedump)
         {
-            is_app_crashing = 1;
             // Execute the alternative crash handler, and prepend "createdump" to the arguments
 
             // Count the number of arguments (the list ends with a null pointer)
