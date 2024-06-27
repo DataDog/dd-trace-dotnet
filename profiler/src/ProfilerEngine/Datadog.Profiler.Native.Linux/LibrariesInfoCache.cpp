@@ -24,7 +24,7 @@ LibrariesInfoCache::LibrariesInfoCache()
 LibrariesInfoCache* LibrariesInfoCache::Get()
 {
     static LibrariesInfoCache Instance;
-    return &Instance;
+    return s_instance;
 }
 
 LibrariesInfoCache::~LibrariesInfoCache()
@@ -44,13 +44,19 @@ void LibrariesInfoCache::UpdateCache()
 {
     std::unique_lock l(_cacheLock);
 
-    auto nbCallsToDlopenDlclose = __builtin_expect(dd_nb_calls_to_dlopen_dlclose != nullptr, true) ? dd_nb_calls_to_dlopen_dlclose() : NbCallsToDlopenDlclose;
-    if (nbCallsToDlopenDlclose == NbCallsToDlopenDlclose)
+    auto shouldReload = true;
+    if (dd_nb_calls_to_dlopen_dlclose != nullptr) [[likely]]
+    {
+        auto previous = NbCallsToDlopenDlclose;
+        NbCallsToDlopenDlclose = dd_nb_calls_to_dlopen_dlclose();
+        shouldReload = previous == NbCallsToDlopenDlclose;
+    }
+
+    if (!shouldReload)
     {
         return;
     }
 
-    NbCallsToDlopenDlclose = nbCallsToDlopenDlclose;
     IterationData data = {.Index = 0, .Cache = this};
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
