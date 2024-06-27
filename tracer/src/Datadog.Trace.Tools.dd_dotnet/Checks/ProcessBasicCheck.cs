@@ -257,8 +257,16 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                     }
                     else
                     {
-                        Utils.WriteInfo(ContinuousProfilerDisabled);
-                        isContinuousProfilerEnabled = false;
+                        if (profilingEnabled == "auto")
+                        {
+                            Utils.WriteInfo(ContinuousProfilerSsiDeployed);
+                            isContinuousProfilerEnabled = true;
+                        }
+                        else
+                        {
+                            Utils.WriteInfo(ContinuousProfilerDisabled);
+                            isContinuousProfilerEnabled = false;
+                        }
                     }
                 }
                 else

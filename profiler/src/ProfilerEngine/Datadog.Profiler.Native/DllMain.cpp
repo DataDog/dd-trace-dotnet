@@ -91,6 +91,7 @@ bool IsProfilingEnabled(Configuration const& configuration)
         return false;
     }
 
+    Log::Warn(".NET Profiler is disabled for an unknown reason.");
     return false;
 }
 

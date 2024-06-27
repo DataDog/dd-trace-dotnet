@@ -33,7 +33,9 @@ namespace Datadog.Trace.ContinuousProfiler
                 var manualDeployement = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled);
                 if (manualDeployement != null)
                 {
-                    _isProfilingEnabled = manualDeployement.ToBoolean() ?? false;
+                    // it is possible that SSI installation script is setting the environment variable to "auto" to enable the profiler
+                    // instead of "true" to avoid starting the profiler immediately after the installation
+                    _isProfilingEnabled = manualDeployement.ToBoolean() ?? (manualDeployement == "auto");
                 }
                 else
                 {

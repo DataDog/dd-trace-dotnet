@@ -670,7 +670,7 @@ EnablementStatus Configuration::ExtractEnablementStatus()
             // and the profiler was enabled during that step. In that case, the "auto" value
             // will be set. This should be replaced by adding "profiler" in
             // EnvironmentVariables::SsiDeployed
-            if (enabled.compare(WStr("auto")) == 0)
+            if (enabled == WStr("auto"))
             {
                 return EnablementStatus::SsiEnabled;
             }

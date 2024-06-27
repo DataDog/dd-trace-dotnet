@@ -695,7 +695,13 @@ bool ShouldRewriteProfilerMaps()
     {
         bool is_profiler_enabled;
         auto strValue = shared::GetEnvironmentValue(envVarKey);
-        return shared::TryParseBooleanEnvironmentValue(strValue, is_profiler_enabled) && is_profiler_enabled;
+
+        if (shared::TryParseBooleanEnvironmentValue(strValue, is_profiler_enabled))
+        {
+            return is_profiler_enabled;
+        }
+
+        return (strValue == WStr("auto"));
     }
     
     return shared::EnvironmentExist(WStr("DD_INJECTION_ENABLED"));
