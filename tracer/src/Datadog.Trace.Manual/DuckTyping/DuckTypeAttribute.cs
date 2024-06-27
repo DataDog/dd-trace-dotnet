@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.SourceGenerators;
+namespace Datadog.Trace.DuckTyping;
 
 /// <summary>
 /// Indicates the type is used as a ducktype.

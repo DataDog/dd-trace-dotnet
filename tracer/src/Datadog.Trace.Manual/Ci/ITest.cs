@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Reflection;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Ci;
