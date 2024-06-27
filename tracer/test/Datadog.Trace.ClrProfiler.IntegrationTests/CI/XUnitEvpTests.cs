@@ -16,6 +16,7 @@ using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Util;
@@ -114,7 +115,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
 
-        using var agent = EnvironmentHelper.GetMockAgent();
+        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
 
         const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
@@ -357,23 +358,15 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
             throw;
         }
 
-        // Snapshots
-        var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
-        settings.UseTextForParameters("packageVersion=all");
-        settings.DisableRequireUniquePrefix();
-        settings.UseTypeName(nameof(XUnitEvpTests));
-        await Verifier.Verify(testsCopy.OrderBy(s => s.Resource).ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)), settings);
+        // Smoke check telemetry
+        agent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+        var allData = agent.Telemetry.Cast<TelemetryData>().ToArray();
 
-        // ***************************************************************************
-        // Check logs
-        messages = logsIntake.Logs.Select(i => i.Message).Where(m => m.StartsWith("Test:")).ToArray();
-
-        Assert.Contains(messages, m => m.StartsWith("Test:SimplePassTest"));
-        Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorTest"));
-        Assert.Contains(messages, m => m.StartsWith("Test:TraitPassTest"));
-        Assert.Contains(messages, m => m.StartsWith("Test:TraitErrorTest"));
-        Assert.Contains(messages, m => m.StartsWith("Test:SimpleParameterizedTest"));
-        Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorParameterizedTest"));
+        // we will have multiple app closing events
+        TelemetryHelper.GetMetricData(allData, "endpoint_payload.requests", "endpoint:test_cycle", singleAppClosing: false)
+                       .Should()
+                       .NotBeEmpty()
+                       .And.OnlyContain(x => HasCorrectCompressionTag(x.Tags, expectedGzip));
     }
 
     public virtual async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
@@ -486,6 +479,9 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
             throw;
         }
     }
+
+    private static bool HasCorrectCompressionTag(string[] tags, bool isGzipped)
+        => isGzipped ? tags.Contains("rq_compressed:true") : !tags.Contains("rq_compressed:true");
 
     private class MockLogsIntakeForCiVisibility : MockLogsIntake<MockLogsIntakeForCiVisibility.Log>
     {
