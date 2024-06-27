@@ -41,11 +41,11 @@ internal class AppSecRequestContext
         }
     }
 
-    internal void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings)
+    internal void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings, bool timeout)
     {
         lock (_sync)
         {
-            _raspTelemetryHelper?.AddRaspSpanMetrics(duration, durationWithBindings);
+            _raspTelemetryHelper?.AddRaspSpanMetrics(duration, durationWithBindings, timeout);
         }
     }
 
