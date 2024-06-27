@@ -374,6 +374,14 @@ internal static class MetricTags
         [Description("endpoint:code_coverage")] CodeCoverage,
     }
 
+    public enum CIVisibilityEndpointAndCompression
+    {
+        [Description("endpoint:test_cycle")] TestCycleUncompressed,
+        [Description("endpoint:test_cycle;rq_compressed:true")] TestCycleRequestCompressed,
+        [Description("endpoint:code_coverage")] CodeCoverageUncompressed,
+        [Description("endpoint:code_coverage;rq_compressed:true")] CodeCoverageRequestCompressed,
+    }
+
     public enum CIVisibilityErrorType
     {
         [Description("error_type:timeout")] Timeout,
@@ -423,5 +431,17 @@ internal static class MetricTags
         [Description("coverage_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipDisabled_EFDEnabled,
         [Description("itrskip_enabled;early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled,
         [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled,
+    }
+
+    public enum CIVisibilityRequestCompressed
+    {
+        [Description("")] Uncompressed,
+        [Description("rq_compressed:true")] Compressed,
+    }
+
+    public enum CIVisibilityResponseCompressed
+    {
+        [Description("")] Uncompressed,
+        [Description("rs_compressed:true")] Compressed,
     }
 }

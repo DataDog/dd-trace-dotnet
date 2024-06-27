@@ -48,6 +48,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         public abstract MetricTags.CIVisibilityEndpoints TelemetryEndpoint { get; }
 
         /// <summary>
+        /// Gets the Telemetry endpoint and compression enum
+        /// </summary>
+        public abstract MetricTags.CIVisibilityEndpointAndCompression TelemetryEndpointAndCompression { get; }
+
+        /// <summary>
         /// Gets or sets the Payload url
         /// </summary>
         public Uri Url
