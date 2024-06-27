@@ -381,6 +381,12 @@ internal static class MetricTags
         [Description("error_type:status_code")] StatusCode,
         [Description("error_type:status_code_4xx_response")] StatusCode4xx,
         [Description("error_type:status_code_5xx_response")] StatusCode5xx,
+        [Description("error_type:status_code_4xx_response;status_code:400")] StatusCode400,
+        [Description("error_type:status_code_4xx_response;status_code:401")] StatusCode401,
+        [Description("error_type:status_code_4xx_response;status_code:403")] StatusCode403,
+        [Description("error_type:status_code_4xx_response;status_code:404")] StatusCode404,
+        [Description("error_type:status_code_4xx_response;status_code:408")] StatusCode408,
+        [Description("error_type:status_code_4xx_response;status_code:429")] StatusCode429,
     }
 
     public enum CIVisibilityCommands

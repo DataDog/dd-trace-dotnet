@@ -40,6 +40,12 @@ public class MetricTests
         { "event_created", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
         { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason", "browser_driver", "is_rum" } },
         { "git_requests.settings_response", new[] { "coverage_enabled", "itrskip_enabled", "early_flake_detection_enabled" } },
+        { "endpoint_payload.requests_errors", ["status_code"] },
+        { "git_requests.search_commits_errors", ["status_code"] },
+        { "git_requests.objects_pack_errors", ["status_code"] },
+        { "git_requests.settings_errors", ["status_code"] },
+        { "itr_skippable_tests.request_errors", ["status_code"] },
+        { "early_flake_detection.request_errors", ["status_code"] },
     };
 
     private static readonly Dictionary<string, List<string>> OneOfTagsByMetricName = new()
