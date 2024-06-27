@@ -7,8 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.ClrProfiler;
-using Helpers;
+using Datadog.Trace.SourceGenerators.Helpers;
 
 namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
 {
