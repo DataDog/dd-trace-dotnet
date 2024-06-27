@@ -72,9 +72,9 @@ internal readonly partial struct SecurityCoordinator
         return _httpTransport.Context is not null;
     }
 
-    public bool AdditiveContextDisposed()
+    public bool IsAdditiveContextDisposed()
     {
-        return _httpTransport.AdditiveContextDisposed();
+        return _httpTransport.IsAdditiveContextDisposed();
     }
 
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)

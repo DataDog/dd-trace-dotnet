@@ -40,7 +40,7 @@ internal abstract class HttpTransportBase
         _isAdditiveContextDisposed = true;
     }
 
-    internal bool AdditiveContextDisposed() => _isAdditiveContextDisposed;
+    internal bool IsAdditiveContextDisposed() => _isAdditiveContextDisposed;
 
     internal abstract void SetAdditiveContext(IContext additiveContext);
 
