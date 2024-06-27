@@ -11,30 +11,13 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Oracle.ManagedDataAccess",
     TypeName = "Oracle.ManagedDataAccess.Client.OracleCommand",
-    MinimumVersion = "4.122.0",
-    MaximumVersion = "4.122.*",
-    IntegrationName = nameof(IntegrationId.Oracle),
-    DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
-    DataReaderTaskType = "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
-    TargetMethodAttributes = new[]
-    {
-        // int Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteNonQuery()
-        typeof(CommandExecuteNonQueryAttribute),
-        // OracleDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteReader()
-        typeof(CommandExecuteReaderAttribute),
-        // OracleDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteReader(CommandBehavior)
-        typeof(CommandExecuteReaderWithBehaviorAttribute),
-        // DbDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteDbDataReader(CommandBehavior)
-        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
-        // object Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteScalar()
-        typeof(CommandExecuteScalarAttribute),
-    })]
-
-[assembly: AdoNetClientInstrumentMethods(
-    AssemblyName = "Oracle.ManagedDataAccess",
-    TypeName = "Oracle.ManagedDataAccess.Client.OracleCommand",
+    // The netframework nuget depends on the v4.122.* of the dll.
+    // It seems that the pattern is 4.122.<major version of the nuget>.
+    // For netcore, the major version of the dll matches the major version of the nuget,
+    // that was v2 and v3, but they have recently bumped it from 3 to 23
+    // (to have matching version numbers between netcore and netframework I suppose).
     MinimumVersion = "2.0.0",
-    MaximumVersion = "2.*.*",
+    MaximumVersion = "23.*.*",
     IntegrationName = nameof(IntegrationId.Oracle),
     DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
