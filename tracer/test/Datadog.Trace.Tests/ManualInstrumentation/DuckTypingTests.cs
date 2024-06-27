@@ -24,6 +24,7 @@ using Xunit;
 using ManualBenchmarkDiscreteStats = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkDiscreteStats;
 using ManualBenchmarkHostInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkHostInfo;
 using ManualBenchmarkJobInfo = DatadogTraceManual::Datadog.Trace.Ci.BenchmarkJobInfo;
+using ManualDuckTypeTargetAttribute = DatadogTraceManual::Datadog.Trace.DuckTyping.DuckTypeTarget;
 using ManualIScope = DatadogTraceManual::Datadog.Trace.IScope;
 using ManualISpan = DatadogTraceManual::Datadog.Trace.ISpan;
 using ManualISpanContext = DatadogTraceManual::Datadog.Trace.ISpanContext;
@@ -166,6 +167,34 @@ public class DuckTypingTests
         TestDuckTypes(proxiesAssembly, targetAssembly);
     }
 
+    [Fact]
+    public void AllTypesInDatadogTraceManualWithADuckTypeTargetAttributeAreDuckTypeAnnotatedInDatadogTrace()
+    {
+        // This test ensures tht every type that is marked as being duck typed, has a corresponding annotated duck type in the other assembly
+        var manualAssembly = typeof(ManualIScope).Assembly;
+        var typesWithDuckTypeTargetAttribute =
+            manualAssembly
+               .GetTypes()
+               .Where(
+                    type => type
+                           .GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                           .Any(member => member.GetCustomAttributes<ManualDuckTypeTargetAttribute>().Any()));
+
+        var duckTypeTypes =
+            typeof(Tracer)
+               .Assembly
+               .GetTypes()
+               .SelectMany(
+                    type => type
+                           .GetCustomAttributesData()
+                           .Select(attr => GetTarget(attr, "Datadog.Trace.Manual") is { } target ? manualAssembly.GetType(target) : null)
+                           .Where(target => target != null))
+               .Distinct()
+               .ToList();
+
+        typesWithDuckTypeTargetAttribute.Should().BeSubsetOf(duckTypeTypes);
+    }
+
     private void TestDuckTypes(Assembly proxiesAssembly, Assembly targetAssembly)
     {
         var types = proxiesAssembly
@@ -193,12 +222,12 @@ public class DuckTypingTests
             result.CanCreate().Should().BeTrue();
             FluentActions.Invoking(() => result.ProxyType).Should().NotThrow();
         }
-
-        static string GetTarget(CustomAttributeData attr, string assemblyName)
-            => (attr.AttributeType.Name is "DuckTypeAttribute" or "DuckCopyAttribute")
-            && attr.ConstructorArguments.Count == 2
-            && attr.ConstructorArguments[1].Value?.ToString() == assemblyName
-                   ? attr.ConstructorArguments[0].Value?.ToString()
-                   : null;
     }
+
+    private string GetTarget(CustomAttributeData attr, string assemblyName)
+        => (attr.AttributeType.Name is "DuckTypeAttribute" or "DuckCopyAttribute")
+        && attr.ConstructorArguments.Count == 2
+        && attr.ConstructorArguments[1].Value?.ToString() == assemblyName
+               ? attr.ConstructorArguments[0].Value?.ToString()
+               : null;
 }
