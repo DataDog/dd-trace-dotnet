@@ -11,6 +11,7 @@
 #include "debugger_rejit_preprocessor.h"
 #include "fault_tolerant_method_duplicator.h"
 #include "logger.h"
+#include "iast/iast_util.h"
 
 #include <fstream>
 #include <map>
@@ -100,7 +101,7 @@ WSTRING DebuggerProbesInstrumentationRequester::GenerateRandomProbeId()
     return converted;
 }
 
-std::map<std::pair<std::string, int>, std::vector<int>>
+std::map<std::pair<std::string, mdToken>, std::vector<int>>
 DebuggerProbesInstrumentationRequester::GetExplorationLineProbesFromFile(const WSTRING& filename)
 {
     if (explorationTestLineProbes.size() > 0)
@@ -129,7 +130,7 @@ DebuggerProbesInstrumentationRequester::GetExplorationLineProbesFromFile(const W
             std::getline(lineStream, bytecodeOffsetStr, ','))
         {
 
-            int methodToken = std::stoi(methodTokenStr);
+            int methodToken = static_cast<mdToken>(std::stoi(methodTokenStr));
             int bytecodeOffset = std::stoi(bytecodeOffsetStr);
 
             auto key = std::make_pair(guid, methodToken);
@@ -152,6 +153,8 @@ DebuggerProbesInstrumentationRequester::GetExplorationLineProbesFromFile(const W
 void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const ModuleID& module_id,
                                                                           const mdToken& function_token)
 {
+    // while (!::IsDebuggerPresent()) { ::Sleep(100); }
+
     try
     {
         if (!IsDebuggerInstrumentAllEnabled())
@@ -253,7 +256,9 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
             }
             else
             {
-                auto key = std::make_pair(ToString(mvid), function_token);
+                auto lowerMvid =  iast::ToLower(ToString(mvid));
+                lowerMvid = lowerMvid.substr(1, lowerMvid.length() - 2);
+                auto key = std::make_pair(lowerMvid, function_token);
                 auto it = lineProbesDict.find(key);
                 if (it == lineProbesDict.end())
                 {
