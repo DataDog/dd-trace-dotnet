@@ -264,6 +264,8 @@ bool Dataflow::IsInitialized()
 
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength)
 {
+    CSGUARD(_cs);
+
     // Init aspects
     auto aspectsName = Constants::AspectsAssemblyName;
     trace::Logger::Debug("Dataflow::LoadAspects -> Processing aspects...");
@@ -326,6 +328,7 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
+    CSGUARD(_cs);
     LPCBYTE pbBaseLoadAddr;
     WCHAR wszPath[300];
     ULONG cchNameIn = 300;
@@ -365,7 +368,6 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     WSTRING modulePath = WSTRING(wszPath);
 
     ModuleInfo* moduleInfo = new ModuleInfo(this, appDomain, moduleId, modulePath, assemblyId, moduleName);
-    CSGUARD(_cs);
     _modules[moduleId] = moduleInfo;
     if (pModuleInfo)
     {
@@ -632,9 +634,8 @@ HRESULT SetILFunctionBody(MethodInfo* method, ICorProfilerFunctionControl* pFunc
 }
 HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrapper* pFunctionControl)
 {
-    HRESULT hr = S_OK;
-
     CSGUARD(_cs);
+    HRESULT hr = S_OK;
 
     if (!pFunctionControl)
     {
@@ -742,6 +743,4 @@ HRESULT Dataflow::RejitMethod(trace::FunctionControlWrapper& functionControl)
     }
     return S_FALSE;
 }
-
-
 } // namespace iast
