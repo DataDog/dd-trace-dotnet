@@ -46,6 +46,15 @@ public class MetricTests
         { "git_requests.settings_errors", ["status_code"] },
         { "itr_skippable_tests.request_errors", ["status_code"] },
         { "early_flake_detection.request_errors", ["status_code"] },
+        { "endpoint_payload.requests", ["rq_compressed"] },
+        { "git_requests.search_commits", ["rq_compressed"] },
+        { "git_requests.objects_pack", ["rq_compressed"] },
+        { "git_requests.settings", ["rq_compressed"] },
+        { "itr_skippable_tests.request", ["rq_compressed"] },
+        { "early_flake_detection.request", ["rq_compressed"] },
+        { "git_requests.search_commits_ms", ["rs_compressed"] },
+        { "itr_skippable_tests.response_bytes", ["rs_compressed"] },
+        { "early_flake_detection.response_bytes", ["rs_compressed"] },
     };
 
     private static readonly Dictionary<string, List<string>> OneOfTagsByMetricName = new()
