@@ -12,6 +12,7 @@ using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
 {
@@ -27,12 +28,22 @@ namespace Datadog.Trace.Propagators
         private readonly IContextInjector[] _injectors;
         private readonly IContextExtractor[] _extractors;
         private readonly bool _propagationExtractFirstOnly;
+        private readonly bool _w3CExtractorConfigured;
 
         internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors, bool propagationExtractFirsValue)
         {
             _propagationExtractFirstOnly = propagationExtractFirsValue;
             _injectors = injectors?.ToArray() ?? Array.Empty<IContextInjector>();
             _extractors = extractors?.ToArray() ?? Array.Empty<IContextExtractor>();
+
+            foreach (var extractor in _extractors)
+            {
+                if (extractor is W3CTraceContextPropagator)
+                {
+                    _w3CExtractorConfigured = true;
+                    break;
+                }
+            }
         }
 
         public static SpanContextPropagator Instance
@@ -166,7 +177,7 @@ namespace Datadog.Trace.Propagators
                         return spanContext;
                     }
 
-                    if (localSpanContext is not null && spanContext is not null)
+                    if (localSpanContext is not null && spanContext is not null && _w3CExtractorConfigured)
                     {
                         if (localSpanContext.RawTraceId == spanContext.RawTraceId)
                         {
@@ -180,7 +191,7 @@ namespace Datadog.Trace.Propagators
                                 }
                                 else
                                 {
-                                    localSpanContext.LastParentId = $"{localSpanContext.SpanId:x16}";
+                                    localSpanContext.LastParentId = HexString.ToHexString(localSpanContext.SpanId);
                                 }
 
                                 localSpanContext.SpanId = spanContext.SpanId;

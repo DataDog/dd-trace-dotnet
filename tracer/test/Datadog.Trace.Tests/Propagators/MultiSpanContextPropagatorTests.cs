@@ -10,6 +10,7 @@ using System.Globalization;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -38,6 +39,8 @@ namespace Datadog.Trace.Tests.Propagators
         private static readonly SpanContextPropagator DatadogW3CPropagatorExtractFirstTrue;
         private static readonly SpanContextPropagator W3CDatadogPropagatorExtractFirstFalse;
         private static readonly SpanContextPropagator DatadogW3CPropagatorExtractFirstFalse;
+        private static readonly SpanContextPropagator DatadogB3PropagatorExtractFirstFalse;
+        private static readonly SpanContextPropagator B3W3CPropagatorExtractFirstFalse;
 
         static MultiSpanContextPropagatorTests()
         {
@@ -103,6 +106,34 @@ namespace Datadog.Trace.Tests.Propagators
                 new[]
                 {
                     ContextPropagationHeaderStyle.Datadog,
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                },
+                false);
+
+            // Datadog-B3MultipleHeaders
+            DatadogB3PropagatorExtractFirstFalse = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                new[]
+                {
+                    ContextPropagationHeaderStyle.Datadog,
+                    ContextPropagationHeaderStyle.B3MultipleHeaders,
+                },
+                new[]
+                {
+                    ContextPropagationHeaderStyle.Datadog,
+                    ContextPropagationHeaderStyle.B3MultipleHeaders,
+                },
+                false);
+
+            // B3MultipleHeaders-W3CTraceContext
+            B3W3CPropagatorExtractFirstFalse = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                new[]
+                {
+                    ContextPropagationHeaderStyle.B3MultipleHeaders,
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                },
+                new[]
+                {
+                    ContextPropagationHeaderStyle.B3MultipleHeaders,
                     ContextPropagationHeaderStyle.W3CTraceContext,
                 },
                 false);
@@ -818,19 +849,34 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData("dd=s:2;p:8fffffffffffffff,foo=1", "1", "10", 987654321, "8fffffffffffffff")]
         public void Datadog_W3C_TraceState_ParentExtracted(string tracestate, string traceId, string parentId, ulong expectedSpanId, string expectedParentTag)
         {
-            // headers1 equivalent from system-tests
+            var uLongParentId = Convert.ToUInt64(parentId);
             var headers = new NameValueHeadersCollection(new NameValueCollection());
 
+            // W3C Headers
             headers.Add("traceparent", "00-00000000000000000000000000000001-000000003ade68b1-01");
             headers.Add("tracestate", tracestate);
+            // Datadog Headers
             headers.Add("x-datadog-trace-id", traceId);
             headers.Add("x-datadog-parent-id", parentId);
+            // B3 Multi Headers
+            headers.Add("x-b3-traceid", $"0000000000000000000000000000000{traceId}");
+            headers.Add("x-b3-spanid", $"{HexString.ToHexString(uLongParentId)}");
+            headers.Add("x-b3-sampled", "1");
 
-            var result = DatadogW3CPropagatorExtractFirstFalse.Extract(headers);
+            var resultDatadogW3C = DatadogW3CPropagatorExtractFirstFalse.Extract(headers);
+            resultDatadogW3C.Should().NotBeNull();
+            resultDatadogW3C?.SpanId.Should().Be(expectedSpanId);
+            resultDatadogW3C?.LastParentId.Should().Be(expectedParentTag);
 
-            result.Should().NotBeNull();
-            result?.SpanId.Should().Be(expectedSpanId);
-            result?.LastParentId.Should().Be(expectedParentTag);
+            var resultDatadogB3 = DatadogB3PropagatorExtractFirstFalse.Extract(headers);
+            resultDatadogB3.Should().NotBeNull();
+            resultDatadogB3?.SpanId.Should().Be(uLongParentId);
+            resultDatadogB3?.LastParentId.Should().Be(null);
+
+            var resultB3W3C = B3W3CPropagatorExtractFirstFalse.Extract(headers);
+            resultB3W3C.Should().NotBeNull();
+            resultB3W3C?.SpanId.Should().Be(expectedSpanId);
+            resultB3W3C?.LastParentId.Should().Be(expectedParentTag);
         }
 
         private SpanContextPropagator GetPropagatorToTest(bool extractFirst, bool w3CHeaderFirst)
