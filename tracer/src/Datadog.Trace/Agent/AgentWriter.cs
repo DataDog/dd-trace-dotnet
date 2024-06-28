@@ -107,7 +107,7 @@ namespace Datadog.Trace.Agent
 
         public bool CanComputeStats => !_appsecStandaloneEnabled && _statsAggregator?.CanComputeStats == true;
 
-        public Task<bool> Ping() => _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
+        public Task<bool> Ping() => _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0, false);
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
@@ -333,7 +333,7 @@ namespace Datadog.Trace.Agent
                             Log.Debug<int, int>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
                         }
 
-                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans).ConfigureAwait(false);
+                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans, _appsecStandaloneEnabled).ConfigureAwait(false);
 
                         TelemetryFactory.Metrics.RecordCountTraceChunkSent(buffer.TraceCount);
                         if (success)
