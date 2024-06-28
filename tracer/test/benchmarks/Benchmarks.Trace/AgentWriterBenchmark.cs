@@ -149,9 +149,13 @@ namespace Benchmarks.Trace
 
             public string ContentTypeHeader => "application/json";
 
+            public string ContentEncodingHeader => null;
+
             public string GetHeader(string headerName) => string.Empty;
 
             public Encoding GetCharsetEncoding() => ApiResponseExtensions.GetCharsetEncoding(ContentTypeHeader);
+
+            public ContentEncodingType GetContentEncodingType() => ApiResponseExtensions.GetContentEncodingType(ContentEncodingHeader);
 
             public Task<Stream> GetStreamAsync()
             {

@@ -25,9 +25,16 @@ namespace Datadog.Trace.Agent
         /// </summary>
         string ContentTypeHeader { get; }
 
+        /// <summary>
+        /// Gets the "raw" content-encoding header, which may contain multiple values
+        /// </summary>
+        string ContentEncodingHeader { get; }
+
         string GetHeader(string headerName);
 
         Encoding GetCharsetEncoding();
+
+        ContentEncodingType GetContentEncodingType();
 
         Task<Stream> GetStreamAsync();
     }
@@ -134,6 +141,39 @@ namespace Datadog.Trace.Agent
             }
 
             return EncodingHelpers.Utf8NoBom;
+        }
+
+        public static ContentEncodingType GetContentEncodingType(string contentEncodingHeader)
+        {
+            if (string.IsNullOrEmpty(contentEncodingHeader))
+            {
+                return ContentEncodingType.None;
+            }
+
+            if (contentEncodingHeader.Contains(","))
+            {
+                return ContentEncodingType.Multiple;
+            }
+
+            var encoding = contentEncodingHeader.AsSpan().Trim();
+            if (encoding.Equals("gzip".AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
+                return ContentEncodingType.GZip;
+            }
+            else if (encoding.Equals("deflate".AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
+                return ContentEncodingType.Deflate;
+            }
+            else if (encoding.Equals("compress".AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
+                return ContentEncodingType.Compress;
+            }
+            else if (encoding.Equals("br".AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
+                return ContentEncodingType.Brotli;
+            }
+
+            return ContentEncodingType.Other;
         }
     }
 }

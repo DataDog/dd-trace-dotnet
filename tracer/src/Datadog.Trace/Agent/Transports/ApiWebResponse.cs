@@ -26,9 +26,13 @@ namespace Datadog.Trace.Agent.Transports
 
         public string ContentTypeHeader => _response.ContentType;
 
+        public string ContentEncodingHeader => _response.ContentEncoding;
+
         public string GetHeader(string headerName) => _response.Headers[headerName];
 
         public Encoding GetCharsetEncoding() => ApiResponseExtensions.GetCharsetEncoding(ContentTypeHeader);
+
+        public ContentEncodingType GetContentEncodingType() => ApiResponseExtensions.GetContentEncodingType(ContentEncodingHeader);
 
         public Task<Stream> GetStreamAsync()
         {

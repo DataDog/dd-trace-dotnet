@@ -30,6 +30,8 @@ namespace Datadog.Trace.Agent.Transports
 
         public string ContentTypeHeader => _headers.GetValue("Content-Type");
 
+        public string ContentEncodingHeader => _headers.GetValue("Content-Encoding");
+
         public Stream ResponseStream { get; }
 
         public void Dispose()
@@ -39,6 +41,8 @@ namespace Datadog.Trace.Agent.Transports
         public string GetHeader(string headerName) => _headers.GetValue(headerName);
 
         public Encoding GetCharsetEncoding() => _encoding;
+
+        public ContentEncodingType GetContentEncodingType() => ApiResponseExtensions.GetContentEncodingType(ContentEncodingHeader);
 
         public Task<Stream> GetStreamAsync()
         {

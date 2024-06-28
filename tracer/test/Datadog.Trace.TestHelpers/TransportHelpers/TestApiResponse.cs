@@ -24,11 +24,15 @@ internal class TestApiResponse : IApiResponse
 
     public string ContentTypeHeader { get; }
 
+    public string ContentEncodingHeader { get; set; }
+
     public int StatusCode { get; }
 
     public long ContentLength => _body?.Length ?? 0;
 
     public Encoding GetCharsetEncoding() => Encoding.UTF8;
+
+    public ContentEncodingType GetContentEncodingType() => ApiResponseExtensions.GetContentEncodingType(ContentEncodingHeader);
 
     public void Dispose()
     {

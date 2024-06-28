@@ -86,6 +86,25 @@ public class ApiResponseExtensionsTests
         { " text/plain ; charset=meep; boundary=fdsygyh", EncodingHelpers.Utf8NoBom },
     };
 
+    public static TheoryData<string, int> ContentEncodingData => new()
+    {
+        { null, (int)ContentEncodingType.None },
+        { string.Empty, (int)ContentEncodingType.None },
+        { "br", (int)ContentEncodingType.Brotli },
+        { "gzip", (int)ContentEncodingType.GZip },
+        { "GZip", (int)ContentEncodingType.GZip },
+        { "compress", (int)ContentEncodingType.Compress },
+        { "deflate", (int)ContentEncodingType.Deflate },
+        { "zstd", (int)ContentEncodingType.Other },
+        { "br,", (int)ContentEncodingType.Multiple }, // not technically, but edge case we don't care about
+        { ",", (int)ContentEncodingType.Multiple }, // not technically, but edge case we don't care about
+        { ",,", (int)ContentEncodingType.Multiple }, // not technically, but edge case we don't care about
+        { "br,gzip", (int)ContentEncodingType.Multiple },
+        { " br,gzip ", (int)ContentEncodingType.Multiple },
+        { "br, gzip", (int)ContentEncodingType.Multiple },
+        { " br ", (int)ContentEncodingType.Brotli },
+    };
+
     [Theory]
     [MemberData(nameof(CharsetData), DisableDiscoveryEnumeration = true)]
     public void GetCharsetEncoding_ReturnsExpectedValues(string rawContentType, Encoding expected)
@@ -117,4 +136,13 @@ public class ApiResponseExtensionsTests
                 .BeSameAs(expected, $"content-type {rawContentType} should be extracted as encoding {expected.EncodingName}");
     }
 #endif
+
+    [Theory]
+    [MemberData(nameof(ContentEncodingData), DisableDiscoveryEnumeration = true)]
+    public void GetContentEncodingType_ReturnsExpectedValues(string contentEncoding, int type)
+    {
+        ApiResponseExtensions.GetContentEncodingType(contentEncoding)
+                             .Should()
+                             .Be((ContentEncodingType)type);
+    }
 }

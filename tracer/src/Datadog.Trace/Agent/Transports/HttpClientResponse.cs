@@ -26,7 +26,17 @@ namespace Datadog.Trace.Agent.Transports
 
         public long ContentLength => _response.Content.Headers.ContentLength ?? -1;
 
+        public string ContentEncodingHeader => string.Join(',', _response.Content.Headers.ContentEncoding);
+
         public string ContentTypeHeader => _response.Content.Headers.ContentType?.ToString();
+
+        public ContentEncodingType GetContentEncodingType() =>
+            _response.Content.Headers.ContentEncoding.Count switch
+            {
+                0 => ContentEncodingType.None,
+                1 => ApiResponseExtensions.GetContentEncodingType(_response.Content.Headers.ContentEncoding.First()),
+                _ => ContentEncodingType.Multiple,
+            };
 
         public Encoding GetCharsetEncoding()
         {
