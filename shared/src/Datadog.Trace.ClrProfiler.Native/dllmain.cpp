@@ -5,6 +5,8 @@
 #include "dynamic_dispatcher.h"
 #include "util.h"
 
+#include "symbols_overrides.h"
+
 #ifndef _WIN32
 #undef EXTERN_C
 #define EXTERN_C extern "C" __attribute__((visibility("default")))
@@ -21,6 +23,8 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
     {
         case DLL_PROCESS_ATTACH:
         {
+            setup_overrides();
+
             // Initialize once for each new process.
             // Return FALSE to fail DLL load.
 
