@@ -24,6 +24,7 @@
 #include "../../../shared/src/native-src/version.h"
 
 #include "iast/dataflow.h"
+#include "Generated/generated_definitions.h"
 
 #ifdef MACOS
 #include <mach-o/dyld.h>
@@ -343,31 +344,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         Logger::Error("Profiler filepath: cannot be calculated.");
         return E_FAIL;
-    }
-
-    // iast stuff
-    
-    bool isRaspEnabled = IsRaspEnabled();
-    bool isIastEnabled = IsIastEnabled();
-
-    Logger::Info(isIastEnabled ? "IAST Callsite instrumentation is enabled."
-                               : "IAST Callsite instrumentation is disabled.");
-
-    Logger::Info(isRaspEnabled ? "RASP Callsite instrumentation is enabled."
-                               : "RASP Callsite instrumentation is disabled.");
-
-    if (isIastEnabled || isRaspEnabled)
-    {
-        _dataflow = new iast::Dataflow(info_, rejit_handler);
-        if (FAILED(_dataflow->Init()))
-        {
-            Logger::Error("Callsite Dataflow failed to initialize");
-            DEL(_dataflow);
-        }
-    }
-    else
-    {
-        Logger::Info("Callsite instrumentation is disabled.");
     }
 
     // we're in!
@@ -1679,7 +1655,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    Logger::Info("InitializeProfiler: received id: ", definitionsId, " from managed side with ", size,
+    Logger::Info("InitializeProfiler (LEGACY MODE): received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
     if (size > 0)
@@ -1691,7 +1667,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 void CorProfiler::RemoveCallTargetDefinitions(WCHAR* id, CallTargetDefinition* items, int size)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    Logger::Info("RemoveCallTargetDefinitions: received id: ", definitionsId, " from managed side with ", size,
+    Logger::Info("RemoveCallTargetDefinitions (LEGACY MODE): received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
     if (size > 0)
@@ -2028,20 +2004,32 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
 int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+    if (!_dataflow)
+    {
+        auto dataflow = new iast::Dataflow(info_, rejit_handler);
+        if (FAILED(dataflow->Init()))
+        {
+            Logger::Error("Callsite Dataflow failed to initialize");
+            DEL(dataflow);
+        }
+        else
+        {
+            _dataflow = dataflow;
+        }
+    }
 
     if (_dataflow != nullptr)
     {
-        Logger::Info("Registering Callsite Aspects.");
+        Logger::Info("Registering CallSite Aspects: ", aspectsLength, " ...");
         _dataflow->LoadAspects(aspects, aspectsLength);
         return aspectsLength;
     }
     else
     {
-        Logger::Info("Callsite instrumentation is disabled.");
+        Logger::Info("CallSite instrumentation is disabled.");
     }
     return 0;
 }
-
 
 void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
                                                    WCHAR* integration_type_name_ptr)
