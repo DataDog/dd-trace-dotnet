@@ -244,7 +244,7 @@ namespace datadog::shared::nativeloader
         {
             Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
             // we're not recording the exact version here, we just know that at this point it's not enough
-            single_step_guard_rails.RecordBootstrapError(single_step_guard_rails.NetFrameworkRuntime, inferredVersion, "incompatible_runtime");
+            single_step_guard_rails.RecordBootstrapError(SingleStepGuardRails::NetFrameworkRuntime, inferredVersion, "incompatible_runtime");
             return E_FAIL;
         }
         const auto runtimeInformation = GetRuntimeVersion(info4, inferredVersion);

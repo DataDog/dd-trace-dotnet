@@ -105,25 +105,15 @@ steps:
     env:
       DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
 
-- task: DockerCompose@0
+- script: docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) logs $(TEST_AGENT_TARGET)
   displayName: dump docker-compose logs for $(TEST_AGENT_TARGET)
-  inputs:
-    containerregistrytype: Container Registry
-    dockerComposeCommand: logs $(TEST_AGENT_TARGET)
-    projectName: ddtrace_$(Build.BuildNumber)
-    dockerComposeFile: $(COMPOSE_PATH)
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   condition: succeededOrFailed()
   continueOnError: true
 
-- task: DockerCompose@0
+- script: docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) down
   displayName: docker-compose stop services
-  inputs:
-    containerregistrytype: Container Registry
-    dockerComposeCommand: down
-    projectName: ddtrace_$(Build.BuildNumber)
-    dockerComposeFile: $(COMPOSE_PATH)
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   condition: succeededOrFailed()

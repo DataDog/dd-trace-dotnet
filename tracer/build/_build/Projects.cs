@@ -9,6 +9,7 @@ public static class Projects
     public const string DatadogTraceBenchmarkDotNet = "Datadog.Trace.BenchmarkDotNet";
     public const string DatadogTraceOpenTracing = "Datadog.Trace.OpenTracing";
     public const string ClrProfilerNative = "Datadog.Tracer.Native";
+    public const string NativeTracerNativeTests = "Datadog.Tracer.Native.Tests";
     public const string NativeLoader = "Datadog.Trace.ClrProfiler.Native";
     public const string NativeLoaderNativeTests = "Datadog.Trace.ClrProfiler.Native.Tests";
     public const string DatadogTraceTrimming = "Datadog.Trace.Trimming";

@@ -12,7 +12,7 @@ namespace iast
 		ModuleAspects* _module;
 	public:
 		virtual ~AspectFilter();
-		virtual bool AllowInstruction(ILInstr* instruction, ILRewriter* processor) = 0;
+        virtual bool AllowInstruction(DataflowContext& context) = 0;
 	};
 
 	struct AspectFilterTarget

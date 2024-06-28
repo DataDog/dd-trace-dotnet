@@ -363,19 +363,30 @@ namespace Datadog.Trace.Configuration
             }
             else if (metricsUnixDomainSocketPath != null)
             {
+#if NETCOREAPP3_1_OR_GREATER
                 SetUds(metricsUnixDomainSocketPath, metricsUnixDomainSocketPath, metricsUnixDomainSocketPath, ConfigurationKeys.MetricsUnixDomainSocketPath);
+#else
+                // .NET Core 2.1 and .NET FX don't support Unix Domain Sockets
+                ValidationWarnings.Add($"Found metrics UDS configuration {metricsUnixDomainSocketPath}, but current runtime doesn't support UDS, so ignoring it.");
+                _telemetry.Record(
+                    ConfigurationKeys.MetricsUnixDomainSocketPath,
+                    metricsUnixDomainSocketPath,
+                    recordValue: true,
+                    ConfigurationOrigins.Default,
+                    TelemetryErrorCode.UdsOnUnsupportedPlatform);
+                SetDefault();
+#endif
             }
+#if NETCOREAPP3_1_OR_GREATER
+            // .NET Core 2.1 and .NET FX don't support Unix Domain Sockets, so we don't care if the file already exists
             else if (_fileExists(DefaultMetricsUnixDomainSocket))
             {
                 SetUds(DefaultMetricsUnixDomainSocket, DefaultMetricsUnixDomainSocket, DefaultMetricsUnixDomainSocket, null);
             }
+#endif
             else
             {
-                SetUdp(
-                    hostname: DefaultDogstatsdHostname,
-                    hostnameSource: null,
-                    port: DefaultDogstatsdPort,
-                    portSource: null);
+                SetDefault();
             }
 
             // set these values if they're not already set just to keep some things happy
@@ -396,6 +407,7 @@ namespace Datadog.Trace.Configuration
                 var origin = ConfigurationOrigins.Default; // only called from the constructor
                 if (uri.OriginalString.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
                 {
+#if NETCOREAPP3_1_OR_GREATER
                     var absoluteUri = uri.AbsoluteUri.Replace(UnixDomainSocketPrefix, string.Empty);
                     var probablyValid = SetUds(uri.PathAndQuery, uri.OriginalString, absoluteUri, ConfigurationKeys.AgentUri);
                     _telemetry.Record(
@@ -404,6 +416,18 @@ namespace Datadog.Trace.Configuration
                         recordValue: true,
                         origin,
                         probablyValid ? null : TelemetryErrorCode.PotentiallyInvalidUdsPath);
+#else
+                    // .NET Core 2.1 and .NET FX don't support Unix Domain Sockets, but it's _explicitly_ being
+                    // configured here, so warn the user, and switch to using the default transport instead.
+                    ValidationWarnings.Add($"The provided metrics Uri {uri} represents a Unix Domain Socket (UDS), but the current runtime doesn't support UDS. Falling back to the default UDP transport.");
+                    _telemetry.Record(
+                        ConfigurationKeys.MetricsUnixDomainSocketPath,
+                        metricsUrl,
+                        recordValue: true,
+                        origin,
+                        TelemetryErrorCode.UdsOnUnsupportedPlatform);
+                    SetDefault();
+#endif
                     return true;
                 }
 
@@ -424,6 +448,7 @@ namespace Datadog.Trace.Configuration
                 return false;
             }
 
+#if NETCOREAPP3_1_OR_GREATER
             [MemberNotNull(nameof(MetricsHostname))]
             bool SetUds(string unixSocket, string original, string absoluteUri, string? source)
             {
@@ -448,7 +473,7 @@ namespace Datadog.Trace.Configuration
 
                 return probablyValid;
             }
-
+#endif
             [MemberNotNull(nameof(MetricsHostname))]
             bool SetUdp(string hostname, string? hostnameSource, int port, string? portSource)
             {
@@ -486,9 +511,15 @@ namespace Datadog.Trace.Configuration
                 // TODO: use this to mark config as errors
                 return probablyValid;
             }
+
+            void SetDefault() => SetUdp(
+                hostname: DefaultDogstatsdHostname,
+                hostnameSource: null,
+                port: DefaultDogstatsdPort,
+                portSource: null);
         }
 
         private void RecordTraceTransport(string transport, ConfigurationOrigins origin = ConfigurationOrigins.Default)
-            => _telemetry.Record(ConfigTelemetryData.AgentTraceTransport, transport, recordValue: true, ConfigurationOrigins.Default);
+            => _telemetry.Record(ConfigTelemetryData.AgentTraceTransport, transport, recordValue: true, origin);
     }
 }

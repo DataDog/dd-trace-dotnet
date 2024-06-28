@@ -80,7 +80,7 @@ partial class Build : NukeBuild
     readonly string BenchmarkCategory;
 
     [Parameter("Enables code coverage")]
-    readonly bool CodeCoverage;
+    readonly bool CodeCoverageEnabled;
 
     [Parameter("Enable or Disable fast developer loop")]
     readonly bool FastDevLoop;
@@ -162,8 +162,7 @@ partial class Build : NukeBuild
         .Description("Builds the native src ")
         .After(Clean, CompileManagedLoader)
         .DependsOn(CreateRequiredDirectories)
-        .DependsOn(CompileNativeSrc)
-        .DependsOn(BuildNativeLoader)
+        .DependsOn(CompileTracerNativeSrc)
         .DependsOn(PublishNativeTracer);
 
 
@@ -183,7 +182,7 @@ partial class Build : NukeBuild
     Target BuildTracerHome => _ => _
         .Description("Builds the native and managed src, and publishes the tracer home directory")
         .After(Clean)
-        .DependsOn(CompileManagedLoader, BuildNativeTracerHome, BuildManagedTracerHome);
+        .DependsOn(CompileManagedLoader, BuildNativeTracerHome, BuildManagedTracerHome, BuildNativeLoader);
 
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
@@ -213,11 +212,10 @@ partial class Build : NukeBuild
         .DependsOn(CompileManagedUnitTests)
         .DependsOn(RunManagedUnitTests);
 
-    Target BuildAndRunNativeUnitTests => _ => _
+    Target RunNativeUnitTests => _ => _
         .Description("Builds the native unit tests and runs them")
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
-        .DependsOn(CompileNativeTests)
         .DependsOn(RunNativeTests);
 
     Target BuildWindowsIntegrationTests => _ => _

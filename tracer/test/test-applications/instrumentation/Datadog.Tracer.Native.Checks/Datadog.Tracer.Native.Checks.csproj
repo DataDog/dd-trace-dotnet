@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <LangVersion>latest</LangVersion>
+    <AllowDatadogTraceReference>true</AllowDatadogTraceReference>
   </PropertyGroup>
 
   <ItemGroup>

@@ -61,8 +61,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             catch (Exception ex)
             {
                 // as this method is prefixed "Try" we shouldn't throw, but experience has
-                // shown that unforseen circumstance can lead to exceptions being thrown
-                Log.Error(ex, "Error occured while trying to load library from {LibraryPath}", libraryPath);
+                // shown that unforeseen circumstances can lead to exceptions being thrown
+                Log.Error(ex, "Error occurred while trying to load library from {LibraryPath}", libraryPath);
             }
 
             return handle != IntPtr.Zero;
@@ -70,19 +70,27 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal static bool CloseLibrary(IntPtr library)
         {
-            if (library == IntPtr.Zero)
+            try
             {
-                Log.Error("Trying to close WAF library with a null pointer");
+                if (library == IntPtr.Zero)
+                {
+                    Log.Error("Trying to close WAF library with a null pointer");
+                    return false;
+                }
+
+                if (isPosixLike)
+                {
+                    var result = NonWindows.dddlclose(library);
+                    return result == 0;
+                }
+
+                return FreeLibrary(library);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error occurred while trying to unload WAF library");
                 return false;
             }
-
-            if (isPosixLike)
-            {
-                var result = NonWindows.dddlclose(library);
-                return result == 0;
-            }
-
-            return FreeLibrary(library);
         }
 
         private static IntPtr LoadWindowsLibrary(string libraryPath)

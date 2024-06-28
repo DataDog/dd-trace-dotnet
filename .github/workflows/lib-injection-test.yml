@@ -29,6 +29,10 @@ jobs:
       RUNTIME: ${{ inputs.runtime }}
       BUILDX_PLATFORMS: linux/amd64
     steps:
+      - uses: GitHubSecurityLab/actions-permissions/monitor@v1
+        with:
+          config: ${{ vars.PERMISSIONS_CONFIG }}
+
       - name: Checkout system tests
         uses: actions/checkout@v2
         with:

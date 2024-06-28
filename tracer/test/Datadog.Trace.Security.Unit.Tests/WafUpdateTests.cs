@@ -148,6 +148,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
             var result = context.Run(args, TimeoutMicroSeconds);
+            result.Timeout.Should().BeFalse("Timeout should be false");
             var spectedResult = isAttack ? WafReturnCode.Match : WafReturnCode.Ok;
             result.ReturnCode.Should().Be(spectedResult);
             if (spectedResult == WafReturnCode.Match)

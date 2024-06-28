@@ -15,12 +15,38 @@ using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
+
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
-namespace Datadog.Trace.Rasp.Unit.Tests;
+namespace Datadog.Trace.Security.Unit.Tests;
 
 public class RaspWafTests : WafLibraryRequiredTest
 {
+    [Theory]
+    [InlineData(1, 1000000, false)]
+    [InlineData(1000, 1, true)]
+    public void GivenALfiRule_WhenInsecureAccess_TimeoutIsCorrect(int queryLength, ulong timeout, bool shouldRaiseTimeout)
+    {
+        var file = "folder";
+
+        for (int i = 0; i < queryLength; i++)
+        {
+            file += $"/folder";
+        }
+
+        var etcPasswd = "../../../../../../../../../etc/passwd";
+        file += etcPasswd;
+        var args = CreateArgs(etcPasswd);
+        var context = InitWaf(true, "rasp-rule-set.json", args, out _);
+        var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, file } };
+        var resultEph = context.RunWithEphemeral(argsVulnerable, timeout, true);
+        resultEph.Timeout.Should().Be(shouldRaiseTimeout);
+        if (!shouldRaiseTimeout)
+        {
+            resultEph.ShouldBlock.Should().BeTrue();
+        }
+    }
+
     [Theory]
     [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "rasp-rule-set.json", "customblock", BlockingAction.BlockRequestType)]
     public void GivenALfiRule_WhenActionReturnCodeIsChanged_ThenChangesAreApplied(string value, string paramValue, string rule, string ruleFile, string action, string actionType)
@@ -31,6 +57,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, value } };
         var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
         resultEph.BlockInfo["status_code"].Should().Be("403");
+        resultEph.Timeout.Should().BeFalse("Timeout should be false");
         var jsonString = JsonConvert.SerializeObject(resultEph.Data);
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
         resultData.Rule.Id.Should().Be(rule);
@@ -45,6 +72,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         context = waf.CreateContext();
         context.Run(args, TimeoutMicroSeconds);
         var resultEphNew = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
+        resultEphNew.Timeout.Should().BeFalse("Timeout should be false");
         resultEphNew.BlockInfo["status_code"].Should().Be("500");
         resultEphNew.AggregatedTotalRuntimeRasp.Should().BeGreaterThan(0);
         resultEphNew.AggregatedTotalRuntimeWithBindingsRasp.Should().BeGreaterThan(0);
@@ -104,7 +132,8 @@ public class RaspWafTests : WafLibraryRequiredTest
         waf = initResult.Waf;
         waf.Should().NotBeNull();
         var context = waf.CreateContext();
-        context.Run(args, TimeoutMicroSeconds);
+        var result = context.Run(args, TimeoutMicroSeconds);
+        result.Timeout.Should().BeFalse("Timeout should be false");
         return context;
     }
 
@@ -120,6 +149,7 @@ public class RaspWafTests : WafLibraryRequiredTest
 
     private void CheckResult(string rule, string expectedAction, IResult result, string actionType)
     {
+        result.Timeout.Should().BeFalse("Timeout should be false");
         result.ReturnCode.Should().Be(WafReturnCode.Match);
         result.Actions.ContainsKey(actionType).Should().BeTrue();
         var jsonString = JsonConvert.SerializeObject(result.Data);

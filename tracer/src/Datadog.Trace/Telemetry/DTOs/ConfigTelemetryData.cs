@@ -7,6 +7,7 @@
 
 namespace Datadog.Trace.Telemetry
 {
+    [TargetFrameworkMoniker(ConfigTelemetryData.ManagedTracerTfmValue)]
     internal static class ConfigTelemetryData
     {
         public const string AgentTraceTransport = "agent_transport";

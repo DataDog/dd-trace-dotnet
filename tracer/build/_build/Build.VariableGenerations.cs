@@ -391,6 +391,9 @@ partial class Build : NukeBuild
 
                 // tracer home smoke tests
                 GenerateWindowsTracerHomeSmokeTestsMatrix();
+                
+                // macos smoke tests
+                GenerateMacosDotnetToolNugetSmokeTestsMatrix();
 
                 void GenerateLinuxInstallerSmokeTestsMatrix()
                 {
@@ -1153,6 +1156,29 @@ partial class Build : NukeBuild
                     Logger.Information($"Installer smoke tests dotnet-tool matrix Windows");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetOutputVariable("dotnet_tool_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void GenerateMacosDotnetToolNugetSmokeTestsMatrix()
+                {
+                    var matrix = new Dictionary<string, object>
+                    {
+                        // macos-11 environments are no longer available in Azure Devops
+                        { "macos-12_netcoreapp3.1", new { vmImage = "macos-12", publishFramework = "netcoreapp3.1" } },
+                        { "macos-12_net6.0", new { vmImage = "macos-12", publishFramework = "net6.0" } },
+                        { "macos-12_net8.0", new { vmImage = "macos-12", publishFramework = "net8.0" } },
+                        { "macos-13_netcoreapp3.1", new { vmImage = "macos-13", publishFramework = "netcoreapp3.1" } },
+                        { "macos-13_net5.0", new { vmImage = "macos-13", publishFramework = "net5.0" } },
+                        { "macos-13_net6.0", new { vmImage = "macos-13", publishFramework = "net6.0" } },
+                        { "macos-13_net7.0", new { vmImage = "macos-13", publishFramework = "net7.0" } },
+                        { "macos-13_net8.0", new { vmImage = "macos-13", publishFramework = "net8.0" } },
+                        { "macos-14_netcoreapp3.1", new { vmImage = "macos-14", publishFramework = "netcoreapp3.1" } },
+                        { "macos-14_net6.0", new { vmImage = "macos-14", publishFramework = "net6.0" } },
+                        { "macos-14_net8.0", new { vmImage = "macos-14", publishFramework = "net8.0" } },
+                    };
+
+                    Logger.Information($"Installer smoke tests dotnet-tool NuGet matrix MacOs");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetOutputVariable("dotnet_tool_nuget_installer_macos_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
                 static string GetInstallerChannel(string publishFramework) =>

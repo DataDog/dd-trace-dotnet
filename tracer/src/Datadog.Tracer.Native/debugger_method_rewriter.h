@@ -117,7 +117,8 @@ private:
                                   int instrumentedMethodIndex, ILInstr* const& beforeLineProbe,
                                   std::vector<EHClause>& newClauses) const;
     static bool DoesILContainUnsupportedInstructions(ILRewriter& rewriter);
-    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl,
+    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
+                    ICorProfilerFunctionControl* pFunctionControl, ICorProfilerInfo* pCorProfilerInfo,
                     MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
                     SpanProbeOnMethodDefinitions& spanProbesOnMethod) const;
     static std::vector<ILInstr*> GetBranchTargets(ILRewriter* pRewriter);
@@ -125,7 +126,8 @@ private:
     static void AdjustExceptionHandlingClauses(ILInstr* pFromInstr, ILInstr* pToInstr, ILRewriter* pRewriter);
 
 public:
-    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl) override;
+    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
+                    ICorProfilerFunctionControl* pFunctionControl, ICorProfilerInfo* pCorProfilerInfo) override;
     InstrumentingProducts GetInstrumentingProduct(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
     WSTRING GetInstrumentationId(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
     static HRESULT IsTypeImplementIAsyncStateMachine(const ComPtr<IMetaDataImport2>& metadataImport,

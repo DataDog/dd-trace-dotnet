@@ -67,7 +67,10 @@ public:
         bool isCompacting,
         uint64_t pauseDuration,
         uint64_t totalDuration,
-        uint64_t endTimestamp) override;
+        uint64_t endTimestamp,
+        uint64_t gen2Size,
+        uint64_t lohSize,
+        uint64_t pohSize) override;
 
 private:
     ObjectHandleID CreateWeakHandle(uintptr_t address) const;

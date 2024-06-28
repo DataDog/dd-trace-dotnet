@@ -237,7 +237,7 @@ namespace iast
         if (SUCCEEDED(hr))
         {
             MemberRefInfo* targetMemberRefInfo = nullptr;
-            //Look for our method based uppon the signature representation
+            //Look for our method based upon the signature representation
             for (auto candidate : targetMethodRefCandidates)
             {
                 if (auto memberRefInfo = module->GetMemberRefInfo(candidate))
@@ -366,14 +366,14 @@ namespace iast
         AspectBehavior behavior;
     };
 
-    bool DataflowAspectReference::ApplyFilters(ILInstr* instruction, ILRewriter* processor)
+    bool DataflowAspectReference::ApplyFilters(DataflowContext& context)
     {
         static bool aspectFilterEnabled = true; //HdivConfig::Instance.GetEnabled("hdiv.net.ast.profiler.aspect.filter.enabled"_W, true);
         if (aspectFilterEnabled && _filters.size() > 0)
         {
             for (auto filter : _filters)
             {
-                if (!filter->AllowInstruction(instruction, processor))
+                if (!filter->AllowInstruction(context))
                 {
                     return false;
                 }
@@ -382,21 +382,32 @@ namespace iast
         return true;
     }
 
+    bool DataflowAspectReference::IsReinstrumentation(mdMemberRef method)
+    {
+        return _aspectMemberRef == method;
+    }
     bool DataflowAspectReference::IsTargetMethod(mdMemberRef method)
     {
         return _targetMethodRef == method;
     }
 
-    InstrumentResult DataflowAspectReference::Apply(ILRewriter* processor, ILInstr* instruction)
+    bool DataflowAspectReference::Apply(DataflowContext& context)
     {
-        auto res = InstrumentResult{ instruction, false };
+        ILRewriter* processor = context.rewriter;
+        ILInstr* instruction = context.instruction;
+        mdMemberRef operand = instruction->m_Arg32;
         auto method = processor->GetMethodInfo();
         auto module = method->GetModuleInfo();
+        if (IsReinstrumentation(operand) && method->IsWritten())
+        {
+            context.aborted = true;
+            return true;
+        }
+
 
         //Check if we must process this instruction (usually a call or newObj)
         bool process = false;
         std::vector<InstructionProcessInfo> instructionsToProcess;
-        mdMemberRef operand = instruction->m_Arg32;
 
         if (TypeFromToken(operand) == mdtMethodSpec && !IsTargetMethod(operand))
         {
@@ -431,7 +442,7 @@ namespace iast
             }
             if (process)
             {
-                process = ApplyFilters(instruction, processor);
+                process = ApplyFilters(context);
             }
             if (process)
             {
@@ -492,7 +503,7 @@ namespace iast
 
                     if (instructionToProcess.instruction == instruction)
                     {
-                        res.instruction = inserted;
+                        context.instruction = inserted;
                     }
                 }
                 else //Replace
@@ -524,10 +535,9 @@ namespace iast
                     instructionToProcess.instruction->m_opcode = CEE_CALL;
                     instructionToProcess.instruction->m_Arg32 = methodRef;
                 }
-
-                res.written = true;
             }
         }
-        return res;
+
+        return process;
     }
 }
