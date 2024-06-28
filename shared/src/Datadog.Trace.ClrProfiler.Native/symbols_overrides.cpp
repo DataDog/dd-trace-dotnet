@@ -1,12 +1,14 @@
 
 
 #define _GNU_SOURCE /* See feature_test_macros(7) */
+#include "log.h"
+
 #include "elfutils.hpp"
 #include <link.h>
 #include <memory>
 #include <mutex>
+#include <stdatomic.h>
 
-#include "log.h"
 
 struct HookBase
 {
@@ -17,6 +19,14 @@ thread_local unsigned long long g_dd_inside_wrapped = 0;
 extern "C" __attribute__((visibility("default")))  unsigned long long dd_inside_wrapped_functions2()
 {
     return g_dd_inside_wrapped;
+}
+
+__attribute__((visibility("hidden")))
+atomic_ullong __dd_dlopen_dlcose_calls_counter = 0;
+
+unsigned long long dd_nb_calls_to_dlopen_dlclose()
+{
+    return __dd_dlopen_dlcose_calls_counter;
 }
 
 struct DlIteratePphdrHook : HookBase
@@ -46,8 +56,23 @@ struct DlopenHook : HookBase
     {
         g_dd_inside_wrapped++;
         void* ret = ref(filename, flags);
+        __dd_dlopen_dlcose_calls_counter++;
         update_overrides();
         g_dd_inside_wrapped--;
+        return ret;
+    }
+};
+
+struct DlcloseHook : HookBase
+{
+    static constexpr auto name = "dlclose";
+    using FuncType = decltype(&::dlclose);
+    static inline FuncType ref{};
+
+    static int hook(void* handle) noexcept
+    {
+        auto ret = ref(handle);
+        __dd_dlopen_dlcose_calls_counter++;
         return ret;
     }
 };
@@ -65,6 +90,7 @@ void register_hook()
 void register_hooks()
 {
     register_hook<DlIteratePphdrHook>();
+    register_hook<DlcloseHook>();
     register_hook<DlopenHook>();
 }
 
