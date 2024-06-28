@@ -104,31 +104,21 @@ namespace Datadog.Trace.Configuration
             //  - if not, the profiler needed to be loaded by the CLR but no profiling will be done, only telemetry metrics will be sent
             // So, for the Tracer, the profiler should be seen as enabled if ContinuousProfiler.ConfigurationKeys.SsiDeployed has a value
             // (even without "profiler") so that spans will be sent to the profiler.
-            bool isProfilingEnabledSet = true;
-            bool GetProfilingEnabledDefaultValue()
-            {
-                isProfilingEnabledSet = false;
-                return false;  // default value
-            }
-
-            var profilingManuallyEnabled =
-                config.WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled).AsBool(GetProfilingEnabledDefaultValue, null);
-            if (isProfilingEnabledSet)
-            {
-                ProfilingEnabledInternal = profilingManuallyEnabled.Value;
-            }
-            else
-            {
-                if (config.WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled).AsString() == "auto")
-                {
-                    ProfilingEnabledInternal = true;
-                }
-                else
-                {
-                    var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
-                    ProfilingEnabledInternal = (profilingSsiDeployed != null);
-                }
-            }
+            ProfilingEnabledInternal = config
+                         .WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)
+                         .GetAs(
+                            converter: x => x switch
+                            {
+                                "auto" => true,
+                                _ when x.ToBoolean() is { } boolean => boolean,
+                                _ => ParsingResult<bool>.Failure(),
+                            },
+                            getDefaultValue: () =>
+                            {
+                                var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
+                                return profilingSsiDeployed is not null;
+                            },
+                            validator: null);
 
             EnvironmentInternal = config
                          .WithKeys(ConfigurationKeys.Environment)
