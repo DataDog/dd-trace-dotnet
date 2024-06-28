@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,9 +20,14 @@ namespace Datadog.Trace.Agent
 
         long ContentLength { get; }
 
-        Encoding ContentEncoding { get; }
+        /// <summary>
+        /// Gets the "raw" content-type header, which may contain additional information like charset or boundary.
+        /// </summary>
+        string ContentTypeHeader { get; }
 
         string GetHeader(string headerName);
+
+        Encoding GetCharsetEncoding();
 
         Task<Stream> GetStreamAsync();
     }
@@ -64,7 +70,7 @@ namespace Datadog.Trace.Agent
             // Server may not send the content length, in that case we use a default value.
             // https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/IO/StreamReader.cs,25
             var length = apiResponse.ContentLength is > 0 and < DefaultBufferSize ? (int)apiResponse.ContentLength : DefaultBufferSize;
-            return new StreamReader(stream, apiResponse.ContentEncoding, detectEncodingFromByteOrderMarks: false, length, leaveOpen: true);
+            return new StreamReader(stream, apiResponse.GetCharsetEncoding(), detectEncodingFromByteOrderMarks: false, length, leaveOpen: true);
         }
 
         public static bool ShouldRetry(this IApiResponse response)

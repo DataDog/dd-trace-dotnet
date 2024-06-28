@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Util;
@@ -92,4 +94,27 @@ public class ApiResponseExtensionsTests
                              .Should()
                              .BeSameAs(expected, $"content-type {rawContentType} should be extracted as encoding {expected.EncodingName}");
     }
+
+#if NETCOREAPP3_1_OR_GREATER
+    [SkippableTheory]
+    [MemberData(nameof(CharsetData), DisableDiscoveryEnumeration = true)]
+    public void HttpClientResponse_ReturnsExpectedValues(string rawContentType, Encoding expected)
+    {
+        if (!MediaTypeHeaderValue.TryParse(rawContentType, out var parsed))
+        {
+            // this is unforgiving, so just bail out as we can't test it
+            throw new SkipException();
+        }
+
+        var httpClientResponse = new HttpResponseMessage();
+        var content = new StringContent("Some content");
+        content.Headers.ContentType = parsed;
+        httpClientResponse.Content = content;
+
+        var response = new Datadog.Trace.Agent.Transports.HttpClientResponse(httpClientResponse);
+        response.GetCharsetEncoding()
+                .Should()
+                .BeSameAs(expected, $"content-type {rawContentType} should be extracted as encoding {expected.EncodingName}");
+    }
+#endif
 }

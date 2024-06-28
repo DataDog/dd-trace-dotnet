@@ -12,14 +12,15 @@ namespace Datadog.Trace.Agent.Transports
 {
     internal class HttpStreamResponse : IApiResponse
     {
+        private readonly Encoding _encoding;
         private readonly HttpHeaders _headers;
 
         public HttpStreamResponse(int statusCode, long contentLength, Encoding encoding, Stream responseStream, HttpHeaders headers)
         {
             StatusCode = statusCode;
             ContentLength = contentLength;
-            ContentEncoding = encoding;
             ResponseStream = responseStream;
+            _encoding = encoding;
             _headers = headers;
         }
 
@@ -27,7 +28,7 @@ namespace Datadog.Trace.Agent.Transports
 
         public long ContentLength { get; }
 
-        public Encoding ContentEncoding { get; }
+        public string ContentTypeHeader => _headers.GetValue("Content-Type");
 
         public Stream ResponseStream { get; }
 
@@ -36,6 +37,8 @@ namespace Datadog.Trace.Agent.Transports
         }
 
         public string GetHeader(string headerName) => _headers.GetValue(headerName);
+
+        public Encoding GetCharsetEncoding() => _encoding;
 
         public Task<Stream> GetStreamAsync()
         {

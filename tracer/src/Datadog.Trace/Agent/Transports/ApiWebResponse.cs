@@ -18,16 +18,17 @@ namespace Datadog.Trace.Agent.Transports
         public ApiWebResponse(HttpWebResponse response)
         {
             _response = response;
-            ContentEncoding = !string.IsNullOrEmpty(response.ContentEncoding) ? Encoding.GetEncoding(response.ContentEncoding) : Encoding.UTF8;
         }
 
         public int StatusCode => (int)_response.StatusCode;
 
         public long ContentLength => _response.ContentLength;
 
-        public Encoding ContentEncoding { get; }
+        public string ContentTypeHeader => _response.ContentType;
 
         public string GetHeader(string headerName) => _response.Headers[headerName];
+
+        public Encoding GetCharsetEncoding() => ApiResponseExtensions.GetCharsetEncoding(ContentTypeHeader);
 
         public Task<Stream> GetStreamAsync()
         {
