@@ -30,8 +30,12 @@ public class DbCommandAspect
         if (command is DbCommand entityCommand && command.GetType().Name == "EntityCommand")
         {
             var commandText = entityCommand.CommandText;
-            IastModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
-            RaspModule.OnSqlI(commandText, IntegrationId.SqlClient);
+
+            if (!string.IsNullOrEmpty(commandText))
+            {
+                IastModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
+                RaspModule.OnSqlI(commandText, IntegrationId.SqlClient);
+            }
         }
 
         return command;

@@ -31,8 +31,11 @@ public class EntityCommandAspect
         if (command is DbCommand dbCommand)
         {
             var commandText = dbCommand.CommandText;
-            IastModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
-            RaspModule.OnSqlI(commandText, IntegrationId.SqlClient);
+            if (!string.IsNullOrEmpty(commandText))
+            {
+                IastModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
+                RaspModule.OnSqlI(commandText, IntegrationId.SqlClient);
+            }
         }
 
         return command;
