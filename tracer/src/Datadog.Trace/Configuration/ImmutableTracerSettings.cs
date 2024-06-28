@@ -132,6 +132,7 @@ namespace Datadog.Trace.Configuration
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
             PropagationExtractFirstOnly = settings.PropagationExtractFirstOnly;
+            PropagationShouldIgnoreParentSampling = settings.PropagationShouldIgnoreParentSampling;
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
             OpenTelemetryLegacyOperationNameEnabled = settings.OpenTelemetryLegacyOperationNameEnabled;
@@ -504,6 +505,12 @@ namespace Datadog.Trace.Configuration
         /// extract the first header.
         /// </summary>
         internal bool PropagationExtractFirstOnly { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the propagation should ignore the
+        /// sampling decision when extracting distributed tracing headers.
+        /// </summary>
+        internal bool PropagationShouldIgnoreParentSampling { get; }
 
         /// <summary>
         /// Gets a value indicating the trace methods configuration.

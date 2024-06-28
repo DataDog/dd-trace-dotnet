@@ -376,6 +376,10 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.PropagationExtractFirstOnly)
                                          .AsBool(false);
 
+            PropagationShouldIgnoreParentSampling = config
+                                                    .WithKeys(ConfigurationKeys.PropagationShouldIgnoreParentSampling)
+                                                    .AsBool(false);
+
             // If Activity support is enabled, we shouldn't enable the W3C Trace Context propagators.
             if (!IsActivityListenerEnabled)
             {
@@ -830,6 +834,12 @@ namespace Datadog.Trace.Configuration
         /// extract the first header.
         /// </summary>
         internal bool PropagationExtractFirstOnly { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the propagation should ignore the
+        /// sampling decision when extracing distributed tracing headers.
+        /// </summary>
+        internal bool PropagationShouldIgnoreParentSampling { get; }
 
         /// <summary>
         /// Gets a value indicating whether runtime metrics

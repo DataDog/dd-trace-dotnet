@@ -239,10 +239,10 @@ namespace Datadog.Trace
         internal TraceContext TraceContext { get; }
 
         /// <summary>
-        /// Gets the sampling priority for contexts created from incoming propagated context.
+        /// Gets or sets the sampling priority for contexts created from incoming propagated context.
         /// Returns null for local contexts.
         /// </summary>
-        internal int? SamplingPriority { get; }
+        internal int? SamplingPriority { get; set; }
 
         /// <summary>
         /// Gets the trace id as a hexadecimal string of length 32,

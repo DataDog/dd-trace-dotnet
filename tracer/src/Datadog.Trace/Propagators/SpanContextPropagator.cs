@@ -28,10 +28,12 @@ namespace Datadog.Trace.Propagators
         private readonly IContextInjector[] _injectors;
         private readonly IContextExtractor[] _extractors;
         private readonly bool _propagationExtractFirstOnly;
+        private readonly bool _propagationShouldIgnoreParentSampling;
 
-        internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors, bool propagationExtractFirsValue)
+        internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors, bool propagationExtractFirsValue, bool propagationShouldIgnoreParentSampling)
         {
             _propagationExtractFirstOnly = propagationExtractFirsValue;
+            _propagationShouldIgnoreParentSampling = propagationShouldIgnoreParentSampling;
             _injectors = injectors?.ToArray() ?? Array.Empty<IContextInjector>();
             _extractors = extractors?.ToArray() ?? Array.Empty<IContextExtractor>();
         }
@@ -59,6 +61,7 @@ namespace Datadog.Trace.Propagators
                             DistributedContextExtractor.Instance,
                             DatadogContextPropagator.Instance
                         },
+                        false,
                         false);
 
                     return _instance;
@@ -162,6 +165,11 @@ namespace Datadog.Trace.Propagators
             {
                 if (_extractors[i].TryExtract(carrier, carrierGetter, out var spanContext))
                 {
+                    if (_propagationShouldIgnoreParentSampling && spanContext is not null)
+                    {
+                        spanContext.SamplingPriority = null;
+                    }
+
                     if (_propagationExtractFirstOnly)
                     {
                         return spanContext;

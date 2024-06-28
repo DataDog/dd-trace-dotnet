@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.Propagators
                             ContextPropagationHeaderStyle.B3SingleHeader,
                         };
 
-            Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names, true);
+            Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names, true, false);
 
             // W3CTraceContext-Datadog Extracts first header only
             W3CDatadogPropagatorExtractFirstTrue = SpanContextPropagatorFactory.GetSpanContextPropagator(
@@ -66,7 +66,8 @@ namespace Datadog.Trace.Tests.Propagators
                     ContextPropagationHeaderStyle.W3CTraceContext,
                     ContextPropagationHeaderStyle.Datadog,
                 },
-                true);
+                true,
+                false);
 
             // Datadog-W3CTraceContext Extracts first header only
             DatadogW3CPropagatorExtractFirstTrue = SpanContextPropagatorFactory.GetSpanContextPropagator(
@@ -80,7 +81,8 @@ namespace Datadog.Trace.Tests.Propagators
                     ContextPropagationHeaderStyle.Datadog,
                     ContextPropagationHeaderStyle.W3CTraceContext,
                 },
-                true);
+                true,
+                false);
 
             // W3CTraceContext-Datadog
             W3CDatadogPropagatorExtractFirstFalse = SpanContextPropagatorFactory.GetSpanContextPropagator(
@@ -94,6 +96,7 @@ namespace Datadog.Trace.Tests.Propagators
                     ContextPropagationHeaderStyle.W3CTraceContext,
                     ContextPropagationHeaderStyle.Datadog,
                 },
+                false,
                 false);
 
             // Datadog-W3CTraceContext
@@ -108,6 +111,7 @@ namespace Datadog.Trace.Tests.Propagators
                     ContextPropagationHeaderStyle.Datadog,
                     ContextPropagationHeaderStyle.W3CTraceContext,
                 },
+                false,
                 false);
 
             // Datadog-B3MultipleHeaders

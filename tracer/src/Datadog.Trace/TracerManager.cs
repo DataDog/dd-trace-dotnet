@@ -548,6 +548,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("trace_propagation_style_extract_first_only");
                     writer.WriteValue(instanceSettings.PropagationExtractFirstOnly);
 
+                    writer.WritePropertyName("trace_propagation_ignore_parent_sampling");
+                    writer.WriteValue(instanceSettings.PropagationShouldIgnoreParentSampling);
+
                     writer.WritePropertyName("trace_propagation_style_inject");
                     writer.WriteStartArray();
 

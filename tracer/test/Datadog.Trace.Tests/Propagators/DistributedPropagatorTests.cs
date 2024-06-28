@@ -55,6 +55,7 @@ public class DistributedPropagatorTests
         Propagator = new SpanContextPropagator(
             injectors: null,
             extractors: new IContextExtractor[] { DistributedContextExtractor.Instance },
+            false,
             false);
     }
 

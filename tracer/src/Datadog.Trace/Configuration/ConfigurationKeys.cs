@@ -373,6 +373,13 @@ namespace Datadog.Trace.Configuration
         public const string PropagationExtractFirstOnly = "DD_TRACE_PROPAGATION_EXTRACT_FIRST";
 
         /// <summary>
+        /// Configuration key to configure if propagation should ignore the sampling decision when extracting
+        /// distributed tracing headers.
+        /// </summary>
+        /// <seealso cref="TracerSettings.PropagationShouldIgnoreParentSampling"/>
+        public const string PropagationShouldIgnoreParentSampling = "DD_TRACE_PROPAGATION_IGNORE_PARENT_SAMPLING";
+
+        /// <summary>
         /// Configuration key for enabling automatic instrumentation on specified methods.
         /// Default value is "" (disabled).
         /// </summary>

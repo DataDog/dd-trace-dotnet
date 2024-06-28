@@ -55,6 +55,7 @@ namespace Datadog.Trace.Tests.Propagators
             Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
                 new[] { ContextPropagationHeaderStyle.Datadog },
                 new[] { ContextPropagationHeaderStyle.Datadog },
+                false,
                 false);
         }
 

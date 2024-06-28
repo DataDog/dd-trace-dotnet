@@ -20,6 +20,7 @@ namespace Datadog.Trace.Tests.Propagators
             B3Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
                 [ContextPropagationHeaderStyle.B3MultipleHeaders],
                 [ContextPropagationHeaderStyle.B3MultipleHeaders],
+                false,
                 false);
         }
 
