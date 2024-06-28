@@ -25,6 +25,33 @@ extern "C" IUnknown * STDMETHODCALLTYPE CreateCrashReport(int32_t pid)
 #endif
 }
 
+template <typename Type>
+struct ErrorType
+{
+};
+
+template <>
+struct ErrorType<ddog_prof_CrashtrackerResult>
+{
+    static constexpr int ErrorValue = DDOG_PROF_CRASHTRACKER_RESULT_ERR;
+};
+
+template <>
+struct ErrorType<ddog_Vec_Tag_PushResult>
+{
+    static constexpr int ErrorValue = DDOG_VEC_TAG_PUSH_RESULT_ERR;
+};
+
+template <typename TResult>
+void DropResult(TResult&& result)
+{
+    if (result.tag == ErrorType<TResult>::ErrorValue)
+    {
+        // TODO logging ?
+        ddog_Error_drop(&result.err);
+    }
+}
+
 CrashReporting::CrashReporting(int32_t pid)
     : _pid(pid)
 {
@@ -142,7 +169,7 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
         signalInfo = std::string(description);
     }
 
-    ddog_crashinfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::FfiHelper::StringToCharSlice(signalInfo) });
+    DropResult(ddog_crashinfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::FfiHelper::StringToCharSlice(signalInfo) }));
 
     return 0;
 }
@@ -258,7 +285,7 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
     for (int32_t i = 0; i < tagCount; i++)
     {
         auto tag = tags[i];
-        ddog_Vec_Tag_push(&vecTags, libdatadog::FfiHelper::StringToCharSlice(std::string_view(tag.key)), libdatadog::FfiHelper::StringToCharSlice(std::string_view(tag.value)));
+        DropResult(ddog_Vec_Tag_push(&vecTags, libdatadog::FfiHelper::StringToCharSlice(std::string_view(tag.key)), libdatadog::FfiHelper::StringToCharSlice(std::string_view(tag.value))));
     }
 
     auto result = ddog_crashinfo_set_metadata(&_crashInfo, metadata);
