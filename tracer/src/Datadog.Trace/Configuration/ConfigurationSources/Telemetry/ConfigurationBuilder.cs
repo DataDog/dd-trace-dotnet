@@ -18,6 +18,18 @@ namespace Datadog.Trace.Configuration.Telemetry;
 
 internal readonly struct ConfigurationBuilder
 {
+    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<string, bool>?, bool, ConfigurationResult<string>> AsStringSelector
+        = (source, key, telemetry, validator, recordValue) => source.GetString(key, telemetry, validator, recordValue);
+
+    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<bool, bool>?, bool, ConfigurationResult<bool>> AsBoolSelector
+        = (source, key, telemetry, validator, _) => source.GetBool(key, telemetry, validator);
+
+    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<int, bool>?, bool, ConfigurationResult<int>> AsInt32Selector
+        = (source, key, telemetry, validator, _) => source.GetInt32(key, telemetry, validator);
+
+    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<double, bool>?, bool, ConfigurationResult<double>> AsDoubleSelector
+        = (source, key, telemetry, validator, _) => source.GetDouble(key, telemetry, validator);
+
     private readonly ITelemeteredConfigurationSource _source;
     private readonly IConfigurationTelemetry _telemetry;
 
@@ -99,10 +111,7 @@ internal readonly struct ConfigurationBuilder
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, bool recordValue)
         {
-            var result = Source.GetString(Key, Telemetry, validator, recordValue)
-                      ?? (FallbackKey1 is null ? null : Source.GetString(FallbackKey1, Telemetry, validator, recordValue))
-                      ?? (FallbackKey2 is null ? null : Source.GetString(FallbackKey2, Telemetry, validator, recordValue))
-                      ?? (FallbackKey3 is null ? null : Source.GetString(FallbackKey3, Telemetry, validator, recordValue));
+            var result = GetResult(AsStringSelector, validator, recordValue);
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
@@ -124,31 +133,10 @@ internal readonly struct ConfigurationBuilder
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, bool recordValue, string openTelemetryKey, Func<string, ParsingResult<string>>? openTelemetryConverter)
         {
-            var result = Source.GetString(Key, Telemetry, validator, recordValue)
-                      ?? (FallbackKey1 is null ? null : Source.GetString(FallbackKey1, Telemetry, validator, recordValue))
-                      ?? (FallbackKey2 is null ? null : Source.GetString(FallbackKey2, Telemetry, validator, recordValue))
-                      ?? (FallbackKey3 is null ? null : Source.GetString(FallbackKey3, Telemetry, validator, recordValue));
-
-            string? returnValue = null;
-            bool datadogConfigurationIsPresent = false;
-            if (result is { Result: { } value, IsValid: { } resultIsValid })
-            {
-                datadogConfigurationIsPresent = true;
-                if (resultIsValid)
-                {
-                    returnValue = value;
-                }
-            }
-            else
-            {
-                datadogConfigurationIsPresent = Source.IsPresent(Key)
-                                             || (FallbackKey1 is null ? false : Source.IsPresent(FallbackKey1))
-                                             || (FallbackKey2 is null ? false : Source.IsPresent(FallbackKey2))
-                                             || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
-            }
+            var datadogConfigResult = GetResult(AsStringSelector, validator, recordValue);
 
             // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
-            if (datadogConfigurationIsPresent && Source.IsPresent(openTelemetryKey))
+            if (datadogConfigResult.IsPresent && Source.IsPresent(openTelemetryKey))
             {
                 // TODO Log to user and report "otel.env.hiding" telemetry metric
             }
@@ -170,9 +158,9 @@ internal readonly struct ConfigurationBuilder
                 }
             }
 
-            if (returnValue is not null)
+            if (datadogConfigResult.IsValid)
             {
-                return returnValue;
+                return datadogConfigResult.Result;
             }
 
             // don't have a valid value
@@ -189,10 +177,11 @@ internal readonly struct ConfigurationBuilder
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         public T? GetAs<T>(Func<DefaultResult<T>>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
         {
-            var result = Source.GetAs<T>(Key, Telemetry, converter, validator, recordValue: true)
-                      ?? (FallbackKey1 is null ? null : Source.GetAs<T>(FallbackKey1, Telemetry, converter, validator, recordValue: true))
-                      ?? (FallbackKey2 is null ? null : Source.GetAs<T>(FallbackKey2, Telemetry, converter, validator, recordValue: true))
-                      ?? (FallbackKey3 is null ? null : Source.GetAs<T>(FallbackKey3, Telemetry, converter, validator, recordValue: true));
+            var result = GetResult(
+                (source, key, telemetry, val, convert, recordValue) => source.GetAs(key, telemetry, convert!, val, recordValue),
+                validator,
+                converter,
+                recordValue: true);
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
@@ -214,31 +203,14 @@ internal readonly struct ConfigurationBuilder
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         public T? GetAs<T>(Func<DefaultResult<T>>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter, string openTelemetryKey, Func<string, ParsingResult<T>> openTelemetryConverter)
         {
-            var result = Source.GetAs<T>(Key, Telemetry, converter, validator, recordValue: true)
-                      ?? (FallbackKey1 is null ? null : Source.GetAs<T>(FallbackKey1, Telemetry, converter, validator, recordValue: true))
-                      ?? (FallbackKey2 is null ? null : Source.GetAs<T>(FallbackKey2, Telemetry, converter, validator, recordValue: true))
-                      ?? (FallbackKey3 is null ? null : Source.GetAs<T>(FallbackKey3, Telemetry, converter, validator, recordValue: true));
-
-            T? returnValue = default;
-            bool datadogConfigurationIsPresent = false;
-            if (result is { Result: { } value, IsValid: { } resultIsValid })
-            {
-                datadogConfigurationIsPresent = true;
-                if (resultIsValid)
-                {
-                    returnValue = value;
-                }
-            }
-            else
-            {
-                datadogConfigurationIsPresent = Source.IsPresent(Key)
-                                             || (FallbackKey1 is null ? false : Source.IsPresent(FallbackKey1))
-                                             || (FallbackKey2 is null ? false : Source.IsPresent(FallbackKey2))
-                                             || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
-            }
+            var datadogConfigResult = GetResult(
+                (source, key, telemetry, val, convert, recordValue) => source.GetAs(key, telemetry, convert!, val, recordValue),
+                validator,
+                converter,
+                recordValue: true);
 
             // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
-            if (datadogConfigurationIsPresent && Source.IsPresent(openTelemetryKey))
+            if (datadogConfigResult.IsPresent && Source.IsPresent(openTelemetryKey))
             {
                 // TODO Log to user and report "otel.env.hiding" telemetry metric
             }
@@ -256,9 +228,9 @@ internal readonly struct ConfigurationBuilder
                 }
             }
 
-            if (result is { Result: { } datadogValue, IsValid: true })
+            if (datadogConfigResult.IsValid)
             {
-                return datadogValue;
+                return datadogConfigResult.Result;
             }
 
             // don't have a valid value
@@ -290,10 +262,7 @@ internal readonly struct ConfigurationBuilder
         [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
         public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator)
         {
-            var result = Source.GetBool(Key, Telemetry, validator)
-                      ?? (FallbackKey1 is null ? null : Source.GetBool(FallbackKey1, Telemetry, validator))
-                      ?? (FallbackKey2 is null ? null : Source.GetBool(FallbackKey2, Telemetry, validator))
-                      ?? (FallbackKey3 is null ? null : Source.GetBool(FallbackKey3, Telemetry, validator));
+            var result = GetResult(AsBoolSelector, validator, recordValue: true);
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
@@ -315,31 +284,10 @@ internal readonly struct ConfigurationBuilder
         [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
         public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator, string openTelemetryKey, Func<string, ParsingResult<bool>>? openTelemetryConverter = null)
         {
-            var result = Source.GetBool(Key, Telemetry, validator)
-                      ?? (FallbackKey1 is null ? null : Source.GetBool(FallbackKey1, Telemetry, validator))
-                      ?? (FallbackKey2 is null ? null : Source.GetBool(FallbackKey2, Telemetry, validator))
-                      ?? (FallbackKey3 is null ? null : Source.GetBool(FallbackKey3, Telemetry, validator));
-
-            bool? returnValue = null;
-            bool datadogConfigurationIsPresent = false;
-            if (result is { Result: { } value, IsValid: { } resultIsValid })
-            {
-                datadogConfigurationIsPresent = true;
-                if (resultIsValid)
-                {
-                    returnValue = value;
-                }
-            }
-            else
-            {
-                datadogConfigurationIsPresent = Source.IsPresent(Key)
-                                             || (FallbackKey1 is null ? false : Source.IsPresent(FallbackKey1))
-                                             || (FallbackKey2 is null ? false : Source.IsPresent(FallbackKey2))
-                                             || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
-            }
+            var datadogConfigResult = GetResult(AsBoolSelector, validator, recordValue: true);
 
             // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
-            if (datadogConfigurationIsPresent && Source.IsPresent(openTelemetryKey))
+            if (datadogConfigResult.IsPresent && Source.IsPresent(openTelemetryKey))
             {
                 // TODO Log to user and report "otel.env.hiding" telemetry metric
             }
@@ -361,9 +309,9 @@ internal readonly struct ConfigurationBuilder
                 }
             }
 
-            if (returnValue is not null)
+            if (datadogConfigResult.IsValid)
             {
-                return returnValue;
+                return datadogConfigResult.Result;
             }
 
             // don't have a default value
@@ -389,10 +337,7 @@ internal readonly struct ConfigurationBuilder
         [return: NotNullIfNotNull(nameof(defaultValue))] // This doesn't work with nullables, but it still expresses intent
         public int? AsInt32(int? defaultValue, Func<int, bool>? validator)
         {
-            var result = Source.GetInt32(Key, Telemetry, validator)
-                      ?? (FallbackKey1 is null ? null : Source.GetInt32(FallbackKey1, Telemetry, validator))
-                      ?? (FallbackKey2 is null ? null : Source.GetInt32(FallbackKey2, Telemetry, validator))
-                      ?? (FallbackKey3 is null ? null : Source.GetInt32(FallbackKey3, Telemetry, validator));
+            var result = GetResult(AsInt32Selector, validator, recordValue: true);
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
@@ -419,10 +364,7 @@ internal readonly struct ConfigurationBuilder
         [return: NotNullIfNotNull(nameof(defaultValue))]
         public double? AsDouble(double? defaultValue, Func<double, bool>? validator)
         {
-            var result = Source.GetDouble(Key, Telemetry, validator)
-                      ?? (FallbackKey1 is null ? null : Source.GetDouble(FallbackKey1, Telemetry, validator))
-                      ?? (FallbackKey2 is null ? null : Source.GetDouble(FallbackKey2, Telemetry, validator))
-                      ?? (FallbackKey3 is null ? null : Source.GetDouble(FallbackKey3, Telemetry, validator));
+            var result = GetResult(AsDoubleSelector, validator, recordValue: true);
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
@@ -444,33 +386,17 @@ internal readonly struct ConfigurationBuilder
         {
             var openTelemetryKey = ConfigurationKeys.OpenTelemetry.TracesSampler;
             var openTelemetryArgKey = ConfigurationKeys.OpenTelemetry.TracesSamplerArg;
-            var result = Source.GetDouble(Key, Telemetry, validator: null)
-                      ?? (FallbackKey1 is null ? null : Source.GetDouble(FallbackKey1, Telemetry, validator: null))
-                      ?? (FallbackKey2 is null ? null : Source.GetDouble(FallbackKey2, Telemetry, validator: null))
-                      ?? (FallbackKey3 is null ? null : Source.GetDouble(FallbackKey3, Telemetry, validator: null));
 
-            double? returnValue = null;
-            bool datadogConfigurationIsPresent = false;
-            if (result is { Result: { } value, IsValid: { } resultIsValid })
-            {
-                datadogConfigurationIsPresent = true;
-                if (resultIsValid)
-                {
-                    returnValue = value;
-                }
-            }
-            else
-            {
-                datadogConfigurationIsPresent = Source.IsPresent(Key)
-                                             || (FallbackKey1 is null ? false : Source.IsPresent(FallbackKey1))
-                                             || (FallbackKey2 is null ? false : Source.IsPresent(FallbackKey2))
-                                             || (FallbackKey3 is null ? false : Source.IsPresent(FallbackKey3));
-            }
+            var datadogConfigResult = GetResult(AsDoubleSelector, validator: null, recordValue: true);
+
+            double? returnValue = datadogConfigResult.IsValid
+                                      ? datadogConfigResult.Result
+                                      : null;
 
             // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
             var samplerKeyPresent = Source.IsPresent(openTelemetryKey);
             var samplerArgKeyPresent = Source.IsPresent(openTelemetryArgKey);
-            if (datadogConfigurationIsPresent)
+            if (datadogConfigResult.IsPresent)
             {
                 if (samplerKeyPresent)
                 {
@@ -543,10 +469,7 @@ internal readonly struct ConfigurationBuilder
         public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<IDictionary<string, string>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
-            var result = Source.GetDictionary(Key, Telemetry, validator: null, allowOptionalMappings, separator: ':')
-                      ?? (FallbackKey1 is null ? null : Source.GetDictionary(FallbackKey1, Telemetry, validator: null, allowOptionalMappings, separator: ':'))
-                      ?? (FallbackKey2 is null ? null : Source.GetDictionary(FallbackKey2, Telemetry, validator: null, allowOptionalMappings, separator: ':'))
-                      ?? (FallbackKey3 is null ? null : Source.GetDictionary(FallbackKey3, Telemetry, validator: null, allowOptionalMappings, separator: ':'));
+            var result = GetDictionaryResult(allowOptionalMappings, separator: ':');
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
@@ -570,10 +493,7 @@ internal readonly struct ConfigurationBuilder
         public IDictionary<string, string>? AsDictionaryWithOpenTelemetryMapping(string openTelemetryKey, Func<IDictionary<string, string>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
-            var result = Source.GetDictionary(Key, Telemetry, validator: null)
-                      ?? (FallbackKey1 is null ? null : Source.GetDictionary(FallbackKey1, Telemetry, validator: null))
-                      ?? (FallbackKey2 is null ? null : Source.GetDictionary(FallbackKey2, Telemetry, validator: null))
-                      ?? (FallbackKey3 is null ? null : Source.GetDictionary(FallbackKey3, Telemetry, validator: null));
+            var result = GetDictionaryResult(allowOptionalMappings: false, separator: ':');
 
             IDictionary<string, string>? returnValue = null;
             bool datadogConfigurationIsPresent = false;
@@ -645,6 +565,86 @@ internal readonly struct ConfigurationBuilder
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Gets the raw <see cref="ConfigurationResult{T}"/> from the configuration source, recording the access in telemetry
+        /// </summary>
+        /// <param name="selector">The method to invoke to retrieve the parameter</param>
+        /// <param name="validator">The validator to call to decide if a provided value is valid</param>
+        /// <param name="recordValue">If applicable, whether to record the value in configuration</param>
+        /// <typeparam name="T">The type being retrieved</typeparam>
+        /// <returns>The raw <see cref="ConfigurationResult{T}"/></returns>
+        private ConfigurationResult<T> GetResult<T>(Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<T, bool>?, bool, ConfigurationResult<T>> selector, Func<T, bool>? validator, bool recordValue)
+        {
+            var result = selector(Source, Key, Telemetry, validator, recordValue);
+            if (result.ShouldFallBack && FallbackKey1 is not null)
+            {
+                result = selector(Source, FallbackKey1, Telemetry, validator, recordValue);
+            }
+
+            if (result.ShouldFallBack && FallbackKey2 is not null)
+            {
+                result = selector(Source, FallbackKey2, Telemetry, validator, recordValue);
+            }
+
+            if (result.ShouldFallBack && FallbackKey3 is not null)
+            {
+                result = selector(Source, FallbackKey3, Telemetry, validator, recordValue);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the raw <see cref="ConfigurationResult{T}"/> from the configuration source, recording the access in telemetry
+        /// </summary>
+        /// <param name="selector">The method to invoke to retrieve the parameter</param>
+        /// <param name="validator">The validator to call to decide if a provided value is valid</param>
+        /// <param name="converter">The converter to run when calling <see cref="ITelemeteredConfigurationSource.GetAs{T}"/></param>
+        /// <param name="recordValue">If applicable, whether to record the value in configuration</param>
+        /// <typeparam name="T">The type being retrieved</typeparam>
+        /// <returns>The raw <see cref="ConfigurationResult{T}"/></returns>
+        private ConfigurationResult<T> GetResult<T>(Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<T, bool>?, Func<string, ParsingResult<T>>, bool, ConfigurationResult<T>> selector, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter, bool recordValue)
+        {
+            var result = selector(Source, Key, Telemetry, validator, converter, recordValue);
+            if (result.ShouldFallBack && FallbackKey1 is not null)
+            {
+                result = selector(Source, FallbackKey1, Telemetry, validator, converter, recordValue);
+            }
+
+            if (result.ShouldFallBack && FallbackKey2 is not null)
+            {
+                result = selector(Source, FallbackKey2, Telemetry, validator, converter, recordValue);
+            }
+
+            if (result.ShouldFallBack && FallbackKey3 is not null)
+            {
+                result = selector(Source, FallbackKey3, Telemetry, validator, converter, recordValue);
+            }
+
+            return result;
+        }
+
+        private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(bool allowOptionalMappings, char separator)
+        {
+            var result = Source.GetDictionary(Key, Telemetry, validator: null, allowOptionalMappings, separator);
+            if (result.ShouldFallBack && FallbackKey1 is not null)
+            {
+                result = Source.GetDictionary(FallbackKey1, Telemetry, validator: null, allowOptionalMappings, separator);
+            }
+
+            if (result.ShouldFallBack && FallbackKey2 is not null)
+            {
+                result = Source.GetDictionary(FallbackKey2, Telemetry, validator: null, allowOptionalMappings, separator);
+            }
+
+            if (result.ShouldFallBack && FallbackKey3 is not null)
+            {
+                result = Source.GetDictionary(FallbackKey3, Telemetry, validator: null, allowOptionalMappings, separator);
+            }
+
+            return result;
         }
     }
 }
