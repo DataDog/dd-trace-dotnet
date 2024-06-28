@@ -18,6 +18,7 @@ namespace Datadog.Trace.Configuration.Telemetry;
 
 internal readonly struct ConfigurationBuilder
 {
+    // static accessor functions
     private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<string, bool>?, bool, ConfigurationResult<string>> AsStringSelector
         = (source, key, telemetry, validator, recordValue) => source.GetString(key, telemetry, validator, recordValue);
 
@@ -29,6 +30,19 @@ internal readonly struct ConfigurationBuilder
 
     private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<double, bool>?, bool, ConfigurationResult<double>> AsDoubleSelector
         = (source, key, telemetry, validator, _) => source.GetDouble(key, telemetry, validator);
+
+    // static accessor functions with converters
+    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<string, bool>?, Func<string, ParsingResult<string>>, bool, ConfigurationResult<string>> AsStringWithConverterSelector
+        = (source, key, telemetry, validator, converter, recordValue) => source.GetAs(key, telemetry, converter, validator, recordValue);
+
+    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<bool, bool>?, Func<string, ParsingResult<bool>>, bool, ConfigurationResult<bool>> AsBoolWithConverterSelector
+        = (source, key, telemetry, validator, converter, _) => source.GetAs(key, telemetry, converter, validator, recordValue: true);
+
+    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<int, bool>?, Func<string, ParsingResult<int>>, bool, ConfigurationResult<int>> AsInt32WithConverterSelector
+        = (source, key, telemetry, validator, converter, _) => source.GetAs(key, telemetry, converter, validator, recordValue: true);
+
+    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<double, bool>?, Func<string, ParsingResult<double>>, bool, ConfigurationResult<double>> AsDoubleWithConverterSelector
+        = (source, key, telemetry, validator, converter, _) => source.GetAs(key, telemetry, converter, validator, recordValue: true);
 
     private readonly ITelemeteredConfigurationSource _source;
     private readonly IConfigurationTelemetry _telemetry;
@@ -77,17 +91,17 @@ internal readonly struct ConfigurationBuilder
         // String accessors
         // ****************
         public string? AsRedactedString()
-            => AsString(getDefaultValue: null, validator: null, recordValue: false);
+            => AsString(getDefaultValue: null, validator: null, converter: null, recordValue: false);
 
         public string AsRedactedString(string defaultValue)
-            => AsString(() => defaultValue, validator: null, recordValue: false);
+            => AsString(() => defaultValue, validator: null, converter: null, recordValue: false);
 
         /// <summary>
         /// Beware, this function won't record telemetry if the config isn't explicitly set.
         /// If you can, use <see cref="AsString(string)"/> instead or record telemetry manually.
         /// </summary>
         /// <returns>the string value of the configuration if set</returns>
-        public string? AsString() => AsString(getDefaultValue: null, validator: null, recordValue: true);
+        public string? AsString() => AsString(getDefaultValue: null, validator: null, converter: null, recordValue: true);
 
         public string AsString(string defaultValue) => AsString(defaultValue, validator: null);
 
@@ -105,13 +119,21 @@ internal readonly struct ConfigurationBuilder
         public string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator)
             => AsString(getDefaultValue, validator, recordValue: true);
 
+        [return: NotNullIfNotNull(nameof(getDefaultValue))]
+        public string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>> converter)
+            => AsString(getDefaultValue, validator, converter, recordValue: true);
+
         public string? AsStringWithOpenTelemetryMapping(string openTelemetryKey, Func<string, ParsingResult<string>>? openTelemetryConverter = null)
             => AsString(getDefaultValue: null, validator: null, recordValue: true, openTelemetryKey, openTelemetryConverter);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, bool recordValue)
+            => AsString(getDefaultValue, validator, converter: null, recordValue);
+
+        [return: NotNullIfNotNull(nameof(getDefaultValue))]
+        private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
         {
-            var result = GetResult(AsStringSelector, validator, recordValue);
+            var result = GetStringResult(validator, converter, recordValue);
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
@@ -177,11 +199,7 @@ internal readonly struct ConfigurationBuilder
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         public T? GetAs<T>(Func<DefaultResult<T>>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
         {
-            var result = GetResult(
-                (source, key, telemetry, val, convert, recordValue) => source.GetAs(key, telemetry, convert!, val, recordValue),
-                validator,
-                converter,
-                recordValue: true);
+            var result = GetAs(validator, converter);
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
@@ -203,11 +221,7 @@ internal readonly struct ConfigurationBuilder
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         public T? GetAs<T>(Func<DefaultResult<T>>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter, string openTelemetryKey, Func<string, ParsingResult<T>> openTelemetryConverter)
         {
-            var datadogConfigResult = GetResult(
-                (source, key, telemetry, val, convert, recordValue) => source.GetAs(key, telemetry, convert!, val, recordValue),
-                validator,
-                converter,
-                recordValue: true);
+            var datadogConfigResult = GetAs(validator, converter);
 
             // If there's a Datadog configuration present, check if a corresponding OpenTelemetry key is present so we can log the conflicting keys
             if (datadogConfigResult.IsPresent && Source.IsPresent(openTelemetryKey))
@@ -261,8 +275,12 @@ internal readonly struct ConfigurationBuilder
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
         public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator)
+            => AsBool(getDefaultValue, validator, converter: null);
+
+        [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
+        public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
         {
-            var result = GetResult(AsBoolSelector, validator, recordValue: true);
+            var result = GetBoolResult(validator, converter);
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
@@ -336,8 +354,12 @@ internal readonly struct ConfigurationBuilder
 
         [return: NotNullIfNotNull(nameof(defaultValue))] // This doesn't work with nullables, but it still expresses intent
         public int? AsInt32(int? defaultValue, Func<int, bool>? validator)
+            => AsInt32(defaultValue, validator, converter: null);
+
+        [return: NotNullIfNotNull(nameof(defaultValue))] // This doesn't work with nullables, but it still expresses intent
+        public int? AsInt32(int? defaultValue, Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
         {
-            var result = GetResult(AsInt32Selector, validator, recordValue: true);
+            var result = GetInt32Result(validator, converter);
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
@@ -363,8 +385,12 @@ internal readonly struct ConfigurationBuilder
 
         [return: NotNullIfNotNull(nameof(defaultValue))]
         public double? AsDouble(double? defaultValue, Func<double, bool>? validator)
+            => AsDouble(defaultValue, validator, converter: null);
+
+        [return: NotNullIfNotNull(nameof(defaultValue))]
+        public double? AsDouble(double? defaultValue, Func<double, bool>? validator, Func<string, ParsingResult<double>>? converter)
         {
-            var result = GetResult(AsDoubleSelector, validator, recordValue: true);
+            var result = GetDoubleResult(validator, converter);
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })
@@ -463,10 +489,10 @@ internal readonly struct ConfigurationBuilder
         // Dictionary accessors
         // ****************
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(Func<IDictionary<string, string>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
+        public IDictionary<string, string>? AsDictionary(Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<IDictionary<string, string>>? getDefaultValue = null)
+        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
             var result = GetDictionaryResult(allowOptionalMappings, separator: ':');
@@ -479,18 +505,15 @@ internal readonly struct ConfigurationBuilder
 
             if (getDefaultValue != null)
             {
-                // Horrible that we have to stringify the dictionary, but that's all that's available in the telemetry api
                 var defaultValue = getDefaultValue();
-                var defaultValueAsString = defaultValue.Count == 0 ? string.Empty : string.Join(", ", defaultValue!.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
-
-                Telemetry.Record(Key, defaultValueAsString, true, ConfigurationOrigins.Default);
-                return defaultValue;
+                Telemetry.Record(Key, defaultValue.TelemetryValue, true, ConfigurationOrigins.Default);
+                return defaultValue.Result;
             }
 
             return null;
         }
 
-        public IDictionary<string, string>? AsDictionaryWithOpenTelemetryMapping(string openTelemetryKey, Func<IDictionary<string, string>>? getDefaultValue = null)
+        public IDictionary<string, string>? AsDictionaryWithOpenTelemetryMapping(string openTelemetryKey, Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
             var result = GetDictionaryResult(allowOptionalMappings: false, separator: ':');
@@ -556,16 +579,40 @@ internal readonly struct ConfigurationBuilder
 
             if (getDefaultValue != null)
             {
-                // Horrible that we have to stringify the dictionary, but that's all that's available in the telemetry api
                 var defaultValue = getDefaultValue();
-                var defaultValueAsString = defaultValue.Count == 0 ? string.Empty : string.Join(", ", defaultValue!.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
-
-                Telemetry.Record(Key, defaultValueAsString, true, ConfigurationOrigins.Default);
-                return defaultValue;
+                Telemetry.Record(Key, defaultValue.TelemetryValue, true, ConfigurationOrigins.Default);
+                return defaultValue.Result;
             }
 
             return null;
         }
+
+        private ConfigurationResult<string> GetStringResult(Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
+            => converter is null
+                   ? GetResult(AsStringSelector, validator, recordValue)
+                   : GetResult(AsStringWithConverterSelector, validator, converter, recordValue);
+
+        private ConfigurationResult<bool> GetBoolResult(Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
+            => converter is null
+                   ? GetResult(AsBoolSelector, validator, recordValue: true)
+                   : GetResult(AsBoolWithConverterSelector, validator, converter, recordValue: true);
+
+        private ConfigurationResult<int> GetInt32Result(Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
+            => converter is null
+                   ? GetResult(AsInt32Selector, validator, recordValue: true)
+                   : GetResult(AsInt32WithConverterSelector, validator, converter, recordValue: true);
+
+        private ConfigurationResult<double> GetDoubleResult(Func<double, bool>? validator, Func<string, ParsingResult<double>>? converter)
+            => converter is null
+                   ? GetResult(AsDoubleSelector, validator, recordValue: true)
+                   : GetResult(AsDoubleWithConverterSelector, validator, converter, recordValue: true);
+
+        private ConfigurationResult<T> GetAs<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+            => GetResult(
+                (source, key, telemetry, val, convert, recordValue) => source.GetAs(key, telemetry, convert!, val, recordValue),
+                validator,
+                converter,
+                recordValue: true);
 
         /// <summary>
         /// Gets the raw <see cref="ConfigurationResult{T}"/> from the configuration source, recording the access in telemetry
