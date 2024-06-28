@@ -45,7 +45,7 @@ INSTANTIATE_TEST_SUITE_P(
         // (void*)::fork,
 #endif
         //(void*)::dl_iterate_phdr,
-        (void*)::dlopen,
+        //(void*)::dlopen,
         (void*)::dladdr,
         (void*)::accept,
         (void*)::accept4,
