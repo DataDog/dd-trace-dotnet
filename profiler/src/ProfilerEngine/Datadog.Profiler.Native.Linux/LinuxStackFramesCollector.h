@@ -8,6 +8,7 @@
 #include "corprof.h"
 // end
 
+#include "LibrariesInfoCache.h"
 #include "StackFramesCollectorBase.h"
 
 #include <atomic>
@@ -22,11 +23,12 @@ class ProfilerSignalManager;
 class ProfilerSignalManager;
 class IConfiguration;
 class CallstackProvider;
+class LibrariesInfoCache;
 
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* configuration, CallstackProvider* callstackProvider);
+    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* configuration, CallstackProvider* callstackProvider, LibrariesInfoCache* librariesCacheInfo);
     ~LinuxStackFramesCollector() override;
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
@@ -86,4 +88,5 @@ private:
 
     ErrorStatistics _errorStatistics;
     bool _useBacktrace2;
+    LibrariesInfoCache* _plibrariesInfo;
 };
