@@ -378,7 +378,7 @@ int dl_iterate_phdr_old(int (*callback)(struct dl_phdr_info* info, size_t size, 
 /* Function pointers to hold the value of the glibc functions */
 static void* (*__real_dlopen)(const char* file, int mode) = NULL;
 
-void* dlopen(const char* file, int mode)
+void* dlopen_old(const char* file, int mode)
 {
     check_init();
 
@@ -396,7 +396,7 @@ void* dlopen(const char* file, int mode)
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_dlclose)(void* handle) = NULL;
 
-int dlclose(void* handle)
+int dlclose_old(void* handle)
 {
     check_init();
 

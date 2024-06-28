@@ -171,8 +171,6 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         dynamic_dispatcher.cpp
         dynamic_instance.cpp
         runtimeid_store.cpp
-        elfutils.cpp
-        symbols_overrides.cpp
         instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_function_control.cpp
         instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.cpp
         instrumented_assembly_generator/instrumented_assembly_generator_metadata_interfaces.cpp
@@ -184,6 +182,12 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/dynamic_library_base.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/dynamic_com_library.cpp
         )
+    
+if (ISLINUX)
+    target_sources("Datadog.Trace.ClrProfiler.Native.static" PRIVATE
+    elfutils.cpp
+    symbols_overrides.cpp)
+endif()
 
 target_compile_definitions("Datadog.Trace.ClrProfiler.Native.static" PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
 
