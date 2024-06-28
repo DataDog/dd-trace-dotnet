@@ -10,6 +10,8 @@ using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 #if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
@@ -48,7 +50,7 @@ public static class SignInManagerPasswordSignInIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string user, string password, bool isPersistent, bool lockoutOnFailure)
     {
         var security = Security.Instance;
-        if (security.TrackUserEvents)
+        if (security.IsTrackUserEventsEnabled)
         {
             var tracer = Tracer.Instance;
             var scope = tracer.InternalActiveScope;
@@ -61,18 +63,32 @@ public static class SignInManagerPasswordSignInIntegration
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TReturn : ISignInResult
     {
-        if (!returnValue.Succeeded && Security.Instance is { TrackUserEvents: true } security && state.Scope is { Span: { } span })
+        if (!returnValue.Succeeded
+            && Security.Instance is { IsTrackUserEventsEnabled: true } security
+            && state is { Scope: { Span: { } span } })
         {
+            if (state.State is not string id)
+            {
+                TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
+                return returnValue;
+            }
+
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
 
             setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
             tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, "false");
-            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
-            if (security.IsExtendedUserTrackingEnabled)
+
+            if (security.IsAnonUserTrackingMode)
             {
-                // if we get here and the tag doesn't exist, the user doesn't exist, we dont have an ID but a username that doesn't exist
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserName, state.State!.ToString());
+                var anonId = UserEventsCommon.GetAnonId(id);
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
+            }
+            else
+            {
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, id);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
             }
 
             security.SetTraceSamplingPriority(span);

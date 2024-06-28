@@ -80,7 +80,7 @@ internal readonly struct ConfigurationBuilder
             => AsString(getDefaultValue: null, validator: null, recordValue: false);
 
         public string AsRedactedString(string defaultValue)
-            => AsString(() => defaultValue, validator: null, recordValue: false);
+            => AsString(_ => defaultValue, validator: null, recordValue: false);
 
         /// <summary>
         /// Beware, this function won't record telemetry if the config isn't explicitly set.
@@ -99,17 +99,17 @@ internal readonly struct ConfigurationBuilder
         public string? AsString(Func<string, bool> validator) => AsString(getDefaultValue: null, validator, recordValue: true);
 
         public string AsString(string defaultValue, Func<string, bool>? validator)
-            => AsString(() => defaultValue, validator, recordValue: true);
+            => AsString(_ => defaultValue, validator, recordValue: true);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator)
+        public string? AsString(Func<bool, string>? getDefaultValue, Func<string, bool>? validator)
             => AsString(getDefaultValue, validator, recordValue: true);
 
         public string? AsStringWithOpenTelemetryMapping(string openTelemetryKey, Func<string, ParsingResult<string>>? openTelemetryConverter = null)
             => AsString(getDefaultValue: null, validator: null, recordValue: true, openTelemetryKey, openTelemetryConverter);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, bool recordValue)
+        private string? AsString(Func<bool, string>? getDefaultValue, Func<string, bool>? validator, bool recordValue)
         {
             var result = GetResult(AsStringSelector, validator, recordValue);
 
@@ -125,7 +125,11 @@ internal readonly struct ConfigurationBuilder
                 return null;
             }
 
-            var defaultValue = getDefaultValue();
+            var isPresent = Source.IsPresent(Key)
+                         || (FallbackKey1 is not null && Source.IsPresent(FallbackKey1))
+                         || (FallbackKey2 is not null && Source.IsPresent(FallbackKey2))
+                         || (FallbackKey3 is not null && Source.IsPresent(FallbackKey3));
+            var defaultValue = getDefaultValue(isPresent);
             Telemetry.Record(Key, defaultValue, recordValue, ConfigurationOrigins.Default);
             return defaultValue;
         }

@@ -45,7 +45,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             var directLogSubmissionUrl = config
                                     .WithKeys(ConfigurationKeys.DirectLogSubmission.Url)
                                     .AsString(
-                                         getDefaultValue: () =>
+                                         getDefaultValue: _ =>
                                          {
                                              // They didn't provide a URL, use the default (With DD_SITE if provided)
                                              var ddSite = config

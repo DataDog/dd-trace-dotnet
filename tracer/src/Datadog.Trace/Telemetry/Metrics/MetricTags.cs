@@ -312,6 +312,12 @@ internal static class MetricTags
         [Description("vulnerability_type:session_timeout")] SessionTimeout = 25,
     }
 
+    public enum AuthenticationFramework
+    {
+        [Description("framework:aspnetcore_identity")] AspNetCoreIdentity,
+        [Description("framework:unknown")] Unknown,
+    }
+
     public enum CIVisibilityTestFramework
     {
         [Description("test_framework:xunit")] XUnit,
