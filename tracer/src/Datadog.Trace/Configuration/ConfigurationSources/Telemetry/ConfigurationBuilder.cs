@@ -63,6 +63,59 @@ internal readonly struct ConfigurationBuilder
 
     public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2, string fallbackKey3) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2, fallbackKey3);
 
+    private static bool TryHandleResult<T>(
+        IConfigurationTelemetry telemetry,
+        string key,
+        ConfigurationResult<T> result,
+        bool recordValue,
+        Func<DefaultResult<T>>? getDefaultValue,
+        [NotNullIfNotNull(nameof(getDefaultValue))] out T? value)
+    {
+        if (result is { Result: { } ddResult, IsValid: true })
+        {
+            value = ddResult;
+            return true;
+        }
+
+        // don't have a default value, so caller (which knows what the <T> is needs
+        // to return the default value. Necessary because we can't create a generic
+        // method that works "correctly" for both value types and reference types.
+        if (getDefaultValue is null)
+        {
+            value = default;
+            return false;
+        }
+
+        var defaultValue = getDefaultValue();
+        RecordTelemetry(telemetry, key, recordValue, defaultValue);
+
+        // The compiler complains about this, because technically you _could_ call it as `TryHandleResult<int?>` (for example)
+        // in which case Func<DefaultResult<T>> _could_ return a `null` value, so the `[NotNullIfNotNull]` annotation
+        // would be wrong. In practice, we control the calls to this method, and we know that T is always non-null
+        // so it's safe to use the dammit here.
+        value = defaultValue.Result!;
+        return true;
+    }
+
+    private static void RecordTelemetry<T>(IConfigurationTelemetry telemetry, string key, bool recordValue, DefaultResult<T> defaultValue)
+    {
+        switch (defaultValue.Result)
+        {
+            case int intVal:
+                telemetry.Record(key, intVal, ConfigurationOrigins.Default);
+                break;
+            case double doubleVal:
+                telemetry.Record(key, doubleVal, ConfigurationOrigins.Default);
+                break;
+            case bool boolVal:
+                telemetry.Record(key, boolVal, ConfigurationOrigins.Default);
+                break;
+            default:
+                telemetry.Record(key, defaultValue.TelemetryValue, recordValue, ConfigurationOrigins.Default);
+                break;
+        }
+    }
+
     internal readonly struct HasKeys
     {
         public HasKeys(ITelemeteredConfigurationSource source, IConfigurationTelemetry telemetry, string key, string? fallbackKey1 = null, string? fallbackKey2 = null, string? fallbackKey3 = null)
@@ -196,26 +249,32 @@ internal readonly struct ConfigurationBuilder
             return defaultValue;
         }
 
+        // We have to use different methods for class/struct when we _don't_ have a null value, because NRTs don't work properly otherwise
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public T? GetAs<T>(Func<DefaultResult<T>>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+        public T GetAs<T>(Func<DefaultResult<T>> getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
         {
             var result = GetAs(validator, converter);
+            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value)
+                       ? value
+                       : default!; // TryHandleResult always returns true as getDefaultValue != null
+        }
 
-            // We have a valid value
-            if (result is { Result: { } value, IsValid: true })
-            {
-                return value;
-            }
+        public T? GetAsClass<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+            where T : class
+        {
+            var result = GetAs(validator, converter);
+            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue: null, out var value)
+                       ? value
+                       : null;
+        }
 
-            // don't have a valid value
-            if (getDefaultValue is null)
-            {
-                return default;
-            }
-
-            var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue.TelemetryValue, recordValue: true, ConfigurationOrigins.Default);
-            return defaultValue.Result!;
+        public T? GetAsStruct<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+            where T : struct
+        {
+            var result = GetAs(validator, converter);
+            return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue: null, out var value)
+                       ? value
+                       : null;
         }
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
@@ -587,6 +646,90 @@ internal readonly struct ConfigurationBuilder
             return null;
         }
 
+        // ****************
+        // Raw result accessors
+        // ****************
+        public ClassConfigurationResultWithKey<string> AsStringResult()
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetStringResult(validator: null, converter: null, recordValue: true));
+
+        public ClassConfigurationResultWithKey<string> AsStringResult(Func<string, ParsingResult<string>>? converter)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetStringResult(validator: null, converter, recordValue: true));
+
+        public ClassConfigurationResultWithKey<string> AsStringResult(Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetStringResult(validator, converter, recordValue: true));
+
+        public ClassConfigurationResultWithKey<string> AsRedactedStringResult()
+            => new(Telemetry, Key, recordValue: false, configurationResult: GetStringResult(validator: null, converter: null, recordValue: false));
+
+        public ClassConfigurationResultWithKey<string> AsRedactedStringResult(Func<string, ParsingResult<string>>? converter)
+            => new(Telemetry, Key, recordValue: false, configurationResult: GetStringResult(validator: null, converter, recordValue: false));
+
+        public ClassConfigurationResultWithKey<string> AsRedactedStringResult(Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter)
+            => new(Telemetry, Key, recordValue: false, configurationResult: GetStringResult(validator, converter, recordValue: false));
+
+        public ClassConfigurationResultWithKey<string> AsStringResult(Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
+            => new(Telemetry, Key, recordValue, GetStringResult(validator, converter, recordValue));
+
+        // bool
+        public StructConfigurationResultWithKey<bool> AsBoolResult()
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetBoolResult(validator: null, converter: null));
+
+        public StructConfigurationResultWithKey<bool> AsBoolResult(Func<string, ParsingResult<bool>>? converter)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetBoolResult(validator: null, converter));
+
+        public StructConfigurationResultWithKey<bool> AsBoolResult(Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetBoolResult(validator, converter));
+
+        // T
+        public ClassConfigurationResultWithKey<T> GetAsClassResult<T>(Func<string, ParsingResult<T>> converter)
+            where T : class
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetAs(validator: null, converter));
+
+        public ClassConfigurationResultWithKey<T> GetAsClassResult<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+            where T : class
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetAs(validator, converter));
+
+        public StructConfigurationResultWithKey<T> GetAsStructResult<T>(Func<string, ParsingResult<T>> converter)
+            where T : struct
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetAs(validator: null, converter));
+
+        public StructConfigurationResultWithKey<T> GetAsStructResult<T>(Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+            where T : struct
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetAs(validator, converter));
+
+        // int
+        public StructConfigurationResultWithKey<int> AsInt32Result()
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetInt32Result(validator: null, converter: null));
+
+        public StructConfigurationResultWithKey<int> AsInt32Result(Func<string, ParsingResult<int>>? converter)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetInt32Result(validator: null, converter));
+
+        public StructConfigurationResultWithKey<int> AsInt32Result(Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetInt32Result(validator, converter));
+
+        // double
+        public StructConfigurationResultWithKey<double> AsDoubleResult()
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetDoubleResult(validator: null, converter: null));
+
+        public StructConfigurationResultWithKey<double> AsDoubleResult(Func<string, ParsingResult<double>>? converter)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetDoubleResult(validator: null, converter));
+
+        public StructConfigurationResultWithKey<double> AsDoubleResult(Func<double, bool>? validator, Func<string, ParsingResult<double>>? converter)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetDoubleResult(validator, converter));
+
+        // dictionary
+        public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult()
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(allowOptionalMappings: false, separator: ':'));
+
+        public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult(bool allowOptionalMappings)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(allowOptionalMappings, separator: ':'));
+
+        public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult(char separator)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(allowOptionalMappings: false, separator));
+
+        public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult(bool allowOptionalMappings, char separator)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(allowOptionalMappings, separator));
+
         private ConfigurationResult<string> GetStringResult(Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
             => converter is null
                    ? GetResult(AsStringSelector, validator, recordValue)
@@ -692,6 +835,50 @@ internal readonly struct ConfigurationBuilder
             }
 
             return result;
+        }
+    }
+
+    internal readonly struct StructConfigurationResultWithKey<T>(IConfigurationTelemetry telemetry, string key, bool recordValue, ConfigurationResult<T> configurationResult)
+        where T : struct
+    {
+        public readonly string Key = key;
+        public readonly IConfigurationTelemetry Telemetry = telemetry;
+        public readonly bool RecordValue = recordValue;
+        public readonly ConfigurationResult<T> ConfigurationResult = configurationResult;
+
+        public T WithDefault(T defaultValue)
+            => WithDefault(getDefaultValue: () => defaultValue);
+
+        public T WithDefault(Func<DefaultResult<T>> getDefaultValue)
+        {
+            if (TryHandleResult(Telemetry, Key, ConfigurationResult, RecordValue, getDefaultValue, out var value))
+            {
+                return value;
+            }
+
+            return default; // should never be invoked because we have a value for getDefaultValue
+        }
+    }
+
+    internal readonly struct ClassConfigurationResultWithKey<T>(IConfigurationTelemetry telemetry, string key, bool recordValue, ConfigurationResult<T> configurationResult)
+        where T : class
+    {
+        public readonly string Key = key;
+        public readonly IConfigurationTelemetry Telemetry = telemetry;
+        public readonly bool RecordValue = recordValue;
+        public readonly ConfigurationResult<T> ConfigurationResult = configurationResult;
+
+        public T WithDefault(T defaultValue)
+            => WithDefault(getDefaultValue: () => defaultValue);
+
+        public T WithDefault(Func<DefaultResult<T>> getDefaultValue)
+        {
+            if (TryHandleResult(Telemetry, Key, ConfigurationResult, RecordValue, getDefaultValue, out var value))
+            {
+                return value;
+            }
+
+            return default!; // should never be invoked because we have a value for getDefaultValue
         }
     }
 }
