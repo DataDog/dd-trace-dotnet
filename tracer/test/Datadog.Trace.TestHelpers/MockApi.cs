@@ -42,7 +42,7 @@ namespace Datadog.Trace.TestHelpers
             return objects;
         }
 
-        public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans)
+        public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool appsecStandaloneEnabled)
         {
             // use nuget MessagePack to deserialize
             var spans = global::MessagePack.MessagePackSerializer.Deserialize<List<List<MockSpan>>>(traces);
