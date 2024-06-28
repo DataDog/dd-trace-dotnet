@@ -754,16 +754,7 @@ namespace Datadog.Trace.Tests.Propagators
                 },
                 null);
 
-            string lastParentId = null;
-
-            if (extractFirst == w3CHeaderFirst)
-            {
-                lastParentId = "0123456789abcdef";
-            }
-            else if (w3CHeaderFirst)
-            {
-                lastParentId = "000000003ade68b1";
-            }
+            bool expectW3cParentIds = w3CHeaderFirst || !extractFirst;
 
             result.Should()
                   .NotBeNull()
@@ -773,16 +764,16 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId128 = new TraceId(0x1111111111111111, 4),
                            TraceId = 4,
-                           SpanId = (ulong)(w3CHeaderFirst == extractFirst ? 987654321 : 3540),
+                           SpanId = (ulong)(expectW3cParentIds ? 987654321 : 3540),
                            RawTraceId = "11111111111111110000000000000004",
-                           RawSpanId = w3CHeaderFirst ? "000000003ade68b1" : "0000000000000dd4",
+                           RawSpanId = expectW3cParentIds ? "000000003ade68b1" : "0000000000000dd4",
                            SamplingPriority = 2,
                            PropagatedTags = propagatedTags,
-                           AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
+                           AdditionalW3CTraceState = expectW3cParentIds ? "foo=1" : null,
                            Parent = null,
                            ParentId = null,
                            IsRemote = true,
-                           LastParentId = lastParentId,
+                           LastParentId =  expectW3cParentIds ? "0123456789abcdef" : null,
                        });
         }
 
