@@ -386,7 +386,7 @@ void* dlopen_old(const char* file, int mode)
 
     // call the real dlopen (libc/musl-libc)
     void* result = __real_dlopen(file, mode);
-    __dd_notify_libraries_cache_update();
+    //__dd_notify_libraries_cache_update();
 
     ((char*)&functions_entered_counter)[ENTERED_DL_OPEN]--;
 
@@ -402,7 +402,7 @@ int dlclose_old(void* handle)
 
     // call the real dlopen (libc/musl-libc)
     int result = __real_dlclose(handle);
-    __dd_notify_libraries_cache_update();
+    //__dd_notify_libraries_cache_update();
 
     return result;
 }
