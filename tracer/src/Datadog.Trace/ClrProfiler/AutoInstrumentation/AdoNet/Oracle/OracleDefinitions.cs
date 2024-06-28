@@ -16,8 +16,10 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     // For netcore, the major version of the dll matches the major version of the nuget,
     // that was v2 and v3, but they have recently bumped it from 3 to 23
     // (to have matching version numbers between netcore and netframework I suppose).
+    // here we target the older versions of the netcore dll, and the netframework.
+    // instrumentation for v23 is below, separated to make sure that we don't instrument a hypothetical v5 by mistake.
     MinimumVersion = "2.0.0",
-    MaximumVersion = "23.*.*",
+    MaximumVersion = "4.122.*",
     IntegrationName = nameof(IntegrationId.Oracle),
     DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
@@ -33,6 +35,29 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
         // object Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteScalar()
         typeof(CommandExecuteScalarAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "Oracle.ManagedDataAccess",
+    TypeName = "Oracle.ManagedDataAccess.Client.OracleCommand",
+    // see comment above on version numbers
+    MinimumVersion = "23.0.0",
+    MaximumVersion = "23.*.*",
+    IntegrationName = nameof(IntegrationId.Oracle),
+    DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
+    TargetMethodAttributes = new[]
+    {
+        // int Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteNonQuery()
+        typeof(CommandExecuteNonQueryAttribute),
+        // OracleDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteReader()
+        typeof(CommandExecuteReaderAttribute),
+        // OracleDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteReader(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAttribute),
+        // DbDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteDbDataReader(CommandBehavior)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // object Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteScalar()
+        typeof(CommandExecuteScalarAttribute)
     })]
 
 [assembly: AdoNetClientInstrumentMethods(
