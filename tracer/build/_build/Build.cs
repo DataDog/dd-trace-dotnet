@@ -80,7 +80,7 @@ partial class Build : NukeBuild
     readonly string BenchmarkCategory;
 
     [Parameter("Enables code coverage")]
-    readonly bool CodeCoverage;
+    readonly bool CodeCoverageEnabled;
 
     [Parameter("Enable or Disable fast developer loop")]
     readonly bool FastDevLoop;
@@ -182,7 +182,7 @@ partial class Build : NukeBuild
     Target BuildTracerHome => _ => _
         .Description("Builds the native and managed src, and publishes the tracer home directory")
         .After(Clean)
-        .DependsOn(CompileManagedLoader, BuildNativeTracerHome, BuildManagedTracerHome);
+        .DependsOn(CompileManagedLoader, BuildNativeTracerHome, BuildManagedTracerHome, BuildNativeLoader);
 
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")

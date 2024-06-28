@@ -34,7 +34,7 @@ internal interface ITelemeteredConfigurationSource
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <param name="recordValue">If <c>true</c> the value should be recorded in telemetry. If not, the source value should be redacted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<string>? GetString(
+    ConfigurationResult<string> GetString(
         string key,
         IConfigurationTelemetry telemetry,
         Func<string, bool>? validator,
@@ -49,7 +49,7 @@ internal interface ITelemeteredConfigurationSource
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<int>? GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator);
+    ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator);
 
     /// <summary>
     /// Gets the <see cref="double"/> value of
@@ -60,7 +60,7 @@ internal interface ITelemeteredConfigurationSource
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<double>? GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator);
+    ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator);
 
     /// <summary>
     /// Gets the <see cref="bool"/> value of
@@ -71,7 +71,7 @@ internal interface ITelemeteredConfigurationSource
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<bool>? GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator);
+    ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator);
 
     /// <summary>
     /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
@@ -82,7 +82,7 @@ internal interface ITelemeteredConfigurationSource
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator);
+    ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator);
 
     /// <summary>
     /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
@@ -95,7 +95,7 @@ internal interface ITelemeteredConfigurationSource
     /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
     /// <param name="separator">Sets the character that separates keys and values in the input</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator);
+    ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator);
 
     /// <summary>
     /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
@@ -108,7 +108,7 @@ internal interface ITelemeteredConfigurationSource
     /// a successfully extracted value to determine if it should be accepted</param>
     /// <param name="recordValue">If <c>true</c> the value should be recorded in telemetry. If not, the source value should be redacted</param>
     /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
-    ConfigurationResult<T>? GetAs<T>(
+    ConfigurationResult<T> GetAs<T>(
         string key,
         IConfigurationTelemetry telemetry,
         Func<string, ParsingResult<T>> converter,

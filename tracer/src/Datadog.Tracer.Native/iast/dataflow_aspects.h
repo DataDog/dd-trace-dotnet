@@ -15,10 +15,11 @@ namespace iast
     class ILRewriter;
     struct ILInstr;
 
-    struct InstrumentResult
+    struct DataflowContext
     {
+        ILRewriter* rewriter;
         ILInstr* instruction;
-        bool written;
+        bool aborted;
     };
 
     enum class DataflowAspectFilterValue
@@ -132,9 +133,9 @@ namespace iast
         std::vector<AspectFilter*> _filters;
 
         mdMemberRef _aspectMemberRef = 0;
-        mdMemberRef _aspectTrackMemberRef = 0;
 
     private:
+        bool IsReinstrumentation(mdMemberRef method);
         bool IsTargetMethod(mdMemberRef method);
         void ResolveAspect();
 
@@ -146,7 +147,7 @@ namespace iast
 
         mdMemberRef GetAspectMemberRef() override;
 
-        InstrumentResult Apply(ILRewriter* rewriter, ILInstr* instr);
-        bool ApplyFilters(ILInstr* instruction, ILRewriter* processor);
+        bool Apply(DataflowContext& context);
+        bool ApplyFilters(DataflowContext& context);
     };
 }

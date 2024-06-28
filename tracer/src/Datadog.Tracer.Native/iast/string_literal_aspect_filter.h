@@ -16,8 +16,8 @@ namespace iast
     public:
         StringLiteralsAspectFilter(ModuleAspects* module, bool any = false);
 
-        bool AllowInstruction(ILInstr* instruction, ILRewriter* processor) override;
-        bool AllowInstruction(ILInstr* instruction, ILRewriter* processor, const std::vector<int>& indexes, bool any);
+        bool AllowInstruction(DataflowContext& context) override;
+        bool AllowInstruction(DataflowContext& context, const std::vector<int>& indexes, bool any);
     };
 
     class StringLiteralsAspectFilter_Base : public AspectFilter
@@ -30,7 +30,7 @@ namespace iast
         StringLiteralsAspectFilter_Base(ModuleAspects* module, std::vector<int> indexes, bool any = false);
         StringLiteralsAspectFilter_Base(ModuleAspects* module, int index);
 
-        bool AllowInstruction(ILInstr* instruction, ILRewriter* processor) override;
+        bool AllowInstruction(DataflowContext& context) override;
     };
 
     class StringLiterals_AnyAspectFilter : public StringLiteralsAspectFilter_Base

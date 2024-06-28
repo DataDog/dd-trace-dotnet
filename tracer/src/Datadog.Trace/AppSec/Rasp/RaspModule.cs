@@ -47,7 +47,7 @@ internal static class RaspModule
 
         var rootSpan = Tracer.Instance.InternalActiveScope?.Root?.Span;
 
-        if (rootSpan is null)
+        if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
         {
             return;
         }
@@ -84,7 +84,7 @@ internal static class RaspModule
         var securityCoordinator = new SecurityCoordinator(Security.Instance, rootSpan);
 
         // We need a context for RASP
-        if (!securityCoordinator.HasContext())
+        if (!securityCoordinator.HasContext() || securityCoordinator.IsAdditiveContextDisposed())
         {
             return;
         }

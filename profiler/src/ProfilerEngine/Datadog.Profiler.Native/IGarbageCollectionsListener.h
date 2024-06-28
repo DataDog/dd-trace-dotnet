@@ -26,8 +26,10 @@ public:
         bool isCompacting,
         uint64_t pauseDuration,
         uint64_t totalDuration, // from start to end (includes pauses)
-        uint64_t endTimestamp   // end of GC
-        ) = 0;
+        uint64_t endTimestamp,  // end of GC
+        uint64_t gen2Size,
+        uint64_t lohSize,
+        uint64_t pohSize) = 0;
 
     virtual ~IGarbageCollectionsListener() = default;
 };

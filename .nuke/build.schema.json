@@ -42,7 +42,7 @@
           "type": "string",
           "description": "The id of a build in AzureDevops"
         },
-        "CodeCoverage": {
+        "CodeCoverageEnabled": {
           "type": "boolean",
           "description": "Enables code coverage"
         },

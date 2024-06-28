@@ -1033,7 +1033,7 @@ partial class Build
                             .SetFramework(targetFramework)
                             .EnableCrashDumps()
                             .SetLogsDirectory(TestLogsDirectory)
-                            .When(CodeCoverage, ConfigureCodeCoverage)
+                            .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                             .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -1407,7 +1407,7 @@ partial class Build
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
@@ -1430,7 +1430,7 @@ partial class Build
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
@@ -1499,7 +1499,7 @@ partial class Build
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(GetResultsDirectory(project))
                     .WithDatadogLogger()
                     .SetProjectFile(project));
@@ -1540,7 +1540,7 @@ partial class Build
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
@@ -1592,7 +1592,7 @@ partial class Build
                                 .SetIsDebugRun(isDebugRun)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                 .SetLogsDirectory(TestLogsDirectory)
-                                .When(CodeCoverage, ConfigureCodeCoverage)
+                                .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
                                 .SetProjectFile(project));
@@ -1631,7 +1631,7 @@ partial class Build
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(resultsDirectory)
                     .WithDatadogLogger()
                     .SetProjectFile(project));
@@ -1891,7 +1891,7 @@ partial class Build
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .SetProjectFile(Projects.DdTraceIntegrationTests)
                     .EnableTrxLogOutput(project)
                     .WithDatadogLogger());
@@ -1948,7 +1948,7 @@ partial class Build
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                         .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                        .When(CodeCoverage, ConfigureCodeCoverage)
+                        .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
                             .WithDatadogLogger()
@@ -1970,7 +1970,7 @@ partial class Build
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
@@ -2032,7 +2032,7 @@ partial class Build
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                         .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                        .When(CodeCoverage, ConfigureCodeCoverage)
+                        .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
                             .WithDatadogLogger()
@@ -2055,7 +2055,7 @@ partial class Build
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
@@ -2505,7 +2505,7 @@ partial class Build
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
                              && nativeTracerFiles.Count > 0
-                             && nativeProfilerFiles.Count > 0
+                             && (nativeProfilerFiles.Count > 0 || IsOsx) // profiler doesn't support mac 
                              && nativeLoaderFiles.Count > 0);
 
         if (hasRequiredFiles

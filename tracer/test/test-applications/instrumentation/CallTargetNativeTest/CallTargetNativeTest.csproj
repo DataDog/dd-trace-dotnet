@@ -8,9 +8,11 @@
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowDatadogTraceReference>true</AllowDatadogTraceReference>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Memory" Version="4.5.5" />
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 

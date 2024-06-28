@@ -4,8 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
@@ -110,28 +110,58 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void SetSamplingRules()
         {
-            var tracerSettings = new TracerSettings();
+            // start with local sampling rules only
+            var localSamplingRulesConfig = new[]
+            {
+                new { sample_rate = 0.5,  service = "Service3", resource = "Resource3", },
+            };
+
+            var localSamplingRulesJson = JsonConvert.SerializeObject(localSamplingRulesConfig);
+
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { "DD_TRACE_SAMPLING_RULES", localSamplingRulesJson }
+            });
+
             TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
 
-            // sampling rules is null by default
-            TracerManager.Instance.Settings.RemoteSamplingRules.Should().BeNull();
+            TracerManager.Instance.Settings.CustomSamplingRulesInternal.Should().Be(localSamplingRulesJson);
+            TracerManager.Instance.Settings.CustomSamplingRulesIsRemote.Should().BeFalse();
 
-            var singleAgentRuleOnly = ((TraceSampler)TracerManager.Instance.PerTraceSettings.TraceSampler)!.GetRules();
-            singleAgentRuleOnly.Should().ContainSingle().And.AllBeOfType<AgentSamplingRule>();
+            var rules = ((TraceSampler)TracerManager.Instance.PerTraceSettings.TraceSampler)!.GetRules();
 
-            var samplingRulesConfig = new[]
+            rules.Should()
+                 .BeEquivalentTo(
+                      new ISamplingRule[]
+                      {
+                          new LocalCustomSamplingRule(
+                              rate: 0.1f,
+                              serviceNamePattern: "Service3",
+                              operationNamePattern: null,
+                              resourceNamePattern: "Resource3",
+                              tagPatterns: null,
+                              timeout: TimeSpan.FromSeconds(1),
+                              patternFormat: "glob"),
+                          new AgentSamplingRule()
+                      });
+
+            // set sampling rules "remotely"
+            var remoteSamplingRulesConfig = new[]
             {
                 new { sample_rate = 0.5, provenance = "customer", service = "Service1", resource = "Resource1", },
                 new { sample_rate = 0.1, provenance = "dynamic", service = "Service2", resource = "Resource2", }
             };
 
-            var samplingRulesJson = JsonConvert.SerializeObject(samplingRulesConfig);
+            var configBuilder = CreateConfig(("tracing_sampling_rules", remoteSamplingRulesConfig));
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder);
 
-            // set sampling rules "remotely"
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_sampling_rules", samplingRulesConfig)));
-            TracerManager.Instance.Settings.RemoteSamplingRules.Should().Be(samplingRulesJson);
-            var rules = ((TraceSampler)TracerManager.Instance.PerTraceSettings.TraceSampler)!.GetRules();
+            var remoteSamplingRulesJson = JsonConvert.SerializeObject(remoteSamplingRulesConfig);
+            TracerManager.Instance.Settings.CustomSamplingRulesInternal.Should().Be(remoteSamplingRulesJson);
+            TracerManager.Instance.Settings.CustomSamplingRulesIsRemote.Should().BeTrue();
 
+            rules = ((TraceSampler)TracerManager.Instance.PerTraceSettings.TraceSampler)!.GetRules();
+
+            // new list should include the remote rules, not the local rules
             rules.Should()
                  .BeEquivalentTo(
                       new ISamplingRule[]
