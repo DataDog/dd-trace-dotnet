@@ -5,7 +5,9 @@
 #include "dynamic_dispatcher.h"
 #include "util.h"
 
+#ifdef LINUX
 #include "symbols_overrides.h"
+#endif
 
 #ifndef _WIN32
 #undef EXTERN_C
@@ -23,7 +25,9 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
     {
         case DLL_PROCESS_ATTACH:
         {
+            #ifdef LINUX
             setup_overrides();
+            #endif
 
             // Initialize once for each new process.
             // Return FALSE to fail DLL load.
