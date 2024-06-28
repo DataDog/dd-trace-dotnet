@@ -357,7 +357,7 @@ void initLibrary(void)
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_dl_iterate_phdr)(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data) = NULL;
 
-int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data)
+int dl_iterate_phdr_old(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data)
 {
     check_init();
 
