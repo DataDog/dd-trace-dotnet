@@ -20,8 +20,10 @@ namespace Datadog.Trace.AppSec
     internal class SecuritySettings
     {
         public const string UserTrackingDisabled = "disabled";
-        public const string UserTrackingIdentMode = "ident";
-        public const string UserTrackingAnonMode = "anon";
+        public const string UserTrackingIdentMode = "identification";
+        public const string UserTrackingIdentShortMode = "ident";
+        public const string UserTrackingAnonMode = "anonymization";
+        public const string UserTrackingAnonShortMode = "anon";
         private const string DeprecatedUserTrackingExtendedMode = "extended";
         private const string DeprecatedUserTrackingSafeMode = "safe";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecuritySettings>();
@@ -96,15 +98,19 @@ namespace Datadog.Trace.AppSec
                                                     val =>
                                                         val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
                                                      || val.Equals(UserTrackingIdentMode, StringComparison.OrdinalIgnoreCase)
-                                                     || val.Equals(UserTrackingAnonMode, StringComparison.OrdinalIgnoreCase))
+                                                     || val.Equals(UserTrackingIdentShortMode, StringComparison.OrdinalIgnoreCase)
+                                                     || val.Equals(UserTrackingAnonMode, StringComparison.OrdinalIgnoreCase)
+                                                     || val.Equals(UserTrackingAnonShortMode, StringComparison.OrdinalIgnoreCase))
                                                .ToLowerInvariant();
 
-            if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingSafeMode)
+            if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingSafeMode
+                || UserEventsAutoInstrumentationMode == UserTrackingAnonShortMode)
             {
                 UserEventsAutoInstrumentationMode = UserTrackingAnonMode;
             }
 
-            if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingExtendedMode)
+            if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingExtendedMode
+                || UserEventsAutoInstrumentationMode == UserTrackingIdentShortMode)
             {
                 UserEventsAutoInstrumentationMode = UserTrackingIdentMode;
             }
