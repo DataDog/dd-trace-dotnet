@@ -265,12 +265,12 @@ namespace Datadog.Trace
 
             if (settings.AppsecStandaloneEnabledInternal)
             {
-                var samplerStandalone = new TraceSampler(new TracerRateLimiter(1, 60_000));
+                var samplerStandalone = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: 1, intervalMilliseconds: 60_000));
                 samplerStandalone.RegisterRule(new GlobalSamplingRateRule(1.0f));
                 return samplerStandalone;
             }
 
-            var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal, null));
+            var sampler = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: settings.MaxTracesSubmittedPerSecondInternal, intervalMilliseconds: null));
 
             // sampling rules (remote value overrides local value)
             var samplingRulesJson = settings.CustomSamplingRulesInternal;
