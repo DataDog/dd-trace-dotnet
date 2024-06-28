@@ -1,0 +1,218 @@
+# Sample workflow to run the action
+name: Permissions Advisor
+
+permissions:
+  actions: read
+
+on:
+  push:
+
+jobs:
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: auto-trigger-aas-release.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: auto_add_vnext_milestone_to_pr.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: auto_bump_test_package_versions.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: auto_check_snapshots.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: auto_code_freeze_block_pr.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: auto_create_version_bump_pr.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: auto_deploy_aas_test_apps.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: auto_label_prs.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: auto_update_benchmark_branches.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: codeql-analysis.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: code_freeze_end.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: code_freeze_start.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: create-system-test-docker-base-images.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: create_draft_release.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: create_hotfix_branch.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: datadog-static-analysis.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: force_manual_version_bump.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: generate_package_versions.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: lib-injection-test.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: lib-injection.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: override_version_bump_pr_checks.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: verify_app_trimming_changes_are_persisted.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: verify_files_without_nullability.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: verify_integrations_map_added.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: verify_source_generated_changes_are_persisted.yml
+        count: 20
+
+  advisor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: GitHubSecurityLab/actions-permissions/advisor@v1
+      with:
+        name: verify_span_metadata_markdown_is_updated.yml
+        count: 20
