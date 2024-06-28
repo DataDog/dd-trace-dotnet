@@ -60,10 +60,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await SendRequestsAsync(agent, "/account/reset-memory-db");
             await SendRequestsAsync(agent, "/account/logout");
 
-            var span = span0Ident.First();
-            Output.WriteLine($"usr.id: {span.Tags["usr.id"]}");
-
-            var anonMode = ((object)new AsmFeatures { AutoUserInstrum = new AutoUserInstrum { Mode = "anon" } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection));
+            var anonMode = ((object)new AsmFeatures { AutoUserInstrum = new AutoUserInstrum { Mode = SecuritySettings.UserTrackingAnonMode } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection));
             var request1Files = EnableSecurity is true ? new[] { anonMode } : new[] { active, anonMode };
             var request1 = await agent.SetupRcmAndWait(Output, request1Files, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request1.Should().NotBeNull();
@@ -73,7 +70,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await SendRequestsAsync(agent, "/account/reset-memory-db");
             await SendRequestsAsync(agent, "/account/logout");
 
-            var disabledMode = ((object)new AsmFeatures { AutoUserInstrum = new AutoUserInstrum { Mode = "disabled" } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection));
+            var disabledMode = ((object)new AsmFeatures { AutoUserInstrum = new AutoUserInstrum { Mode = SecuritySettings.UserTrackingDisabled } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection));
             var request2Files = EnableSecurity is true ? new[] { disabledMode } : new[] { active, disabledMode };
             var request2 = await agent.SetupRcmAndWait(Output, request2Files, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request2.Should().NotBeNull();

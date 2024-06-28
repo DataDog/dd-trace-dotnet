@@ -844,8 +844,6 @@ partial class Build
         .Requires(() => Version)
         .Executes(() =>
         {
-            var fpm = Fpm.Value;
-            var gzip = GZip.Value;
             var chmod = Chmod.Value;
 
             // For legacy back-compat reasons, we _must_ add certain files to their expected locations
