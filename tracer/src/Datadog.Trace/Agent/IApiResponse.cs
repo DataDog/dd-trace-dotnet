@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Streams;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -81,6 +82,52 @@ namespace Datadog.Trace.Agent
             };
 
             return shouldRetry;
+        }
+
+        /// <summary>
+        /// Gets the <see cref="Encoding"/> represented by the charset defined in the content type header.
+        /// </summary>
+        /// <param name="contentTypeHeader">The raw content-type header, for example <c>"application/json;charset=utf-8"</c></param>
+        /// <returns>The encoding associated with the charset, or <see cref="EncodingHelpers.Utf8NoBom"/> if the content-type header was not provided,
+        /// if the charset was not provided, or if the charset was not recognized</returns>
+        public static Encoding GetCharsetEncoding(string contentTypeHeader)
+        {
+            // special casing application/json because it's so common
+            if (string.IsNullOrEmpty(contentTypeHeader)
+                || string.Equals("application/json", contentTypeHeader, StringComparison.OrdinalIgnoreCase))
+            {
+                // Default
+                return EncodingHelpers.Utf8NoBom;
+            }
+
+            // text/plain; charset=utf-8; boundary=foo
+            foreach (var pair in contentTypeHeader.SplitIntoSpans(';'))
+            {
+                var parts = pair.AsSpan();
+                var index = parts.IndexOf('=');
+
+                if (index != -1)
+                {
+                    var firstPart = parts.Slice(0, index).Trim();
+
+                    if (!firstPart.Equals("charset".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    var secondPart = parts.Slice(index + 1).Trim();
+                    if (EncodingHelpers.TryGetWellKnownCharset(secondPart, out var encoding))
+                    {
+                        return encoding;
+                    }
+
+                    return EncodingHelpers.TryGetFromCharset(secondPart.ToString(), out var parsed)
+                               ? parsed
+                               : EncodingHelpers.Utf8NoBom;
+                }
+            }
+
+            return EncodingHelpers.Utf8NoBom;
         }
     }
 }
