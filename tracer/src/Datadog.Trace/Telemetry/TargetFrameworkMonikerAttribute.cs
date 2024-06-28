@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace Datadog.Trace.Telemetry
 {
     /// <summary>
-    /// Marks class with TargetFrameworkMoniker field
+    /// Marks class with TargetFrameworkMoniker field for use by source generators
     /// </summary>
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Class)]
