@@ -1,6 +1,7 @@
 
 stages:
   - build
+  - wait_for_images
   - package
   - publish
   - deploy
@@ -13,6 +14,7 @@ variables:
   GIT_PROFILER_REF: master
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
+  DOCKER_BINARIES_IMAGE: ghcr.io/datadog/dd-trace-dotnet/apm-library-dotnet
 
 build:
   only:
@@ -39,6 +41,84 @@ build:
     expire_in: 2 weeks
     paths:
     - artifacts
+
+wait-single-step-snapshot-packages:
+  #only:
+  #  - master
+  stage: wait_for_images
+  image: registry.ddbuild.io/images/ci_docker_base
+  tags: ["runner:docker"]
+  when: delayed
+  start_in: 20 minutes 
+  before_script:
+    - export GH_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.gh_ghcr_token --with-decryption --query "Parameter.Value" --out text) 
+  script: |
+    #Create a directory to store the image
+    target_dir=artifacts
+    mkdir -p $target_dir
+    image="${DOCKER_BINARIES_IMAGE}:${CI_COMMIT_SHA}"
+
+    #Login to the ghcr registry to pull private images
+    echo $GH_TOKEN|docker login ghcr.io -u publisher --password-stdin
+    
+    #Wait for the image to be available
+    echo "Waiting for the image [$image] to be available"
+    TIMEOUT=3000
+    STARTED=0
+    until (( STARTED == TIMEOUT )) || docker pull $image; do
+        sleep 100
+        (( STARTED += 100 ))
+    done
+    (( STARTED < TIMEOUT ))
+
+    #Here, the image should be available, otherwise the job will fail on command 'docker save'
+    .gitlab/extract_docker_image.sh $image $target_dir
+
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+    - artifacts/PACKAGE_VERSION
+
+compute-ci-package-snapshot-version:
+  image: registry.ddbuild.io/ci/auto_inject/gitlab:current
+  tags: ["arch:amd64"]
+  stage: wait_for_images
+  needs:
+    - wait-single-step-snapshot-packages
+  script:
+    - cp .gitlab/.gitlab-ci-snapshot-package-test-template.yml gitlab-ci-snapshot-package-test.yml 
+    - |
+      echo "Generating CI DEV configuration"
+      if test -f "artifacts/PACKAGE_VERSION"; then
+        #Set the version of the package
+        DOTNET_PACKAGE_DEV_VERSION=$(cat artifacts/PACKAGE_VERSION).dev.${CI_COMMIT_SHORT_SHA}
+        
+        DOTNET_PACKAGE_MAJOR_VERSION=$(cat artifacts/PACKAGE_VERSION)
+        echo "DOTNET_PACKAGE_DEV_VERSION=${DOTNET_PACKAGE_DEV_VERSION}"
+        echo "DOTNET_PACKAGE_MAJOR_VERSION=${DOTNET_PACKAGE_MAJOR_VERSION}"
+
+        #Set values in the gitlab-ci file
+        sed -i "s/DOTNET_PACKAGE_DEV_VERSION:/DOTNET_PACKAGE_DEV_VERSION: ${DOTNET_PACKAGE_DEV_VERSION}/g" gitlab-ci-snapshot-package-test.yml 
+        sed -i 's/description: "Specific version for current build"/##/g' gitlab-ci-snapshot-package-test.yml
+        sed -i "s/DOTNET_PACKAGE_MAJOR_VERSION:/DOTNET_PACKAGE_MAJOR_VERSION: ${DOTNET_PACKAGE_MAJOR_VERSION}/g" gitlab-ci-snapshot-package-test.yml 
+        sed -i 's/description: "Major version. By default all builds are generated with the same major version"/##/g' gitlab-ci-snapshot-package-test.yml
+      fi
+      echo "----------------------------------"
+      echo "----------------------------------"
+      cat gitlab-ci-snapshot-package-test.yml   
+  artifacts:
+    paths:
+      - gitlab-ci-snapshot-package-test.yml
+
+trigger-package-snapshot-testing:
+  stage: wait_for_images
+  needs:
+    - compute-ci-package-snapshot-version
+  trigger:
+    strategy: depend
+    include:
+      - artifact: gitlab-ci-snapshot-package-test.yml
+        job: compute-ci-package-snapshot-version
 
 publish:
   only:

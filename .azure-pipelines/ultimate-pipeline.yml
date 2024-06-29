@@ -111,8 +111,8 @@ variables:
   ddApiKey: $(DD_API_KEY)
   slackWebhookUrl: $(SLACK_WEBHOOK_URL)
   isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
-  isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
-  isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
+  isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main', 'refs/remotes/origin/robertomonteromiguel/build_deb_rpm_packages', 'robertomonteromiguel/build_deb_rpm_packages')]
+  isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main', 'refs/remotes/origin/robertomonteromiguel/build_deb_rpm_packages', 'robertomonteromiguel/build_deb_rpm_packages'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
   # Only run code coverage when requested
   # Coverlet relies on IL rewriting, which currently breaks tests which explictly check the IL
@@ -3817,8 +3817,9 @@ stages:
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
 
 # Only run these on merges to master etc
+#eq(variables['Build.Reason'], 'IndividualCI'), 
 - stage: upload_container_images
-  condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables.isMainRepository, true), eq(variables.isMainOrReleaseBranch, true))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
   dependsOn: [upload_to_azure]
   jobs:
     - job: upload
@@ -3827,18 +3828,19 @@ stages:
         vmImage: ubuntu-latest
       steps:
       - checkout: none
-      - bash: |
-          echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/lib-injection.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId)"
-          curl \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: token $GITHUB_TOKEN"\
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/lib-injection.yml/dispatches \
-            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)","is_latest":"$(isMainBranch)"}}'
-        displayName: Start lib-injection GitHub Actions worfklow
-        env:
-          GITHUB_TOKEN: $(GITHUB_TOKEN)
+    #  - bash: |
+    #      echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/lib-injection.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId)"
+    #      curl \
+    #        -X POST \
+    #        -H "Accept: application/vnd.github+json" \
+    #        -H "Authorization: token $GITHUB_TOKEN"\
+    #        -H "X-GitHub-Api-Version: 2022-11-28" \
+    #        https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/lib-injection.yml/dispatches \
+    #        -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)","is_latest":"$(isMainBranch)"}}'
+    #        
+    #    displayName: Start lib-injection GitHub Actions worfklow
+    #    env:
+    #      GITHUB_TOKEN: $(GITHUB_TOKEN)
 
       - bash: |
           echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId) and is_release_version=False"
@@ -3848,9 +3850,11 @@ stages:
             -H "Authorization: token $GITHUB_TOKEN"\
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/create-system-test-docker-base-images.yml/dispatches \
-            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)"}}'
+            -d '{"ref":"robertomonteromiguel/build_deb_rpm_packages","inputs":{"azdo_build_id":"$(Build.BuildId)","commit_sha":"$(OriginalCommitId)"}}'
+            
         displayName: Start the generation of docker base images on GitHub Actions worfklow
-        condition: eq(variables['isMainBranch'], true)
+       #TODO set condition again
+       #condition: eq(variables['isMainBranch'], true)
         env:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 
