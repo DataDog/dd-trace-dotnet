@@ -70,6 +70,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
+        // Create the DB and populate it with some data
         [Route("PopulateDDBB")]
         public ActionResult PopulateDDBB()
         {
