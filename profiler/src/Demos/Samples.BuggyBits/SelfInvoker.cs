@@ -60,6 +60,11 @@ namespace BuggyBits
                         foreach (var asyncEndpoint in asyncEndpoints)
                         {
                             await ExecuteIterationAsync(asyncEndpoint);
+
+                            if (_exitToken.IsCancellationRequested)
+                            {
+                                break;
+                            }
                         }
 
                         await Task.Delay(SleepDuration);
