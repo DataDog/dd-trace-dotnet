@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
@@ -14,6 +15,8 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
@@ -25,6 +28,8 @@ namespace Datadog.Trace.Agent
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentWriter>();
 
         private static readonly ArraySegment<byte> EmptyPayload = new(new byte[] { 0x90 });
+
+        private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private readonly ConcurrentQueue<WorkItem> _pendingTraces = new ConcurrentQueue<WorkItem>();
         private readonly IDogStatsd _statsd;
@@ -133,6 +138,25 @@ namespace Datadog.Trace.Agent
                 _statsd.Increment(TracerMetricNames.Queue.EnqueuedTraces);
                 _statsd.Increment(TracerMetricNames.Queue.EnqueuedSpans, trace.Count);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void LogSpanDebugInformation(TraceContext traceContext, ArraySegment<Span> trace)
+        {
+            foreach (var span in trace)
+            {
+                Log.Debug(
+                    "Span write to agent: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, SamplingPriority: {SamplingPriority} Tags: [{Tags}])\nDetails:{ToString}",
+                    new object[] { span.Context.RawSpanId, span.Context.ParentIdInternal, span.Context.RawTraceId, span.ServiceName, span.ResourceName, span.OperationName, traceContext.SamplingPriority, span.Tags, span.ToString() });
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void LogRootSpanDebugInformation(TraceContext traceContext, Span span)
+        {
+            Log.Debug(
+                    "RootSpan write to agent: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, SamplingPriority: {SamplingPriority} Tags: [{Tags}], TraceContext Tags: [{TraceTags}])\nDetails:{ToString}",
+                    new object[] { span.Context.RawSpanId, span.Context.ParentIdInternal, span.Context.RawTraceId, span.ServiceName, span.ResourceName, span.OperationName, traceContext.SamplingPriority, span.Tags, traceContext.Tags, span.ToString() });
         }
 
         public async Task FlushAndCloseAsync()
@@ -460,6 +484,14 @@ namespace Datadog.Trace.Agent
                 else
                 {
                     rootSpan.Tags.SetMetric(Metrics.TracesKeepRate, currentKeepRate);
+                }
+
+                if (IsLogLevelDebugEnabled)
+                {
+                    var traceContext = spans.Array![spans.Offset].Context.TraceContext;
+                    // foreach span write out the enhanced debug information
+                    LogRootSpanDebugInformation(traceContext, rootSpan);
+                    LogSpanDebugInformation(traceContext, spans);
                 }
             }
 
