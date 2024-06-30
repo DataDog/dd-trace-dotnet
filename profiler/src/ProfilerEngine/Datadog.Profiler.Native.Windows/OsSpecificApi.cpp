@@ -105,6 +105,15 @@ uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
                 Log::Error("GetThreadCpuTime() error calling GetThreadTimes ", message);
             }
         }
+        if (errorCode == ERROR_INVALID_HANDLE)
+        {
+            static bool alreadyLogged = false;
+            if (!alreadyLogged)
+            {
+                alreadyLogged = true;
+                Log::Error("GetThreadCpuTime() Invalid handle - error calling GetThreadTimes ", pThreadInfo->GetOsThreadHandle(), " invalid handle is: ", INVALID_HANDLE_VALUE);
+            }
+        }
     }
     return 0;
 }
