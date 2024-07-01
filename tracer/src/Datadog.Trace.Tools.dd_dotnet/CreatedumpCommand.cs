@@ -421,7 +421,10 @@ internal class CreatedumpCommand : Command
 
     private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread)
     {
-        var lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Datadog.Profiler.Native.so"));
+        var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
+        var profilerLibrary = $"Datadog.Profiler.Native.{extension}";
+
+        var lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, profilerLibrary));
 
         var export = NativeLibrary.GetExport(lib, "CreateCrashReport");
 

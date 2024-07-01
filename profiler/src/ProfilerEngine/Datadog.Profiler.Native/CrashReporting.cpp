@@ -18,13 +18,9 @@ extern "C"
 
 extern "C" IUnknown * STDMETHODCALLTYPE CreateCrashReport(int32_t pid)
 {
-#ifdef _WIN32
-    return nullptr;
-#else
     auto instance = CrashReporting::Create(pid);
     instance->AddRef();
     return (IUnknown*)instance;
-#endif
 }
 
 CrashReporting::CrashReporting(int32_t pid)

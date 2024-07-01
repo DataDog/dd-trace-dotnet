@@ -219,6 +219,7 @@
   <ItemGroup>
     <ClInclude Include="..\Datadog.Profiler.Native\DllMain.h" />
     <ClInclude Include="..\Datadog.Profiler.Native.Windows\resource.h" />
+    <ClInclude Include="CrashReportingWindows.h" />
     <ClInclude Include="EtwEventsManager.h" />
     <ClInclude Include="ETW\EtwEventsHandler.h" />
     <ClInclude Include="ETW\IIpcLogger.h" />
@@ -236,6 +237,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Datadog.Profiler.Native\DllMain.cpp" />
+    <ClCompile Include="CrashReportingWindows.cpp" />
     <ClCompile Include="EtwEventsManager.cpp" />
     <ClCompile Include="ETW\EtwEventsHandler.cpp" />
     <ClCompile Include="ETW\IpcClient.cpp" />
