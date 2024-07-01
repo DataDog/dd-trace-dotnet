@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
     AssemblyName = "Datadog.Trace.Manual",
     TypeName = "Datadog.Trace.Ci.TestModule",
     MethodName = "InternalCreate",
-    ReturnTypeName = "Datadog.Trace.Ci.TestModule",
+    ReturnTypeName = "Datadog.Trace.Ci.ITestModule",
     ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.String, "System.Nullable`1[System.DateTimeOffset]"],
     MinimumVersion = ManualInstrumentationConstants.MinVersion,
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
