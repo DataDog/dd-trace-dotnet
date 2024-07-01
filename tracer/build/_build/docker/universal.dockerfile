@@ -22,34 +22,17 @@ RUN apt-get update \
     && apt-get -y upgrade \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
       cmake \
-        git \
-        procps \
-        wget \
-        curl \
-        cmake \
-        make \
-        gcc \
-        build-essential \
-        rpm \
-        ruby \
-        ruby-dev \
-        rubygems \
-        uuid-dev \
-        autoconf \
-        libtool \
-        liblzma-dev \
-        gdb \
-        cppcheck \
-    zlib1g-dev \
-        \
-        # required to install clang
-        lsb-release \
-        software-properties-common \
-        gnupg \
-        \
-    && gem install --version 1.6.0 --user-install git \
-    && gem install --version 2.7.6 dotenv \
-    && gem install --version 1.14.2 --minimal-deps --no-document fpm \
+      git \
+      wget \
+      curl \
+      cmake \
+      make \
+      gcc \
+      build-essential \
+      uuid-dev \
+      autoconf \
+      gdb \
+      \
     && rm -rf /var/lib/apt/lists/*
 
 # We need to set this environment variable to make sure
