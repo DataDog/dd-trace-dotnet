@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Pr
 /// <summary>
 /// Duck type for the SpanContext and ReadOnlySpanContext types in Datadog.Trace.Manual
 /// </summary>
-[DuckCopy]
+[DuckCopy("Datadog.Trace.SpanContext", "Datadog.Trace.Manual")]
 internal struct SpanContextProxy
 {
     public ulong TraceId;
