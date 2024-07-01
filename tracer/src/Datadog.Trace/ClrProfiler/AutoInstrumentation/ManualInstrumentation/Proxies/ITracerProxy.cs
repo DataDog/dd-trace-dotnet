@@ -5,11 +5,14 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 
 /// <summary>
 /// Duck type for ITracer in Datadog.Trace.Manual
 /// </summary>
+[DuckType("Datadog.Trace.Tracer", "Datadog.Trace.Manual")]
 internal interface ITracerProxy
 {
     public object AutomaticTracer { get; }
