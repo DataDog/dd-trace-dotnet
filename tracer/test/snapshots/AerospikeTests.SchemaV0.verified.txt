@@ -12,7 +12,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -34,7 +35,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -56,7 +58,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -78,7 +81,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -102,7 +106,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -126,7 +131,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -150,7 +156,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -174,7 +181,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -197,7 +205,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -221,7 +230,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -245,7 +255,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -269,7 +280,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -293,7 +305,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -317,7 +330,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -341,7 +355,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -365,7 +380,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -389,7 +405,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -413,7 +430,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -437,7 +455,8 @@
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,

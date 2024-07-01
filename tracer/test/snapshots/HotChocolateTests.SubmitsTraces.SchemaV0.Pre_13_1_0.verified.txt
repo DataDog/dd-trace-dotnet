@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -52,7 +52,8 @@
 },
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -204,7 +205,8 @@ query Book {
 },
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -233,7 +235,8 @@ mutation m {
 },
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -278,7 +281,8 @@ errors: [
 },
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -316,7 +320,8 @@ subscription NotImplementedSub {
 },
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.HotChocolate
     },
     Metrics: {
       _dd.top_level: 1.0

@@ -51,7 +51,8 @@
       http.url: http://localhost:00000/api/trigger,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -143,7 +144,8 @@
       http.url: http://localhost:00000/api/simple,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -168,7 +170,8 @@
       http.url: http://localhost:00000/api/exception,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -193,7 +196,8 @@
       http.url: http://localhost:00000/api/error,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -220,7 +224,8 @@
       http.url: http://localhost:00000/api/badrequest,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0

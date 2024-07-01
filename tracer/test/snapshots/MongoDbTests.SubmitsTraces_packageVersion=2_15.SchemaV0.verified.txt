@@ -94,7 +94,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -117,7 +118,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -140,7 +142,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -163,7 +166,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -186,7 +190,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -209,7 +214,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -232,7 +238,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -255,7 +262,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -278,7 +286,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -301,7 +310,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -324,7 +334,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -347,7 +358,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -370,7 +382,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -393,7 +406,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -416,7 +430,8 @@
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0

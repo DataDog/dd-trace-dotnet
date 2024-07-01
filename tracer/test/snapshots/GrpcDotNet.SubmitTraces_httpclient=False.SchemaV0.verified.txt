@@ -41,7 +41,8 @@
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -144,7 +145,8 @@
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -249,7 +251,8 @@
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -356,7 +359,8 @@
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -463,7 +467,8 @@
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -570,7 +575,8 @@
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -681,7 +687,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -788,7 +795,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -895,7 +903,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1002,7 +1011,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1111,7 +1121,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1214,7 +1225,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1317,7 +1329,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1420,7 +1433,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1525,7 +1539,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0

@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -13,7 +13,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -33,7 +34,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -53,7 +55,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -73,7 +76,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -93,7 +97,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -113,7 +118,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -133,7 +139,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -153,7 +160,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -173,7 +181,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -193,7 +202,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -213,7 +223,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -233,7 +244,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -253,7 +265,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -273,7 +286,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -293,7 +307,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -313,7 +328,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -333,7 +349,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -353,7 +370,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -373,7 +391,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -393,7 +412,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -413,7 +433,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -433,7 +454,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -453,7 +475,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -473,7 +496,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -493,7 +517,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -513,7 +538,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -533,7 +559,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -553,7 +580,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -573,7 +601,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -593,7 +622,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -613,7 +643,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -633,7 +664,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -653,7 +685,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -673,7 +706,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -693,7 +727,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -713,7 +748,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -733,7 +769,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -753,7 +790,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -773,7 +811,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -793,7 +832,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -813,7 +853,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -833,7 +874,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -853,7 +895,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -873,7 +916,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -893,7 +937,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -913,7 +958,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -933,7 +979,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -953,7 +1000,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -973,7 +1021,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -993,7 +1042,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1013,7 +1063,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1033,7 +1084,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1053,7 +1105,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1073,7 +1126,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1093,7 +1147,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1113,7 +1168,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1133,7 +1189,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1153,7 +1210,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1173,7 +1231,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1193,7 +1252,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1213,7 +1273,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1233,7 +1294,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1253,7 +1315,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1273,7 +1336,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1293,7 +1357,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1313,7 +1378,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1333,7 +1399,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1353,7 +1420,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1373,7 +1441,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1393,7 +1462,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1413,7 +1483,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1433,7 +1504,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1453,7 +1525,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1473,7 +1546,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1493,7 +1567,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1513,7 +1588,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1533,7 +1609,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1553,7 +1630,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1573,7 +1651,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1593,7 +1672,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1613,7 +1693,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1633,7 +1714,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1653,7 +1735,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1673,7 +1756,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1693,7 +1777,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1713,7 +1798,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1733,7 +1819,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1753,7 +1840,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1773,7 +1861,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1793,7 +1882,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1813,7 +1903,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1833,7 +1924,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1853,7 +1945,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1873,7 +1966,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1893,7 +1987,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1913,7 +2008,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1933,7 +2029,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1953,7 +2050,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1973,7 +2071,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1993,7 +2092,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2013,7 +2113,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2033,7 +2134,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2053,7 +2155,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2073,7 +2176,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2093,7 +2197,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2113,7 +2218,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2133,7 +2239,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2153,7 +2260,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2173,7 +2281,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2193,7 +2302,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2213,7 +2323,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2233,7 +2344,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2253,7 +2365,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2273,7 +2386,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2293,7 +2407,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2313,7 +2428,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2333,7 +2449,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2353,7 +2470,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2373,7 +2491,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2393,7 +2512,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2413,7 +2533,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2433,7 +2554,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2453,7 +2575,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2473,7 +2596,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2493,7 +2617,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2513,7 +2638,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2533,7 +2659,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2553,7 +2680,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2573,7 +2701,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2593,7 +2722,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2613,7 +2743,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2633,7 +2764,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2653,7 +2785,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2673,7 +2806,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2693,7 +2827,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2713,7 +2848,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2733,7 +2869,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2753,7 +2890,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2773,7 +2911,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2793,7 +2932,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2813,7 +2953,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2833,7 +2974,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2853,7 +2995,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2873,7 +3016,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2893,7 +3037,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2913,7 +3058,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2933,7 +3079,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2953,7 +3100,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2973,7 +3121,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2993,7 +3142,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3013,7 +3163,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3033,7 +3184,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3053,7 +3205,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3073,7 +3226,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3093,7 +3247,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3113,7 +3268,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3133,7 +3289,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3153,7 +3310,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3173,7 +3331,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3193,7 +3352,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3213,7 +3373,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3233,7 +3394,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3253,7 +3415,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3273,7 +3436,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3293,7 +3457,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3313,7 +3478,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3333,7 +3499,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3353,7 +3520,8 @@
       env: integration_tests,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
