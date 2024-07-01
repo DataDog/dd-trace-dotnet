@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
 /// <summary>
 /// Duck type for Datadog.Trace.Ci.TestParameters in Datadog.Trace.Manual
 /// </summary>
+[DuckType("Datadog.Trace.Ci.TestParameters", "Datadog.Trace.Manual")]
 internal interface ITestParameters : IDuckType
 {
     public Dictionary<string, object>? Metadata { get; }
