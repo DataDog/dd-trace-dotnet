@@ -86,6 +86,21 @@ public static class Program
             RunSpanOperationName();
             RunSpanReservedAttributes();
         }
+
+        using var missingServiceTracerProvider = Sdk.CreateTracerProviderBuilder()
+            .AddSource("MissingServiceName")
+            .AddActivitySourceIfEnvironmentVariablePresent()
+            .AddConsoleExporter()
+            .AddOtlpExporterIfEnvironmentVariablePresent()
+            .Build();
+
+        var missingServiceTracer = missingServiceTracerProvider.GetTracer("MissingServiceName");
+
+        using (var unknownServiceSpan = missingServiceTracer.StartRootSpan("service.name should be the DefaultServiceName value"))
+        {
+            Thread.Sleep(100);
+        }
+
     }
 
     private static async Task RunStartSpanOverloadsAsync(TelemetrySpan span)
