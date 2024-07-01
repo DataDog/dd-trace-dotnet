@@ -276,6 +276,29 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             return *pcProperties > 0 ? HResult.S_OK : HResult.S_FALSE;
         }
 
+        public unsafe HResult EnumMethodsWithName(HCORENUM* phEnum, MdTypeDef cl, char* szName, MdMethodDef* rMethods, uint cMax, uint* pcTokens)
+        {
+            var typeDef = LookupToken(cl.Value) as TypeDefinition;
+            if (typeDef is null) { return HResult.E_INVALIDARG; }
+
+            var name = System.Runtime.InteropServices.Marshal.PtrToStringAuto((IntPtr)szName);
+            Enumerator<MethodDefinition, MdMethodDef> enumerator;
+            if (phEnum is null || phEnum->Value == 0)
+            {
+                *phEnum = new HCORENUM(enumId++);
+                enumerator = new Enumerator<MethodDefinition, MdMethodDef>(typeDef.Methods.Where(m => m.Name == name).ToArray(), (i) => new MdMethodDef(i.MetadataToken.ToInt32()));
+                enumerators[phEnum->Value] = enumerator;
+            }
+            else
+            {
+                enumerator = (Enumerator<MethodDefinition, MdMethodDef>)enumerators[phEnum->Value];
+            }
+
+            *pcTokens = enumerator.Fetch(rMethods, cMax);
+
+            return *pcTokens > 0 ? HResult.S_OK : HResult.S_FALSE;
+        }
+
         public unsafe HResult GetCustomAttributeProps(MdCustomAttribute cv, MdToken* ptkObj, MdToken* ptkType, IntPtr* ppBlob, uint* pcbSize)
         {
             var customAttribute = LookupToken(cv);
@@ -447,6 +470,20 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             return HResult.S_OK;
         }
 
+        public unsafe HResult FindMethod(MdTypeDef td, char* szName, nint* pvSigBlob, uint cbSigBlob, MdMethodDef* pmb)
+        {
+            var type = LookupToken(td.Value) as TypeDefinition;
+            if (type is null) { return HResult.E_INVALIDARG; }
+
+            var name = System.Runtime.InteropServices.Marshal.PtrToStringAuto((IntPtr)szName);
+            var method = type.Methods.FirstOrDefault(m => m.Name == name);
+            if (method is null) { return HResult.E_INVALIDARG; }
+
+            *pmb = new MdMethodDef(method.MetadataToken.ToInt32());
+
+            return HResult.S_OK;
+        }
+
         #endregion
 
         #region IMetadataEmit
@@ -582,6 +619,30 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             *pmsig = new MdSignature(Module.Definition.AddRaw(sig).ToInt32());
 
             return HResult.S_OK;
+        }
+
+        public unsafe HResult DefineImportMember(IntPtr pAssemImport, byte* pbHashValue, int cbHashValue, IntPtr pImport, MdToken mbMember, IntPtr pAssemEmit, MdToken tkParent, MdMemberRef* pmr)
+        {
+            var metadataAssemblyImport = new NativeObjects.IMetaDataAssemblyImportInvoker(pAssemImport);
+            var metadataImport = new NativeObjects.IMetaDataImportInvoker(pImport);
+            var metadataAssemblyEmit = new NativeObjects.IMetaDataAssemblyEmitInvoker(pAssemEmit);
+
+            MdToken type;
+            char[] name = new char[256];
+            uint nameLength;
+            int attr;
+            IntPtr pbSigBlob;
+            uint pnSigBlob;
+
+            fixed (char* pName = name)
+            {
+                var hr = metadataImport.GetMemberProps(mbMember, &type, pName, 256, &nameLength, &attr, &pbSigBlob, &pnSigBlob, null, null, null, null, null);
+                if (hr.Failed) { return hr; }
+
+                hr = DefineMemberRef(tkParent, pName, pbSigBlob, (int)pnSigBlob, pmr);
+
+                return hr;
+            }
         }
 
         #endregion

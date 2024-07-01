@@ -1,3 +1,4 @@
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Xml.Linq;
@@ -17,7 +18,7 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
     private CorPrfMonitor eventsLow = CorPrfMonitor.COR_PRF_MONITOR_NONE;
     private CorPrfHighMonitor eventsHigh = CorPrfHighMonitor.COR_PRF_HIGH_MONITOR_NONE;
 
-    private Dictionary<nint, AppDomainInfo> appDomains = new Dictionary<nint, AppDomainInfo>();
+    private AppDomainInfo appDomainInfo = new AppDomainInfo(1, "AoT");
     private Dictionary<nint, AssemblyInfo> assemblies = new Dictionary<nint, AssemblyInfo>();
     private Dictionary<nint, ModuleInfo> modules = new Dictionary<nint, ModuleInfo>();
     private Dictionary<nint, MethodInfo> functions = new Dictionary<nint, MethodInfo>();
@@ -76,28 +77,48 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
         }
     }
 
-    public unsafe bool ProcessAssembly(string path)
+    public unsafe void ProcessApp(string appAssemblyPath, string otputPath = "./output")
     {
-        // Read assembly with mono cecil
+        SetOutput(otputPath);
+        var folder = Path.GetDirectoryName(appAssemblyPath) ?? string.Empty;
         var readParams = new ReaderParameters(ReadingMode.Immediate);
-        var assembly = AssemblyDefinition.ReadAssembly(path, readParams);
 
+        var systemRuntimeAssembly = AssemblyDefinition.ReadAssembly(Path.Combine(folder, "System.Runtime.dll"), readParams);
+        ProcessAssembly(systemRuntimeAssembly);
+
+        var datadogPath = Path.GetFullPath("Datadog.Trace.dll");
+        var datadogAssembly = AssemblyDefinition.ReadAssembly(datadogPath, readParams);
+        ProcessAssembly(datadogAssembly);
+
+        var appAssembly = AssemblyDefinition.ReadAssembly(appAssemblyPath, readParams);
+        ProcessAssembly(appAssembly);
+
+        // foreach (var reference in appAssembly.MainModule.AssemblyReferences)
+        // {
+        //     var assembly = AssemblyDefinition.ReadAssembly(appAssemblyPath, readParams);
+        //     ProcessAssembly(assembly);
+        // }
+    }
+
+    internal void InitAppDomain()
+    {
         // AppDomain
-        var appDomainInfo = new AppDomainInfo(appDomains.Count + 1);
-        appDomains[appDomainInfo.Id.Value] = appDomainInfo;
         if (eventsLow.HasFlag(CorPrfMonitor.COR_PRF_MONITOR_APPDOMAIN_LOADS))
         {
             profiler.AppDomainCreationStarted(appDomainInfo.Id);
             profiler.AppDomainCreationFinished(appDomainInfo.Id, HResult.S_OK);
         }
+    }
 
+    internal unsafe bool ProcessAssembly(AssemblyDefinition assembly)
+    {
         // Assembly
+        var path = assembly.MainModule.FileName;
         var assemblyInfo = new AssemblyInfo(this, assembly, assemblies.Count + 1, appDomainInfo, assembly.Name.Name, path, GetModuleId);
         assemblies[assemblyInfo.Id.Value] = assemblyInfo;
         if (eventsLow.HasFlag(CorPrfMonitor.COR_PRF_MONITOR_ASSEMBLY_LOADS))
         {
             profiler.AssemblyLoadStarted(assemblyInfo.Id);
-            profiler.AssemblyLoadFinished(assemblyInfo.Id, HResult.S_OK);
         }
 
         // Module
@@ -107,6 +128,11 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
         {
             profiler.ModuleLoadStarted(moduleInfo.Id);
             profiler.ModuleLoadFinished(moduleInfo.Id, HResult.S_OK);
+        }
+
+        if (eventsLow.HasFlag(CorPrfMonitor.COR_PRF_MONITOR_ASSEMBLY_LOADS))
+        {
+            profiler.AssemblyLoadFinished(assemblyInfo.Id, HResult.S_OK);
         }
 
         // Process all methods in the assembly
@@ -140,26 +166,6 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
     {
         assemblies.TryGetValue(id, out var res);
         return res;
-    }
-
-    private AppDomainInfo GetAppDomain()
-    {
-        if (appDomains.Count == 0)
-        {
-            var appDomainInfo = new AppDomainInfo(appDomains.Count + 1);
-            appDomains[appDomainInfo.Id.Value] = appDomainInfo;
-            if (eventsLow.HasFlag(CorPrfMonitor.COR_PRF_MONITOR_APPDOMAIN_LOADS))
-            {
-                profiler.AppDomainCreationStarted(appDomainInfo.Id);
-                profiler.AppDomainCreationFinished(appDomainInfo.Id, HResult.S_OK);
-            }
-
-            return appDomainInfo;
-        }
-        else
-        {
-            return appDomains.First().Value;
-        }
     }
 
     private int GetModuleId()
@@ -252,11 +258,10 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
 
     public unsafe HResult GetAppDomainInfo(AppDomainId appDomainId, uint cchName, uint* pcchName, char* szName, ProcessId* pProcessId)
     {
-        var appDomain = appDomains[appDomainId.Value];
-        appDomain.Name.CopyTo(cchName, szName, pcchName);
+        appDomainInfo.Name.CopyTo(cchName, szName, pcchName);
         if (pProcessId is not null)
         {
-            *pProcessId = appDomain.ProcessId;
+            *pProcessId = appDomainInfo.ProcessId;
         }
 
         return HResult.S_OK;

@@ -76,7 +76,7 @@ internal unsafe interface IMetaDataImport : IUnknown
         char* szName,                 // [IN] Limit results to those with this name.
         MdMethodDef* rMethods,             // [OU] Put MethodDefs here.
         uint cMax,                   // [IN] Max MethodDefs to put.
-        out uint pcTokens);        // [OUT] Put # put here.
+        uint* pcTokens);        // [OUT] Put # put here.
 
     HResult EnumFields(                  // S_OK, S_FALSE, or error.
         HCORENUM* phEnum,                // [IN|OUT] Pointer to the enum.
@@ -135,7 +135,7 @@ internal unsafe interface IMetaDataImport : IUnknown
         char* szName,                 // [IN] member name
         nint* pvSigBlob,          // [IN] point to a blob value of CLR signature
         uint cbSigBlob,              // [IN] count of bytes in the signature blob
-        out MdMethodDef pmb);             // [OUT] matching memberdef
+        MdMethodDef* pmb);             // [OUT] matching memberdef
 
     HResult FindField(
         MdTypeDef td,                     // [IN] given typedef
