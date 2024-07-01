@@ -82,7 +82,7 @@ internal unsafe interface IMetaDataEmit : IUnknown
         MdToken     mbMember,               // [IN] Member in import scope.
         IntPtr pAssemEmit,                  // [IN] Assembly into which the Member is imported. IMetaDataAssemblyEmit* pAssemEmit
         MdToken     tkParent,               // [IN] Classref or classdef in emit scope.
-        out MdMemberRef pmr);               // [OUT] Put member ref here.
+        MdMemberRef* pmr);               // [OUT] Put member ref here.
 
     HResult DefineEvent(
         MdTypeDef td,                       // [IN] the class/interface on which the event is being defined

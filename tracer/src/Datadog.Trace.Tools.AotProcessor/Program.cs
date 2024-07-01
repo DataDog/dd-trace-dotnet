@@ -18,11 +18,10 @@ internal class Program
                 Console.WriteLine("Failed to initialize rewriter");
             }
 
-            var path = Path.GetFullPath("C:\\_DD\\Git\\dd-trace-dotnet\\tracer\\test\\test-applications\\aot\\Samples.Aot\\bin\\Debug\\net6.0\\Samples.Aot.dll");
+            var folder = Path.GetFullPath(@"C:\_DD\Git\dd-trace-dotnet\tracer\test\test-applications\aot\Samples.Aot\bin\Publish\win-x64");
+            var entryAssembly = "Samples.Aot.dll";
 
-            rewriter.SetOutput("output");
-
-            rewriter.ProcessAssembly(path);
+            rewriter.ProcessApp(Path.Combine(folder, entryAssembly));
         }
     }
 }

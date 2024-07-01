@@ -108,12 +108,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             throw new NotImplementedException();
         }
 
-        public unsafe HResult EnumMethodsWithName(HCORENUM* phEnum, MdTypeDef cl, char* szName, MdMethodDef* rMethods, uint cMax, out uint pcTokens)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
         public unsafe HResult EnumFields(HCORENUM* phEnum, MdTypeDef cl, MdFieldDef* rFields, uint cMax, out uint pcTokens)
         {
             System.Diagnostics.Debugger.Break();
@@ -145,12 +139,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
         }
 
         public unsafe HResult FindMember(MdTypeDef td, char* szName, nint* pvSigBlob, uint cbSigBlob, out MdToken pmb)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
-        public unsafe HResult FindMethod(MdTypeDef td, char* szName, nint* pvSigBlob, uint cbSigBlob, out MdMethodDef pmb)
         {
             System.Diagnostics.Debugger.Break();
             throw new NotImplementedException();
@@ -412,12 +400,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
         }
 
         public unsafe HResult DefineImportType(IntPtr pAssemImport, byte* pbHashValue, int cbHashValue, IntPtr pImport, MdTypeDef tdImport, IntPtr pAssemEmit, out MdTypeRef ptr)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
-        public unsafe HResult DefineImportMember(IntPtr pAssemImport, byte* pbHashValue, int cbHashValue, IntPtr pImport, MdToken mbMember, IntPtr pAssemEmit, MdToken tkParent, out MdMemberRef pmr)
         {
             System.Diagnostics.Debugger.Break();
             throw new NotImplementedException();
