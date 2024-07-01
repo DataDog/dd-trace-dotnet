@@ -264,6 +264,8 @@ bool Dataflow::IsInitialized()
 
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength)
 {
+    CSGUARD(_cs);
+
     // Init aspects
     auto aspectsName = Constants::AspectsAssemblyName;
     trace::Logger::Debug("Dataflow::LoadAspects -> Processing aspects...");
@@ -326,6 +328,7 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
+    CSGUARD(_cs);
     LPCBYTE pbBaseLoadAddr;
     WCHAR wszPath[300];
     ULONG cchNameIn = 300;
@@ -336,11 +339,15 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     WCHAR wszName[1024];
 
     DWORD dwModuleFlags;
-    HRESULT hr = _profiler->GetModuleInfo2(moduleId, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId,
-                                           &dwModuleFlags);
+    HRESULT hr = _profiler->GetModuleInfo2(moduleId, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId, &dwModuleFlags);
+    if (hr == CORPROF_E_DATAINCOMPLETE)
+    {
+        trace::Logger::Debug("Data for ModuleId ", moduleId, " was incomplete");
+        return hr;
+    }
     if (FAILED(hr))
     {
-        trace::Logger::Error("GetModuleInfo2 failed for ModuleId ", moduleId);
+        trace::Logger::Error("GetModuleInfo2 failed for ModuleId: ", moduleId, " hr:", hr);
         return hr;
     }
     if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
@@ -352,7 +359,7 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     hr = _profiler->GetAssemblyInfo(assemblyId, 1024, nullptr, wszName, &appDomainId, &modIDDummy);
     if (FAILED(hr))
     {
-        trace::Logger::Error("GetAssemblyInfo failed for ModuleId ", moduleId, " AssemblyId ", assemblyId);
+        trace::Logger::Error("GetAssemblyInfo failed for ModuleId ", moduleId, " AssemblyId ", assemblyId, " hr: ", hr);
         return hr;
     }
 
@@ -361,7 +368,6 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     WSTRING modulePath = WSTRING(wszPath);
 
     ModuleInfo* moduleInfo = new ModuleInfo(this, appDomain, moduleId, modulePath, assemblyId, moduleName);
-    CSGUARD(_cs);
     _modules[moduleId] = moduleInfo;
     if (pModuleInfo)
     {
@@ -509,6 +515,13 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     {
         return found->second;
     }
+
+    ModuleInfo* pModuleInfo;
+    if (SUCCEEDED(ModuleLoaded(id, &pModuleInfo)))
+    {
+        return pModuleInfo;
+    }
+
     return nullptr;
 }
 ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId, bool lookInSharedRepos)
@@ -621,9 +634,8 @@ HRESULT SetILFunctionBody(MethodInfo* method, ICorProfilerFunctionControl* pFunc
 }
 HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrapper* pFunctionControl)
 {
-    HRESULT hr = S_OK;
-
     CSGUARD(_cs);
+    HRESULT hr = S_OK;
 
     if (!pFunctionControl)
     {
@@ -731,6 +743,4 @@ HRESULT Dataflow::RejitMethod(trace::FunctionControlWrapper& functionControl)
     }
     return S_FALSE;
 }
-
-
 } // namespace iast
