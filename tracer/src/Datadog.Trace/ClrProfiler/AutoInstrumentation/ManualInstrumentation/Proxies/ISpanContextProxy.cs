@@ -12,7 +12,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Pr
 /// <summary>
 /// Duck type for custom ISpanContext implementations in Datadog.Trace.Manual
 /// </summary>
-[DuckCopy]
+[DuckCopy("Datadog.Trace.ISpanContext", "Datadog.Trace.Manual")]
+[DuckCopy("Datadog.Trace.SpanContext", "Datadog.Trace.Manual")]
+[DuckCopy("Datadog.Trace.ReadOnlySpanContext", "Datadog.Trace.Manual")]
 // ReSharper disable once InconsistentNaming
 internal struct ISpanContextProxy
 {

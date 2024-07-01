@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
 /// <summary>
 /// Duck type for Datadog.Trace.Ci.BenchmarkDiscreteStats in Datadog.Trace.Manual
 /// </summary>
+[DuckType("Datadog.Trace.Ci.BenchmarkDiscreteStats", "Datadog.Trace.Manual")]
 internal interface IBenchmarkDiscreteStats
 {
     [DuckField]

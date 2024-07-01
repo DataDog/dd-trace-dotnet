@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
 /// <summary>
 /// Duck type for Datadog.Trace.Ci.BenchmarkHostInfo in Datadog.Trace.Manual
 /// </summary>
+[DuckType("Datadog.Trace.Ci.BenchmarkHostInfo", "Datadog.Trace.Manual")]
 internal interface IBenchmarkHostInfo
 {
     [DuckField]
