@@ -5,13 +5,15 @@
 
 #nullable enable
 
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
+using static Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Iast.Aspects.NHibernate;
 
 /// <summary> NHibernate class aspect </summary>
-[AspectClass("NHibernate", AspectType.Sink, VulnerabilityType.SqlInjection)]
+[AspectClass("NHibernate", AspectType.RaspIastSink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class ISessionAspect
@@ -26,6 +28,7 @@ public class ISessionAspect
     public static object AnalyzeQuery(string query)
     {
         IastModule.OnSqlQuery(query, IntegrationId.NHibernate);
+        RaspModule.OnSqlI(query, IntegrationId.NHibernate);
         return query;
     }
 }

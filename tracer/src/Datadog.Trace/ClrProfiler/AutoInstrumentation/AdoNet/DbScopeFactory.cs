@@ -8,8 +8,11 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlTypes;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.Iast;
@@ -50,6 +53,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return null;
                 }
 
+                if (Iast.Iast.Instance.Settings.Enabled)
+                {
+                    IastModule.OnSqlQuery(commandText, integrationId);
+                }
+
+                // We might block the SQL call from RASP depending on the query
+                RaspModule.OnSqlI(commandText, integrationId);
+
                 tags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
                 tags.DbType = dbType;
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
@@ -65,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not BlockException)
             {
                 Log.Error(ex, "Error creating or populating scope.");
                 return scope;
@@ -73,11 +84,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             try
             {
-                if (Iast.Iast.Instance.Settings.Enabled)
-                {
-                    IastModule.OnSqlQuery(commandText, integrationId);
-                }
-
                 if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled
                     && command.CommandType != CommandType.StoredProcedure)
                 {
