@@ -461,7 +461,7 @@
   "DD_DYNAMIC_INSTRUMENTATION_REDACTED_TYPES": "dynamic_instrumentation_redacted_types",
   "DD_SYMBOL_DATABASE_BATCH_SIZE_BYTES": "symbol_database_batch_size_bytes",
   "DD_SYMBOL_DATABASE_UPLOAD_ENABLED": "symbol_database_upload_enabled",
-  "DD_DYNAMIC_INSTRUMENTATION_INTERAL_FORCE_SYMBOL_DATABASE_UPLOAD": "dynamic_instrumentation_internal_force_symbol_database_upload",
+  "DD_INTERAL_FORCE_SYMBOL_DATABASE_UPLOAD": "internal_force_symbol_database_upload",
   "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_INCLUDES": "dynamic_instrumentation_symbol_database_includes",
   "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS": "logs_direct_submission_integrations",
   "DD_LOGS_DIRECT_SUBMISSION_HOST": "logs_direct_submission_host",
