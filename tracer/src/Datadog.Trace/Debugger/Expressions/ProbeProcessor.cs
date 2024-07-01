@@ -14,6 +14,7 @@ using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Debugger.Expressions
 {
@@ -158,13 +159,59 @@ namespace Datadog.Trace.Debugger.Expressions
             return _evaluator;
         }
 
+
         public bool ShouldProcess(in ProbeData probeData)
         {
+            if (GetDebuggerPropogationFlag().HasFlag(DebugPropogationFlag.AllUserProbes))
+            {
+                return true; // TODO: check circuit breaker
+            }
+
             return HasCondition() || probeData.Sampler.Sample();
+        }
+
+        private void AddEntrySpanInfo<TCapture>(CaptureInfo<TCapture> info, string probeId)
+        {
+            if (!probeId.StartsWith("SpanEntry"))
+            {
+                return;
+            }
+
+            // TODO: cache all these tags somewhere
+            var activeSpan = Tracer.Instance.InternalActiveScope?.Span;
+            if (activeSpan != null)
+            {
+                // if ( GetDebuggerPropogationFlag().HasFlag(DebugPropogationFlag.SourceCodeLocation))
+                if (true) // In demo, always set the span origin
+                {
+                    info.GetMethodDetails(out var method, out var methodName, out var typeFullName);
+
+                    activeSpan.Tags.SetTag("_dd.di.has_code_location", "true");
+                    activeSpan.Tags.SetTag("_dd.entry_location.type", typeFullName);
+                    activeSpan.Tags.SetTag("_dd.entry_location.method", methodName);
+                    var methodLocation = SpanOriginHelper.ExtractFilePathAndLineNumbersFromPdb(method);
+                    if (methodLocation != null)
+                    {
+                        activeSpan.Tags.SetTag("_dd.entry_location.file", methodLocation.FilePath);
+                        activeSpan.Tags.SetTag("_dd.entry_location.start_line", methodLocation.MethodBeginLineNumber);
+                        activeSpan.Tags.SetTag("_dd.entry_location.end_line", methodLocation.MethodEndLineNumber);
+                    }
+                }
+            }
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
         {
+            if (info.MethodState == MethodState.EntryStart || info.MethodState == MethodState.EntryAsync)
+            {
+                AddEntrySpanInfo(info, probeData.ProbeId);
+            }
+            
+            if (probeData.ProbeId.StartsWith("SpanEntry") && !GetDebuggerPropogationFlag().HasFlag(DebugPropogationFlag.VariableValues))
+            {
+                return true; // don't do anything!
+            }
+
             var snapshotCreator = (DebuggerSnapshotCreator)inSnapshotCreator;
 
             ExpressionEvaluationResult evaluationResult = default;
@@ -194,6 +241,11 @@ namespace Datadog.Trace.Debugger.Expressions
                             }
 
                             break;
+                        }
+                        else if (captureBehaviour == CaptureBehaviour.Evaluate)
+                        {
+                            // WTF. Get the span decoration probe to evaluate
+                            evaluationResult = Evaluate(snapshotCreator, out var shouldStopCapture, probeData.Sampler);
                         }
 
                         if (captureBehaviour != CaptureBehaviour.Capture)
@@ -305,6 +357,32 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
+        [Flags]
+        public enum DebugPropogationFlag
+        {
+            None = 0,
+            SourceCodeLocation = 1,
+            FullStackTrace = 2,
+            VariableValues = 4,
+            ExceptionReplay = 8,
+            AllUserProbes = 16
+        }
+
+        protected static DebugPropogationFlag GetDebuggerPropogationFlag()
+        {
+            var activeSpan = Tracer.Instance.InternalActiveScope?.Span;
+            if (activeSpan != null)
+            {
+                if (DebugPropogationFlag.TryParse(activeSpan.Context.TraceContext.Tags.GetTag("_dd.p.debug"), out DebugPropogationFlag debugPropValue))
+                {
+                    return debugPropValue;
+                }
+            }
+
+            return DebugPropogationFlag.None;
+        }
+
+
         private ExpressionEvaluationResult Evaluate(DebuggerSnapshotCreator snapshotCreator, out bool shouldStopCapture, IAdaptiveSampler sampler)
         {
             ExpressionEvaluationResult evaluationResult = default;
@@ -387,34 +465,13 @@ namespace Datadog.Trace.Debugger.Expressions
                 switch (ProbeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
-                        Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(decoration.TagName, decoration.Value);
-                        Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
-                        if (decoration.Errors?.Length > 0)
-                        {
-                            Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
-                        }
-                        else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
-                        {
-                            Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, null);
-                        }
-
+                        UpdateSpanTag(decoration, probeIdTag, evaluationErrorTag, Tracer.Instance.ScopeManager.Active.Root.Span);
                         attachedTags = true;
-
                         break;
                     case TargetSpan.Active:
-                        Tracer.Instance.ScopeManager.Active.Span.SetTag(decoration.TagName, decoration.Value);
-                        Tracer.Instance.ScopeManager.Active.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
-                        if (decoration.Errors?.Length > 0)
-                        {
-                            Tracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
-                        }
-                        else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
-                        {
-                            Tracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, null);
-                        }
-
+                        
+                        UpdateSpanTag(decoration, probeIdTag, evaluationErrorTag, Tracer.Instance.ScopeManager.Active.Span);
                         attachedTags = true;
-
                         break;
                     default:
                         Log.Error("Invalid target span. Probe: {ProbeId}", ProbeInfo.ProbeId);
@@ -432,6 +489,26 @@ namespace Datadog.Trace.Debugger.Expressions
             if (attachedTags)
             {
                 LiveDebugger.Instance.SetProbeStatusToEmitting(ProbeInfo);
+            }
+        }
+
+        private void UpdateSpanTag(ExpressionEvaluationResult.DecorationResult decoration, string probeIdTag, string evaluationErrorTag, Span span)
+        {
+            if (decoration.TagName.StartsWith(TagPropagation.PropagatedTagPrefix))
+            {
+                // TODO, handle error
+                span.Context.TraceContext.Tags.SetTag(decoration.TagName, decoration.Value);
+            }
+
+            span.SetTag(decoration.TagName, decoration.Value);
+            span.SetTag(probeIdTag, ProbeInfo.ProbeId);
+            if (decoration.Errors?.Length > 0)
+            {
+                span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
+            }
+            else if (span.GetTag(evaluationErrorTag) != null)
+            {
+                span.SetTag(evaluationErrorTag, null);
             }
         }
 

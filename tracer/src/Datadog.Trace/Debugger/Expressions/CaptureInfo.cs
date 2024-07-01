@@ -71,6 +71,17 @@ internal readonly ref struct CaptureInfo<TCapture>
     {
         return AsyncCaptureInfo.KickoffInvocationTargetType != null;
     }
+
+    public void GetMethodDetails(out MethodBase method, out string methodName, out string typeFullName)
+    {
+        method = MethodState == MethodState.ExitEndAsync
+                     ? AsyncCaptureInfo.KickoffMethod
+                     : Method;
+        methodName = method?.Name;
+        typeFullName = MethodState == MethodState.ExitEndAsync
+                           ? AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
+                           : InvocationTargetType?.FullName;
+    }
 }
 
 internal readonly ref struct AsyncCaptureInfo

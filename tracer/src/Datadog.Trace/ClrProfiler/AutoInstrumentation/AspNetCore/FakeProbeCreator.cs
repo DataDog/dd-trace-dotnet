@@ -92,6 +92,7 @@ public static class FakeProbeCreator
             Segments = segments,
             Sampling = new Sampling { SnapshotsPerSecond = 1000000 }
         };
-        ProbeExpressionsProcessor.Instance.AddProbeProcessor(methodProbeDef);
+//        ProbeExpressionsProcessor.Instance.AddProbeProcessor(methodProbeDef);
+        ProbeExpressionsProcessor.Instance.TryAddProbeProcessor(probeId, new SpanOriginProbeProcessor(methodProbeDef));
     }
 }

@@ -25,6 +25,49 @@ using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
+    internal class SpanOriginHelper
+    {
+        internal static MethodLocation ExtractFilePathAndLineNumbersFromPdb(MethodBase method)
+        {
+            if (method == null)
+            {
+                throw new ArgumentNullException(nameof(method));
+            }
+
+            if (method.Module == null)
+            {
+                throw new InvalidOperationException("Method's module is null for method " + method.Name);
+            }
+
+            if (method.Module.Assembly == null)
+            {
+                throw new InvalidOperationException("Method's module assembly is null for module " + method.Module.Name);
+            }
+
+            var pdbReader = DatadogMetadataReader.CreatePdbReader(method.Module.Assembly);
+            if (pdbReader == null)
+            {
+                throw new InvalidOperationException("Failed to create PDB reader.");
+            }
+
+            var sequencePoints = pdbReader.GetMethodSequencePoints((int)method.MetadataToken);
+            if (sequencePoints == null)
+            {
+                throw new InvalidOperationException("Failed to get method sequence points.");
+            }
+
+            if (sequencePoints != null && sequencePoints.Any())
+            {
+                var filePath = sequencePoints.First().URL;
+                var methodBeginLineNumber = sequencePoints.First().StartLine.ToString();
+                var methodEndLineNumber = sequencePoints.Last().EndLine.ToString();
+                return new MethodLocation(filePath, methodBeginLineNumber, methodEndLineNumber);
+            }
+
+            return null;
+        }
+    }
+
     internal class DebuggerSnapshotCreator : IDebuggerSnapshotCreator, IDisposable
     {
         private const string LoggerVersion = "2";
@@ -130,7 +173,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 else
                 {
                     // Log template without capture all - capture only template message
-                    if ((evaluateAt == EvaluateAt.Entry && info.MethodState.IsInEntryEnd()) ||
+                    if ((evaluateAt == EvaluateAt.Entry && info.MethodState.IsInEntry()) ||
                         (evaluateAt == EvaluateAt.Exit && info.MethodState.IsInExitEnd()))
                     {
                         CaptureBehaviour = CaptureBehaviour.Evaluate;
@@ -711,15 +754,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             using (this)
             {
-                var method = info.MethodState == MethodState.ExitEndAsync
-                                  ? info.AsyncCaptureInfo.KickoffMethod
-                                  : info.Method;
-                var methodName = method?.Name;
-                var typeFullName = info.MethodState == MethodState.ExitEndAsync
-                                       ? info.AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
-                                       : info.InvocationTargetType?.FullName;
-
-
+                info.GetMethodDetails(out var method, out var methodName, out var typeFullName);
+                
                 AddEvaluationErrors()
                    .AddProbeInfo(
                         probeId,
@@ -734,18 +770,9 @@ namespace Datadog.Trace.Debugger.Snapshots
                 var activeSpan = Tracer.Instance.InternalActiveScope?.Span;
                 if (activeSpan != null && probeId.StartsWith("SpanEntry"))
                 {
-                    activeSpan.Tags.SetTag("_dd.entry_location.snapshot_id", _snapshotId.ToString());
-                    activeSpan.Tags.SetTag("_dd.entry_location.type", typeFullName);
-                    activeSpan.Tags.SetTag("_dd.entry_location.method", methodName);
-                    var methodLocation = ExtractFilePathAndLineNumbersFromPdb(method);
-                    if (methodLocation != null)
-                    {
-                        activeSpan.Tags.SetTag("_dd.entry_location.file", methodLocation.FilePath);
-                        activeSpan.Tags.SetTag("_dd.entry_location.start_line", methodLocation.MethodBeginLineNumber);
-                        activeSpan.Tags.SetTag("_dd.entry_location.end_line", methodLocation.MethodEndLineNumber);
-                    }
+                    activeSpan.Tags.SetTag("_dd.entry_location.snapshot_id", _snapshotId);
                 }
-
+                
                 var snapshot = GetSnapshotJson();
                 WriteSnapshotJsonToDisk(probeId, snapshot);
                 //TimeTravelStateManager.EndMethod();
@@ -776,47 +803,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             var jsonWriter = new JsonTextWriter(stringWriter) { Formatting = Formatting.Indented };
             jsonWriter.WriteToken(jsonReader);
             return stringWriter.ToString();
-        }
-
-
-        private static MethodLocation ExtractFilePathAndLineNumbersFromPdb(MethodBase method)
-        {
-            if (method == null)
-            {
-                throw new ArgumentNullException(nameof(method));
-            }
-
-            if (method.Module == null)
-            {
-                throw new InvalidOperationException("Method's module is null for method " + method.Name);
-            }
-
-            if (method.Module.Assembly == null)
-            {
-                throw new InvalidOperationException("Method's module assembly is null for module " + method.Module.Name);
-            }
-
-            var pdbReader = DatadogMetadataReader.CreatePdbReader(method.Module.Assembly);
-            if (pdbReader == null)
-            {
-                throw new InvalidOperationException("Failed to create PDB reader.");
-            }
-
-            var sequencePoints = pdbReader.GetMethodSequencePoints((int)method.MetadataToken);
-            if (sequencePoints == null)
-            {
-                throw new InvalidOperationException("Failed to get method sequence points.");
-            }
-
-            if (sequencePoints != null && sequencePoints.Any())
-            {
-                var filePath = sequencePoints.First().URL;
-                var methodBeginLineNumber = sequencePoints.First().StartLine.ToString();
-                var methodEndLineNumber = sequencePoints.Last().EndLine.ToString();
-                return new MethodLocation(filePath, methodBeginLineNumber, methodEndLineNumber);
-            }
-
-            return null;
         }
 
         internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath, int realLineNumber = -1)

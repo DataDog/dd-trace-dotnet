@@ -70,7 +70,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             return new RemoteConfigurationManager(
                     discoveryService,
                     remoteConfigurationApi,
-                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.EnvironmentInternal), tracerSettings.ServiceVersionInternal, tags),
+                    rcmTracer: new RcmClientTracer(settings.RuntimeId, "2.54.0", serviceName, TraceUtil.NormalizeTag(tracerSettings.EnvironmentInternal), tracerSettings.ServiceVersionInternal, tags),
                     pollInterval: settings.PollInterval,
                     gitMetadataTagsProvider,
                     subscriptionManager);
@@ -95,7 +95,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             var tracerVersion = rcmSettings.TracerVersion;
             if (!string.IsNullOrEmpty(tracerVersion))
             {
-                tags.Add($"tracer_version:{tracerVersion}");
+                tags.Add($"tracer_version:2.54.0");
             }
 
             var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;

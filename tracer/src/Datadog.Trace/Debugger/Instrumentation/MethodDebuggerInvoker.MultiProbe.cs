@@ -41,7 +41,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var probeMetadataIndices = methodMetadataInfo.ProbeMetadataIndices;
             var states = InstrumentationAllocator.RentArray<MethodDebuggerState>(probesIds.Length);
 
-            for (var stateIndex = 0; stateIndex < states.Length; stateIndex++)
+            for (var stateIndex = states.Length - 1; stateIndex >= 0; stateIndex--)
             {
                 states[stateIndex] = BeginMethod_StartMarker(instance, methodMetadataIndex, probeMetadataIndices[stateIndex], probesIds[stateIndex]);
             }
@@ -61,7 +61,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void BeginMethod_EndMarker(ref MethodDebuggerState[] states)
         {
-            for (var i = 0; i < states.Length; i++)
+            for (var i = states.Length - 1; i >= 0; i--)
             {
                 BeginMethod_EndMarker(ref states[i]);
             }
