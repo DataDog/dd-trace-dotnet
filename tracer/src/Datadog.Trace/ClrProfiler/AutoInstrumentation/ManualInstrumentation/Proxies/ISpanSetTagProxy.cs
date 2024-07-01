@@ -5,11 +5,14 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 
 /// <summary>
 /// Duck type used to call SetTag where we receive a custom implementation
 /// </summary>
+[DuckType("Datadog.Trace.ISpan", "Datadog.Trace.Manual")]
 internal interface ISpanSetTagProxy
 {
     object SetTag(string key, string? value);

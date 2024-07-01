@@ -7,13 +7,25 @@
 
 using System;
 
-namespace Datadog.Trace.DuckTyping
+namespace Datadog.Trace.DuckTyping;
+
+/// <summary>
+/// Duck copy struct attribute
+/// </summary>
+[AttributeUsage(AttributeTargets.Struct, AllowMultiple = true)]
+internal class DuckCopyAttribute : Attribute
 {
-    /// <summary>
-    /// Duck copy struct attribute
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Struct, AllowMultiple = false)]
-    internal class DuckCopyAttribute : Attribute
+    public DuckCopyAttribute()
     {
     }
+
+    public DuckCopyAttribute(string targetType, string targetAssembly)
+    {
+        TargetType = targetType;
+        TargetAssembly = targetAssembly;
+    }
+
+    public string? TargetType { get; set; }
+
+    public string? TargetAssembly { get; set; }
 }
