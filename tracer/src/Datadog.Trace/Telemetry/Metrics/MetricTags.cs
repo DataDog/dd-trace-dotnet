@@ -116,6 +116,33 @@ internal static class MetricTags
         [Description("type:status_code")] StatusCode,
     }
 
+    internal enum DatadogConfiguration
+    {
+        [Description("config.datadog:DD_LOG_LEVEL")] LogLevel,
+        [Description("config.datadog:DD_RUNTIME_METRICS_ENABLED")] RuntimeMetricsEnabled,
+        [Description("config.datadog:DD_SERVICE")] Service,
+        [Description("config.datadog:DD_TAGS")] Tags,
+        [Description("config.datadog:DD_TRACE_ENABLED")] TraceEnabled,
+        [Description("config.datadog:DD_TRACE_PROPAGATION_STYLE")] PropagationStyle,
+        [Description("config.datadog:DD_TRACE_SAMPLE_RATE")] SampleRate,
+        [Description("config.datadog:DD_TRACE_OTEL_ENABLED")] OpenTelemetryEnabled,
+        [Description("config.datadog:Unknown")] Unknown,
+    }
+
+    internal enum OpenTelemetryConfiguration
+    {
+        [Description("config.opentelemetry:OTEL_LOG_LEVEL")] LogLevel,
+        [Description("config.opentelemetry:OTEL_METRICS_EXPORTER")] MetricsExporter,
+        [Description("config.opentelemetry:OTEL_PROPAGATORS")] Propagators,
+        [Description("config.opentelemetry:OTEL_RESOURCE_ATTRIBUTES")] ResourceAttributes,
+        [Description("config.opentelemetry:OTEL_SDK_DISABLED")] SdkDisabled,
+        [Description("config.opentelemetry:OTEL_SERVICE_NAME")] ServiceName,
+        [Description("config.opentelemetry:OTEL_TRACES_EXPORTER")] TracesExporter,
+        [Description("config.opentelemetry:OTEL_TRACES_SAMPLER")] TracesSampler,
+        [Description("config.opentelemetry:OTEL_TRACES_SAMPLER_ARG")] TracesSamplerArg,
+        [Description("config.opentelemetry:Unknown")] Unknown,
+    }
+
     internal enum PartialFlushReason
     {
         [Description("reason:large_trace")] LargeTrace,
