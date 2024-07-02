@@ -374,10 +374,7 @@ static int (*__real_dlclose)(void* handle) = NULL;
 
 int dlclose(void* handle)
 {
-    if (__real_dlclose == NULL)
-    {
-        __real_dlclose = dlsym(RTLD_NEXT, "dlclose");
-    }
+    check_init();
 
     // call the real dlopen (libc/musl-libc)
     int result = __real_dlclose(handle);
@@ -576,6 +573,7 @@ static void init()
 {
     __real_dl_iterate_phdr = __dd_dlsym(RTLD_NEXT, "dl_iterate_phdr");
     __real_dlopen = __dd_dlsym(RTLD_NEXT, "dlopen");
+    __real_dlclose = __dd_dlsym(RTLD_NEXT, "dlclose");
     __real_dladdr = __dd_dlsym(RTLD_NEXT, "dladdr");
     __real_execve = __dd_dlsym(RTLD_NEXT, "execve");
 #ifdef DD_ALPINE

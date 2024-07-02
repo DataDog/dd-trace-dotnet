@@ -79,7 +79,7 @@ __attribute__((visibility("hidden"))) static int __dd_pthread_once(pthread_once_
     static __typeof(pthread_once)* pthread_once_ptr = &pthread_once;
     if (!pthread_once_ptr)
     {
-        // pthread_once is not available: meaning we are on libpthread.so was not
+        // pthread_once is not available: meaning libpthread.so was not
         // loaded at startup
 
         // First ensure that libpthread.so is loaded
