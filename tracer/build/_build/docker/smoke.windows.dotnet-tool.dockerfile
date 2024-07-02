@@ -19,7 +19,7 @@ WORKDIR /app
 ARG CHANNEL_32_BIT
 RUN if($env:CHANNEL_32_BIT){ \
     echo 'Installing x86 dotnet runtime ' + $env:CHANNEL_32_BIT; \
-    curl 'https://dot.net/v1/dotnet-install.ps1' -o dotnet-install.ps1; \
+    curl 'https://raw.githubusercontent.com/dotnet/install-scripts/7e6edf599d114134a3d35a6b775d65d06bcddf2a/src/dotnet-install.ps1' -o dotnet-install.ps1; \
     ./dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel $env:CHANNEL_32_BIT -InstallDir c:\cli; \
     [Environment]::SetEnvironmentVariable('Path',  'c:\cli;' + $env:Path, [EnvironmentVariableTarget]::Machine); \
     rm ./dotnet-install.ps1; }

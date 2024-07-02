@@ -20,7 +20,7 @@ steps:
       $sdkVersion = "${{ parameters.sdkVersion }}"
 
       echo "Downloading dotnet-install.ps1"
-      Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile dotnet-install.ps1
+      Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dotnet/install-scripts/7e6edf599d114134a3d35a6b775d65d06bcddf2a/src/dotnet-install.ps1" -OutFile dotnet-install.ps1
 
       if( "${{ parameters.is64bit }}" -eq "true") {
         $path = "$HOME\AppData\Local\Microsoft\dotnet"
