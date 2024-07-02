@@ -26,7 +26,8 @@ EXTERN_C VOID STDAPICALLTYPE GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, i
 {
     if (trace::profiler == nullptr)
     {
-        trace::Logger::Error("Error in GetAssemblyAndSymbolsBytes call. Tracer CLR Profiler was not initialized.");
+        trace::Logger::Warn("Warning in GetAssemblyAndSymbolsBytes call. Tracer CLR Profiler was not initialized. Probably, AoT instrumentation");
+        trace::CorProfiler::GetAssemblyAndSymbolsBytes(false, pAssemblyArray, assemblySize, pSymbolsArray, symbolsSize);
         return;
     }
 
