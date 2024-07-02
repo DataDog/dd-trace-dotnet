@@ -99,7 +99,7 @@ namespace Datadog.Trace.Ci.Agent
 
             while (true)
             {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequests(payload.TelemetryEndpoint);
+                TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequests(payload.TelemetryEndpointAndCompression);
 
                 IApiRequest request;
 
