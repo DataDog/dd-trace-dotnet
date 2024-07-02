@@ -19,6 +19,10 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
         private nint enumId = 1;
         private Dictionary<nint, IEnumerator> enumerators = new Dictionary<nint, IEnumerator>();
 
+        private MdToken systemRuntimeAssemblyRef = default;
+        private MdToken systemRuntimeInteropServicesAssemblyRef = default;
+        private MdToken systemThreadingAssemblyRef = default;
+
         public ModuleMetadata(ModuleInfo module)
         {
             Module = module;
@@ -144,6 +148,61 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             if (res is not null) { return res; }
             return new TypeReference("System", "Void", Module.Definition, null);
         }
+
+        #region IMetaDataAssemblyEmit
+
+        public unsafe HResult DefineAssemblyRef(IntPtr pbPublicKeyOrToken, int cbPublicKeyOrToken, char* szName, ASSEMBLYMETADATA* pMetaData, IntPtr pbHashValue, int cbHashValue, int dwAssemblyRefFlags, MdToken* pmdar)
+        {
+            var name = System.Runtime.InteropServices.Marshal.PtrToStringAuto((IntPtr)szName);
+            if (string.IsNullOrEmpty(name)) { return HResult.E_INVALIDARG; }
+
+            Version? version = default;
+            if (pMetaData is not null)
+            {
+                version = new Version(pMetaData->usMajorVersion, pMetaData->usMinorVersion, pMetaData->usBuildNumber, pMetaData->usRevisionNumber);
+            }
+
+            byte[]? publicKeyToken = null;
+            if (cbPublicKeyOrToken > 0)
+            {
+                publicKeyToken = new byte[cbPublicKeyOrToken];
+                System.Runtime.InteropServices.Marshal.Copy(pbPublicKeyOrToken, publicKeyToken, 0, cbPublicKeyOrToken);
+            }
+
+            if (name == "mscorlib")
+            {
+                systemRuntimeAssemblyRef = DefineAssemblyRefInternal("System.Runtime", ref version, ref publicKeyToken);
+                systemRuntimeInteropServicesAssemblyRef = DefineAssemblyRefInternal("System.Runtime.InteropServices", ref version, ref publicKeyToken);
+                systemThreadingAssemblyRef = DefineAssemblyRefInternal("System.Threading", ref version, ref publicKeyToken);
+                *pmdar = systemRuntimeAssemblyRef;
+            }
+            else
+            {
+                *pmdar = DefineAssemblyRefInternal(name, ref version, ref publicKeyToken);
+            }
+
+            return HResult.S_OK;
+        }
+
+        private MdToken DefineAssemblyRefInternal(string name, ref Version? version, ref byte[]? publicKeyToken)
+        {
+            var reference = Module.Definition.AssemblyReferences.FirstOrDefault(a => a.Name == name);
+            if (reference is not null)
+            {
+                version = reference.Version;
+                publicKeyToken = reference.PublicKeyToken;
+                return new MdToken(reference.MetadataToken.ToInt32());
+            }
+
+            reference = new AssemblyNameReference(name, version);
+            reference.PublicKeyToken = publicKeyToken;
+            reference.MetadataToken = new MetadataToken(TokenType.AssemblyRef, Module.Definition.AssemblyReferences.Count + 1);
+
+            Module.Definition.AssemblyReferences.Add(reference);
+            return new MdToken(reference.MetadataToken.ToInt32());
+        }
+
+        #endregion
 
         #region IMetadataImport2
 
@@ -354,7 +413,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
 
         public unsafe HResult GetTypeRefProps(MdTypeRef tr, MdToken* ptkResolutionScope, char* szName, uint cchName, uint* pchName)
         {
-            // var typeRef = Module.Definition.GetTypeReferences().FirstOrDefault(t => t.MetadataToken.ToInt32() == tr.Value);
             var typeRef = LookupToken(tr.Value) as TypeReference;
             if (typeRef is null) { return HResult.E_INVALIDARG; }
 
@@ -490,9 +548,21 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
 
         public unsafe HResult DefineTypeRefByName(MdToken tkResolutionScope, char* szName, MdTypeRef* ptr)
         {
-            var scope = LookupToken(tkResolutionScope.Value) as IMetadataScope;
             var name = System.Runtime.InteropServices.Marshal.PtrToStringAuto((IntPtr)szName);
             if (string.IsNullOrEmpty(name)) { return HResult.E_INVALIDARG; }
+            if (tkResolutionScope.Value == systemRuntimeAssemblyRef.Value)
+            {
+                if (name.StartsWith("System.Threading."))
+                {
+                    tkResolutionScope = (MdToken)systemThreadingAssemblyRef;
+                }
+                else if (name.StartsWith("System.Runtime.InteropServices."))
+                {
+                    tkResolutionScope = (MdToken)systemRuntimeInteropServicesAssemblyRef;
+                }
+            }
+
+            var scope = LookupToken(tkResolutionScope.Value) as IMetadataScope;
 
             // Look for existing
             var existing = Module.Definition.GetTypeReferences().FirstOrDefault(r => r.FullName == name && r.Scope.MetadataToken.ToInt32() == tkResolutionScope.Value);
@@ -602,11 +672,11 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
 
         public unsafe HResult DefinePinvokeMap(MdToken tk, int dwMappingFlags, char* szImportName, MdModuleRef mrImportDLL)
         {
-            var token = LookupToken(tk.Value) as MethodDefinition;
+            var methodDef = LookupToken(tk.Value) as MethodDefinition;
             var moduleRef = LookupToken(mrImportDLL.Value) as ModuleReference;
-            if (token is null || moduleRef is null) { return HResult.E_INVALIDARG; }
+            if (methodDef is null || moduleRef is null) { return HResult.E_INVALIDARG; }
 
-            token.PInvokeInfo = new PInvokeInfo((PInvokeAttributes)dwMappingFlags, System.Runtime.InteropServices.Marshal.PtrToStringAuto((IntPtr)szImportName), moduleRef);
+            methodDef.PInvokeInfo = new PInvokeInfo((PInvokeAttributes)dwMappingFlags, System.Runtime.InteropServices.Marshal.PtrToStringAuto((IntPtr)szImportName), moduleRef);
 
             return HResult.S_OK;
         }
@@ -717,41 +787,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             if (typeRef is null) { return HResult.E_INVALIDARG; }
 
             *ptr = new MdTypeRef(typeRef.MetadataToken.ToInt32());
-            return HResult.S_OK;
-        }
-
-        #endregion
-
-        #region IMetaDataAssemblyEmit
-
-        public unsafe HResult DefineAssemblyRef(IntPtr pbPublicKeyOrToken, int cbPublicKeyOrToken, char* szName, ASSEMBLYMETADATA* pMetaData, IntPtr pbHashValue, int cbHashValue, int dwAssemblyRefFlags, MdAssemblyRef* pmdar)
-        {
-            var name = System.Runtime.InteropServices.Marshal.PtrToStringAuto((IntPtr)szName);
-            if (string.IsNullOrEmpty(name)) { return HResult.E_INVALIDARG; }
-            if (name == "mscorlib") { name = "System.Runtime"; }
-
-            var reference = Module.Definition.AssemblyReferences.FirstOrDefault(a => a.Name == name);
-            if (reference is not null)
-            {
-                *pmdar = new MdAssemblyRef(reference.MetadataToken.ToInt32());
-                return HResult.S_OK;
-            }
-
-            reference = new AssemblyNameReference(
-                   name,
-                   new Version(pMetaData->usMajorVersion, pMetaData->usMinorVersion, pMetaData->usBuildNumber, pMetaData->usRevisionNumber));
-
-            if (cbPublicKeyOrToken > 0)
-            {
-                reference.PublicKeyToken = new byte[cbPublicKeyOrToken];
-                System.Runtime.InteropServices.Marshal.Copy(pbPublicKeyOrToken, reference.PublicKeyToken, 0, cbPublicKeyOrToken);
-            }
-
-            reference.MetadataToken = new MetadataToken(TokenType.AssemblyRef, Module.Definition.AssemblyReferences.Count + 1);
-
-            Module.Definition.AssemblyReferences.Add(reference);
-            *pmdar = new MdAssemblyRef(reference.MetadataToken.ToInt32());
-
             return HResult.S_OK;
         }
 

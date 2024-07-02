@@ -22,7 +22,7 @@ internal unsafe interface IMetaDataAssemblyEmit : IUnknown
         IntPtr  pbHashValue,            // [IN] Hash Blob.
         int cbHashValue,                // [IN] Count of bytes in the Hash Blob.
         int dwAssemblyRefFlags,         // [IN] Flags.
-        MdAssemblyRef* pmdar);          // [OUT] Returned AssemblyRef token.
+        MdToken* pmdar);          // [OUT] Returned AssemblyRef token.
 
     HResult DefineFile(
         char* szName,                   // [IN] Name of the file.
