@@ -58,13 +58,21 @@ namespace Datadog.Trace.Debugger
                                          .AsInt32(DefaultSymbolBatchSizeInBytes, batchSize => batchSize > 0)
                                          .Value;
 
-            var includeLibraries = config
-                                     .WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseIncludes)
+            var symDb3rdPartyIncludeLibraries = config
+                                     .WithKeys(ConfigurationKeys.Debugger.SymDbThirdPartyDetectionIncludes)
                                      .AsString()?
                                      .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                       Enumerable.Empty<string>();
 
-            SymbolDatabaseIncludes = new HashSet<string>(includeLibraries, StringComparer.OrdinalIgnoreCase);
+            SymDbThirdPartyDetectionIncludes = new HashSet<string>(symDb3rdPartyIncludeLibraries, StringComparer.OrdinalIgnoreCase);
+
+            var symDb3rdPartyExcludeLibraries = config
+                                               .WithKeys(ConfigurationKeys.Debugger.SymDbThirdPartyDetectionExcludes)
+                                               .AsString()?
+                                               .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                                Enumerable.Empty<string>();
+
+            SymDbThirdPartyDetectionExcludes = new HashSet<string>(symDb3rdPartyExcludeLibraries, StringComparer.OrdinalIgnoreCase);
 
             DiagnosticsIntervalSeconds = config
                                         .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
@@ -105,7 +113,9 @@ namespace Datadog.Trace.Debugger
 
         public int SymbolDatabaseBatchSizeInBytes { get; }
 
-        public HashSet<string> SymbolDatabaseIncludes { get; }
+        public HashSet<string> SymDbThirdPartyDetectionIncludes { get; }
+
+        public HashSet<string> SymDbThirdPartyDetectionExcludes { get; }
 
         public int DiagnosticsIntervalSeconds { get; }
 

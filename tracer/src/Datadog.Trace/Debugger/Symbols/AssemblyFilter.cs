@@ -16,16 +16,31 @@ namespace Datadog.Trace.Debugger.Symbols
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AssemblyFilter));
 
-        internal static bool ShouldSkipAssembly(Assembly assembly, HashSet<string>? includeList = null)
+        internal static bool ShouldSkipAssembly(Assembly assembly, HashSet<string>? excludeList = null, HashSet<string>? includeList = null)
         {
             var assemblyName = assembly.GetName().Name;
-            return string.IsNullOrWhiteSpace(assemblyName) ||
-                   assembly.IsDynamic ||
-                   assembly.ManifestModule.IsResource() ||
-                   string.IsNullOrWhiteSpace(assembly.Location) ||
-                   IsDatadogAssembly(assemblyName) ||
-                   IsThirdPartyCode(assemblyName) ||
-                   (includeList != null && !IsInIncludeList(assemblyName, includeList));
+
+            var shouldSkip = string.IsNullOrWhiteSpace(assemblyName) ||
+                             assembly.IsDynamic ||
+                             assembly.ManifestModule.IsResource() ||
+                             string.IsNullOrWhiteSpace(assembly.Location);
+
+            if (shouldSkip)
+            {
+                return true;
+            }
+
+            if (IsInExcludeList(assemblyName!, excludeList))
+            {
+                return false;
+            }
+
+            if (IsInIncludeList(assemblyName!, includeList))
+            {
+                return true;
+            }
+
+            return IsDatadogAssembly(assemblyName) || IsThirdPartyCode(assemblyName!);
         }
 
         private static bool IsThirdPartyCode(string assemblyName)
@@ -41,6 +56,11 @@ namespace Datadog.Trace.Debugger.Symbols
         private static bool IsInIncludeList(string assemblyName, HashSet<string>? includeList)
         {
             return includeList?.Contains(assemblyName) == true;
+        }
+
+        private static bool IsInExcludeList(string assemblyName, HashSet<string>? excludeList)
+        {
+            return excludeList?.Contains(assemblyName) == true;
         }
 
         private static string? GetAssemblyNameWithoutExtension(string assemblyName)
