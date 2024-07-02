@@ -8,7 +8,8 @@ internal class ProfilerInterop
 {
     internal static unsafe NativeObjects.ICorProfilerCallback4Invoker? LoadProfiler(Rewriter rewriter)
     {
-        var clsid = new Guid("846F5F1C-F9AE-4B07-969E-05C26BC060D8");
+        // -> Standard profiler ID : var clsid = new Guid("846F5F1C-F9AE-4B07-969E-05C26BC060D8");
+        var clsid = new Guid("426CE820-97B3-4FFD-9BE7-155B4B5B5E42");  // -> AoT instrumentation profiler Id
         var unknownIid = Interfaces.IUnknown.Guid; // "IUnknown
         var classFactoryIid = Interfaces.IClassFactory.Guid; // "IClassFactory
         IntPtr pcf;

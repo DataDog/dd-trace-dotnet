@@ -98,7 +98,17 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
                 continue;
             }
 
-            var assembly = AssemblyDefinition.ReadAssembly(path, readParams);
+            AssemblyDefinition assembly;
+            try
+            {
+                assembly = AssemblyDefinition.ReadAssembly(path, readParams);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to read assembly: {0}", ex.Message);
+                continue;
+            }
+
             ProcessAssembly(assembly);
 
             foreach (var reference in assembly.MainModule.AssemblyReferences)
@@ -397,6 +407,18 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
         }
 
         return HResult.S_OK;
+    }
+
+    public unsafe HResult RequestReJIT(uint cFunctions, ModuleId* moduleIds, MdMethodDef* methodIds)
+    {
+        System.Diagnostics.Debugger.Break();
+        throw new NotImplementedException();
+    }
+
+    public unsafe HResult RequestRevert(uint cFunctions, ModuleId* moduleIds, MdMethodDef* methodIds, HResult* status)
+    {
+        System.Diagnostics.Debugger.Break();
+        throw new NotImplementedException();
     }
 
     #endregion

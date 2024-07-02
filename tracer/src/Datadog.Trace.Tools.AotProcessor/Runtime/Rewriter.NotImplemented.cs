@@ -370,18 +370,6 @@ internal partial class Rewriter
         throw new NotImplementedException();
     }
 
-    public unsafe HResult RequestReJIT(uint cFunctions, ModuleId* moduleIds, MdMethodDef* methodIds)
-    {
-        System.Diagnostics.Debugger.Break();
-        throw new NotImplementedException();
-    }
-
-    public unsafe HResult RequestRevert(uint cFunctions, ModuleId* moduleIds, MdMethodDef* methodIds, HResult* status)
-    {
-        System.Diagnostics.Debugger.Break();
-        throw new NotImplementedException();
-    }
-
     public unsafe HResult SetEnterLeaveFunctionHooks(void* pFuncEnter, void* pFuncLeave, void* pFuncTailcall)
     {
         System.Diagnostics.Debugger.Break();

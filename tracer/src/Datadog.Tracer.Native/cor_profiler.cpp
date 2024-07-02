@@ -68,6 +68,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
     }
 
+    if (is_aot_instrumentation)
+    {
+        Logger::Info(" * AoT Instrumentation Mode ENABLED *");
+    }
+
     const auto process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
@@ -3851,6 +3856,15 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
 {
     GetAssemblyAndSymbolsBytes(runtime_information_.is_desktop(), pAssemblyArray, assemblySize, pSymbolsArray,
                                symbolsSize);
+}
+
+void CorProfiler::SetAotInstrumentation()
+{
+    is_aot_instrumentation = true;
+}
+bool CorProfiler::GetAotInstrumentation()
+{
+    return is_aot_instrumentation;
 }
 
 
