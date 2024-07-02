@@ -38,8 +38,6 @@ internal partial class TestSuiteSpanTags : TestModuleSpanTags
         OSArchitecture = moduleTags.OSArchitecture;
         OSPlatform = moduleTags.OSPlatform;
         OSVersion = moduleTags.OSVersion;
-        SamplingLimitDecision = moduleTags.SamplingLimitDecision;
-        TracesKeepRate = moduleTags.TracesKeepRate;
         CIJobName = moduleTags.CIJobName;
         CIJobUrl = moduleTags.CIJobUrl;
         CIPipelineId = moduleTags.CIPipelineId;

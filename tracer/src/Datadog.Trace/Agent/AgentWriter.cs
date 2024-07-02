@@ -446,21 +446,10 @@ namespace Datadog.Trace.Agent
                 TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.Default, spans.Count);
             }
 
-            // Add the current keep rate to the root span
-            var rootSpan = spans.Array![spans.Offset].Context.TraceContext?.RootSpan;
-
-            if (rootSpan is not null)
+            // Add the current keep rate to trace
+            if (spans.Array![spans.Offset].Context.TraceContext is { } trace)
             {
-                var currentKeepRate = _traceKeepRateCalculator.GetKeepRate();
-
-                if (rootSpan.Tags is CommonTags commonTags)
-                {
-                    commonTags.TracesKeepRate = currentKeepRate;
-                }
-                else
-                {
-                    rootSpan.Tags.SetMetric(Metrics.TracesKeepRate, currentKeepRate);
-                }
+                trace.TracesKeepRate = _traceKeepRateCalculator.GetKeepRate();
             }
 
             // We use a double-buffering mechanism

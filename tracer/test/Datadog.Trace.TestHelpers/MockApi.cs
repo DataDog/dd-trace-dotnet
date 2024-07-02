@@ -34,6 +34,12 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        public int TraceCount { get; private set; }
+
+        public long DroppedP0TracesCount { get; private set; }
+
+        public long DroppedP0SpansCount { get; private set; }
+
         public List<List<MockSpan>> Wait(TimeSpan? timeout = null)
         {
             _resetEvent.Wait(timeout ?? TimeSpan.FromMinutes(1));
@@ -44,6 +50,10 @@ namespace Datadog.Trace.TestHelpers
 
         public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans)
         {
+            TraceCount += numberOfTraces;
+            DroppedP0TracesCount += numberOfDroppedP0Traces;
+            DroppedP0SpansCount += numberOfDroppedP0Spans;
+
             // use nuget MessagePack to deserialize
             var spans = global::MessagePack.MessagePackSerializer.Deserialize<List<List<MockSpan>>>(traces);
 
