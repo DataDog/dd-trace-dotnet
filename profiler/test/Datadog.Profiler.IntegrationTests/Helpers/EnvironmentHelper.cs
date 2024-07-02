@@ -18,11 +18,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private static string _solutionDirectory = null;
         private readonly string _framework;
         private readonly string _testOutputPath;
+        private readonly bool _enableProfiler;
 
-        public EnvironmentHelper(string framework, bool enableTracer)
+        public EnvironmentHelper(string framework, bool enableTracer, bool enableProfiler)
         {
             _framework = framework;
             _testOutputPath = BuildTestOutputPath(framework);
+            _enableProfiler = enableProfiler;
 
             if (enableTracer)
             {
@@ -172,7 +174,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 environmentVariables["COR_PROFILER_PATH"] = profilerPath;
             }
 
-            environmentVariables["DD_PROFILING_ENABLED"] = "1";
+            if (_enableProfiler)
+            {
+                environmentVariables["DD_PROFILING_ENABLED"] = "1";
+            }
+
             environmentVariables["DD_TRACE_ENABLED"] = "0";
 
             environmentVariables["DD_PROFILING_UPLOAD_PERIOD"] = profilingExportIntervalInSeconds.ToString();

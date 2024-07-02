@@ -92,6 +92,8 @@ Configuration::Configuration()
     _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _enablementStatus = ExtractEnablementStatus();
+    _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
+    _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -561,6 +563,11 @@ DeploymentMode Configuration::GetDeploymentMode() const
     return _deploymentMode;
 }
 
+std::chrono::milliseconds Configuration::GetSsiLongLivedThreshold() const
+{
+    return _ssiLongLivedThreshold;
+}
+
 static bool convert_to(shared::WSTRING const& s, bool& result)
 {
     return shared::TryParseBooleanEnvironmentValue(s, result);
@@ -613,6 +620,18 @@ static bool convert_to(shared::WSTRING const& s, DeploymentMode& result)
     return true;
 }
 
+static bool convert_to(shared::WSTRING const& s, std::chrono::milliseconds& result)
+{
+    auto intermediate = 0;
+    if (TryParse(s, intermediate))
+    {
+        result = std::chrono::milliseconds(intermediate);
+        return true;
+    }
+
+    return false;
+}
+
 template <typename T>
 T Configuration::GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue)
 {
@@ -639,34 +658,53 @@ bool Configuration::IsEnvironmentValueSet(shared::WSTRING const& name, T& value)
 
 EnablementStatus Configuration::ExtractEnablementStatus()
 {
-    auto enabled = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
-
-    auto isEnabled = false;
-    auto parsed = shared::TryParseBooleanEnvironmentValue(enabled, isEnabled);
-    if (enabled.empty() || !parsed)
+    if (shared::EnvironmentExist(EnvironmentVariables::ProfilerEnabled))
     {
-        auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
-        auto pos = r.find(WStr("profiler"));
-        auto ssiEnabled = (pos != shared::WSTRING::npos);
+        auto isEnabled = false;
+        auto enabled = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
+        auto parsed = shared::TryParseBooleanEnvironmentValue(enabled, isEnabled);
 
-        if (ssiEnabled)
+        if (enabled.empty() || !parsed || !isEnabled)
         {
-            return EnablementStatus::SsiEnabled;
+            // It is possible that a Single Step Instrumentation deployment was done
+            // and the profiler was enabled during that step. In that case, the "auto" value
+            // will be set. This should be replaced by adding "profiler" in
+            // EnvironmentVariables::SsiDeployed
+            if (enabled == WStr("auto"))
+            {
+                return EnablementStatus::SsiEnabled;
+            }
+
+            return EnablementStatus::ManuallyDisabled;
         }
-        else
-        {
-            return EnablementStatus::NotSet;
-        }
+        return EnablementStatus::ManuallyEnabled;
+    }
+
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
+    auto pos = r.find(WStr("profiler"));
+    auto ssiEnabled = (pos != shared::WSTRING::npos);
+
+    if (ssiEnabled)
+    {
+        return EnablementStatus::SsiEnabled;
     }
     else
     {
-        if (isEnabled)
-        {
-            return EnablementStatus::ManuallyEnabled;
-        }
-        else
-        {
-            return EnablementStatus::ManuallyDisabled;
-        }
+        return EnablementStatus::NotSet;
     }
+}
+
+std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const
+{
+    auto const defaultValue = 30'000ms;
+    auto value = GetEnvironmentValue(EnvironmentVariables::SsiLongLivedThreshold, defaultValue);
+
+    if (value < 0ms)
+        return defaultValue;
+    return std::chrono::milliseconds(value);
+}
+
+bool Configuration::IsTelemetryToDiskEnabled() const
+{
+    return _isTelemetryToDiskEnabled;
 }

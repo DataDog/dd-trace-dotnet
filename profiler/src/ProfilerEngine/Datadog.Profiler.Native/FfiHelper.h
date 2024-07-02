@@ -22,11 +22,17 @@ public:
     static ddog_ByteSlice StringToByteSlice(char const* str);
     static ddog_CharSlice StringToCharSlice(std::string const& str);
     static ddog_CharSlice StringToCharSlice(std::string_view str);
+    constexpr static ddog_CharSlice StringToCharSlice(const char* str)
+    {
+        return {str, std::char_traits<char>::length(str)};
+    }
     static ddog_prof_ValueType CreateValueType(std::string const& type, std::string const& unit);
     static std::string GetErrorMessage(ddog_Error& error);
+    static std::string GetErrorMessage(ddog_MaybeError& error);
 };
 
 Success make_error(ddog_Error error);
 Success make_error(std::string error);
+Success make_error(ddog_MaybeError error);
 Success make_success();
 } // namespace libdatadog

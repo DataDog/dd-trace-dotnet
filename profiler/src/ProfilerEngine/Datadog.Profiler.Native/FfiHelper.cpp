@@ -48,6 +48,11 @@ std::string FfiHelper::GetErrorMessage(ddog_Error& error)
     return std::string(message.ptr, message.len);
 }
 
+std::string FfiHelper::GetErrorMessage(ddog_MaybeError& error)
+{
+    return std::string((char*)error.some.message.ptr, error.some.message.len);
+}
+
 Success make_error(ddog_Error error)
 {
     return Success(std::make_unique<SuccessImpl>(error));
@@ -56,6 +61,11 @@ Success make_error(ddog_Error error)
 Success make_error(std::string error)
 {
     return Success(std::make_unique<SuccessImpl>(std::move(error)));
+}
+
+Success make_error(ddog_MaybeError error)
+{
+    return Success(std::make_unique<SuccessImpl>(error));
 }
 
 Success make_success()

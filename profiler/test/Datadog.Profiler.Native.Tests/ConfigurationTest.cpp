@@ -846,13 +846,13 @@ TEST(ConfigurationTest, CheckEtwIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsEtwEnabled(), expectedValue);
 }
 
-TEST(ConfigurationTest, CheckSsiDeployedByDefault)
+TEST(ConfigurationTest, CheckSsiNotDeployedByDefault)
 {
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetDeploymentMode(), DeploymentMode::Manual);
 }
 
-TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarConstainsProfiling)
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarConstainsProfiler)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiler"));
     auto configuration = Configuration{};
@@ -860,7 +860,7 @@ TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarConstainsProfiling)
     ASSERT_THAT(configuration.GetDeploymentMode(), expectedValue);
 }
 
-TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarDoesNotContainProfiling)
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarDoesNotContainProfiler)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
     auto configuration = Configuration{};
@@ -919,11 +919,19 @@ TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarDoesNotContainProfiler)
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
 }
 
-TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarIsEmpty)
+TEST(ConfigurationTest, CheckSsiIsDisabledIfEnvVarIsEmpty)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr(""));
     auto configuration = Configuration{};
     auto expectedValue = EnablementStatus::NotSet;
+    ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsActivatedIfProfilerEnvVarConstainsAuto)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("auto"));
+    auto configuration = Configuration{};
+    auto expectedValue = EnablementStatus::SsiEnabled;
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
 }
 
@@ -933,11 +941,25 @@ TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotSet)
     ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::NotSet) << "Env var is not set. Profiler enablement should be the default one.";
 }
 
+TEST(ConfigurationTest, CheckProfilerIsDisabledIfEnvVarIsEmpty)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("  "));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyDisabled);
+}
+
 TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToTrue)
 {
     EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("1 ")); // add a space on purpose to ensure that it's correctly parsed
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyEnabled) << "Env var is to 1. Profiler must be enabled.";
+}
+
+TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotParsable)
+{
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("not_parsable_ "));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyDisabled) << "Profiler must disabled is value for DD_PROLIFER_ENABLED cannot be converted to bool.";
 }
 
 TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToFalse)
@@ -964,4 +986,38 @@ TEST(ConfigurationTest, CheckEtwLoggingIsEnabledIfEnvVarSetToTrue)
         true;
 #endif
     ASSERT_THAT(configuration.IsEtwLoggingEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckLongLivedThresholdWhenEnvVarNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 30'000ms);
+}
+
+TEST(ConfigurationTest, CheckLongLivedThresholdWhenEnvVarNotParsable)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("not_an_int"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 30'000ms);
+}
+
+TEST(ConfigurationTest, CheckLongLivedThresholdWhenEnvVarIsCorrectlySet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("42001"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 42'001ms);
+}
+
+TEST(ConfigurationTest, CheckLongLivedThresholdIsSetToZero)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 0ms);
+}
+
+TEST(ConfigurationTest, CheckLongLivedThresholdIsDefaultIfSetToNegativeValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("-1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 30'000ms);
 }

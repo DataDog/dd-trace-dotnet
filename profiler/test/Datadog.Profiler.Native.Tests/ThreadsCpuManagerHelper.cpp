@@ -3,21 +3,6 @@
 
 #include "ThreadsCpuManagerHelper.h"
 
-const char* ThreadsCpuManagerHelper::GetName()
-{
-    return "ThreadsCpuManagerHelper";
-}
-
-bool ThreadsCpuManagerHelper::StartImpl()
-{
-    return true;
-}
-
-bool ThreadsCpuManagerHelper::StopImpl()
-{
-    return true;
-}
-
 void ThreadsCpuManagerHelper::Map(DWORD threadOSId, const WCHAR* name)
 {
 }

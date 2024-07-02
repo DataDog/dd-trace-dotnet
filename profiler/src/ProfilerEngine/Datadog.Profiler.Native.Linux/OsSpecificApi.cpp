@@ -405,4 +405,24 @@ std::unique_ptr<IEtwEventsManager> CreateEtwEventsManager(
     // No ETW implementation on Linux
     return nullptr;
 }
+
+double GetProcessLifetime()
+{
+    auto machineBootTime = GetMachineBootTime();
+    if (machineBootTime == -1s)
+    {
+        return 0;
+    }
+
+    auto processStartTimeSinceBoot = GetProcessStartTimeSinceBoot();
+    if (processStartTimeSinceBoot == -1s)
+    {
+        return 0;
+    }
+
+    std::chrono::seconds now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch());
+    auto startTimeIsSeconds = now.count() - (machineBootTime.count() + processStartTimeSinceBoot.count());
+    return startTimeIsSeconds;
+}
+
 } // namespace OsSpecificApi

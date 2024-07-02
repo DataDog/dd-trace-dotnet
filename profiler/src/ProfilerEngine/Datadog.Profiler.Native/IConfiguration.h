@@ -70,4 +70,6 @@ public:
     virtual bool IsEtwLoggingEnabled() const = 0;
     virtual EnablementStatus GetEnablementStatus() const = 0;
     virtual DeploymentMode GetDeploymentMode() const = 0;
+    virtual std::chrono::milliseconds GetSsiLongLivedThreshold() const = 0;
+    virtual bool IsTelemetryToDiskEnabled() const = 0;
 };
