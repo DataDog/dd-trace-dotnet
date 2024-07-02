@@ -387,31 +387,27 @@ namespace Datadog.Trace
     {
         Datadog.Trace.ISpanContext Context { get; }
         bool Error { get; set; }
-        string OperationName { get; set; }
-        string ResourceName { get; set; }
-        string ServiceName { get; set; }
+        string? OperationName { get; set; }
+        string? ResourceName { get; set; }
+        string? ServiceName { get; set; }
         ulong SpanId { get; }
         ulong TraceId { get; }
-        string Type { get; set; }
+        string? Type { get; set; }
         void Finish();
         void Finish(System.DateTimeOffset finishTimestamp);
-        string GetTag(string key);
+        string? GetTag(string key);
         void SetException(System.Exception exception);
-        Datadog.Trace.ISpan SetTag(string key, string value);
+        Datadog.Trace.ISpan SetTag(string key, string? value);
     }
     public interface ISpanContext
     {
-        string ServiceName { get; }
+        string? ServiceName { get; }
         ulong SpanId { get; }
         ulong TraceId { get; }
     }
-    public interface ISpanContextExtractor
-    {
-        Datadog.Trace.ISpanContext? Extract<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter);
-    }
     public interface ITracer
     {
-        Datadog.Trace.IScope ActiveScope { get; }
+        Datadog.Trace.IScope? ActiveScope { get; }
         Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
         Datadog.Trace.IScope StartActive(string operationName);
         Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings);
@@ -433,20 +429,22 @@ namespace Datadog.Trace
         public ulong SpanId { get; }
         public ulong TraceId { get; }
     }
-    public class SpanContextExtractor : Datadog.Trace.ISpanContextExtractor
+    public class SpanContextExtractor
     {
         public SpanContextExtractor() { }
         public Datadog.Trace.ISpanContext? Extract<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter) { }
+        public Datadog.Trace.ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter, string messageType, string source) { }
     }
     public class SpanContextInjector
     {
         public SpanContextInjector() { }
         public void Inject<TCarrier>(TCarrier carrier, System.Action<TCarrier, string, string> setter, Datadog.Trace.ISpanContext context) { }
+        public void InjectIncludingDsm<TCarrier>(TCarrier carrier, System.Action<TCarrier, string, string> setter, Datadog.Trace.ISpanContext context, string messageType, string target) { }
     }
     public struct SpanCreationSettings
     {
         public bool? FinishOnClose { get; set; }
-        public Datadog.Trace.ISpanContext Parent { get; set; }
+        public Datadog.Trace.ISpanContext? Parent { get; set; }
         public System.DateTimeOffset? StartTime { get; set; }
     }
     public static class SpanExtensions

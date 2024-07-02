@@ -157,7 +157,7 @@ partial class Build
 
     IEnumerable<Project> ProjectsToPack => new[]
     {
-        Solution.GetProject(Projects.DatadogTrace),
+        Solution.GetProject(Projects.DatadogTraceManual),
         Solution.GetProject(Projects.DatadogTraceOpenTracing),
         Solution.GetProject(Projects.DatadogTraceAnnotations),
         Solution.GetProject(Projects.DatadogTraceTrimming),
@@ -166,7 +166,6 @@ partial class Build
     Project[] ParallelIntegrationTests => new[]
     {
         Solution.GetProject(Projects.TraceIntegrationTests),
-        Solution.GetProject(Projects.OpenTracingIntegrationTests),
     };
 
     Project[] ClrProfilerIntegrationTests
@@ -610,7 +609,7 @@ partial class Build
                 ? TargetFrameworks
                 : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
 
-            // Publish Datadog.Trace.MSBuild which includes Datadog.Trace and Datadog.Trace.AspNet
+            // Publish Datadog.Trace.MSBuild which includes Datadog.Trace
             DotNetPublish(s => s
                 .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
                 .SetConfiguration(BuildConfiguration)
@@ -707,6 +706,9 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
+            // We don't produce an x86-only MSI any more
+            var architectures = ArchitecturesForPlatformForTracer.Where(x => x != MSBuildTargetPlatform.x86);
+            
             MSBuild(s => s
                     .SetTargetPath(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
                     .SetConfiguration(BuildConfiguration)
@@ -714,7 +716,7 @@ partial class Build
                     .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetMaxCpuCount(null)
-                    .CombineWith(ArchitecturesForPlatformForTracer, (o, arch) => o
+                    .CombineWith(architectures, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
                         .SetTargetPlatform(arch)),
                 degreeOfParallelism: 2);
@@ -842,8 +844,6 @@ partial class Build
         .Requires(() => Version)
         .Executes(() =>
         {
-            var fpm = Fpm.Value;
-            var gzip = GZip.Value;
             var chmod = Chmod.Value;
 
             // For legacy back-compat reasons, we _must_ add certain files to their expected locations
@@ -886,7 +886,7 @@ partial class Build
             loaderConfContents = Regex.Replace(
                 input: loaderConfContents,
                 pattern: @";(linux-.*?);\.\/Datadog\.",
-                replacement: $@";$1;./{arch}/Datadog.");
+                replacement: $@";$1;./$1/Datadog.");
             File.WriteAllText(assetsDirectory / FileNames.LoaderConf, contents: loaderConfContents);
 
             // Copy createLogPath.sh script and set the permissions
@@ -924,6 +924,11 @@ partial class Build
                     $"--chdir {assetsDirectory}",
                     $"--after-install {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}",
                     $"--after-remove {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}",
+                    "--license \"Apache License 2.0\"",
+                    "--description \"Datadog APM client library for .NET\"",
+                    "--url \"https://github.com/DataDog/dd-trace-dotnet\"",
+                    "--vendor \"Datadog <package@datadoghq.com>\"",
+                    "--maintainer \"Datadog Packages <package@datadoghq.com>\"",
                     "createLogPath.sh",
                     "dd-dotnet.sh",
                     "netstandard2.0/",

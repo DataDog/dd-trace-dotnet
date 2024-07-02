@@ -82,7 +82,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.IntegrationSettings_Enabled_Get,
             PublicApiUsage.IntegrationSettings_Enabled_Set)]
-        internal bool? EnabledInternal { get; private set; }
+        internal bool? EnabledInternal { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.IntegrationSettings_AnalyticsEnabled_Get,
             PublicApiUsage.IntegrationSettings_AnalyticsEnabled_Set)]
-        internal bool? AnalyticsEnabledInternal { get; private set; }
+        internal bool? AnalyticsEnabledInternal { get; set; }
 
         /// <summary>
         /// Gets or sets a value between 0 and 1 (inclusive)
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.IntegrationSettings_AnalyticsSampleRate_Get,
             PublicApiUsage.IntegrationSettings_AnalyticsSampleRate_Set)]
-        internal double AnalyticsSampleRateInternal { get; private set; }
+        internal double AnalyticsSampleRateInternal { get; set; }
 #pragma warning restore SA1624
     }
 }

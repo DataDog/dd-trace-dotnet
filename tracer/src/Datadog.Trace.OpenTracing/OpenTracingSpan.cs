@@ -3,10 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using OpenTracing;
 using OpenTracing.Tag;
 
 namespace Datadog.Trace.OpenTracing

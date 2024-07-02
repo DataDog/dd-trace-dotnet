@@ -262,11 +262,11 @@ namespace PrepareRelease
                     NugetVersionReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
+                    "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
+                    "src/Datadog.Trace.Manual/Datadog.Trace.Manual.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(
