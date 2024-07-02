@@ -79,25 +79,43 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
 
     public unsafe void ProcessApp(string appAssemblyPath, string otputPath = "./output")
     {
+        var references = new HashSet<string>();
+        var assemblies = new Queue<string>();
+
         SetOutput(otputPath);
         var folder = Path.GetDirectoryName(appAssemblyPath) ?? string.Empty;
         var readParams = new ReaderParameters(ReadingMode.Immediate);
 
-        var systemRuntimeAssembly = AssemblyDefinition.ReadAssembly(Path.Combine(folder, "System.Runtime.dll"), readParams);
-        ProcessAssembly(systemRuntimeAssembly);
+        AddAssembly(Path.Combine(folder, "System.Runtime.dll"));
+        AddAssembly(Path.GetFullPath("Datadog.Trace.dll"));
+        AddAssembly(appAssemblyPath);
 
-        var datadogPath = Path.GetFullPath("Datadog.Trace.dll");
-        var datadogAssembly = AssemblyDefinition.ReadAssembly(datadogPath, readParams);
-        ProcessAssembly(datadogAssembly);
+        while (assemblies.Count > 0)
+        {
+            var path = assemblies.Dequeue();
+            if (!File.Exists(path))
+            {
+                continue;
+            }
 
-        var appAssembly = AssemblyDefinition.ReadAssembly(appAssemblyPath, readParams);
-        ProcessAssembly(appAssembly);
+            var assembly = AssemblyDefinition.ReadAssembly(path, readParams);
+            ProcessAssembly(assembly);
 
-        // foreach (var reference in appAssembly.MainModule.AssemblyReferences)
-        // {
-        //     var assembly = AssemblyDefinition.ReadAssembly(appAssemblyPath, readParams);
-        //     ProcessAssembly(assembly);
-        // }
+            foreach (var reference in assembly.MainModule.AssemblyReferences)
+            {
+                AddAssembly(Path.Combine(folder, reference.Name + ".dll"));
+            }
+        }
+
+        void AddAssembly(string path)
+        {
+            var fileName = Path.GetFileNameWithoutExtension(path);
+            if (!references!.Contains(fileName))
+            {
+                references.Add(fileName);
+                assemblies!.Enqueue(path);
+            }
+        }
     }
 
     internal void InitAppDomain()
@@ -112,8 +130,16 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
 
     internal unsafe bool ProcessAssembly(AssemblyDefinition assembly)
     {
-        // Assembly
         var path = assembly.MainModule.FileName;
+        Console.Write("Processing assembly: {0} ...", Path.GetFileName(path));
+
+        if ((assembly.MainModule.Attributes & ModuleAttributes.ILOnly) == 0)
+        {
+            Console.Write(" Mixed assembly. ");
+            assembly.MainModule.Attributes |= ModuleAttributes.ILOnly;
+        }
+
+        // Assembly
         var assemblyInfo = new AssemblyInfo(this, assembly, assemblies.Count + 1, appDomainInfo, assembly.Name.Name, path, GetModuleId);
         assemblies[assemblyInfo.Id.Value] = assemblyInfo;
         if (eventsLow.HasFlag(CorPrfMonitor.COR_PRF_MONITOR_ASSEMBLY_LOADS))
@@ -155,10 +181,20 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
         }
 
         // Write processed assembly
-        var output = Path.Combine(outputPath, Path.GetFileName(path));
-        var writeParams = new WriterParameters();
-        writeParams.Raw = true;
-        assembly.Write(output, writeParams);
+        if (assembly.MainModule.IsDirty)
+        {
+            var output = Path.Combine(outputPath, Path.GetFileName(path));
+            var writeParams = new WriterParameters();
+            writeParams.Raw = true;
+            assembly.Write(output, writeParams);
+
+            Console.WriteLine(" Written.");
+        }
+        else
+        {
+            Console.WriteLine(" Unchanged.");
+        }
+
         return true;
     }
 
