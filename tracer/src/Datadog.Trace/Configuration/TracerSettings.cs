@@ -1361,7 +1361,14 @@ namespace Datadog.Trace.Configuration
 
                 if (supportedSamplerName is null)
                 {
-                    log.LogUnsupportedConfiguration(otelSampleType.Key, samplerName, ddSampleRate.Key);
+                    log.EnqueueAction(
+                        (log, _) =>
+                        {
+                            log.Warning(
+                                "OpenTelemetry configuration {OpenTelemetryConfiguration}={OpenTelemetryValue} is not supported. Using default configuration.",
+                                otelSampleType.Key,
+                                samplerName);
+                        });
                     return ddResult;
                 }
 

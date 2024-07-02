@@ -867,9 +867,10 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
 
             settings.IsActivityListenerEnabled.Should().Be(expected);
-            Count? metric = (value ?? fallbackValue, otelValue) switch
+            Count? metric = (value ?? fallbackValue, otelValue?.ToLower()) switch
             {
-                (null, "uses_default_value") => Count.OpenTelemetryConfigInvalid,
+                (null, "true") => null,
+                (null, _) => Count.OpenTelemetryConfigInvalid,
                 (not null, not null) => Count.OpenTelemetryConfigHiddenByDatadogConfig,
                 _ => null,
             };
