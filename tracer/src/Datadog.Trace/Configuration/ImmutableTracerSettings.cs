@@ -29,6 +29,7 @@ namespace Datadog.Trace.Configuration
     public partial record ImmutableTracerSettings
     {
         private readonly bool _traceEnabled;
+        private readonly bool _appsecStandaloneEnabled;
         private readonly DomainMetadata _domainMetadata;
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly bool _logsInjectionEnabled;
@@ -94,6 +95,7 @@ namespace Datadog.Trace.Configuration
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
             _traceEnabled = settings.TraceEnabledInternal;
+            _appsecStandaloneEnabled = settings.AppsecStandaloneEnabledInternal;
             ExporterInternal = new ImmutableExporterSettings(settings.ExporterInternal, true);
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
@@ -257,6 +259,13 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_TraceEnabled_Get)]
         internal bool TraceEnabledInternal => DynamicSettings.TraceEnabled ?? _traceEnabled;
+
+        /// <summary>
+        /// Gets a value indicating whether Appsec standalone billing is enabled.
+        /// Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AppsecStandaloneEnabled"/>
+        internal bool AppsecStandaloneEnabledInternal => DynamicSettings.AppsecStandaloneEnabled ?? _appsecStandaloneEnabled;
 
         /// <summary>
         /// Gets the exporter settings that dictate how the tracer exports data.
