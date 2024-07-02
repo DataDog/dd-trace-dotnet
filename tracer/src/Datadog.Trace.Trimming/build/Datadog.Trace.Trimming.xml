@@ -568,6 +568,7 @@
       <type fullname="System.Func`4" />
       <type fullname="System.Func`5" />
       <type fullname="System.Func`6" />
+      <type fullname="System.Func`7" />
       <type fullname="System.GC" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />

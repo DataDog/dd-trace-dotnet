@@ -195,6 +195,12 @@ add_library("Datadog.Tracer.Native.static" STATIC
         fault_tolerant_tracker.cpp
         fault_tolerant_cor_profiler_function_control.cpp
         threadUtils.cpp
+        function_control_wrapper.cpp
+        tracer_handler_module_method.cpp
+        tracer_integration_definition.cpp
+        tracer_method_rewriter.cpp
+        tracer_rejit_preprocessor.cpp
+        Generated/generated_definitions.cpp
 )
 
 set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")
