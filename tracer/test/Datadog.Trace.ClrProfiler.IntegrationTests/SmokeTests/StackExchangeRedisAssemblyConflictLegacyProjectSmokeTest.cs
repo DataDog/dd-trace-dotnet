@@ -19,8 +19,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [Fact(Skip = ".NET Framework test, but cannot run on Windows because it requires Redis")]
+        [Fact]
         [Trait("Category", "Smoke")]
+        [Trait("SkipInCI", "True")] // .NET Framework test, but cannot run on Windows in CI because it requires Redis
         public async Task NoExceptions()
         {
             await CheckForSmoke(shouldDeserializeTraces: false);

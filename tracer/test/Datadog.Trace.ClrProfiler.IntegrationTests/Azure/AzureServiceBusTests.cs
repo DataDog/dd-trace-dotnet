@@ -41,9 +41,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS SQS integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 
-        [SkippableTheory(Skip = "We are unable to test all the features of Azure Service Bus with an emulator. For now, run only locally with a connection string to a live Azure Service Bus namespace")]
+        [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
+        [Trait("SkipInCI", "True")] // We are unable to test all the features of Azure Service Bus with an emulator. For now, run only locally with a connection string to a live Azure Service Bus namespace
         public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
