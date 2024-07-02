@@ -130,7 +130,7 @@ int strerror_r(int errnum, char* buf, size_t buflen)
 // Can also be looked up here https://refspecs.linuxbase.org/LSB_5.0.0/LSB-Core-generic/LSB-Core-generic/baselib---xstat.html
 #ifndef _STAT_VER_LINUX
 #  ifndef __x86_64__
-#    define _STAT_VER_LINUX 3
+#    define _STAT_VER_LINUX 0
 #  else
 #    define _STAT_VER_LINUX 1
 #  endif // __x86_64__
