@@ -11,7 +11,7 @@ namespace Datadog.Trace.Agent;
 /// The encoding used on the content body.
 /// <see href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding">Mozilla</see> for the content-encoding header
 /// </summary>
-public enum ContentEncodingType
+internal enum ContentEncodingType
 {
     /// <summary>
     /// The Content-Encoding header is not present or was empty
