@@ -1683,8 +1683,6 @@ partial class Build
                 "Samples.WebRequest.NetFramework20",
                 "DogStatsD.RaceCondition",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
-                "Samples.OracleMDA", // We don't test these yet
-                "Samples.OracleMDA.Core", // We don't test these yet
                 "MismatchedTracerVersions",
                 "IBM.Data.DB2.DBCommand",
                 "Sandbox.AutomaticInstrumentation", // Doesn't run on Linux
