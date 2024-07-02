@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Data.Common;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
@@ -31,11 +32,7 @@ public class EntityCommandAspect
         if (command is DbCommand dbCommand)
         {
             var commandText = dbCommand.CommandText;
-            if (!string.IsNullOrEmpty(commandText))
-            {
-                IastModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
-                RaspModule.OnSqlI(commandText, IntegrationId.SqlClient);
-            }
+            IastRaspVulnerabilityManager.OnSqlI(commandText, IntegrationId.SqlClient);
         }
 
         return command;

@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
 
@@ -102,8 +104,7 @@ public class FileAspect
     [AspectMethodInsertBefore("System.IO.File::Replace(System.String,System.String,System.String,System.Boolean)", new int[] { 1, 2, 3 })]
     public static string ReviewPath(string path)
     {
-        IastModule.OnPathTraversal(path);
-        RaspModule.OnLfi(path);
+        IastRaspVulnerabilityManager.OnPathTraversal(path);
         return path;
     }
 }
