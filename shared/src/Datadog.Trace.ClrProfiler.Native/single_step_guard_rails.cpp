@@ -59,6 +59,22 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
         {
             tstVerProfilerInfo->Release();
 
+            // Is it a known-faulty release?
+            if(runtimeInformation.major_version == 6
+                && runtimeInformation.minor_version == 0
+                && runtimeInformation.build_version < 13)
+            {
+                // known faulty release with bug in the runtime that can cause crashes when we're attached:
+                // https://github.com/dotnet/runtime/pull/78670
+                Log::Debug("SingleStepGuardRails::CheckRuntime: Known faulty .NET runtime version detected, aborting instrumentation");
+
+                const auto eol = ".NET 6.0.12 and earlier have known crashing bugs";
+                const auto runtime = std::to_string(runtimeInformation.major_version) + "." +
+                                     std::to_string(runtimeInformation.minor_version) + "." +
+                                     std::to_string(runtimeInformation.build_version);
+                return HandleUnsupportedNetCoreVersion(eol, runtime, false); // not eol, just incompatible
+            }
+
             // .NET Core 3.1+, but is it _too_ high?
             if(runtimeInformation.major_version <= 8)
             {
@@ -111,7 +127,7 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
 
 HRESULT SingleStepGuardRails::HandleUnsupportedNetCoreVersion(const std::string& unsupportedDescription, const std::string& runtimeVersion, const bool isEol)
 {
-    if(ShouldForceInstrumentationOverride(unsupportedDescription))
+    if(ShouldForceInstrumentationOverride(unsupportedDescription, isEol))
     {
         return S_OK;
     }
@@ -122,7 +138,7 @@ HRESULT SingleStepGuardRails::HandleUnsupportedNetCoreVersion(const std::string&
 
 HRESULT SingleStepGuardRails::HandleUnsupportedNetFrameworkVersion(const std::string& unsupportedDescription, const std::string& runtimeVersion, const bool isEol)
 {
-    if(ShouldForceInstrumentationOverride(unsupportedDescription))
+    if(ShouldForceInstrumentationOverride(unsupportedDescription, isEol))
     {
         return S_OK;
     }
@@ -131,7 +147,7 @@ HRESULT SingleStepGuardRails::HandleUnsupportedNetFrameworkVersion(const std::st
     return E_FAIL;
 }
 
-bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string& eolDescription)
+bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string& eolDescription, const bool isEol)
 {
     // Should only be called when we have an incompatible runtime
     Log::Warn(
@@ -154,8 +170,9 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
         return true;
     }
 
+    const std::string reason = isEol ? "eol_runtime" : "incompatible_runtime";
     Log::Warn(
-        "SingleStepGuardRails::HandleUnsupportedNetCoreVersion: Aborting application instrumentation due to eol_runtime");
+        "SingleStepGuardRails::HandleUnsupportedNetCoreVersion: Aborting application instrumentation due to ", reason);
     return false;
 }
 
