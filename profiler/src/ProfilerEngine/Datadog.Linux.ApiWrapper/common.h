@@ -36,4 +36,3 @@ int is_interrupted_by_profiler(int rc, int error_code, int interrupted_by_profil
 int __dd_set_shared_memory(volatile int* mem);
 
 void *__dd_dlsym(void *handle, const char *symbol);
-void ensure_libpthread_is_loaded();
