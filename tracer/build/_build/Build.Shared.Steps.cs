@@ -92,11 +92,11 @@ partial class Build
         {
             EnsureExistingDirectory(NativeBuildDirectory);
 
-            var additionalArgs = string.Empty;
+            var additionalArgs = $"-DUNIVERSAL={(AsUniversal ? "ON" : "OFF")}";
 
             if (AsUniversal)
             {
-                additionalArgs += $"-DUNIVERSAL=ON -DCMAKE_TOOLCHAIN_FILE=./build/cmake/Universal.cmake.{(IsArm64 ? "aarch64" : "x86_64")}";
+                additionalArgs += $" -DCMAKE_TOOLCHAIN_FILE=./build/cmake/Universal.cmake.{(IsArm64 ? "aarch64" : "x86_64")}";
             }
 
             CMake.Value(
