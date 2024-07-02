@@ -24,6 +24,12 @@ namespace Datadog.Trace.Propagators
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
+            // Case 1 (1): If appsec standalone is enabled and appsec propagation is disabled (no ASM events) -> stop propagation
+            if (Tracer.Instance.Settings.AppsecStandaloneEnabledInternal && context.TraceContext.Tags.GetTag(Tags.PropagatedAppSec) != "1")
+            {
+                return;
+            }
+
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.Datadog);
             var invariantCulture = CultureInfo.InvariantCulture;
 
@@ -43,7 +49,6 @@ namespace Datadog.Trace.Propagators
             }
 
             var propagatedTagsHeader = context.PrepareTagsHeaderForPropagation();
-
             if (!string.IsNullOrEmpty(propagatedTagsHeader))
             {
                 carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTagsHeader!);
@@ -67,8 +72,17 @@ namespace Datadog.Trace.Propagators
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, HttpHeaderNames.SamplingPriority);
             var origin = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.Origin);
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.PropagatedTags);
-
             var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
+
+            // Case 1 (2):
+            // When in appsec standalone mode, only distributed traces with the `_dd.p.appsec` tag
+            // are propagated downstream, however we need 1 trace per minute sent to the backend, so
+            // we unset sampling priority so the rate limiter decides.
+            if (Tracer.Instance.Settings.AppsecStandaloneEnabledInternal)
+            {
+                // If the trace has appsec propagation tag, the default priority is user keep
+                samplingPriority = traceTags.GetTag(Tags.PropagatedAppSec) == "1" ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.Default;
+            }
 
             // reconstruct 128-bit trace id from the lower 64 bits in "x-datadog-traceid"
             // and the upper 64 bits in "_dd.p.tid"
