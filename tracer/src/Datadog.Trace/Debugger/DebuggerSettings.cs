@@ -58,11 +58,27 @@ namespace Datadog.Trace.Debugger
                                          .AsInt32(DefaultSymbolBatchSizeInBytes, batchSize => batchSize > 0)
                                          .Value;
 
+            var thirdPartyIncludes = config
+                                  .WithKeys(ConfigurationKeys.Debugger.ThirdPartyDetectionIncludes)
+                                  .AsString()?
+                                  .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                   Enumerable.Empty<string>();
+
+            ThirdPartyIncludes = new HashSet<string>(thirdPartyIncludes, StringComparer.OrdinalIgnoreCase);
+
+            var thirdPartyExcludes = config
+                                    .WithKeys(ConfigurationKeys.Debugger.ThirdPartyDetectionExcludes)
+                                    .AsString()?
+                                    .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                     Enumerable.Empty<string>();
+
+            ThirdPartyExcludes = new HashSet<string>(thirdPartyExcludes, StringComparer.OrdinalIgnoreCase);
+
             var includeLibraries = config
-                                     .WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseIncludes)
-                                     .AsString()?
-                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
-                                      Enumerable.Empty<string>();
+                                  .WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseIncludes)
+                                  .AsString()?
+                                  .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                   Enumerable.Empty<string>();
 
             SymbolDatabaseIncludes = new HashSet<string>(includeLibraries, StringComparer.OrdinalIgnoreCase);
 
@@ -104,6 +120,10 @@ namespace Datadog.Trace.Debugger
         public int UploadBatchSize { get; }
 
         public int SymbolDatabaseBatchSizeInBytes { get; }
+
+        public HashSet<string> ThirdPartyIncludes { get; }
+
+        public HashSet<string> ThirdPartyExcludes { get; }
 
         public HashSet<string> SymbolDatabaseIncludes { get; }
 
