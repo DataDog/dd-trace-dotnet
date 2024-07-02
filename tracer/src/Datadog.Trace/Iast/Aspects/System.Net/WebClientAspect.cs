@@ -4,11 +4,8 @@
 // </copyright>
 
 using System;
-using System.Net;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Propagation;
 
 #nullable enable
 

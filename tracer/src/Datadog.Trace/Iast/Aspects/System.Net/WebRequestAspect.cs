@@ -5,7 +5,6 @@
 
 using System;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
 
 #nullable enable

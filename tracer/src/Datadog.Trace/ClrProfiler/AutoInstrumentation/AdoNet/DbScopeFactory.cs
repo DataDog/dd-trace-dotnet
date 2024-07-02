@@ -53,13 +53,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return null;
                 }
 
-                if (Iast.Iast.Instance.Settings.Enabled)
-                {
-                    IastModule.OnSqlQuery(commandText, integrationId);
-                }
-
                 // We might block the SQL call from RASP depending on the query
-                RaspModule.OnSqlI(commandText, integrationId);
+                IastRaspVulnerabilityManager.OnSqlI(commandText, integrationId);
 
                 tags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
                 tags.DbType = dbType;

@@ -7,7 +7,6 @@
 using System.Net.Http;
 #endif
 using System;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec;
 
 #if NETFRAMEWORK
@@ -89,7 +88,7 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::set_BaseAddress(System.Uri)")]
     public static Uri ReviewUri(Uri parameter)
     {
-        IastRaspVulnerabilityManager.OnSSRF(parameter);
+        IastRaspVulnerabilityManager.OnSSRF(parameter.OriginalString);
         return parameter;
     }
 
