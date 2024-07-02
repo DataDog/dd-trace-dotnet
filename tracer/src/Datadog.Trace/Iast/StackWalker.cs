@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -38,7 +39,7 @@ internal static class StackWalker
         "Azure."
     };
 
-    private static readonly Dictionary<string, bool> ExcludedAssemblyCache = new Dictionary<string, bool>();
+    private static readonly ConcurrentDictionary<string, bool> ExcludedAssemblyCache = new ConcurrentDictionary<string, bool>();
 
     public static StackFrameInfo GetFrame(StackTrace? externalStack = null)
     {
