@@ -7,6 +7,18 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <!-- Stop NuGet complaining about us targetting obsolete TFMs etc-->
+    <NuGetAudit>false</NuGetAudit>
+    <!--  _Really_ stop it complaining  -->
+    <NoWarn>NU1901;NU1902;NU1903;NU1904</NoWarn>
+
+    <ArtifactsPath>$(MSBuildThisFileDirectory)../../../../artifacts</ArtifactsPath>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <LangVersion>latest</LangVersion>
     
     <DebugType>portable</DebugType>

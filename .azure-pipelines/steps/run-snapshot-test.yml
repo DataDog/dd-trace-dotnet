@@ -41,11 +41,11 @@ steps:
     displayName: Set env-specific variables
 
   - script: |
-      mkdir -p tracer/build_data/snapshots
-      mkdir -p tracer/build_data/logs
-      mkdir -p tracer/build_data/dumps
+      mkdir -p artifacts/build_data/snapshots
+      mkdir -p artifacts/build_data/logs
+      mkdir -p artifacts/build_data/dumps
       # make sure that the container have enough rights to write in this folder
-      sudo chmod -R 777 tracer/build_data/ || true
+      sudo chmod -R 777 artifacts/build_data/ || true
     displayName: create test data directories
 - ${{ else }}:
   - bash: |
@@ -142,6 +142,6 @@ steps:
 
 - ${{ if eq(parameters.isLinux, true) }}:
     - script: |
-        sudo chmod -R 644 tracer/build_data/dumps/* || true
+        sudo chmod -R 644 artifacts/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
