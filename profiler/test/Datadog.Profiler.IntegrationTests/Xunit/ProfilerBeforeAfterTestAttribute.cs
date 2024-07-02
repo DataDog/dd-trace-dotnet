@@ -13,11 +13,15 @@ namespace Datadog.Profiler.IntegrationTests.Xunit
         public override void After(MethodInfo methodUnderTest)
         {
             TestContext.Current.TestName = null;
+            TestContext.Current.WithTracer = false;
         }
 
         public override void Before(MethodInfo methodUnderTest)
         {
             TestContext.Current.TestName = methodUnderTest.DeclaringType.Name + "." + methodUnderTest.Name;
+            TestContext.Current.WithTracer =
+                methodUnderTest.GetCustomAttribute<WithTracerAttribute>() != null ||
+                methodUnderTest.DeclaringType.GetCustomAttribute<WithTracerAttribute>() != null;
         }
     }
 }

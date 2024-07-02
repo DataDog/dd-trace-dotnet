@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -19,6 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 {
+    [WithTracer]
     public class CodeHotspotTest
     {
         private const string ScenarioCodeHotspot = "--scenario 256";
@@ -33,7 +35,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void CheckTraceContextAreAttachedForWalltimeProfilerHumberOfThreads(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot + " --with-idle-threads 500");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioCodeHotspot + " --with-idle-threads 500");
             // By default, the codehotspot feature is activated
 
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
@@ -81,7 +83,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void CheckSpanContextAreAttachedForWalltimeProfiler(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioCodeHotspot);
             // By default, the codehotspot feature is activated
 
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
@@ -129,7 +131,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void CheckSpanContextAreAttachedForCpuProfiler(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioCodeHotspot);
             // By default, the codehotspot feature is activated
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
@@ -175,7 +177,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void NoTraceContextAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioCodeHotspot);
             runner.Environment.SetVariable(EnvironmentVariables.CodeHotSpotsEnable, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -191,7 +193,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void CheckEndpointsAreAttached(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioCodeHotspot);
             runner.TestDurationInSeconds = 20;
 
             // By default, the endpoint profiling feature is activated
@@ -210,7 +212,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void NoEndpointsAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioCodeHotspot);
             runner.TestDurationInSeconds = 20;
             runner.Environment.SetVariable(EnvironmentVariables.EndpointProfilerEnabled, "0");
 

@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -64,9 +65,10 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         }
 
         [TestAppFact("Samples.BuggyBits")]
+        [WithTracer]
         public void EnsureAppDoesNotCrashIfProfilerDeactivateAndTracerActivated(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
 
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);
