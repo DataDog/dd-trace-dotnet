@@ -26,7 +26,7 @@ public class HttpMessageTests
     {
         var httpResponse = new HttpResponse(200, "OK", new HttpHeaders(), null);
 
-        httpResponse.GetContentEncoding().Should().Be(null);
+        httpResponse.GetContentEncoding().Should().Be(new UTF8Encoding(false, true));
     }
 
     [Fact]
