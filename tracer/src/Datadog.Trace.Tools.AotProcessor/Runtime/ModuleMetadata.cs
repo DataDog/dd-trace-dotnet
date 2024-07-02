@@ -730,7 +730,7 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             if (string.IsNullOrEmpty(name)) { return HResult.E_INVALIDARG; }
             if (name == "mscorlib") { name = "System.Runtime"; }
 
-            var reference = Module.Definition.AssemblyReferences.FirstOrDefault(a => a.Name == "System.Runtime");
+            var reference = Module.Definition.AssemblyReferences.FirstOrDefault(a => a.Name == name);
             if (reference is not null)
             {
                 *pmdar = new MdAssemblyRef(reference.MetadataToken.ToInt32());
