@@ -18,28 +18,28 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.304.19 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.304.19" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.304.22 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.304.22" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.303.25 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.303.25" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.304.1 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.304.1" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.301.101 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.301.101" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.301.104 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.301.104" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.301.57 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.301.57" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.301.60 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.301.60" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.301.22 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.301.22" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.301.25 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.301.25" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
@@ -63,8 +63,8 @@
 
     <!-- Integration: Google.Protobuf -->
     <!--    Assembly: Google.Protobuf -->
-    <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.27.1 -->
-    <PackageReference Include="Google.Protobuf" Version="3.27.1" />
+    <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.27.2 -->
+    <PackageReference Include="Google.Protobuf" Version="3.27.2" />
 
     <!-- Integration: GraphQL -->
     <!--    Assembly: GraphQL -->
@@ -200,13 +200,13 @@
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!--    Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.26.0 -->
-    <PackageReference Include="MongoDB.Driver" Version="2.26.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.27.0 -->
+    <PackageReference Include="MongoDB.Driver" Version="2.27.0" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!--    Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.26.0 -->
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.26.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.27.0 -->
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.27.0" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
@@ -275,8 +275,8 @@
 
     <!-- Integration: StackExchange.Redis -->
     <!--    Assembly: StackExchange.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.7.33 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.7.33" />
+    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.8.0 -->
+    <PackageReference Include="StackExchange.Redis" Version="2.8.0" />
 
     <!-- Integration: StackExchange.Redis.StrongName -->
     <!--    Assembly: StackExchange.Redis.StrongName -->

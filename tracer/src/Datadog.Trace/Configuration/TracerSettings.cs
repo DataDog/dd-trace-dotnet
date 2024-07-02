@@ -106,9 +106,11 @@ namespace Datadog.Trace.Configuration
                          .WithKeys(ConfigurationKeys.Environment)
                          .AsString();
 
+            var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
             ServiceNameInternal = config
-                         .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
-                         .AsStringWithOpenTelemetryMapping(ConfigurationKeys.OpenTelemetry.ServiceName);
+                                 .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                                 .AsStringResult()
+                                 .OverrideWith(in otelServiceName);
 
             ServiceVersionInternal = config
                             .WithKeys(ConfigurationKeys.ServiceVersion)
@@ -126,14 +128,16 @@ namespace Datadog.Trace.Configuration
                                 .WithKeys(ConfigurationKeys.GitMetadataEnabled)
                                 .AsBool(defaultValue: true);
 
+            var otelTraceEnabled = config
+                                  .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
+                                  .AsBoolResult(
+                                       value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
+                                                    ? ParsingResult<bool>.Success(result: false)
+                                                    : ParsingResult<bool>.Failure());
             TraceEnabledInternal = config
-                          .WithKeys(ConfigurationKeys.TraceEnabled)
-                          .AsBoolWithOpenTelemetryMapping(
-                            defaultValue: true,
-                            openTelemetryKey: ConfigurationKeys.OpenTelemetry.TracesExporter,
-                            openTelemetryConverter: value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
-                                                             ? ParsingResult<bool>.Success(result: false)
-                                                             : ParsingResult<bool>.Failure());
+                                  .WithKeys(ConfigurationKeys.TraceEnabled)
+                                  .AsBoolResult()
+                                  .OverrideWith(in otelTraceEnabled, defaultValue: true);
 
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
@@ -162,17 +166,20 @@ namespace Datadog.Trace.Configuration
 #pragma warning restore 618
                                          .AsInt32(defaultValue: 100);
 
+            var otelTags = config
+                          .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
+                          .AsDictionaryResult(separator: '=');
+
+            // backwards compatibility for names used in the past
             GlobalTagsInternal = config
-                        // backwards compatibility for names used in the past
-                        .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
-                        .AsDictionaryWithOpenTelemetryMapping(
-                            getDefaultValue: () => new Dictionary<string, string>(),
-                            openTelemetryKey: ConfigurationKeys.OpenTelemetry.ResourceAttributes)
-                       // Filter out tags with empty keys or empty values, and trim whitespace
-                       ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
-                      // default value (empty)
-                      ?? (IDictionary<string, string>)new ConcurrentDictionary<string, string>();
+                                .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                                .AsDictionaryResult()
+                                .OverrideWith(
+                                     RemapOtelTags(in otelTags),
+                                     () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
+                                 // Filter out tags with empty keys or empty values, and trim whitespace
+                                .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             HeaderTagsNormalizationFixEnabled = config
                                                .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
@@ -211,13 +218,16 @@ namespace Datadog.Trace.Configuration
 
             StatsComputationInterval = config.WithKeys(ConfigurationKeys.StatsComputationInterval).AsInt32(defaultValue: 10);
 
-            RuntimeMetricsEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
-                                          .AsBoolWithOpenTelemetryMapping(
-                                              defaultValue: false,
-                                              openTelemetryKey: ConfigurationKeys.OpenTelemetry.MetricsExporter,
-                                              openTelemetryConverter: value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
-                                                                               ? ParsingResult<bool>.Success(result: false)
-                                                                               : ParsingResult<bool>.Failure());
+            var otelRuntimeMetricsEnabled = config
+                                          .WithKeys(ConfigurationKeys.OpenTelemetry.MetricsExporter)
+                                          .AsBoolResult(
+                                               value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
+                                                            ? ParsingResult<bool>.Success(result: false)
+                                                            : ParsingResult<bool>.Failure());
+            RuntimeMetricsEnabled = config
+                                   .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
+                                   .AsBoolResult()
+                                   .OverrideWith(in otelRuntimeMetricsEnabled, defaultValue: false);
 
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
@@ -253,7 +263,7 @@ namespace Datadog.Trace.Configuration
 
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
-            GlobalSamplingRateInternal = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsOpenTelemetrySampleRate();
+            GlobalSamplingRateInternal = BuildSampleRate(in config);
 
             // We need to record a default value for configuration reporting
             // However, we need to keep GlobalSamplingRateInternal null because it changes the behavior of the tracer in subtle ways
@@ -329,48 +339,54 @@ namespace Datadog.Trace.Configuration
                                                 .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegexTimeout)
                                                 .AsDouble(200, val1 => val1 is > 0).Value;
 
+            var otelActivityListenerEnabled = config
+                                             .WithKeys(ConfigurationKeys.OpenTelemetry.SdkDisabled)
+                                             .AsBoolResult(
+                                                  value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                                                               ? ParsingResult<bool>.Success(result: false)
+                                                               : ParsingResult<bool>.Failure());
             IsActivityListenerEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
-                                       .AsBoolWithOpenTelemetryMapping(
-                                            defaultValue: false,
-                                            openTelemetryKey: ConfigurationKeys.OpenTelemetry.SdkDisabled,
-                                            openTelemetryConverter: value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
-                                                                             ? ParsingResult<bool>.Success(result: false)
-                                                                             : ParsingResult<bool>.Failure());
+                                       .AsBoolResult()
+                                       .OverrideWith(in otelActivityListenerEnabled, defaultValue: false);
 
             OpenTelemetryLegacyOperationNameEnabled = config
                                                      .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled)
                                                      .AsBool(false);
 
+            Func<string[], bool> injectionValidator = styles => styles is { Length: > 0 };
+            Func<string, ParsingResult<string[]>> otelConverter =
+                style => TrimSplitString(style, commaSeparator)
+                        .Select(
+                             s => string.Equals(s, "b3", StringComparison.OrdinalIgnoreCase)
+                                      ? ContextPropagationHeaderStyle.B3SingleHeader // OTEL's "b3" maps to "b3 single header"
+                                      : s)
+                        .ToArray();
+
+            var getDefaultPropagationHeaders = () => new DefaultResult<string[]>(
+                [ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext],
+                $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}");
+
+            // Same otel config is used for both injection and extraction
+            var otelPropagation = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.Propagators)
+                            .GetAsClassResult(
+                                 validator: injectionValidator, // invalid individual values are rejected later
+                                 converter: otelConverter);
+
             PropagationStyleInject = config
                                     .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
-                                    .GetAs(
-                                         getDefaultValue: () => new DefaultResult<string[]>(
-                                             new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext },
-                                             $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}"),
-                                         validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
-                                         converter: style => TrimSplitString(style, commaSeparator),
-                                         openTelemetryKey: ConfigurationKeys.OpenTelemetry.Propagators,
-                                         openTelemetryConverter: style => TrimSplitString(style, commaSeparator)
-                                                                          .Select(s => string.Equals(s, "b3", StringComparison.OrdinalIgnoreCase)
-                                                                              ? ContextPropagationHeaderStyle.B3SingleHeader // OTEL's "b3" maps to "b3 single header"
-                                                                              : s)
-                                                                          .ToArray());
+                                    .GetAsClassResult(
+                                         validator: injectionValidator, // invalid individual values are rejected later
+                                         converter: style => TrimSplitString(style, commaSeparator))
+                                    .OverrideWith(in otelPropagation, getDefaultPropagationHeaders);
 
             PropagationStyleExtract = config
                                      .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
-                                     .GetAs(
-                                          getDefaultValue: () => new DefaultResult<string[]>(
-                                              new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext },
-                                              $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}"),
-                                          validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
-                                          converter: style => TrimSplitString(style, commaSeparator),
-                                          openTelemetryKey: ConfigurationKeys.OpenTelemetry.Propagators,
-                                          openTelemetryConverter: style => TrimSplitString(style, commaSeparator)
-                                                                          .Select(s => string.Equals(s, "b3", StringComparison.OrdinalIgnoreCase)
-                                                                              ? ContextPropagationHeaderStyle.B3SingleHeader // OTEL's "b3" maps to "b3 single header"
-                                                                              : s)
-                                                                          .ToArray());
+                                     .GetAsClassResult(
+                                          validator: injectionValidator, // invalid individual values are rejected later
+                                          converter: style => TrimSplitString(style, commaSeparator))
+                                     .OverrideWith(in otelPropagation, getDefaultPropagationHeaders);
 
             PropagationExtractFirstOnly = config
                                          .WithKeys(ConfigurationKeys.PropagationExtractFirstOnly)
@@ -1239,6 +1255,103 @@ namespace Datadog.Trace.Configuration
             {
                 exporterTelemetry.CopyTo(destination);
             }
+        }
+
+        private static double? BuildSampleRate(in ConfigurationBuilder config)
+        {
+            // The "overriding" is complex, so we can't use the usual `OverrideWith(in )` approach
+            var ddSampleRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
+            var otelSampleType = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSampler).AsStringResult();
+            var otelSampleRate = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSamplerArg).AsDoubleResult();
+
+            double? ddResult = ddSampleRate.ConfigurationResult.IsValid ? ddSampleRate.ConfigurationResult.Result : null;
+
+            // more complex, so can't use built-in `Merge()` support
+            if (ddSampleRate.ConfigurationResult.IsPresent)
+            {
+                if (otelSampleType.ConfigurationResult.IsPresent)
+                {
+                    // TODO Log to user and report "otel.env.hiding" telemetry metric
+                }
+
+                if (otelSampleRate.ConfigurationResult.IsPresent)
+                {
+                    // TODO Log to user and report "otel.env.hiding" telemetry metric
+                }
+            }
+            else if (otelSampleType.ConfigurationResult is { IsValid: true, Result: { } samplerName })
+            {
+                const string parentbasedAlwaysOn = "parentbased_always_on";
+                const string parentbasedAlwaysOff = "parentbased_always_off";
+                const string parentbasedTraceidratio = "parentbased_traceidratio";
+
+                string? supportedSamplerName = samplerName switch
+                {
+                    parentbasedAlwaysOn => parentbasedAlwaysOn,
+                    "always_on" => parentbasedAlwaysOn,
+                    parentbasedAlwaysOff => parentbasedAlwaysOff,
+                    "always_off" => parentbasedAlwaysOff,
+                    parentbasedTraceidratio => parentbasedTraceidratio,
+                    "traceidratio" => parentbasedTraceidratio,
+                    _ => null,
+                };
+
+                if (supportedSamplerName is null)
+                {
+                    // TODO log warning that the OpenTelemetry value is invalid
+                    return ddResult;
+                }
+
+                if (!string.Equals(samplerName, supportedSamplerName, StringComparison.OrdinalIgnoreCase))
+                {
+                    // TODO log warning that the configuration is not supported
+                }
+
+                var openTelemetrySampleRateResult = supportedSamplerName switch
+                {
+                    parentbasedAlwaysOn => ConfigurationResult<double>.Valid(1.0),
+                    parentbasedAlwaysOff => ConfigurationResult<double>.Valid(0.0),
+                    parentbasedTraceidratio => otelSampleRate.ConfigurationResult,
+                    _ => ConfigurationResult<double>.ParseFailure(),
+                };
+
+                if (openTelemetrySampleRateResult is { Result: { } sampleRateResult, IsValid: true })
+                {
+                    return sampleRateResult;
+                }
+
+                // TODO Log to user and report "otel.env.invalid" telemetry metric
+            }
+
+            return ddResult;
+        }
+
+        private static ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> RemapOtelTags(
+            in ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> original)
+        {
+            if (original.ConfigurationResult is { IsValid: true, Result: { } values })
+            {
+                // Update well-known service information resources
+                if (values.TryGetValue("deployment.environment", out var envValue))
+                {
+                    values.Remove("deployment.environment");
+                    values[Tags.Env] = envValue;
+                }
+
+                if (values.TryGetValue("service.name", out var serviceValue))
+                {
+                    values.Remove("service.name");
+                    values[Tags.Service] = serviceValue;
+                }
+
+                if (values.TryGetValue("service.version", out var versionValue))
+                {
+                    values.Remove("service.version");
+                    values[Tags.Version] = versionValue;
+                }
+            }
+
+            return original;
         }
     }
 }

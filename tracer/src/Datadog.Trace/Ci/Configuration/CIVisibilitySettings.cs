@@ -218,8 +218,8 @@ namespace Datadog.Trace.Ci.Configuration
         {
             var source = GlobalConfigurationSource.CreateDefaultConfigurationSource();
             var defaultExcludedUrlSubstrings = string.Empty;
-            if (((ITelemeteredConfigurationSource)source).GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings, NullConfigurationTelemetry.Instance, null, false)?.Result is { } substrings &&
-                !string.IsNullOrWhiteSpace(substrings))
+            var configResult = ((ITelemeteredConfigurationSource)source).GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings, NullConfigurationTelemetry.Instance, validator: null, recordValue: false);
+            if (configResult is { IsValid: true, Result: { } substrings } && !string.IsNullOrWhiteSpace(substrings))
             {
                 defaultExcludedUrlSubstrings = substrings + ", ";
             }

@@ -266,7 +266,7 @@ namespace iast
         {
             methodKeyBuilder << " Processed ";
         }
-        if (HasChanged())
+        if (HasChanges())
         {
             methodKeyBuilder << " Changed ";
         }
@@ -289,7 +289,15 @@ namespace iast
     {
         _isProcessed = true;
     }
-    bool MethodInfo::HasChanged()
+    void MethodInfo::SetInstrumented(bool instrumented)
+    {
+        _isInstrumented = instrumented;
+    }
+    bool MethodInfo::IsInstrumented()
+    {
+        return _isInstrumented;
+    }
+    bool MethodInfo::HasChanges()
     {
         return _pMethodIL;
     }
@@ -303,21 +311,33 @@ namespace iast
     }
     bool MethodInfo::IsInlineEnabled()
     {
-        return _module->IsInlineEnabled() && !_disableInlining && !HasChanged();
+        return _module->IsInlineEnabled() && !_disableInlining && !IsInstrumented();
     }
     void MethodInfo::DisableInlining()
     {
         _disableInlining = true;
     }
 
-    HRESULT MethodInfo::GetILRewriter(ILRewriter** pRewriter)
+    HRESULT MethodInfo::GetILRewriter(ILRewriter** pRewriter, ICorProfilerInfo* pCorProfilerInfo)
     {
         HRESULT hr = S_FALSE;
         if (_rewriter == nullptr)
         {
             hr = S_OK;
             _rewriter = new ILRewriter(this);
-            hr = _rewriter->Import();
+            if (!pCorProfilerInfo)
+            {
+                hr = _rewriter->Import();
+            }
+            else
+            {
+                LPCBYTE pMethodIL = nullptr;
+                hr = pCorProfilerInfo->GetILFunctionBody(_module->_id, _id, &pMethodIL, nullptr);
+                if (SUCCEEDED(hr))
+                {
+                    hr = _rewriter->Import(pMethodIL);
+                }
+            }
             if (FAILED(hr))
             {
                 DEL(_rewriter);
@@ -326,12 +346,12 @@ namespace iast
         *pRewriter = _rewriter;
         return hr;
     }
-    HRESULT MethodInfo::CommitILRewriter(const std::string& applyMessage)
+    HRESULT MethodInfo::CommitILRewriter(bool abort)
     {
         HRESULT hr = S_FALSE;
-        if (_rewriter != nullptr)
+        if (_rewriter != nullptr && !abort)
         {
-            hr = _rewriter->Export(applyMessage);
+            hr = _rewriter->Export();
         }
         DEL(_rewriter);
         return hr;
@@ -358,29 +378,6 @@ namespace iast
         return hr;
     }
 
-    void MethodInfo::DumpIL(const std::string message, ULONG pnMethodIL, LPCBYTE pMethodIL)
-    {
-        if (!pMethodIL)
-        {
-            GetMethodIL(&pMethodIL, &pnMethodIL);
-        }
-        ILRewriter ilRewriter(this);
-        if (FAILED(ilRewriter.Import(pMethodIL)))
-        {
-            trace::Logger::Info("Dumping IL ", message, " : ", GetFullName(), " IL Verification FAILED ( Error on ILImport ) !!!");
-            return;
-        }
-
-        ILAnalysis analysis(&ilRewriter);
-        auto correct = analysis.IsStackValid();
-        auto verificationFail = analysis.GetError();
-        analysis.Dump(message);
-        if (!correct)
-        {
-            trace::Logger::Info("Dumping IL ", message, " : ", GetFullName(), " IL Verification FAILED ( ", verificationFail, " ) !!!");
-        }
-    }
-
     HRESULT MethodInfo::SetMethodIL(ULONG nSize, LPCBYTE pMethodIL, ICorProfilerFunctionControl* pFunctionControl)
     {
         bool isRejit = pFunctionControl != nullptr;
@@ -392,12 +389,6 @@ namespace iast
         {
             trace::Logger::Debug("Same function body detected. Skipping SetMethodIL ", GetKey());
             return S_FALSE;
-        }
-
-        if (!isRejit && _module->ExcludeInChaining())
-        {
-            DEL_ARR(pMethodIL);
-            return S_OK;
         }
 
         bool correct = true;
@@ -471,8 +462,16 @@ namespace iast
         HRESULT hr = S_OK;
         if (pFunctionControl)
         {
-            hr = pFunctionControl->SetILFunctionBody(_nMethodIL, _pMethodIL);
-            trace::Logger::Debug("MethodInfo::ApplyFinalInstrumentation ReJIT from ", _nOriginalMehodIL, " to ", _nMethodIL, " on ", GetKey(), " hr=", Hex(hr));
+            if (HasChanges())
+            {
+                hr = pFunctionControl->SetILFunctionBody(_nMethodIL, _pMethodIL);
+                trace::Logger::Debug("MethodInfo::ApplyFinalInstrumentation ReJIT from ", _nOriginalMehodIL, " to ",
+                                     _nMethodIL, " on ", GetKey(), " hr=", Hex(hr));
+            }
+            else
+            {
+                trace::Logger::Debug("MethodInfo::ApplyFinalInstrumentation ReJIT SKIPPED (method did not change)");
+            }
         }
         else
         {
@@ -484,11 +483,7 @@ namespace iast
                 }
                 return hr;
             }
-            if (_module->ExcludeInChaining())
-            {
-                return S_FALSE;
-            }
-            if (!HasChanged())
+            if (!HasChanges())
             {
                 trace::Logger::Error("ERROR: MethodInfo::ApplyFinalInstrumentation should only be called if a method body has been set for this function");
                 return E_FAIL;
@@ -517,11 +512,6 @@ namespace iast
         }
 
         FreeBuffer(); //To save memory
-
-        if (_applyMessage.size() > 0)
-        {
-            trace::Logger::Info(" --> ", _applyMessage, " <-- ");
-        }
         return hr;
     }
 

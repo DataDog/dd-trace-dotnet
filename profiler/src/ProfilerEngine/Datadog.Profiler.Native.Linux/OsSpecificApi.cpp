@@ -27,6 +27,7 @@
 
 #include "IConfiguration.h"
 #include "IThreadInfo.h"
+#include "LibrariesInfoCache.h"
 #include "LinuxStackFramesCollector.h"
 #include "LinuxThreadInfo.h"
 #include "Log.h"
@@ -62,7 +63,7 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
     IConfiguration const* const pConfiguration,
     CallstackProvider* callstackProvider)
 {
-    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration, callstackProvider);
+    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration, callstackProvider, LibrariesInfoCache::Get());
 }
 
 // https://linux.die.net/man/5/proc

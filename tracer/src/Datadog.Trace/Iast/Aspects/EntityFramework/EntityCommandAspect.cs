@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Data.Common;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 
@@ -12,7 +13,7 @@ namespace Datadog.Trace.Iast.Aspects;
 #nullable enable
 
 /// <summary> EntityCommandAspect class aspect </summary>
-[AspectClass("EntityFramework")]
+[AspectClass("EntityFramework", AspectType.RaspIastSink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class EntityCommandAspect
@@ -29,7 +30,12 @@ public class EntityCommandAspect
     {
         if (command is DbCommand dbCommand)
         {
-            IastModule.OnSqlQuery(dbCommand.CommandText, IntegrationId.SqlClient);
+            var commandText = dbCommand.CommandText;
+            if (!string.IsNullOrEmpty(commandText))
+            {
+                IastModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
+                RaspModule.OnSqlI(commandText, IntegrationId.SqlClient);
+            }
         }
 
         return command;

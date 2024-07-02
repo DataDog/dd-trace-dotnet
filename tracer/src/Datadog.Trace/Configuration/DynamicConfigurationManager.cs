@@ -77,7 +77,9 @@ namespace Datadog.Trace.Configuration
                 TraceEnabled = settings.WithKeys(ConfigurationKeys.TraceEnabled).AsBool(),
                 // RuntimeMetricsEnabled = settings.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool(),
                 // DataStreamsMonitoringEnabled = settings.WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled).AsBool(),
-                SamplingRules = settings.WithKeys(ConfigurationKeys.CustomSamplingRules).GetAs<string>(null, null, s => s),
+                // Note: Calling GetAsClass<string>() here instead of GetAsString() as we need to get the
+                // "serialized JToken", which in JsonConfigurationSource is different, as it allows for non-string tokens
+                SamplingRules = settings.WithKeys(ConfigurationKeys.CustomSamplingRules).GetAsClass<string>(validator: null, converter: s => s),
                 GlobalSamplingRate = settings.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(),
                 // SpanSamplingRules = settings.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString(),
                 LogsInjectionEnabled = settings.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(),

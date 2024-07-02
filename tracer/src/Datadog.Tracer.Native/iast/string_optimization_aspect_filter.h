@@ -31,7 +31,7 @@ namespace iast
 		StringOptimizationAspectFilter(ModuleAspects* module);
 		~StringOptimizationAspectFilter() override;
 
-		bool AllowInstruction(ILInstr* instruction, ILRewriter* processor) override;
+		bool AllowInstruction(DataflowContext& context) override;
 	
 	};
 }

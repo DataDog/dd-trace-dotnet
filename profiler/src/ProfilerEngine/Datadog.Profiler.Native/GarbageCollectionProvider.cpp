@@ -25,6 +25,22 @@ GarbageCollectionProvider::GarbageCollectionProvider(
     _inducedCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_induced");
     _compactingGen2CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_compacting_gen2");
     _memoryPressureCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_memory_pressure");
+
+    _gen2Size = 0;
+    _lohSize = 0;
+    _pohSize = 0;
+    _gen2SizeMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_gc_gen2_size", [this]() {
+        return _gen2Size;
+    });
+    _lohSizeMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_gc_loh_size", [this]() {
+        return _lohSize;
+    });
+
+    // TODO: see if we need to "hide" this metrics for versions of .NET before POH was introduced
+    //       or if we can just ignore the metric if the value is 0
+    _pohSizeMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_gc_poh_size", [this]() {
+        return _pohSize;
+    });
 }
 
 void GarbageCollectionProvider::OnGarbageCollectionEnd(
@@ -35,8 +51,10 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
     bool isCompacting,
     uint64_t pauseDuration,
     uint64_t totalDuration, // from start to end (includes pauses)
-    uint64_t endTimestamp   // end of GC
-)
+    uint64_t endTimestamp,  // end of GC
+    uint64_t gen2Size,
+    uint64_t lohSize,
+    uint64_t pohSize)
 {
     _suspensionDurationMetric->Add((double_t)pauseDuration);
     if (generation == 0)
@@ -76,6 +94,10 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
     {
         _compactingGen2CountMetric->Incr();
     }
+
+    _gen2Size = gen2Size;
+    _lohSize = lohSize;
+    _pohSize = pohSize;
 
     RawGarbageCollectionSample rawSample;
     rawSample.Timestamp = endTimestamp;

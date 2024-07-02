@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] GetAspects() => new string[] {
-"[AspectClass(\"EntityFramework\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.EntityCommandAspect",
+"[AspectClass(\"EntityFramework\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.EntityCommandAspect",
 "  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReader(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.UriBuilder::get_Query()\",\"\",[0],[False],[None],Default,[])] GetQuery(System.UriBuilder)",
 "  [AspectMethodReplace(\"System.UriBuilder::get_Path()\",\"\",[0],[False],[None],Default,[])] GetPath(System.UriBuilder)",
 "  [AspectMethodReplace(\"System.Object::ToString()\",\"System.UriBuilder\",[0],[False],[None],Default,[])] ToString(System.Object)",
-"[AspectClass(\"System.Data,System.Data.Common\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.DbCommandAspect",
+"[AspectClass(\"System.Data,System.Data.Common\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.DbCommandAspect",
 "  [AspectMethodInsertBefore(\"System.Data.Common.DbCommand::ExecuteNonQueryAsync(System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])] ReviewExecuteNonQuery(System.Object)",
 "  [AspectMethodInsertBefore(\"System.Data.Common.DbCommand::ExecuteNonQueryAsync()\",\"\",[0],[False],[None],Default,[])] ReviewExecuteNonQuery(System.Object)",
 "[AspectClass(\"System.DirectoryServices\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.DirectoryServices.DirectoryEntryAspect",
@@ -556,6 +556,16 @@ namespace Datadog.Trace.ClrProfiler
         };
 
         public static string[] GetRaspAspects() => new string[] {
+"[AspectClass(\"EntityFramework\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.EntityCommandAspect",
+"  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReader(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
+"  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
+"  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
+"[AspectClass(\"NHibernate\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.NHibernate.ISessionAspect",
+"  [AspectMethodInsertBefore(\"NHibernate.ISession::CreateQuery(System.String)\",\"\",[0],[False],[None],Default,[])] AnalyzeQuery(System.String)",
+"  [AspectMethodInsertBefore(\"NHibernate.ISession::CreateSQLQuery(System.String)\",\"\",[0],[False],[None],Default,[])] AnalyzeQuery(System.String)",
+"[AspectClass(\"System.Data,System.Data.Common\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.DbCommandAspect",
+"  [AspectMethodInsertBefore(\"System.Data.Common.DbCommand::ExecuteNonQueryAsync(System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])] ReviewExecuteNonQuery(System.Object)",
+"  [AspectMethodInsertBefore(\"System.Data.Common.DbCommand::ExecuteNonQueryAsync()\",\"\",[0],[False],[None],Default,[])] ReviewExecuteNonQuery(System.Object)",
 "[AspectClass(\"System.Net.Http\",[None],Sink,[Ssrf])] Datadog.Trace.Iast.Aspects.System.Net.HttpClientAspect",
 "  [AspectMethodInsertBefore(\"System.Net.Http.HttpClient::GetStringAsync(System.String)\",\"\",[0],[False],[None],Default,[])] Review(System.String)",
 "  [AspectMethodInsertBefore(\"System.Net.Http.HttpClient::GetByteArrayAsync(System.String)\",\"\",[0],[False],[None],Default,[])] Review(System.String)",

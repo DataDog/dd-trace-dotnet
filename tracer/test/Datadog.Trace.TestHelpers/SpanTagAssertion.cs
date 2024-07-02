@@ -28,6 +28,7 @@ namespace Datadog.Trace.TestHelpers
             .IsOptional("version")
             .IsOptional("_dd.p.dm")   // "decision maker", but contains the sampling mechanism
             .IsOptional("_dd.p.tid")  // contains the upper 64 bits of a 128-bit trace id
+            .IsOptional("_dd.parent_id") // Contains the 16 length hex decoded last found parent_id found set from either exising `p` tag on tracestate or headers
             .IsOptional("error.msg")
             .IsOptional("error.type")
             .IsOptional("error.stack")

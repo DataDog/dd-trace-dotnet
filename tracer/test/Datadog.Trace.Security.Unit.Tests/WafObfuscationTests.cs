@@ -50,6 +50,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 waf.Should().NotBeNull();
                 using var context = waf.CreateContext();
                 var result = context.Run(args, TimeoutMicroSeconds);
+                result.Timeout.Should().BeFalse("Timeout should be false");
                 result.ReturnCode.Should().Be(WafReturnCode.Match);
                 result.Data.Should().NotBeNull();
                 var jsonString = JsonConvert.SerializeObject(result.Data);

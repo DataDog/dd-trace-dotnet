@@ -9,6 +9,8 @@
 #include "cor_profiler.h"
 #include "logger.h"
 #include "iast/hardcoded_secrets_method_analyzer.h"
+#include "Generated/generated_definitions.h"
+#include <vector>
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -245,6 +247,38 @@ EXTERN_C BOOL STDAPICALLTYPE ShouldHeal(ModuleID moduleId, int methodToken, WCHA
     }
 
     return trace::profiler->ShouldHeal(moduleId, methodToken, instrumentationId, products);
+}
+
+EXTERN_C int InitEmbeddedCallTargetDefinitions(WCHAR* platform, UINT32 enabledCategories)
+{
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in InitEmbeddedCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        return 0;
+    }
+
+    auto targets = trace::GeneratedDefinitions::GetCallTargets(platform);
+    if (targets)
+    {
+        return trace::profiler->RegisterCallTargetDefinitions((WCHAR*) WStr("Tracing"), targets->data(), targets->size(), enabledCategories);
+    }
+    return 0;
+}
+
+EXTERN_C int InitEmbeddedCallSiteDefinitions(WCHAR* platform, UINT32 enabledCategories)
+{
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in InitEmbeddedCallSiteDefinitions call. Tracer CLR Profiler was not initialized.");
+        return 0;
+    }
+
+    auto targets = trace::GeneratedDefinitions::GetCallSites(platform);
+    if (targets)
+    {
+        return trace::profiler->RegisterIastAspects((WCHAR**) targets->data(), targets->size());
+    }
+    return 0;
 }
 
 #ifndef _WIN32

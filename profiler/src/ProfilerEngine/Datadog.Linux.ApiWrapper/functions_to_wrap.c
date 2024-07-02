@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdatomic.h>
 
 /* dl_iterate_phdr wrapper
 The .NET profiler on Linux uses a classic signal-based approach to collect thread callstack.
@@ -54,10 +55,13 @@ enum FUNCTION_ID
 // counters: one byte per function
 __thread unsigned long long functions_entered_counter = 0;
 
+__attribute__((visibility("hidden"))) 
+atomic_int is_app_crashing = 0;
+
 // this function is called by the profiler
 unsigned long long dd_inside_wrapped_functions()
 {
-    return functions_entered_counter;
+    return functions_entered_counter + is_app_crashing;
 }
 
 #if defined(__aarch64__)
@@ -334,6 +338,14 @@ int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void
  * dlopen, dladdr issue happens mainly on Alpine
  */
 
+__attribute__((visibility("hidden")))
+atomic_ullong __dd_dlopen_dlcose_calls_counter = 0;
+
+unsigned long long dd_nb_calls_to_dlopen_dlclose()
+{
+    return __dd_dlopen_dlcose_calls_counter;
+}
+
 /* Function pointers to hold the value of the glibc functions */
 static void* (*__real_dlopen)(const char* file, int mode) = NULL;
 
@@ -348,8 +360,26 @@ void* dlopen(const char* file, int mode)
 
     // call the real dlopen (libc/musl-libc)
     void* result = __real_dlopen(file, mode);
+    __dd_dlopen_dlcose_calls_counter++;
 
     ((char*)&functions_entered_counter)[ENTERED_DL_OPEN]--;
+
+    return result;
+}
+
+/* Function pointers to hold the value of the glibc functions */
+static int (*__real_dlclose)(void* handle) = NULL;
+
+int dlclose(void* handle)
+{
+    if (__real_dlclose == NULL)
+    {
+        __real_dlclose = dlsym(RTLD_NEXT, "dlclose");
+    }
+
+    // call the real dlopen (libc/musl-libc)
+    int result = __real_dlclose(handle);
+    __dd_dlopen_dlcose_calls_counter++;
 
     return result;
 }
@@ -392,6 +422,7 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
 
         if (length >= 11 && strcmp(pathname + length - 11, "/createdump") == 0)
         {
+            is_app_crashing = 1;
             // Execute the alternative crash handler, and prepend "createdump" to the arguments
 
             // Count the number of arguments (the list ends with a null pointer)

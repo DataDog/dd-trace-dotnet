@@ -4,14 +4,18 @@
 // </copyright>
 
 #nullable enable
+using System.Collections.Generic;
+
 namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 
 internal readonly record struct DefaultResult<T>
 {
+    private readonly string? _telemetryValue;
+
     public DefaultResult(T result, string? telemetryValue)
     {
         Result = result;
-        TelemetryValue = telemetryValue ?? result?.ToString();
+        _telemetryValue = telemetryValue;
     }
 
     /// <summary>
@@ -22,7 +26,10 @@ internal readonly record struct DefaultResult<T>
     /// <summary>
     /// Gets a string representation of the result to use in telemetry.
     /// </summary>
-    public string? TelemetryValue { get; }
+    public string? TelemetryValue => _telemetryValue ?? Result?.ToString();
 
-    public static implicit operator DefaultResult<T>(T result) => new(result, telemetryValue: null);
+    public static implicit operator DefaultResult<T>(T result)
+        => result is IDictionary<string, string>
+               ? new(result, telemetryValue: string.Empty) // we don't want to call ToString() on these
+               : new(result, null);
 }

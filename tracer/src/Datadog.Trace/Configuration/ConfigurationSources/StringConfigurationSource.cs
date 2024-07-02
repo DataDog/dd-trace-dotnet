@@ -181,13 +181,13 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<string>? ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+        ConfigurationResult<string> ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {
             var value = GetString(key);
 
             if (value is null)
             {
-                return null;
+                return ConfigurationResult<string>.NotFound();
             }
 
             if (validator is null || validator(value))
@@ -201,13 +201,13 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<int>? ITelemeteredConfigurationSource.GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+        ConfigurationResult<int> ITelemeteredConfigurationSource.GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
         {
             var value = GetString(key);
 
             if (value is null)
             {
-                return null;
+                return ConfigurationResult<int>.NotFound();
             }
 
             if (int.TryParse(value, out var result))
@@ -223,17 +223,17 @@ namespace Datadog.Trace.Configuration
             }
 
             telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.ParsingInt32Error);
-            return null;
+            return ConfigurationResult<int>.ParseFailure();
         }
 
         /// <inheritdoc />
-        ConfigurationResult<double>? ITelemeteredConfigurationSource.GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+        ConfigurationResult<double> ITelemeteredConfigurationSource.GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
         {
             var value = GetString(key);
 
             if (value is null)
             {
-                return null;
+                return ConfigurationResult<double>.NotFound();
             }
 
             if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var result))
@@ -249,17 +249,17 @@ namespace Datadog.Trace.Configuration
             }
 
             telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.ParsingDoubleError);
-            return null;
+            return ConfigurationResult<double>.ParseFailure();
         }
 
         /// <inheritdoc />
-        ConfigurationResult<bool>? ITelemeteredConfigurationSource.GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+        ConfigurationResult<bool> ITelemeteredConfigurationSource.GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
         {
             var value = GetString(key);
 
             if (value is null)
             {
-                return null;
+                return ConfigurationResult<bool>.NotFound();
             }
 
             var result = value.ToBoolean();
@@ -276,17 +276,17 @@ namespace Datadog.Trace.Configuration
             }
 
             telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.ParsingBooleanError);
-            return null;
+            return ConfigurationResult<bool>.ParseFailure();
         }
 
         /// <inheritdoc />
-        ConfigurationResult<T>? ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        ConfigurationResult<T> ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
         {
             var value = GetString(key);
 
             if (value is null)
             {
-                return null;
+                return ConfigurationResult<T>.NotFound();
             }
 
             var result = converter(value);
@@ -303,24 +303,24 @@ namespace Datadog.Trace.Configuration
             }
 
             telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.ParsingCustomError);
-            return null;
+            return ConfigurationResult<T>.ParseFailure();
         }
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings, separator);
 
-        private ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        private ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
         {
             var value = GetString(key);
 
             if (value is null)
             {
-                return null;
+                return ConfigurationResult<IDictionary<string, string>>.NotFound();
             }
 
             // We record the original dictionary value here instead of serializing the _parsed_ value

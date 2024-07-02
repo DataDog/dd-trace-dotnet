@@ -90,7 +90,9 @@ namespace Datadog.Trace.Activity.Handlers
         {
             if (span is not null && activity is IW3CActivity w3cActivity)
             {
-                if (activity.Parent is null || activity.Parent.StartTimeUtc < span.StartTime.UtcDateTime)
+                if ((activity.Parent is null || activity.Parent.StartTimeUtc < span.StartTime.UtcDateTime)
+                    && w3cActivity.SpanId is not null
+                    && w3cActivity.TraceId is not null)
                 {
                     // If we ignore the activity and there's an existing active span
                     // We modify the activity spanId with the one in the span

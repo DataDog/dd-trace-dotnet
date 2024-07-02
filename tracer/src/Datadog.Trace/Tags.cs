@@ -692,6 +692,12 @@ namespace Datadog.Trace
         /// </summary>
         internal const string BaseService = "_dd.base_service";
 
+        /// <summary>
+        /// Tag used to propagate the unsigned  64 bits last parent Id
+        /// lower-case 16 characters hexadecimal string
+        /// </summary>
+        internal const string LastParentId = "_dd.parent_id";
+
         internal static class User
         {
             internal const string Email = "usr.email";

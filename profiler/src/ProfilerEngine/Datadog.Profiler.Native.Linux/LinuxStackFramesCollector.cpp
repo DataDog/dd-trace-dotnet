@@ -29,14 +29,16 @@ LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackW
 LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
     IConfiguration const* const configuration,
-    CallstackProvider* callstackProvider) :
+    CallstackProvider* callstackProvider,
+    LibrariesInfoCache* librariesCacheInfo) :
     StackFramesCollectorBase(configuration, callstackProvider),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
     _errorStatistics{},
-    _useBacktrace2{configuration->UseBacktrace2()}
+    _useBacktrace2{configuration->UseBacktrace2()},
+    _plibrariesInfo{librariesCacheInfo}
 {
     _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
 }
@@ -81,11 +83,14 @@ void LinuxStackFramesCollector::UpdateErrorStats(std::int32_t errorCode)
     }
 }
 
+
 StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                        uint32_t* pHR,
                                                                                        bool selfCollect)
 {
     long errorCode;
+
+    _plibrariesInfo->UpdateCache();
 
     if (selfCollect)
     {

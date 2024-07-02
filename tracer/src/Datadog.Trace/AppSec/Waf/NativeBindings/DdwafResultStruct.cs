@@ -12,7 +12,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
     internal struct DdwafResultStruct
     {
         /** Whether there has been a timeout during the operation **/
-        public bool Timeout;
+        public byte Timeout;
         /** Array of events generated, this is guaranteed to be an array **/
         public DdwafObjectStruct Events;
         /** Array of actions generated, this is guaranteed to be an array **/

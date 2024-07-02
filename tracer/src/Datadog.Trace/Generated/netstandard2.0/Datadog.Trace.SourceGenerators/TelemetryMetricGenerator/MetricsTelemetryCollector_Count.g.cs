@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int CountLength = 368;
+    private const int CountLength = 371;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
@@ -374,13 +374,16 @@ internal partial class MetricsTelemetryCollector
             // rasp.rule.eval, index = 321
             new(new[] { "waf_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "rule_type:ssrf" }),
-            // rasp.rule.match, index = 323
+            new(new[] { "waf_version", "rule_type:sql_injection" }),
+            // rasp.rule.match, index = 324
             new(new[] { "waf_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "rule_type:ssrf" }),
-            // rasp.timeout, index = 325
+            new(new[] { "waf_version", "rule_type:sql_injection" }),
+            // rasp.timeout, index = 327
             new(new[] { "waf_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "rule_type:ssrf" }),
-            // executed.source, index = 327
+            new(new[] { "waf_version", "rule_type:sql_injection" }),
+            // executed.source, index = 330
             new(new[] { "source_type:http.request.body" }),
             new(new[] { "source_type:http.request.path" }),
             new(new[] { "source_type:http.request.parameter.name" }),
@@ -394,9 +397,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "source_type:http.request.matrix.parameter" }),
             new(new[] { "source_type:http.request.uri" }),
             new(new[] { "source_type:grpc.request.body" }),
-            // executed.propagation, index = 340
+            // executed.propagation, index = 343
             new(null),
-            // executed.sink, index = 341
+            // executed.sink, index = 344
             new(new[] { "vulnerability_type:none" }),
             new(new[] { "vulnerability_type:weak_cipher" }),
             new(new[] { "vulnerability_type:weak_hash" }),
@@ -423,7 +426,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:xss" }),
             new(new[] { "vulnerability_type:directory_listing_leak" }),
             new(new[] { "vulnerability_type:session_timeout" }),
-            // request.tainted, index = 367
+            // request.tainted, index = 370
             new(null),
         };
 
@@ -433,7 +436,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new int[]{ 4, 74, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 74, 1, 22, 3, 1, 1, 5, 3, 2, 2, 2, 13, 1, 26, 1, };
+        = new int[]{ 4, 74, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 74, 1, 22, 3, 1, 1, 5, 3, 3, 3, 3, 13, 1, 26, 1, };
 
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
@@ -620,35 +623,35 @@ internal partial class MetricsTelemetryCollector
 
     public void RecordCountRaspRuleMatch(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 323 + (int)tag;
+        var index = 324 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspTimeout(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 325 + (int)tag;
+        var index = 327 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1)
     {
-        var index = 327 + (int)tag;
+        var index = 330 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastExecutedPropagations(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[340], increment);
+        Interlocked.Add(ref _buffer.Count[343], increment);
     }
 
     public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1)
     {
-        var index = 341 + (int)tag;
+        var index = 344 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastRequestTainted(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[367], increment);
+        Interlocked.Add(ref _buffer.Count[370], increment);
     }
 }

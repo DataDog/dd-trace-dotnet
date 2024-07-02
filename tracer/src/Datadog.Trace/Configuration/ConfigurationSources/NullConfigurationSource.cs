@@ -30,24 +30,24 @@ internal class NullConfigurationSource : IConfigurationSource, ITelemeteredConfi
 
     public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) => null;
 
-    public ConfigurationResult<string>? GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
-        => null;
+    public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+        => ConfigurationResult<string>.NotFound();
 
-    public ConfigurationResult<int>? GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
-        => null;
+    public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+        => ConfigurationResult<int>.NotFound();
 
-    public ConfigurationResult<double>? GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
-        => null;
+    public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+        => ConfigurationResult<double>.NotFound();
 
-    public ConfigurationResult<bool>? GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
-        => null;
+    public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+        => ConfigurationResult<bool>.NotFound();
 
-    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
-        => null;
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        => ConfigurationResult<IDictionary<string, string>>.NotFound();
 
-    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
-        => null;
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        => ConfigurationResult<IDictionary<string, string>>.NotFound();
 
-    public ConfigurationResult<T>? GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
-        => null;
+    public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        => ConfigurationResult<T>.NotFound();
 }

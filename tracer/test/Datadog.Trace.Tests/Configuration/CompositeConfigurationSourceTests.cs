@@ -125,7 +125,7 @@ public class CompositeConfigurationSourceTests
     public void GetsTheExpectedStringInAllCases(string key, string expected)
     {
         var actual = ((ITelemeteredConfigurationSource)_source).GetString(key, _telemetry, validator: null, recordValue: true);
-        actual?.Result.Should().Be(expected);
+        actual.Result.Should().Be(expected);
     }
 
     [Theory]
@@ -137,7 +137,7 @@ public class CompositeConfigurationSourceTests
     {
         var expected = ((IConfigurationSource)_source).GetString(key);
         var actual = ((ITelemeteredConfigurationSource)_source).GetString(key, _telemetry, validator: null, recordValue: true);
-        actual?.Result.Should().Be(expected);
+        actual.Result.Should().Be(expected);
     }
 
     [Theory]
@@ -160,7 +160,7 @@ public class CompositeConfigurationSourceTests
     public void GetsTheExpectedIntInAllCases(string key, int expected)
     {
         var actual = ((ITelemeteredConfigurationSource)_source).GetInt32(key, _telemetry, validator: null);
-        actual?.Result.Should().Be(expected);
+        actual.Result.Should().Be(expected);
     }
 
     [Theory]
@@ -172,7 +172,7 @@ public class CompositeConfigurationSourceTests
     {
         var expected = ((IConfigurationSource)_source).GetInt32(key);
         var actual = ((ITelemeteredConfigurationSource)_source).GetInt32(key, _telemetry, validator: null);
-        actual?.Result.Should().Be(expected);
+        actual.Result.Should().Be(expected);
     }
 
     [Theory]
@@ -195,7 +195,7 @@ public class CompositeConfigurationSourceTests
     public void GetsTheExpectedDoubleInAllCases(string key, double expected)
     {
         var actual = ((ITelemeteredConfigurationSource)_source).GetDouble(key, _telemetry, validator: null);
-        actual?.Result.Should().Be(expected);
+        actual.Result.Should().Be(expected);
     }
 
     [Theory]
@@ -207,7 +207,7 @@ public class CompositeConfigurationSourceTests
     {
         var expected = ((IConfigurationSource)_source).GetDouble(key);
         var actual = ((ITelemeteredConfigurationSource)_source).GetDouble(key, _telemetry, validator: null);
-        actual?.Result.Should().Be(expected);
+        actual.Result.Should().Be(expected);
     }
 
     [Theory]
@@ -230,7 +230,7 @@ public class CompositeConfigurationSourceTests
     public void GetsTheExpectedBoolInAllCases(string key, bool expected)
     {
         var actual = ((ITelemeteredConfigurationSource)_source).GetBool(key, _telemetry, validator: null);
-        actual?.Result.Should().Be(expected);
+        actual.Result.Should().Be(expected);
     }
 
     [Theory]
@@ -242,7 +242,7 @@ public class CompositeConfigurationSourceTests
     {
         var expected = ((IConfigurationSource)_source).GetBool(key);
         var actual = ((ITelemeteredConfigurationSource)_source).GetBool(key, _telemetry, validator: null);
-        ((bool?)actual?.Result).Should().Be(expected);
+        ((bool?)actual.Result).Should().Be(expected);
     }
 
     [Theory]
@@ -265,7 +265,7 @@ public class CompositeConfigurationSourceTests
     public void GetsTheExpectedDictionaryInAllCases(string key, params string[] expectedKeys)
     {
         var actual = ((ITelemeteredConfigurationSource)_source).GetDictionary(key, _telemetry, validator: null);
-        actual?.Result.Should().ContainKeys(expectedKeys);
+        actual.Result.Should().ContainKeys(expectedKeys);
     }
 
     [Theory]
@@ -277,7 +277,7 @@ public class CompositeConfigurationSourceTests
     {
         var expected = ((IConfigurationSource)_source).GetDictionary(key);
         var actual = ((ITelemeteredConfigurationSource)_source).GetDictionary(key, _telemetry, validator: null);
-        actual?.Result.Should().Equal(expected);
+        actual.Result.Should().Equal(expected);
     }
 
     [Theory]

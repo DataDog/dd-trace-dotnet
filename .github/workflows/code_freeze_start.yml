@@ -54,6 +54,12 @@ jobs:
           page_number: 4
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: ./.github/actions/code-freeze
+        name: 'Freeze 25 PRs'
+        with:
+          page_number: 5
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: ./.github/actions/deploy-aas-dev-apps
         name: 'Trigger AAS deploy'
         with:

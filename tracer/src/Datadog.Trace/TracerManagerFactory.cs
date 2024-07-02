@@ -262,40 +262,40 @@ namespace Datadog.Trace
 
             // Note: the order that rules are registered is important, as they are evaluated in order.
             // The first rule that matches will be used to determine the sampling rate.
-
-            // Remote and local "custom" sampling rules:
-            // Unlike most settings, local custom sampling rules configuration (DD_TRACE_SAMPLING_RULES) is not
-            // simply overriden with the remote configuration. Instead, remote rules are merged with local rules,
-            // with remote rules taking precedence.
-
             var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
 
-            // remote sampling rules
-            var remoteSamplingRulesJson = settings.RemoteSamplingRules;
+            // sampling rules (remote value overrides local value)
+            var samplingRulesJson = settings.CustomSamplingRulesInternal;
 
-            if (!string.IsNullOrWhiteSpace(remoteSamplingRulesJson))
+            // check if the rules are remote or local because they have different JSON schemas
+            if (settings.CustomSamplingRulesIsRemote)
             {
-                var remoteSamplingRules =
-                    RemoteCustomSamplingRule.BuildFromConfigurationString(
-                        remoteSamplingRulesJson,
-                        RegexBuilder.DefaultTimeout);
+                // remote sampling rules
+                if (!string.IsNullOrWhiteSpace(samplingRulesJson))
+                {
+                    var remoteSamplingRules =
+                        RemoteCustomSamplingRule.BuildFromConfigurationString(
+                            samplingRulesJson,
+                            RegexBuilder.DefaultTimeout);
 
-                sampler.RegisterRules(remoteSamplingRules);
+                    sampler.RegisterRules(remoteSamplingRules);
+                }
             }
-
-            // local sampling rules
-            var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
-            var localSamplingRulesJson = settings.CustomSamplingRulesInternal;
-
-            if (patternFormatIsValid && !string.IsNullOrWhiteSpace(localSamplingRulesJson))
+            else
             {
-                var localSamplingRules =
-                    LocalCustomSamplingRule.BuildFromConfigurationString(
-                        localSamplingRulesJson,
-                        samplingRulesFormat,
-                        RegexBuilder.DefaultTimeout);
+                // local sampling rules
+                var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
 
-                sampler.RegisterRules(localSamplingRules);
+                if (patternFormatIsValid && !string.IsNullOrWhiteSpace(samplingRulesJson))
+                {
+                    var localSamplingRules =
+                        LocalCustomSamplingRule.BuildFromConfigurationString(
+                            samplingRulesJson,
+                            samplingRulesFormat,
+                            RegexBuilder.DefaultTimeout);
+
+                    sampler.RegisterRules(localSamplingRules);
+                }
             }
 
             // global sampling rate (remote value overrides local value)

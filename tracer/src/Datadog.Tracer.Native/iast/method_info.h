@@ -118,15 +118,15 @@ namespace iast
         bool _allowRestoreOnSecondJit = false;
         bool _disableInlining = false;
         bool _isWritten = false;
+        bool _isInstrumented = false;
 
         LPCBYTE _pOriginalMehodIL = nullptr;
-        DWORD _nOriginalMehodIL = 0;
+        ULONG _nOriginalMehodIL = 0;
         LPBYTE _pMethodIL = nullptr;
-        DWORD _nMethodIL = 0;
+        ULONG _nMethodIL = 0;
 
     protected:
         ILRewriter* _rewriter = nullptr;
-        std::string _applyMessage = "";
     private:
         void FreeBuffer();
     public:
@@ -139,14 +139,16 @@ namespace iast
         bool IsExcluded();
         bool IsProcessed();
         void SetProcessed();
-        bool HasChanged();
+        bool IsInstrumented();
+        void SetInstrumented(bool instrumented);
+        bool HasChanges();
         bool IsWritten();
         void DisableRestoreOnSecondJit();
         bool IsInlineEnabled();
         void DisableInlining();
 
-        HRESULT GetILRewriter(ILRewriter** rewriter);
-        HRESULT CommitILRewriter(const std::string& applyMessage = "");
+        HRESULT GetILRewriter(ILRewriter** rewriter, ICorProfilerInfo* pCorProfilerInfo = nullptr);
+        HRESULT CommitILRewriter(bool abort = false);
         HRESULT GetMethodIL(LPCBYTE* ppMehodIL, ULONG* pnSize, bool original = false);
         
         HRESULT SetMethodIL(ULONG nSize, LPCBYTE pMehodIL, ICorProfilerFunctionControl* pFunctionControl = nullptr);
@@ -154,8 +156,6 @@ namespace iast
 
         void ReJITCompilationStarted();
         void ReJITCompilationFinished();
-
-        void DumpIL(std::string message = "", ULONG pnMethodIL = 0, LPCBYTE pMethodIL = nullptr);
 
         bool IsPropertyAccessor();
         std::vector<WSTRING> GetCustomAttributes() override;

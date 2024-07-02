@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] GetAspects() => new string[] {
-"[AspectClass(\"EntityFramework\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.EntityCommandAspect",
+"[AspectClass(\"EntityFramework\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.EntityCommandAspect",
 "  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReader(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodInsertBefore(\"Microsoft.AspNetCore.Mvc.ControllerBase::LocalRedirectPermanent(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String)",
 "  [AspectMethodInsertBefore(\"Microsoft.AspNetCore.Mvc.ControllerBase::LocalRedirectPreserveMethod(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String)",
 "  [AspectMethodInsertBefore(\"Microsoft.AspNetCore.Mvc.ControllerBase::LocalRedirectPermanentPreserveMethod(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String)",
-"[AspectClass(\"Microsoft.EntityFrameworkCore.Relational\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.EntityFrameworkCoreAspect",
+"[AspectClass(\"Microsoft.EntityFrameworkCore.Relational\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.EntityFrameworkCoreAspect",
 "  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[])\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
 "  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable`1<System.Object>)\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
 "  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.UriBuilder::get_Query()\",\"\",[0],[False],[None],Default,[])] GetQuery(System.UriBuilder)",
 "  [AspectMethodReplace(\"System.UriBuilder::get_Path()\",\"\",[0],[False],[None],Default,[])] GetPath(System.UriBuilder)",
 "  [AspectMethodReplace(\"System.Object::ToString()\",\"System.UriBuilder\",[0],[False],[None],Default,[])] ToString(System.Object)",
-"[AspectClass(\"System.Data,System.Data.Common\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.DbCommandAspect",
+"[AspectClass(\"System.Data,System.Data.Common\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.DbCommandAspect",
 "  [AspectMethodInsertBefore(\"System.Data.Common.DbCommand::ExecuteNonQueryAsync(System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])] ReviewExecuteNonQuery(System.Object)",
 "  [AspectMethodInsertBefore(\"System.Data.Common.DbCommand::ExecuteNonQueryAsync()\",\"\",[0],[False],[None],Default,[])] ReviewExecuteNonQuery(System.Object)",
 "[AspectClass(\"System.DirectoryServices\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.DirectoryServices.DirectoryEntryAspect",
@@ -599,6 +599,23 @@ namespace Datadog.Trace.ClrProfiler
         };
 
         public static string[] GetRaspAspects() => new string[] {
+"[AspectClass(\"EntityFramework\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.EntityCommandAspect",
+"  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReader(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
+"  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
+"  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
+"[AspectClass(\"Microsoft.EntityFrameworkCore.Relational\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.EntityFrameworkCoreAspect",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[])\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable`1<System.Object>)\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[])\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable`1<System.Object>,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalQueryableExtensions::FromSqlRaw(Microsoft.EntityFrameworkCore.DbSet`1<!!0>,System.String,System.Object[])\",\"\",[1],[False],[None],Default,[])] ReviewSqlString(System.String)",
+"[AspectClass(\"NHibernate\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.NHibernate.ISessionAspect",
+"  [AspectMethodInsertBefore(\"NHibernate.ISession::CreateQuery(System.String)\",\"\",[0],[False],[None],Default,[])] AnalyzeQuery(System.String)",
+"  [AspectMethodInsertBefore(\"NHibernate.ISession::CreateSQLQuery(System.String)\",\"\",[0],[False],[None],Default,[])] AnalyzeQuery(System.String)",
+"[AspectClass(\"System.Data,System.Data.Common\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.DbCommandAspect",
+"  [AspectMethodInsertBefore(\"System.Data.Common.DbCommand::ExecuteNonQueryAsync(System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])] ReviewExecuteNonQuery(System.Object)",
+"  [AspectMethodInsertBefore(\"System.Data.Common.DbCommand::ExecuteNonQueryAsync()\",\"\",[0],[False],[None],Default,[])] ReviewExecuteNonQuery(System.Object)",
 "[AspectClass(\"System.Net.Http\",[None],Sink,[Ssrf])] Datadog.Trace.Iast.Aspects.System.Net.HttpClientAspect",
 "  [AspectMethodInsertBefore(\"System.Net.Http.HttpClient::GetStringAsync(System.String)\",\"\",[0],[False],[None],Default,[])] Review(System.String)",
 "  [AspectMethodInsertBefore(\"System.Net.Http.HttpClient::GetByteArrayAsync(System.String)\",\"\",[0],[False],[None],Default,[])] Review(System.String)",
