@@ -15,7 +15,7 @@ project("Datadog.APM.Native" VERSION 2.18.0)
 # Environment detection
 # ******************************************************
 
-option(UNIVERSAL "Build as Universal binary" OFF)
+option(UNIVERSAL "Build as Universal binary" ON)
 message(STATUS "Building Native Loader and Wrapper as Universal binary: " ${UNIVERSAL})
 
 if (CMAKE_TOOLCHAIN_FILE)
