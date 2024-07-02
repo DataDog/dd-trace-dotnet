@@ -97,6 +97,9 @@ partial class Build : NukeBuild
     [Parameter("Should we build and run tests against _all_ target frameworks, or just the reduced set. Defaults to true locally, false in PRs, and true in CI on main branch only", List = false)]
     readonly bool IncludeAllTestFrameworks = true;
 
+    [Parameter("Should we build native binaries as Universal. Default to false, so we can still build native libs outside of docker.")]
+    readonly bool AsUniversal = false;
+
     Target Info => _ => _
                        .Description("Describes the current configuration")
                        .Before(Clean, Restore, BuildTracerHome)
@@ -195,6 +198,12 @@ partial class Build : NukeBuild
         .After(Clean)
         .DependsOn(CompileNativeLoader)
         .DependsOn(PublishNativeLoader);
+
+    Target BuildNativeWrapper => _ => _
+        .Description("")
+        .After(Clean)
+        .DependsOn(CompileNativeWrapper)
+        .DependsOn(PublishNativeWrapper);
 
     Target PackageTracerHome => _ => _
         .Description("Builds NuGet packages, MSIs, and zip files, from already built source")

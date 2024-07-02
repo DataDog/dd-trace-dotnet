@@ -8,6 +8,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdatomic.h>
+#include <pthread.h>
+
+#include "common.h"
 
 /* dl_iterate_phdr wrapper
 The .NET profiler on Linux uses a classic signal-based approach to collect thread callstack.
@@ -173,9 +176,14 @@ char* getSubfolder(const char* path)
     return subfolder;
 }
 
+
+static void check_init();
+
 __attribute__((constructor))
 void initLibrary(void)
 {
+    check_init();
+
     const char* crashHandlerEnabled = getenv("DD_TRACE_CRASH_HANDLER_ENABLED");
 
     if (crashHandlerEnabled != NULL)
@@ -319,10 +327,7 @@ static int (*__real_dl_iterate_phdr)(int (*callback)(struct dl_phdr_info* info, 
 
 int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data)
 {
-    if (__real_dl_iterate_phdr == NULL)
-    {
-        __real_dl_iterate_phdr = dlsym(RTLD_NEXT, "dl_iterate_phdr");
-    }
+    check_init();
 
     ((char*)&functions_entered_counter)[ENTERED_DL_ITERATE_PHDR]++;
 
@@ -351,10 +356,7 @@ static void* (*__real_dlopen)(const char* file, int mode) = NULL;
 
 void* dlopen(const char* file, int mode)
 {
-    if (__real_dlopen == NULL)
-    {
-        __real_dlopen = dlsym(RTLD_NEXT, "dlopen");
-    }
+    check_init();
 
     ((char*)&functions_entered_counter)[ENTERED_DL_OPEN]++;
 
@@ -372,10 +374,7 @@ static int (*__real_dlclose)(void* handle) = NULL;
 
 int dlclose(void* handle)
 {
-    if (__real_dlclose == NULL)
-    {
-        __real_dlclose = dlsym(RTLD_NEXT, "dlclose");
-    }
+    check_init();
 
     // call the real dlopen (libc/musl-libc)
     int result = __real_dlclose(handle);
@@ -389,10 +388,7 @@ static int (*__real_dladdr)(const void* addr_arg, Dl_info* info) = NULL;
 
 int dladdr(const void* addr_arg, Dl_info* info)
 {
-    if (__real_dladdr == NULL)
-    {
-        __real_dladdr = dlsym(RTLD_NEXT, "dladdr");
-    }
+    check_init();
 
     ((char*)&functions_entered_counter)[ENTERED_DL_ADDR]++;
 
@@ -409,10 +405,7 @@ static int (*__real_execve)(const char* pathname, char* const argv[], char* cons
 
 int execve(const char* pathname, char* const argv[], char* const envp[])
 {
-    if (__real_execve == NULL)
-    {
-        __real_execve = dlsym(RTLD_NEXT, "execve");
-    }
+    check_init();
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wtautological-compare"
@@ -487,10 +480,7 @@ static int (*__real_pthread_create)(pthread_t* restrict res, const pthread_attr_
 
 int pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg)
 {
-    if (__real_pthread_create == NULL)
-    {
-        __real_pthread_create = dlsym(RTLD_NEXT, "pthread_create");
-    }
+    check_init();
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_CREATE]++;
 
@@ -507,11 +497,7 @@ static int (*__real_pthread_attr_init)(pthread_attr_t* a) = NULL;
 
 int pthread_attr_init(pthread_attr_t* a)
 {
-    if (__real_pthread_attr_init == NULL)
-    {
-        __real_pthread_attr_init = dlsym(RTLD_NEXT, "pthread_attr_init");
-    }
-
+    check_init();
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_ATTR_INIT]++;
 
     // call the real pthread_attr_init (libc/musl-libc)
@@ -527,10 +513,7 @@ static int (*__real_pthread_getattr_default_np)(pthread_attr_t* attrp) = NULL;
 
 int pthread_getattr_default_np(pthread_attr_t* a)
 {
-    if (__real_pthread_getattr_default_np == NULL)
-    {
-        __real_pthread_getattr_default_np = dlsym(RTLD_NEXT, "pthread_getattr_default_np");
-    }
+    check_init();
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_GETATTR_DEFAULT_NP]++;
 
@@ -547,10 +530,7 @@ static int (*__real_pthread_setattr_default_np)(const pthread_attr_t* attrp) = N
 
 int pthread_setattr_default_np(const pthread_attr_t* a)
 {
-    if (__real_pthread_setattr_default_np == NULL)
-    {
-        __real_pthread_setattr_default_np = dlsym(RTLD_NEXT, "pthread_setattr_default_np");
-    }
+    check_init();
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_SETATTR_DEFAULT_NP]++;
 
@@ -562,15 +542,19 @@ int pthread_setattr_default_np(const pthread_attr_t* a)
     return result;
 }
 
+#if 0
+// Remove the wrapping around fork because in Universal this cause deadlock on 
+// debian stretch slim
+// In debian stretch slim, it's impossible to install gdb and other tools to
+// investigate the deadlock.
+// Since this wrapping was done for safety but no actual issue, we remove it for now.
+// But we leave the code for documentation or if we need to reactivate it.
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_fork)() = NULL;
 
 pid_t fork()
 {
-    if (__real_fork == NULL)
-    {
-        __real_fork = dlsym(RTLD_NEXT, "fork");
-    }
+    check_init();
 
     ((char*)&functions_entered_counter)[ENTERED_FORK]++;
 
@@ -581,5 +565,27 @@ pid_t fork()
 
     return result;
 }
-
 #endif
+#endif
+static pthread_once_t once_control = PTHREAD_ONCE_INIT;
+
+static void init()
+{
+    __real_dl_iterate_phdr = __dd_dlsym(RTLD_NEXT, "dl_iterate_phdr");
+    __real_dlopen = __dd_dlsym(RTLD_NEXT, "dlopen");
+    __real_dlclose = __dd_dlsym(RTLD_NEXT, "dlclose");
+    __real_dladdr = __dd_dlsym(RTLD_NEXT, "dladdr");
+    __real_execve = __dd_dlsym(RTLD_NEXT, "execve");
+#ifdef DD_ALPINE
+    __real_pthread_create = __dd_dlsym(RTLD_NEXT, "pthread_create");
+    __real_pthread_attr_init = __dd_dlsym(RTLD_NEXT, "pthread_attr_init");
+    __real_pthread_getattr_default_np = __dd_dlsym(RTLD_NEXT, "pthread_getattr_default_np");
+    __real_pthread_setattr_default_np = __dd_dlsym(RTLD_NEXT, "pthread_setattr_default_np");
+    //__real_fork = __dd_dlsym(RTLD_NEXT, "fork");
+#endif
+}
+
+static void check_init()
+{
+    __dd_pthread_once(&once_control, init);
+}
