@@ -10,6 +10,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 using static Datadog.Trace.Configuration.ConfigurationKeys;
 
+#if !NETFRAMEWORK
+
 namespace Datadog.Trace.Iast.Aspects.NHibernate;
 
 /// <summary> NHibernate class aspect </summary>
@@ -32,3 +34,4 @@ public class ISessionAspect
         return query;
     }
 }
+#endif
