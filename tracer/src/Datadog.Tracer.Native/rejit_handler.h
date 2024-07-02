@@ -101,6 +101,7 @@ class RejitHandler
 private:
     std::atomic_bool m_shutdown = {false};
     Lock m_shutdown_lock;
+    Lock m_rejitters_lock;
 
     AssemblyProperty* m_pCorAssemblyProperty = nullptr;
 
