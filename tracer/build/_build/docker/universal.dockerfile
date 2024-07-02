@@ -67,11 +67,3 @@ COPY . /build
 RUN dotnet build /build --no-restore
 WORKDIR /project
 
-FROM base as tester
-
-# Copy the build project in and build it
-COPY *.csproj *.props *.targets /build/
-RUN dotnet restore /build
-COPY . /build
-RUN dotnet build /build 
-WORKDIR /project

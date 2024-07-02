@@ -35,6 +35,7 @@ double ceil(double x) {
 
 #else
 #if defined(__x86_64__)
+// Extracted from https://github.com/DataDog/nginx-datadog/pull/65/files#diff-b77cefd23849235d3914550a1e3eae720b4a410605ae696b4f02b1b2bb6983edR3
 static float ceilf_local_sse41(float x)
 {
     float result;
@@ -56,7 +57,7 @@ double ceil(double x) {
     return result;
 }
 
-#endif
+#endif // defined(__x86_64__)
 /* fp_force_eval ensures that the input value is computed when that's
    otherwise unused.  To prevent the constant folding of the input
    expression, an additional fp_barrier may be needed or a compilation
@@ -100,7 +101,7 @@ static float ceilf_local(float x)
         }
         return u.f;
 }
-#endif
+#endif // defined(__aarch64__)
 
 int strerror_r(int errnum, char *buf, size_t buflen)
 {
@@ -155,11 +156,11 @@ float ceilf(float x)
             }
 # else
             ceilf_global_ = &ceilf_local;
-#endif
+#endif // defined(__x86_64__)
         } else {
             ceilf_global_ = (ceilf_t)ceilf_sym;
         }
     }
     return ceilf_global_(x);
 }
-#endif
+#endif // defined(__linux__)

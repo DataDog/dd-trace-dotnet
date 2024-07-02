@@ -31,7 +31,6 @@ static void* s_libpthread_handle = NULL;
 void* dlsym(void* handle, const char* symbol) __attribute__((weak));
 int pthread_once(pthread_once_t* control, void (*init)(void)) __attribute__((weak));
 
-static __typeof(dlerror)* s_dlerror = &dlerror;
 static __typeof(dlopen)* s_dlopen = NULL;
 void* __libc_dlopen_mode(const char* filename, int flag) __attribute__((weak));
 void* __libc_dlsym(void* handle, const char* symbol) __attribute__((weak));
@@ -53,10 +52,6 @@ static void* __dd_dlopen(const char* filename, int flags)
     if (s_dlopen)
     {
         void* ret = s_dlopen(filename, flags);
-        if (!ret && s_dlerror)
-        {
-            fprintf(stderr, "Failed to dlopen %s (%s)\n", filename, s_dlerror());
-        }
         return ret;
     }
     // Should not happen
