@@ -54,7 +54,7 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.String,System.Threading.CancellationToken)", 1)]
     public static string Review(string parameter)
     {
-        IastRaspVulnerabilityManager.OnSSRF(parameter);
+        VulnerabilitiesModule.OnSSRF(parameter);
         return parameter;
     }
 
@@ -88,7 +88,7 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::set_BaseAddress(System.Uri)")]
     public static Uri ReviewUri(Uri parameter)
     {
-        IastRaspVulnerabilityManager.OnSSRF(parameter.OriginalString);
+        VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
         return parameter;
     }
 
@@ -115,7 +115,7 @@ public class HttpClientAspect
 
         if (uri is not null)
         {
-            IastRaspVulnerabilityManager.OnSSRF(uri.OriginalString);
+            VulnerabilitiesModule.OnSSRF(uri.OriginalString);
         }
 
         return parameter;
@@ -127,7 +127,7 @@ public class HttpClientAspect
 
         if (uri is not null)
         {
-            IastRaspVulnerabilityManager.OnSSRF(uri.OriginalString);
+            VulnerabilitiesModule.OnSSRF(uri.OriginalString);
         }
 
         return parameter;

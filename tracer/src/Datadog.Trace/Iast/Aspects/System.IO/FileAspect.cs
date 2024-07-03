@@ -104,7 +104,7 @@ public class FileAspect
     [AspectMethodInsertBefore("System.IO.File::Replace(System.String,System.String,System.String,System.Boolean)", new int[] { 1, 2, 3 })]
     public static string ReviewPath(string path)
     {
-        IastRaspVulnerabilityManager.OnPathTraversal(path);
+        VulnerabilitiesModule.OnPathTraversal(path);
         return path;
     }
 }

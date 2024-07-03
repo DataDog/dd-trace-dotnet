@@ -33,7 +33,7 @@ public class FileInfoAspect
     [AspectMethodInsertBefore("System.IO.FileInfo::Replace(System.String,System.String,System.Boolean)", new int[] { 1, 2 })]
     public static string ReviewPath(string path)
     {
-        IastRaspVulnerabilityManager.OnPathTraversal(path);
+        VulnerabilitiesModule.OnPathTraversal(path);
         return path;
     }
 }

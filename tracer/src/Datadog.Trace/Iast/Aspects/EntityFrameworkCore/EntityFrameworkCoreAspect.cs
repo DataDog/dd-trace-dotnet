@@ -32,7 +32,7 @@ public class EntityFrameworkCoreAspect
     [AspectMethodInsertBefore("Microsoft.EntityFrameworkCore.RelationalQueryableExtensions::FromSqlRaw(Microsoft.EntityFrameworkCore.DbSet`1<!!0>,System.String,System.Object[])", 1)]
     public static object ReviewSqlString(string sqlAsString)
     {
-        IastRaspVulnerabilityManager.OnSqlI(sqlAsString, IntegrationId.SqlClient);
+        VulnerabilitiesModule.OnSqlI(sqlAsString, IntegrationId.SqlClient);
         return sqlAsString;
     }
 }

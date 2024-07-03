@@ -75,7 +75,7 @@ public class DirectoryAspect
     [AspectMethodInsertBefore("System.IO.Directory::SetCurrentDirectory(System.String)")]
     public static string ReviewPath(string path)
     {
-        IastRaspVulnerabilityManager.OnPathTraversal(path);
+        VulnerabilitiesModule.OnPathTraversal(path);
         return path;
     }
 }

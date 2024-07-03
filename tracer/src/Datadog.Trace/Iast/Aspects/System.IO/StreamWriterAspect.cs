@@ -32,7 +32,7 @@ public class StreamWriterAspect
     [AspectMethodInsertBefore("System.IO.StreamWriter::.ctor(System.String,System.Boolean,System.Text.Encoding,System.Int32)", 3)]
     public static string ReviewPath(string path)
     {
-        IastRaspVulnerabilityManager.OnPathTraversal(path);
+        VulnerabilitiesModule.OnPathTraversal(path);
         return path;
     }
 }

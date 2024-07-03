@@ -31,7 +31,7 @@ public class DbCommandAspect
         if (command is DbCommand entityCommand && command.GetType().Name == "EntityCommand")
         {
             var commandText = entityCommand.CommandText;
-            IastRaspVulnerabilityManager.OnSqlI(commandText, IntegrationId.SqlClient);
+            VulnerabilitiesModule.OnSqlI(commandText, IntegrationId.SqlClient);
         }
 
         return command;

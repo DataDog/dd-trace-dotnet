@@ -60,7 +60,7 @@ public class DirectoryInfoAspect
 #endif
     public static string ReviewPath(string path)
     {
-        IastRaspVulnerabilityManager.OnPathTraversal(path);
+        VulnerabilitiesModule.OnPathTraversal(path);
         return path;
     }
 }

@@ -26,7 +26,7 @@ public class WebRequestAspect
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.String)")]
     public static object Review(string parameter)
     {
-        IastRaspVulnerabilityManager.OnSSRF(parameter);
+        VulnerabilitiesModule.OnSSRF(parameter);
         return parameter;
     }
 
@@ -40,7 +40,7 @@ public class WebRequestAspect
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.Uri)")]
     public static object Review(Uri parameter)
     {
-        IastRaspVulnerabilityManager.OnSSRF(parameter.OriginalString);
+        VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
         return parameter;
     }
 }
