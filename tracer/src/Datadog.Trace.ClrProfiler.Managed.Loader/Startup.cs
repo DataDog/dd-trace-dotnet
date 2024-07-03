@@ -73,7 +73,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var customTracingEnabled = ReadBooleanEnvironmentVariable(AasCustomTracingKey, false);
             var needsDogStatsD = ReadBooleanEnvironmentVariable(AasCustomMetricsKey, false);
             var automaticTraceEnabled = ReadBooleanEnvironmentVariable(TraceEnabledKey, true);
-            var automaticProfilingEnabled = ReadBooleanEnvironmentVariable(ProfilingEnabledKey, false);
+
+            var profilingSsiEnabled = ReadEnvironmentVariable(ProfilingSsiEnabledKey);
+            var profilingManuallyEnabled = ReadEnvironmentVariable(ProfilingManuallyEnabledKey);
+
+            var automaticProfilingEnabled = profilingManuallyEnabled switch
+            {
+                "auto" => true,
+                null => profilingSsiEnabled != null,
+                _ => Parse(profilingManuallyEnabled)
+            };
+
 
             if (automaticTraceEnabled || customTracingEnabled || needsDogStatsD || automaticProfilingEnabled)
             {

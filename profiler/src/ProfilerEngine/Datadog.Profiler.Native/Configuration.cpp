@@ -639,34 +639,39 @@ bool Configuration::IsEnvironmentValueSet(shared::WSTRING const& name, T& value)
 
 EnablementStatus Configuration::ExtractEnablementStatus()
 {
-    auto enabled = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
-
-    auto isEnabled = false;
-    auto parsed = shared::TryParseBooleanEnvironmentValue(enabled, isEnabled);
-    if (enabled.empty() || !parsed)
+    if (shared::EnvironmentExist(EnvironmentVariables::ProfilerEnabled))
     {
-        auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
-        auto pos = r.find(WStr("profiler"));
-        auto ssiEnabled = (pos != shared::WSTRING::npos);
+        auto isEnabled = false;
+        auto enabled = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
+        auto parsed = shared::TryParseBooleanEnvironmentValue(enabled, isEnabled);
 
-        if (ssiEnabled)
+        if (enabled.empty() || !parsed || !isEnabled)
         {
-            return EnablementStatus::SsiEnabled;
+            // It is possible that a Single Step Instrumentation deployment was done
+            // and the profiler was enabled during that step. In that case, the "auto" value
+            // will be set and profiler should be enabled.
+            // This should be replaced by adding "profiler" in EnvironmentVariables::SsiDeployed
+            // later that will take into account heuristics
+            if (enabled == WStr("auto"))
+            {
+                return EnablementStatus::ManuallyEnabled;
+            }
+
+            return EnablementStatus::ManuallyDisabled;
         }
-        else
-        {
-            return EnablementStatus::NotSet;
-        }
+        return EnablementStatus::ManuallyEnabled;
+    }
+
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
+    auto pos = r.find(WStr("profiler"));
+    auto ssiEnabled = (pos != shared::WSTRING::npos);
+
+    if (ssiEnabled)
+    {
+        return EnablementStatus::SsiEnabled;
     }
     else
     {
-        if (isEnabled)
-        {
-            return EnablementStatus::ManuallyEnabled;
-        }
-        else
-        {
-            return EnablementStatus::ManuallyDisabled;
-        }
+        return EnablementStatus::NotSet;
     }
 }

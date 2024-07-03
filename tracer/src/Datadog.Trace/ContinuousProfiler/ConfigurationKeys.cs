@@ -10,5 +10,6 @@ namespace Datadog.Trace.ContinuousProfiler
         public const string ProfilingEnabled = "DD_PROFILING_ENABLED";
         public const string CodeHotspotsEnabled = "DD_PROFILING_CODEHOTSPOTS_ENABLED";
         public const string EndpointProfilingEnabled = "DD_PROFILING_ENDPOINT_COLLECTION_ENABLED";
+        public const string SsiDeployed = "DD_INJECTION_ENABLED";
     }
 }

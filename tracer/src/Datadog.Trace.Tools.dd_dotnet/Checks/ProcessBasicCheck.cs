@@ -242,25 +242,41 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
 
                 AnsiConsole.WriteLine(ContinuousProfilerCheck());
-                bool isContinuousProfilerEnabled;
 
-                if (process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled))
+                bool isContinuousProfilerEnabled = false;
+                var hasValue = process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled);
+                if (hasValue)
                 {
-                    if (ParseBooleanConfigurationValue(profilingEnabled))
+                    if (ParseBooleanConfigurationValue(profilingEnabled!))
                     {
                         Utils.WriteSuccess(ContinuousProfilerEnabled);
                         isContinuousProfilerEnabled = true;
                     }
                     else
                     {
-                        Utils.WriteInfo(ContinuousProfilerDisabled);
-                        isContinuousProfilerEnabled = false;
+                        if (profilingEnabled == "auto")
+                        {
+                            Utils.WriteInfo(ContinuousProfilerSsiDeployed);
+                            isContinuousProfilerEnabled = true;
+                        }
+                        else
+                        {
+                            Utils.WriteInfo(ContinuousProfilerDisabled);
+                            isContinuousProfilerEnabled = false;
+                        }
                     }
                 }
                 else
                 {
-                    Utils.WriteInfo(ContinuousProfilerNotSet);
-                    isContinuousProfilerEnabled = false;
+                    isContinuousProfilerEnabled = process.EnvironmentVariables.TryGetValue("DD_INJECTION_ENABLED", out var _);
+                    if (isContinuousProfilerEnabled)
+                    {
+                        Utils.WriteInfo(ContinuousProfilerSsiDeployed);
+                    }
+                    else
+                    {
+                        Utils.WriteInfo(ContinuousProfilerNotSet);
+                    }
                 }
 
                 if (isContinuousProfilerEnabled)
