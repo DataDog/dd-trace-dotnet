@@ -10,8 +10,8 @@
 #include "debugger_rejit_handler_module_method.h"
 #include "debugger_rejit_preprocessor.h"
 #include "fault_tolerant_method_duplicator.h"
-#include "logger.h"
 #include "iast/iast_util.h"
+#include "logger.h"
 
 #include <fstream>
 #include <map>
@@ -101,20 +101,19 @@ WSTRING DebuggerProbesInstrumentationRequester::GenerateRandomProbeId()
     return converted;
 }
 
-std::map<std::pair<std::string, mdToken>, std::vector<int>>
-DebuggerProbesInstrumentationRequester::GetExplorationLineProbesFromFile(const WSTRING& filename)
+const auto& DebuggerProbesInstrumentationRequester::GetExplorationTestLineProbes(const WSTRING& filename)
 {
-    if (explorationTestLineProbes.size() > 0)
-    {
-        return explorationTestLineProbes;
-    }
+    std::call_once(explorationLinesInitFlag, InitializeExplorationTestLineProbes, filename);
+    return explorationLineProbes;
+}
 
-    // Open the file
+void DebuggerProbesInstrumentationRequester::InitializeExplorationTestLineProbes(const WSTRING& filename)
+{
     std::ifstream file(filename);
     if (!file.is_open())
     {
-        Logger::Error("Unable to open file: ", filename);
-        return explorationTestLineProbes;
+        Logger::Error("InitializeExplorationTestLineProbes: Unable to open file: ", filename);
+        return;
     }
 
     std::string line;
@@ -134,14 +133,11 @@ DebuggerProbesInstrumentationRequester::GetExplorationLineProbesFromFile(const W
             int bytecodeOffset = std::stoi(bytecodeOffsetStr);
 
             auto key = std::make_pair(guid, methodToken);
-            explorationTestLineProbes[key].push_back(bytecodeOffset);
+            explorationLineProbes[key].push_back(bytecodeOffset);
         }
     }
 
-    // Close the file
     file.close();
-
-    return explorationTestLineProbes;
 }
 
 /**
@@ -153,8 +149,6 @@ DebuggerProbesInstrumentationRequester::GetExplorationLineProbesFromFile(const W
 void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const ModuleID& module_id,
                                                                           const mdToken& function_token)
 {
-    // while (!::IsDebuggerPresent()) { ::Sleep(100); }
-
     try
     {
         if (!IsDebuggerInstrumentAllEnabled())
@@ -237,64 +231,67 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
         const auto numReJITs = m_debugger_rejit_preprocessor->RequestRejitForLoadedModules(
             std::vector{module_id}, std::vector{methodProbe}, /* enqueueInSameThread */ true);
 
-        if (IsDebuggerInstrumentAllLinesEnabled())
+        Logger::Debug("Instrument-All: ReJIT Requested for: ", methodProbe->target_method.method_name,
+                      ". ProbeId:", methodProbe->probeId, ". Numbers of ReJits: ", numReJITs);
+
+        if (!IsDebuggerInstrumentAllLinesEnabled())
         {
+            return;
+        }
 
-            const auto lineProbesPath = GetEnvironmentValue(environment::internal_instrument_all_lines_path);
-            const shared::WSTRING& probeFilePath = WStr("line_exploration_file_path");
+        const auto lineProbesPath = GetEnvironmentValue(environment::internal_instrument_all_lines_path);
+        const shared::WSTRING& probeFilePath = WStr("line_exploration_file_path");
 
-            auto lineProbesDict = GetExplorationLineProbesFromFile(lineProbesPath);
+        auto lineProbesMap = GetExplorationTestLineProbes(lineProbesPath);
 
-            WCHAR moduleName[MAX_PACKAGE_NAME];
-            ULONG nSize;
-            GUID mvid;
-            hr = metadataImport->GetScopeProps(moduleName, MAX_PACKAGE_NAME, &nSize, &mvid);
+        WCHAR moduleName[MAX_PACKAGE_NAME];
+        ULONG nSize;
+        GUID mvid;
+        hr = metadataImport->GetScopeProps(moduleName, MAX_PACKAGE_NAME, &nSize, &mvid);
 
-            if (FAILED(hr))
+        if (FAILED(hr))
+        {
+            Logger::Warn("Can't read module scope props for module ID: ", module_id);
+        }
+        else
+        {
+            auto lowerMvid = iast::ToLower(ToString(mvid));
+            lowerMvid = lowerMvid.substr(1, lowerMvid.length() - 2);
+            auto key = std::make_pair(lowerMvid, function_token);
+            auto it = lineProbesMap.find(key);
+            if (it == lineProbesMap.end())
             {
-                Logger::Warn("Can't read module scope props for module ID: ", module_id);
+                Logger::Warn("No line probes found in method: ", caller.type.name, ".", caller.name);
             }
             else
             {
-                auto lowerMvid =  iast::ToLower(ToString(mvid));
-                lowerMvid = lowerMvid.substr(1, lowerMvid.length() - 2);
-                auto key = std::make_pair(lowerMvid, function_token);
-                auto it = lineProbesDict.find(key);
-                if (it == lineProbesDict.end())
+                std::vector<std::shared_ptr<LineProbeDefinition>> lineProbeDefinitions;
+                auto bytecodeOffsets = it->second;
+                for (const auto& offset : bytecodeOffsets)
                 {
-                    Logger::Warn("No line probes found in method: ", caller.type.name, ".", caller.name);
+                    const auto& lineProbe = std::make_shared<LineProbeDefinition>(
+                        LineProbeDefinition(GenerateRandomProbeId(), offset, 0, mvid, function_token, probeFilePath));
+                    lineProbeDefinitions.push_back(lineProbe);
                 }
-                else
-                {
-                    std::vector<std::shared_ptr<LineProbeDefinition>> lineProbeDefinitions;
-                    auto bytecodeOffsets = it->second;
-                    for (const auto& offset : bytecodeOffsets)
-                    {
-                        const auto& lineProbe = std::make_shared<LineProbeDefinition>(LineProbeDefinition(
-                            GenerateRandomProbeId(), offset, 0, mvid, function_token, probeFilePath));
-                        lineProbeDefinitions.push_back(lineProbe);
-                    }
 
-                    std::promise<std::vector<MethodIdentifier>> promise;
-                    std::future<std::vector<MethodIdentifier>> future = promise.get_future();
-                    m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(std::vector{module_id},
-                                                                               lineProbeDefinitions, &promise);
-                    const auto& lineProbeRequests = future.get();
+                std::promise<std::vector<MethodIdentifier>> promise;
+                std::future<std::vector<MethodIdentifier>> future = promise.get_future();
+                m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(std::vector{module_id}, lineProbeDefinitions,
+                                                                           &promise);
+                const auto& lineProbeRequests = future.get();
 
-                    // RequestRejit
-                    auto requestRejitPromise = std::make_shared<std::promise<void>>();
-                    std::future<void> requestRejitFuture = requestRejitPromise->get_future();
-                    std::vector<MethodIdentifier> requests(lineProbeRequests.size());
-                    std::copy(lineProbeRequests.begin(), lineProbeRequests.end(), requests.begin());
-                    m_debugger_rejit_preprocessor->EnqueueRequestRejit(requests, requestRejitPromise);
-                    // wait and get the value from the future<void>
-                    requestRejitFuture.get();
-                }
+                // RequestRejit
+                auto requestRejitPromise = std::make_shared<std::promise<void>>();
+                std::future<void> requestRejitFuture = requestRejitPromise->get_future();
+                std::vector<MethodIdentifier> requests(lineProbeRequests.size());
+                std::copy(lineProbeRequests.begin(), lineProbeRequests.end(), requests.begin());
+                m_debugger_rejit_preprocessor->EnqueueRequestRejit(requests, requestRejitPromise);
+                // wait and get the value from the future<void>
+                requestRejitFuture.get();
+                Logger::Debug("Instrument-All: ReJIT Requested for: ", methodProbe->target_method.method_name,
+                              ". Numbers of line probes: ", lineProbeDefinitions.size());
             }
         }
-
-        Logger::Debug("Instrument-All: ReJIT Requested for: ", methodProbe->target_method.method_name,
-                      ". ProbeId:", methodProbe->probeId, ". Numbers of ReJits: ", numReJITs);
     }
     catch (...)
     {
