@@ -8,6 +8,9 @@
 # Tracer
 /tracer/                                  @DataDog/tracing-dotnet
 
+# IDM
+/tracer/test/test-applications/integrations/                                                            @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
+
 # CI
 /tracer/src/Datadog.Trace/Ci/             @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CI/   @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
@@ -106,8 +109,6 @@ docker-compose.serverless.yml                                      @DataDog/trac
 /tracer/test/test-applications/integrations/dependency-libs/Samples.DatabaseHelper.netstandard          @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/dependency-libs/Samples.SqlServer.Vb                        @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/dependency-libs/Samples.WebRequestHelper.NetFramework20     @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
-
-/tracer/test/test-applications/integrations/                                                            @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 
 
 ## NON-IDM
