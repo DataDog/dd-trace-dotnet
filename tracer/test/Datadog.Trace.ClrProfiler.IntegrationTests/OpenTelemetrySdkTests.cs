@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 36;
+                const int expectedSpanCount = 37;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
@@ -118,8 +118,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var otelSpans = spans.Where(s => s.Service == "MyServiceName");
                 var activitySourceSpans = spans.Where(s => s.Service == CustomServiceName);
 
-                otelSpans.Count().Should().Be(expectedSpanCount - 2); // there is another span w/ service == ServiceNameOverride
-                activitySourceSpans.Count().Should().Be(1);
+                otelSpans.Count().Should().Be(expectedSpanCount - 3); // there is another span w/ service == ServiceNameOverride
+                activitySourceSpans.Count().Should().Be(2);
 
                 ValidateIntegrationSpans(otelSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
                 ValidateIntegrationSpans(activitySourceSpans, metadataSchemaVersion: "v0", expectedServiceName: CustomServiceName, isExternalSpan: false);
@@ -159,13 +159,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 36;
+                const int expectedSpanCount = 37;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
                 var otelSpans = spans.Where(s => s.Service == "MyServiceName");
 
-                otelSpans.Count().Should().Be(expectedSpanCount - 1); // there is another span w/ service == ServiceNameOverride
+                otelSpans.Count().Should().Be(expectedSpanCount - 2); // there is another span w/ service == ServiceNameOverride
 
                 ValidateIntegrationSpans(otelSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
 
