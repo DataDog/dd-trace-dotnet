@@ -263,30 +263,6 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        public static int InitEmbeddedCallTargetDefinitions(string platform, uint enabledCategories)
-        {
-            if (IsWindows)
-            {
-                return Windows.InitEmbeddedCallTargetDefinitions(platform, enabledCategories);
-            }
-            else
-            {
-                return NonWindows.InitEmbeddedCallTargetDefinitions(platform, enabledCategories);
-            }
-        }
-
-        public static int InitEmbeddedCallSiteDefinitions(string platform, uint enabledCategories)
-        {
-            if (IsWindows)
-            {
-                return Windows.InitEmbeddedCallSiteDefinitions(platform, enabledCategories);
-            }
-            else
-            {
-                return NonWindows.InitEmbeddedCallSiteDefinitions(platform, enabledCategories);
-            }
-        }
-
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
         // The DllImport methods are re-written by cor_profiler to have the correct vales
@@ -342,12 +318,6 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native.dll", CharSet = CharSet.Unicode)]
             public static extern int GetUserStrings(int arrSize, [In, Out] UserStringInterop[] arr);
-
-            [DllImport("Datadog.Tracer.Native.dll", CharSet = CharSet.Unicode)]
-            public static extern int InitEmbeddedCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string platform, uint enabledCategories);
-
-            [DllImport("Datadog.Tracer.Native.dll", CharSet = CharSet.Unicode)]
-            public static extern int InitEmbeddedCallSiteDefinitions([MarshalAs(UnmanagedType.LPWStr)] string platform, uint enabledCategories);
         }
 
         // assume .NET Core if not running on Windows
@@ -404,12 +374,6 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native", CharSet = CharSet.Unicode)]
             public static extern int GetUserStrings(int arrSize, [In, Out] UserStringInterop[] arr);
-
-            [DllImport("Datadog.Tracer.Native", CharSet = CharSet.Unicode)]
-            public static extern int InitEmbeddedCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string platform, uint enabledCategories);
-
-            [DllImport("Datadog.Tracer.Native", CharSet = CharSet.Unicode)]
-            public static extern int InitEmbeddedCallSiteDefinitions([MarshalAs(UnmanagedType.LPWStr)] string platform, uint enabledCategories);
         }
     }
 }

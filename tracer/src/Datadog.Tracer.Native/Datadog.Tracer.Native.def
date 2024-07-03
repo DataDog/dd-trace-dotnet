@@ -24,5 +24,3 @@ EXPORTS
     ShouldHeal
     ReportSuccessfulInstrumentation
     GetUserStrings
-    InitEmbeddedCallTargetDefinitions
-    InitEmbeddedCallSiteDefinitions

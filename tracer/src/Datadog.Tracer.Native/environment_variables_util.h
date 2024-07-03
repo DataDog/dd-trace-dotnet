@@ -61,6 +61,8 @@ bool NeedsDogstatsdInAAS();
 bool IsTraceAnnotationEnabled();
 bool IsAzureFunctionsEnabled();
 bool IsVersionCompatibilityEnabled();
+bool IsIastEnabled();
+bool IsRaspEnabled();
 
 } // namespace trace
 
