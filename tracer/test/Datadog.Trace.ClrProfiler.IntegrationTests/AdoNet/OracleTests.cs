@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet;
 
 [Trait("RequiresDockerDependency", "true")]
 [UsesVerify]
+[Trait("SkipInCI", "True")] // This test requires the Oracle DB image, which is huge (8GB unpacked), so we cannot enable it without taking precautionary measures.
 public class OracleTests : TracingIntegrationTest
 {
     public OracleTests(ITestOutputHelper output)
