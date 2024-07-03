@@ -31,12 +31,12 @@ internal static class VulnerabilitiesModule
         }
     }
 
-    internal static void OnSqlI(string query, IntegrationId integrationId)
+    internal static void OnSqlQuery(string query, IntegrationId integrationId)
     {
         if (!string.IsNullOrEmpty(query))
         {
             IastModule.OnSqlQuery(query, integrationId);
-            RaspModule.OnSqlI(query, integrationId);
+            RaspModule.OnSqlQuery(query, integrationId);
         }
     }
 }

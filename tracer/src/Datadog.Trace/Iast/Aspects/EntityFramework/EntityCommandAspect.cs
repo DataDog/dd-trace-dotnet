@@ -32,7 +32,7 @@ public class EntityCommandAspect
         if (command is DbCommand dbCommand)
         {
             var commandText = dbCommand.CommandText;
-            VulnerabilitiesModule.OnSqlI(commandText, IntegrationId.SqlClient);
+            VulnerabilitiesModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
         }
 
         return command;

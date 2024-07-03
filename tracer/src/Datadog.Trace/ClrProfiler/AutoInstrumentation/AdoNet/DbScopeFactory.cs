@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 }
 
                 // We might block the SQL call from RASP depending on the query
-                VulnerabilitiesModule.OnSqlI(commandText, integrationId);
+                VulnerabilitiesModule.OnSqlQuery(commandText, integrationId);
 
                 tags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
                 tags.DbType = dbType;

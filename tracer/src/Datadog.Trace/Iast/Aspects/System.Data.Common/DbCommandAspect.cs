@@ -31,7 +31,7 @@ public class DbCommandAspect
         if (command is DbCommand entityCommand && command.GetType().Name == "EntityCommand")
         {
             var commandText = entityCommand.CommandText;
-            VulnerabilitiesModule.OnSqlI(commandText, IntegrationId.SqlClient);
+            VulnerabilitiesModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
         }
 
         return command;
