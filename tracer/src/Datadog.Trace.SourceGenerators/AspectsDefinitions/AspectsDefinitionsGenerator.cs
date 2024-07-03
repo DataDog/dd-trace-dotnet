@@ -5,31 +5,27 @@
 
 #nullable enable
 
-#pragma warning disable SA1204 // StaticElementsMustAppearBeforeInstanceElements
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.SourceGenerators.Helpers;
-using Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
-using Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 /// <inheritdoc />
 [Generator]
-public class AspectsDefinitionsGenerator : IncrementalGeneratorBase
+public class AspectsDefinitionsGenerator : IIncrementalGenerator
 {
     private const string NullLiteral = "null";
 
     /// <inheritdoc />
-    public override void Initialize(IncrementalGeneratorInitializationContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // RegisterSource(context, "AspectAttribute");
         // RegisterSource(context, "AspectClassAttribute");
@@ -38,12 +34,6 @@ public class AspectsDefinitionsGenerator : IncrementalGeneratorBase
         // RegisterSource(context, "AspectMethodInsertBeforeAttribute");
         // RegisterSource(context, "AspectMethodReplaceAttribute");
 
-        // Get path of the compiling project using the placeholder additional file
-        var folderLocatorFile = RegisterFolderLocator(context);
-
-        // Get the TFM from the TargetFrameworkMonikerAttribute
-        var tfm = RegisterTfm(context);
-
         IncrementalValuesProvider<Result<(ClassAspects Aspects, bool IsValid)>> aspectsClassesToGenerate =
             context.SyntaxProvider
                    .ForAttributeWithMetadataName(
@@ -51,6 +41,7 @@ public class AspectsDefinitionsGenerator : IncrementalGeneratorBase
                         predicate: (node, _) => node is ClassDeclarationSyntax,
                         transform: GetAspectsToGenerate)
                    .WithTrackingName(TrackingNames.PostTransform)
+
                    .Where(static m => m is not null);
 
         context.ReportDiagnostics(
@@ -71,12 +62,11 @@ public class AspectsDefinitionsGenerator : IncrementalGeneratorBase
                .WithTrackingName(TrackingNames.Collected);
 
         context.RegisterSourceOutput(
-            tfm.Collect().Combine(folderLocatorFile.Collect())
-            .Combine(allClassesToGenerate),
-            (spc, classToGenerate) => Execute(in classToGenerate.Left, in classToGenerate.Right, spc));
+            allClassesToGenerate,
+            static (spc, classToGenerate) => Execute(in classToGenerate, spc));
     }
 
-    private void Execute(in (ImmutableArray<string> Tfm, ImmutableArray<string> FolderLocators) dest, in ImmutableArray<ClassAspects> aspectClasses, SourceProductionContext context)
+    private static void Execute(in ImmutableArray<ClassAspects> aspectClasses, SourceProductionContext context)
     {
         var sb = new StringBuilder();
         sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeader);
@@ -131,64 +121,9 @@ namespace Datadog.Trace.ClrProfiler
 
         context.AddSource("AspectsDefinitions.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
 
-        if (dest.Tfm.Length > 0 && dest.FolderLocators.Length > 0)
-        {
-            GenerateNative(dest.Tfm[0], dest.FolderLocators[0], aspectClasses, context);
-        }
-
         string FormatLine(string line)
         {
             return $"\"{line.Replace("\"", "\\\"").Replace("RaspIastSink", "Sink")}\",";
-        }
-    }
-
-    private void GenerateNative(string tfm, in string destFolder, in ImmutableArray<ClassAspects> aspectClasses, SourceProductionContext context)
-    {
-        var tfmName = tfm.Replace(".", "_");
-        var sb = new StringBuilder();
-        sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeaderCpp);
-        sb.AppendLine("""
-            #pragma once
-            #include "generated_definitions.h"
-
-            namespace trace
-            {
-
-            """);
-        GenerateCallSites(aspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal));
-        sb.AppendLine();
-        GenerateCallSites(aspectClasses.Where(p => p.AspectClass.Contains(",RaspIastSink,")).OrderBy(p => p.AspectClass, StringComparer.Ordinal), "_Rasp");
-        sb.AppendLine("""
-            }
-            """);
-
-        var filePath = Path.GetFullPath(Path.Combine(Path.Combine(destFolder, "../Datadog.Tracer.Native/Generated"), $"generated_callSites_{tfmName}.g.h".ToLower()));
-        WriteAdditionalFile(filePath, sb.ToString());
-
-        string FormatLine(string line)
-        {
-            return $"(WCHAR*)WStr(\"{line.Replace("\"", "\\\"").Replace("RaspIastSink", "Sink")}\"),";
-        }
-
-        string GetFieldName(string suffix = "")
-        {
-            return $"std::vector<WCHAR*> g_callSites_{tfmName + suffix}=";
-        }
-
-        void GenerateCallSites(IEnumerable<ClassAspects> aspectClasses, string suffix = "")
-        {
-            sb.AppendLine(GetFieldName(suffix));
-            sb.AppendLine("{");
-            foreach (var aspectClass in aspectClasses)
-            {
-                sb.AppendLine(FormatLine(aspectClass.AspectClass));
-                foreach (var aspect in aspectClass.Aspects)
-                {
-                    sb.AppendLine(FormatLine(aspect));
-                }
-            }
-
-            sb.AppendLine("};");
         }
     }
 
@@ -410,4 +345,3 @@ namespace Datadog.Trace.ClrProfiler
         }
     }
 }
-#pragma warning restore SA1204 // StaticElementsMustAppearBeforeInstanceElements

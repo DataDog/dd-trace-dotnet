@@ -24,9 +24,9 @@ jobs:
 
       - name: "Verify no changes in generated files"
         run: |
-          git diff --quiet -- .\tracer\src\Datadog.Trace\Generated .\tracer\src\Datadog.Tracer.Native\Generated
+          git diff --quiet -- .\tracer\src\Datadog.Trace\Generated
           if ($LASTEXITCODE -eq 1) {
-            git diff -- .\tracer\src\Datadog.Trace\Generated .\tracer\src\Datadog.Tracer.Native\Generated
+            git diff -- .\tracer\src\Datadog.Trace\Generated
             Write-Error "Found changes in Generated folder. Build the solution locally and ensure you have committed all source generated files."
             Exit 1
           } else {
