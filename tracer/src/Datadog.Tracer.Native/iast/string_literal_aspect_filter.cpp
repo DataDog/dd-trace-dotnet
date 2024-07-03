@@ -52,16 +52,12 @@ namespace iast
         }
         return false;
     }
-    bool StringLiteralsAspectFilter::AllowInstruction(DataflowContext& context)
+    bool StringLiteralsAspectFilter::AllowInstruction(ILInstr* instruction, ILRewriter* processor)
     {
-        return AllowInstruction(context, allIndexes, false);
+        return AllowInstruction(instruction, processor, allIndexes, false);
     }
-    bool StringLiteralsAspectFilter::AllowInstruction(DataflowContext& context, const std::vector<int>& indexes,
-                                                      bool any)
+    bool StringLiteralsAspectFilter::AllowInstruction(ILInstr* instruction, ILRewriter* processor, const std::vector<int>& indexes, bool any)
     {
-        ILInstr* instruction = context.instruction;
-        ILRewriter* processor = context.rewriter;
-
         auto params = indexes;
         if (params.size() == 0)
         {
@@ -106,9 +102,9 @@ namespace iast
         this->_any = any;
     }
     StringLiteralsAspectFilter_Base::StringLiteralsAspectFilter_Base(ModuleAspects* module, int index) : StringLiteralsAspectFilter_Base(module, std::vector<int>{ index }) { }
-    bool StringLiteralsAspectFilter_Base::AllowInstruction(DataflowContext& context)
+    bool StringLiteralsAspectFilter_Base::AllowInstruction(ILInstr* instruction, ILRewriter* processor)
     {
-        return _baseFilter->AllowInstruction(context, _indexes, _any);
+        return _baseFilter->AllowInstruction(instruction, processor, _indexes, _any);
     }
 
 

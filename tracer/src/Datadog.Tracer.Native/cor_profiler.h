@@ -14,7 +14,6 @@
 #include "il_rewriter.h"
 #include "integration.h"
 #include "rejit_preprocessor.h"
-#include "tracer_rejit_preprocessor.h"
 #include "debugger_rejit_preprocessor.h"
 #include "rejit_handler.h"
 #include <unordered_set>
@@ -46,6 +45,7 @@ class FaultTolerantRewriter;
 
 namespace trace
 {
+
 class CorProfiler : public CorProfilerBase
 {
 private:
@@ -207,8 +207,7 @@ public:
     //
     // Tracer Integration methods #2
     //
-    long RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size,
-                                       UINT32 enabledCategories = -1);
+    long RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories = -1);
     long EnableCallTargetDefinitions(UINT32 enabledCategories);
     long DisableCallTargetDefinitions(UINT32 disabledCategories);
 

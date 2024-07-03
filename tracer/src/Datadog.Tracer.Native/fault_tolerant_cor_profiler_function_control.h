@@ -11,14 +11,14 @@
 namespace fault_tolerant
 {
 
-using InjectSuccessfulInstrumentationLambda = std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*, ICorProfilerFunctionControl*, ICorProfilerInfo*, LPCBYTE pMethodBytes)>;
+using InjectSuccessfulInstrumentationLambda = std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*, ICorProfilerFunctionControl*, LPCBYTE pMethodBytes)>;
 
 class FaultTolerantCorProfilerFunctionControl : public ICorProfilerFunctionControl
 {
 private:
     std::atomic<int> m_refCount;
     ICorProfilerFunctionControl* m_pICorProfilerFunctionControl;
-    ICorProfilerInfo* m_pCorProfilerInfo;
+    std::shared_ptr<ICorProfilerInfo12> m_corProfilerInfo;
     ModuleID m_moduleId;
     mdMethodDef m_methodId;
 
@@ -28,7 +28,7 @@ private:
     InjectSuccessfulInstrumentationLambda injectSuccessfulInstrumentation;
 
 public:
-    FaultTolerantCorProfilerFunctionControl(ICorProfilerFunctionControl* corProfilerFunctionControl, ICorProfilerInfo* corProfilerInfo, ModuleID moduleId,
+    FaultTolerantCorProfilerFunctionControl(ICorProfilerFunctionControl* corProfilerFunctionControl, ModuleID moduleId,
                                             mdMethodDef methodId, RejitHandlerModule* moduleHandler,
                                             RejitHandlerModuleMethod* methodHandler,
                                             InjectSuccessfulInstrumentationLambda injectSuccessfulInstrumentation);

@@ -568,9 +568,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MSTestTests2", "tra
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Selenium", "tracer\test\test-applications\integrations\Samples.Selenium\Samples.Selenium.csproj", "{32193A01-04DD-463B-A84A-9A93167958A4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.CIVisibilityIpc", "tracer\test\test-applications\integrations\Samples.CIVisibilityIpc\Samples.CIVisibilityIpc.csproj", "{BA9613FB-8458-4C78-98DE-AA45BBE62F64}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.CIVisibilityIpc", "tracer\test\test-applications\integrations\Samples.CIVisibilityIpc\Samples.CIVisibilityIpc.csproj", "{BA9613FB-8458-4C78-98DE-AA45BBE62F64}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.CIVisibilityVersionMismatch", "tracer\test\test-applications\integrations\Samples.CIVisibilityVersionMismatch\Samples.CIVisibilityVersionMismatch.csproj", "{0D996EEE-7C04-4888-AF48-9C1E2F261A00}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.CIVisibilityVersionMismatch", "tracer\test\test-applications\integrations\Samples.CIVisibilityVersionMismatch\Samples.CIVisibilityVersionMismatch.csproj", "{0D996EEE-7C04-4888-AF48-9C1E2F261A00}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeMetricsShutdown", "tracer\test\test-applications\regression\RuntimeMetricsShutdown\RuntimeMetricsShutdown.csproj", "{C4ABF344-3263-45D5-A074-03FB206FF309}"
 EndProject

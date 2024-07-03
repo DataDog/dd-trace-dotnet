@@ -25,11 +25,6 @@ public abstract class EFCoreBaseTests: InstrumentationTestsBase, IDisposable
 
     public EFCoreBaseTests()
     {
-        PrepareData();
-    }
-
-    private void PrepareData()
-    {
         AddTainted(taintedTitle);
         formatStr = $"Update Books set title= title where title = {taintedTitle}";
         commandUnsafeparameter = "Update Books set title=title where title ='" + taintedTitle + "' or title=@title";
@@ -104,7 +99,6 @@ public abstract class EFCoreBaseTests: InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenACoreDatabase_WhenCallingFromSqlRawWithTainted_VulnerabilityIsReported()
     {
-        PrepareData();
         dbContext.Books.FromSqlRaw(queryUnsafe).ToList();
         AssertVulnerable();
     }
@@ -112,7 +106,6 @@ public abstract class EFCoreBaseTests: InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenACoreDatabase_WhenCallingFromSqlRawWithTainted_VulnerabilityIsReported2()
     {
-        PrepareData();
         dbContext.Books.FromSqlRaw(queryUnsafe, titleParam).ToList();
         AssertVulnerable();
     }
@@ -120,7 +113,6 @@ public abstract class EFCoreBaseTests: InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenACoreDatabase_WhenCallingFromSqlRawWithTainted_VulnerabilityIsReported3()
     {
-        PrepareData();
         dbContext.Books.FromSqlRaw("Select * from dbo.Books where title ='" + taintedTitle + "'");
         AssertVulnerable();
     }

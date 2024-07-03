@@ -412,7 +412,6 @@ HRESULT FaultTolerantRewriter::ApplyOriginalInstrumentation(RejitHandlerModule* 
 HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModule* moduleHandler,
                                                                RejitHandlerModuleMethod* methodHandler,
                                                                ICorProfilerFunctionControl* pFunctionControl,
-                                                               ICorProfilerInfo* pCorProfilerInfo,
                                                                LPCBYTE pMethodBytes) const
 {
     const auto moduleId = moduleHandler->GetModuleId();
@@ -423,7 +422,7 @@ HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModul
     FaultTolerantTokens* faultTolerantTokens = moduleHandler->GetModuleMetadata()->GetFaultTolerantTokens();
     faultTolerantTokens->EnsureCorLibTokens();
 
-    ILRewriter rewriter(pCorProfilerInfo, pFunctionControl, moduleId, methodId);
+    ILRewriter rewriter(m_corProfiler->info_, pFunctionControl, moduleId, methodId);
     auto hr = rewriter.Import(pMethodBytes);
 
     if (FAILED(hr))
@@ -490,12 +489,11 @@ HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModul
 
 HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler,
                                                RejitHandlerModuleMethod* methodHandler,
-                                               ICorProfilerFunctionControl* pFunctionControl,
-                                               ICorProfilerInfo* pCorProfilerInfo)
+                                               ICorProfilerFunctionControl* pFunctionControl)
 {
     if (!is_fault_tolerant_instrumentation_enabled)
     {
-        return m_methodRewriter->Rewrite(moduleHandler, methodHandler, pFunctionControl, pCorProfilerInfo);
+        return m_methodRewriter->Rewrite(moduleHandler, methodHandler, pFunctionControl);
     }
 
     const auto moduleId = moduleHandler->GetModuleId();
@@ -520,11 +518,11 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
             //const auto [pMethodBytes, methodSize] = FaultTolerantTracker::Instance()->GetILBodyAndSize(moduleId, methodId);
             //pFunctionControl->SetILFunctionBody(methodSize, pMethodBytes);
 
-            return m_methodRewriter->Rewrite(moduleHandler, methodHandler, pFunctionControl, pCorProfilerInfo);
+            return m_methodRewriter->Rewrite(moduleHandler, methodHandler, pFunctionControl);
         }
         else
         {
-            return ApplyKickoffInstrumentation(moduleHandler, methodHandler, pFunctionControl);
+            return ApplyKickoffInstrumentation(moduleHandler, methodHandler, pFunctionControl);   
         }
     }
     else if (FaultTolerantTracker::Instance()->IsOriginalMethod(moduleId, methodId))
@@ -549,13 +547,13 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
 
         InjectSuccessfulInstrumentationLambda injectSuccessfulInstrumentation =
             [this](RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
-                   ICorProfilerFunctionControl* pFunctionControl, ICorProfilerInfo* pCorProfilerInfo, LPCBYTE pbILMethod) -> HRESULT {
-            return this->InjectSuccessfulInstrumentation(moduleHandler, methodHandler, pFunctionControl, pCorProfilerInfo, pbILMethod);
+                   ICorProfilerFunctionControl* pFunctionControl, LPCBYTE pbILMethod) -> HRESULT {
+            return this->InjectSuccessfulInstrumentation(moduleHandler, methodHandler, pFunctionControl, pbILMethod);
         };
 
 
-        auto faultTolerantFunctionControl = std::make_unique<fault_tolerant::FaultTolerantCorProfilerFunctionControl>(pFunctionControl, pCorProfilerInfo, moduleId, methodId, moduleHandler, methodHandler, injectSuccessfulInstrumentation);
-        auto hr = m_methodRewriter->Rewrite(moduleHandler, methodHandler, faultTolerantFunctionControl.get(), pCorProfilerInfo);
+        auto faultTolerantFunctionControl = std::make_unique<fault_tolerant::FaultTolerantCorProfilerFunctionControl>(pFunctionControl, moduleId, methodId, moduleHandler, methodHandler, injectSuccessfulInstrumentation);
+        auto hr = m_methodRewriter->Rewrite(moduleHandler, methodHandler, faultTolerantFunctionControl.get());
 
         //if (hr == S_OK)
         //{
@@ -579,10 +577,9 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
     }
 }
 
-HRESULT FaultTolerantRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
-                                       ICorProfilerFunctionControl* pFunctionControl, ICorProfilerInfo* pCorProfilerInfo)
+HRESULT FaultTolerantRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl)
 {
-    const auto hr = RewriteInternal(moduleHandler, methodHandler, pFunctionControl, pCorProfilerInfo);
+    const auto hr = RewriteInternal(moduleHandler, methodHandler, pFunctionControl);
     return (FAILED(hr) || hr == S_FALSE) ? S_FALSE : S_OK;
 }
 

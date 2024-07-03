@@ -80,6 +80,10 @@ bool ModuleInfo::IsInlineEnabled()
 {
     return true;
 }
+bool ModuleInfo::ExcludeInChaining()
+{
+    return false;
+}
 
 bool ModuleInfo::IsNestedType(DWORD typeDefFlags)
 {
@@ -751,7 +755,7 @@ HRESULT ModuleInfo::GetILRewriter(const WSTRING& typeName, const WSTRING& method
     }
     return GetILRewriter(methodInfo, rewriter);
 }
-HRESULT ModuleInfo::CommitILRewriter(ILRewriter** rewriter)
+HRESULT ModuleInfo::CommitILRewriter(ILRewriter** rewriter, const std::string& applyMessage)
 {
     HRESULT hr = S_FALSE;
     if (*rewriter != nullptr)
@@ -759,7 +763,7 @@ HRESULT ModuleInfo::CommitILRewriter(ILRewriter** rewriter)
         auto method = (*rewriter)->GetMethodInfo();
         if (method != nullptr)
         {
-            hr = method->CommitILRewriter();
+            hr = method->CommitILRewriter(applyMessage);
         }
     }
     *rewriter = nullptr;

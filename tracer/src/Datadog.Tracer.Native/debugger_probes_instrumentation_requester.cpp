@@ -227,7 +227,7 @@ void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemo
                 for (const auto& methodToIndexPair : probeMetadata->methodIndexMap)
                 {
                     const auto method = methodToIndexPair.first;
-                    const auto moduleHandler = m_debugger_rejit_preprocessor->GetOrAddModule(method.moduleId);
+                    const auto moduleHandler = m_rejit_handler->GetOrAddModule(method.moduleId);
                     if (moduleHandler == nullptr)
                     {
                         Logger::Warn("Module handler is returned as null while tried to RemoveProbes, this only "
@@ -526,7 +526,7 @@ void DebuggerProbesInstrumentationRequester::DetermineReInstrumentProbes(
 
     for (const auto& request : revertRequests)
     {
-        const auto moduleHandler = m_debugger_rejit_preprocessor->GetOrAddModule(request.moduleId);
+        const auto moduleHandler = m_rejit_handler->GetOrAddModule(request.moduleId);
         if (moduleHandler == nullptr)
         {
             Logger::Warn("Module handler is returned as null while tried to RemoveProbes, this only happens if "
@@ -608,6 +608,7 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(
 
     // We offload the actual `RequestRejit` & `RequestRevert` to a separate thread because they are not permitted
     // to be called from managed land.
+
     if (!revertRequests.empty())
     {
         Logger::Info("About to RequestRevert for ", revertRequests.size(), " methods.");
@@ -617,7 +618,7 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(
         std::copy(revertRequests.begin(), revertRequests.end(), requests.begin());
         auto promise = std::make_shared<std::promise<void>>();
         std::future<void> future = promise->get_future();
-        m_debugger_rejit_preprocessor->EnqueueRequestRejit(requests, promise, true);
+        m_debugger_rejit_preprocessor->EnqueueRequestRevert(requests, promise);
         // wait and get the value from the future<void>
         future.get();
     }

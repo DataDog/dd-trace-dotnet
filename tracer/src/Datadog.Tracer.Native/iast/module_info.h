@@ -114,6 +114,7 @@ namespace iast
         mdToken DefineMemberRef(const WSTRING& moduleName, const WSTRING& typeName, const WSTRING& methodName, const WSTRING& methodParams);
 
         virtual bool IsInlineEnabled();
+        virtual bool ExcludeInChaining();
 
         TypeInfo* GetTypeInfo(mdTypeDef typeDef);
         MemberRefInfo* GetMemberRefInfo(mdMemberRef token);
@@ -141,7 +142,7 @@ namespace iast
         static HRESULT GetILRewriter(MethodInfo* methodInfo, ILRewriter** rewriter);
         HRESULT GetILRewriter(const WSTRING& typeName, const WSTRING& methodName, int requiredParamCount, ILRewriter** rewriter);
         HRESULT GetILRewriter(const WSTRING& typeName, const WSTRING& methodName, PCCOR_SIGNATURE pSignature, ULONG nSignature, ILRewriter** rewriter, MethodInfo** pMethodInfo = nullptr);
-        static HRESULT CommitILRewriter(ILRewriter** rewriter);
+        static HRESULT CommitILRewriter(ILRewriter** rewriter, const std::string& applyMessage = "");
 
         bool AreSameTypes(mdTypeRef typeRef1, mdTypeRef typeRef2);
 

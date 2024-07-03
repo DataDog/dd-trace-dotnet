@@ -6,7 +6,6 @@
 #include "dataflow_aspects.h"
 #include "dataflow_il_rewriter.h"
 #include "aspect_filter_factory.h"
-#include "../function_control_wrapper.h"
 #include <fstream>
 #include <chrono>
 #include "../../../../shared/src/native-src/com_ptr.h"
@@ -20,7 +19,8 @@ static const WSTRING _fixedAppDomainIncludeFilters[] = {
     LastEntry, // Can't have an empty array
 };
 static const WSTRING _fixedAppDomainExcludeFilters[] = {
-    WStr("DD*"), WStr("DataDog*"),
+    WStr("DD*"), 
+    WStr("DataDog*"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedAssemblyIncludeFilters[] = {
@@ -152,8 +152,7 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 
 //--------------------
 
-Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler) :
-    Rejitter(rejitHandler, RejitterPriority::Low)
+Dataflow::Dataflow(ICorProfilerInfo* profiler)
 {
     HRESULT hr = profiler->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &_profiler);
     if (_profiler != nullptr)
@@ -163,7 +162,7 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
         USHORT build;
 
         if (SUCCEEDED(_profiler->GetRuntimeInformation(nullptr, &m_runtimeType, &major, &minor, &build, nullptr, 0,
-                                                       nullptr, nullptr)))
+                                                    nullptr, nullptr)))
         {
             m_runtimeVersion = VersionInfo{major, minor, build, 0};
         }
@@ -277,7 +276,8 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength)
             aspectClass = new DataflowAspectClass(this, aspectsName, line);
             if (!aspectClass->IsValid())
             {
-                trace::Logger::Info("Dataflow::LoadAspects -> Detected invalid aspect class ", aspectClass->ToString());
+                trace::Logger::Info("Dataflow::LoadAspects -> Detected invalid aspect class ",
+                                    aspectClass->ToString());
                 DEL(aspectClass);
             }
             else
@@ -309,14 +309,14 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength)
     _loaded = true;
 }
 
+
 HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 {
     CSGUARD(_cs);
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
     {
-        trace::Logger::Debug("AppDomainShutdown: AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name,
-                             " ] ");
+        trace::Logger::Debug("AppDomainShutdown: AppDomainId = ", Hex((ULONG)appDomainId), " [ ", it->second->Name, " ] ");
         DEL(it->second);
         _appDomains.erase(appDomainId);
         return S_OK;
@@ -336,8 +336,7 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     WCHAR wszName[1024];
 
     DWORD dwModuleFlags;
-    HRESULT hr = _profiler->GetModuleInfo2(moduleId, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId,
-                                           &dwModuleFlags);
+    HRESULT hr = _profiler->GetModuleInfo2(moduleId, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId, &dwModuleFlags);
     if (FAILED(hr))
     {
         trace::Logger::Error("GetModuleInfo2 failed for ModuleId ", moduleId);
@@ -346,8 +345,7 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
     {
         return S_OK;
-    } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their
-      // IL
+    } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their IL
 
     hr = _profiler->GetAssemblyInfo(assemblyId, 1024, nullptr, wszName, &appDomainId, &modIDDummy);
     if (FAILED(hr))
@@ -387,13 +385,13 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
         auto it = _modules.find(moduleId);
         if (it != _modules.end())
         {
-            trace::Logger::Debug("ModuleUnloadFinished: ModuleID = ", Hex((ULONG) moduleId), " [ ",
-                                 it->second->_appDomain.Name, " ] ", it->second->_name);
+            trace::Logger::Debug("ModuleUnloadFinished: ModuleID = ", Hex((ULONG)moduleId), " [ ", it->second->_appDomain.Name,
+                                 " ] ", it->second->_name);
             DEL(it->second);
         }
         else
         {
-            trace::Logger::Debug("ModuleUnloadFinished: ModuleID = ", Hex((ULONG) moduleId), " (Not found)");
+            trace::Logger::Debug("ModuleUnloadFinished: ModuleID = ", Hex((ULONG)moduleId), " (Not found)");
         }
         _modules.erase(moduleId);
     }
@@ -401,22 +399,22 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
     return S_OK;
 }
 
-HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMetadataImport,
-                                      IMetaDataEmit2** ppMetadataEmit, IMetaDataAssemblyImport** ppAssemblyImport,
+HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMetadataImport, IMetaDataEmit2** ppMetadataEmit,
+                                      IMetaDataAssemblyImport** ppAssemblyImport,
                                       IMetaDataAssemblyEmit** ppAssemblyEmit)
 {
     HRESULT hr = S_OK;
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr)) 
     {
         IUnknown* piUnk = nullptr;
-        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, &piUnk);
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, &piUnk); 
         if (SUCCEEDED(hr))
         {
             hr = piUnk->QueryInterface(IID_IMetaDataImport2, (void**) ppMetadataImport);
         }
         REL(piUnk);
     }
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr)) 
     {
         IUnknown* piUnk = nullptr;
         hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataEmit2, &piUnk);
@@ -426,7 +424,7 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
         }
         REL(piUnk);
     }
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr)) 
     {
         IUnknown* piUnk = nullptr;
         hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyImport, &piUnk);
@@ -436,7 +434,7 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
         }
         REL(piUnk);
     }
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr)) 
     {
         IUnknown* piUnk = nullptr;
         hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyEmit, &piUnk);
@@ -461,16 +459,15 @@ bool Dataflow::IsMethodExcluded(const WSTRING& methodSignature, MatchResult* inc
 {
     return IsExcluded(_methodIncludeFilters, _methodExcludeFilters, methodSignature, includedMatch, excludedMatch);
 }
-bool Dataflow::IsMethodAttributeExcluded(const WSTRING& attributeName, MatchResult* includedMatch,
-                                         MatchResult* excludedMatch)
+bool Dataflow::IsMethodAttributeExcluded(const WSTRING& attributeName, MatchResult* includedMatch, MatchResult* excludedMatch)
 {
-    return IsExcluded(_methodAttributeIncludeFilters, _methodAttributeExcludeFilters, attributeName, includedMatch,
-                      excludedMatch);
+    return IsExcluded(_methodAttributeIncludeFilters, _methodAttributeExcludeFilters, attributeName, includedMatch, excludedMatch);
 }
 bool Dataflow::HasMethodAttributeExclusions()
 {
     return _methodAttributeExcludeFilters.size() > 0;
 }
+
 
 ICorProfilerInfo* Dataflow::GetCorProfilerInfo()
 {
@@ -520,8 +517,7 @@ ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId,
         {
             auto ppModuleInfo = iterator->second;
 
-            if ((ppModuleInfo->_appDomain.Id == appDomainId) ||
-                (lookInSharedRepos && ppModuleInfo->_appDomain.IsSharedAssemblyRepository))
+            if ((ppModuleInfo->_appDomain.Id == appDomainId) || (lookInSharedRepos && ppModuleInfo->_appDomain.IsSharedAssemblyRepository))
             {
                 return ppModuleInfo;
             }
@@ -578,21 +574,19 @@ bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 }
 bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 {
-    if (!_loaded)
-    {
-        return false;
-    }
+    if (!_loaded) { return false; }
 
     auto method = JITProcessMethod(moduleId, methodId);
-    return method != nullptr;
+    if (method && method->HasChanged())
+    {
+        return SUCCEEDED(method->ApplyFinalInstrumentation());
+    }
+    return true;
 }
-MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl)
+MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, bool isRejit)
 {
     MethodInfo* method = nullptr;
-    if (!_loaded)
-    {
-        return method;
-    }
+    if (!_loaded) { return method; }
 
     auto module = GetModuleInfo(moduleId);
     if (module && !module->IsExcluded())
@@ -600,10 +594,16 @@ MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trac
         method = module->GetMethodInfo(methodId);
         if (method && !method->IsExcluded())
         {
-            if (pFunctionControl || !method->IsProcessed())
+            auto type = method->GetTypeInfo();
+            if (isRejit || !method->IsProcessed())
             {
                 method->SetProcessed();
-                RewriteMethod(method, pFunctionControl);
+                if (_traceJitMethods)
+                {
+                    trace::Logger::Debug("JITProcessMethod       -> Processing ", method->GetFullName());
+                }
+                RewriteMethod(method, nullptr);
+                return method;
             }
         }
     }
@@ -615,67 +615,48 @@ bool IsCandidate(unsigned opcode)
     return (opcode == CEE_CALL || opcode == CEE_CALLI || opcode == CEE_CALLVIRT || opcode == CEE_NEWOBJ);
 }
 
+
 HRESULT SetILFunctionBody(MethodInfo* method, ICorProfilerFunctionControl* pFunctionControl, ULONG size, LPCBYTE pBody)
 {
     return method->SetMethodIL(size, pBody, pFunctionControl);
 }
-HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrapper* pFunctionControl)
+HRESULT Dataflow::RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl* pFunctionControl)
 {
     HRESULT hr = S_OK;
-
-    CSGUARD(_cs);
-
-    if (!pFunctionControl)
+    try
     {
+        CSGUARD(_cs);
+
         MethodAnalyzers::ProcessMethod(method);
-    }
 
-    auto module = method->GetModuleInfo();
-    auto moduleAspectRefs = GetAspects(module);
-    if (moduleAspectRefs.size() > 0)
-    {
-        bool written = false;
-        ILRewriter* rewriter;
-        hr = method->GetILRewriter(&rewriter, (ICorProfilerInfo*) pFunctionControl);
-        if (SUCCEEDED(hr))
+        auto module = method->GetModuleInfo();
+        auto moduleAspectRefs = GetAspects(module);
+        if (moduleAspectRefs.size() > 0)
         {
-            DataflowContext context = {rewriter, rewriter->GetILList()->m_pNext, false};
-
-            for (; context.instruction != rewriter->GetILList(); context.instruction = context.instruction->m_pNext)
+            ILRewriter* rewriter;
+            hr = method->GetILRewriter(&rewriter);
+            if (SUCCEEDED(hr))
             {
-                if (IsCandidate(context.instruction->m_opcode))
+                bool written = false;
+                for (ILInstr* pInstr = rewriter->GetILList()->m_pNext; pInstr != rewriter->GetILList();
+                     pInstr = pInstr->m_pNext)
                 {
-                    // Instrument instruction
-                    written |= InstrumentInstruction(context, moduleAspectRefs);
-                    if (context.aborted)
+                    if (IsCandidate(pInstr->m_opcode))
                     {
-                        break;
+                        // Instrument instruction
+                        auto result = InstrumentInstruction(rewriter, pInstr, moduleAspectRefs);
+                        pInstr = result.instruction;
+                        written |= result.written;
                     }
                 }
-            }
-            if (!pFunctionControl && written)
-            {
-                context.aborted = true;
-            }
-            method->SetInstrumented(written);
-            method->CommitILRewriter(context.aborted);
-        }
-
-        if (written)
-        {
-            if (pFunctionControl)
-            {
-                hr = method->ApplyFinalInstrumentation((ICorProfilerFunctionControl*) pFunctionControl);
-            }
-            else
-            {
-                std::vector<ModuleID> modulesVector = {module->_id};
-                std::vector<mdMethodDef> methodsVector = {method->GetMemberId()}; // methodId
-                m_rejitHandler->RequestRejit(modulesVector, methodsVector);
+                hr = method->CommitILRewriter();
             }
         }
     }
-
+    catch (std::exception& err)
+    {
+        trace::Logger::Error("ERROR: ", err.what());
+    }
     return hr;
 }
 
@@ -691,46 +672,19 @@ std::vector<DataflowAspectReference*> Dataflow::GetAspects(ModuleInfo* module)
     return res->_aspects;
 }
 
-bool Dataflow::InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects)
+InstrumentResult Dataflow::InstrumentInstruction(ILRewriter* rewriter, ILInstr* instruction,
+                                                       std::vector<DataflowAspectReference*>& aspects)
 {
+    auto res = InstrumentResult{instruction, false};
     for (auto aspect : aspects)
     {
-        if (aspect->Apply(context))
+        res = aspect->Apply(rewriter, instruction);
+        if (res.written)
         {
-            return true;
+            return res;
         }
     }
-    return false;
+    return res;
 }
-
-void Dataflow::Shutdown()
-{
-    Destroy();
-}
-RejitHandlerModule* Dataflow::GetOrAddModule(ModuleID moduleId)
-{
-    return nullptr;
-}
-bool Dataflow::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
-{
-    return false;
-}
-void Dataflow::RemoveModule(ModuleID moduleId)
-{
-}
-void Dataflow::AddNGenInlinerModule(ModuleID moduleId)
-{
-}
-
-HRESULT Dataflow::RejitMethod(trace::FunctionControlWrapper& functionControl)
-{
-    auto method = JITProcessMethod(functionControl.GetModuleId(), functionControl.GetMethodId(), &functionControl);
-    if (method && method->IsWritten())
-    {
-        return S_OK;
-    }
-    return S_FALSE;
-}
-
 
 } // namespace iast

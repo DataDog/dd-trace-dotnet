@@ -366,14 +366,14 @@ namespace iast
         AspectBehavior behavior;
     };
 
-    bool DataflowAspectReference::ApplyFilters(DataflowContext& context)
+    bool DataflowAspectReference::ApplyFilters(ILInstr* instruction, ILRewriter* processor)
     {
         static bool aspectFilterEnabled = true; //HdivConfig::Instance.GetEnabled("hdiv.net.ast.profiler.aspect.filter.enabled"_W, true);
         if (aspectFilterEnabled && _filters.size() > 0)
         {
             for (auto filter : _filters)
             {
-                if (!filter->AllowInstruction(context))
+                if (!filter->AllowInstruction(instruction, processor))
                 {
                     return false;
                 }
@@ -382,32 +382,21 @@ namespace iast
         return true;
     }
 
-    bool DataflowAspectReference::IsReinstrumentation(mdMemberRef method)
-    {
-        return _aspectMemberRef == method;
-    }
     bool DataflowAspectReference::IsTargetMethod(mdMemberRef method)
     {
         return _targetMethodRef == method;
     }
 
-    bool DataflowAspectReference::Apply(DataflowContext& context)
+    InstrumentResult DataflowAspectReference::Apply(ILRewriter* processor, ILInstr* instruction)
     {
-        ILRewriter* processor = context.rewriter;
-        ILInstr* instruction = context.instruction;
-        mdMemberRef operand = instruction->m_Arg32;
+        auto res = InstrumentResult{ instruction, false };
         auto method = processor->GetMethodInfo();
         auto module = method->GetModuleInfo();
-        if (IsReinstrumentation(operand) && method->IsWritten())
-        {
-            context.aborted = true;
-            return true;
-        }
-
 
         //Check if we must process this instruction (usually a call or newObj)
         bool process = false;
         std::vector<InstructionProcessInfo> instructionsToProcess;
+        mdMemberRef operand = instruction->m_Arg32;
 
         if (TypeFromToken(operand) == mdtMethodSpec && !IsTargetMethod(operand))
         {
@@ -442,7 +431,7 @@ namespace iast
             }
             if (process)
             {
-                process = ApplyFilters(context);
+                process = ApplyFilters(instruction, processor);
             }
             if (process)
             {
@@ -503,7 +492,7 @@ namespace iast
 
                     if (instructionToProcess.instruction == instruction)
                     {
-                        context.instruction = inserted;
+                        res.instruction = inserted;
                     }
                 }
                 else //Replace
@@ -535,9 +524,10 @@ namespace iast
                     instructionToProcess.instruction->m_opcode = CEE_CALL;
                     instructionToProcess.instruction->m_Arg32 = methodRef;
                 }
+
+                res.written = true;
             }
         }
-
-        return process;
+        return res;
     }
 }
