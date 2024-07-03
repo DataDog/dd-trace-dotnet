@@ -356,6 +356,8 @@ void RejitHandler::Shutdown()
     WriteLock w_lock(m_shutdown_lock);
     m_shutdown.store(true);
 
+    ReadLock r_lock(m_rejitters_lock);
+
     for (auto rejitter : m_rejitters)
     {
         rejitter->Shutdown();
@@ -373,6 +375,8 @@ bool RejitHandler::IsShutdownRequested()
 
 void RejitHandler::RegisterRejitter(Rejitter* rejitter)
 {
+    WriteLock w_lock(m_rejitters_lock);
+
     if (m_rejitters.size() == 0)
     {
         m_rejitters.push_back(rejitter);
@@ -404,6 +408,8 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
 
     // Create the FunctionControlWrapper
     FunctionControlWrapper functionControl((ICorProfilerInfo*)m_profilerInfo, moduleId, methodId);
+
+    ReadLock r_lock(m_rejitters_lock);
 
     // Call all rejitters sequentially
     for (auto rejitter : m_rejitters)
@@ -461,6 +467,8 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
         return false;
     }
 
+    ReadLock r_lock(m_rejitters_lock);
+
     for (auto rejitter : m_rejitters)
     {
         if (rejitter->HasModuleAndMethod(moduleId, methodDef))
@@ -479,6 +487,8 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
         return;
     }
 
+    ReadLock r_lock(m_rejitters_lock);
+
     for (auto rejitter : m_rejitters)
     {
         rejitter->RemoveModule(moduleId);
@@ -491,6 +501,8 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
     {
         return;
     }
+
+    ReadLock r_lock(m_rejitters_lock);
 
     for (auto rejitter : m_rejitters)
     {

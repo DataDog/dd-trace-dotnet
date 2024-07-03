@@ -1062,5 +1062,59 @@
       span.kind: server,
       version: 1.0.0
     }
+  },
+  {
+    TraceId: Id_60,
+    SpanId: Id_61,
+    Name: internal,
+    Resource: TimeParent,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.status_code: STATUS_CODE_UNSET,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_60,
+    SpanId: Id_62,
+    Name: internal,
+    Resource: TimeTrigger,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    ParentId: Id_61,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.status_code: STATUS_CODE_UNSET,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_60,
+    SpanId: Id_63,
+    Name: internal,
+    Resource: TimeChild,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    ParentId: Id_62,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.status_code: STATUS_CODE_UNSET,
+      span.kind: internal,
+      version: 1.0.0
+    }
   }
 ]
