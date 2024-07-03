@@ -101,9 +101,10 @@ WSTRING DebuggerProbesInstrumentationRequester::GenerateRandomProbeId()
     return converted;
 }
 
-const auto& DebuggerProbesInstrumentationRequester::GetExplorationTestLineProbes(const WSTRING& filename)
+auto& DebuggerProbesInstrumentationRequester::GetExplorationTestLineProbes(const WSTRING& filename)
 {
-    std::call_once(explorationLinesInitFlag, InitializeExplorationTestLineProbes, filename);
+    std::call_once(explorationLinesInitFlag,
+                   &DebuggerProbesInstrumentationRequester::InitializeExplorationTestLineProbes, &filename);
     return explorationLineProbes;
 }
 
@@ -129,7 +130,7 @@ void DebuggerProbesInstrumentationRequester::InitializeExplorationTestLineProbes
             std::getline(lineStream, bytecodeOffsetStr, ','))
         {
 
-            int methodToken = static_cast<mdToken>(std::stoi(methodTokenStr));
+            auto methodToken = static_cast<mdToken>(std::stoul(methodTokenStr));
             int bytecodeOffset = std::stoi(bytecodeOffsetStr);
 
             auto key = std::make_pair(guid, methodToken);
@@ -233,6 +234,10 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
 
         Logger::Debug("Instrument-All: ReJIT Requested for: ", methodProbe->target_method.method_name,
                       ". ProbeId:", methodProbe->probeId, ". Numbers of ReJits: ", numReJITs);
+
+#ifndef _WIN32
+        return;
+#endif
 
         if (!IsDebuggerInstrumentAllLinesEnabled())
         {
