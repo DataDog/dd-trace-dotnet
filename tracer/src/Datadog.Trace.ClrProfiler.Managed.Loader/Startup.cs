@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private const string AasCustomMetricsKey = "DD_AAS_ENABLE_CUSTOM_METRICS";
         private const string TraceEnabledKey = "DD_TRACE_ENABLED";
         private const string ProfilingEnabledKey = "DD_PROFILING_ENABLED";
+        private const string ProfilingSsiEnabledKey = "DD_INJECTION_ENABLED";
 
         private static int _startupCtorInitialized;
 
@@ -75,15 +76,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var automaticTraceEnabled = ReadBooleanEnvironmentVariable(TraceEnabledKey, true);
 
             var profilingSsiEnabled = ReadEnvironmentVariable(ProfilingSsiEnabledKey);
-            var profilingManuallyEnabled = ReadEnvironmentVariable(ProfilingManuallyEnabledKey);
+            var profilingManuallyEnabled = ReadEnvironmentVariable(ProfilingEnabledKey);
 
             var automaticProfilingEnabled = profilingManuallyEnabled switch
             {
                 "auto" => true,
                 null => profilingSsiEnabled != null,
-                _ => Parse(profilingManuallyEnabled)
+                _ => ReadBooleanEnvironmentVariable(profilingManuallyEnabled, false)
             };
-
 
             if (automaticTraceEnabled || customTracingEnabled || needsDogStatsD || automaticProfilingEnabled)
             {
