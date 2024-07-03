@@ -100,7 +100,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             {
                 request.Responses.Should()
                        .ContainSingle()
-                       .And.OnlyContain(x => x.ContentType == "application/json");
+                       .And.OnlyContain(x => x.ContentTypeHeader == "application/json");
             }
         }
 
