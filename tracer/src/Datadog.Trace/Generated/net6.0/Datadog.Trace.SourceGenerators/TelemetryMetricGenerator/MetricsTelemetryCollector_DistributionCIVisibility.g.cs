@@ -32,7 +32,7 @@ internal partial class MetricsTelemetryCollector
     {
     }
 
-    public void RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(double value)
+    public void RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
     {
     }
 
@@ -56,7 +56,7 @@ internal partial class MetricsTelemetryCollector
     {
     }
 
-    public void RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(double value)
+    public void RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
     {
     }
 
@@ -68,7 +68,7 @@ internal partial class MetricsTelemetryCollector
     {
     }
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(double value)
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
     {
     }
 

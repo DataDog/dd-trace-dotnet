@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
 
@@ -31,8 +32,7 @@ public class StreamWriterAspect
     [AspectMethodInsertBefore("System.IO.StreamWriter::.ctor(System.String,System.Boolean,System.Text.Encoding,System.Int32)", 3)]
     public static string ReviewPath(string path)
     {
-        IastModule.OnPathTraversal(path);
-        RaspModule.OnLfi(path);
+        VulnerabilitiesModule.OnPathTraversal(path);
         return path;
     }
 }

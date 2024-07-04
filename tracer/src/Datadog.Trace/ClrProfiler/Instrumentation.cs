@@ -98,7 +98,6 @@ namespace Datadog.Trace.ClrProfiler
             legacyMode = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
             if (legacyMode)
             {
-                Log.Information("Version mismatch detected. Initializing in legacy mode. Native: {Native} Managed: {Managed}", GetNativeTracerVersion(), TracerConstants.ThreePartVersion);
                 InitializeLegacy();
             }
             else
@@ -107,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 try
                 {
-                    Log.Debug("Enabling CallTarget integration definitions embedded in native library.");
+                    Log.Debug("Enabling CallTarget integration definitions in native library.");
 
                     InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
                     if (Security.Instance.Enabled)
@@ -116,26 +115,25 @@ namespace Datadog.Trace.ClrProfiler
                         enabledCategories |= InstrumentationCategory.AppSec;
                     }
 
-                    var defs = NativeMethods.InitEmbeddedCallTargetDefinitions(ConfigTelemetryData.ManagedTracerTfmValue, (uint)enabledCategories);
-
+                    var defs = NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
                     Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
                     TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
 
-                    var raspEnabled = Security.Instance.RaspEnabled;
-                    var iastEnabled = Iast.Iast.Instance.Enabled;
+                    var raspEnabled = Security.Instance.Settings.RaspEnabled;
+                    var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
 
                     if (raspEnabled || iastEnabled)
                     {
                         InstrumentationCategory category = 0;
                         if (iastEnabled)
                         {
-                            Log.Debug("Enabling IAST call target category");
+                            Log.Debug("Enabling Iast call target category");
                             category |= InstrumentationCategory.Iast;
                         }
 
                         if (raspEnabled)
                         {
-                            Log.Debug("Enabling RASP");
+                            Log.Debug("Enabling Rasp");
                         }
 
                         EnableTracerInstrumentations(category, raspEnabled: raspEnabled);
@@ -582,31 +580,19 @@ namespace Datadog.Trace.ClrProfiler
             // enabled and IAST is disabled. We don't expect RASP only instrumentation to be used in the near future.
 
             var isIast = categories.HasFlag(InstrumentationCategory.Iast);
-            var debugMsg = (isIast && raspEnabled) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
 
             if (isIast || raspEnabled)
             {
-                int aspects = 0;
-                if (!legacyMode)
-                {
-                    Log.Debug("Initializing {DebugMsg} Callsite Dataflow Aspects embedded into native library.", debugMsg);
-                    string platform = ConfigTelemetryData.ManagedTracerTfmValue;
-                    if (!isIast) { platform += "_Rasp"; }
+                string[] inputAspects = null;
 
-                    aspects = NativeMethods.InitEmbeddedCallSiteDefinitions(platform, (uint)categories);
-                }
-                else
+                inputAspects = isIast ? AspectDefinitions.GetAspects() : AspectDefinitions.GetRaspAspects();
+
+                if (inputAspects != null)
                 {
+                    var debugMsg = (isIast && raspEnabled) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
                     Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
-                    string[] inputAspects = isIast ? AspectDefinitions.GetAspects() : AspectDefinitions.GetRaspAspects();
-                    if (inputAspects != null)
-                    {
-                        aspects = NativeMethods.RegisterIastAspects(inputAspects);
-                    }
-                }
 
-                if (aspects > 0)
-                {
+                    var aspects = NativeMethods.RegisterIastAspects(inputAspects);
                     Log.Information<int, string>("{Aspects} {DebugMsg} Callsite Dataflow Aspects added to the profiler.", aspects, debugMsg);
 
                     if (isIast)
@@ -623,10 +609,6 @@ namespace Datadog.Trace.ClrProfiler
 
                         sw.Restart();
                     }
-                }
-                else
-                {
-                    Log.Error("No CallSite Dataflow Aspects have been registered ({DebugMsg})", debugMsg);
                 }
             }
         }

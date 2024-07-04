@@ -116,9 +116,6 @@
     <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp">
       <Filter>Iast</Filter>
     </ClCompile>
-    <ClCompile Include="Generated\generated_definitions.cpp">
-      <Filter>Generated</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -137,6 +134,7 @@
     <ClInclude Include="metadata_builder.h" />
     <ClInclude Include="rejit_handler.h" />
     <ClInclude Include="stats.h" />
+    <ClInclude Include="version.h" />
     <ClInclude Include="debugger_members.h">
       <Filter>Debugger</Filter>
     </ClInclude>
@@ -268,18 +266,6 @@
     <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h">
       <Filter>Iast</Filter>
     </ClInclude>
-    <ClInclude Include="Generated\generated_definitions.h">
-      <Filter>Generated</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\shared\src\native-src\version.h" />
-    <ClInclude Include="Generated\generated_callsites_net6_0.g.h" />
-    <ClInclude Include="Generated\generated_callsites_net461.g.h" />
-    <ClInclude Include="Generated\generated_callsites_netcoreapp3_1.g.h" />
-    <ClInclude Include="Generated\generated_callsites_netstandard2_0.g.h" />
-    <ClInclude Include="Generated\generated_calltargets_net6_0.g.h" />
-    <ClInclude Include="Generated\generated_calltargets_net461.g.h" />
-    <ClInclude Include="Generated\generated_calltargets_netcoreapp3_1.g.h" />
-    <ClInclude Include="Generated\generated_calltargets_netstandard2_0.g.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">
@@ -299,9 +285,6 @@
     </Filter>
     <Filter Include="Tracer">
       <UniqueIdentifier>{981bc011-a78e-4f39-b0b2-429340f384cc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Generated">
-      <UniqueIdentifier>{e28536f2-0112-42e4-aee7-d11cb6b38cfe}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

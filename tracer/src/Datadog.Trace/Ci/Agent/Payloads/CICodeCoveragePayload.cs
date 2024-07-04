@@ -38,6 +38,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         public override MetricTags.CIVisibilityEndpoints TelemetryEndpoint => MetricTags.CIVisibilityEndpoints.CodeCoverage;
 
+        public override MetricTags.CIVisibilityEndpointAndCompression TelemetryEndpointAndCompression
+            => UseGZip
+                   ? MetricTags.CIVisibilityEndpointAndCompression.CodeCoverageRequestCompressed
+                   : MetricTags.CIVisibilityEndpointAndCompression.CodeCoverageUncompressed;
+
         public override bool CanProcessEvent(IEvent @event)
         {
             return @event is TestCoverage;

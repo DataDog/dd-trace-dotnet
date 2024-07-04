@@ -146,8 +146,4 @@
     <DefineConstants>$(DefineConstants);ENABLE_IL2CPP</DefineConstants>
   </PropertyGroup>
 
-  <ItemGroup>
-    <AdditionalFiles Include="folder_locator.json" />
-  </ItemGroup>
-
 </Project>

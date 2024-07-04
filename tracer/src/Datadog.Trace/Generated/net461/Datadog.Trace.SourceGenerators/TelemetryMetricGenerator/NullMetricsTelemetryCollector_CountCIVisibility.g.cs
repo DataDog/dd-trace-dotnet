@@ -36,7 +36,7 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountCIVisibilityEndpointPayloadRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, int increment = 1)
+    public void RecordCountCIVisibilityEndpointPayloadRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpointAndCompression tag, int increment = 1)
     {
     }
 
@@ -56,7 +56,7 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountCIVisibilityGitRequestsSearchCommits(int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsSearchCommits(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
     }
 
@@ -64,7 +64,7 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountCIVisibilityGitRequestsObjectsPack(int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsObjectsPack(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
     }
 
@@ -72,7 +72,7 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountCIVisibilityGitRequestsSettings(int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsSettings(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
     }
 
@@ -84,7 +84,7 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountCIVisibilityITRSkippableTestsRequest(int increment = 1)
+    public void RecordCountCIVisibilityITRSkippableTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
     }
 
@@ -120,7 +120,7 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountCIVisibilityEarlyFlakeDetectionRequest(int increment = 1)
+    public void RecordCountCIVisibilityEarlyFlakeDetectionRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
     }
 

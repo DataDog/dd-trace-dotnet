@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
@@ -27,8 +28,7 @@ public class ISessionAspect
     [AspectMethodInsertBefore("NHibernate.ISession::CreateSQLQuery(System.String)", 0)]
     public static object AnalyzeQuery(string query)
     {
-        IastModule.OnSqlQuery(query, IntegrationId.NHibernate);
-        RaspModule.OnSqlI(query, IntegrationId.NHibernate);
+        VulnerabilitiesModule.OnSqlQuery(query, IntegrationId.NHibernate);
         return query;
     }
 }

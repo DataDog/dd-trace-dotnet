@@ -27,6 +27,12 @@ public class MetricTests
         { "waf.updates", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
         { "waf.requests", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
         { "spans_finished", new[] { "integration_name" } }, // this is technically difficult for us, so we don't tag it
+        { "trace_chunks_dropped", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_chunks_sent", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_api.requests", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_api.bytes", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_api.responses", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_api.errors", ["src_library"] }, // this is optional, only added by the rust library
     };
 
     private static readonly Dictionary<string, string[]> OptionalTagsByMetricName = new()
@@ -34,6 +40,21 @@ public class MetricTests
         { "event_created", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
         { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason", "browser_driver", "is_rum" } },
         { "git_requests.settings_response", new[] { "coverage_enabled", "itrskip_enabled", "early_flake_detection_enabled" } },
+        { "endpoint_payload.requests_errors", ["status_code"] },
+        { "git_requests.search_commits_errors", ["status_code"] },
+        { "git_requests.objects_pack_errors", ["status_code"] },
+        { "git_requests.settings_errors", ["status_code"] },
+        { "itr_skippable_tests.request_errors", ["status_code"] },
+        { "early_flake_detection.request_errors", ["status_code"] },
+        { "endpoint_payload.requests", ["rq_compressed"] },
+        { "git_requests.search_commits", ["rq_compressed"] },
+        { "git_requests.objects_pack", ["rq_compressed"] },
+        { "git_requests.settings", ["rq_compressed"] },
+        { "itr_skippable_tests.request", ["rq_compressed"] },
+        { "early_flake_detection.request", ["rq_compressed"] },
+        { "git_requests.search_commits_ms", ["rs_compressed"] },
+        { "itr_skippable_tests.response_bytes", ["rs_compressed"] },
+        { "early_flake_detection.response_bytes", ["rs_compressed"] },
     };
 
     private static readonly Dictionary<string, List<string>> OneOfTagsByMetricName = new()

@@ -48,7 +48,8 @@ internal enum DistributionCIVisibility
     /// <summary>
     /// The time it takes to get the response of the search commit quest in ms by CI Visibility
     /// </summary>
-    [TelemetryMetric("git_requests.search_commits_ms", isCommon: true, NS.CIVisibility)] GitRequestsSearchCommitsMs,
+    [TelemetryMetric<MetricTags.CIVisibilityResponseCompressed>
+        ("git_requests.search_commits_ms", isCommon: true, NS.CIVisibility)] GitRequestsSearchCommitsMs,
 
     /// <summary>
     /// The time it takes to get the response of the git object pack request in ms by CI Visibility
@@ -76,9 +77,10 @@ internal enum DistributionCIVisibility
     [TelemetryMetric("itr_skippable_tests.request_ms", isCommon: true, NS.CIVisibility)] ITRSkippableTestsRequestMs,
 
     /// <summary>
-    /// The number of bytes received by the endpoint by CI Visibility
+    /// The number of bytes received by the endpoint. Tagged with a boolean flag set to true if response body is compressed
     /// </summary>
-    [TelemetryMetric("itr_skippable_tests.response_bytes", isCommon: true, NS.CIVisibility)] ITRSkippableTestsResponseBytes,
+    [TelemetryMetric<MetricTags.CIVisibilityResponseCompressed>
+        ("itr_skippable_tests.response_bytes", isCommon: true, NS.CIVisibility)] ITRSkippableTestsResponseBytes,
 
     /// <summary>
     /// The number of files covered inside a coverage payload by CI Visibility
@@ -91,9 +93,10 @@ internal enum DistributionCIVisibility
     [TelemetryMetric("early_flake_detection.request_ms", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionRequestMs,
 
     /// <summary>
-    /// The number of bytes received by the endpoint by CI Visibility
+    /// The number of bytes received by the endpoint. Tagged with a boolean flag set to true if response body is compressed
     /// </summary>
-    [TelemetryMetric("early_flake_detection.response_bytes", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionResponseBytes,
+    [TelemetryMetric<MetricTags.CIVisibilityResponseCompressed>
+        ("early_flake_detection.response_bytes", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionResponseBytes,
 
     /// <summary>
     /// The number of bytes received by the endpoint by CI Visibility

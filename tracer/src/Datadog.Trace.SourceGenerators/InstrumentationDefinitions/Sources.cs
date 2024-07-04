@@ -7,25 +7,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.SourceGenerators.Helpers;
+using Datadog.Trace.ClrProfiler;
 
 namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
 {
     internal static class Sources
     {
-        private const string InstrumentationsPropertyName = "Instrumentations";
-        private const string InstrumentationsCollectionName = "_instrumentations";
+        private const string InstrumentationsCollectionName = "Instrumentations";
 
-        public static string CreateCallTargetDefinitions(IReadOnlyCollection<CallTargetDefinitionSource> definitions, out List<CallTargetDefinitionSource> orderedDefinitions)
+        public static string CreateCallTargetDefinitions(IReadOnlyCollection<CallTargetDefinitionSource> definitions)
         {
             static void BuildInstrumentationDefinitions(StringBuilder sb, List<CallTargetDefinitionSource> orderedDefinitions, string instrumentationsCollectionName)
             {
                 string? integrationName = null;
 
                 sb.Append($@"
-                    // CallTarget types
-                    {instrumentationsCollectionName} = new NativeCallTargetDefinition2[]
-                    {{
+            // CallTarget types
+            {instrumentationsCollectionName} = new NativeCallTargetDefinition2[]
+            {{
 ");
                 foreach (var definition in orderedDefinitions)
                 {
@@ -33,7 +32,7 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
                 }
 
                 sb.Append($@"
-                    }};");
+            }};");
             }
 
             static void BuildInstrumentedAssemblies(StringBuilder sb, IReadOnlyCollection<CallTargetDefinitionSource> orderedDefinitions)
@@ -99,31 +98,19 @@ namespace Datadog.Trace.ClrProfiler
 {{
     internal static partial class InstrumentationDefinitions
     {{
-        private static NativeCallTargetDefinition2[]? {InstrumentationsCollectionName} = null;
+        internal static NativeCallTargetDefinition2[] {InstrumentationsCollectionName};
 
-        internal static NativeCallTargetDefinition2[] {InstrumentationsPropertyName}
-        {{
-            get
-            {{
-                if ({InstrumentationsCollectionName} == null)
-                {{");
-            orderedDefinitions = definitions
+        static InstrumentationDefinitions()
+        {{");
+            var orderedDefinitions = definitions
                                     .OrderBy(static x => x.IntegrationName)
                                     .ThenBy(static x => x.AssemblyName)
                                     .ThenBy(static x => x.TargetTypeName)
                                     .ThenBy(static x => x.TargetMethodName)
-                                    .ThenBy(static x => x.TargetParameterTypes, StringArrayComparer.Comparer)
                                     .ToList();
 
             BuildInstrumentationDefinitions(sb, orderedDefinitions, InstrumentationsCollectionName);
             sb.Append(@$"
-                }}
-                return {InstrumentationsCollectionName};
-            }}
-            set
-            {{
-                {InstrumentationsCollectionName} = value;
-            }}
         }}
 
         /// <summary>
@@ -305,12 +292,12 @@ namespace Datadog.Trace.ClrProfiler
                 integrationName = definition.IntegrationName;
                 sb.Append(
                 $@"
-                        // {integrationName}");
+                // {integrationName}");
             }
 
             sb.Append(
                @"
-                        new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(""")
+                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(""")
               .Append(definition.AssemblyName)
               .Append(@"""), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(""")
               .Append(definition.TargetTypeName)
