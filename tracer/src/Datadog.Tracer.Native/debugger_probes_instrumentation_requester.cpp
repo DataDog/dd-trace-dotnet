@@ -103,8 +103,9 @@ WSTRING DebuggerProbesInstrumentationRequester::GenerateRandomProbeId()
 
 auto& DebuggerProbesInstrumentationRequester::GetExplorationTestLineProbes(const WSTRING& filename)
 {
-    std::call_once(explorationLinesInitFlag,
-                   &DebuggerProbesInstrumentationRequester::InitializeExplorationTestLineProbes, &filename);
+    std::call_once(explorationLinesInitFlag, [this, fn = filename] {
+        DebuggerProbesInstrumentationRequester::InitializeExplorationTestLineProbes(fn);
+    });
     return explorationLineProbes;
 }
 
@@ -129,7 +130,6 @@ void DebuggerProbesInstrumentationRequester::InitializeExplorationTestLineProbes
         if (std::getline(lineStream, guid, ',') && std::getline(lineStream, methodTokenStr, ',') &&
             std::getline(lineStream, bytecodeOffsetStr, ','))
         {
-
             auto methodToken = static_cast<mdToken>(std::stoul(methodTokenStr));
             int bytecodeOffset = std::stoi(bytecodeOffsetStr);
 
