@@ -2413,3 +2413,77 @@ suite:
           }
         ]
       }
+
+  - type: 'VULNERABILITIES'
+    description: 'Email html injection. Everything should be redacted'
+    input: >
+      [
+        {
+          "type": "EMAIL_HTML_INJECTION",
+          "evidence": {
+            "value": "Hi, Alice! Welcome to our newsletter!",
+            "ranges": [
+              { "start" : 4, "length" : 5, "source": { "origin": "http.request.parameter", "name": "name", "value": "Alice" } }
+            ]
+          }
+        }
+      ]
+    expected: >
+      {
+        "sources": [
+          { "origin": "http.request.parameter", "name": "name", "redacted": true, "pattern": "abcde" }
+        ],
+        "vulnerabilities": [
+          {
+            "type": "EMAIL_HTML_INJECTION",
+            "evidence": {
+              "valueParts": [
+                { "redacted": true },
+                { "source": 0, "redacted": true, "pattern": "abcde"},
+                { "redacted": true }
+              ]
+            }
+          }
+        ]
+      } 
+
+  - type: 'VULNERABILITIES'
+    description: 'Email html injection. Everything should be redacted'
+    input: >
+      [
+        {
+          "type": "EMAIL_HTML_INJECTION",
+          "evidence": {
+            "value": "Hi, Alice Stevens! Please, confirm that your email is alice@aliceland.com",
+            "ranges": [
+              { "start" : 4, "length" : 5, "source": { "origin": "http.request.parameter", "name": "name", "value": "Alice" } },
+              { "start" : 10, "length" : 7, "source": { "origin": "http.request.parameter", "name": "lastname", "value": "Stevens" } }
+              { "start" : 54, "length" : 19, "source": { "origin": "http.request.parameter", "name": "email", "value": "alice@aliceland.com" } }
+            ]
+          }
+        }
+      ]
+    expected: >
+      {
+        "sources": [
+          { "origin": "http.request.parameter", "name": "name", "redacted": true, "pattern": "abcde" },
+          { "origin": "http.request.parameter", "name": "lastname", "redacted": true, "pattern": "abcdefghi" },
+          { "origin": "http.request.parameter", "name": "email", "redacted": true, "pattern": "abcdefghijklmnopqrs" }
+        ],
+        "vulnerabilities": [
+          {
+            "type": "EMAIL_HTML_INJECTION",
+            "evidence": {
+              "valueParts": [
+                { "redacted": true },
+                { "source": 0, "redacted": true, "pattern": "abcde"},
+                { "redacted": true },
+                { "source": 1, "redacted": true, "pattern": "abcdefghi"},
+                { "redacted": true }
+                { "source": 2, "redacted": true, "pattern": "abcdefghijklmnopqrs"},
+                { "redacted": true }
+              ]
+            }
+          }
+        ]
+      } 

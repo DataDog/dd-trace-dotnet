@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web.Script.Serialization;
 using System.Xml;
+using System.Net.Mail;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -692,6 +693,58 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             var result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
             return Content(result);
+        }
+
+        [Route("SendEmailSmtpData")]
+        public ActionResult SendEmailSmtpData(string email, string name, string lastname,
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = "smtp-mail.outlook.com",
+            int smtpPort = 587)
+        {
+            SendMailAux(name, lastname, email, smtpUsername, smtpPassword, smtpserver, smtpPort);
+            return Content("Email sent");
+        }
+
+        [Route("SendEmail")]
+        public ActionResult SendEmail(string email, string name, string lastname, bool escape = false)
+        {
+            SendMailAux(name, lastname, email, escape: escape);
+            return Content("Email sent");
+        }
+
+        private static void SendMailAux(string firstName, string lastName, string email,
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = "smtp-mail.outlook.com",
+            int smtpPort = 587, bool escape = false)
+        {
+            string contentHtml = $"Hi {firstName} {lastName}, <br />" +
+                "We appreciate you subscribing to our newsletter. To complete your subscription, kindly click the link below. <br />" +
+                "<a href=\"https://localhost/confirm?token=435345\">Complete your subscription</a>";
+
+            if (escape)
+            {
+                contentHtml = WebUtility.HtmlEncode(contentHtml);
+            }
+
+            var subject = $"{firstName}, welcome!";
+
+            if (string.IsNullOrEmpty(smtpUsername))
+            {
+                smtpUsername = email;
+            }
+
+            var mailMessage = new MailMessage();
+            mailMessage.From = new MailAddress(smtpUsername);
+            mailMessage.To.Add(email);
+            mailMessage.Subject = subject;
+            mailMessage.Body = contentHtml;
+            mailMessage.IsBodyHtml = true; // Set to true to indicate that the body is HTML
+
+            var client = new SmtpClient(smtpserver, smtpPort)
+            {
+                Credentials = new NetworkCredential(smtpUsername, smtpPassword),
+                EnableSsl = true,
+                Timeout = 10000
+            };
+            client.Send(mailMessage);
         }
     }
 }

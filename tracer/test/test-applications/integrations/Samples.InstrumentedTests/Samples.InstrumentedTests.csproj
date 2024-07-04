@@ -105,6 +105,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="System.Web" />
     <Reference Include="System.Web.Extensions" />
   </ItemGroup>
 

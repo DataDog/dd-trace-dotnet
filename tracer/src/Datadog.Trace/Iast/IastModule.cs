@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Net.Mail;
 using System.Text.RegularExpressions;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
@@ -45,6 +46,7 @@ internal static partial class IastModule
     private const string OperationNameReflectionInjection = "reflection_injection";
     private const string OperationNameXss = "xss";
     private const string OperationNameSessionTimeout = "session_timeout";
+    private const string OperationNameEmailHtmlInjection = "email_html_injection";
     private const string ReferrerHeaderName = "Referrer";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -614,7 +616,7 @@ internal static partial class IastModule
             }
         }
 
-        // Contains at least one range that is not not safe (when analyzing a vulnerability that can have secure marks)
+        // Contains at least one range that is not safe (when analyzing a vulnerability that can have secure marks)
         if (exclusionSecureMarks != SecureMarks.None && !Ranges.ContainsUnsafeRange(tainted?.Ranges))
         {
             return IastModuleResponse.Empty;
@@ -775,6 +777,26 @@ internal static partial class IastModule
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for xpath injection.");
+            return IastModuleResponse.Empty;
+        }
+    }
+
+    internal static IastModuleResponse OnEmailHtmlInjection(MailMessage message)
+    {
+        if (!Iast.Instance.Settings.Enabled || !message.IsBodyHtml)
+        {
+            return IastModuleResponse.Empty;
+        }
+
+        try
+        {
+            var text = message.Body;
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.EmailHtmlInjection);
+            return GetScope(text, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, Always);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for email html injection.");
             return IastModuleResponse.Empty;
         }
     }
