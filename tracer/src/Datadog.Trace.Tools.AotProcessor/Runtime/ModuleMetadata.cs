@@ -121,6 +121,10 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
                     if (property is not null) { return property; }
                 }
             }
+            else if (token.TokenType == TokenType.TypeSpec)
+            {
+                return Module.Definition.GetTypeSpec(new MetadataToken((uint)tokenId));
+            }
 
             return null;
         }
@@ -152,16 +156,21 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             return null;
         }
 
-        internal (IntPtr Sig, uint SigSize) GetSignature(MetadataToken token)
+        internal (IntPtr Sig, uint SigSize) GetLocalSignature(MetadataToken token)
         {
-            var signature = Module.Definition.GetSignature(token);
-            if (signature is null || signature.Length == 0)
-            {
-                return (IntPtr.Zero, 0);
-            }
+            return GetSignature(token, Module.Definition.GetSignature);
+        }
 
+        internal (IntPtr Sig, uint SigSize) GetSignature(MetadataToken token, Func<MetadataToken, byte[]> ifNotFound)
+        {
             if (!signatures.TryGetValue(token, out var handle))
             {
+                var signature = ifNotFound(token);
+                if (signature is null || signature.Length == 0)
+                {
+                    return (IntPtr.Zero, 0);
+                }
+
                 handle = GCHandle.Alloc(signature, GCHandleType.Pinned);
                 signatures[token] = handle;
             }
@@ -296,6 +305,25 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             *pcTypeRefs = enumerator.Fetch(rTypeRefs, cMax);
 
             return *pcTypeRefs > 0 ? HResult.S_OK : HResult.S_FALSE;
+        }
+
+        public unsafe HResult EnumTypeDefs(HCORENUM* phEnum, MdTypeDef* rTypeDefs, uint cMax, uint* pcTypeDefs)
+        {
+            Enumerator<TypeDefinition, MdTypeDef> enumerator;
+            if (phEnum is null || phEnum->Value == 0)
+            {
+                *phEnum = new HCORENUM(enumId++);
+                enumerator = new Enumerator<TypeDefinition, MdTypeDef>(Module.Definition.Types.ToArray(), (i) => new MdTypeDef(i.MetadataToken.ToInt32()));
+                enumerators[phEnum->Value] = enumerator;
+            }
+            else
+            {
+                enumerator = (Enumerator<TypeDefinition, MdTypeDef>)enumerators[phEnum->Value];
+            }
+
+            *pcTypeDefs = enumerator.Fetch(rTypeDefs, cMax);
+
+            return *pcTypeDefs > 0 ? HResult.S_OK : HResult.S_FALSE;
         }
 
         public unsafe HResult EnumMemberRefs(HCORENUM* phEnum, MdToken tkParent, MdMemberRef* rMemberRefs, uint cMax, uint* pcTokens)
@@ -579,7 +607,7 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
 
         public unsafe HResult GetSigFromToken(MdSignature mdSig, IntPtr* ppvSig, uint* pcbSig)
         {
-            var signature = GetSignature(new MetadataToken((uint)mdSig.Value));
+            var signature = GetLocalSignature(new MetadataToken((uint)mdSig.Value));
             if (signature.SigSize == 0)
             {
                 ppvSig = null;
@@ -593,10 +621,23 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             return HResult.S_OK;
         }
 
-        public unsafe HResult GetTokenFromTypeSpec(byte* pvSig, int cbSig, out MdTypeSpec ptypespec)
+        public unsafe HResult GetTypeSpecFromToken(MdTypeSpec typespec, IntPtr* ppvSig, uint* pcbSig)
         {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
+            var type = Module.Definition.GetTypeSpec(new MetadataToken((uint)typespec.Value));
+            if (type is null) { return HResult.E_RECORD_NOT_FOUND; }
+
+            var signature = GetSignature(type.MetadataToken, (_) => type.RawSignature);
+            if (signature.SigSize == 0)
+            {
+                ppvSig = null;
+                *pcbSig = 0;
+                return HResult.E_INVALIDARG;
+            }
+
+            *ppvSig = signature.Sig;
+            *pcbSig = signature.SigSize;
+
+            return HResult.S_OK;
         }
 
         #endregion
@@ -622,7 +663,7 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             var scope = LookupToken(tkResolutionScope.Value) as IMetadataScope;
 
             // Look for existing
-            var existing = Module.Definition.GetTypeReferences().FirstOrDefault(r => r.FullName == name && r.Scope.MetadataToken.ToInt32() == tkResolutionScope.Value);
+            var existing = Module.Definition.GetTypeReferences().FirstOrDefault(r => r.FullName == name && (r.Scope == null || r.Scope.MetadataToken.ToInt32() == tkResolutionScope.Value));
             if (existing is not null)
             {
                 *ptr = new MdTypeRef(existing.MetadataToken.ToInt32());
@@ -770,6 +811,30 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
 
                 return hr;
             }
+        }
+
+        public unsafe HResult GetTokenFromTypeSpec(IntPtr pvSig, int cbSig, MdTypeSpec* ptypespec)
+        {
+            byte[] sig = new byte[cbSig];
+            System.Runtime.InteropServices.Marshal.Copy(pvSig, sig, 0, cbSig);
+
+            var typeSpec = Module.Definition.AddRawTypeSpec(sig);
+            *ptypespec = new MdTypeSpec(typeSpec.MetadataToken.ToInt32());
+
+            return HResult.S_OK;
+        }
+
+        public unsafe HResult DefineMethodSpec(MdToken tkParent, IntPtr pvSigBlob, int cbSigBlob, MdMethodSpec* pmi)
+        {
+            var parent = LookupToken(tkParent.Value) as MethodReference;
+            if (parent is null) { return HResult.E_INVALIDARG; }
+
+            byte[] sig = new byte[cbSigBlob];
+            System.Runtime.InteropServices.Marshal.Copy(pvSigBlob, sig, 0, cbSigBlob);
+            var method = Module.Definition.AddRawMethodSpec(parent, sig);
+            *pmi = new MdMethodSpec(method.MetadataToken.ToInt32());
+
+            return HResult.S_OK;
         }
 
         #endregion

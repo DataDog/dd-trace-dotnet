@@ -138,9 +138,9 @@ internal unsafe interface IMetaDataEmit : IUnknown
         MdToken tk);               // [IN] The ref parent.
 
     HResult GetTokenFromTypeSpec(
-        byte* pvSig,              // [IN] TypeSpec Signature to define.
+        IntPtr pvSig,              // [IN] TypeSpec Signature to define.
         int cbSig,                  // [IN] Size of signature data.
-        out MdTypeSpec ptypespec);        // [OUT] returned TypeSpec token.
+        MdTypeSpec* ptypespec);        // [OUT] returned TypeSpec token.
 
     HResult SaveToMemory(
         IntPtr pbData,                // [OUT] Location to write data.

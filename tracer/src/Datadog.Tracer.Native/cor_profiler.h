@@ -153,7 +153,7 @@ public:
                                            int* symbolsSize);
 
     void SetAotInstrumentation();
-    bool GetAotInstrumentation();
+    bool IsAotInstrumentation();
 
     //
     // ICorProfilerCallback methods

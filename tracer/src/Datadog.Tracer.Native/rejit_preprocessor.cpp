@@ -481,7 +481,7 @@ void RejitPreprocessor<RejitRequestDefinition>::RequestRejit(std::vector<MethodI
             vtMethodDefs.push_back(rejitRequest.methodToken);
         }
 
-        if (enqueueInSameThread || m_corProfiler->GetAotInstrumentation())
+        if (enqueueInSameThread || m_corProfiler->IsAotInstrumentation())
         {
             m_rejit_handler->RequestRejit(vtModules, vtMethodDefs, callRevertExplicitly);
         }

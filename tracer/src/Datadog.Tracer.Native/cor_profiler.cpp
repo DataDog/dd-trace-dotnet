@@ -1198,8 +1198,15 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         {
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_,
-                                                                                promise);
+
+            if (!profiler->IsAotInstrumentation())
+            {
+                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_, promise);
+            }
+            else
+            {
+                tracer_integration_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_, true);
+            }
 
             // wait and get the value from the future<ULONG>
             const auto status = future.wait_for(100ms);
@@ -3862,7 +3869,7 @@ void CorProfiler::SetAotInstrumentation()
 {
     is_aot_instrumentation = true;
 }
-bool CorProfiler::GetAotInstrumentation()
+bool CorProfiler::IsAotInstrumentation()
 {
     return is_aot_instrumentation;
 }

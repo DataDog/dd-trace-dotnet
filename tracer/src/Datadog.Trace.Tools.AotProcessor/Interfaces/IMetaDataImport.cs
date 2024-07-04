@@ -256,8 +256,8 @@ internal unsafe interface IMetaDataImport : IUnknown
 
     HResult GetTypeSpecFromToken(
         MdTypeSpec typespec,                // [IN] TypeSpec token.
-        out nint* ppvSig,            // [OUT] return pointer to TypeSpec signature
-        out uint pcbSig);          // [OUT] return size of signature.
+        IntPtr* ppvSig,            // [OUT] return pointer to TypeSpec signature
+        uint* pcbSig);          // [OUT] return size of signature.
 
     HResult GetNameFromToken(            // Not Recommended! May be removed!
         MdToken tk,                     // [IN] Token to get name from.  Must have a name.

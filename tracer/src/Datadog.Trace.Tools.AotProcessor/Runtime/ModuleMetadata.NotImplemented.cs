@@ -54,12 +54,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             throw new NotImplementedException();
         }
 
-        public unsafe HResult EnumTypeDefs(HCORENUM* phEnum, MdTypeDef* rTypeDefs, uint cMax, uint* pcTypeDefs)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
         public unsafe HResult EnumInterfaceImpls(HCORENUM* phEnum, MdTypeDef td, MdInterfaceImpl* rImpls, uint cMax, uint* pcImpls)
         {
             System.Diagnostics.Debugger.Break();
@@ -210,12 +204,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             throw new NotImplementedException();
         }
 
-        public unsafe HResult GetTypeSpecFromToken(MdTypeSpec typespec, out nint* ppvSig, out uint pcbSig)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
         public unsafe HResult GetNameFromToken(MdToken tk, out byte* pszUtf8NamePtr)
         {
             System.Diagnostics.Debugger.Break();
@@ -297,11 +285,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
         #endregion
 
         #region IMetadataEmit2
-        public unsafe HResult DefineMethodSpec(MdToken tkParent, byte* pvSigBlob, int cbSigBlob, MdMethodSpec* pmi)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
 
         public HResult GetDeltaSaveSize(CorSaveSize fSave, out int pdwSaveSize)
         {

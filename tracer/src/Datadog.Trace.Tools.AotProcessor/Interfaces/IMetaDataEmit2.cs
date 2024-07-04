@@ -7,7 +7,7 @@ internal unsafe interface IMetaDataEmit2 : IMetaDataEmit
 
     HResult DefineMethodSpec(
         MdToken tkParent,               // [IN] MethodDef or MemberRef
-        byte* pvSigBlob,          // [IN] point to a blob value of COM+ signature PCCOR_SIGNATURE pvSigBlob
+        IntPtr pvSigBlob,          // [IN] point to a blob value of COM+ signature PCCOR_SIGNATURE pvSigBlob
         int cbSigBlob,              // [IN] count of bytes in the signature blob
         MdMethodSpec* pmi);            // [OUT] method instantiation token
 
