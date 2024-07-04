@@ -527,26 +527,51 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
+    # Download _both_ musl and glibc if we're building the universal package
+    # but only the musl package if we're building alpine package
     - task: DownloadPipelineArtifact@2
-      displayName: Download tracer linux native binary
+      displayName: Download tracer linux native binary (linux-x64)
+      condition: eq(variables['artifactSuffix'], 'linux-x64')
       inputs:
-        artifact: linux-tracer-home-$(artifactSuffix)
+        artifact: linux-tracer-home-linux-x64
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download profiler linux native binary
+      displayName: Download profiler linux native binary (linux-x64)
+      condition: eq(variables['artifactSuffix'], 'linux-x64')
       inputs:
-        artifact: linux-profiler-home-$(artifactSuffix)
+        artifact: linux-profiler-home-linux-x64
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet $(artifactSuffix)
+      displayName: Download dd-dotnet (linux-x64)
+      condition: eq(variables['artifactSuffix'], 'linux-x64')
       inputs:
-        artifact: dd-dotnet-$(artifactSuffix)
-        path: $(monitoringHome)/$(artifactSuffix)
+        artifact: dd-dotnet-linux-x64
+        path: $(monitoringHome)/linux-x64
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tracer linux native binary (linux-musl-x64)
+      inputs:
+        artifact: linux-tracer-home-linux-musl-x64
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download profiler linux native binary (linux-musl-x64)
+      inputs:
+        artifact: linux-profiler-home-linux-musl-x64
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet (linux-musl-x64)
+      inputs:
+        artifact: dd-dotnet-linux-musl-x64
+        path: $(monitoringHome)/linux-musl-x64
 
     - script: |
-        chmod +x $(monitoringHome)/$(artifactSuffix)/dd-dotnet
+        chmod +x $(monitoringHome)/linux-musl-x64/dd-dotnet
+        # don't panic if the file doesn't exist
+        chmod +x $(monitoringHome)/linux-x64/dd-dotnet | :
       displayName: chmod dd-dotnet
 
     - task: DownloadPipelineArtifact@2
