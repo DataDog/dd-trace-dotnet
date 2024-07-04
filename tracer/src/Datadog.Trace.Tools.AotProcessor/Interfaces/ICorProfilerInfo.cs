@@ -145,9 +145,9 @@ internal unsafe interface ICorProfilerInfo : IUnknown
      */
     HResult GetFunctionInfo(
                 FunctionId FunctionId,
-                out ClassId pClassId,
-                out ModuleId pModuleId,
-                out MdToken pToken);
+                ClassId* pClassId,
+                ModuleId* pModuleId,
+                MdToken* pToken);
 
     /*
      * RECOMMENDATION: USE SetEventMask2 INSTEAD.  WHILE THIS METHOD CONTINUES TO

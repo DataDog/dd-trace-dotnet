@@ -24,7 +24,7 @@ internal unsafe interface IMetaDataImport : IUnknown
         out Guid pmvid);           // [OUT, OPTIONAL] Put MVID here.
 
     HResult GetModuleFromScope(
-        out MdModule pmd);             // [OUT] Put mdModule token here.
+        MdModule* pmd);             // [OUT] Put mdModule token here.
 
     HResult GetTypeDefProps(
         MdTypeDef td,                   // [IN] TypeDef token for inquiry.
@@ -239,8 +239,8 @@ internal unsafe interface IMetaDataImport : IUnknown
 
     HResult GetSigFromToken(
         MdSignature mdSig,                  // [IN] Signature token.
-        out nint* ppvSig,            // [OUT] return pointer to token.
-        out uint pcbSig);          // [OUT] return size of signature.
+        IntPtr* ppvSig,            // [OUT] return pointer to token.
+        uint* pcbSig);          // [OUT] return size of signature.
 
     HResult GetModuleRefProps(
         MdModuleRef mur,                    // [IN] moduleref token.

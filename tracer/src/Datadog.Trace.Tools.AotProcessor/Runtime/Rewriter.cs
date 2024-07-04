@@ -346,20 +346,28 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
         return moduleInfo.MetadataImport.QueryInterface(riid, out ppOut);
     }
 
-    public HResult GetFunctionInfo(FunctionId functionId, out ClassId pClassId, out ModuleId pModuleId, out MdToken pToken)
+    public unsafe HResult GetFunctionInfo(FunctionId functionId, ClassId* pClassId, ModuleId* pModuleId, MdToken* pToken)
     {
         if (functions.TryGetValue(functionId.Value, out var methodInfo))
         {
-            pClassId = new ClassId(methodInfo.Definition.DeclaringType.MetadataToken.ToInt32());
-            pModuleId = methodInfo.Module.Id;
-            pToken = new MdToken(methodInfo.Id.Value);
+            if (pClassId is not null)
+            {
+                *pClassId = new ClassId(methodInfo.Definition.DeclaringType.MetadataToken.ToInt32());
+            }
+
+            if (pModuleId is not null)
+            {
+                *pModuleId = methodInfo.Module.Id;
+            }
+
+            if (pToken is not null)
+            {
+                *pToken = new MdToken(methodInfo.Id.Value);
+            }
 
             return HResult.S_OK;
         }
 
-        pClassId = default;
-        pModuleId = default;
-        pToken = default;
         return HResult.E_INVALIDARG;
     }
 
@@ -411,15 +419,91 @@ internal partial class Rewriter : ICorProfilerInfo8, IMethodMalloc, IDisposable
 
     public unsafe HResult RequestReJIT(uint cFunctions, ModuleId* moduleIds, MdMethodDef* methodIds)
     {
-        System.Diagnostics.Debugger.Break();
-        throw new NotImplementedException();
+        for (int x = 0; x < cFunctions; x++)
+        {
+            var moduleInfo = modules[moduleIds[x].Value];
+            var methodInfo = moduleInfo.GetMember(methodIds[x].Value) as MethodInfo;
+            if (methodInfo is null) { return HResult.E_INVALIDARG; }
+
+            var functionId = new FunctionId(functions.Count + 1);
+            functions[functionId.Value] = methodInfo;
+            var id = new ReJITId((nint)functionId.Value);
+
+            // ReJIT Instrument method
+            using var wrapper = new FunctionWrapper(methodInfo);
+            profiler.ReJITCompilationStarted(functionId, id, 1);
+            profiler.GetReJITParameters(moduleInfo.Id, methodInfo.Id, wrapper.CorProfilerFunctionControl);
+            profiler.ReJITCompilationFinished(functionId, id, HResult.S_OK, 1);
+        }
+
+        return HResult.S_OK;
     }
 
     public unsafe HResult RequestRevert(uint cFunctions, ModuleId* moduleIds, MdMethodDef* methodIds, HResult* status)
     {
-        System.Diagnostics.Debugger.Break();
-        throw new NotImplementedException();
+        return HResult.S_FALSE;
     }
 
     #endregion
+
+    private class FunctionWrapper : ICorProfilerFunctionControl, IDisposable
+    {
+        private MethodInfo method;
+        private NativeObjects.ICorProfilerFunctionControl corProfilerFunctionControl;
+
+        public FunctionWrapper(MethodInfo method)
+        {
+            this.method = method;
+            corProfilerFunctionControl = NativeObjects.ICorProfilerFunctionControl.Wrap(this);
+        }
+
+        public void Dispose()
+        {
+            corProfilerFunctionControl.Dispose();
+        }
+
+        public NativeObjects.ICorProfilerFunctionControl CorProfilerFunctionControl => corProfilerFunctionControl;
+
+        public int AddRef()
+        {
+            return 1;
+        }
+
+        public int Release()
+        {
+            return 1;
+        }
+
+        public HResult QueryInterface(in Guid guid, out IntPtr ptr)
+        {
+            if (guid == IUnknown.Guid ||
+                guid == ICorProfilerFunctionControl.Guid)
+            {
+                ptr = corProfilerFunctionControl;
+                return HResult.S_OK;
+            }
+
+            ptr = IntPtr.Zero;
+            return HResult.E_NOINTERFACE;
+        }
+
+        public HResult SetILFunctionBody(uint cbNewILMethodHeader, IntPtr pbNewILMethodHeader)
+        {
+            byte[] rawBody = new byte[cbNewILMethodHeader];
+            Marshal.Copy(pbNewILMethodHeader, rawBody, 0, (int)cbNewILMethodHeader);
+            method.Definition.Body.RawBody = rawBody;
+
+            return HResult.S_OK;
+        }
+
+        public HResult SetCodegenFlags(int flags)
+        {
+            return HResult.S_OK;
+        }
+
+        public unsafe HResult SetILInstrumentedCodeMap(uint cILMapEntries, CorIlMap* rgILMapEntries)
+        {
+            return HResult.S_OK;
+        }
+    }
 }

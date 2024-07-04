@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.X86;
 using System.Xml.Linq;
 using Datadog.Trace.Tools.AotProcessor.Interfaces;
@@ -23,6 +24,8 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
         private MdToken systemRuntimeInteropServicesAssemblyRef = default;
         private MdToken systemThreadingAssemblyRef = default;
 
+        private Dictionary<MetadataToken, GCHandle> signatures = new Dictionary<MetadataToken, GCHandle>();
+
         public ModuleMetadata(ModuleInfo module)
         {
             Module = module;
@@ -38,6 +41,13 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             metadataEmit.Dispose();
             metadataAssemblyImport.Dispose();
             metadataAssemblyEmit.Dispose();
+
+            foreach (var handle in signatures.Values)
+            {
+                handle.Free();
+            }
+
+            signatures.Clear();
         }
 
         public ModuleInfo Module { get; }
@@ -140,6 +150,25 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             }
 
             return null;
+        }
+
+        internal (IntPtr Sig, uint SigSize) GetSignature(MetadataToken token)
+        {
+            var signature = Module.Definition.GetSignature(token);
+            if (signature is null || signature.Length == 0)
+            {
+                return (IntPtr.Zero, 0);
+            }
+
+            if (!signatures.TryGetValue(token, out var handle))
+            {
+                handle = GCHandle.Alloc(signature, GCHandleType.Pinned);
+                signatures[token] = handle;
+            }
+
+            var len = ((byte[])handle.Target!).Length;
+
+            return (handle.AddrOfPinnedObject(), (uint)len);
         }
 
         internal TypeReference SystemVoidRef()
@@ -542,6 +571,34 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             return HResult.S_OK;
         }
 
+        public unsafe HResult GetModuleFromScope(MdModule* pmd)
+        {
+            *pmd = new MdModule((int)Module.Id.Value);
+            return HResult.S_OK;
+        }
+
+        public unsafe HResult GetSigFromToken(MdSignature mdSig, IntPtr* ppvSig, uint* pcbSig)
+        {
+            var signature = GetSignature(new MetadataToken((uint)mdSig.Value));
+            if (signature.SigSize == 0)
+            {
+                ppvSig = null;
+                *pcbSig = 0;
+                return HResult.E_INVALIDARG;
+            }
+
+            *ppvSig = signature.Sig;
+            *pcbSig = signature.SigSize;
+
+            return HResult.S_OK;
+        }
+
+        public unsafe HResult GetTokenFromTypeSpec(byte* pvSig, int cbSig, out MdTypeSpec ptypespec)
+        {
+            System.Diagnostics.Debugger.Break();
+            throw new NotImplementedException();
+        }
+
         #endregion
 
         #region IMetadataEmit
@@ -784,7 +841,7 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             if (string.IsNullOrEmpty(name)) { return HResult.E_INVALIDARG; }
 
             var typeRef = Module.Definition.GetTypeReferences().FirstOrDefault(t => t.FullName == name);
-            if (typeRef is null) { return HResult.E_INVALIDARG; }
+            if (typeRef is null) { return HResult.E_RECORD_NOT_FOUND; }
 
             *ptr = new MdTypeRef(typeRef.MetadataToken.ToInt32());
             return HResult.S_OK;

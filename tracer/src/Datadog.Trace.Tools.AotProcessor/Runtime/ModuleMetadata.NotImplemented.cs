@@ -72,12 +72,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
             throw new NotImplementedException();
         }
 
-        public HResult GetModuleFromScope(out MdModule pmd)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
         public HResult GetInterfaceImplProps(MdInterfaceImpl iiImpl, out MdTypeDef pClass, out MdToken ptkIface)
         {
             System.Diagnostics.Debugger.Break();
@@ -199,12 +193,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
         }
 
         public unsafe HResult GetPermissionSetProps(MdPermission pm, out int pdwAction, out void* ppvPermission, out uint pcbPermission)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
-        public unsafe HResult GetSigFromToken(MdSignature mdSig, out nint* ppvSig, out uint pcbSig)
         {
             System.Diagnostics.Debugger.Break();
             throw new NotImplementedException();
@@ -447,12 +435,6 @@ namespace Datadog.Trace.Tools.AotProcessor.Runtime
         }
 
         public HResult SetParent(MdMemberRef mr, MdToken tk)
-        {
-            System.Diagnostics.Debugger.Break();
-            throw new NotImplementedException();
-        }
-
-        public unsafe HResult GetTokenFromTypeSpec(byte* pvSig, int cbSig, out MdTypeSpec ptypespec)
         {
             System.Diagnostics.Debugger.Break();
             throw new NotImplementedException();

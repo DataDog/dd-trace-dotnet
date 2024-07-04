@@ -5,6 +5,7 @@
 #include "integration.h"
 #include "logger.h"
 #include "stats.h"
+#include "cor_profiler.h"
 
 namespace trace
 {
@@ -480,7 +481,7 @@ void RejitPreprocessor<RejitRequestDefinition>::RequestRejit(std::vector<MethodI
             vtMethodDefs.push_back(rejitRequest.methodToken);
         }
 
-        if (enqueueInSameThread)
+        if (enqueueInSameThread || m_corProfiler->GetAotInstrumentation())
         {
             m_rejit_handler->RequestRejit(vtModules, vtMethodDefs, callRevertExplicitly);
         }

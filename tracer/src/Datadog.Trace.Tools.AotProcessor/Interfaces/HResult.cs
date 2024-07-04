@@ -9,6 +9,7 @@ internal readonly struct HResult
     public const int E_POINTER = unchecked((int)0x80004003);
     public const int E_FAIL = unchecked((int)0x80004005);
     public const int E_INVALIDARG = unchecked((int)0x80070057);
+    public const int E_RECORD_NOT_FOUND = unchecked((int)0x80131130);
     public const int CORPROF_E_UNSUPPORTED_CALL_SEQUENCE = unchecked((int)0x80131363);
 
     public HResult(int hr) => Code = hr;
