@@ -901,6 +901,15 @@ partial class Build
                 DeleteFile(muslLinkLocation);
                 HardLinkUtil.Value($"-v {archSpecificFile} {muslLinkLocation}");
             }
+            
+            if(needsMuslLink)
+            {
+                archSpecificFile = assetsDirectory / arch / FileNames.LoaderConf;
+                var muslLinkLocation = assetsDirectory / muslArch / FileNames.LoaderConf;
+                DeleteFile(muslLinkLocation); // probably won't exist, but be safe
+                // copy the loader.conf into the musl arch folder
+                HardLinkUtil.Value($"-v {archSpecificFile} {muslLinkLocation}");
+            }
 
             // Copy the loader.conf to the root folder, this is required for when the "root" native loader is used,
             // It needs to include the architecture in the paths to the native dlls
