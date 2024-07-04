@@ -24,6 +24,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         public override MetricTags.CIVisibilityEndpoints TelemetryEndpoint => MetricTags.CIVisibilityEndpoints.TestCycle;
 
+        public override MetricTags.CIVisibilityEndpointAndCompression TelemetryEndpointAndCompression
+            => UseGZip
+                   ? MetricTags.CIVisibilityEndpointAndCompression.TestCycleRequestCompressed
+                   : MetricTags.CIVisibilityEndpointAndCompression.TestCycleUncompressed;
+
         public override bool CanProcessEvent(IEvent @event)
         {
             // This intake accepts both Span and Test events
