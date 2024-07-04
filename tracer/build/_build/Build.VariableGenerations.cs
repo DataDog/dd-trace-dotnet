@@ -466,11 +466,12 @@ partial class Build : NukeBuild
                             new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
                             new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
                         },
-                        // currently we direct to the musl-specific package. Should we update this to point to the default artifact instead?
-                        installer: "datadog-dotnet-apm*-musl.tar.gz",
+                        // currently we direct customers to the musl-specific package in the command line.
+                        // Should we update this to point to the default artifact instead?
+                        installer: "datadog-dotnet-apm*-musl.tar.gz", // used by the dd-dotnet checks to direct customers to the right place
                         installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.tar.gz",
-                        linuxArtifacts: "linux-packages-linux-x64",
-                        runtimeId: "linux-musl-x64",
+                        linuxArtifacts: "linux-packages-linux-x64", // these are what we download
+                        runtimeId: "linux-musl-x64", // used by the dd-dotnet checks to direct customers to the right place
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
