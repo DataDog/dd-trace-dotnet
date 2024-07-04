@@ -929,7 +929,7 @@ partial class Build
 
                 if (!includeMuslArtifacts && !IsAlpine)
                 {
-                    // Remove the linux-musl-x64 folder entirely
+                    // Remove the linux-musl-x64 folder entirely if we don't need it
                     Logger.Information("Removing musl assets as not required");
                     DeleteDirectory(assetsDirectory / muslArch);
                 }
@@ -941,11 +941,27 @@ partial class Build
                 var linkLocation = assetsDirectory / $"{FileNames.NativeLoader}.{ext}";
                 HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
 
+                if (includeMuslArtifacts)
+                {
+                    // The native loader file is the same for glibc/musl so can share the file
+                    var muslLinkLocation = assetsDirectory / muslArch / $"{FileNames.NativeLoader}.{ext}";
+                    DeleteFile(muslLinkLocation); // remove the original file and replace it with a link
+                    HardLinkUtil.Value($"-v {archSpecificFile} {muslLinkLocation}");
+                }
+
                 // For back-compat reasons, we have to keep the libddwaf.so file in the root folder
                 // because the way AppSec probes the paths won't find the linux-musl-x64 target currently
                 archSpecificFile = assetsDirectory / arch / FileNames.AppSecLinuxWaf;
                 linkLocation = assetsDirectory / FileNames.AppSecLinuxWaf;
                 HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+
+                if (includeMuslArtifacts)
+                {
+                    // The WAF file is the same for glibc/musl so can share the file
+                    var muslLinkLocation = assetsDirectory / muslArch / FileNames.AppSecLinuxWaf;
+                    DeleteFile(muslLinkLocation);
+                    HardLinkUtil.Value($"-v {archSpecificFile} {muslLinkLocation}");
+                }
 
                 // we must always have the Datadog.Linux.ApiWrapper.x64.so file in the continuousprofiler subfolder
                 // as it's set in the LD_PRELOAD env var
@@ -954,6 +970,14 @@ partial class Build
                 archSpecificFile = assetsDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
                 linkLocation = continuousProfilerDir / FileNames.ProfilerLinuxApiWrapper;
                 HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+
+                if (includeMuslArtifacts)
+                {
+                    // The wrapper library is the same for glibc/musl so can share the file
+                    var muslLinkLocation = assetsDirectory / muslArch / FileNames.ProfilerLinuxApiWrapper;
+                    DeleteFile(muslLinkLocation);
+                    HardLinkUtil.Value($"-v {archSpecificFile} {muslLinkLocation}");
+                }
 
                 // Need to copy in the loader.conf file into the musl arch folder
                 if(includeMuslArtifacts)
