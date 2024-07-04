@@ -10,17 +10,24 @@ if [ -z "$ARCH" ]; then
   ARCH=amd64
 fi
 
+if [ "$ARCH" == "amd64" ]; then
+  SUFFIX=""
+elif [ "$ARCH" == "arm64" ]; then
+  SUFFIX=".arm64"
+else
+  echo "Unsupported architecture: $ARCH"
+  exit 1
+fi
+
 TMP_DIR=$(mktemp --dir)
 
 curl --location --fail \
-  --output $TMP_DIR/datadog-dotnet-apm.old \
-  "https://github.com/DataDog/dd-trace-dotnet/releases/download/v$DOTNET_PACKAGE_VERSION/datadog-dotnet-apm_${DOTNET_PACKAGE_VERSION}_$ARCH.deb"
+  --output $TMP_DIR/datadog-dotnet-apm.tar.gz \
+  "https://github.com/DataDog/dd-trace-dotnet/releases/download/v$DOTNET_PACKAGE_VERSION/datadog-dotnet-apm_${DOTNET_PACKAGE_VERSION}${SUFFIX}.tar.gz"
 
-fpm --input-type deb \
-  --output-type dir \
-  --name datadog-dotnet-apm \
-  --package $TMP_DIR \
-  $TMP_DIR/datadog-dotnet-apm.old
+mkdir $TMP_DIR/datadog-dotnet-apm.dir/opt/datadog
+
+tar -xzf $TMP_DIR/datadog-dotnet-apm.tar.gz -C /target/directory
 
 echo -n $DOTNET_PACKAGE_VERSION > auto_inject-dotnet.version
 

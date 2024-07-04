@@ -10,14 +10,24 @@ if [ -z "$ARCH" ]; then
   ARCH=amd64
 fi
 
-curl --location --fail \
-  --output datadog-dotnet-apm.old \
-  "https://github.com/DataDog/dd-trace-dotnet/releases/download/v$DOTNET_PACKAGE_VERSION/datadog-dotnet-apm_${DOTNET_PACKAGE_VERSION}_$ARCH.deb"
+if [ "$ARCH" == "amd64" ]; then
+  SUFFIX=""
+elif [ "$ARCH" == "arm64" ]; then
+  SUFFIX=".arm64"
+else
+  echo "Unsupported architecture: $ARCH"
+  exit 1
+fi
 
-fpm --input-type deb \
-  --output-type dir \
-  --name datadog-dotnet-apm \
-  datadog-dotnet-apm.old
+TMP_DIR=$(mktemp --dir)
+
+curl --location --fail \
+  --output $TMP_DIR/datadog-dotnet-apm.tar.gz \
+  "https://github.com/DataDog/dd-trace-dotnet/releases/download/v$DOTNET_PACKAGE_VERSION/datadog-dotnet-apm_${DOTNET_PACKAGE_VERSION}${SUFFIX}.tar.gz"
+
+mkdir $TMP_DIR/datadog-dotnet-apm.dir/opt/datadog
+
+tar -xzf $TMP_DIR/datadog-dotnet-apm.tar.gz -C /target/directory
 
 echo -n $DOTNET_PACKAGE_VERSION > auto_inject-dotnet.version
 
@@ -26,9 +36,9 @@ cp auto_inject-dotnet.version datadog-dotnet-apm.dir/opt/datadog/version
 # Build packages
 fpm_wrapper "datadog-apm-library-dotnet" "$DOTNET_PACKAGE_VERSION" \
   --input-type dir \
-  --chdir=datadog-dotnet-apm.dir/opt/datadog \
+  --chdir=$TMP_DIR/datadog-dotnet-apm.dir/opt/datadog \
   --prefix "$LIBRARIES_INSTALL_BASE/dotnet" \
-  --after-install datadog-dotnet-apm.dir/opt/datadog/createLogPath.sh \
+  --after-install $TMP_DIR/datadog-dotnet-apm.dir/opt/datadog/createLogPath.sh \
   --url "https://github.com/DataDog/dd-trace-dotnet" \
   --license "Apache License 2.0" \
   --description "Datadog APM client library for .NET" \
