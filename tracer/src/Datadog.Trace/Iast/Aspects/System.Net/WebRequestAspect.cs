@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Dataflow;
 
 #nullable enable
@@ -26,8 +26,7 @@ public class WebRequestAspect
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.String)")]
     public static object Review(string parameter)
     {
-        IastModule.OnSSRF(parameter);
-        RaspModule.OnSSRF(parameter);
+        VulnerabilitiesModule.OnSSRF(parameter);
         return parameter;
     }
 
@@ -41,8 +40,7 @@ public class WebRequestAspect
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.Uri)")]
     public static object Review(Uri parameter)
     {
-        IastModule.OnSSRF(parameter.OriginalString);
-        RaspModule.OnSSRF(parameter.OriginalString);
+        VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
         return parameter;
     }
 }

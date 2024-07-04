@@ -7,7 +7,8 @@
 using System.Net.Http;
 #endif
 using System;
-using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.AppSec;
+
 #if NETFRAMEWORK
 using Datadog.Trace.DuckTyping;
 #endif
@@ -53,8 +54,7 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.String,System.Threading.CancellationToken)", 1)]
     public static string Review(string parameter)
     {
-        IastModule.OnSSRF(parameter);
-        RaspModule.OnSSRF(parameter);
+        VulnerabilitiesModule.OnSSRF(parameter);
         return parameter;
     }
 
@@ -88,8 +88,7 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::set_BaseAddress(System.Uri)")]
     public static Uri ReviewUri(Uri parameter)
     {
-        IastModule.OnSSRF(parameter.OriginalString);
-        RaspModule.OnSSRF(parameter.OriginalString);
+        VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
         return parameter;
     }
 
@@ -116,8 +115,7 @@ public class HttpClientAspect
 
         if (uri is not null)
         {
-            IastModule.OnSSRF(uri.OriginalString);
-            RaspModule.OnSSRF(uri.OriginalString);
+            VulnerabilitiesModule.OnSSRF(uri.OriginalString);
         }
 
         return parameter;
@@ -129,8 +127,7 @@ public class HttpClientAspect
 
         if (uri is not null)
         {
-            IastModule.OnSSRF(uri.OriginalString);
-            RaspModule.OnSSRF(uri.OriginalString);
+            VulnerabilitiesModule.OnSSRF(uri.OriginalString);
         }
 
         return parameter;
