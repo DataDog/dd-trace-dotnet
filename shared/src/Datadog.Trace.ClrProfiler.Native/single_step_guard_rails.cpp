@@ -166,7 +166,7 @@ bool SingleStepGuardRails::ShouldForceInstrumentationOverride(const std::string&
         Log::Info(
             "SingleStepGuardRails::ShouldForceInstrumentationOverride: ",
             EnvironmentVariables::ForceEolInstrumentation,
-            "enabled, allowing unsupported runtimes and continuing");
+            " enabled, allowing unsupported runtimes and continuing");
         return true;
     }
 
