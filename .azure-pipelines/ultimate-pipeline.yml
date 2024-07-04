@@ -5960,7 +5960,7 @@ stages:
           failOnStderr: true
 
         - script: |
-            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/.
+            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/. --prerelease
           displayName: Install tracer
 
         - script: |
