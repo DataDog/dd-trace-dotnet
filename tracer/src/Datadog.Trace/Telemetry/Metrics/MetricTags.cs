@@ -118,7 +118,7 @@ internal static class MetricTags
 
     internal enum DatadogConfiguration
     {
-        [Description("config.datadog:DD_LOG_LEVEL")] LogLevel,
+        [Description("config.datadog:DD_TRACE_DEBUG")] DebugEnabled,
         [Description("config.datadog:DD_RUNTIME_METRICS_ENABLED")] RuntimeMetricsEnabled,
         [Description("config.datadog:DD_SERVICE")] Service,
         [Description("config.datadog:DD_TAGS")] Tags,

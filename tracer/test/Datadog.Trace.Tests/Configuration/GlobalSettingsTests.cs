@@ -48,8 +48,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance, errorLog);
 
             settings.DebugEnabled.Should().Be(expected);
-            // Is DD_LOG_LEVEL correct here? Shouldn't it be ConfigurationKeys.DebugEnabled?
-            errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.LogLevel, "DD_LOG_LEVEL");
+            errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.LogLevel, ConfigurationKeys.DebugEnabled);
         }
 
         [Theory]

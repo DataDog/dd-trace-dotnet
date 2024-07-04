@@ -25,7 +25,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry
             else if (string.Equals(openTelemetryKey, "OTEL_LOG_LEVEL", StringComparison.OrdinalIgnoreCase))
             {
                 openTelemetryConfig = MetricTags.OpenTelemetryConfiguration.LogLevel;
-                datadogConfig = MetricTags.DatadogConfiguration.LogLevel;
+                datadogConfig = MetricTags.DatadogConfiguration.DebugEnabled;
             }
             else if (string.Equals(openTelemetryKey, "OTEL_PROPAGATORS", StringComparison.OrdinalIgnoreCase))
             {
