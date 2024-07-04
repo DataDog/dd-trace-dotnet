@@ -1,0 +1,100 @@
+﻿[
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "17c1e39c-e46c-828e-4e02-21be0f3b5358",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
+        "status": "EMITTING"
+      }
+    },
+    "message": "Emitted probe 17c1e39c-e46c-828e-4e02-21be0f3b5358.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "1828a3f0-e94b-eb91-81e3-12bcf19ac41a",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
+        "status": "EMITTING"
+      }
+    },
+    "message": "Emitted probe 1828a3f0-e94b-eb91-81e3-12bcf19ac41a.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "3410cda1-5b13-a34e-6f84-a54adf7a0ea0",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
+        "status": "EMITTING"
+      }
+    },
+    "message": "Emitted probe 3410cda1-5b13-a34e-6f84-a54adf7a0ea0.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "3c5a4d30-f652-b355-51d6-9589d1d290b4",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
+        "status": "EMITTING"
+      }
+    },
+    "message": "Emitted probe 3c5a4d30-f652-b355-51d6-9589d1d290b4.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "8286d046-9740-a3e4-95cf-ff46699c73c4",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
+        "status": "EMITTING"
+      }
+    },
+    "message": "Emitted probe 8286d046-9740-a3e4-95cf-ff46699c73c4.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "86a95ec1-5bda-bd57-3f8e-e610398f9334",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
+        "status": "EMITTING"
+      }
+    },
+    "message": "Emitted probe 86a95ec1-5bda-bd57-3f8e-e610398f9334.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "b1fd073e-cd92-947d-4b6b-d9bd0380b1f2",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
+        "status": "EMITTING"
+      }
+    },
+    "message": "Emitted probe b1fd073e-cd92-947d-4b6b-d9bd0380b1f2.",
+    "service": "probes"
+  }
+]
