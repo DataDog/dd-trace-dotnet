@@ -113,11 +113,7 @@ namespace Datadog.Trace.Configuration
                                 _ when x.ToBoolean() is { } boolean => boolean,
                                 _ => ParsingResult<bool>.Failure(),
                             },
-                            getDefaultValue: () =>
-                            {
-                                var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
-                                return profilingSsiDeployed is not null;
-                            },
+                            getDefaultValue: () => false,
                             validator: null);
 
             EnvironmentInternal = config

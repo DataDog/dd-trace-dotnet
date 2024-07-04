@@ -645,21 +645,21 @@ EnablementStatus Configuration::ExtractEnablementStatus()
         auto enabled = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
         auto parsed = shared::TryParseBooleanEnvironmentValue(enabled, isEnabled);
 
-        if (enabled.empty() || !parsed || !isEnabled)
+        if (parsed)
         {
-            // It is possible that a Single Step Instrumentation deployment was done
-            // and the profiler was enabled during that step. In that case, the "auto" value
-            // will be set and profiler should be enabled.
-            // This should be replaced by adding "profiler" in EnvironmentVariables::SsiDeployed
-            // later that will take into account heuristics
-            if (enabled == WStr("auto"))
-            {
-                return EnablementStatus::ManuallyEnabled;
-            }
-
-            return EnablementStatus::ManuallyDisabled;
+            return isEnabled
+                ? EnablementStatus::ManuallyEnabled
+                : EnablementStatus::ManuallyDisabled;
         }
-        return EnablementStatus::ManuallyEnabled;
+
+        // It is possible that a Single Step Instrumentation deployment was done
+        // and the profiler was enabled during that step. In that case, the "auto" value
+        // will be set and profiler should be enabled.
+        // This should be replaced by adding "profiler" in EnvironmentVariables::SsiDeployed
+        // later that will take into account heuristics
+        return !enabled.empty() && enabled == WStr("auto")
+            ? EnablementStatus::ManuallyEnabled
+            : EnablementStatus::ManuallyDisabled;
     }
 
     auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);

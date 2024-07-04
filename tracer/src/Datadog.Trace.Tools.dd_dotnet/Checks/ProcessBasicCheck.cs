@@ -268,15 +268,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
                 else
                 {
-                    isContinuousProfilerEnabled = process.EnvironmentVariables.TryGetValue("DD_INJECTION_ENABLED", out var _);
-                    if (isContinuousProfilerEnabled)
-                    {
-                        Utils.WriteInfo(ContinuousProfilerSsiDeployed);
-                    }
-                    else
-                    {
-                        Utils.WriteInfo(ContinuousProfilerNotSet);
-                    }
+                    Utils.WriteInfo(ContinuousProfilerNotSet);
                 }
 
                 if (isContinuousProfilerEnabled)

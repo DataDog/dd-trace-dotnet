@@ -37,12 +37,6 @@ namespace Datadog.Trace.ContinuousProfiler
                     // instead of "true" to avoid starting the profiler immediately after the installation
                     _isProfilingEnabled = manualDeployement.ToBoolean() ?? (manualDeployement == "auto");
                 }
-                else
-                {
-                    // the profiler is declared "enabled" just if the SSI environment variable exists to be sure that telemetry metrics
-                    // will contain the right status (i.e. we need the tracer to send the spans even if the profiler is not started yet)
-                    _isProfilingEnabled = (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed) != null);
-                }
             }
 
             Log.Information("Continuous Profiler is {IsEnabled}.", _isProfilingEnabled ? "enabled" : "disabled");

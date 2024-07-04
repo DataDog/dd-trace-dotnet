@@ -704,7 +704,7 @@ bool ShouldRewriteProfilerMaps()
         return (strValue == WStr("auto"));
     }
 
-    return shared::EnvironmentExist(WStr("DD_INJECTION_ENABLED"));
+    return false;
 }
 
 std::string GetNativeLoaderFilePath()
