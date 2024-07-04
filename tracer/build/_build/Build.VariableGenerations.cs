@@ -972,8 +972,9 @@ partial class Build : NukeBuild
                             // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available 
                             new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye"),
-                        },
+                        }.Where(x=> IsPrerelease || x.PublishFramework != TargetFramework.NETCOREAPP3_1).ToArray(),
                         platformSuffix: "linux-x64",
                         dockerName: "mcr.microsoft.com/dotnet/sdk"
                     );
@@ -986,7 +987,8 @@ partial class Build : NukeBuild
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
                             new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.15"),
-                        },
+                            // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available 
+                        }.Where(x=> IsPrerelease || x.PublishFramework != TargetFramework.NETCOREAPP3_1).ToArray(),
                         platformSuffix: "linux-musl-x64",
                         dockerName: "mcr.microsoft.com/dotnet/sdk"
                     );
