@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -24,7 +24,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       usr.id: Guid_2,
-      _dd.appsec.events.users.login.success.auto.mode: ident,
+      _dd.appsec.events.users.login.success.auto.mode: identification,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -43,7 +43,6 @@
     Service: Samples.Security.AspNetCore5,
     Type: web,
     Tags: {
-      appsec.events.users.login.success.track: true,
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.AccountController.Index (Samples.Security.AspNetCore5),
       aspnet_core.route: {controller=home}/{action=index}/{id?},
       component: aspnet_core,
@@ -59,8 +58,6 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      usr.id: anon_7bcd1c9fc4f6e4c2460e0ad38d6ad0d9,
-      _dd.appsec.events.users.login.success.auto.mode: anon,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -68,7 +65,7 @@
       _dd.appsec.enabled: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 2.0
+      _sampling_priority_v1: 1.0
     }
   },
   {
