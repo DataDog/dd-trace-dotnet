@@ -55,10 +55,16 @@ namespace Datadog.Trace.Configuration
             public const string SymbolDatabaseUploadEnabled = "DD_SYMBOL_DATABASE_UPLOAD_ENABLED";
 
             /// <summary>
-            /// Configuration key for a separated comma list of libraries to include in the symbol database upload
+            /// Configuration key for a separated comma list of libraries to include in the 3rd party detection
             /// Default value is empty.
             /// </summary>
-            public const string SymbolDatabaseIncludes = "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_INCLUDES";
+            public const string SymDbThirdPartyDetectionIncludes = "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES";
+
+            /// <summary>
+            /// Configuration key for a separated comma list of libraries to include in the 3rd party detection
+            /// Default value is empty.
+            /// </summary>
+            public const string SymDbThirdPartyDetectionExcludes = "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_EXCLUDES";
 
             /// <summary>
             /// Configuration key for the interval (in seconds) between sending probe statuses.
