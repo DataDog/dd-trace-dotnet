@@ -161,6 +161,7 @@ namespace Datadog.Trace.AppSec
                 return false;
             }
 
+            // local can never be null, we handle the default in the setting class (so it will be recorded by telemetry)
             return local is SecuritySettings.UserTrackingIdentMode or SecuritySettings.UserTrackingAnonMode;
         }
 

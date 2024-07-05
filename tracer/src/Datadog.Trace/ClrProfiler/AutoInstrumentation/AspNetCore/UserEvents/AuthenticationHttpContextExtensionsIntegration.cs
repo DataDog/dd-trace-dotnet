@@ -39,6 +39,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
         private const string HttpContextExtensionsTypeName = "Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions";
 
+            // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
+            private static readonly HashSet<string> ClaimsToTest = new HashSet<string> 
+            { 
+                ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub", ClaimTypes.Email,  ClaimTypes.Name
+            };
+
         internal static CallTargetState OnMethodBegin<TTarget>(object httpContext, string scheme, ClaimsPrincipal claimPrincipal, object authProperties)
         {
             var security = Security.Instance;
@@ -55,8 +61,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         internal static object OnAsyncMethodEnd<TTarget>(object returnValue, Exception exception, in CallTargetState state)
         {
             var claimsPrincipal = state.State as ClaimsPrincipal;
-            // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-            var claimsToTest = new[] { ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub", ClaimTypes.Email, ClaimTypes.Name, };
             if (claimsPrincipal?.Claims != null && Security.Instance is { IsTrackUserEventsEnabled: true } security)
             {
                 var span = state.Scope.Span;
@@ -67,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
                 foreach (var claim in claimsPrincipal.Claims)
                 {
-                    if (claimsToTest.Contains(claim.Type))
+                    if (ClaimsToTest.Contains(claim.Type))
                     {
                         if (security.IsAnonUserTrackingMode)
                         {
