@@ -27,6 +27,22 @@ public class JsonDocumentTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void AccessByRef_AzureDataTables_JsonElementExtensions()
+    {
+        var json = JsonDocument.Parse(_taintedJson);
+        var element = json.RootElement.GetProperty("key");
+        
+        // Call with reflection the method Azure.Core.JsonElementExtensions.GetObject(JsonElement& element)
+        var obj = (object)element;
+        var type = Type.GetType("Azure.Core.JsonElementExtensions, Azure.Data.Tables")!;
+        var method = type.GetMethod("GetObject", new[] { typeof(JsonElement).MakeByRefType() });
+        var result = method!.Invoke(null, new[] { obj });
+        
+        Assert.Equal("value", result);
+        AssertTainted(result);
+    }
+
+    [Fact]
     public void GivenASimpleJson_WhenParsing_GetProperty_Vulnerable()
     {
         var json = JsonDocument.Parse(_taintedJson);
