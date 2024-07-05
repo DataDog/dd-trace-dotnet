@@ -5,6 +5,7 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Security.Claims;
@@ -39,11 +40,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
         private const string HttpContextExtensionsTypeName = "Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions";
 
-            // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-            private static readonly HashSet<string> ClaimsToTest = new HashSet<string> 
-            { 
-                ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub", ClaimTypes.Email,  ClaimTypes.Name
-            };
+        // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
+        private static readonly HashSet<string> ClaimsToTest = new HashSet<string>
+        {
+            ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub", ClaimTypes.Email,  ClaimTypes.Name
+        };
 
         internal static CallTargetState OnMethodBegin<TTarget>(object httpContext, string scheme, ClaimsPrincipal claimPrincipal, object authProperties)
         {
