@@ -17,8 +17,11 @@ namespace Datadog.Trace.Iast.SensitiveData;
 /// </summary>
 internal class TaintedRangeBasedTokenizer : ITokenizer
 {
-    public TaintedRangeBasedTokenizer(TimeSpan timeout)
+    private bool _redactTaintedRanges;
+
+    public TaintedRangeBasedTokenizer(bool redactTaintedRanges = false)
     {
+        _redactTaintedRanges = redactTaintedRanges;
     }
 
     public List<Range> GetTokens(Evidence evidence, IntegrationId? integrationId = null)
@@ -40,6 +43,11 @@ internal class TaintedRangeBasedTokenizer : ITokenizer
                 var next = new Range(pos, range.Start - pos);
                 pos = range.Start + range.Length;
                 res.Add(next);
+            }
+
+            if (_redactTaintedRanges)
+            {
+                res.Add(range);
             }
         }
 
