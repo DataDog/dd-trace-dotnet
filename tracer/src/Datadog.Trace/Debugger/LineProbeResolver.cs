@@ -37,11 +37,11 @@ namespace Datadog.Trace.Debugger
             return new LineProbeResolver();
         }
 
-        private static IList<string>? GetDocumentsFromPDB(Assembly loadedAssembly)
+        private IList<string>? GetDocumentsFromPDB(Assembly loadedAssembly)
         {
             try
             {
-                if (AssemblyFilter.ShouldSkipAssembly(loadedAssembly))
+                if (AssemblyFilter.ShouldSkipAssembly(loadedAssembly, LiveDebugger.Instance.Settings.ThirdPartyDetectionExcludes, LiveDebugger.Instance.Settings.ThirdPartyDetectionIncludes))
                 {
                     return null;
                 }

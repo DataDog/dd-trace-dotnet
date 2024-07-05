@@ -70,7 +70,9 @@ namespace Datadog.Trace.Debugger.Symbols
             _enablementSemaphore = new SemaphoreSlim(0);
             _thresholdInBytes = settings.SymbolDatabaseBatchSizeInBytes;
             _symDb3rdPartyIncludes = settings.SymDbThirdPartyDetectionIncludes;
+            _symDb3rdPartyIncludes.UnionWith(settings.ThirdPartyDetectionIncludes);
             _symDb3rdPartyExcludes = settings.SymDbThirdPartyDetectionExcludes;
+            _symDb3rdPartyExcludes.UnionWith(settings.ThirdPartyDetectionExcludes);
             _cancellationToken = new CancellationTokenSource();
             _jsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             _discoveryService.SubscribeToChanges(ConfigurationChanged);

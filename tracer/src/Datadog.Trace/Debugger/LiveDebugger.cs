@@ -35,7 +35,6 @@ namespace Datadog.Trace.Debugger
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebugger));
         private static readonly object GlobalLock = new();
 
-        private readonly DebuggerSettings _settings;
         private readonly IDiscoveryService _discoveryService;
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ISubscription _subscription;
@@ -64,7 +63,7 @@ namespace Datadog.Trace.Debugger
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
         {
-            _settings = settings;
+            Settings = settings;
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
             _snapshotUploader = snapshotUploader;
@@ -90,6 +89,8 @@ namespace Datadog.Trace.Debugger
         public static LiveDebugger Instance { get; private set; }
 
         public string ServiceName { get; }
+
+        internal DebuggerSettings Settings { get; }
 
         public static LiveDebugger Create(
             DebuggerSettings settings,
@@ -139,8 +140,8 @@ namespace Datadog.Trace.Debugger
                 Log.Information("Live Debugger initialization started");
                 _subscriptionManager.SubscribeToChanges(_subscription);
 
-                DebuggerSnapshotSerializer.SetConfig(_settings);
-                Redaction.SetConfig(_settings);
+                DebuggerSnapshotSerializer.SetConfig(Settings);
+                Redaction.SetConfig(Settings);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
 
                 await StartAsync().ConfigureAwait(false);
@@ -157,7 +158,7 @@ namespace Datadog.Trace.Debugger
                     return false;
                 }
 
-                if (!_settings.Enabled)
+                if (!Settings.Enabled)
                 {
                     Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
                     return false;

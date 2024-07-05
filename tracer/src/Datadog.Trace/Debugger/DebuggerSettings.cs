@@ -64,7 +64,7 @@ namespace Datadog.Trace.Debugger
                                   .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                    Enumerable.Empty<string>();
 
-            ThirdPartyIncludes = new HashSet<string>(thirdPartyIncludes, StringComparer.OrdinalIgnoreCase);
+            ThirdPartyDetectionIncludes = new HashSet<string>(thirdPartyIncludes, StringComparer.OrdinalIgnoreCase);
 
             var thirdPartyExcludes = config
                                     .WithKeys(ConfigurationKeys.Debugger.ThirdPartyDetectionExcludes)
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Debugger
                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                      Enumerable.Empty<string>();
 
-            ThirdPartyExcludes = new HashSet<string>(thirdPartyExcludes, StringComparer.OrdinalIgnoreCase);
+            ThirdPartyDetectionExcludes = new HashSet<string>(thirdPartyExcludes, StringComparer.OrdinalIgnoreCase);
 
             var symDb3rdPartyIncludeLibraries = config
                                      .WithKeys(ConfigurationKeys.Debugger.SymDbThirdPartyDetectionIncludes)
@@ -129,9 +129,9 @@ namespace Datadog.Trace.Debugger
 
         public int SymbolDatabaseBatchSizeInBytes { get; }
 
-        public HashSet<string> ThirdPartyIncludes { get; }
+        public HashSet<string> ThirdPartyDetectionIncludes { get; }
 
-        public HashSet<string> ThirdPartyExcludes { get; }
+        public HashSet<string> ThirdPartyDetectionExcludes { get; }
 
         public HashSet<string> SymDbThirdPartyDetectionIncludes { get; }
 

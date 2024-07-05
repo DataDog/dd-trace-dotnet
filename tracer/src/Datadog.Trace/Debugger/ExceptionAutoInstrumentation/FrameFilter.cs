@@ -64,7 +64,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return true;
             }
 
-            return AssemblyFilter.ShouldSkipAssembly(method.Module.Assembly);
+            return AssemblyFilter.ShouldSkipAssembly(method.Module.Assembly, LiveDebugger.Instance.Settings.ThirdPartyDetectionExcludes, LiveDebugger.Instance.Settings.ThirdPartyDetectionIncludes);
         }
 
         internal static bool ShouldSkipNamespaceIfOnTopOfStack(MethodBase method)
