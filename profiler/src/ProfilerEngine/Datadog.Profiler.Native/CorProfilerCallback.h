@@ -50,6 +50,7 @@ class IManagedThreadList;
 class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
+class TimerCreateCpuProfiler;
 
 
 #ifdef LINUX
@@ -240,6 +241,7 @@ private :
     ThreadLifetimeProvider* _pThreadLifetimeProvider = nullptr;
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
+    TimerCreateCpuProfiler* _pCpuProfiler = nullptr;
 #endif
 
     std::vector<std::unique_ptr<IService>> _services;

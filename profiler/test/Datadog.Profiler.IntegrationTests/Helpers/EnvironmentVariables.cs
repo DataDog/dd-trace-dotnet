@@ -27,5 +27,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string ThreadLifetimeEnabled = "DD_INTERNAL_THREAD_LIFETIME_ENABLED";
         public const string SsiDeployed = "DD_INJECTION_ENABLED";
         public const string EtwEnabled = "DD_INTERNAL_PROFILING_ETW_ENABLED";
+        public const string CpuProfilerType = "DD_INTERNAL_CPU_PROFILER_TYPE";
+        public const string CpuProfilingInterval = "DD_INTERNAL_CPU_PROFILING_INTERVAL";
     }
 }
