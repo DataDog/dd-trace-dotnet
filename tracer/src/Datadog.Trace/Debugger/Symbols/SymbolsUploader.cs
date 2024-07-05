@@ -38,7 +38,8 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly SemaphoreSlim _discoveryServiceSemaphore;
         private readonly SemaphoreSlim _enablementSemaphore;
         private readonly HashSet<string> _alreadyProcessed;
-        private readonly HashSet<string> _librariesToUpload;
+        private readonly HashSet<string> _symDb3rdPartyIncludes;
+        private readonly HashSet<string> _symDb3rdPartyExcludes;
         private readonly long _thresholdInBytes;
         private readonly CancellationTokenSource _cancellationToken;
         private readonly IBatchUploadApi _api;
@@ -68,7 +69,8 @@ namespace Datadog.Trace.Debugger.Symbols
             _discoveryServiceSemaphore = new SemaphoreSlim(0);
             _enablementSemaphore = new SemaphoreSlim(0);
             _thresholdInBytes = settings.SymbolDatabaseBatchSizeInBytes;
-            _librariesToUpload = settings.SymbolDatabaseIncludes;
+            _symDb3rdPartyIncludes = settings.SymDbThirdPartyDetectionIncludes;
+            _symDb3rdPartyExcludes = settings.SymDbThirdPartyDetectionExcludes;
             _cancellationToken = new CancellationTokenSource();
             _jsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             _discoveryService.SubscribeToChanges(ConfigurationChanged);
@@ -185,7 +187,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     return;
                 }
 
-                if (AssemblyFilter.ShouldSkipAssembly(assembly, null /*_librariesToUpload*/))
+                if (AssemblyFilter.ShouldSkipAssembly(assembly, _symDb3rdPartyExcludes, _symDb3rdPartyIncludes))
                 {
                     return;
                 }
