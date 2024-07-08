@@ -781,23 +781,32 @@ internal static partial class IastModule
         }
     }
 
-    internal static IastModuleResponse OnEmailHtmlInjection(MailMessage message)
+    internal static void OnEmailHtmlInjection(MailMessage? message)
     {
-        if (!Iast.Instance.Settings.Enabled || !message.IsBodyHtml)
+        if (!Iast.Instance.Settings.Enabled)
         {
-            return IastModuleResponse.Empty;
+            return;
         }
 
         try
         {
-            var text = message.Body;
             OnExecutedSinkTelemetry(IastInstrumentedSinks.EmailHtmlInjection);
-            return GetScope(text, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, Always);
+
+            if (message is null || !message.IsBodyHtml)
+            {
+                return;
+            }
+
+            var body = message.Body;
+
+            if (!string.IsNullOrEmpty(body))
+            {
+                GetScope(body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, Always, exclusionSecureMarks: SecureMarks.Xss);
+            }
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for email html injection.");
-            return IastModuleResponse.Empty;
         }
     }
 }
