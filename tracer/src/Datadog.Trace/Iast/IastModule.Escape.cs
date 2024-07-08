@@ -44,8 +44,11 @@ internal static partial class IastModule
                 return res;
             }
 
-            // Add the mark (exclusion) to the tainted ranges
-            tainted.Ranges = Ranges.CopyWithMark(tainted.Ranges, SecureMarks.Xss);
+            if (ReferenceEquals(res, text))
+            {
+                // Add the mark (exclusion) to the tainted ranges
+                tainted.Ranges = Ranges.CopyWithMark(tainted.Ranges, SecureMarks.Xss);
+            }
         }
         catch (Exception ex)
         {
