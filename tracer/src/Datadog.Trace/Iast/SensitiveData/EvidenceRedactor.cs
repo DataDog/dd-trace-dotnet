@@ -42,7 +42,7 @@ internal class EvidenceRedactor
             { VulnerabilityTypeName.HeaderInjection, new HeaderInjectionTokenizer(_timeout) },
             { VulnerabilityTypeName.NoSqlMongoDbInjection, new JsonTokenizer(_timeout) },
             { VulnerabilityTypeName.Xss, new TaintedRangeBasedTokenizer() },
-            { VulnerabilityTypeName.EmailHtmlInjection, new TaintedRangeBasedTokenizer(true) }
+            { VulnerabilityTypeName.EmailHtmlInjection, new TaintedRangeBasedTokenizer() }
         };
     }
 

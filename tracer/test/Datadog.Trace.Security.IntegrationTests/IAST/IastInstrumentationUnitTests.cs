@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mail;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -102,6 +103,9 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(Type), "InvokeMember", null, true)]
     [InlineData(typeof(Assembly), "Load", null, true)]
     [InlineData(typeof(Assembly), "LoadFrom", null, true)]
+    [InlineData(typeof(SmtpClient), "Send", new[] { "Void Send(System.String, System.String, System.String, System.String)" }, true)]
+    [InlineData(typeof(SmtpClient), "SendAsync", new[] { "Void SendAsync(System.String, System.String, System.String, System.String, System.Object)" }, true)]
+    [InlineData(typeof(SmtpClient), "SendMailAsync", new[] { "System.Threading.Tasks.Task SendMailAsync(System.String, System.String, System.String, System.String, System.Threading.CancellationToken)", "System.Threading.Tasks.Task SendMailAsync(System.String, System.String, System.String, System.String)" }, true)]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
@@ -224,6 +228,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(XmlNode))]
     [InlineData(typeof(Extensions))]
     [InlineData(typeof(XPathExpression))]
+    [InlineData(typeof(SmtpClient))]
     [InlineData(typeof(Activator), new string[] { "System.Activator::CreateInstance(System.AppDomain,System.String,System.String)" })]
 #if !NETFRAMEWORK
     #if NET6_0_OR_GREATER
