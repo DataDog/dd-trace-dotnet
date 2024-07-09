@@ -1011,49 +1011,61 @@ namespace Samples.Security.AspNetCore5.Controllers
             string smtpUsername = "", string smtpPassword = "", string smtpserver = "smtp-mail.outlook.com",
             int smtpPort = 587)
         {
-            SendMailAux(name, lastname, email, smtpUsername, smtpPassword, smtpserver, smtpPort);
-            return Content("Email sent");
+            return SendMailAux(name, lastname, email, smtpUsername, smtpPassword, smtpserver, smtpPort);
         }
 
         [HttpGet("SendEmail")]
         [Route("SendEmail")]
         public IActionResult SendEmail(string email, string name, string lastname)
         {
-            SendMailAux(name, lastname, email);
-            return Content("Email sent");
+            return SendMailAux(name, lastname, email);
         }
 
-        private static void SendMailAux(string firstName, string lastName, string email,
-            string smtpUsername = "", string smtpPassword = "", string smtpserver = "smtp-mail.outlook.com",
-            int smtpPort = 587)
+        private IActionResult SendMailAux(string firstName, string lastName, string email,
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
+            int smtpPort = 587, bool escape = false)
         {
             string contentHtml = $"Hi {firstName} {lastName}, <br />" +
                 "We appreciate you subscribing to our newsletter. To complete your subscription, kindly click the link below. <br />" +
                 "<a href=\"https://localhost/confirm?token=435345\">Complete your subscription</a>";
 
-            var subject = $"{firstName}, welcome!";
+            if (escape)
+            {
+                contentHtml = WebUtility.HtmlEncode(contentHtml);
+            }
+
+            var subject = firstName + " welcome!";
 
             if (string.IsNullOrEmpty(smtpUsername))
             {
                 smtpUsername = email;
             }
 
-            var mailMessage = new MailMessage();
-            mailMessage.From = new MailAddress(smtpUsername);
-            mailMessage.To.Add(email);
-            mailMessage.Subject = subject;
-            mailMessage.Body = contentHtml;
-            mailMessage.IsBodyHtml = true; // Set to true to indicate that the body is HTML
-
-            var client = new SmtpClient(smtpserver, smtpPort)
+            try
             {
-                Credentials = new NetworkCredential(smtpUsername, smtpPassword),
-                EnableSsl = true,
-                Timeout = 10000
-            };
-            client.Send(mailMessage);
-        }
 
+                var mailMessage = new MailMessage();
+                mailMessage.From = new MailAddress(smtpUsername);
+                mailMessage.To.Add(email);
+                mailMessage.Subject = subject;
+                mailMessage.Body = contentHtml;
+                mailMessage.IsBodyHtml = true; // Set to true to indicate that the body is HTML
+
+                var client = new SmtpClient(smtpserver, smtpPort)
+                {
+                    Credentials = new NetworkCredential(smtpUsername, smtpPassword),
+                    EnableSsl = true,
+                    Timeout = 1000
+                };
+                client.Send(mailMessage);
+            }
+            catch (SmtpException)
+            {
+                return StatusCode(404, "SMTP Error: mail message was not sent");
+            }
+
+            return Content("Email sent");
+        }
 
         static string CopyStringAvoidTainting(string original)
         {
