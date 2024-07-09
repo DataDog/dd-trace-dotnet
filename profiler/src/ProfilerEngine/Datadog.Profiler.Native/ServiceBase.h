@@ -19,7 +19,6 @@ protected:
     virtual bool StartImpl() = 0;
     virtual bool StopImpl() = 0;
 
-private:
     enum class State
     {
         Init,
@@ -28,6 +27,10 @@ private:
         Stopping,
         Stopped
     };
+
+    State GetState() const;
+
+private:
 
     friend std::string to_string(ServiceBase::State);
     std::atomic<State> _currentState;

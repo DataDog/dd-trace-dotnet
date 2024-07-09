@@ -172,7 +172,7 @@ public:
         StopTest();
         _workerThread.reset();
 
-        ProfilerSignalManager::Get()->Reset();
+        GetSignalManager()->Reset();
 
         SignalHandlerForTest::_instance.reset();
         sigaction(SIGUSR1, &_oldAction, nullptr);
@@ -245,7 +245,7 @@ public:
 
     static ProfilerSignalManager* GetSignalManager()
     {
-        return ProfilerSignalManager::Get();
+        return ProfilerSignalManager::Get(SIGUSR1);
     }
 
     static LinuxStackFramesCollector CreateStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration* configuration, CallstackProvider* p)
@@ -369,7 +369,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCa
 {
     SimulateInsideWrappedFunctions();
 
-    auto* signalManager = ProfilerSignalManager::Get();
+    auto* signalManager = GetSignalManager();
 
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
@@ -391,7 +391,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCa
 
 TEST_F(LinuxStackFramesCollectorFixture, MustNotCollectIfUnknownThreadId)
 {
-    auto* signalManager = ProfilerSignalManager::Get();
+    auto* signalManager = GetSignalManager();
 
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
