@@ -39,7 +39,7 @@ internal static class RaspModule
         CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.UrlAccess] = url }, AddressesConstants.UrlAccess);
     }
 
-    internal static void OnSqlI(string sql, IntegrationId id)
+    internal static void OnSqlQuery(string sql, IntegrationId id)
     {
         var ddbbType = SqlIntegrationIdToDDBBType(id);
         CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.DBStatement] = sql, [AddressesConstants.DBSystem] = ddbbType }, AddressesConstants.DBStatement);

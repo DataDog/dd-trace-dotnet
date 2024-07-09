@@ -4,10 +4,8 @@
 // </copyright>
 
 using System;
-using System.Net;
-using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Propagation;
 
 #nullable enable
 
@@ -55,8 +53,7 @@ public class WebClientAspect
     [AspectMethodInsertBefore("System.Net.WebClient::set_BaseAddress(System.String)")]
     public static object Review(string parameter)
     {
-        IastModule.OnSSRF(parameter);
-        RaspModule.OnSSRF(parameter);
+        VulnerabilitiesModule.OnSSRF(parameter);
         return parameter;
     }
 
@@ -118,8 +115,7 @@ public class WebClientAspect
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.Uri,System.String,System.Collections.Specialized.NameValueCollection)", 2)]
     public static object ReviewUri(Uri parameter)
     {
-        IastModule.OnSSRF(parameter.OriginalString);
-        RaspModule.OnSSRF(parameter.OriginalString);
+        VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
         return parameter;
     }
 }

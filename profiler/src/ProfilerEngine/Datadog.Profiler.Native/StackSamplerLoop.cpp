@@ -64,7 +64,7 @@ StackSamplerLoop::StackSamplerLoop(
     _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
     _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
-    _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled()},
+    _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled() && pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime},
     _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
@@ -75,6 +75,8 @@ StackSamplerLoop::StackSamplerLoop(
     Log::Info("Wall time sampled threads = ", _walltimeThreadsThreshold);
     Log::Info("Max CodeHotspots sampled threads = ", _codeHotspotsThreadsThreshold);
     Log::Info("Max CPU sampled threads = ", _cpuThreadsThreshold);
+    Log::Info("Manual Cpu profiler is ", (_isCpuEnabled) ? "enabled" : "disabled");
+    Log::Info("Wall-time profiler is ", (_isWalltimeEnabled) ? "enabled" : "disabled");
 
     _pCorProfilerInfo->AddRef();
 

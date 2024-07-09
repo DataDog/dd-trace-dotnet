@@ -1,0 +1,57 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "23": {
+              "arguments": {
+                "arg": {
+                  "type": "String",
+                  "value": "TryFinallyTest"
+                },
+                "this": {
+                  "type": "TryFinallyTest",
+                  "value": "TryFinallyTest"
+                }
+              },
+              "locals": {
+                "ret": {
+                  "type": "Int32",
+                  "value": "0"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "TryFinallyTest.cs",
+            "lines": [
+              "23"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Test",
+      "name": "Samples.Probes.TestRuns.SmokeTests.TryFinallyTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

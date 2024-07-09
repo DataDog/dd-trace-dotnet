@@ -5,6 +5,7 @@
 #include "shared/src/native-src/string.h"
 
 std::atomic<std::uint32_t> ManagedThreadInfo::s_nextProfilerThreadInfoId{1};
+thread_local std::shared_ptr<ManagedThreadInfo> ManagedThreadInfo::CurrentThreadInfo{nullptr};
 
 std::uint32_t ManagedThreadInfo::GenerateProfilerThreadInfoId()
 {

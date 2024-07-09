@@ -40,6 +40,10 @@ public:
     explicit ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pCorProfilerInfo);
     ~ManagedThreadInfo() = default;
 
+    // This field is set in the CorProfilerCallback. It's based on the assumption that the thread's calling ThreadAssignedToOSThread
+    // is the same native thread assigned to the managed thread.
+    static thread_local std::shared_ptr<ManagedThreadInfo> CurrentThreadInfo;
+
     inline std::uint32_t GetProfilerThreadInfoId() const;
 
     inline ThreadID GetClrThreadId() const;
@@ -81,7 +85,6 @@ public:
     inline TraceContextTrackingInfo* GetTraceContextPointer();
     inline std::uint64_t GetLocalRootSpanId() const;
     inline std::uint64_t GetSpanId() const;
-    inline bool CanReadTraceContext() const;
     inline bool HasTraceContext() const;
 
     inline std::string GetProfileThreadId() override;
@@ -90,14 +93,19 @@ public:
 #ifdef LINUX
     inline void SetSharedMemory(volatile int* memoryArea);
     inline void MarkAsInterrupted();
+    inline int32_t SetTimerId(int32_t timerId);
+    inline int32_t GetTimerId() const;
 #endif
     inline bool CanBeInterrupted() const;
 
     inline AppDomainID GetAppDomainId();
 
+    inline std::pair<std::uint64_t, std::uint64_t> GetTracingContext() const;
+
 private:
     inline std::string BuildProfileThreadId();
     inline std::string BuildProfileThreadName();
+    inline bool CanReadTraceContext() const;
 
 private:
     static constexpr std::uint32_t MaxProfilerThreadInfoId = 0xFFFFFF; // = 16,777,215
@@ -140,6 +148,9 @@ private:
     ICorProfilerInfo4* _info;
     std::shared_mutex _threadIdMutex;
     std::shared_mutex _threadNameMutex;
+#ifdef LINUX
+    std::int32_t _timerId;
+#endif
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()
@@ -452,6 +463,16 @@ inline void ManagedThreadInfo::SetSharedMemory(volatile int* memoryArea)
 {
     _sharedMemoryArea = memoryArea;
 }
+
+inline std::int32_t ManagedThreadInfo::SetTimerId(std::int32_t timerId)
+{
+    return std::exchange(_timerId, timerId);
+}
+
+inline std::int32_t ManagedThreadInfo::GetTimerId() const
+{
+    return _timerId;
+}
 #endif
 
 inline AppDomainID ManagedThreadInfo::GetAppDomainId()
@@ -463,4 +484,18 @@ inline AppDomainID ManagedThreadInfo::GetAppDomainId()
     AppDomainID appDomainId{0};
     HRESULT hr = _info->GetThreadAppDomain(_clrThreadId, &appDomainId);
     return appDomainId;
+}
+
+inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingContext() const
+{
+    std::uint64_t localRootSpanId = 0;
+    std::uint64_t spanId = 0;
+
+    if (CanReadTraceContext())
+    {
+        localRootSpanId = GetLocalRootSpanId();
+        spanId = GetSpanId();
+    }
+
+    return {localRootSpanId, spanId};
 }
