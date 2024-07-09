@@ -1025,7 +1025,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
             int smtpPort = 587, bool escape = false)
         {
-            string contentHtml = $"Hi {firstName} {lastName}, <br />" +
+            var contentHtml = $"Hi " + firstName + " " + lastName + ", <br />" +
                 "We appreciate you subscribing to our newsletter. To complete your subscription, kindly click the link below. <br />" +
                 "<a href=\"https://localhost/confirm?token=435345\">Complete your subscription</a>";
 
@@ -1061,7 +1061,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
             catch (SmtpException)
             {
-                return StatusCode(404, "SMTP Error: mail message was not sent");
+                return StatusCode(200, "Mail message was not sent");
             }
 
             return Content("Email sent");
