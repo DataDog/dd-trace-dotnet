@@ -14,6 +14,8 @@ using System.Net.Mail;
 using System.Text.RegularExpressions;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast.Aspects;
 using Datadog.Trace.Iast.Aspects.System;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.SensitiveData;
@@ -781,7 +783,7 @@ internal static partial class IastModule
         }
     }
 
-    internal static void OnEmailHtmlInjection(MailMessage? message)
+    internal static void OnEmailHtmlInjection(object? message)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -792,17 +794,19 @@ internal static partial class IastModule
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.EmailHtmlInjection);
 
-            if (message is null || !message.IsBodyHtml)
+            if (message is null)
             {
                 return;
             }
 
-            var body = message.Body;
+            var messageDuck = message.DuckCast<IMailMessage>();
 
-            if (!string.IsNullOrEmpty(body))
+            if (messageDuck?.IsBodyHtml is not true || string.IsNullOrEmpty(messageDuck.Body))
             {
-                GetScope(body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, Always, exclusionSecureMarks: SecureMarks.Xss);
+                return;
             }
+
+            GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, Always, exclusionSecureMarks: SecureMarks.Xss);
         }
         catch (Exception ex)
         {

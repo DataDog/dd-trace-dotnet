@@ -4,8 +4,6 @@
 // </copyright>
 #nullable enable
 
-using System.Net.Mail;
-using System.Threading;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
@@ -29,7 +27,7 @@ public class SmtpClientAspect
 #if NETCOREAPP3_1_OR_GREATER
     [AspectMethodInsertBefore("System.Net.Mail.SmtpClient::SendMailAsync(System.Net.Mail.MailMessage,System.Threading.CancellationToken)", 1)]
 #endif
-    public static MailMessage? Send(MailMessage? message)
+    public static object? Send(object? message)
     {
         IastModule.OnEmailHtmlInjection(message);
         return message;
