@@ -100,6 +100,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.DirectoryListingLeak => nameof(Datadog.Trace.Configuration.IntegrationId.DirectoryListingLeak),
             Datadog.Trace.Configuration.IntegrationId.SessionTimeout => nameof(Datadog.Trace.Configuration.IntegrationId.SessionTimeout),
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual => nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual),
+            Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection => nameof(Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection),
             _ => value.ToString(),
         };
 
@@ -183,6 +184,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.DirectoryListingLeak,
             Datadog.Trace.Configuration.IntegrationId.SessionTimeout,
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual,
+            Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection,
         };
 
     /// <summary>
@@ -266,5 +268,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.DirectoryListingLeak),
             nameof(Datadog.Trace.Configuration.IntegrationId.SessionTimeout),
             nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual),
+            nameof(Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection),
         };
 }
