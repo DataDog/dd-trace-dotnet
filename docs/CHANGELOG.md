@@ -1,5 +1,92 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+
+## [Release 2.54.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.54.0)
+
+## Summary
+
+* [ASM] Exploit prevention: Support SQL Injection attacks
+* [Profiler] Add `timer_create`-based CPU profiling on Linux
+* Multiple fixes
+
+## Changes
+
+### Tracer
+* [Tracer] Rejit refactor to support multiple products in the same method (#5533)
+* [Tracer] Move definitions to native side (#5592)
+* [Remote Configuration] Buffer the response and include in error (#5675)
+* [Dynamic Instrumentation] DEBUG-2356 3rd party detection Include\exclude for SymDB (#5681)
+* [TRACER] Ensure synchronization in MethodInfo lazy operations (#5698)
+* Config refactor - distinguish between "not present" and "not valid" (#5713)
+* Config refactor - support "converters" for other configuration types (#5714)
+* Config refactor - fix struct/class `T` nullable ref issues, and allow "raw" access to `ConfigurationResult` (#5715)
+* Config refactor - remove duplication and OTel-specific code from `ConfigurationBuilder` (#5716)
+* [Tracing] fix precedence of remote vs local sampling rules (#5720)
+* [Tracer] Extracting Last Parent Id If Conflicting SpanIds are Found with The W3C Headers (#5721)
+* Fix flake in `SimpleActivitiesAndSpansTest` (#5735)
+* [Dynamic Instrumentation] Fix SymDB config keys to match RFC (#5737)
+* Do not reset `Activity.Id` for non-W3C formats (#5739)
+* Fix `ContentEncoding` in `IApiResponse` (#5748)
+
+### CI Visibility
+* Update CI Visibility metrics to latest requirements (#5747)
+
+### ASM
+* [ASM] Exploit prevention: Support SQL Injection attacks (#5651)
+* [ASM] Fix WAF timeout false positives (#5724)
+* [ASM] Capture ObjectDisposedException (#5732)
+* [ASM][IAST] Add support for CallSites in functions with by ref value type arguments (#5755)
+* [ASM] Iast/Rasp vulnerability manager (#5764)
+* [ASM] Fix - InvalidOperationException/ConcurrentOperationsNotSupported (#5765)
+
+### Continuous Profiler
+* [Profiler] Add `timer_create`-based CPU profiling on Linux (#5476)
+* [Profiler] Add custom dl_iterate_phdr and use it in libunwind (#5660)
+* [Profiler] Add heap size metrics (gen2, loh and poh) (#5669)
+* [Profiler] Add global flag to prevent the profiler from stackwalking while the app is crashing (#5729)
+
+### Debugger
+* [Dynamic Instrumentation] Fixed instrumentation error (InvalidProgramException) related to EH clauses (#5774)
+
+### Build / Test
+* Update Windows hosted image to latest software (#5416)
+* Build native test binaries in build jobs (#5614)
+* Run smoke tests as though they're in SSI (#5673)
+* Enforce not referencing Datadog.Trace directly in sample projects (#5683)
+* [builds] fix `build_in_docker` scripts (#5688)
+* [Tracing] [Samples] Update MicrosoftExtensionsExample.csproj to remove incompatible library (#5689)
+* Update codeowners to make Directory.Build.props to make them universal (#5703)
+* Build against `macos-12` instead of `macos-11` (#5707)
+* Set CODEOWNERS of debugger configuration keys to the debugger team (#5709)
+* Add basic smoke tests for macos (#5710)
+* Update workflow file again (#5712)
+* Try to fix the build by changing BuildId (#5718)
+* Fix Gitlab build and codeCoverage bugs (#5723)
+* Fix some macOS build issues (#5725)
+* Better logs folder creation in chiseled smoke test (#5731)
+* Add workflow monitor to all workflows (#5733)
+* Minor github action changes (#5734)
+* Revert "Add workflow monitor to all workflows (#5733)" (#5741)
+* Make BuildTracerHome build the native profiler (#5750)
+* Skip flaky tests on .NET Core 2.1 (#5753)
+* Add attribute for skipping tests in CI without using `[Fact(Skip = "")]` (#5756)
+* Re-order integrations folder in CODEOWNERS (#5762)
+* Stop testing with a specific build in macos smoke tests (#5772)
+* Filter out .NET Core 3.1 NuGet tests in prerelease versions (#5773)
+* Switch system-tests to python 3.12 (#5777)
+
+### Miscellaneous
+* [Test Package Versions Bump] Updating package versions (#5639)
+* Single-step guard rails: Use stdin instead of args to invoke telemetry (#5677)
+* [Test Package Versions Bump] Updating package versions (#5699)
+* [Test Package Versions Bump] Updating package versions (#5727)
+* [Test Package Versions Bump] Updating package versions (#5752)
+* Lock access to rejitters (#5757)
+* Revert native changes that moved the definitions to the native side (#5768)
+
+
+[Changes since 2.53.2](https://github.com/DataDog/dd-trace-dotnet/compare/v2.53.2...v2.54.0)
+
 ## [Release 2.53.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.53.0)
 
 ## Summary
