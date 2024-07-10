@@ -58,11 +58,6 @@ namespace Datadog.Trace.Activity.Handlers
                 var activityTraceId = w3cActivity.TraceId;
                 var activitySpanId = w3cActivity.SpanId;
 
-                if (activityTraceId != null! && activitySpanId != null!)
-                {
-                    activityKey = activityTraceId + activitySpanId;
-                }
-
                 // If the user has specified a parent context, get the parent Datadog SpanContext
                 if (w3cActivity is { ParentSpanId: { } parentSpanId, ParentId: { } parentId })
                 {
@@ -110,6 +105,7 @@ namespace Datadog.Trace.Activity.Handlers
                     {
                         // TraceId (always 32 chars long even when using 64-bit ids)
                         w3cActivity.TraceId = activeSpan.Context.RawTraceId;
+                        activityTraceId = w3cActivity.TraceId;
 
                         // SpanId (always 16 chars long)
                         w3cActivity.ParentSpanId = activeSpan.Context.RawSpanId;
@@ -136,6 +132,11 @@ namespace Datadog.Trace.Activity.Handlers
 
                     rawTraceId = activityTraceId;
                     rawSpanId = activitySpanId;
+                }
+
+                if (activityTraceId != null! && activitySpanId != null!)
+                {
+                    activityKey = activityTraceId + activitySpanId;
                 }
             }
 
