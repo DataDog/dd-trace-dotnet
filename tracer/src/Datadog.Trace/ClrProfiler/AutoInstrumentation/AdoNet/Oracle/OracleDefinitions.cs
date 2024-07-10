@@ -11,7 +11,14 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Oracle.ManagedDataAccess",
     TypeName = "Oracle.ManagedDataAccess.Client.OracleCommand",
-    MinimumVersion = "4.122.0",
+    // The netframework nuget depends on the v4.122.* of the dll.
+    // It seems that the pattern is 4.122.<major version of the nuget>.
+    // For netcore, the major version of the dll matches the major version of the nuget,
+    // that was v2 and v3, but they have recently bumped it from 3 to 23
+    // (to have matching version numbers between netcore and netframework I suppose).
+    // here we target the older versions of the netcore dll, and the netframework.
+    // instrumentation for v23 is below, separated to make sure that we don't instrument a hypothetical v5 by mistake.
+    MinimumVersion = "2.0.0",
     MaximumVersion = "4.122.*",
     IntegrationName = nameof(IntegrationId.Oracle),
     DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
@@ -33,8 +40,9 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Oracle.ManagedDataAccess",
     TypeName = "Oracle.ManagedDataAccess.Client.OracleCommand",
-    MinimumVersion = "2.0.0",
-    MaximumVersion = "2.*.*",
+    // see comment above on version numbers
+    MinimumVersion = "23.0.0",
+    MaximumVersion = "23.*.*",
     IntegrationName = nameof(IntegrationId.Oracle),
     DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
@@ -49,7 +57,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         // DbDataReader Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteDbDataReader(CommandBehavior)
         typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
         // object Oracle.ManagedDataAccess.Client.OracleCommand.ExecuteScalar()
-        typeof(CommandExecuteScalarAttribute),
+        typeof(CommandExecuteScalarAttribute)
     })]
 
 [assembly: AdoNetClientInstrumentMethods(
