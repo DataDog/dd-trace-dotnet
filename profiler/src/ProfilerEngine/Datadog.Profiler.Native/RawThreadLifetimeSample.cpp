@@ -22,5 +22,5 @@ void RawThreadLifetimeSample::OnTransform(
     }
 
     // Set an arbitratry value to avoid being discarded by the backend
-    sample->AddValue(valueOffset[0], 1);
+    sample->AddValue(1, valueOffset[0]);
 }
