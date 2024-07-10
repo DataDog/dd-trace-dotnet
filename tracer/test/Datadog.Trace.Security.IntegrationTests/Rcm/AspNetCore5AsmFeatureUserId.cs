@@ -31,9 +31,14 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class AspNetCore5AsmFeatureUserIdSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : AspNetCore5AsmFeatureUserId(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmFeatureUserIdSecurityEnabled));
 
-    public abstract class AspNetCore5AsmFeatureUserId(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName)
-        : RcmBase(fixture, outputHelper, enableSecurity, testName)
+    public abstract class AspNetCore5AsmFeatureUserId : RcmBase
     {
+        public AspNetCore5AsmFeatureUserId(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName)
+            : base(fixture, outputHelper, enableSecurity, testName)
+        {
+            EnableRasp(false);
+        }
+
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public async Task TestChangeUserIdCollection()
