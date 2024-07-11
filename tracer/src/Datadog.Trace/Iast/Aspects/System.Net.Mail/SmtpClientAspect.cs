@@ -15,9 +15,9 @@ namespace Datadog.Trace.Iast.Aspects;
 public class SmtpClientAspect
 {
     /// <summary>
-    /// Launches a email html injection vulnerability if the input is tainted.
-    /// No need to instrument methods with these arguments (string from, string recipients, string subject, string body)
-    /// since those will send a the email as plain text.
+    /// Launches a email html injection vulnerability if the email body is tainted, it's not escaped and the email is html compatible.
+    /// No need to instrument methods Send(string from, string recipients, string subject, string body) and similar
+    /// since those methods would send the email as plain text.
     /// </summary>
     /// <param name="message">the email message that is going to be sent</param>
     /// <returns>the MailMessage</returns>

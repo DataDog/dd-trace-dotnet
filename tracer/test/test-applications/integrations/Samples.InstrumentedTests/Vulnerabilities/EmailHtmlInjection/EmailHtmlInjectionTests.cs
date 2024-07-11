@@ -12,15 +12,15 @@ using System.Web;
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 public class EmailHtmlInjectionTests : InstrumentationTestsBase
 { 
-    private string taintedName = "Alice<h1>Hi</h1>";
-    private string untaintedName = "Peter";
-    private string taintedLastName = "Stevens";
-    private string untaintedLastName = "Smith";
-    private string email = "alice@aliceland.com";
-    private string smtpServer = "127.0.0.1";
-    private string smtpUsername = "alice@alice.com";
-    private int smtpPort = 587;
-    private string smtpPassword = "password";
+    private static string taintedName = "Alice<h1>Hi</h1>";
+    private static string untaintedName = "Peter";
+    private static string taintedLastName = "Stevens";
+    private static string untaintedLastName = "Smith";
+    private static string email = "alice@aliceland.com";
+    private static string smtpServer = "127.0.0.1";
+    private static string smtpUsername = "alice@alice.com";
+    private static int smtpPort = 587;
+    private static string smtpPassword = "password";
     protected static string emailHtmlInjectionType = "EMAIL_HTML_INJECTION";
     private static SmtpClient client;
 

@@ -62,6 +62,8 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.5" />
     <PackageReference Include="Npgsql" Version="4.0.11" />
     <PackageReference Include="RestSharp" Version="110.2.0" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
@@ -103,11 +105,4 @@
     <PackageReference Include="System.DirectoryServices.Protocols" Version="6.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="6.0.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="System.Web" />
-    <Reference Include="System.Web.Extensions" />
-  </ItemGroup>
-
-
 </Project>

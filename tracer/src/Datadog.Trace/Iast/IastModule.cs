@@ -6,11 +6,9 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Net.Mail;
 using System.Text.RegularExpressions;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
@@ -806,7 +804,8 @@ internal static partial class IastModule
                 return;
             }
 
-            GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, Always, exclusionSecureMarks: SecureMarks.Xss);
+            // We use the same secure marks as XSS
+            GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, exclusionSecureMarks: SecureMarks.Xss);
         }
         catch (Exception ex)
         {
