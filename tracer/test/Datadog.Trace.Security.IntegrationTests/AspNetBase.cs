@@ -13,6 +13,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -44,6 +45,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecRaspWafDuration = new(@"_dd.appsec.rasp.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecRaspWafDurationWithBindings = new(@"_dd.appsec.rasp.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecSpanIdRegex = (new Regex("\"span_id\":\\d+"));
+        private static readonly Type MetaStructHelperType = Type.GetType("Datadog.Trace.AppSec.Rasp.MetaStructHelper, Datadog.Trace");
+        private static MethodInfo _metaStructByteArrayToObject = MetaStructHelperType.GetMethod("ByteArrayToObject", BindingFlags.Public | BindingFlags.Static);
         private readonly string _testName;
         private readonly HttpClient _httpClient;
         private readonly CookieContainer _cookieContainer;
@@ -131,11 +134,25 @@ namespace Datadog.Trace.Security.IntegrationTests
                                 }
                             }
 
-                            if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
+                            if (target.MetaStruct != null)
                             {
-                                var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
-                                var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
-                                target.Tags[Tags.AppSecJson] = orderedAppSecJson;
+                                // We want to retrieve the appsec event data from the meta struct to validate it in snapshots
+                                // But that's hard to debug if we only see the binary data
+                                // So move the meta struct appsec data to a fake tag to validate it in snapshots
+                                if (target.MetaStruct.TryGetValue("appsec", out var appsec))
+                                {
+                                    var appSecMetaStruct = _metaStructByteArrayToObject.Invoke(null, [appsec]);
+                                    var orderedAppSecJson = JsonConvert.SerializeObject(appSecMetaStruct, _jsonSerializerSettingsOrderProperty);
+                                    target.MetaStruct.Remove("appsec");
+                                    var metaStructSnapshotTestsTag = "_dd.appsec.meta-struct.test";
+                                    target.Tags.Add(metaStructSnapshotTestsTag, orderedAppSecJson);
+                                }
+
+                                // Remove all data from meta structs keys, no need to get the binary data for other keys
+                                foreach (var item in target.MetaStruct)
+                                {
+                                    target.MetaStruct[item.Key] = [];
+                                }
                             }
 
                             return VerifyHelper.ScrubStringTags(target, target.Tags);
@@ -154,7 +171,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
             }
 
-            var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json"));
+            var appsecSpans = spans.Where(s => s.MetaStruct != null && s.MetaStruct.ContainsKey("appsec"));
             if (appsecSpans.Any())
             {
                 appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]

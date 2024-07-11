@@ -37,7 +37,7 @@ public class SpanMetaStructTests
                     MetaStructHelper.StackTraceInfoToDictionary("type2222", "dotnet", "test55555", null, new List<Dictionary<string, object>>() { stackFrame3, stackFrame4 }),
                 };
 
-    // _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["id"],"value":"appscan_fingerprint"}]}]}]},
+    // appsec event: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["id"],"value":"appscan_fingerprint"}]}]}]},
     private static List<object> appsecData =
                 new()
                 {
