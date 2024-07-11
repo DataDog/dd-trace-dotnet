@@ -228,7 +228,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(XmlNode))]
     [InlineData(typeof(Extensions))]
     [InlineData(typeof(XPathExpression))]
-    [InlineData(typeof(SmtpClient))]
+    [InlineData(typeof(SmtpClient), new[] { "System.Net.Mail.SmtpClient::SendMailAsync(System.Net.Mail.MailMessage,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])]" })]
     [InlineData(typeof(Activator), new string[] { "System.Activator::CreateInstance(System.AppDomain,System.String,System.String)" })]
 #if !NETFRAMEWORK
     #if NET6_0_OR_GREATER
