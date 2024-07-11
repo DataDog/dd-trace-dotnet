@@ -1057,6 +1057,44 @@ namespace Datadog.Trace.Tests.Configuration
             value.Value.Should().Be(expected);
         }
 
+        // profiling takes precedence over SSI
+        // "auto" is a special profiling value that enables profiling when deployed via SSI
+        // the ssi env var is not used yet to enable the profiler
+        [Theory]
+        [InlineData("1", null, true)]
+        [InlineData("0", null, false)]
+        [InlineData("true", null, true)]
+        [InlineData("auto", null, true)]
+        [InlineData("1", "not used", true)]
+        [InlineData("0", "not used", false)]
+        [InlineData("true", "not used", true)]
+        [InlineData("auto", "not used", true)]
+        [InlineData("invalid", "", false)]
+        [InlineData("invalid", "anything", false)]
+        [InlineData("", null, false)]
+        [InlineData("", "anything", false)]
+        [InlineData(null, null, false)]
+        [InlineData(null, "", false)]
+        [InlineData(null, "anything", false)]
+        public void ProfilingEnabled(string profilingValue, string ssiValue, bool expected)
+        {
+            var values = new List<(string, string)>();
+            if (profilingValue is not null)
+            {
+                values.Add((Datadog.Trace.ContinuousProfiler.ConfigurationKeys.ProfilingEnabled, profilingValue));
+            }
+
+            if (ssiValue is not null)
+            {
+                values.Add((Datadog.Trace.ContinuousProfiler.ConfigurationKeys.SsiDeployed, ssiValue));
+            }
+
+            var source = CreateConfigurationSource(values.ToArray());
+            var settings = new TracerSettings(source);
+
+            settings.ProfilingEnabledInternal.Should().Be(expected);
+        }
+
         private void SetAndValidateStatusCodes(Action<TracerSettings, IEnumerable<int>> setStatusCodes, Func<TracerSettings, bool[]> getStatusCodes)
         {
             var settings = new TracerSettings();

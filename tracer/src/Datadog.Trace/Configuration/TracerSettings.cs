@@ -98,9 +98,23 @@ namespace Datadog.Trace.Configuration
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
             }
 
+            // With SSI, beyond ContinuousProfiler.ConfigurationKeys.ProfilingEnabled (true or auto vs false),
+            // the profiler could be enabled via ContinuousProfiler.ConfigurationKeys.SsiDeployed:
+            //  - if it contains "profiler", the profiler is enabled after 30 seconds + at least 1 span
+            //  - if not, the profiler needed to be loaded by the CLR but no profiling will be done, only telemetry metrics will be sent
+            // So, for the Tracer, the profiler should be seen as enabled if ContinuousProfiler.ConfigurationKeys.SsiDeployed has a value
+            // (even without "profiler") so that spans will be sent to the profiler.
             ProfilingEnabledInternal = config
-                .WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)
-                .AsBool(defaultValue: false);
+                         .WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)
+                         .GetAs(
+                            converter: x => x switch
+                            {
+                                "auto" => true,
+                                _ when x.ToBoolean() is { } boolean => boolean,
+                                _ => ParsingResult<bool>.Failure(),
+                            },
+                            getDefaultValue: () => false,
+                            validator: null);
 
             EnvironmentInternal = config
                          .WithKeys(ConfigurationKeys.Environment)
