@@ -344,7 +344,6 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled")
     {
         SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
     }
 
     // When the request is finished without this X-Content-Type-Options: nosniff header and the content-type of the request looks

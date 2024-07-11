@@ -1008,7 +1008,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         [HttpGet("SendEmailSmtpData")]
         [Route("SendEmailSmtpData")]
         public IActionResult SendEmailSmtpData(string email, string name, string lastname,
-            string smtpUsername = "", string smtpPassword = "", string smtpserver = "smtp-mail.outlook.com",
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
             int smtpPort = 587)
         {
             return SendMailAux(name, lastname, email, smtpUsername, smtpPassword, smtpserver, smtpPort);
