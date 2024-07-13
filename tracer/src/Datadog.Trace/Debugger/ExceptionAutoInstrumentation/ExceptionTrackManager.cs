@@ -60,7 +60,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             if (!_isInitialized)
             {
-                Log.Information(exception, "Exception Track Manager is not initialized yet. Skipping the processing of an exception. Span = {Span}", span);
+                Log.Information(exception, "Exception Track Manager is not initialized yet. Skipping the processing of an exception. Exception = {Exception}, Span = {Span}", exception?.ToString(), span);
                 return;
             }
 
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             // and marked as error by the service entry/root span.
             if (!span.IsRootSpan || exception == null || !IsSupportedExceptionType(exception))
             {
-                Log.Information(exception, "Skipping the processing of the exception. Span = {Span}", span);
+                Log.Information(exception, "Skipping the processing of the exception. Exception = {Exception}, Span = {Span}", exception?.ToString(), span.ToString());
                 return;
             }
 
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "An exception was thrown while processing an exception for tracking.");
+                Log.Error(ex, "An exception was thrown while processing an exception for tracking. Exception = {Exception}, Span = {Span}", exception.ToString(), span.ToString());
             }
         }
 
@@ -157,7 +157,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 if (rootSpan == null)
                 {
-                    Log.Warning("rootSpan is null while processing invalidated case. Should not happen. exception: {Exception}", exception.ToString());
+                    Log.Error("rootSpan is null while processing invalidated case. Should not happen. exception: {Exception}", exception.ToString());
                     return;
                 }
 
@@ -192,26 +192,26 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
             else if (trackedExceptionCase.IsCollecting)
             {
-                Log.Information("Exception case re-occurred, data can be collected. Exception details: {FullName} {Message}.", exception.GetType().FullName, exception.Message);
+                Log.Information("Exception case re-occurred, data can be collected. Exception : {FullName} {Message}.", exception.GetType().FullName, exception.Message);
 
                 var shouldCheckWhyThereAreNoFrames = false;
 
                 if (rootSpan == null)
                 {
-                    Log.Information("The RootSpan is null. Exception: {Exception}", exception.ToString());
+                    Log.Error("The RootSpan is null. Exception: {Exception}", exception.ToString());
                     shouldCheckWhyThereAreNoFrames = true;
                 }
 
                 if (!ShadowStackHolder.IsShadowStackTrackingEnabled)
                 {
-                    Log.Warning("The shadow stack is not enabled, while processing IsCollecting state of an exception. Exception details: {FullName} {Message}.", exception.GetType().FullName, exception.Message);
+                    Log.Error("The shadow stack is not enabled, while processing IsCollecting state of an exception. Exception: {Exception}.", exception.ToString());
                     shouldCheckWhyThereAreNoFrames = true;
                 }
 
                 var resultCallStackTree = shouldCheckWhyThereAreNoFrames ? null : ShadowStackHolder.ShadowStack!.CreateResultReport(exceptionPath: exception);
                 if (resultCallStackTree == null || !resultCallStackTree.Frames.Any())
                 {
-                    Log.Error("ExceptionTrackManager: Checking why there are no frames captured for exception: {Exception}.", exception.ToString());
+                    Log.Warning("ExceptionTrackManager: Checking why there are no frames captured for exception: {Exception}.", exception.ToString());
 
                     // Check if we failed to instrument all the probes.
 
@@ -251,7 +251,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 {
                     if (rootSpan == null)
                     {
-                        Log.Warning("The RootSpan is null in the branch of extracing snapshots. Should not happen. Exception: {Exception}", exception.ToString());
+                        Log.Error("The RootSpan is null in the branch of extracing snapshots. Should not happen. Exception: {Exception}", exception.ToString());
                         return;
                     }
 
@@ -518,7 +518,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                           Reverse().
                                           SkipWhile(frame =>
                                           {
-                                              var method = frame?.GetMethod();
+                                              MethodBase? method;
+
+                                              try
+                                              {
+                                                  method = frame?.GetMethod();
+                                                  var token = method?.MetadataToken;
+                                              }
+                                              catch
+                                              {
+                                                  return true;
+                                              }
 
                                               if (method == null)
                                               {
@@ -543,7 +553,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     continue;
                 }
 
-                var method = frame.GetMethod();
+                MethodBase? method;
+                try
+                {
+                    method = frame.GetMethod();
+                    var token = method?.MetadataToken;
+                }
+                catch
+                {
+                    continue;
+                }
 
                 if (method == null)
                 {
