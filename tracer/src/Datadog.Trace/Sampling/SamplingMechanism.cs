@@ -18,14 +18,14 @@ internal static class SamplingMechanism
     /// receives any rates from agent and there are no rules configured.
     /// The only available sampling priority <see cref="SamplingPriorityValues.AutoKeep"/> (1).
     /// </summary>
-    public const int Default = 0;
+    public const string Default = "-0";
 
     /// <summary>
     /// A sampling decision was made using a sampling rate computed automatically by the Agent.
     /// The available sampling priorities are <see cref="SamplingPriorityValues.AutoReject"/> (0)
     /// and <see cref="SamplingPriorityValues.AutoKeep"/> (1).
     /// </summary>
-    public const int AgentRate = 1;
+    public const string AgentRate = "-1";
 
     /// <summary>
     /// A sampling decision was made using a sampling rate computed automatically by the backend.
@@ -34,7 +34,7 @@ internal static class SamplingMechanism
     /// (Reserved for future use.)
     /// </summary>
     [Obsolete("This value is reserved for future use.")]
-    public const int RemoteRateAuto = 2;
+    public const string RemoteRateAuto = "-2";
 
     /// <summary>
     /// A sampling decision was made using a trace sampling rule or
@@ -42,20 +42,20 @@ internal static class SamplingMechanism
     /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
     /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
-    public const int LocalTraceSamplingRule = 3;
+    public const string LocalTraceSamplingRule = "-3";
 
     /// <summary>
     /// A sampling decision was made manually by the user.
     /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
     /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
-    public const int Manual = 4;
+    public const string Manual = "-4";
 
     /// <summary>
     /// A sampling decision was made by ASM (formerly AppSec), probably due to a security event.
     /// The sampling priority is always <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
-    public const int Asm = 5;
+    public const string Asm = "-5";
 
     /// <summary>
     /// A sampling decision was made using a sampling rule configured remotely by the user.
@@ -64,31 +64,34 @@ internal static class SamplingMechanism
     /// (Reserved for future use.)
     /// </summary>
     [Obsolete("This value is reserved for future use.")]
-    public const int RemoteRateUser = 6;
+    public const string RemoteRateUser = "-6";
 
     /// <summary>
     /// A sampling decision was made using a sampling rule configured remotely by Datadog.
     /// (Reserved for future use.)
     /// </summary>
     [Obsolete("This value is reserved for future use.")]
-    public const int RemoteRateDatadog = 7;
+    public const string RemoteRateDatadog = "-7";
 
     /// <summary>
     /// A sampling decision was made using a span sampling rule configured by the user on the tracer.
     /// The only available sampling priority is <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
+    /// <remarks>
+    /// Note that this value is <see cref="int"/> because it is used in a numeric tag.
+    /// </remarks>
     public const int SpanSamplingRule = 8;
 
     /// <summary>
     /// A sampling decision was made using the OTLP-compatible probabilistic sampling in the Agent.
     /// </summary>
     [Obsolete("This value is used in the trace agent, not in tracing libraries.")]
-    public const int OtlpIngestProbabilisticSampling = 9;
+    public const string OtlpIngestProbabilisticSampling = "-9";
 
     /// <summary>
     /// Traces coming from spark/databricks workload tracing
     /// </summary>
-    public const int DataJobsMonitoring = 10;
+    public const string DataJobsMonitoring = "-10";
 
     /// <summary>
     /// A sampling decision was made using a trace sampling rule that was configured remotely by the user
@@ -96,7 +99,7 @@ internal static class SamplingMechanism
     /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
     /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
-    public const int RemoteUserSamplingRule = 11;
+    public const string RemoteUserSamplingRule = "-11";
 
     /// <summary>
     /// A sampling decision was made using a trace sampling rule that was computed remotely by Datadog
@@ -104,30 +107,5 @@ internal static class SamplingMechanism
     /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
     /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
-    public const int RemoteAdaptiveSamplingRule = 12;
-
-    public static string GetTagValue(int mechanism)
-    {
-        // the "-" prefix is a left-over separator from a previous iteration of this feature
-        // (not a negative sign)
-        return mechanism switch
-        {
-            Default => "-0",
-            AgentRate => "-1",
-            // RemoteRateAuto => "-2",
-            LocalTraceSamplingRule => "-3",
-            Manual => "-4",
-            Asm => "-5",
-            // RemoteRateUser => "-6",
-            // RemoteRateDatadog => "-7",
-            SpanSamplingRule => "-8",
-            // OtlpIngestProbabilisticSampling => "-9",
-            DataJobsMonitoring => "-10",
-            RemoteUserSamplingRule => "-11",
-            RemoteAdaptiveSamplingRule => "-12",
-
-            // forwards-compatibility for future values
-            _ => $"-{mechanism.ToString(CultureInfo.InvariantCulture)}"
-        };
-    }
+    public const string RemoteAdaptiveSamplingRule = "-12";
 }

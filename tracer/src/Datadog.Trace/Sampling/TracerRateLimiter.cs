@@ -18,7 +18,7 @@ namespace Datadog.Trace.Sampling
         {
         }
 
-        public override void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval)
+        protected override void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval)
         {
             if (!Volatile.Read(ref _warningWritten))
             {
@@ -27,7 +27,7 @@ namespace Datadog.Trace.Sampling
             }
         }
 
-        public override void OnRefresh(int intervalMs, int checksInLastInterval, int allowedInLastInterval)
+        protected override void OnRefresh(int intervalMs, int checksInLastInterval, int allowedInLastInterval)
         {
             if (Volatile.Read(ref _warningWritten))
             {
@@ -35,14 +35,6 @@ namespace Datadog.Trace.Sampling
             }
 
             _warningWritten = false;
-        }
-
-        public override void OnFinally(Span span)
-        {
-            // Always set the sample rate metric whether it was allowed or not
-            // DEV: Setting this allows us to properly compute metrics and debug the
-            //      various sample rates that are getting applied to this span
-            span.SetMetric(Metrics.SamplingLimitDecision, GetEffectiveRate());
         }
     }
 }

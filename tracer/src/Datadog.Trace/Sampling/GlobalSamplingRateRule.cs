@@ -22,7 +22,6 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            span.SetMetric(Metrics.SamplingRuleDecision, _globalRate);
             return _globalRate;
         }
 

@@ -89,6 +89,14 @@ namespace Datadog.Trace
 
         public string? Origin { get; set; }
 
+        public string? SamplingMechanism { get; set; }
+
+        public double? AppliedSamplingRate { get; set; }
+
+        public double? RateLimiterRate { get; set; }
+
+        public double? TracesKeepRate { get; set; }
+
         /// <summary>
         /// Gets or sets additional key/value pairs from upstream "tracestate" header that we will propagate downstream.
         /// This value will _not_ include the "dd" key, which is parsed out into other individual values
@@ -291,26 +299,39 @@ namespace Datadog.Trace
 
         public void SetSamplingPriority(SamplingDecision decision, bool notifyDistributedTracer = true)
         {
-            SetSamplingPriority(decision.Priority, decision.Mechanism, notifyDistributedTracer);
+            SetSamplingPriority(decision.Priority, decision.Mechanism, decision.Rate, decision.LimiterRate, notifyDistributedTracer);
         }
 
-        public void SetSamplingPriority(int? priority, int? mechanism = null, bool notifyDistributedTracer = true)
+        public void SetSamplingPriority(
+            int? priority,
+            string? mechanism = null,
+            double? rate = null,
+            double? limiterRate = null,
+            bool notifyDistributedTracer = true)
         {
             if (priority is not { } p)
             {
                 return;
             }
 
-            SamplingPriority = p;
+            // priority (keep/drop) can change (manually, ASM, etc)
+            SamplingPriority = priority;
 
-            if (SamplingPriorityValues.IsKeep(p) && mechanism is { } m)
+            // report only the original rates, do not override
+            AppliedSamplingRate ??= rate;
+            RateLimiterRate ??= limiterRate;
+
+            if (SamplingPriorityValues.IsKeep(p) && mechanism != null)
             {
-                // add the tag once if trace is sampled, but never overwrite an existing tag
-                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(m));
+                // report sampling mechanism only if decision is to keep the trace.
+                // report only the original sampling mechanism, do not override.
+                SamplingMechanism ??= mechanism;
+                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, mechanism);
             }
             else if (SamplingPriorityValues.IsDrop(p))
             {
-                // remove tag if trace is not sampled
+                // remove sampling mechanism if decision is to drop the trace
+                SamplingMechanism = null;
                 Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
