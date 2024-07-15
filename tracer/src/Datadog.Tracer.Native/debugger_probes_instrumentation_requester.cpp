@@ -10,6 +10,7 @@
 #include "debugger_rejit_handler_module_method.h"
 #include "debugger_rejit_preprocessor.h"
 #include "fault_tolerant_method_duplicator.h"
+#include "fault_tolerant_tracker.h"
 #include "iast/iast_util.h"
 #include "logger.h"
 
@@ -147,8 +148,7 @@ void DebuggerProbesInstrumentationRequester::InitializeExplorationTestLineProbes
  * module entering into instrumentation-all. \param module_id the ModuleID of the module entering into
  * instrumentation-all. \param function_token the mdToken of the method entering into instrumentation-all.
  */
-void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const ModuleID& module_id,
-                                                                          const mdToken& function_token)
+void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const ModuleID& module_id, mdToken& function_token)
 {
     try
     {
@@ -260,6 +260,15 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
         }
         else
         {
+            auto original_function_token = function_token;
+
+            if (fault_tolerant::FaultTolerantTracker::Instance()->IsInstrumentedMethod(module_id, function_token))
+            {
+                function_token =
+                    fault_tolerant::FaultTolerantTracker::Instance()->GetKickoffMethodFromInstrumentedMethod(
+                        module_id, function_token);
+            }
+
             auto lowerMvid = iast::ToLower(ToString(mvid));
             lowerMvid = lowerMvid.substr(1, lowerMvid.length() - 2);
             auto key = std::make_pair(lowerMvid, function_token);
@@ -274,8 +283,8 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
                 auto bytecodeOffsets = it->second;
                 for (const auto& offset : bytecodeOffsets)
                 {
-                    const auto& lineProbe = std::make_shared<LineProbeDefinition>(
-                        LineProbeDefinition(GenerateRandomProbeId(), offset, 0, mvid, function_token, probeFilePath));
+                    const auto& lineProbe = std::make_shared<LineProbeDefinition>(LineProbeDefinition(
+                        GenerateRandomProbeId(), offset, offset, mvid, original_function_token, probeFilePath));
                     lineProbeDefinitions.push_back(lineProbe);
                 }
 
