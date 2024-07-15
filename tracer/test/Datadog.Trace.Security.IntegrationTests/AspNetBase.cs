@@ -105,7 +105,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             await VerifySpans(spans, settings, testInit, methodNameOverride);
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -134,6 +134,13 @@ namespace Datadog.Trace.Security.IntegrationTests
                                 }
                             }
 
+                            if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
+                            {
+                                var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
+                                var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
+                                target.Tags[Tags.AppSecJson] = orderedAppSecJson;
+                            }
+
                             if (target.MetaStruct != null)
                             {
                                 // We want to retrieve the appsec event data from the meta struct to validate it in snapshots
@@ -142,16 +149,24 @@ namespace Datadog.Trace.Security.IntegrationTests
                                 if (target.MetaStruct.TryGetValue("appsec", out var appsec))
                                 {
                                     var appSecMetaStruct = _metaStructByteArrayToObject.Invoke(null, [appsec]);
-                                    var orderedAppSecJson = JsonConvert.SerializeObject(appSecMetaStruct, _jsonSerializerSettingsOrderProperty);
+                                    var json = JsonConvert.SerializeObject(appSecMetaStruct);
+                                    var obj = JsonConvert.DeserializeObject<AppSecJson>(json);
+                                    var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
+                                    target.Tags[Tags.AppSecJson] = orderedJson;
+
                                     target.MetaStruct.Remove("appsec");
-                                    var metaStructSnapshotTestsTag = "_dd.appsec.meta-struct.test";
-                                    target.Tags.Add(metaStructSnapshotTestsTag, orderedAppSecJson);
+
+                                    // Let the snapshot know that the data comes from the meta struct
+                                    if (forceMetaStruct)
+                                    {
+                                        target.Tags[Tags.AppSecJson + ".metastruct.test"] = "true";
+                                    }
                                 }
 
                                 // Remove all data from meta structs keys, no need to get the binary data for other keys
-                                foreach (var item in target.MetaStruct)
+                                foreach (var key in target.MetaStruct.Keys.ToList())
                                 {
-                                    target.MetaStruct[item.Key] = [];
+                                    target.MetaStruct[key] = [];
                                 }
                             }
 
@@ -171,7 +186,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
             }
 
-            var appsecSpans = spans.Where(s => s.MetaStruct != null && s.MetaStruct.ContainsKey("appsec"));
+            var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json") || (s.MetaStruct != null && s.MetaStruct.ContainsKey("appsec")));
             if (appsecSpans.Any())
             {
                 appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]

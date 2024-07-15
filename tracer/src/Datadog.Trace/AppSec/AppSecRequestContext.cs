@@ -29,7 +29,17 @@ internal class AppSecRequestContext
         {
             if (_wafSecurityEvents.Count > 0)
             {
-                span.SetMetaStruct(AppsecKey, MetaStructHelper.ObjectToByteArray(new Dictionary<string, List<object>> { { "triggers", _wafSecurityEvents } }));
+                // Older version of the Agent doesn't support meta struct
+                // Fallback to the _dd.appsec.json tag
+                if (Security.Instance.IsMetaStructSupported())
+                {
+                    span.SetMetaStruct(AppsecKey, MetaStructHelper.ObjectToByteArray(new Dictionary<string, List<object>> { { "triggers", _wafSecurityEvents } }));
+                }
+                else
+                {
+                    var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
+                    tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
+                }
             }
 
             if (_raspStackTraces?.Count > 0)

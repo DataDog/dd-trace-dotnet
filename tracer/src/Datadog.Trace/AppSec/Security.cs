@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf;
@@ -46,6 +47,8 @@ namespace Datadog.Trace.AppSec
         private WafLibraryInvoker? _wafLibraryInvoker;
         private AppSecRateLimiter? _rateLimiter;
         private InitResult? _wafInitResult;
+        private IDiscoveryService? _discoveryService;
+        private bool _spanMetaStructs;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
@@ -492,6 +495,17 @@ namespace Datadog.Trace.AppSec
             }
 
             Dispose();
+        }
+
+        internal bool IsMetaStructSupported()
+        {
+            if (_discoveryService is null)
+            {
+                _discoveryService = Tracer.Instance.TracerManager.DiscoveryService;
+                _discoveryService?.SubscribeToChanges(config => _spanMetaStructs = config.SpanMetaStructs);
+            }
+
+            return _spanMetaStructs;
         }
     }
 }
