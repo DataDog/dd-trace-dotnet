@@ -560,12 +560,8 @@ internal static partial class IastModule
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
-            traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
-
-            if (traceContext?.RootSpan is { } rootSpan)
-            {
-                rootSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-            }
+            traceContext.IastRequestContext?.AddVulnerability(vulnerability);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
 
             return IastModuleResponse.Vulnerable;
         }
@@ -639,11 +635,7 @@ internal static partial class IastModule
         {
             if (isRequest)
             {
-                if (traceContext?.RootSpan is { } rootSpan)
-                {
-                    rootSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-                }
-
+                traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
                 traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
                 return IastModuleResponse.Vulnerable;
             }
