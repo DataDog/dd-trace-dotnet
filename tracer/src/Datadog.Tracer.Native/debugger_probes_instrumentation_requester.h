@@ -68,7 +68,7 @@ public:
                    debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
                    debugger::DebuggerRemoveProbesDefinition* removeProbes, int removeProbesLength);
     static int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
-    void PerformInstrumentAllIfNeeded(const ModuleID& module_id, const mdToken& function_token);
+    void PerformInstrumentAllIfNeeded(const ModuleID& module_id, mdToken& function_token);
     void InitializeExplorationTestLineProbes(const WSTRING& filename);
     auto& GetExplorationTestLineProbes(const WSTRING& filename);
     const std::vector<std::shared_ptr<ProbeDefinition>>& GetProbes() const;

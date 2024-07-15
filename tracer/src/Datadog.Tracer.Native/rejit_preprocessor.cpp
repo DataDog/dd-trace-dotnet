@@ -218,13 +218,19 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueFaultTolerantMethods(
     {
         const auto originalMethod =
             fault_tolerant::FaultTolerantTracker::Instance()->GetOriginalMethod(moduleInfo.id, methodDef);
+        const auto& originalMethodNewFunctionInfo = FunctionInfo(
+            originalMethod, functionInfo.name, functionInfo.type, functionInfo.signature,
+            functionInfo.function_spec_signature, functionInfo.method_def_id, functionInfo.method_signature);
         RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef,
-                                            rejitRequests, originalMethod, functionInfo, moduleHandler);
+                                            rejitRequests, originalMethod, originalMethodNewFunctionInfo,
+                                            moduleHandler);
 
         const auto instrumentedMethod =
             fault_tolerant::FaultTolerantTracker::Instance()->GetInstrumentedMethod(moduleInfo.id, methodDef);
+        const auto& instrumentedMethodNewFunctionInfo = FunctionInfo(instrumentedMethod, functionInfo.name, functionInfo.type, functionInfo.signature, functionInfo.function_spec_signature, functionInfo.method_def_id, functionInfo.method_signature);
         RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef,
-                                            rejitRequests, instrumentedMethod, functionInfo, moduleHandler);
+                                            rejitRequests, instrumentedMethod, instrumentedMethodNewFunctionInfo,
+                                            moduleHandler);
     }
 }
 
