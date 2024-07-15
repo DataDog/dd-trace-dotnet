@@ -24,6 +24,12 @@ namespace Datadog.Trace.Propagators
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
+            // If appsec standalone is enabled and appsec propagation is disabled (no ASM events) -> stop propagation
+            if (context.TraceContext?.Tracer.Settings?.AppsecStandaloneEnabledInternal == true && context.TraceContext.Tags.GetTag(Tags.PropagatedAppSec) != "1")
+            {
+                return;
+            }
+
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.Datadog);
             var invariantCulture = CultureInfo.InvariantCulture;
 
@@ -43,7 +49,6 @@ namespace Datadog.Trace.Propagators
             }
 
             var propagatedTagsHeader = context.PrepareTagsHeaderForPropagation();
-
             if (!string.IsNullOrEmpty(propagatedTagsHeader))
             {
                 carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTagsHeader!);
@@ -67,7 +72,6 @@ namespace Datadog.Trace.Propagators
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, HttpHeaderNames.SamplingPriority);
             var origin = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.Origin);
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.PropagatedTags);
-
             var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
 
             // reconstruct 128-bit trace id from the lower 64 bits in "x-datadog-traceid"
