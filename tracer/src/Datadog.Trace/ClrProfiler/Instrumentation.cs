@@ -605,10 +605,10 @@ namespace Datadog.Trace.ClrProfiler
                     }
                 }
 
+                Log.Information<int, string>("{Aspects} {DebugMsg} Callsite Dataflow Aspects added to the profiler.", aspects, debugMsg);
+
                 if (aspects > 0)
                 {
-                    Log.Information<int, string>("{Aspects} {DebugMsg} Callsite Dataflow Aspects added to the profiler.", aspects, debugMsg);
-
                     if (isIast)
                     {
                         TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastAspects, aspects);
@@ -623,10 +623,6 @@ namespace Datadog.Trace.ClrProfiler
 
                         sw.Restart();
                     }
-                }
-                else
-                {
-                    Log.Error("No CallSite Dataflow Aspects have been registered ({DebugMsg})", debugMsg);
                 }
             }
         }
