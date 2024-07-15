@@ -25,7 +25,7 @@ namespace iast
         mdTypeDef _id = 0;
     public:
         mdTypeDef GetTypeDef();
-        WSTRING& GetName();
+        const WSTRING& GetName();
     };
 
     class MemberRefInfo
@@ -55,10 +55,10 @@ namespace iast
         mdTypeDef GetTypeDef();
 
         ModuleInfo* GetModuleInfo();
-        WSTRING& GetName();
-        WSTRING& GetFullName();
-        WSTRING GetFullNameWithReturnType();
-        WSTRING& GetTypeName();
+        const WSTRING& GetName();
+        const WSTRING& GetFullName();
+        const WSTRING GetFullNameWithReturnType();
+        const WSTRING& GetTypeName();
         virtual SignatureInfo* GetSignature();
         ULONG GetParameterCount();
         CorElementType GetReturnCorType();

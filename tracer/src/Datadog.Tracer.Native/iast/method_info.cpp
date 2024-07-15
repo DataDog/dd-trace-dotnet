@@ -22,6 +22,7 @@ namespace iast
     {
         this->_module = pModuleInfo;
         this->_id = typeDef;
+        this->_name = _module->GetTypeName(_id);
     }
     TypeInfo::~TypeInfo()
     {
@@ -32,12 +33,8 @@ namespace iast
     {
         return _id;
     }
-    WSTRING& TypeInfo::GetName()
+    const WSTRING& TypeInfo::GetName()
     {
-        if (_name.size() == 0)
-        {
-            _name = _module->GetTypeName(_id);
-        }
         return _name;
     }
 
@@ -86,12 +83,12 @@ namespace iast
     {
         return _module;
     }
-    WSTRING& MemberRefInfo::GetName()
+    const WSTRING& MemberRefInfo::GetName()
     {
         return _name;
     }
 
-    WSTRING& MemberRefInfo::GetFullName()
+    const WSTRING& MemberRefInfo::GetFullName()
     {
         if (_fullName.size() == 0)
         {
@@ -109,7 +106,7 @@ namespace iast
         }
         return _fullName;
     }
-    WSTRING MemberRefInfo::GetFullNameWithReturnType()
+    const WSTRING MemberRefInfo::GetFullNameWithReturnType()
     {
         auto res = GetFullName();
         auto signature = GetSignature();
@@ -119,7 +116,7 @@ namespace iast
         }
         return res;
     }
-    WSTRING& MemberRefInfo::GetTypeName()
+    const WSTRING& MemberRefInfo::GetTypeName()
     {
         auto type = GetTypeInfo();
         if (type) { return type->GetName(); }
