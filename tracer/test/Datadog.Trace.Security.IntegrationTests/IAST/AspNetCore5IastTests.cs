@@ -308,6 +308,36 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
     }
 }
 
+public class AspNetCore5IastTestsStandaloneBillingIastEnabled : AspNetCore5IastTests
+{
+    public AspNetCore5IastTestsStandaloneBillingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled", redactionEnabled: true, samplingRate: 100)
+    {
+        // Set environment variable to enable the Standalone ASM Billing feature
+        SetEnvironmentVariable("DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED", "true");
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestApmDisabledAndAppsecIastReporting()
+    {
+        var filename = "Iast.StandaloneBilling.AspNetCore5.IastEnabled";
+
+        // Testing a Reflection Injection vulnerability
+        var url = $"/Iast/TypeReflectionInjection?type=System.String";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+}
+
 public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsFullSampling
 {
     public AspNetCore5IastTestsFullSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)

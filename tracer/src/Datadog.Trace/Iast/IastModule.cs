@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Aspects.System;
 using Datadog.Trace.Iast.Propagation;
@@ -18,6 +19,7 @@ using Datadog.Trace.Iast.SensitiveData;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
@@ -558,7 +560,9 @@ internal static partial class IastModule
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
-            traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
+            traceContext.IastRequestContext?.AddVulnerability(vulnerability);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+
             return IastModuleResponse.Vulnerable;
         }
 
@@ -631,6 +635,7 @@ internal static partial class IastModule
         {
             if (isRequest)
             {
+                traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
                 traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
                 return IastModuleResponse.Vulnerable;
             }
@@ -685,6 +690,7 @@ internal static partial class IastModule
         var scope = tracer.StartActiveInternal(operationName, tags: tags);
         scope.Span.Type = SpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+        scope.Span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
         return new IastModuleResponse(scope);
     }
 

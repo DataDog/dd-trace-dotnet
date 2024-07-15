@@ -153,6 +153,10 @@ namespace Datadog.Trace.Configuration
                                   .AsBoolResult()
                                   .OverrideWith(in otelTraceEnabled, defaultValue: true);
 
+            AppsecStandaloneEnabledInternal = config
+                          .WithKeys(ConfigurationKeys.AppsecStandaloneEnabled)
+                          .AsBool(defaultValue: false);
+
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
                 TraceEnabledInternal = false;
@@ -448,6 +452,11 @@ namespace Datadog.Trace.Configuration
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
                                      .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan));
+            if (AppsecStandaloneEnabledInternal && StatsComputationEnabledInternal)
+            {
+                telemetry.Record(ConfigurationKeys.StatsComputationEnabled, false, ConfigurationOrigins.Calculated);
+                StatsComputationEnabledInternal = false;
+            }
 
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
@@ -559,6 +568,13 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_TraceEnabled_Set)]
         [ConfigKey(ConfigurationKeys.TraceEnabled)]
         internal bool TraceEnabledInternal { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether Appsec standalone is enabled.
+        /// Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AppsecStandaloneEnabled"/>
+        internal bool AppsecStandaloneEnabledInternal { get; }
 
         /// <summary>
         /// Gets a value indicating whether profiling is enabled.

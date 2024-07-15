@@ -85,11 +85,11 @@ namespace Datadog.Trace.Agent
             return SendWithRetry(_statsEndpoint, _sendStats, state);
         }
 
-        public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans)
+        public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool appsecStandaloneEnabled)
         {
             _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
 
-            var state = new SendTracesState(traces, numberOfTraces, statsComputationEnabled, numberOfDroppedP0Traces, numberOfDroppedP0Spans);
+            var state = new SendTracesState(traces, numberOfTraces, statsComputationEnabled, numberOfDroppedP0Traces, numberOfDroppedP0Spans, appsecStandaloneEnabled);
 
             return SendWithRetry(_tracesEndpoint, _sendTraces, state);
         }
@@ -270,6 +270,7 @@ namespace Datadog.Trace.Agent
             var statsComputationEnabled = state.StatsComputationEnabled;
             var numberOfDroppedP0Traces = state.NumberOfDroppedP0Traces;
             var numberOfDroppedP0Spans = state.NumberOfDroppedP0Spans;
+            var appsecStandaloneEnabled = state.AppsecStandaloneEnabled;
 
             // Set additional headers
             request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToString());
@@ -289,6 +290,10 @@ namespace Datadog.Trace.Agent
                 request.AddHeader(AgentHttpHeaderNames.StatsComputation, "true");
                 request.AddHeader(AgentHttpHeaderNames.DroppedP0Traces, numberOfDroppedP0Traces.ToString());
                 request.AddHeader(AgentHttpHeaderNames.DroppedP0Spans, numberOfDroppedP0Spans.ToString());
+            }
+            else if (appsecStandaloneEnabled)
+            {
+                request.AddHeader(AgentHttpHeaderNames.StatsComputation, "true");
             }
 
             try
@@ -407,14 +412,16 @@ namespace Datadog.Trace.Agent
             public readonly bool StatsComputationEnabled;
             public readonly long NumberOfDroppedP0Traces;
             public readonly long NumberOfDroppedP0Spans;
+            public readonly bool AppsecStandaloneEnabled;
 
-            public SendTracesState(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans)
+            public SendTracesState(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool appsecStandaloneEnabled)
             {
                 Traces = traces;
                 NumberOfTraces = numberOfTraces;
                 StatsComputationEnabled = statsComputationEnabled;
                 NumberOfDroppedP0Traces = numberOfDroppedP0Traces;
                 NumberOfDroppedP0Spans = numberOfDroppedP0Spans;
+                AppsecStandaloneEnabled = appsecStandaloneEnabled;
             }
         }
 
