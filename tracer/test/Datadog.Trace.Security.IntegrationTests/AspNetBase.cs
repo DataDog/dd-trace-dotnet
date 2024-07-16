@@ -46,7 +46,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecRaspWafDurationWithBindings = new(@"_dd.appsec.rasp.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecSpanIdRegex = (new Regex("\"span_id\":\\d+"));
         private static readonly Type MetaStructHelperType = Type.GetType("Datadog.Trace.AppSec.Rasp.MetaStructHelper, Datadog.Trace");
-        private static MethodInfo _metaStructByteArrayToObject = MetaStructHelperType.GetMethod("ByteArrayToObject", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo MetaStructByteArrayToObject = MetaStructHelperType.GetMethod("ByteArrayToObject", BindingFlags.Public | BindingFlags.Static);
         private readonly string _testName;
         private readonly HttpClient _httpClient;
         private readonly CookieContainer _cookieContainer;
@@ -148,7 +148,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                                 // So move the meta struct appsec data to a fake tag to validate it in snapshots
                                 if (target.MetaStruct.TryGetValue("appsec", out var appsec))
                                 {
-                                    var appSecMetaStruct = _metaStructByteArrayToObject.Invoke(null, [appsec]);
+                                    var appSecMetaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
                                     var json = JsonConvert.SerializeObject(appSecMetaStruct);
                                     var obj = JsonConvert.DeserializeObject<AppSecJson>(json);
                                     var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);

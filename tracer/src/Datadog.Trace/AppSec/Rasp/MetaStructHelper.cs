@@ -5,8 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Vendors.MessagePack.Resolvers;
 
 #nullable enable
 
@@ -96,7 +96,7 @@ internal static class MetaStructHelper
 
     public static object ByteArrayToObject(byte[] value)
     {
-        var formatterResolver = SpanFormatterResolver.Instance;
+        var formatterResolver = StandardResolver.Instance;
         return PrimitiveObjectFormatter.Instance.Deserialize(value, 0, formatterResolver, out _);
     }
 }
