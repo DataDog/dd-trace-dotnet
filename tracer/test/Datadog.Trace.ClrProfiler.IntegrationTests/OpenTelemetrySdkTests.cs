@@ -85,8 +85,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var version in PackageVersions.OpenTelemetry)
             {
-                yield return new object[] { version[0], false };
-                yield return new object[] { version[0], true };
+                yield return new object[] { version[0] };
+                yield return new object[] { version[0] };
             }
         }
 
@@ -96,14 +96,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(GetData))]
-        public async Task SubmitsTraces(string packageVersion, bool legacyOperationNames)
+        public async Task SubmitsTraces(string packageVersion)
         {
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
-
-            if (legacyOperationNames)
-            {
-                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled, "true");
-            }
 
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -126,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot
-                var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion, legacyOperationNames);
+                var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
@@ -171,7 +166,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot
-                var filename = nameof(OpenTelemetrySdkTests) + "WithActivitySource" + GetSuffix(packageVersion, false);
+                var filename = nameof(OpenTelemetrySdkTests) + "WithActivitySource" + GetSuffix(packageVersion);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
@@ -209,20 +204,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private static string GetSuffix(string packageVersion, bool legacyOperationNames)
+        private static string GetSuffix(string packageVersion)
         {
-            var legacyEnabled = string.Empty;
-            if (legacyOperationNames)
-            {
-                legacyEnabled = "_withLegacyOperationName";
-            }
-
             // The snapshots are only different in .NET Core 2.1 - .NET 5 with package version 1.0.1
 #if !NET6_0_OR_GREATER
             if (!string.IsNullOrEmpty(packageVersion)
              && new Version(packageVersion) < new Version("1.2.0"))
             {
-                return "_1_0" + legacyEnabled;
+                return "_1_0";
             }
 #endif
 
@@ -230,17 +219,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (!string.IsNullOrEmpty(packageVersion)
             && new Version(packageVersion) <= new Version("1.5.0"))
             {
-                return "_up_to_1_5_0" + legacyEnabled;
+                return "_up_to_1_5_0";
             }
 
             // v1.7.0 fixed StartRootSpan to not be a child of the active span
             if (!string.IsNullOrEmpty(packageVersion)
              && new Version(packageVersion) < new Version("1.7.0"))
             {
-                return "_up_to_1_7_0" + legacyEnabled;
+                return "_up_to_1_7_0";
             }
 
-            return string.Empty + legacyEnabled;
+            return string.Empty;
         }
     }
 }
