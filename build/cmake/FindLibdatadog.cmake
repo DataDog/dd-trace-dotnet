@@ -26,7 +26,7 @@ FetchContent_Declare(libdatadog-${LIBDATADOG_VERSION}
     SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-${LIBDATADOG_VERSION}
 )
 if(NOT libdatadog-${LIBDATADOG_VERSION}_POPULATED)
-    FetchContent_Populate(libdatadog-${LIBDATADOG_VERSION})
+    FetchContent_MakeAvailable(libdatadog-${LIBDATADOG_VERSION})
 endif()
 
 set(LIBDATADOG_BASE_DIR ${libdatadog-${LIBDATADOG_VERSION}_SOURCE_DIR})

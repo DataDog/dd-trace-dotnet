@@ -11,5 +11,5 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-FetchContent_Populate(googletest)
+FetchContent_MakeAvailable(googletest)
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
