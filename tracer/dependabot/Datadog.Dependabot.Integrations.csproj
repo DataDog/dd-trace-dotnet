@@ -18,27 +18,27 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.304.22 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.304.29 -->
     <PackageReference Include="AWSSDK.Core" Version="3.7.304.22" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.304.1 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.305 -->
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.304.1" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.301.104 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.301.111 -->
     <PackageReference Include="AWSSDK.Kinesis" Version="3.7.301.104" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.301.60 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.302 -->
     <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.301.60" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.301.25 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.301.32 -->
     <PackageReference Include="AWSSDK.SQS" Version="3.7.301.25" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
@@ -48,12 +48,12 @@
 
     <!-- Integration: Confluent.Kafka -->
     <!--    Assembly: Confluent.Kafka -->
-    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.4.0 -->
+    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.5.0 -->
     <PackageReference Include="Confluent.Kafka" Version="2.4.0" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!--    Assembly: Couchbase.NetClient -->
-    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.6.0 -->
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.6.1 -->
     <PackageReference Include="CouchbaseNetClient" Version="3.6.0" />
 
     <!-- Integration: Elasticsearch.Net -->
@@ -90,7 +90,7 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!--    Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.9.6 -->
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.9.7 -->
     <PackageReference Include="HotChocolate.AspNetCore" Version="13.9.6" />
 
     <!-- Integration: amqmdnetstd -->
@@ -160,7 +160,7 @@
 
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!--    Assembly: Microsoft.Azure.WebJobs.Host -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.39 -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.41 -->
     <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.39" />
 
     <!-- Integration: Microsoft.Data.SqlClient -->
@@ -170,12 +170,12 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!--    Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/8.0.6 -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/8.0.7 -->
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.6" />
 
     <!-- Integration: Microsoft.Extensions.Identity.Core -->
     <!--    Assembly: Microsoft.Extensions.Identity.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/8.0.6 -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/8.0.7 -->
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.6" />
 
     <!-- Integration: Microsoft.Extensions.Logging -->
@@ -190,7 +190,7 @@
 
     <!-- Integration: Microsoft.Extensions.Telemetry -->
     <!--    Assembly: Microsoft.Extensions.Telemetry -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/8.6.0 -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/8.7.0 -->
     <PackageReference Include="Microsoft.Extensions.Telemetry" Version="8.6.0" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.TestFramework -->
@@ -215,8 +215,8 @@
 
     <!-- Integration: MySql.Data -->
     <!--    Assembly: MySql.Data -->
-    <!-- Latest package https://www.nuget.org/packages/MySql.Data/8.4.0 -->
-    <PackageReference Include="MySql.Data" Version="8.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/MySql.Data/9.0.0 -->
+    <PackageReference Include="MySql.Data" Version="9.0.0" />
 
     <!-- Integration: MySqlConnector -->
     <!--    Assembly: MySqlConnector -->
@@ -250,7 +250,7 @@
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!--    Assembly: Oracle.ManagedDataAccess -->
-    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/23.4.0 -->
+    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/23.5.0 -->
     <PackageReference Include="Oracle.ManagedDataAccess" Version="23.4.0" />
 
     <!-- Integration: RabbitMQ.Client -->
@@ -307,7 +307,7 @@
 
     <!-- Integration: System.Net.Http.WinHttpHandler -->
     <!--    Assembly: System.Net.Http.WinHttpHandler -->
-    <!-- Latest package https://www.nuget.org/packages/System.Net.Http.WinHttpHandler/8.0.0 -->
+    <!-- Latest package https://www.nuget.org/packages/System.Net.Http.WinHttpHandler/8.0.1 -->
     <PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0" />
 
     <!-- Integration: System.Net.Requests -->
@@ -322,12 +322,12 @@
 
     <!-- Integration: xunit.execution.desktop -->
     <!--    Assembly: xunit.execution.desktop -->
-    <!-- Latest package https://www.nuget.org/packages/xunit/2.8.1 -->
+    <!-- Latest package https://www.nuget.org/packages/xunit/2.9.0 -->
     <PackageReference Include="xunit" Version="2.8.1" />
 
     <!-- Integration: xunit.execution.dotnet -->
     <!--    Assembly: xunit.execution.dotnet -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.8.1 -->
+    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.9.0 -->
     <PackageReference Include="xunit.extensibility.execution" Version="2.8.1" />
 
     <!-- Integration: Yarp.ReverseProxy -->

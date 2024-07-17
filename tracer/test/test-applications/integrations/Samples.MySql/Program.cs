@@ -42,7 +42,7 @@ namespace Samples.MySql
 
             if (connectionString == null)
             {
-                var oldMySqlServer = typeof(MySqlConnection).Assembly.GetName().Version.Major != 8;
+                var oldMySqlServer = typeof(MySqlConnection).Assembly.GetName().Version.Major < 8;
 
                 if (oldMySqlServer)
                 {
