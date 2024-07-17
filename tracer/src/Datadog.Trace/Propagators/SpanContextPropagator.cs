@@ -115,6 +115,12 @@ namespace Datadog.Trace.Propagators
             if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
+            // If appsec standalone is enabled and appsec propagation is disabled (no ASM events) -> stop propagation
+            if (context.TraceContext?.Tracer.Settings?.AppsecStandaloneEnabledInternal == true && context.TraceContext.Tags.GetTag(Tags.Propagated.AppSec) != "1")
+            {
+                return;
+            }
+
             // trigger a sampling decision if it hasn't happened yet
             _ = context.GetOrMakeSamplingDecision();
 

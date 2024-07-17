@@ -562,6 +562,7 @@ internal static partial class IastModule
         {
             traceContext.IastRequestContext?.AddVulnerability(vulnerability);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+            traceContext.Tags.SetTag(Tags.Propagated.AppSec, "1");
 
             return IastModuleResponse.Vulnerable;
         }
@@ -636,6 +637,8 @@ internal static partial class IastModule
             if (isRequest)
             {
                 traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+                traceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
+
                 traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
                 return IastModuleResponse.Vulnerable;
             }
@@ -691,6 +694,7 @@ internal static partial class IastModule
         scope.Span.Type = SpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
         scope.Span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+        scope.Span.Context.TraceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
         return new IastModuleResponse(scope);
     }
 

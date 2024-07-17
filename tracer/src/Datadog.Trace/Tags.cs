@@ -725,6 +725,12 @@ namespace Datadog.Trace
             /// lower-case hexadecimal string with no zero-padding or `0x` prefix.
             /// </summary>
             internal const string TraceIdUpper = "_dd.p.tid";
+
+            /// <summary>
+            /// A boolean allowing the propagation to downstream services the information that the current distributed trace
+            /// is containing at least one ASM security event, no matter its type (threats, business logic events, IAST, etc.).
+            /// </summary>
+            internal const string AppSec = "_dd.p.appsec";
         }
     }
 }

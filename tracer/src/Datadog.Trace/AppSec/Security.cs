@@ -482,6 +482,7 @@ namespace Datadog.Trace.AppSec
             else if (_rateLimiter?.Allowed(span) ?? false)
             {
                 span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+                span.Context.TraceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
             }
         }
 
