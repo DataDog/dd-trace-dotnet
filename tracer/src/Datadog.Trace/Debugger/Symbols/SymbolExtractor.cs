@@ -100,7 +100,7 @@ namespace Datadog.Trace.Debugger.Symbols
             var assemblyScope = new Model.Scope
             {
                 Name = assemblyName,
-                ScopeType = SymbolType.Assembly,
+                ScopeType = ScopeType.Assembly,
                 SourceFile = string.IsNullOrEmpty(_assemblyPath) ? null : _assemblyPath,
             };
 
@@ -213,7 +213,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 classScope = new Model.Scope
                 {
                     Name = typeDefinitionHandle.FullName(MetadataReader),
-                    ScopeType = SymbolType.Class,
+                    ScopeType = ScopeType.Class,
                     Symbols = fieldSymbols,
                     Scopes = allScopes,
                     StartLine = linesAndSource.StartLine,
@@ -567,7 +567,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
             var methodScope = new Model.Scope
             {
-                ScopeType = SymbolType.Method,
+                ScopeType = ScopeType.Method,
                 Name = methodName,
                 LanguageSpecifics = methodLanguageSpecifics,
                 Symbols = argsSymbol,
@@ -700,6 +700,12 @@ namespace Datadog.Trace.Debugger.Symbols
                     {
                         continue;
                     }
+                }
+
+                // Since we increment the index for `index == 0`, we have to make sure we don't exceed the bound of the array
+                if (index >= argsSymbol.Length)
+                {
+                    break;
                 }
 
                 argsSymbol[index] = new Symbol

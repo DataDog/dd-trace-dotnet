@@ -130,7 +130,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
 
         var closureMethodScope = CreateMethodScope(nestedType, generatedMethod);
         closureMethodScope.Name = methodName;
-        closureMethodScope.ScopeType = SymbolType.Closure;
+        closureMethodScope.ScopeType = ScopeType.Closure;
         return closureMethodScope;
     }
 
@@ -188,7 +188,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
             }
 
             scope.Symbols = localSymbols.Slice(0, localIndex).ToArray();
-            scope.ScopeType = SymbolType.Local;
+            scope.ScopeType = ScopeType.Local;
             scope.StartLine = methodScope.StartLine;
             scope.EndLine = methodScope.EndLine;
             scope.SourceFile = methodScope.SourceFile;
@@ -319,7 +319,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
             }
 
             scope.Symbols = localSymbols.Slice(0, localIndex).ToArray();
-            scope.ScopeType = SymbolType.Local;
+            scope.ScopeType = ScopeType.Local;
             scope.StartLine = methodScope.StartLine;
             scope.EndLine = methodScope.EndLine;
             scope.SourceFile = methodScope.SourceFile;
