@@ -72,6 +72,7 @@ namespace Datadog.Trace.Propagators
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, HttpHeaderNames.SamplingPriority);
             var origin = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.Origin);
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.PropagatedTags);
+
             var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
 
             // reconstruct 128-bit trace id from the lower 64 bits in "x-datadog-traceid"
