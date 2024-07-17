@@ -602,12 +602,6 @@ namespace Datadog.Trace
         internal const string AppSecWafInitRuleErrors = "_dd.appsec.event_rules.errors";
 
         /// <summary>
-        /// A boolean allowing the propagation to downstream services the information that the current distributed trace
-        /// is containing at least one ASM security event, no matter its type (threats, business logic events, IAST, etc.).
-        /// </summary>
-        internal const string PropagatedAppSec = "_dd.p.appsec";
-
-        /// <summary>
         /// Should contain the public IP of the host initiating the request.
         /// </summary>
         internal const string ActorIp = "actor.ip";
@@ -731,6 +725,12 @@ namespace Datadog.Trace
             /// lower-case hexadecimal string with no zero-padding or `0x` prefix.
             /// </summary>
             internal const string TraceIdUpper = "_dd.p.tid";
+
+            /// <summary>
+            /// A boolean allowing the propagation to downstream services the information that the current distributed trace
+            /// is containing at least one ASM security event, no matter its type (threats, business logic events, IAST, etc.).
+            /// </summary>
+            internal const string AppSec = "_dd.p.appsec";
         }
     }
 }

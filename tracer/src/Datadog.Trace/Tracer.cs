@@ -428,7 +428,7 @@ namespace Datadog.Trace
                     if (Settings?.AppsecStandaloneEnabledInternal == true)
                     {
                         // If the trace has appsec propagation tag, the default priority is user keep
-                        samplingPriority = propagatedTags?.GetTag(Tags.PropagatedAppSec) != "1" ? SamplingPriorityValues.Default : SamplingPriorityValues.UserKeep;
+                        samplingPriority = propagatedTags?.GetTag(Tags.Propagated.AppSec) != "1" ? SamplingPriorityValues.Default : SamplingPriorityValues.UserKeep;
                     }
 
                     // If parent is SpanContext but its TraceContext is null, then it was extracted from propagation headers.
