@@ -5,6 +5,13 @@ if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
+# macOS uses 3.30 which deprecates FetchContent_Populate in favor of FetchContent_MakeAvailable,
+# but we're using 3.13.4 on Linux, which doesn't have FetchContent_MakeAvailable
+
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+endif()
+
 # ******************************************************
 # Project definition
 # ******************************************************
