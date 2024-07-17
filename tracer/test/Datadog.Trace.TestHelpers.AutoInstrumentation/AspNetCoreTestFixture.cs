@@ -139,16 +139,16 @@ namespace Datadog.Trace.TestHelpers
             Agent.SpanFilters.Add(IsNotServerLifeCheck);
         }
 
-        public void Dispose()
+        public int CloseProcess()
         {
-            if (HttpPort is not 0)
+            if (Process is not null && !Process.HasExited)
             {
-                var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
-                request.GetResponse().Close();
-            }
+                if (HttpPort is not 0)
+                {
+                    var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
+                    request.GetResponse().Close();
+                }
 
-            if (Process is not null)
-            {
                 try
                 {
                     if (!Process.HasExited)
@@ -158,16 +158,24 @@ namespace Datadog.Trace.TestHelpers
                             Process.Kill();
                         }
                     }
+
+                    return Process.ExitCode;
                 }
                 catch
                 {
                     // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
                 }
-
-                Process.Dispose();
             }
 
+            return 0;
+        }
+
+        public void Dispose()
+        {
+            CloseProcess();
+            Process?.Dispose();
             Agent?.Dispose();
+            Process = null;
         }
 
         public async Task<IImmutableList<MockSpan>> WaitForSpans(string path, bool post = false)

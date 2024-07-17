@@ -24,6 +24,7 @@
 #include "../../../shared/src/native-src/version.h"
 
 #include "iast/dataflow.h"
+#include "Generated/generated_definitions.h"
 
 #ifdef MACOS
 #include <mach-o/dyld.h>
@@ -1679,7 +1680,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    Logger::Info("InitializeProfiler: received id: ", definitionsId, " from managed side with ", size,
+    Logger::Info("InitializeProfiler (LEGACY MODE): received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
     if (size > 0)
@@ -1691,7 +1692,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 void CorProfiler::RemoveCallTargetDefinitions(WCHAR* id, CallTargetDefinition* items, int size)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    Logger::Info("RemoveCallTargetDefinitions: received id: ", definitionsId, " from managed side with ", size,
+    Logger::Info("RemoveCallTargetDefinitions (LEGACY MODE): received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
     if (size > 0)
@@ -2031,13 +2032,13 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
 
     if (_dataflow != nullptr)
     {
-        Logger::Info("Registering Callsite Aspects.");
+        Logger::Info("Registering CallSite Aspects: ", aspectsLength, " ...");
         _dataflow->LoadAspects(aspects, aspectsLength);
         return aspectsLength;
     }
     else
     {
-        Logger::Info("Callsite instrumentation is disabled.");
+        Logger::Info("CallSite instrumentation is disabled.");
     }
     return 0;
 }

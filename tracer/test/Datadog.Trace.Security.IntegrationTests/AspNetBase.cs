@@ -270,7 +270,12 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
 
-        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null, IEnumerable<KeyValuePair<string, string>> headers = null)
+        protected Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null, IEnumerable<KeyValuePair<string, string>> headers = null)
+        {
+            return SubmitRequest(_httpPort, path, body, contentType, userAgent, headers);
+        }
+
+        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(int httpPort, string path, string body, string contentType, string userAgent = null, IEnumerable<KeyValuePair<string, string>> headers = null)
         {
             var values = _httpClient.DefaultRequestHeaders.GetValues("user-agent");
 
@@ -289,7 +294,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             try
             {
-                var url = $"http://localhost:{_httpPort}{path}";
+                var url = $"http://localhost:{httpPort}{path}";
 
                 var response = body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
                 var responseText = await response.Content.ReadAsStringAsync();
