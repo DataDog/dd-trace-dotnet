@@ -1027,6 +1027,9 @@ namespace Datadog.Trace.TestHelpers
 
             [JsonProperty("version")]
             public string AgentVersion { get; set; }
+
+            [JsonProperty("span_meta_structs")]
+            public bool SpanMetaStructs { get; set; } = true;
         }
 
         public class TcpUdpAgent : MockTracerAgent

@@ -17,6 +17,7 @@ internal class AppSecRequestContext
 {
     private const string StackKey = "_dd.stack";
     private const string ExploitStackKey = "exploit";
+    private const string AppsecKey = "appsec";
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces = null;
@@ -28,8 +29,17 @@ internal class AppSecRequestContext
         {
             if (_wafSecurityEvents.Count > 0)
             {
-                var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
-                tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
+                // Older version of the Agent doesn't support meta struct
+                // Fallback to the _dd.appsec.json tag
+                if (Security.Instance.IsMetaStructSupported())
+                {
+                    span.SetMetaStruct(AppsecKey, MetaStructHelper.ObjectToByteArray(new Dictionary<string, List<object>> { { "triggers", _wafSecurityEvents } }));
+                }
+                else
+                {
+                    var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
+                    tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
+                }
             }
 
             if (_raspStackTraces?.Count > 0)
