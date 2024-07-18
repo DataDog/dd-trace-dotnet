@@ -9,6 +9,7 @@
 - [Dynamic Instrumentation] Fixed rewriting issues stemmed from combination of multiple instrumentations
 - [Tracing] dd support for MySql.Data 9.0.0
 - [Tracing] Handle unknown service names for OpenTelemetry/Activities
+- [ASM] Standalone Billing
 
 ## Changes
 
@@ -40,7 +41,8 @@
 * Fix macOS cmake warnings/errors (#5788)
 
 
-[Changes since 2.54.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.54.0...v2.55.0)
+[Changes since 2.54.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.54.0...v2.55.0)
+
 
 ## [Release 2.54.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.54.0)
 
@@ -126,7 +128,8 @@
 * Revert native changes that moved the definitions to the native side (#5768)
 
 
-[Changes since 2.53.2](https://github.com/DataDog/dd-trace-dotnet/compare/v2.53.2...v2.54.0)
+[Changes since 2.53.2](https://github.com/DataDog/dd-trace-dotnet/compare/v2.53.2...v2.54.0)
+
 
 ## [Release 2.53.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.53.0)
 
