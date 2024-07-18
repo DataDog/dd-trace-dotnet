@@ -29,8 +29,6 @@ internal readonly partial struct SecurityCoordinator
     private static readonly Lazy<Action<IResult, HttpStatusCode, string, string>?> _throwHttpResponseException = new(CreateThrowHttpResponseExceptionDynMeth);
     private static readonly bool? UsingIntegratedPipeline;
 
-    private readonly HttpContext _context;
-
     static SecurityCoordinator()
     {
         if (UsingIntegratedPipeline == null)
@@ -47,17 +45,14 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal SecurityCoordinator(Security security, HttpContext context, Span span)
+    internal SecurityCoordinator(Security security, Span span, HttpTransport? transport = null)
     {
-        _context = context;
         _security = security;
         _localRootSpan = TryGetRoot(span);
-        _httpTransport = new HttpTransport(context);
+        _httpTransport = transport ?? new HttpTransport(HttpContext.Current);
     }
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
-
-    public static HttpContext Context => HttpContext.Current;
 
     private static Action<IResult, HttpStatusCode, string, string>? CreateThrowHttpResponseExceptionDynMeth()
     {
@@ -239,19 +234,27 @@ internal readonly partial struct SecurityCoordinator
 
     internal Dictionary<string, object> GetBodyFromRequest()
     {
-        var formData = new Dictionary<string, object>(_context.Request.Form.Keys.Count);
-        foreach (string key in _context.Request.Form.Keys)
+        var formData = new Dictionary<string, object>(_httpTransport.Context.Request.Form.Keys.Count);
+        foreach (string key in _httpTransport.Context.Request.Form.Keys)
         {
             // key could be null, but it's not a valid key in a dictionary
             // Using [] instead of Add to avoid potential duplicate key
             // but it does mean there's a (tiny) chance of overwriting the key
-            formData[key ?? string.Empty] = _context.Request.Form[key];
+            try
+            {
+                formData[key ?? string.Empty] = _httpTransport.Context.Request.Form[key];
+            }
+            catch (HttpRequestValidationException)
+            {
+                // We cannot retrieve the value of Form[key] because it triggers a validation exception,
+                // which happens when a dangerous value is detected in the request and validation is enabled.
+            }
         }
 
         return formData;
     }
 
-    internal object? GetPathParams() => ObjectExtractor.Extract(_context.Request.RequestContext.RouteData.Values);
+    internal object? GetPathParams() => ObjectExtractor.Extract(_httpTransport.Context.Request.RequestContext.RouteData.Values);
 
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
@@ -312,8 +315,8 @@ internal readonly partial struct SecurityCoordinator
 
     private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
     {
-        var blockingAction = _security.GetBlockingAction([_context.Request.Headers["Accept"]], blockInfo, redirectInfo);
-        var isWebApiRequest = _context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
+        var blockingAction = _security.GetBlockingAction([_httpTransport.Context.Request.Headers["Accept"]], blockInfo, redirectInfo);
+        var isWebApiRequest = _httpTransport.Context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
         if (isWebApiRequest)
         {
             if (!blockingAction.IsRedirect && _throwHttpResponseException.Value is { } throwException)
@@ -338,7 +341,7 @@ internal readonly partial struct SecurityCoordinator
 
     private void WriteAndEndResponse(BlockingAction blockingAction)
     {
-        var httpResponse = _context.Response;
+        var httpResponse = _httpTransport.Context.Response;
         httpResponse.Clear();
         httpResponse.Cookies.Clear();
 
@@ -366,12 +369,12 @@ internal readonly partial struct SecurityCoordinator
 
         httpResponse.Flush();
         httpResponse.Close();
-        _context.ApplicationInstance.CompleteRequest();
+        _httpTransport.Context.ApplicationInstance.CompleteRequest();
     }
 
     public Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
-        var request = _context.Request;
+        var request = _httpTransport.Context.Request;
         var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
         var headerKeys = request.Headers.Keys;
         foreach (string originalKey in headerKeys)
@@ -461,7 +464,7 @@ internal readonly partial struct SecurityCoordinator
 
     public Dictionary<string, string[]> GetResponseHeadersForWaf()
     {
-        var response = _context.Response;
+        var response = _httpTransport.Context.Response;
         var headersDic = new Dictionary<string, string[]>(response.Headers.Keys.Count);
         var headerKeys = response.Headers.Keys;
         foreach (string originalKey in headerKeys)
@@ -492,29 +495,32 @@ internal readonly partial struct SecurityCoordinator
 
         private static bool _canReadHttpResponseHeaders = true;
 
-        private readonly HttpContext _context;
+        public HttpTransport(HttpContext context)
+        {
+            Context = context;
+        }
 
-        public HttpTransport(HttpContext context) => _context = context;
+        internal override bool IsBlocked => Context.Items[BlockingAction.BlockDefaultActionName] is true;
 
-        internal override bool IsBlocked => _context.Items[BlockingAction.BlockDefaultActionName] is true;
+        internal override int StatusCode => Context.Response.StatusCode;
 
-        internal override int StatusCode => _context.Response.StatusCode;
+        public override HttpContext Context { get; }
 
-        internal override IDictionary<string, object>? RouteData => _context.Request.RequestContext.RouteData?.Values;
+        internal override IDictionary<string, object>? RouteData => Context.Request.RequestContext.RouteData?.Values;
 
         internal override bool ReportedExternalWafsRequestHeaders
         {
-            get => _context.Items["ReportedExternalWafsRequestHeaders"] is true;
-            set => _context.Items["ReportedExternalWafsRequestHeaders"] = value;
+            get => Context.Items["ReportedExternalWafsRequestHeaders"] is true;
+            set => Context.Items["ReportedExternalWafsRequestHeaders"] = value;
         }
 
-        internal override void MarkBlocked() => _context.Items[BlockingAction.BlockDefaultActionName] = true;
+        internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;
 
-        internal override IContext? GetAdditiveContext() => _context.Items[WafKey] as IContext;
+        internal override IContext? GetAdditiveContext() => Context.Items[WafKey] as IContext;
 
-        internal override void SetAdditiveContext(IContext additiveContext) => _context.Items[WafKey] = additiveContext;
+        internal override void SetAdditiveContext(IContext additiveContext) => Context.Items[WafKey] = additiveContext;
 
-        internal override IHeadersCollection GetRequestHeaders() => new NameValueHeadersCollection(_context.Request.Headers);
+        internal override IHeadersCollection GetRequestHeaders() => new NameValueHeadersCollection(Context.Request.Headers);
 
         internal override IHeadersCollection GetResponseHeaders()
         {
@@ -522,8 +528,7 @@ internal readonly partial struct SecurityCoordinator
             {
                 try
                 {
-                    var headers = _context.Response.Headers;
-                    return new NameValueHeadersCollection(_context.Response.Headers);
+                    return new NameValueHeadersCollection(Context.Response.Headers);
                 }
                 catch (PlatformNotSupportedException ex)
                 {

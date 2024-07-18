@@ -74,8 +74,27 @@ namespace Datadog.Trace
                     return;
                 }
 
-                var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
-                var automaticProfilingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)?.ToBoolean() ?? false;
+                bool automaticTraceEnabled = true;
+                if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty) is string stringValue)
+                {
+                    automaticTraceEnabled = stringValue.ToBoolean() ?? true;
+                }
+                else if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.OpenTelemetry.TracesExporter, string.Empty) is string otelTraceExporter
+                    && string.Equals(otelTraceExporter, "none", StringComparison.OrdinalIgnoreCase))
+                {
+                    automaticTraceEnabled = false;
+                }
+
+                var profilingManuallyEnabled = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled);
+                var profilingSsiDeployed = EnvironmentHelpers.GetEnvironmentVariable(ContinuousProfiler.ConfigurationKeys.SsiDeployed);
+
+                var automaticProfilingEnabled = profilingManuallyEnabled switch
+                {
+                    null => false,
+                    // it is possible that SSI installation script is setting the environment variable to "auto" to enable the profiler
+                    // instead of "true" to avoid starting the profiler immediately after the installation
+                    _ => profilingManuallyEnabled.ToBoolean() ?? (profilingManuallyEnabled == "auto")
+                };
 
                 if (azureAppServiceSettings.CustomTracingEnabled || automaticTraceEnabled || automaticProfilingEnabled)
                 {

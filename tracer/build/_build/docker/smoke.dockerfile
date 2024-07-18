@@ -35,6 +35,11 @@ ENV DD_PROFILING_ENABLED=1
 ENV DD_APPSEC_ENABLED=1
 ENV DD_TRACE_DEBUG=1
 
+## SSI variables
+ENV DD_INJECTION_ENABLED=tracer
+ENV DD_INJECT_FORCE=1
+ENV DD_TELEMETRY_FORWARDER_PATH=/bin/true
+
 # Set a random env var we should ignore
 ENV SUPER_SECRET_CANARY=MySuperSecretCanary
 
@@ -42,6 +47,11 @@ ENV SUPER_SECRET_CANARY=MySuperSecretCanary
 ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 
 ENV ASPNETCORE_URLS=http://localhost:5000
+
+# Capture dumps
+ENV COMPlus_DbgEnableMiniDump=1
+ENV COMPlus_DbgMiniDumpType=4
+ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
 
 # Copy the app across
 COPY --from=builder /src/publish /app/.

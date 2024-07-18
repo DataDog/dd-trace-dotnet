@@ -110,7 +110,7 @@
           "location": {
             "file": "AsyncStaticType.cs",
             "lines": [
-              28
+              "28"
             ]
           },
           "version": 0

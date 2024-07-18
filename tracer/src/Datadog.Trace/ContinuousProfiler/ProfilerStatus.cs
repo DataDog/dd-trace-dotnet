@@ -27,7 +27,16 @@ namespace Datadog.Trace.ContinuousProfiler
                 (fd.OSPlatform == OSPlatformName.Windows && (fd.ProcessArchitecture == ProcessArchitecture.X64 || fd.ProcessArchitecture == ProcessArchitecture.X86)) ||
                 (fd.OSPlatform == OSPlatformName.Linux && fd.ProcessArchitecture == ProcessArchitecture.X64);
 
-            _isProfilingEnabled = (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled)?.ToBoolean() ?? false) && isSupported;
+            if (isSupported)
+            {
+                var manualDeployement = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled);
+                if (manualDeployement != null)
+                {
+                    // it is possible that SSI installation script is setting the environment variable to "auto" to enable the profiler
+                    // instead of "true" to avoid starting the profiler immediately after the installation
+                    _isProfilingEnabled = manualDeployement.ToBoolean() ?? (manualDeployement == "auto");
+                }
+            }
 
             Log.Information("Continuous Profiler is {IsEnabled}.", _isProfilingEnabled ? "enabled" : "disabled");
             _lockObj = new();

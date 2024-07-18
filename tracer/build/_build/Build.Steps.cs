@@ -61,7 +61,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.17.0";
+    const string LibDdwafVersion = "1.18.0";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
 
@@ -82,6 +82,7 @@ partial class Build
 
     readonly string[] WafWindowsArchitectureFolders = { "win-x86", "win-x64" };
     Project NativeTracerProject => Solution.GetProject(Projects.ClrProfilerNative);
+    Project NativeTracerTestsProject => Solution.GetProject(Projects.NativeTracerNativeTests);
     Project NativeLoaderProject => Solution.GetProject(Projects.NativeLoader);
     Project NativeLoaderTestsProject => Solution.GetProject(Projects.NativeLoaderNativeTests);
 
@@ -174,19 +175,28 @@ partial class Build
                : new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests), Solution.GetProject(Projects.DdDotnetIntegrationTests) };
 
     TargetFramework[] TestingFrameworks =>
-    IncludeAllTestFrameworks || HaveIntegrationsChanged
+    IncludeAllTestFrameworks || RequiresThoroughTesting()
         ? new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, }
         : new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, };
 
-    bool HaveIntegrationsChanged =>
-        GetGitChangedFiles(baseBranch: "origin/master")
-           .Any(s => new[]
+    bool RequiresThoroughTesting()
+    {
+        var gitChangedFiles = GetGitChangedFiles(baseBranch: "origin/master");
+        var integrationChangedFiles = TargetFrameworks
+            .SelectMany(tfm => new[]
             {
-                "tracer/src/Datadog.Trace/Generated/net461/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
-                "tracer/src/Datadog.Trace/Generated/netstandard2.0/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
-                "tracer/src/Datadog.Trace/Generated/netcoreapp3.1/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
-                "tracer/src/Datadog.Trace/Generated/net6.0/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
-            }.Any(s.Contains));
+                $"tracer/src/Datadog.Trace/Generated/{tfm}/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
+                $"tracer/src/Datadog.Trace/Generated/{tfm}/Datadog.Trace.SourceGenerators/AspectsDefinitionsGenerator",
+            })
+            .ToList();
+
+        var hasIntegrationChanges = gitChangedFiles.Any(s => integrationChangedFiles.Any(s.Contains));
+        var snapshotChangeCount = gitChangedFiles.Count(s => s.EndsWith("verified.txt"));
+
+        // If the integrations have changed, we should play it safe and test all the frameworks
+        // If a lot of snapshots have changed, we should play it safe
+        return hasIntegrationChanges || (snapshotChangeCount > 100);
+    }
 
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
     {
@@ -236,7 +246,7 @@ partial class Build
             }
         });
 
-    Target CompileNativeSrcWindows => _ => _
+    Target CompileTracerNativeSrcWindows => _ => _
         .Unlisted()
         .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsWin)
@@ -273,6 +283,20 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}");
+        });
+
+    Target CompileTracerNativeTestsLinux => _ => _
+        .Unlisted()
+        .After(CompileManagedLoader)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(NativeBuildDirectory);
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracerTests}");
         });
 
     Target CompileNativeSrcMacOs => _ => _
@@ -337,12 +361,18 @@ partial class Build
             Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
         });
 
-    Target CompileNativeSrc => _ => _
+    Target CompileTracerNativeSrc => _ => _
         .Unlisted()
-        .Description("Compiles the native loader")
-        .DependsOn(CompileNativeSrcWindows)
+        .Description("Compiles the native tracer assets")
+        .DependsOn(CompileTracerNativeSrcWindows)
         .DependsOn(CompileNativeSrcMacOs)
         .DependsOn(CompileTracerNativeSrcLinux);
+
+    Target CompileTracerNativeTests => _ => _
+        .Unlisted()
+        .Description("Compiles the native tracer tests assets")
+        .DependsOn(CompileTracerNativeTestsWindows)
+        .DependsOn(CompileTracerNativeTestsLinux);
 
     Target CppCheckNativeSrcUnix => _ => _
         .Unlisted()
@@ -404,7 +434,6 @@ partial class Build
 
     Target CompileTracerNativeTestsWindows => _ => _
         .Unlisted()
-        .After(CompileNativeSrc)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -425,29 +454,6 @@ partial class Build
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
         });
-
-    Target CompileTracerNativeTestsLinux => _ => _
-        .Unlisted()
-        .After(CompileNativeSrc)
-        .OnlyWhenStatic(() => IsLinux)
-        .Executes(() =>
-        {
-            EnsureExistingDirectory(NativeBuildDirectory);
-
-            CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
-            CMake.Value(
-                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracerTests}");
-        });
-
-    Target CompileNativeTests => _ => _
-        .Unlisted()
-        .Description("Compiles the native unit tests (native loader, profiler)")
-        .DependsOn(CompileTracerNativeTestsWindows)
-        .DependsOn(CompileTracerNativeTestsLinux)
-        .DependsOn(CompileNativeLoaderTestsWindows)
-        .DependsOn(CompileNativeLoaderTestsLinux)
-        .DependsOn(CompileProfilerNativeTestsWindows);
 
     Target DownloadLibDdwaf => _ => _.Unlisted().After(CreateRequiredDirectories).Executes(() => DownloadWafVersion());
 
@@ -619,7 +625,7 @@ partial class Build
     Target PublishNativeSymbolsWindows => _ => _
       .Unlisted()
       .OnlyWhenStatic(() => IsWin)
-      .After(CompileNativeSrc, PublishManagedTracer)
+      .After(CompileTracerNativeSrc, PublishManagedTracer)
       .Executes(() =>
        {
            foreach (var architecture in ArchitecturesForPlatformForTracer)
@@ -645,7 +651,7 @@ partial class Build
     Target PublishNativeTracerWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
-        .After(CompileNativeSrc, PublishManagedTracer)
+        .After(CompileTracerNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
             foreach (var architecture in ArchitecturesForPlatformForTracer)
@@ -661,7 +667,7 @@ partial class Build
     Target PublishNativeTracerUnix => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
-        .After(CompileNativeSrc, PublishManagedTracer)
+        .After(CompileTracerNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
             var (arch, extension) = GetUnixArchitectureAndExtension();
@@ -671,12 +677,13 @@ partial class Build
                 NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
                 MonitoringHomeDirectory / arch,
                 FileExistsPolicy.Overwrite);
+
         });
 
     Target PublishNativeTracerOsx => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsOsx)
-        .After(CompileNativeSrc, PublishManagedTracer)
+        .After(CompileTracerNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
             // Copy the universal binary to the output folder
@@ -1002,7 +1009,7 @@ partial class Build
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
-            var filter = string.IsNullOrWhiteSpace(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)" : Filter;
+            var filter = string.IsNullOrWhiteSpace(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter;
             var exceptions = new List<Exception>();
             try
             {
@@ -1026,7 +1033,7 @@ partial class Build
                             .SetFramework(targetFramework)
                             .EnableCrashDumps()
                             .SetLogsDirectory(TestLogsDirectory)
-                            .When(CodeCoverage, ConfigureCodeCoverage)
+                            .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                             .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -1057,10 +1064,15 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var workingDirectory = TestsDirectory / "Datadog.Tracer.Native.Tests" / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
-            var exePath = workingDirectory / "Datadog.Tracer.Native.Tests.exe";
-            var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+            foreach (var platform in ArchitecturesForPlatformForTracer)
+            {
+                var workingDirectory = TestsDirectory / "Datadog.Tracer.Native.Tests" / "bin" / BuildConfiguration.ToString() / platform;
+                var exePath = workingDirectory / "Datadog.Tracer.Native.Tests.exe";
+
+                var testsResultFile = BuildDataDirectory / "tests" / $"Datadog.Tracer.Native.Tests.Results.{BuildConfiguration}.{platform}.xml";
+                var testExe = ToolResolver.GetLocalTool(exePath);
+                testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
+            }
         });
 
     Target RunTracerNativeTestsLinux => _ => _
@@ -1075,18 +1087,35 @@ partial class Build
             var exePath = workingDirectory / FileNames.NativeTracerTests;
             Chmod.Value.Invoke("+x " + exePath);
 
+            var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeTracerTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
             var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+
+            testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
         });
 
     Target RunNativeTests => _ => _
         .Unlisted()
+        .DependsOn(RunTracerNativeTests)
+        .DependsOn(RunNativeLoaderNativeTests)
+        .DependsOn(RunProfilerNativeTests);
+
+    Target RunTracerNativeTests => _ => _
+        .Unlisted()
         .DependsOn(RunTracerNativeTestsWindows)
         .DependsOn(RunTracerNativeTestsLinux)
+        .After(CompileTracerNativeTests);
+
+    Target RunNativeLoaderNativeTests => _ => _
+        .Unlisted()
         .DependsOn(RunNativeLoaderTestsWindows)
         .DependsOn(RunNativeLoaderTestsLinux)
+        .After(CompileNativeLoaderNativeTests);
+
+    Target RunProfilerNativeTests => _ => _
+        .Unlisted()
         .DependsOn(RunProfilerNativeUnitTestsWindows)
-        .DependsOn(RunProfilerNativeUnitTestsLinux);
+        .DependsOn(RunProfilerNativeUnitTestsLinux)
+        .After(CompileProfilerNativeTests);
 
     Target CompileDependencyLibs => _ => _
         .Unlisted()
@@ -1378,7 +1407,7 @@ partial class Build
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
@@ -1395,13 +1424,13 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True&Category!=AzureFunctions" : Filter)
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
@@ -1465,12 +1494,12 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "RunOnWindows=True&Category=AzureFunctions" : Filter)
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(Category=AzureFunctions)&(SkipInCI!=True)" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(GetResultsDirectory(project))
                     .WithDatadogLogger()
                     .SetProjectFile(project));
@@ -1506,12 +1535,12 @@ partial class Build
                     .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions" : Filter)
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
@@ -1558,12 +1587,12 @@ partial class Build
                                 .SetFramework(Framework)
                                 .EnableNoRestore()
                                 .EnableNoBuild()
-                                .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&LoadFromGAC=True&Category!=AzureFunctions" : Filter)
+                                .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(LoadFromGAC=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
                                 .SetTestTargetPlatform(TargetPlatform)
                                 .SetIsDebugRun(isDebugRun)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                 .SetLogsDirectory(TestLogsDirectory)
-                                .When(CodeCoverage, ConfigureCodeCoverage)
+                                .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
                                 .SetProjectFile(project));
@@ -1597,12 +1626,12 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&MSI=True&Category!=AzureFunctions" : Filter)
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(MSI=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(resultsDirectory)
                     .WithDatadogLogger()
                     .SetProjectFile(project));
@@ -1654,8 +1683,6 @@ partial class Build
                 "Samples.WebRequest.NetFramework20",
                 "DogStatsD.RaceCondition",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
-                "Samples.OracleMDA", // We don't test these yet
-                "Samples.OracleMDA.Core", // We don't test these yet
                 "MismatchedTracerVersions",
                 "IBM.Data.DB2.DBCommand",
                 "Sandbox.AutomaticInstrumentation", // Doesn't run on Linux
@@ -1862,7 +1889,7 @@ partial class Build
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .SetProjectFile(Projects.DdTraceIntegrationTests)
                     .EnableTrxLogOutput(project)
                     .WithDatadogLogger());
@@ -1898,7 +1925,7 @@ partial class Build
             var filter = string.IsNullOrWhiteSpace(Filter) switch
             {
                 false => $"({Filter}){dockerFilter}{armFilter}",
-                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
+                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
             };
 
             try
@@ -1919,7 +1946,7 @@ partial class Build
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                         .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                        .When(CodeCoverage, ConfigureCodeCoverage)
+                        .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
                             .WithDatadogLogger()
@@ -1941,7 +1968,7 @@ partial class Build
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
@@ -1979,7 +2006,7 @@ partial class Build
             var filter = string.IsNullOrWhiteSpace(Filter) switch
             {
                 false => Filter,
-                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
+                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
             };
 
             var targetPlatform = IsArm64 ? (MSBuildTargetPlatform)"arm64" : TargetPlatform;
@@ -2003,7 +2030,7 @@ partial class Build
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                         .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                        .When(CodeCoverage, ConfigureCodeCoverage)
+                        .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
                             .WithDatadogLogger()
@@ -2026,7 +2053,7 @@ partial class Build
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
@@ -2427,6 +2454,13 @@ partial class Build
            // There's a race in the profiler where unwinding when the thread is running
            knownPatterns.Add(new(@".*Failed to walk \d+ stacks for sampled exception:\s+CORPROF_E_STACKSNAPSHOT_UNSAFE", RegexOptions.Compiled));
 
+           // This one is caused by the intentional crash in the crash tracking smoke test
+           knownPatterns.Add(new("Application threw an unhandled exception: System.BadImageFormatException: Expected", RegexOptions.Compiled));
+
+           // We intentionally set the variables for smoke tests which means we get this warning on <= .NET Core 3.0 or <.NET 6.0.12 
+           knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET Core 3.0 or lower", RegexOptions.Compiled));
+           knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 6.0.12 and earlier have known crashing bugs", RegexOptions.Compiled));
+           
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
 
@@ -2470,7 +2504,7 @@ partial class Build
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
                              && nativeTracerFiles.Count > 0
-                             && nativeProfilerFiles.Count > 0
+                             && (nativeProfilerFiles.Count > 0 || IsOsx) // profiler doesn't support mac 
                              && nativeLoaderFiles.Count > 0);
 
         if (hasRequiredFiles

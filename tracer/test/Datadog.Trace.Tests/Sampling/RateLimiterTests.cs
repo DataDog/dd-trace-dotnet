@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tests.Sampling
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
             var span = new Span(spanContext, null);
-            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null);
+            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null, intervalMilliseconds: null);
             var allowed = rateLimiter.Allowed(span);
             Assert.True(allowed);
         }
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public async Task All_Traces_Disabled()
         {
-            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: 0);
+            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: 0, intervalMilliseconds: null);
             var allowedCount = await AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
             Assert.Equal(expected: 0, actual: allowedCount);
         }
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public async Task All_Traces_Allowed()
         {
-            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: -1);
+            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: -1, intervalMilliseconds: null);
             var allowedCount = await AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
             Assert.Equal(expected: 500, actual: allowedCount);
         }
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public async Task Only_100_Allowed_In_500_Burst_For_Default()
         {
-            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null);
+            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null, intervalMilliseconds: null);
             var allowedCount = await AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
             Assert.Equal(expected: DefaultLimitPerSecond, actual: allowedCount);
         }
@@ -142,7 +142,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var clock = new SimpleClock();
 
-            var limiter = new TracerRateLimiter(maxTracesPerInterval: intervalLimit);
+            var limiter = new TracerRateLimiter(maxTracesPerInterval: intervalLimit, intervalMilliseconds: null);
             var barrier = new Barrier(parallelism + 1, _ => clock.UtcNow += test.TimeBetweenBursts);
             var numberPerThread = test.NumberPerBurst / parallelism;
             var workers = new Task[parallelism];

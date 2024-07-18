@@ -48,7 +48,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
 
             var nbSignalHandlerInstallation = File.ReadLines(logFile)
-                .Count(l => l.Contains("Successfully setup signal handler for SIGUSR1 signal."));
+                .Count(l => l.Contains("Successfully setup signal handler for"));
 
             nbSignalHandlerInstallation.Should().Be(1);
         }

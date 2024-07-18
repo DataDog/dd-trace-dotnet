@@ -138,6 +138,11 @@
     
     <div><a href="/Iast/NHibernateQuery?username=test">GET /Iast/NHibernateQuery [SQL Injection on NHibernate]</a></div>
 
+	<div><a href="/Iast/CustomAttribute?userName=test">GET /Iast/CustomAttribute [Custom Instrumentation with Attribute]</a></div>
+	
+	<div><a href="/Iast/CustomManual?userName=test">GET /Iast/CustomManual [Custom Instrumentation with Manual Span Creation]</a></div>
+
+
     <div>
         @Html.Raw(Context.Request.Query["q"])
     </div>

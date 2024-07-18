@@ -16,12 +16,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private const string AssemblyName = "Datadog.Trace, Version=2.52.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        private const string AssemblyName = "Datadog.Trace, Version=2.55.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
         private const string AasCustomTracingKey = "DD_AAS_ENABLE_CUSTOM_TRACING";
         private const string AasCustomMetricsKey = "DD_AAS_ENABLE_CUSTOM_METRICS";
         private const string TraceEnabledKey = "DD_TRACE_ENABLED";
         private const string ProfilingEnabledKey = "DD_PROFILING_ENABLED";
+        private const string ProfilingSsiEnabledKey = "DD_INJECTION_ENABLED";
 
         private static int _startupCtorInitialized;
 
@@ -73,7 +74,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var customTracingEnabled = ReadBooleanEnvironmentVariable(AasCustomTracingKey, false);
             var needsDogStatsD = ReadBooleanEnvironmentVariable(AasCustomMetricsKey, false);
             var automaticTraceEnabled = ReadBooleanEnvironmentVariable(TraceEnabledKey, true);
-            var automaticProfilingEnabled = ReadBooleanEnvironmentVariable(ProfilingEnabledKey, false);
+
+            var profilingManuallyEnabled = ReadEnvironmentVariable(ProfilingEnabledKey);
+
+            var automaticProfilingEnabled = profilingManuallyEnabled switch
+            {
+                "auto" => true,
+                null => false,
+                _ => ReadBooleanEnvironmentVariable(ProfilingEnabledKey, false)
+            };
 
             if (automaticTraceEnabled || customTracingEnabled || needsDogStatsD || automaticProfilingEnabled)
             {

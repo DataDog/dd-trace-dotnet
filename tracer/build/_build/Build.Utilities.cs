@@ -253,6 +253,12 @@ partial class Build
 
            var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
+           
+           Logger.Information("Verifying that updated dependabot file is valid...");
+
+           var tempProjectFile = TempDirectory / "dependabot_test" / "Project.csproj";
+           CopyFile(dependabotProj, tempProjectFile, FileExistsPolicy.Overwrite);
+           DotNetRestore(x => x.SetProjectFile(tempProjectFile));
        });
     
     Target GenerateSpanDocumentation => _ => _

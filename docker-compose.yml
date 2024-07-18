@@ -219,6 +219,14 @@ services:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
 
+  # this docker image doesn't work on arm64. It can still be tested on Mac using colima, see https://github.com/abiosoft/colima
+  oracle:
+    image: container-registry.oracle.com/database/free:latest
+    ports:
+      - "127.0.0.1:1521:1521"
+    environment:
+      - ORACLE_PWD=testpassword
+
   wcfservice:
     image: mcr.microsoft.com/dotnet/framework/wcf:4.8
     ports:
@@ -427,7 +435,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter ${Filter:- } --SampleName ${SampleName:- } --code-coverage ${runCodeCoverage:-true}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -439,7 +447,7 @@ services:
       - Filter=${Filter:- } #optional
       - SampleName=${SampleName:- } #optional
       - baseImage=${baseImage:-default}
-      - runCodeCoverage=${runCodeCoverage:-true}
+      - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
@@ -463,6 +471,7 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SDK_HOST=localstack:4566
+      - ORACLE_HOST=oracle
       - AEROSPIKE_HOST=aerospike:3000
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
@@ -503,6 +512,7 @@ services:
       - elasticsearch6
       - elasticsearch5
       - sqlserver
+      # - oracle disabled for now, image is too big for CI
       - mongo
       - postgres
       - mysql
@@ -520,7 +530,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true} --targetplatform x64
+    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -530,7 +540,8 @@ services:
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
-      - runCodeCoverage=${runCodeCoverage:-true}
+      - targetplatform=${targetplatform:-x64}
+      - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
@@ -569,7 +580,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-net6.0} --filter Category=Lambda --code-coverage ${runCodeCoverage:-true}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -577,9 +588,11 @@ services:
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
-      - framework=${framework:-netcoreapp3.1}
+      - framework=${framework:-net6.0}
       - baseImage=${baseImage:-default}
-      - runCodeCoverage=${runCodeCoverage:-true}
+      - Filter=${Filter:-Category=Lambda}
+      - File=${filter:-Category=Lambda}
+      - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
@@ -622,7 +635,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true}
+    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
     cap_add:
@@ -631,7 +644,7 @@ services:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
-      - runCodeCoverage=${runCodeCoverage:-true}
+      - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - explorationTestUseCase=${explorationTestUseCase:-debugger}
       - explorationTestName=${explorationTestName:-eshoponweb}
       - baseImage=${baseImage:-default}
@@ -675,6 +688,7 @@ services:
       - elasticsearch6
       - elasticsearch5
       - sqlserver
+      # - oracle disabled for now, image is too big for CI
       - mongo
       - postgres
       - mysql
@@ -686,7 +700,7 @@ services:
       - couchbase
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210 # oracle:1521
 
   IntegrationTests.ARM64:
     build:
@@ -695,7 +709,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --filter ${Filter:- } --SampleName ${SampleName:- }  --framework ${framework:-netcoreapp3.1}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -704,8 +718,9 @@ services:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
-      - Filter=${Filter:- } #optional
+      - Filter=${Filter:-} #optional
       - SampleName=${SampleName:- } #optional
+      - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - baseImage=${baseImage:-debian}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
@@ -790,7 +805,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --targetplatform x64
+    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -800,6 +815,7 @@ services:
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-debian}
+      - targetplatform=${targetplatform:-x64}
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
@@ -847,7 +863,7 @@ services:
     environment:
     - ENABLED_CHECKS=trace_count_header,meta_tracer_version_header,trace_content_length
     - SNAPSHOT_CI=1
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id
 
   smoke-tests:
     build:
@@ -863,6 +879,7 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -884,6 +901,7 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -905,6 +923,7 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -924,6 +943,7 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -944,6 +964,7 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -963,6 +984,7 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/dumps:/dumps
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -983,6 +1005,7 @@ services:
     volumes:
       - ./:/project
       - ./tracer/build_data/logs:/var/log/datadog/dotnet
+      - ./tracer/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1003,6 +1026,7 @@ services:
     volumes:
       - ./:/project
       - ./tracer/build_data/logs:/var/log/datadog/dotnet
+      - ./tracer/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1024,6 +1048,7 @@ services:
     volumes:
       - ./:/project
       - ./tracer/build_data/logs:/var/log/datadog/dotnet
+      - ./tracer/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126
@@ -1045,6 +1070,7 @@ services:
     volumes:
       - ./:/project
       - ./tracer/build_data/logs:/var/log/datadog/dotnet
+      - ./tracer/build_data/dumps:/dumps
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent:8126

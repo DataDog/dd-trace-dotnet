@@ -103,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler
 
         foreach (var aspectClass in aspectClasses.OrderBy(p => p.AspectClass, StringComparer.Ordinal))
         {
-            if (aspectClass.AspectClass.Contains(",Sink,"))
+            if (aspectClass.AspectClass.Contains(",RaspIastSink,"))
             {
                 sb.AppendLine(FormatLine(aspectClass.AspectClass));
                 foreach (var aspect in aspectClass.Aspects)
@@ -123,7 +123,7 @@ namespace Datadog.Trace.ClrProfiler
 
         string FormatLine(string line)
         {
-            return $"\"{line.Replace("\"", "\\\"")}\",";
+            return $"\"{line.Replace("\"", "\\\"").Replace("RaspIastSink", "Sink")}\",";
         }
     }
 

@@ -15,8 +15,6 @@
 #include "shared/src/native-src/string.h"
 #include "shared/src/native-src/util.h"
 
-using namespace std::literals::chrono_literals;
-
 std::string const Configuration::DefaultDevSite = "datad0g.com";
 std::string const Configuration::DefaultProdSite = "datadoghq.com";
 std::string const Configuration::DefaultVersion = "Unspecified-Version";
@@ -26,6 +24,7 @@ int32_t const Configuration::DefaultAgentPort = 8126;
 std::string const Configuration::DefaultEmptyString = "";
 std::chrono::seconds const Configuration::DefaultDevUploadInterval = 20s;
 std::chrono::seconds const Configuration::DefaultProdUploadInterval = 60s;
+std::chrono::milliseconds const Configuration::DefaultCpuProfilingInterval = 9ms;
 
 Configuration::Configuration()
 {
@@ -77,6 +76,7 @@ Configuration::Configuration()
     // Check CI Visibility mode
     _isCIVisibilityEnabled = GetEnvironmentValue(EnvironmentVariables::CIVisibilityEnabled, false);
     _internalCIVisibilitySpanId = uint64_t{0};
+    _cpuProfilingInterval = ExtractCpuProfilingInterval();
     if (_isCIVisibilityEnabled)
     {
         // We cannot write 0ull instead of std::uint64_t{0} because on Windows, compiling in x64, std::uint64_t == unsigned long long.
@@ -86,11 +86,15 @@ Configuration::Configuration()
 
         // If we detect CI Visibility we allow to reduce the minimum ms in sampling rate down to 1ms.
         _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate(1);
+        // for timer_create based profiling
+        _cpuProfilingInterval = ExtractCpuProfilingInterval(1ms);
     }
 
     _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
-    ExtractSsiState(_isSsiDeployed, _isSsiActivated);
+    _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
+    _enablementStatus = ExtractEnablementStatus();
+    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -397,9 +401,10 @@ std::string const& Configuration::GetGitCommitSha() const
 // - replace shared::TryParse by this implementation
 // - add tests
 
-bool TryParse(shared::WSTRING const& s, int32_t& result)
+static bool TryParse(shared::WSTRING const& s, int32_t& result)
 {
-    if (s.empty())
+    auto r = shared::Trim(s);
+    if (r.empty())
     {
         result = 0;
         return false;
@@ -407,7 +412,7 @@ bool TryParse(shared::WSTRING const& s, int32_t& result)
 
     try
     {
-        result = std::stoi(shared::ToString(s));
+        result = std::stoi(shared::ToString(r));
         return true;
     }
     catch (std::exception const&)
@@ -418,9 +423,11 @@ bool TryParse(shared::WSTRING const& s, int32_t& result)
     return false;
 }
 
-bool TryParse(shared::WSTRING const& s, uint64_t& result)
+static bool TryParse(shared::WSTRING const& s, uint64_t& result)
 {
-    if (s.empty())
+    auto r = shared::Trim(s);
+
+    if (r.empty())
     {
         result = 0;
         return false;
@@ -428,7 +435,7 @@ bool TryParse(shared::WSTRING const& s, uint64_t& result)
 
     try
     {
-        auto str = shared::ToString(s);
+        auto str = shared::ToString(r);
         result = std::stoull(str);
         return true;
     }
@@ -450,6 +457,14 @@ std::chrono::seconds Configuration::ExtractUploadInterval()
     }
 
     return GetDefaultUploadInterval();
+}
+
+std::chrono::milliseconds Configuration::ExtractCpuProfilingInterval(std::chrono::milliseconds minimum)
+{
+    // For normal path (no CI-visibility), 9ms is the default and lowest value we can have
+    // for CI-Visibility we allow it to be less
+    auto interval = GetEnvironmentValue(EnvironmentVariables::CpuProfilingInterval, DefaultCpuProfilingInterval);
+    return std::max(interval, minimum);
 }
 
 std::chrono::nanoseconds Configuration::ExtractCpuWallTimeSamplingRate(int minimum)
@@ -538,16 +553,6 @@ bool Configuration::IsEtwEnabled() const
 #endif
 }
 
-bool Configuration::IsSsiDeployed() const
-{
-    return _isSsiDeployed;
-}
-
-bool Configuration::IsSsiActivated() const
-{
-    return _isSsiActivated;
-}
-
 bool Configuration::IsEtwLoggingEnabled() const
 {
 #ifdef LINUX
@@ -557,36 +562,56 @@ bool Configuration::IsEtwLoggingEnabled() const
 #endif
 }
 
-bool convert_to(shared::WSTRING const& s, bool& result)
+EnablementStatus Configuration::GetEnablementStatus() const
+{
+    return _enablementStatus;
+}
+
+DeploymentMode Configuration::GetDeploymentMode() const
+{
+    return _deploymentMode;
+}
+
+CpuProfilerType Configuration::GetCpuProfilerType() const
+{
+    return _cpuProfilerType;
+}
+
+std::chrono::milliseconds Configuration::GetCpuProfilingInterval() const
+{
+    return _cpuProfilingInterval;
+}
+
+static bool convert_to(shared::WSTRING const& s, bool& result)
 {
     return shared::TryParseBooleanEnvironmentValue(s, result);
 }
 
-bool convert_to(shared::WSTRING const& s, std::string& result)
+static bool convert_to(shared::WSTRING const& s, std::string& result)
 {
-    result = shared::ToString(s);
+    result = shared::ToString(shared::Trim(s));
     return true;
 }
 
-bool convert_to(shared::WSTRING const& s, shared::WSTRING& result)
+static bool convert_to(shared::WSTRING const& s, shared::WSTRING& result)
 {
-    result = s;
+    result = shared::Trim(s);
     return true;
 }
 
-bool convert_to(shared::WSTRING const& s, int32_t& result)
+static bool convert_to(shared::WSTRING const& s, int32_t& result)
 {
     return TryParse(s, result);
 }
 
-bool convert_to(shared::WSTRING const& s, uint64_t& result)
+static bool convert_to(shared::WSTRING const& s, uint64_t& result)
 {
     return TryParse(s, result);
 }
 
-bool convert_to(shared::WSTRING const& s, double& result)
+static bool convert_to(shared::WSTRING const& s, double& result)
 {
-    auto str = shared::ToString(s);
+    auto str = shared::ToString(shared::Trim(s));
 
     char* endPtr = nullptr;
     const char* ptr = str.c_str();
@@ -602,13 +627,32 @@ bool convert_to(shared::WSTRING const& s, double& result)
     return (errno != ERANGE);
 }
 
+static bool convert_to(shared::WSTRING const& s, std::chrono::milliseconds& result)
+{
+    std::uint64_t value;
+    auto parsed = TryParse(s, value);
+    if (parsed)
+    {
+        result = std::chrono::milliseconds(value);
+    }
+    return parsed;
+}
+
+static bool convert_to(shared::WSTRING const& s, DeploymentMode& result)
+{
+    // if we reach here it means the env var exists
+    result = DeploymentMode::SingleStepInstrumentation;
+    return true;
+}
+
 template <typename T>
 T Configuration::GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue)
 {
-    auto r = shared::Trim(shared::GetEnvironmentValue(name));
-    if (r.empty()) return defaultValue;
+    if (!shared::EnvironmentExist(name)) return defaultValue;
+
     T result{};
-    if (!convert_to(r, result)) return std::move(defaultValue);
+    auto r = shared::GetEnvironmentValue(name);
+    if (!convert_to(r, result)) return defaultValue;
     return result;
 }
 
@@ -625,29 +669,41 @@ bool Configuration::IsEnvironmentValueSet(shared::WSTRING const& name, T& value)
     return true;
 }
 
-void Configuration::ExtractSsiState(bool& ssiDeployed, bool& ssiEnabled)
+EnablementStatus Configuration::ExtractEnablementStatus()
 {
-    // if the profiler has been deployed via Single Step Instrumentation,
-    // the DD_INJECTION_ENABLED env var exists.
-    // if the profiler has been activated via Single Step Instrumentation,
-    // the DD_INJECTION_ENABLED env var should contain "profiling" (it is a list of SSI installed products)
-    //
-    if (!shared::EnvironmentExist(EnvironmentVariables::SsiDeployed))
+    if (shared::EnvironmentExist(EnvironmentVariables::ProfilerEnabled))
     {
-        ssiDeployed = false;
-        ssiEnabled = false;
-        return;
-    }
+        auto isEnabled = false;
+        auto enabled = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
+        auto parsed = shared::TryParseBooleanEnvironmentValue(enabled, isEnabled);
 
-    ssiDeployed = true;
+        if (parsed)
+        {
+            return isEnabled
+                ? EnablementStatus::ManuallyEnabled
+                : EnablementStatus::ManuallyDisabled;
+        }
+
+        // It is possible that a Single Step Instrumentation deployment was done
+        // and the profiler was enabled during that step. In that case, the "auto" value
+        // will be set and profiler should be enabled.
+        // This should be replaced by adding "profiler" in EnvironmentVariables::SsiDeployed
+        // later that will take into account heuristics
+        return !enabled.empty() && enabled == WStr("auto")
+            ? EnablementStatus::ManuallyEnabled
+            : EnablementStatus::ManuallyDisabled;
+    }
 
     auto r = shared::GetEnvironmentValue(EnvironmentVariables::SsiDeployed);
-    if (r.empty())
-    {
-        ssiEnabled = false;
-        return;
-    }
+    auto pos = r.find(WStr("profiler"));
+    auto ssiEnabled = (pos != shared::WSTRING::npos);
 
-    auto pos = r.find(WStr("profiling"));
-    ssiEnabled = (pos != shared::WSTRING::npos);
+    if (ssiEnabled)
+    {
+        return EnablementStatus::SsiEnabled;
+    }
+    else
+    {
+        return EnablementStatus::NotSet;
+    }
 }

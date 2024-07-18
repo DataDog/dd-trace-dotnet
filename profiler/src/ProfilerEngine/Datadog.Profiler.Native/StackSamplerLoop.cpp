@@ -31,7 +31,7 @@
 
 // Configuration constants:
 using namespace std::chrono_literals;
-constexpr const WCHAR* ThreadName = WStr("DD.Profiler.StackSamplerLoop.Thread");
+constexpr const WCHAR* ThreadName = WStr("DD_StackSampler");
 
 StackSamplerLoop::StackSamplerLoop(
     ICorProfilerInfo4* pCorProfilerInfo,
@@ -64,9 +64,8 @@ StackSamplerLoop::StackSamplerLoop(
     _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
     _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
-    _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled()},
-    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()},
-    _isStopped{false}
+    _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled() && pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime},
+    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
     Log::Info("Processor cores = ", _nbCores);
@@ -76,6 +75,8 @@ StackSamplerLoop::StackSamplerLoop(
     Log::Info("Wall time sampled threads = ", _walltimeThreadsThreshold);
     Log::Info("Max CodeHotspots sampled threads = ", _codeHotspotsThreadsThreshold);
     Log::Info("Max CPU sampled threads = ", _cpuThreadsThreshold);
+    Log::Info("Manual Cpu profiler is ", (_isCpuEnabled) ? "enabled" : "disabled");
+    Log::Info("Wall-time profiler is ", (_isWalltimeEnabled) ? "enabled" : "disabled");
 
     _pCorProfilerInfo->AddRef();
 
@@ -92,7 +93,7 @@ StackSamplerLoop::StackSamplerLoop(
 
 StackSamplerLoop::~StackSamplerLoop()
 {
-    Stop();
+    StopImpl();
 
     ICorProfilerInfo4* corProfilerInfo = _pCorProfilerInfo;
     if (corProfilerInfo != nullptr)
@@ -107,23 +108,19 @@ const char* StackSamplerLoop::GetName()
     return "StackSamplerLoop";
 }
 
-bool StackSamplerLoop::Start()
+bool StackSamplerLoop::StartImpl()
 {
-    _pLoopThread = std::make_unique<std::thread>(&StackSamplerLoop::MainLoop, this);
-    OpSysTools::SetNativeThreadName(_pLoopThread.get(), ThreadName);
+    _pLoopThread = std::make_unique<std::thread>([this]
+        {
+            OpSysTools::SetNativeThreadName(ThreadName);
+            MainLoop();
+        });
 
     return true;
 }
 
-bool StackSamplerLoop::Stop()
+bool StackSamplerLoop::StopImpl()
 {
-    // allow multiple calls to Stop()
-    auto wasStopped = std::exchange(_isStopped, true);
-    if (wasStopped)
-    {
-        return true;
-    }
-
     _shutdownRequested = true;
     if (_pLoopThread != nullptr)
     {

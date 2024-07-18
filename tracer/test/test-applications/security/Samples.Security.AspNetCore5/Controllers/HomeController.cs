@@ -40,5 +40,12 @@ namespace Samples.Security.AspNetCore5.Controllers
             Response.Headers.Add("content-language", "krypton");
             return Content("Setting content-language");
         }
+        
+        [AcceptVerbs("GET")]
+        [Route("/null-action/{pathparam}/{pathparam2}")]
+        public object NullAction(string pathparam, string pathparam2)
+        {
+            return null;
+        }
     }
 }

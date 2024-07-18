@@ -7,13 +7,11 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
@@ -66,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         LogInjectionEnabled = true,
                         // SpanSamplingRules = "[{\"service\": \"cart*\"}]",
                         TraceSampleRate = .5,
-                        // CustomSamplingRules = "[{\"sample_rate\":0.1}]",
+                        TraceSamplingRules = "[{\"sample_rate\":0.1}]",
                         // ServiceNameMapping = "[{\"from_key\":\"foo\", \"to_name\":\"bar\"}]",
                         TraceHeaderTags = "[{ \"header\": \"User-Agent\", \"tag_name\": \"http.user_agent\" }]",
                         GlobalTags = "[\"foo1:bar1\",\"foo2:bar2\"]"
@@ -80,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         LogInjectionEnabled = true,
                         // SpanSamplingRules = "[{\"service\": \"cart*\"}]",
                         TraceSampleRate = .5,
-                        // CustomSamplingRules = "[{\"sample_rate\":0.1}]",
+                        TraceSamplingRules = "[{\"sample_rate\":0.1}]",
                         // ServiceNameMapping = "foo:bar",
                         TraceHeaderTags = "User-Agent:http.user_agent",
                         GlobalTags = "[\"foo1:bar1\",\"foo2:bar2\"]"
@@ -153,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 return configurationChanged.Configuration;
             }
 
-            return Enumerable.Empty<ConfigurationKeyValue>();
+            return [];
         }
 
         private async Task UpdateAndValidateConfig(MockTracerAgent agent, LogEntryWatcher logEntryWatcher, Config config, Config expectedConfig = null)
@@ -166,14 +164,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var request = await agent.SetupRcmAndWait(Output, new[] { ((object)new { lib_config = config }, DynamicConfigurationManager.ProductName, fileId) });
 
+            // copy the byte array and reverse the bytes to create a BitArray with the correct order
+            var capabilityBytes = new byte[request.Client.Capabilities.Length];
+            Array.Copy(request.Client.Capabilities, capabilityBytes, request.Client.Capabilities.Length);
+            Array.Reverse(capabilityBytes);
+
             // Validate capabilities
-            var capabilities = new BitArray(request.Client.Capabilities);
+            var capabilities = new BitArray(capabilityBytes);
 
             capabilities[12].Should().BeTrue(); // APM_TRACING_SAMPLE_RATE
             capabilities[13].Should().BeTrue(); // APM_TRACING_LOGS_INJECTION
             capabilities[14].Should().BeTrue(); // APM_TRACING_HTTP_HEADER_TAGS
             capabilities[15].Should().BeTrue(); // APM_TRACING_CUSTOM_TAGS
             capabilities[19].Should().BeTrue(); // APM_TRACING_TRACING_ENABLED
+            capabilities[29].Should().BeTrue(); // APM_TRACING_SAMPLE_RULES
 
             request.Client.State.ConfigStates.Should().ContainSingle(f => f.Id == fileId)
                .Subject.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
@@ -209,7 +213,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // json["debug"]?.Value<bool>().Should().Be(expectedConfig.DebugLogsEnabled);
                 json["log_injection_enabled"]?.Value<bool>().Should().Be(expectedConfig.LogInjectionEnabled);
                 json["sample_rate"]?.Value<double?>().Should().Be(expectedConfig.TraceSampleRate);
-                // json["sampling_rules"]?.Value<string>().Should().Be(expectedConfig.CustomSamplingRules);
+                JsonConfigurationSource.JTokenToString(json["sampling_rules"]).Should().Be(expectedConfig.TraceSamplingRules);
                 // json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
                 // json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
                 FlattenJsonArray(json["header_tags"]).Should().Be(expectedConfig.TraceHeaderTags ?? string.Empty);
@@ -251,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // (ConfigurationKeys.DebugEnabled, config.DebugLogsEnabled),
                 (ConfigurationKeys.LogsInjectionEnabled, config.LogInjectionEnabled),
                 (ConfigurationKeys.GlobalSamplingRate, config.TraceSampleRate),
-                // (ConfigurationKeys.CustomSamplingRules, config.CustomSamplingRules),
+                (ConfigurationKeys.CustomSamplingRules, config.TraceSamplingRules == null ? null : JToken.Parse(config.TraceSamplingRules).ToString(Formatting.None)),
                 // (ConfigurationKeys.SpanSamplingRules, config.SpanSamplingRules),
                 // (ConfigurationKeys.DataStreamsMonitoring.Enabled, config.DataStreamsEnabled),
                 (ConfigurationKeys.HeaderTags, config.TraceHeaderTags == null ? null : JToken.Parse(config.TraceHeaderTags).ToString()),
@@ -315,7 +319,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             latestConfig.Should().HaveCount(expectedCount);
         }
 
-        internal class PlainJsonStringConverter : JsonConverter
+        private class PlainJsonStringConverter : JsonConverter
         {
             public override bool CanConvert(Type objectType)
             {
@@ -333,7 +337,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        internal record Config
+        private record Config
         {
             [JsonProperty("tracing_enabled")]
             public bool TraceEnabled { get; init; }
@@ -350,8 +354,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             [JsonProperty("tracing_sampling_rate")]
             public double? TraceSampleRate { get; init; }
 
-            // [JsonProperty("tracing_sampling_rules")]
-            // public string CustomSamplingRules { get; init; }
+            [JsonProperty("tracing_sampling_rules")]
+            [JsonConverter(typeof(PlainJsonStringConverter))]
+            public string TraceSamplingRules { get; init; }
 
             // [JsonProperty("span_sampling_rules")]
             // public string SpanSamplingRules { get; init; }

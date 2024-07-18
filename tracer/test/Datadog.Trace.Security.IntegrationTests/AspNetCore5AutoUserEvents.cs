@@ -25,6 +25,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _fixture = fixture;
             _enableSecurity = enableSecurity;
             _fixture.SetOutput(outputHelper);
+            EnableRasp(false);
             if (userTrackingMode != null)
             {
                 EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING", userTrackingMode);

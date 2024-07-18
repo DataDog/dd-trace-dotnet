@@ -249,13 +249,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             span.Type = SpanTypes.Grpc;
             span.ResourceName = methodFullName;
 
-            if (span.Context.TraceContext.SamplingPriority == null)
-            {
-                // If we don't add the span to the trace context, then we need to manually call the sampler
-                var samplingDecision = tracer.CurrentTraceSettings.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
-                span.Context.TraceContext.SetSamplingPriority(samplingDecision);
-            }
-
             return span;
         }
     }

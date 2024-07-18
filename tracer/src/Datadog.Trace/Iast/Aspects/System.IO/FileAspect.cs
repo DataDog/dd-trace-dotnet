@@ -5,13 +5,15 @@
 
 #nullable enable
 
+using System;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> File class aspects </summary>
-[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.Sink, VulnerabilityType.PathTraversal)]
+[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.RaspIastSink, VulnerabilityType.PathTraversal)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class FileAspect
@@ -102,8 +104,7 @@ public class FileAspect
     [AspectMethodInsertBefore("System.IO.File::Replace(System.String,System.String,System.String,System.Boolean)", new int[] { 1, 2, 3 })]
     public static string ReviewPath(string path)
     {
-        IastModule.OnPathTraversal(path);
-        RaspModule.OnLfi(path);
+        VulnerabilitiesModule.OnPathTraversal(path);
         return path;
     }
 }

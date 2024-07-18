@@ -4,11 +4,11 @@
 #pragma once
 
 #include "ApplicationInfo.h"
-#include "IService.h"
+#include "ServiceBase.h"
 
 #include <string>
 
-class IApplicationStore : public IService
+class IApplicationStore : public ServiceBase
 {
 public:
     virtual ApplicationInfo GetApplicationInfo(const std::string& runtimeId) = 0;

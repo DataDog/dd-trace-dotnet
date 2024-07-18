@@ -5,7 +5,6 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -32,6 +31,12 @@ namespace Datadog.Trace.AppSec.Waf
         ulong AggregatedTotalRuntime { get; }
 
         ulong AggregatedTotalRuntimeWithBindings { get; }
+
+        ulong AggregatedTotalRuntimeRasp { get; }
+
+        ulong AggregatedTotalRuntimeWithBindingsRasp { get; }
+
+        uint RaspRuleEvaluations { get; }
 
         bool Timeout { get; }
 

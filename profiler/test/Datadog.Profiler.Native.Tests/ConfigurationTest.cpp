@@ -846,64 +846,127 @@ TEST(ConfigurationTest, CheckEtwIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsEtwEnabled(), expectedValue);
 }
 
-TEST(ConfigurationTest, CheckSsiDeployedByDefault)
+TEST(ConfigurationTest, CheckSsiNotDeployedByDefault)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsSsiDeployed(), false);
+    ASSERT_THAT(configuration.GetDeploymentMode(), DeploymentMode::Manual);
 }
 
-TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarConstainsProfiling)
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarConstainsProfiler)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiling"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiler"));
     auto configuration = Configuration{};
-    auto expectedValue = true;
-    ASSERT_THAT(configuration.IsSsiDeployed(), expectedValue);
+    auto expectedValue = DeploymentMode::SingleStepInstrumentation;
+    ASSERT_THAT(configuration.GetDeploymentMode(), expectedValue);
 }
 
-TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarDoesNotContainProfiling)
+TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarDoesNotContainProfiler)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
     auto configuration = Configuration{};
-    auto expectedValue = true;
-    ASSERT_THAT(configuration.IsSsiDeployed(), expectedValue);
+    auto expectedValue = DeploymentMode::SingleStepInstrumentation;
+    ASSERT_THAT(configuration.GetDeploymentMode(), expectedValue);
 }
 
 TEST(ConfigurationTest, CheckSsiIsDeployedIfEnvVarIsEmpty)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr(""));
     auto configuration = Configuration{};
-    auto expectedValue = true;
-    ASSERT_THAT(configuration.IsSsiDeployed(), expectedValue);
+    auto expectedValue = DeploymentMode::SingleStepInstrumentation;
+    ASSERT_THAT(configuration.GetDeploymentMode(), expectedValue);
 }
 
-TEST(ConfigurationTest, CheckSsiActivatedByDefault)
+TEST(ConfigurationTest, CheckSsiIsDeployedIfProfilerEnabledVarIsSetToTrue)
 {
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("profiler,tracer"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("1"));
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsSsiActivated(), false);
+    auto expectedValue = DeploymentMode::SingleStepInstrumentation;
+    ASSERT_THAT(configuration.GetDeploymentMode(), expectedValue);
 }
 
-TEST(ConfigurationTest, CheckSsiIsActivatedIfEnvVarConstainsProfiling)
+TEST(ConfigurationTest, CheckSsiIsDeployedIfProfilerEnabledVarIsEmpty)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiling"));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("profiler,tracer"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr(""));
     auto configuration = Configuration{};
-    auto expectedValue = true;
-    ASSERT_THAT(configuration.IsSsiActivated(), expectedValue);
+    auto expectedValue = DeploymentMode::SingleStepInstrumentation;
+    ASSERT_THAT(configuration.GetDeploymentMode(), expectedValue);
 }
 
-TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarDoesNotContainProfiling)
+TEST(ConfigurationTest, CheckSsiIsDeployedIfProfilerEnabledVarIsSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("profiler,tracer"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    auto expectedValue = DeploymentMode::SingleStepInstrumentation;
+    ASSERT_THAT(configuration.GetDeploymentMode(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsActivatedIfEnvVarConstainsProfiler)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer,profiler"));
+    auto configuration = Configuration{};
+    auto expectedValue = EnablementStatus::SsiEnabled;
+    ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsDisableddIfEnvVarDoesNotContainProfiler)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
     auto configuration = Configuration{};
-    auto expectedValue = false;
-    ASSERT_THAT(configuration.IsSsiActivated(), expectedValue);
+    auto expectedValue = EnablementStatus::NotSet;
+    ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
 }
 
-TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarIsEmpty)
+TEST(ConfigurationTest, CheckSsiIsDisabledIfEnvVarIsEmpty)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr(""));
     auto configuration = Configuration{};
-    auto expectedValue = false;
-    ASSERT_THAT(configuration.IsSsiActivated(), expectedValue);
+    auto expectedValue = EnablementStatus::NotSet;
+    ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSsiIsActivatedIfProfilerEnvVarConstainsAuto)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("auto"));
+    auto configuration = Configuration{};
+    auto expectedValue = EnablementStatus::ManuallyEnabled;
+    ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::NotSet) << "Env var is not set. Profiler enablement should be the default one.";
+}
+
+TEST(ConfigurationTest, CheckProfilerIsDisabledIfEnvVarIsEmpty)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("  "));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyDisabled);
+}
+
+TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("1 ")); // add a space on purpose to ensure that it's correctly parsed
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyEnabled) << "Env var is to 1. Profiler must be enabled.";
+}
+
+TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotParsable)
+{
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("not_parsable_ "));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyDisabled) << "Profiler must disabled is value for DD_PROLIFER_ENABLED cannot be converted to bool.";
+}
+
+TEST(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("  0 ")); // add a space on purpose to ensure that it's correctly parsed
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::ManuallyDisabled) << "Env var is to 0. Profiler must be disabled.";
 }
 
 TEST(ConfigurationTest, CheckEtwLoggingIsDisabledByDefault)
@@ -923,4 +986,65 @@ TEST(ConfigurationTest, CheckEtwLoggingIsEnabledIfEnvVarSetToTrue)
         true;
 #endif
     ASSERT_THAT(configuration.IsEtwLoggingEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckDefaultCpuProfilerType)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr(""));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+}
+
+TEST(ConfigurationTest, CheckDefaultCpuProfilerTypeWhenEnvVarNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+}
+
+TEST(ConfigurationTest, CheckUnknownCpuProfilerType)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("UnknownCpuProfilerType"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+}
+
+TEST(ConfigurationTest, CheckManualCpuProfilerType)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("ManualCpuTime"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+}
+
+TEST(ConfigurationTest, CheckTimerCreateCpuProfilerType)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    auto configuration = Configuration{};
+    auto expected =
+#ifdef LINUX
+        CpuProfilerType::TimerCreate;
+#else
+        CpuProfilerType::ManualCpuTime;
+#endif
+    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
+}
+
+TEST(ConfigurationTest, CheckDefaultCpuProfilingInterval)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingInterval, WStr(""));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 9ms);
+}
+
+TEST(ConfigurationTest, CheckCpuProfilingIntervalSetInEnvVar)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingInterval, WStr("42"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 42ms);
+}
+
+TEST(ConfigurationTest, CheckCpuProfilingIntervalIsNotBelowDefault)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingInterval, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 9ms);
 }

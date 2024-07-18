@@ -52,7 +52,15 @@
                 "return_type": "System.Void",
                 "start_column": 999,
                 "end_column": 999
-              }
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithStaticFieldClosure",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ]
             },
             {
               "scope_type": "method",
@@ -68,6 +76,14 @@
                 "start_column": 999,
                 "end_column": 999
               },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithStaticFieldClosure",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ],
               "scopes": [
                 {
                   "scope_type": "closure",
@@ -83,6 +99,14 @@
                     "start_column": 999,
                     "end_column": 999
                   },
+                  "symbols": [
+                    {
+                      "name": "this",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithStaticFieldClosure+<>c",
+                      "symbol_type": "arg",
+                      "line": 0
+                    }
+                  ],
                   "scopes": [
                     {
                       "scope_type": "local",

@@ -17,7 +17,6 @@ src/Datadog.Trace/IScopeRawAccess.cs
 src/Datadog.Trace/ISpan.cs
 src/Datadog.Trace/ISpanContext.cs
 src/Datadog.Trace/ITracer.cs
-src/Datadog.Trace/LifetimeManager.cs
 src/Datadog.Trace/Metrics.cs
 src/Datadog.Trace/NativeLoader.cs
 src/Datadog.Trace/OSPlatformName.cs
@@ -43,6 +42,7 @@ src/Datadog.Trace/Tracer.cs
 src/Datadog.Trace/TracerConstants.cs
 src/Datadog.Trace/TracerManager.cs
 src/Datadog.Trace/TracerManagerFactory.cs
+src/Datadog.Trace/Activity/ActivityEventConverter.cs
 src/Datadog.Trace/Agent/AgentWriter.cs
 src/Datadog.Trace/Agent/Api.cs
 src/Datadog.Trace/Agent/ClientStatsPayload.cs
@@ -247,7 +247,6 @@ src/Datadog.Trace/Util/ArrayBuilder.cs
 src/Datadog.Trace/Util/ArraySlice.cs
 src/Datadog.Trace/Util/AsyncUtil.cs
 src/Datadog.Trace/Util/Clock.cs
-src/Datadog.Trace/Util/DbCommandCache.cs
 src/Datadog.Trace/Util/DomainMetadata.cs
 src/Datadog.Trace/Util/FnvHash64.cs
 src/Datadog.Trace/Util/IClock.cs
@@ -459,7 +458,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/CommandExecuteReaderWit
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/CommandExecuteScalarAsyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/CommandExecuteScalarIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/CommandExecuteScalarWithBehaviorIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/DbScopeFactory.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/DbType.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet/IAdoNetClientData.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Aerospike/AerospikeCommon.cs
@@ -782,7 +780,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmissi
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/DirectSubmission/LevelDuckExtensions.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/LogsInjection/AppenderAttachedImplIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Log4Net/LogsInjection/ILoggingEvent.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/ILogFactoryProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/NLogConstants.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/LogsInjection/DiagnosticContextHelper.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/LogsInjection/IScopeContextSetterProxy.cs
@@ -826,7 +823,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Serilog/DirectSubmissi
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Serilog/DirectSubmission/Formatting/SequenceValueDuck.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Serilog/DirectSubmission/Formatting/StructureValueDuck.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/IJsonLayout4Proxy.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILogFactoryPre43Proxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILoggingConfigurationPre43Proxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILoggingRuleProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Proxies/Pre43/ILoggingRulesListProxy.cs

@@ -15,6 +15,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -26,11 +27,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         internal const IntegrationId DotnetTestIntegrationId = Configuration.IntegrationId.DotnetTest;
 
         internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
+        private static bool? _isDataCollectorDomainCache;
 
         internal static bool DotnetTestIntegrationEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
 
+        internal static bool IsDataCollectorDomain
+        {
+            get
+            {
+                if (_isDataCollectorDomainCache is { } value)
+                {
+                    return value;
+                }
+
+                return (_isDataCollectorDomainCache = DomainMetadata.Instance.AppDomainName.ToLowerInvariant().Contains("datacollector")).Value;
+            }
+        }
+
         internal static TestSession? CreateSession()
         {
+            // We create test session if not DataCollector
+            if (IsDataCollectorDomain)
+            {
+                return null;
+            }
+
+            // Let's detect if we already have a session for this test process
+            if (SpanContextPropagator.Instance.Extract(
+                    EnvironmentHelpers.GetEnvironmentVariables(),
+                    new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor)) is not null)
+            {
+                // Session found in the environment variables
+                // let's bail-out
+                return null;
+            }
+
             var ciVisibilitySettings = CIVisibility.Settings;
             var agentless = ciVisibilitySettings.Agentless;
             var isEvpProxy = CIVisibility.EventPlatformProxySupport != EventPlatformProxySupport.None;
@@ -40,7 +71,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             // We create a test session if the flag is turned on (agentless or evp proxy)
             if (agentless || isEvpProxy)
             {
-                var session = TestSession.InternalGetOrCreate(Environment.CommandLine, null, null, null, true);
+                // Try to load the command line propagated from the dd-trace ci run command
+                if (EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable) is not { Length: > 0 } commandLine)
+                {
+                    commandLine = Environment.CommandLine;
+                }
+
+                // Try to load the working directory propagated from the dd-trace ci run command
+                if (EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable) is not { Length: > 0 } workingDirectory)
+                {
+                    workingDirectory = Environment.CurrentDirectory;
+                }
+
+                var session = TestSession.InternalGetOrCreate(commandLine, workingDirectory, null, null, true);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, ciVisibilitySettings.TestsSkippingEnabled == true ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, ciVisibilitySettings.CodeCoverageEnabled == true ? "true" : "false");
                 if (ciVisibilitySettings.EarlyFlakeDetectionEnabled == true)
@@ -54,6 +97,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 {
                     session.SetTag(IntelligentTestRunnerTags.TestsSkipped, "false");
                 }
+
+                // We enable the IPC server for the session
+                session.EnableIpcServer();
 
                 return session;
             }
@@ -107,31 +153,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath &&
                         File.Exists(extCodeCoverageFilePath))
                     {
-                        // Check Code Coverage from other files.
-                        var xmlDoc = new XmlDocument();
-                        xmlDoc.Load(extCodeCoverageFilePath);
-
-                        if (xmlDoc.SelectSingleNode("/CoverageSession/Summary/@sequenceCoverage") is { } seqCovAttribute &&
-                            double.TryParse(seqCovAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var seqCovValue))
+                        if (TryGetCoveragePercentageFromXml(extCodeCoverageFilePath, out var coveragePercentage))
                         {
-                            // Found using the OpenCover format.
-
-                            // Adds the global code coverage percentage to the session
-                            var coveragePercentage = Math.Round(seqCovValue, 2).ToValidPercentage();
                             session.SetTag(CodeCoverageTags.Enabled, "true");
                             session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
-                            Log.Debug("RunCiCommand: OpenCover code coverage was reported: {Value}", seqCovValue);
-                        }
-                        else if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
-                                 double.TryParse(lineRateAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var lineRateValue))
-                        {
-                            // Found using the Cobertura format.
-
-                            // Adds the global code coverage percentage to the session
-                            var coveragePercentage = Math.Round(lineRateValue * 100, 2).ToValidPercentage();
-                            session.SetTag(CodeCoverageTags.Enabled, "true");
-                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
-                            Log.Debug("RunCiCommand: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
                         }
                         else
                         {
@@ -146,6 +171,109 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
+        }
+
+        internal static bool TryGetCoveragePercentageFromXml(string filePath, out double percentage)
+        {
+            percentage = 0;
+            if (!File.Exists(filePath))
+            {
+                return false;
+            }
+
+            // Load Code Coverage from the file.
+            var xmlDoc = new XmlDocument();
+            xmlDoc.Load(filePath);
+
+            if (xmlDoc.SelectSingleNode("/CoverageSession/Summary/@sequenceCoverage") is { } seqCovAttribute &&
+                double.TryParse(seqCovAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var seqCovValue))
+            {
+                // Found using the OpenCover format.
+                percentage = Math.Round(seqCovValue, 2).ToValidPercentage();
+                Log.Debug("TryGetCoveragePercentageFromXml: OpenCover code coverage was reported: {Value}", seqCovValue);
+                return true;
+            }
+
+            if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
+                double.TryParse(lineRateAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var lineRateValue))
+            {
+                // Found using the Cobertura format.
+                percentage = Math.Round(lineRateValue * 100, 2).ToValidPercentage();
+                Log.Debug("TryGetCoveragePercentageFromXml: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
+                return true;
+            }
+
+            var linesCovered = xmlDoc.SelectNodes("/results/modules/module/@lines_covered");
+            var linesPartiallyCovered = xmlDoc.SelectNodes("/results/modules/module/@lines_partially_covered");
+            var linesNotCovered = xmlDoc.SelectNodes("/results/modules/module/@lines_not_covered");
+
+            if (linesCovered != null && linesPartiallyCovered != null && linesNotCovered != null &&
+                linesCovered.Count == linesPartiallyCovered.Count && linesCovered.Count == linesNotCovered.Count)
+            {
+                // Found using Microsoft.CodeCoverage xml format
+                var modulesCount = linesCovered.Count;
+
+                var totalLinesCovered = 0d;
+                foreach (XmlNode? lineCovered in linesCovered)
+                {
+                    if (lineCovered is null)
+                    {
+                        continue;
+                    }
+
+                    if (double.TryParse(lineCovered.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
+                    {
+                        totalLinesCovered += value;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                var totalLinesPartiallyCovered = 0d;
+                foreach (XmlNode? linePartiallyCovered in linesPartiallyCovered)
+                {
+                    if (linePartiallyCovered is null)
+                    {
+                        continue;
+                    }
+
+                    if (double.TryParse(linePartiallyCovered.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
+                    {
+                        totalLinesPartiallyCovered += value;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                var totalLinesNotCovered = 0d;
+                foreach (XmlNode? lineNotCovered in linesNotCovered)
+                {
+                    if (lineNotCovered is null)
+                    {
+                        continue;
+                    }
+
+                    if (double.TryParse(lineNotCovered.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value))
+                    {
+                        totalLinesNotCovered += value;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                var totalLines = totalLinesCovered + totalLinesPartiallyCovered + totalLinesNotCovered;
+                percentage = Math.Round((totalLinesCovered / totalLines) * 100, 2).ToValidPercentage();
+                Log.Debug("TryGetCoveragePercentageFromXml: Microsoft.CodeCoverage code coverage was reported: {Value}", percentage);
+                return true;
+            }
+
+            return false;
         }
 
         internal static void InjectCodeCoverageCollectorToDotnetTest(ref IEnumerable<string>? msbuildArgs)

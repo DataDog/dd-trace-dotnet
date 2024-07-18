@@ -6,8 +6,16 @@
 #include "CorProfilerCallbackFactory.h"
 #include "CorProfilerCallback.h"
 
+#include "IConfiguration.h"
+
 std::mutex CorProfilerCallbackFactory::_lock;
 
+
+CorProfilerCallbackFactory::CorProfilerCallbackFactory(std::shared_ptr<IConfiguration> configuration) :
+    _configuration{std::move(configuration)}
+{
+
+}
 
 CorProfilerCallbackFactory::~CorProfilerCallbackFactory()
 {
@@ -86,7 +94,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallbackFactory::CreateInstance(IUnknown* p
         return E_INVALIDARG;
     }
 
-    CorProfilerCallback* profiler = new (std::nothrow) CorProfilerCallback();
+    CorProfilerCallback* profiler = new (std::nothrow) CorProfilerCallback(_configuration);
     if (profiler == nullptr)
     {
         return E_OUTOFMEMORY;

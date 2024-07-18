@@ -29,16 +29,21 @@ LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackW
 LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
     IConfiguration const* const configuration,
-    CallstackProvider* callstackProvider) :
+    CallstackProvider* callstackProvider,
+    LibrariesInfoCache* librariesCacheInfo) :
     StackFramesCollectorBase(configuration, callstackProvider),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
     _errorStatistics{},
-    _useBacktrace2{configuration->UseBacktrace2()}
+    _useBacktrace2{configuration->UseBacktrace2()},
+    _plibrariesInfo{librariesCacheInfo}
 {
-    _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
+    if (_signalManager != nullptr)
+    {
+        _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
+    }
 }
 
 LinuxStackFramesCollector::~LinuxStackFramesCollector()
@@ -81,11 +86,18 @@ void LinuxStackFramesCollector::UpdateErrorStats(std::int32_t errorCode)
     }
 }
 
+
 StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                        uint32_t* pHR,
                                                                                        bool selfCollect)
 {
     long errorCode;
+
+    // If there a timer associated to the managed thread, we have to disarm it.
+    // Otherwise, the CPU consumption to collect the callstack, will be accounted as "user app CPU time"
+    auto timerId = pThreadInfo->GetTimerId();
+
+    _plibrariesInfo->UpdateCache();
 
     if (selfCollect)
     {
@@ -103,11 +115,33 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
     }
     else
     {
-        if (!_signalManager->IsHandlerInPlace())
+        if (_signalManager == nullptr || !_signalManager->IsHandlerInPlace())
         {
             *pHR = E_FAIL;
             return GetStackSnapshotResult();
         }
+
+        struct itimerspec old;
+
+        if (timerId != -1)
+        {
+            struct itimerspec ts;
+            ts.it_interval.tv_sec = 0;
+            ts.it_interval.tv_nsec = 0;
+            ts.it_value = ts.it_interval;
+
+            // disarm the timer so this is not accounted for the managed thread cpu usage
+            syscall(__NR_timer_settime, timerId, 0, &ts, &old);
+        }
+
+        on_leave
+        {
+            if (timerId != -1)
+            {
+                // re-arm the timer
+                syscall(__NR_timer_settime, timerId, 0, &old, nullptr);
+            }
+        };
 
         std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
 
@@ -139,7 +173,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
             if (status == std::cv_status::timeout)
             {
                 _lastStackWalkErrorCode = E_ABORT;
-                ;
+                
                 if (!_signalManager->CheckSignalHandler())
                 {
                     _lastStackWalkErrorCode = E_FAIL;

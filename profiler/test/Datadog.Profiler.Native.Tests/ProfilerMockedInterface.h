@@ -12,6 +12,7 @@
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
+#include "CpuProfilerType.h"
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "TagsHelper.h"
@@ -70,9 +71,11 @@ public:
     MOCK_METHOD(bool, IsCIVisibilityEnabled, (), (const override));
     MOCK_METHOD(std::uint64_t, GetCIVisibilitySpanId, (), (const override));
     MOCK_METHOD(bool, IsEtwEnabled, (), (const override));
-    MOCK_METHOD(bool, IsSsiDeployed, (), (const override));
-    MOCK_METHOD(bool, IsSsiActivated, (), (const override));
+    MOCK_METHOD(EnablementStatus, GetEnablementStatus, (), (const override));
+    MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
     MOCK_METHOD(bool, IsEtwLoggingEnabled, (), (const override));
+    MOCK_METHOD(CpuProfilerType, GetCpuProfilerType, (), (const override));
+    MOCK_METHOD(std::chrono::milliseconds, GetCpuProfilingInterval, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -137,8 +140,8 @@ public:
     MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&), (override));
     MOCK_METHOD(void, SetGitMetadata, (std::string, std::string, std::string), (override));
     MOCK_METHOD(const char*, GetName, (), (override));
-    MOCK_METHOD(bool, Start, (), (override));
-    MOCK_METHOD(bool, Stop, (), (override));
+    MOCK_METHOD(bool, StartImpl, (), (override));
+    MOCK_METHOD(bool, StopImpl, (), (override));
 };
 
 class MockRuntimeIdStore : public IRuntimeIdStore

@@ -13,6 +13,9 @@ ExternalProject_Add(libunwind
     BUILD_ALWAYS false
     BUILD_BYPRODUCTS ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-${CMAKE_SYSTEM_PROCESSOR}.a
                      ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind.a
+                     ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-ptrace.a
+                     ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-dwarf-common.a
+                     ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-dwarf-generic.a
 )
 
 
@@ -26,6 +29,9 @@ target_include_directories(libunwind-lib INTERFACE
 target_link_libraries(libunwind-lib INTERFACE
     ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-${CMAKE_SYSTEM_PROCESSOR}.a
     ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind.a
+    ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-ptrace.a
+    ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-dwarf-common.a
+    ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-dwarf-generic.a
 )
 
 add_dependencies(libunwind-lib libunwind)

@@ -20,7 +20,8 @@ internal record AgentConfiguration
         string? telemetryProxyEndpoint,
         string? tracerFlareEndpoint,
         bool clientDropP0,
-        string? diagnosticsEndpoint)
+        string? diagnosticsEndpoint,
+        bool spanMetaStructs)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
@@ -33,6 +34,7 @@ internal record AgentConfiguration
         TelemetryProxyEndpoint = telemetryProxyEndpoint;
         TracerFlareEndpoint = tracerFlareEndpoint;
         ClientDropP0s = clientDropP0;
+        SpanMetaStructs = spanMetaStructs;
     }
 
     public string? ConfigurationEndpoint { get; }
@@ -56,4 +58,6 @@ internal record AgentConfiguration
     public string? TracerFlareEndpoint { get; }
 
     public bool ClientDropP0s { get; }
+
+    public bool SpanMetaStructs { get; }
 }

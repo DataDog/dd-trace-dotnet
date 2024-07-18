@@ -34,7 +34,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     AssemblyName = "MySql.Data",
     TypeName = "MySql.Data.MySqlClient.MySqlCommand",
     MinimumVersion = "8.0.0",
-    MaximumVersion = "8.*.*",
+    MaximumVersion = "9.*.*",
     IntegrationName = nameof(IntegrationId.MySql),
     DataReaderType = "MySql.Data.MySqlClient.MySqlDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1[MySql.Data.MySqlClient.MySqlDataReader]",

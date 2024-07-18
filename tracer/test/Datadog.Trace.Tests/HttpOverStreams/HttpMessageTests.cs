@@ -26,7 +26,7 @@ public class HttpMessageTests
     {
         var httpResponse = new HttpResponse(200, "OK", new HttpHeaders(), null);
 
-        httpResponse.GetContentEncoding().Should().Be(null);
+        httpResponse.GetContentEncoding().Should().Be(new UTF8Encoding(false, true));
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public class HttpMessageTests
         var headers = new HttpHeaders { { "Content-Type", "text/plain; charset=iso-8859-1" } };
         var httpResponse = new HttpResponse(200, "OK", headers, null);
 
-        httpResponse.GetContentEncoding().Should().Be(new UTF8Encoding(false, true));
+        httpResponse.GetContentEncoding().Should().Be(Encoding.GetEncoding("ISO-8859-1"));
     }
 
     [Fact]

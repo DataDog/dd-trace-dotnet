@@ -136,7 +136,7 @@ internal static class Ranges
 
                 if (newLength > 0)
                 {
-                    newRanges[newRangeIndex] = new Range(newStart, newLength, range.Source);
+                    newRanges[newRangeIndex] = new Range(newStart, newLength, range.Source, range.SecureMarks);
                 }
             }
         }
@@ -186,10 +186,77 @@ internal static class Ranges
                 newEnd = endAfterRemoveArea ? ranges[i].Start + ranges[i].Length - (endIndex - beginIndex) : beginIndex;
             }
 
-            var newRange = new Range(newStart, newEnd - newStart, ranges[i].Source);
+            var newRange = new Range(newStart, newEnd - newStart, ranges[i].Source, ranges[i].SecureMarks);
             newRanges.Add(newRange);
         }
 
         return newRanges.ToArray();
+    }
+
+    internal static Range[] CopyWithMark(Range[] ranges, SecureMarks secureMarks)
+    {
+        var newRanges = new List<Range>();
+
+        foreach (var range in ranges)
+        {
+            var newRange = new Range(range.Start, range.Length, range.Source, secureMarks);
+            newRanges.Add(newRange);
+        }
+
+        return newRanges.ToArray();
+    }
+
+    internal static bool ContainsUnsafeRange(IEnumerable<Range>? ranges)
+    {
+        if (ranges is null)
+        {
+            return false;
+        }
+
+        foreach (var range in ranges)
+        {
+            if (range.SecureMarks == SecureMarks.None)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Returns an array of ranges without ranges that are marked with the given marks.
+    /// </summary>
+    internal static Range[]? UnsafeRanges(Range[]? ranges, SecureMarks secureMarks)
+    {
+        if (ranges is null || secureMarks == SecureMarks.None)
+        {
+            return ranges;
+        }
+
+        var newRanges = new Range[ranges.Length];
+
+        var length = 0;
+        for (var i = 0; i < ranges.Length; i++)
+        {
+            // Keep the vulnerable range if not marked with the given marks
+            if (!ranges[i].IsMarked(secureMarks))
+            {
+                newRanges[length++] = ranges[i];
+            }
+        }
+
+        if (length == 0)
+        {
+            return null;
+        }
+
+#if NETCOREAPP
+        return new ArraySegment<Range>(newRanges, 0, length).ToArray();
+#else
+        var result = new Range[length];
+        Array.Copy(newRanges, 0, result, 0, length);
+        return result;
+#endif
     }
 }

@@ -40,15 +40,14 @@ namespace Datadog.Trace.Tests.Propagators
             var newContext = new SpanContext(parent: null, new TraceContext(Mock.Of<IDatadogTracer>()), serviceName: null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object);
-            // BUG: we should default to KEEP if there's no sampler, but this never happens in real life, will fix later
-            newHeaders.Verify(h => h.Set("b3", "0123456789abcdef1122334455667788-000000003ade68b1-0"), Times.Once());
+            newHeaders.Verify(h => h.Set("b3", "0123456789abcdef1122334455667788-000000003ade68b1-1"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
 
             // override sampling decision
-            newContext.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            newContext.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject);
             newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object);
-            newHeaders.Verify(h => h.Set("b3", "0123456789abcdef1122334455667788-000000003ade68b1-1"), Times.Once());
+            newHeaders.Verify(h => h.Set("b3", "0123456789abcdef1122334455667788-000000003ade68b1-0"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
         }
 
@@ -72,15 +71,14 @@ namespace Datadog.Trace.Tests.Propagators
             var newContext = new SpanContext(parent: null, new TraceContext(Mock.Of<IDatadogTracer>()), serviceName: null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
-            // BUG: we should default to KEEP if there's no sampler, but this never happens in real life, will fix later
-            newHeaders.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-0"), Times.Once());
+            newHeaders.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-1"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
 
             // override sampling decision
-            newContext.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            newContext.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject);
             newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
-            newHeaders.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-1"), Times.Once());
+            newHeaders.Verify(h => h.Set("b3", "000000000000000000000000075bcd15-000000003ade68b1-0"), Times.Once());
             newHeaders.VerifyNoOtherCalls();
         }
 

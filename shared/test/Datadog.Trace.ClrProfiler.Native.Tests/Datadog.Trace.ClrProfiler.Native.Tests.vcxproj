@@ -269,6 +269,7 @@
   <ItemGroup>
     <ClInclude Include="environment_variable_wrapper.h" />
     <ClInclude Include="test_cor_profiler.h" />
+    <ClInclude Include="test_cor_profiler_info.h" />
     <ClInclude Include="test_dynamic_dispatcher.h" />
     <ClInclude Include="test_dynamic_instance.h" />
   </ItemGroup>

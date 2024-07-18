@@ -315,6 +315,7 @@
     <ClInclude Include="..\..\..\shared\src\native-src\dynamic_library_base.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\miniutf.hpp" />
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
+    <ClInclude Include="..\..\..\shared\src\native-src\version.h" />
     <ClInclude Include="cor_profiler_class_factory.h" />
     <ClInclude Include="cor_profiler.h" />
     <ClInclude Include="dynamic_instance.h" />
@@ -330,8 +331,10 @@
     <ClInclude Include="instrumented_assembly_generator\method_signature.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="exported_functions.h" />
+    <ClInclude Include="process_helper.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="runtimeid_store.h" />
+    <ClInclude Include="single_step_guard_rails.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -351,7 +354,9 @@
     <ClCompile Include="instrumented_assembly_generator\member_signature.cpp" />
     <ClCompile Include="instrumented_assembly_generator\method_signature.cpp" />
     <ClCompile Include="exported_functions.cpp" />
+    <ClCompile Include="process_helper.cpp" />
     <ClCompile Include="runtimeid_store.cpp" />
+    <ClCompile Include="single_step_guard_rails.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.Trace.ClrProfiler.Native.def" />

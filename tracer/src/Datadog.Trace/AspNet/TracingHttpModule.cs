@@ -183,7 +183,7 @@ namespace Datadog.Trace.AspNet
                 if (security.Enabled)
                 {
                     SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
-                    var securityCoordinator = new SecurityCoordinator(security, httpContext, scope.Span);
+                    var securityCoordinator = new SecurityCoordinator(security, scope.Span);
 
                     // request args
                     var args = securityCoordinator.GetBasicRequestArgsForWaf();
@@ -244,7 +244,7 @@ namespace Datadog.Trace.AspNet
                         var security = Security.Instance;
                         if (security.Enabled)
                         {
-                            var securityCoordinator = new SecurityCoordinator(security, app.Context, rootSpan);
+                            var securityCoordinator = new SecurityCoordinator(security, rootSpan);
                             var args = securityCoordinator.GetBasicRequestArgsForWaf();
                             args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
 

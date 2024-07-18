@@ -31,7 +31,7 @@ namespace Datadog.Trace.Ci.Agent
             var api = new Api(apiRequestFactory, null, updateSampleRates, partialFlushEnabled);
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            _agentWriter = new AgentWriter(api, statsAggregator, null, maxBufferSize: maxBufferSize);
+            _agentWriter = new AgentWriter(api, statsAggregator, null, maxBufferSize: maxBufferSize, appsecStandaloneEnabled: settings.AppsecStandaloneEnabledInternal);
         }
 
         public ApmAgentWriter(IApi api, int maxBufferSize = DefaultMaxBufferSize)

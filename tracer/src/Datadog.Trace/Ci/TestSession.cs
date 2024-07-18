@@ -7,9 +7,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Ci.Ipc;
+using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
@@ -18,6 +21,7 @@ using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Ci;
 
@@ -27,8 +31,11 @@ namespace Datadog.Trace.Ci;
 public sealed class TestSession
 {
     private static readonly AsyncLocal<TestSession?> CurrentSession = new();
+    private static readonly HashSet<TestSession> OpenedTestSessions = new();
+
     private readonly Span _span;
     private readonly Dictionary<string, string?>? _environmentVariablesToRestore = null;
+    private IpcServer? _ipcServer = null;
     private int _finished;
 
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
@@ -81,6 +88,11 @@ public sealed class TestSession
         }
 
         Current = this;
+        lock (OpenedTestSessions)
+        {
+            OpenedTestSessions.Add(this);
+        }
+
         CIVisibility.Log.Debug("### Test Session Created: {Command}", command);
 
         if (startDate is null)
@@ -125,6 +137,20 @@ public sealed class TestSession
     {
         get => CurrentSession.Value;
         set => CurrentSession.Value = value;
+    }
+
+    /// <summary>
+    /// Gets the active test sessions
+    /// </summary>
+    internal static IReadOnlyCollection<TestSession> ActiveTestSessions
+    {
+        get
+        {
+            lock (OpenedTestSessions)
+            {
+                return OpenedTestSessions.Count == 0 ? [] : OpenedTestSessions.ToArray();
+            }
+        }
     }
 
     internal TestSessionSpanTags Tags => (TestSessionSpanTags)_span.Tags;
@@ -412,6 +438,12 @@ public sealed class TestSession
                 break;
         }
 
+        if (_ipcServer is not null)
+        {
+            _ipcServer.Dispose();
+            _ipcServer = null;
+        }
+
         span.Finish(duration.Value);
 
         // Record EventFinished telemetry metric
@@ -431,6 +463,11 @@ public sealed class TestSession
         }
 
         Current = null;
+        lock (OpenedTestSessions)
+        {
+            OpenedTestSessions.Remove(this);
+        }
+
         CIVisibility.Log.Debug("### Test Session Closed: {Command} | {Status}", Command, Tags.Status);
         return true;
     }
@@ -509,6 +546,62 @@ public sealed class TestSession
     internal TestModule InternalCreateModule(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
     {
         return new TestModule(name, framework, frameworkVersion, startDate, Tags);
+    }
+
+    internal bool EnableIpcServer()
+    {
+        if (Tags.SessionId == 0)
+        {
+            return false;
+        }
+
+        try
+        {
+            var name = $"session_{Tags.SessionId}";
+            CIVisibility.Log.Debug("TestSession.Enabling IPC server: {Name}", name);
+            _ipcServer = new IpcServer(name);
+            _ipcServer.SetMessageReceivedCallback(OnIpcMessageReceived);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            CIVisibility.Log.Error(ex, "Error enabling IPC server");
+            return false;
+        }
+    }
+
+    private void OnIpcMessageReceived(object message)
+    {
+        CIVisibility.Log.Debug("TestSession.OnIpcMessageReceived: {Message}", message);
+
+        // If the session is already finished, we ignore the message
+        if (Interlocked.CompareExchange(ref _finished, 1, 1) == 1)
+        {
+            return;
+        }
+
+        // If the message is a SetSessionTagMessage, we set the tag
+        if (message is SetSessionTagMessage tagMessage)
+        {
+            if (tagMessage.Value is not null)
+            {
+                CIVisibility.Log.Information("TestSession.ReceiveMessage (meta): {Name}={Value}", tagMessage.Name, tagMessage.Value);
+                SetTag(tagMessage.Name, tagMessage.Value);
+            }
+            else if (tagMessage.NumberValue is not null)
+            {
+                CIVisibility.Log.Information("TestSession.ReceiveMessage (metric): {Name}={Value}", tagMessage.Name, tagMessage.NumberValue);
+                SetTag(tagMessage.Name, tagMessage.NumberValue);
+            }
+        }
+        else if (message is SessionCodeCoverageMessage { Value: >= 0.0 } codeCoverageMessage)
+        {
+            CIVisibility.Log.Information("TestSession.ReceiveMessage (code coverage): {Value}", codeCoverageMessage.Value);
+
+            // Adds the global code coverage percentage to the session
+            SetTag(CodeCoverageTags.Enabled, "true");
+            SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoverageMessage.Value);
+        }
     }
 
     private Dictionary<string, string> GetPropagateEnvironmentVariables()

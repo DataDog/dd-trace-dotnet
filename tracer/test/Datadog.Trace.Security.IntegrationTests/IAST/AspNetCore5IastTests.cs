@@ -123,6 +123,25 @@ public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastJsonTagSizeExceeded()
+    {
+        var filename = "Iast.JsonTagSizeExceeded.AspNetCore5.TelemetryEnabled";
+        var url = "/Iast/TestJsonTagSizeExceeded?tainted=taint";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 public class AspNetCore5IastTestsOneVulnerabilityPerRequestIastEnabled : AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled
@@ -245,6 +264,77 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
 
         newFixture.Dispose();
         newFixture.SetOutput(null);
+    }
+
+    [SkippableTheory]
+    [InlineData(31)]
+    [InlineData(120)]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestSessionTimeoutVulnerability(int timeoutMinutes)
+    {
+        SetEnvironmentVariable("IAST_TEST_SESSION_IDLE_TIMEOUT", timeoutMinutes.ToString());
+
+        var filename = "Iast.SessionIdleTimeout.AspNetCore5.IastEnabled";
+        var newFixture = new AspNetCoreTestFixture();
+        newFixture.SetOutput(Output);
+
+        var datetimeOffset = DateTimeOffset.UtcNow; // Catch vulnerability at the startup of the app
+        await TryStartApp(newFixture);
+
+        var agent = newFixture.Agent;
+        var spans = agent.WaitForSpans(1, minDateTime: datetimeOffset);
+
+        // Add a scrubber for "Session idle timeout is configured with: options.IdleTimeout, with a value of x minutes" and also for the hash value
+        (Regex RegexPattern, string Replacement) sessionIdleTimeoutRegex = (new Regex(@"Session idle timeout is configured with: options.IdleTimeout, with a value of \d+ minutes"), "Session idle timeout is configured with: options.IdleTimeout, with a value of XXX minutes");
+        (Regex RegexPattern, string Replacement) hashRegex = (new Regex(@"""hash"": -?\d+"), @"""hash"": XXX");
+
+        // Only for net5.0: path and method are different
+        (Regex RegexPattern, string Replacement) pathRegex = (new Regex(@"""path"": ""Samples.Security.AspNetCore5.Program"""), @"""path"": ""Samples.Security.AspNetCore5.Startup+<>c__DisplayClass4_0""");
+        (Regex RegexPattern, string Replacement) methodRegex = (new Regex(@"""method"": ""Main"""), @"""method"": ""<ConfigureServices>b__0""");
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        settings.AddRegexScrubber(sessionIdleTimeoutRegex);
+        settings.AddRegexScrubber(hashRegex);
+        settings.AddRegexScrubber(pathRegex);
+        settings.AddRegexScrubber(methodRegex);
+
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+
+        newFixture.Dispose();
+        newFixture.SetOutput(null);
+    }
+}
+
+public class AspNetCore5IastTestsStandaloneBillingIastEnabled : AspNetCore5IastTests
+{
+    public AspNetCore5IastTestsStandaloneBillingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled", redactionEnabled: true, samplingRate: 100)
+    {
+        // Set environment variable to enable the Standalone ASM Billing feature
+        SetEnvironmentVariable("DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED", "true");
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestApmDisabledAndAppsecIastReporting()
+    {
+        var filename = "Iast.StandaloneBilling.AspNetCore5.IastEnabled";
+
+        // Testing a Reflection Injection vulnerability
+        var url = $"/Iast/TypeReflectionInjection?type=System.String";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
     }
 }
 
@@ -853,12 +943,14 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
                             .DisableRequireUniquePrefix();
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [InlineData("RawValue")]
+    [InlineData("<script>alert('XSS')</script>")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestIastReflectedXssEscapedRequest()
+    public async Task TestIastReflectedXssEscapedRequest(string param)
     {
         var filename = "Iast.ReflectedXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        var url = "/Iast/ReflectedXssEscaped?param=RawValue";
+        var url = "/Iast/ReflectedXssEscaped?param=" + param;
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
@@ -867,6 +959,11 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
+
+        // Add a scrubber to remove the "?param=<value>" from the a single line
+        (Regex RegexPattern, string Replacement) scrubber = (new Regex(@"\?param=[^ ]+"), "?param=...,\n");
+        settings.AddRegexScrubber(scrubber);
+
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
@@ -948,7 +1045,6 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [Trait("RunOnWindows", "True")]
     public async Task TestIastCustomSpanRequestAttribute()
     {
-        Skip.If(IastEnabled, "Known bug. Custom Attribute Spans inhibit CallSite instrumentation");
         var filename = "Iast.CustomAttribute.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/Iast/CustomAttribute?userName=Vicent";
@@ -960,6 +1056,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
+        settings.AddRegexScrubber(new Regex(@"_dd.agent_psr: .{1,3},"), string.Empty);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();

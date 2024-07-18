@@ -100,7 +100,7 @@ namespace Datadog.Trace.Debugger.Symbols
             var assemblyScope = new Model.Scope
             {
                 Name = assemblyName,
-                ScopeType = SymbolType.Assembly,
+                ScopeType = ScopeType.Assembly,
                 SourceFile = string.IsNullOrEmpty(_assemblyPath) ? null : _assemblyPath,
             };
 
@@ -213,7 +213,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 classScope = new Model.Scope
                 {
                     Name = typeDefinitionHandle.FullName(MetadataReader),
-                    ScopeType = SymbolType.Class,
+                    ScopeType = ScopeType.Class,
                     Symbols = fieldSymbols,
                     Scopes = allScopes,
                     StartLine = linesAndSource.StartLine,
@@ -567,7 +567,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
             var methodScope = new Model.Scope
             {
-                ScopeType = SymbolType.Method,
+                ScopeType = ScopeType.Method,
                 Name = methodName,
                 LanguageSpecifics = methodLanguageSpecifics,
                 Symbols = argsSymbol,
@@ -676,26 +676,36 @@ namespace Datadog.Trace.Debugger.Symbols
             var parameters = method.GetParameters();
             if (parameters.Count == 0)
             {
-                return null;
+                if (method.IsStaticMethod())
+                {
+                    return null;
+                }
+
+                return [new Symbol { Name = "this", SymbolType = SymbolType.Arg, Line = UnknownFieldAndArgLine, Type = method.GetDeclaringType().FullName(MetadataReader) }];
             }
 
-            /* hidden this */
-            var hasThis = MetadataReader.GetParameter(parameters.First()).SequenceNumber == -2;
-            var count = hasThis ? parameters.Count - 1 : parameters.Count;
-            if (count == 0)
-            {
-                return null;
-            }
-
-            var argsSymbol = new Symbol[count];
+            var argsSymbol = CreateArgSymbolArray(method, parameters);
             int index = 0;
-
+            var methodSig = method.DecodeSignature(new TypeProvider(false), 0);
+            var paramTypesMatchArgSymbols = methodSig.ParameterTypes.Length == argsSymbol.Length || methodSig.ParameterTypes.Length == argsSymbol.Length - 1;
             foreach (var parameterHandle in parameters)
             {
                 var parameterDef = MetadataReader.GetParameter(parameterHandle);
-                if (parameterDef.SequenceNumber == -2)
+                if (index == 0)
                 {
-                    continue;
+                    argsSymbol[index] = new Symbol { Name = "this", SymbolType = SymbolType.Arg, Line = UnknownFieldAndArgLine, Type = method.GetDeclaringType().FullName(MetadataReader) };
+                    index++;
+
+                    if (parameterDef.IsHiddenThis())
+                    {
+                        continue;
+                    }
+                }
+
+                // Since we increment the index for `index == 0`, we have to make sure we don't exceed the bound of the array
+                if (index >= argsSymbol.Length)
+                {
+                    break;
                 }
 
                 argsSymbol[index] = new Symbol
@@ -703,26 +713,21 @@ namespace Datadog.Trace.Debugger.Symbols
                     Name = MetadataReader.GetString(parameterDef.Name),
                     SymbolType = SymbolType.Arg,
                     Line = UnknownFieldAndArgLine,
-                    Type = "Unknown"
+                    Type = paramTypesMatchArgSymbols ? methodSig.ParameterTypes[parameterDef.IsHiddenThis() ? index : index - 1] : "Unknown"
                 };
                 index++;
             }
 
-            var methodSig = method.DecodeSignature(new TypeProvider(false), 0);
-            var paramTypesMatchArgSymbols =
-                (!hasThis && methodSig.ParameterTypes.Length == argsSymbol.Length) ||
-                (hasThis && methodSig.ParameterTypes.Length == argsSymbol.Length + 1);
-            if (!paramTypesMatchArgSymbols)
-            {
-                return argsSymbol;
-            }
-
-            for (int i = hasThis ? 1 : 0; i < argsSymbol.Length; i++)
-            {
-                argsSymbol[i].Type = methodSig.ParameterTypes[i];
-            }
-
             return argsSymbol;
+        }
+
+        private Symbol[] CreateArgSymbolArray(MethodDefinition method, ParameterHandleCollection parameters)
+        {
+            // ReSharper disable once NotDisposedResource
+            return method.IsStaticMethod() ?
+                       new Symbol[parameters.Count] :
+                       MetadataReader.GetParameter(parameters.GetEnumerator().Current).IsHiddenThis() ?
+                           new Symbol[parameters.Count] : new Symbol[parameters.Count + 1];
         }
 
         private string[]? GetClassBaseClassNames(TypeDefinition type)

@@ -90,8 +90,6 @@ public:
 
 public:
     const char* GetName() override;
-    bool Start() override;
-    bool Stop() override;
     bool AllowStackWalk(std::shared_ptr<ManagedThreadInfo> pThreadInfo) override;
     void NotifyThreadState(bool isSuspended) override;
     void NotifyCollectionStart() override;
@@ -122,6 +120,9 @@ private:
                                         const std::chrono::nanoseconds& periodDurationNs);
 
     static double ToMillis(const std::chrono::nanoseconds& nanosecs);
+
+    bool StartImpl() override;
+    bool StopImpl() override;
 
 private:
     static const std::chrono::nanoseconds StatisticAggregationPeriodNs;
@@ -237,8 +238,6 @@ private:
     std::unique_ptr<Statistics> _currentStatistics;
     MetricsRegistry& _metricsRegistry;
     std::shared_ptr<CounterMetric> _deadlockCountMetric;
-
-    bool _isStopped = false;
 
     CallstackProvider _callstackProvider;
 };

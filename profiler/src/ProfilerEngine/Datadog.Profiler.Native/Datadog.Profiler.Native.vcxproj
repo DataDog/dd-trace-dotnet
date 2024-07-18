@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\..\packages\libdatadog.8.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.8.0.0\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -238,8 +238,11 @@
     <ClInclude Include="Callstack.h" />
     <ClInclude Include="CallstackProvider.h" />
     <ClInclude Include="CounterMetric.h" />
+    <ClInclude Include="CrashReporting.h" />
     <ClInclude Include="DebugInfoStore.h" />
+    <ClInclude Include="DeploymentMode.h" />
     <ClInclude Include="EnabledProfilers.h" />
+    <ClInclude Include="EnablementStatus.h" />
     <ClInclude Include="EncodedProfile.hpp" />
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
@@ -252,6 +255,7 @@
     <ClInclude Include="MemoryResourceManager.h" />
     <ClInclude Include="RawSamples.hpp" />
     <ClInclude Include="SamplesEnumerator.h" />
+    <ClInclude Include="ServiceBase.h" />
     <ClInclude Include="Success.h" />
     <ClInclude Include="Exception.h" />
     <ClInclude Include="Exporter.h" />
@@ -383,6 +387,7 @@
     <ClCompile Include="CorProfilerCallbackFactory.cpp" />
     <ClCompile Include="CounterMetric.cpp" />
     <ClCompile Include="CpuTimeProvider.cpp" />
+    <ClCompile Include="CrashReporting.cpp" />
     <ClCompile Include="DebugInfoStore.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="EnabledProfilers.cpp" />
@@ -391,6 +396,7 @@
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
+    <ClCompile Include="ServiceBase.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />
@@ -456,6 +462,6 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.8.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.8.0.0\build\native\libdatadog.props'))" />
+    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>

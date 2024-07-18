@@ -5,13 +5,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -252,31 +250,81 @@ namespace Datadog.Trace
 
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
-            var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
-            var samplingRules = settings.CustomSamplingRulesInternal;
-            var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
+            // ISamplingRule is used to implement, in order of precedence:
+            // - custom sampling rules
+            //   - remote custom rules (provenance: "customer")
+            //   - remote dynamic rules (provenance: "dynamic")
+            //   - local custom rules (provenance: "local"/none) = DD_TRACE_SAMPLING_RULES
+            // - global sampling rate
+            //   - remote
+            //   - local = DD_TRACE_SAMPLE_RATE
+            // - agent sampling rates (as a single rule)
 
-            if (patternFormatIsValid && !string.IsNullOrWhiteSpace(samplingRules))
+            // Note: the order that rules are registered is important, as they are evaluated in order.
+            // The first rule that matches will be used to determine the sampling rate.
+
+            if (settings.AppsecStandaloneEnabledInternal)
             {
-                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(samplingRules, samplingRulesFormat, RegexBuilder.DefaultTimeout))
+                var samplerStandalone = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: 1, intervalMilliseconds: 60_000));
+                samplerStandalone.RegisterRule(new GlobalSamplingRateRule(1.0f));
+                return samplerStandalone;
+            }
+
+            var sampler = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: settings.MaxTracesSubmittedPerSecondInternal, intervalMilliseconds: null));
+
+            // sampling rules (remote value overrides local value)
+            var samplingRulesJson = settings.CustomSamplingRulesInternal;
+
+            // check if the rules are remote or local because they have different JSON schemas
+            if (settings.CustomSamplingRulesIsRemote)
+            {
+                // remote sampling rules
+                if (!string.IsNullOrWhiteSpace(samplingRulesJson))
                 {
-                    sampler.RegisterRule(rule);
+                    var remoteSamplingRules =
+                        RemoteCustomSamplingRule.BuildFromConfigurationString(
+                            samplingRulesJson,
+                            RegexBuilder.DefaultTimeout);
+
+                    sampler.RegisterRules(remoteSamplingRules);
+                }
+            }
+            else
+            {
+                // local sampling rules
+                var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
+
+                if (patternFormatIsValid && !string.IsNullOrWhiteSpace(samplingRulesJson))
+                {
+                    var localSamplingRules =
+                        LocalCustomSamplingRule.BuildFromConfigurationString(
+                            samplingRulesJson,
+                            samplingRulesFormat,
+                            RegexBuilder.DefaultTimeout);
+
+                    sampler.RegisterRules(localSamplingRules);
                 }
             }
 
-            if (settings.GlobalSamplingRateInternal != null)
+            // global sampling rate (remote value overrides local value)
+            if (settings.GlobalSamplingRateInternal is { } globalSamplingRate)
             {
-                var globalRate = (float)settings.GlobalSamplingRateInternal.Value;
-
-                if (globalRate < 0f || globalRate > 1f)
+                if (globalSamplingRate is < 0f or > 1f)
                 {
-                    Log.Warning("{ConfigurationKey} configuration of {ConfigurationValue} is out of range", ConfigurationKeys.GlobalSamplingRate, settings.GlobalSamplingRateInternal);
+                    Log.Warning(
+                        "{ConfigurationKey} configuration of {ConfigurationValue} is out of range",
+                        ConfigurationKeys.GlobalSamplingRate,
+                        settings.GlobalSamplingRateInternal);
                 }
                 else
                 {
-                    sampler.RegisterRule(new GlobalSamplingRule(globalRate));
+                    sampler.RegisterRule(new GlobalSamplingRateRule((float)globalSamplingRate));
                 }
             }
+
+            // AgentSamplingRule handles all sampling rates received from the agent as a single "rule".
+            // This rule is always present, even if the agent has not yet provided any sampling rates.
+            sampler.RegisterAgentSamplingRule(new AgentSamplingRule());
 
             return sampler;
         }
@@ -285,7 +333,7 @@ namespace Datadog.Trace
         {
             if (string.IsNullOrWhiteSpace(settings.SpanSamplingRules))
             {
-                return new SpanSampler(Enumerable.Empty<ISpanSamplingRule>());
+                return new SpanSampler([]);
             }
 
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));
@@ -298,7 +346,7 @@ namespace Datadog.Trace
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval);
+            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, appsecStandaloneEnabled: settings.AppsecStandaloneEnabledInternal);
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)

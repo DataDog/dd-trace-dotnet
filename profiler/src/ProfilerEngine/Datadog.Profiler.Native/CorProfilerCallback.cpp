@@ -15,11 +15,12 @@
 #include <windows.h>
 #else
 #include "cgroup.h"
-#include <signal.h>
 #include <libunwind.h>
+#include <signal.h>
 #endif
 
 #include "AllocationsProvider.h"
+#include "AllocationsRecorder.h"
 #include "AppDomainStore.h"
 #include "ApplicationStore.h"
 #include "CallstackProvider.h"
@@ -36,11 +37,12 @@
 #include "GCThreadsCpuProvider.h"
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
-#include "ProfileExporter.h"
 #include "Log.h"
 #include "ManagedThreadList.h"
+#include "MetadataProvider.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
+#include "ProfileExporter.h"
 #include "ProfilerEngineStatus.h"
 #include "RuntimeIdStore.h"
 #include "RuntimeInfo.h"
@@ -49,10 +51,10 @@
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
-#include "AllocationsRecorder.h"
-#include "MetadataProvider.h"
 #ifdef LINUX
+#include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
+#include "TimerCreateCpuProfiler.h"
 #endif
 
 #include "shared/src/native-src/environment_variables.h"
@@ -60,7 +62,6 @@
 #include "shared/src/native-src/string.h"
 
 #include "dd_profiler_version.h"
-
 
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
@@ -76,11 +77,11 @@ extern "C" __declspec(dllexport) const char* Profiler_Version = PROFILER_VERSION
 extern "C" __attribute__((visibility("default"))) const char* Profiler_Version = PROFILER_VERSION;
 #endif
 
-
 // Initialization
 CorProfilerCallback* CorProfilerCallback::_this = nullptr;
 
-CorProfilerCallback::CorProfilerCallback()
+CorProfilerCallback::CorProfilerCallback(std::shared_ptr<IConfiguration> pConfiguration) :
+    _pConfiguration{std::move(pConfiguration)}
 {
     // Keep track of the one and only ICorProfilerCallback implementation.
     // It will be used as root for other services
@@ -167,7 +168,17 @@ bool CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get(), MemoryResourceManager::GetDefault());
+        shared::pmr::memory_resource* memoryResource = MemoryResourceManager::GetDefault();
+
+#ifdef LINUX
+        if (_pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
+        {
+            auto const useMmap = true;
+            memoryResource = _memoryResourceManager.GetSynchronizedPool(100, 4096, useMmap);
+        }
+#endif
+        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
+            valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get(), memoryResource);
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -218,7 +229,7 @@ bool CorProfilerCallback::InitializeServices()
                     _metricsRegistry,
                     CallstackProvider(_memoryResourceManager.GetDefault()),
                     MemoryResourceManager::GetDefault()
-                    );
+                );
 
                 if (!_pConfiguration->IsAllocationProfilingEnabled())
                 {
@@ -247,7 +258,7 @@ bool CorProfilerCallback::InitializeServices()
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
                 MemoryResourceManager::GetDefault()
-                );
+            );
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
@@ -264,7 +275,7 @@ bool CorProfilerCallback::InitializeServices()
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
                 MemoryResourceManager::GetDefault()
-                );
+            );
         }
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
@@ -277,7 +288,7 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get(),
                 MemoryResourceManager::GetDefault()
-                );
+            );
             _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
                 valueTypeProvider,
                 _pFrameStore.get(),
@@ -287,7 +298,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _metricsRegistry,
                 MemoryResourceManager::GetDefault()
-                );
+            );
         }
         else
         {
@@ -300,7 +311,7 @@ bool CorProfilerCallback::InitializeServices()
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider
-            );
+        );
 
         if (_pGarbageCollectionProvider != nullptr)
         {
@@ -439,6 +450,19 @@ bool CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
 
+#ifdef LINUX
+    if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
+    {
+        auto const useMmap = true;
+        _pCpuProfiler = RegisterService<TimerCreateCpuProfiler>(
+            _pConfiguration.get(),
+            ProfilerSignalManager::Get(SIGPROF),
+            _pManagedThreadList,
+            _pCpuTimeProvider,
+            CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize, useMmap)));
+    }
+#endif
+
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 
     // The different elements of the libddprof pipeline are created and linked together
@@ -451,8 +475,7 @@ bool CorProfilerCallback::InitializeServices()
         _pEnabledProfilers.get(),
         _metricsRegistry,
         _pMetadataProvider.get(),
-        _pAllocationsRecorder.get()
-        );
+        _pAllocationsRecorder.get());
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
         _pCpuTimeProvider != nullptr &&
@@ -549,7 +572,9 @@ bool CorProfilerCallback::InitializeServices()
         }
     }
 
+    Log::Info("{{{{ starting services");
     auto started = StartServices();
+    Log::Info("{{{{ services started ");
     if (!started)
     {
         Log::Error("One or multiple services failed to start. Stopping all services.");
@@ -574,7 +599,7 @@ bool CorProfilerCallback::StartServices()
         }
         else
         {
-            Log::Error(name, " failed to start.");
+            Log::Info(name, " failed to start. This service might have been started earlier.");
         }
         result &= success;
     }
@@ -619,7 +644,7 @@ bool CorProfilerCallback::StopServices()
         }
         else
         {
-            Log::Error(name, " failed to stop.");
+            Log::Info(name, " failed to stop. This service might have been stopped earlier.");
         }
         result &= success;
     }
@@ -914,14 +939,14 @@ void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerI
         buffer << "{ "
                << "clrInstanceId:" << clrInstanceId
                << ", runtimeType:" <<
-                    ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR" :
-                    (runtimeType == COR_PRF_CORE_CLR) ? "CORE_CLR" :
-                    (std::string("unknown(") + std::to_string(runtimeType) + std::string(")")))
-                << ", majorVersion: " << major
-                << ", minorVersion: " << minor
-                << ", buildNumber: " << buildNumber
-                << ", qfeVersion: " << qfeVersion
-                << " }";
+                     ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR" :
+                     (runtimeType == COR_PRF_CORE_CLR) ? "CORE_CLR" :
+                     (std::string("unknown(") + std::to_string(runtimeType) + std::string(")")))
+               << ", majorVersion: " << major
+               << ", minorVersion: " << minor
+               << ", buildNumber: " << buildNumber
+               << ", qfeVersion: " << qfeVersion
+               << " }";
 
         CorProfilerCallback::_runtimeDescription = buffer.str();
         Log::Info("Initializing the Profiler: Reported runtime version :", CorProfilerCallback::_runtimeDescription);
@@ -989,7 +1014,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     ConfigureDebugLog();
 
-    _pConfiguration = std::make_unique<Configuration>();
     _pMetadataProvider = std::make_unique<MetadataProvider>();
     _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
@@ -1054,8 +1078,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         _pConfiguration->IsHeapProfilingEnabled() ||
         _pConfiguration->IsAllocationProfilingEnabled() ||
         _pConfiguration->IsContentionProfilingEnabled() ||
-        _pConfiguration->IsGarbageCollectionProfilingEnabled()
-        ;
+        _pConfiguration->IsGarbageCollectionProfilingEnabled();
 
     if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
@@ -1473,6 +1496,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
     {
         _systemCallsShield->Unregister();
     }
+
+    if (_pCpuProfiler != nullptr)
+    {
+        _pCpuProfiler->UnregisterThread(pThreadInfo);
+    }
 #endif
 
     return S_OK;
@@ -1511,6 +1539,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 #endif
 
 #ifdef LINUX
+    auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
+    // CurrentThreadInfo relies on the assumption that the native thread calling ThreadAssignedToOSThread/ThreadDestroyed
+    // is the same native thread assigned to the managed thread.
+    ManagedThreadInfo::CurrentThreadInfo = threadInfo;
+
+    if (_pCpuProfiler != nullptr)
+    {
+        _pCpuProfiler->RegisterThread(threadInfo);
+    }
+
     if (_systemCallsShield != nullptr)
     {
         // Register/Unregister rely on the following assumption:
@@ -1519,7 +1557,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
         // If at some point, it's not true, we can remove Register/Unregister on the SystemCallsShield class.
         // Then initiliaze the TLS managedThreadInfo (by calling TryGetCurrentThreadInfo) the first time a call is made in SystemCallsShield
         // SystemCallsShield::SetSharedMemory callback.
-        auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
         _systemCallsShield->Register(threadInfo);
     }
 

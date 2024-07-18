@@ -19,9 +19,9 @@
 #include "module_metadata.h"
 #include "resource.h"
 #include "stats.h"
-#include "version.h"
 
 #include "../../../shared/src/native-src/pal.h"
+#include "../../../shared/src/native-src/version.h"
 
 #include "iast/dataflow.h"
 
@@ -71,7 +71,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     const auto process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
-    const auto process_command_line = shared::GetCurrentProcessCommandLine();
+    const auto [process_command_line , tokenized_command_line ] = GetCurrentProcessCommandLine();
     Logger::Info("Process CommandLine: ", process_command_line);
 
     // CI visibility checks
@@ -83,19 +83,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             is_ci_visibility_enabled)
         {
             const auto isDotNetProcess = process_name == WStr("dotnet") || process_name == WStr("dotnet.exe");
-            
+            const auto token_count = tokenized_command_line.size();
             if (isDotNetProcess &&
+                token_count > 1 &&
+                tokenized_command_line[1] != WStr("test") &&
+                // these are executed with exec, so we could check for that, but the
+                // below check is more conservative, so leaving at that
                 process_command_line.find(WStr("testhost")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet\" test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet' test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet.exe test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet.exe\" test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet.exe' test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet.dll test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet.dll\" test")) == WSTRING::npos &&
-                process_command_line.find(WStr("dotnet.dll' test")) == WSTRING::npos &&
-                process_command_line.find(WStr(" test ")) == WSTRING::npos)
+                process_command_line.find(WStr("datacollector")) == WSTRING::npos &&
+                process_command_line.find(WStr("vstest.console.dll")) == WSTRING::npos)
             {
                 Logger::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility "
                     "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost'");
@@ -362,7 +358,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     if (isIastEnabled || isRaspEnabled)
     {
-        _dataflow = new iast::Dataflow(info_);
+        _dataflow = new iast::Dataflow(info_, rejit_handler);
         if (FAILED(_dataflow->Init()))
         {
             Logger::Error("Callsite Dataflow failed to initialize");
@@ -694,9 +690,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
 bool ShouldRewriteProfilerMaps()
 {
-    auto strValue = shared::GetEnvironmentValue(WStr("DD_PROFILING_ENABLED"));
-    bool is_profiler_enabled;
-    return shared::TryParseBooleanEnvironmentValue(strValue, is_profiler_enabled) && is_profiler_enabled;
+    const auto envVarKey = WStr("DD_PROFILING_ENABLED");
+    if (shared::EnvironmentExist(envVarKey))
+    {
+        bool is_profiler_enabled;
+        auto strValue = shared::GetEnvironmentValue(envVarKey);
+
+        if (shared::TryParseBooleanEnvironmentValue(strValue, is_profiler_enabled))
+        {
+            return is_profiler_enabled;
+        }
+
+        return (strValue == WStr("auto"));
+    }
+
+    return false;
 }
 
 std::string GetNativeLoaderFilePath()
@@ -1301,13 +1309,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     // to prevent it from unloading while in use
     auto modules = module_ids.Get();
 
-    DEL(_dataflow)
-
     if (rejit_handler != nullptr)
     {
         rejit_handler->Shutdown();
         rejit_handler = nullptr;
     }
+
+    DEL(_dataflow);
 
     auto definitions = definitions_ids.Get();
 
@@ -1825,19 +1833,6 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             {
                 integration_definitions_.push_back(integration);
             }
-
-            Logger::Info("Total number of modules to analyze: ", modules->size());
-            if (rejit_handler != nullptr)
-            {
-                auto promise = std::make_shared<std::promise<ULONG>>();
-                std::future<ULONG> future = promise->get_future();
-                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(),
-                    integrationDefinitions, promise);
-
-                // wait and get the value from the future<int>
-                const auto& numReJITs = future.get();
-                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
-            }
         }
         else
         {
@@ -1852,19 +1847,19 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                     integration_definitions_.push_back(integration);
                 }
             }
+        }
 
-            Logger::Info("Total number of modules to analyze: ", modules->size());
-            if (rejit_handler != nullptr)
-            {
-                auto promise = std::make_shared<std::promise<ULONG>>();
-                std::future<ULONG> future = promise->get_future();
-                tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(modules.Ref(),
-                    integrationDefinitions, promise);
+        Logger::Info("Total number of modules to analyze: ", modules->size());
+        if (rejit_handler != nullptr)
+        {
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions,
+                                                                                 promise);
 
-                // wait and get the value from the future<int>
-                const auto& numReJITs = future.get();
-                Logger::Debug("Total number of Revert Requested: ", numReJITs);
-            }
+            // wait and get the value from the future<int>
+            const auto& numReJITs = future.get();
+            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
 
         Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
@@ -2020,8 +2015,7 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
             auto modules = module_ids.Get();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(modules.Ref(), affectedDefinitions,
-                                                                                  promise);
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions, promise);
 
             // wait and get the value from the future<int>
             numReverts = future.get();

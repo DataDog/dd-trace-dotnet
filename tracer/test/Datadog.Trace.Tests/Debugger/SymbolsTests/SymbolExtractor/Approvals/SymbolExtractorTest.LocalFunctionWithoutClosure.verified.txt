@@ -37,6 +37,14 @@
                 "start_column": 999,
                 "end_column": 999
               },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LocalFunctionWithoutClosure",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ],
               "scopes": [
                 {
                   "scope_type": "closure",
@@ -106,7 +114,15 @@
                   "sanitized"
                 ],
                 "return_type": "System.Void"
-              }
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LocalFunctionWithoutClosure",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ]
             }
           ]
         }

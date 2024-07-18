@@ -14,6 +14,7 @@
 
 namespace datadog::shared::nativeloader
 {
+    struct RuntimeInformation;
     class IDynamicDispatcher;
 
     class CorProfiler : public ICorProfilerCallback10
@@ -30,8 +31,8 @@ namespace datadog::shared::nativeloader
         ICorProfilerInfo4* m_info;
         std::shared_ptr<ICorProfilerInfo12> m_writeToDiskCorProfilerInfo;
 
-        static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
-        static void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
+        static std::string InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
+        static RuntimeInformation GetRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo, const std::string& inferred_version);
 
     public:
         CorProfiler(IDynamicDispatcher* dispatcher);
@@ -177,4 +178,63 @@ namespace datadog::shared::nativeloader
         static const char* GetRuntimeId(AppDomainID appDomain);
     };
 
+    struct RuntimeInformation
+    {
+        COR_PRF_RUNTIME_TYPE runtime_type;
+        USHORT major_version;
+        USHORT minor_version;
+        USHORT build_version;
+        USHORT qfe_version;
+        std::string inferred_version;
+
+        RuntimeInformation() :
+            runtime_type((COR_PRF_RUNTIME_TYPE) 0x0), major_version(0), minor_version(0), build_version(0), qfe_version(0), inferred_version("")
+        {
+        }
+
+        RuntimeInformation(COR_PRF_RUNTIME_TYPE runtime_type, USHORT major_version, USHORT minor_version,
+                           USHORT build_version, USHORT qfe_version, std::string inferred_version) :
+            runtime_type(runtime_type),
+            major_version(major_version),
+            minor_version(minor_version),
+            build_version(build_version),
+            qfe_version(qfe_version),
+            inferred_version(std::move(inferred_version))
+        {
+        }
+
+        RuntimeInformation& operator=(const RuntimeInformation& other)
+        {
+            runtime_type = other.runtime_type;
+            major_version = other.major_version;
+            minor_version = other.minor_version;
+            build_version = other.build_version;
+            qfe_version = other.qfe_version;
+            return *this;
+        }
+
+        bool is_desktop() const
+        {
+            return runtime_type == COR_PRF_DESKTOP_CLR;
+        }
+        bool is_core() const
+        {
+            return runtime_type == COR_PRF_CORE_CLR;
+        }
+
+        std::string description() const
+        {
+            // on .NET Core, prior to .NET 5, can't trust the versions
+            // Similarly, the inferred version (from ICorProfiler interface) gives more
+            // granularity for us in .NET Framework
+            if((is_core() && major_version >= 5) || inferred_version.empty())
+            {
+                return std::to_string(major_version) + "." +
+                       std::to_string(minor_version) + "." +
+                       std::to_string(build_version);
+            }
+
+            return inferred_version;
+        }
+    };
 } // namespace datadog::shared::nativeloader

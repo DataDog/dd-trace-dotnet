@@ -35,21 +35,13 @@ namespace Datadog.Trace.AppSec
                                  .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
                                  .AsString(SecurityConstants.BlockedJsonTemplate);
 
-            bool isEnabledSet = true;
-
-            bool GetEnabledDefaultValue()
-            {
-                isEnabledSet = false;
-                return false;
-            }
-
             // both should default to false
             var enabledEnvVar = config
                                .WithKeys(ConfigurationKeys.AppSec.Enabled)
-                               .AsBool(GetEnabledDefaultValue, null);
+                               .AsBoolResult();
 
-            Enabled = enabledEnvVar.Value;
-            CanBeToggled = !isEnabledSet;
+            CanBeToggled = !enabledEnvVar.ConfigurationResult.IsValid;
+            Enabled = enabledEnvVar.WithDefault(false);
 
             Rules = config.WithKeys(ConfigurationKeys.AppSec.Rules).AsString();
             CustomIpHeader = config.WithKeys(ConfigurationKeys.AppSec.CustomIpHeader).AsString();
@@ -95,9 +87,9 @@ namespace Datadog.Trace.AppSec
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
                                      .AsBool(false);
 
-            // For now, RASP is disabled by default.
+            // For now, RASP is enabled by default.
             RaspEnabled = config.WithKeys(ConfigurationKeys.AppSec.RaspEnabled)
-                                .AsBool(false) && Enabled;
+                                .AsBool(true) && Enabled;
 
             StackTraceEnabled = config.WithKeys(ConfigurationKeys.AppSec.StackTraceEnabled)
                                       .AsBool(true);

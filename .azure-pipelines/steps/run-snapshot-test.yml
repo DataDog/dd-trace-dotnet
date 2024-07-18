@@ -39,6 +39,14 @@ steps:
       echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-test-agent"
       echo "##vso[task.setvariable variable=COMPOSE_PATH]docker-compose.yml"
     displayName: Set env-specific variables
+
+  - script: |
+      mkdir -p tracer/build_data/snapshots
+      mkdir -p tracer/build_data/logs
+      mkdir -p tracer/build_data/dumps
+      # make sure that the container have enough rights to write in this folder
+      sudo chmod -R 777 tracer/build_data/ || true
+    displayName: create test data directories
 - ${{ else }}:
   - bash: |
       echo "##vso[task.setvariable variable=CURL_COMMAND]curl"
@@ -97,26 +105,43 @@ steps:
     env:
       DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
 
-- task: DockerCompose@0
+- script: docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) logs $(TEST_AGENT_TARGET)
   displayName: dump docker-compose logs for $(TEST_AGENT_TARGET)
-  inputs:
-    containerregistrytype: Container Registry
-    dockerComposeCommand: logs $(TEST_AGENT_TARGET)
-    projectName: ddtrace_$(Build.BuildNumber)
-    dockerComposeFile: $(COMPOSE_PATH)
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   condition: succeededOrFailed()
   continueOnError: true
 
-- task: DockerCompose@0
+- script: docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) down
   displayName: docker-compose stop services
-  inputs:
-    containerregistrytype: Container Registry
-    dockerComposeCommand: down
-    projectName: ddtrace_$(Build.BuildNumber)
-    dockerComposeFile: $(COMPOSE_PATH)
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
   condition: succeededOrFailed()
   continueOnError: true
+
+# Run crash tests
+- ${{ if eq(parameters.isLinux, true) }}:
+  - bash: |
+      LOGS=$(docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e CRASH_APP_ON_STARTUP=1 -e COMPlus_DbgEnableMiniDump=0 ${{ parameters.target }})
+      echo $LOGS
+
+      # check logs for evidence of crash detection in the output
+      expected="The crash may have been caused by automatic instrumentation"
+      if [[ $LOGS == *"$expected"* ]]; then
+        echo "Correctly found evidence of crash detection"
+      else
+        echo "Did not find required evidence of crash detection running"
+        exit 1;
+      fi
+
+    env:
+      dockerTag: $(dockerTag)
+      DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
+    displayName: Check logs for evidence of crash output
+    condition: eq(variables['runCrashTest'], 'true')
+
+- ${{ if eq(parameters.isLinux, true) }}:
+    - script: |
+        sudo chmod -R 644 tracer/build_data/dumps/* || true
+      displayName: Make dumps uploadable to AzDo
+      condition: succeededOrFailed()

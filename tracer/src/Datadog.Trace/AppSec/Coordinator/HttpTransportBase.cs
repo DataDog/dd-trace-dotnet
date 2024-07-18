@@ -7,12 +7,17 @@
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
+#if !NETFRAMEWORK
+using Microsoft.AspNetCore.Http;
+#else
+using System.Web;
+#endif
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
 internal abstract class HttpTransportBase
 {
-    internal const string AsmApiSecurity = "asm.apisecurity";
+    private bool _isAdditiveContextDisposed;
 
     internal abstract bool IsBlocked { get; }
 
@@ -22,12 +27,20 @@ internal abstract class HttpTransportBase
 
     internal abstract bool ReportedExternalWafsRequestHeaders { get; set; }
 
+    public abstract HttpContext Context { get; }
+
     internal abstract IContext? GetAdditiveContext();
 
     /// <summary>
     /// Disposes the WAF's context stored in HttpContext.Items[]. If it doesn't exist, nothing happens, no crash
     /// </summary>
-    internal void DisposeAdditiveContext() => GetAdditiveContext()?.Dispose();
+    internal void DisposeAdditiveContext()
+    {
+        GetAdditiveContext()?.Dispose();
+        _isAdditiveContextDisposed = true;
+    }
+
+    internal bool IsAdditiveContextDisposed() => _isAdditiveContextDisposed;
 
     internal abstract void SetAdditiveContext(IContext additiveContext);
 

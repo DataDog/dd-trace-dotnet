@@ -17,9 +17,11 @@ internal class AppSecRequestContext
 {
     private const string StackKey = "_dd.stack";
     private const string ExploitStackKey = "exploit";
+    private const string AppsecKey = "appsec";
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces = null;
+    private RaspTelemetryHelper? _raspTelemetryHelper = Security.Instance.RaspEnabled ? new RaspTelemetryHelper() : null;
 
     internal void CloseWebSpan(TraceTagCollection tags, Span span)
     {
@@ -27,14 +29,33 @@ internal class AppSecRequestContext
         {
             if (_wafSecurityEvents.Count > 0)
             {
-                var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
-                tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
+                // Older version of the Agent doesn't support meta struct
+                // Fallback to the _dd.appsec.json tag
+                if (Security.Instance.IsMetaStructSupported())
+                {
+                    span.SetMetaStruct(AppsecKey, MetaStructHelper.ObjectToByteArray(new Dictionary<string, List<object>> { { "triggers", _wafSecurityEvents } }));
+                }
+                else
+                {
+                    var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
+                    tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
+                }
             }
 
             if (_raspStackTraces?.Count > 0)
             {
                 span.SetMetaStruct(StackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
             }
+
+            _raspTelemetryHelper?.GenerateRaspSpanMetricTags(span.Tags);
+        }
+    }
+
+    internal void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings)
+    {
+        lock (_sync)
+        {
+            _raspTelemetryHelper?.AddRaspSpanMetrics(duration, durationWithBindings);
         }
     }
 
@@ -56,7 +77,7 @@ internal class AppSecRequestContext
             {
                 _raspStackTraces.Add(ExploitStackKey, new());
             }
-            else if (_raspStackTraces[ExploitStackKey].Count >= maxStackTraces)
+            else if (maxStackTraces > 0 && _raspStackTraces[ExploitStackKey].Count >= maxStackTraces)
             {
                 return;
             }

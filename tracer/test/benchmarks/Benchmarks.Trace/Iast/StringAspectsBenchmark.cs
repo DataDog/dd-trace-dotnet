@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Iast;
@@ -20,6 +21,7 @@ namespace Benchmarks.Trace.Iast;
 [MemoryDiagnoser]
 [BenchmarkAgent7]
 [BenchmarkCategory(Constants.AppSecCategory)]
+[IgnoreProfile]
 public class StringAspectsBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;

@@ -28,6 +28,9 @@ namespace Datadog.Trace.RuntimeMetrics
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuntimeMetricsWriter>();
         private static readonly Func<IDogStatsd, TimeSpan, bool, IRuntimeMetricsListener> InitializeListenerFunc = InitializeListener;
 
+        [ThreadStatic]
+        private static bool _inspectingFirstChanceException;
+
         private static int _pssConsecutiveFailures;
 
         private readonly Process _process;
@@ -257,9 +260,27 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private void FirstChanceException(object sender, FirstChanceExceptionEventArgs e)
         {
-            var name = e.Exception.GetType().Name;
+            if (_inspectingFirstChanceException)
+            {
+                // In rare occasions, inspecting an exception could throw another exception
+                // We need to detect this to avoid infinite recursion
+                return;
+            }
 
-            _exceptionCounts.AddOrUpdate(name, 1, (_, count) => count + 1);
+            try
+            {
+                _inspectingFirstChanceException = true;
+
+                var name = e.Exception.GetType().Name;
+                _exceptionCounts.AddOrUpdate(name, 1, (_, count) => count + 1);
+            }
+            catch
+            {
+            }
+            finally
+            {
+                _inspectingFirstChanceException = false;
+            }
         }
 
         private void GetCurrentProcessMetrics(out TimeSpan userProcessorTime, out TimeSpan systemCpuTime, out int threadCount, out long privateMemorySize)

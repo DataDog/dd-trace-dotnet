@@ -106,6 +106,30 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         await VerifySpans(spans, settings, testName: testName, methodNameOverride: exploit);
     }
 
+    [SkippableTheory]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [InlineData("/Iast/ExecuteQueryFromBodyQueryData", "SqlI", "{\"UserName\": \"' or '1'='1\"}")]
+    public async Task TestRaspRequestSqlInBody(string url, string exploit, string body = null)
+    {
+        var agent = _iisFixture.Agent;
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseParameters(url, exploit, body);
+        settings.AddIastScrubbing();
+        var dateTime = DateTime.UtcNow;
+        var answer = await SubmitRequest("/Iast/PopulateDDBB", null, string.Empty);
+        _iisFixture.Agent.SpanFilters.Add(s => !s.Resource.Contains("/Iast/PopulateDDBB"));
+        agent.WaitForSpans(2, minDateTime: dateTime);
+        dateTime = DateTime.UtcNow;
+        var testName = _enableIast ? "RaspIast.AspNetMvc5" : "Rasp.AspNetMvc5";
+        testName += _classicMode ? ".Classic" : ".Integrated";
+        await SubmitRequest(url, body, "application/json");
+        var spans = agent.WaitForSpans(2, minDateTime: dateTime);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
+    }
+
     public async Task InitializeAsync()
     {
         await _iisFixture.TryStartIis(this, _classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);

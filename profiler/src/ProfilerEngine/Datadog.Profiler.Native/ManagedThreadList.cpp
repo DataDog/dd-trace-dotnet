@@ -47,13 +47,13 @@ const char* ManagedThreadList::GetName()
     return _serviceName;
 }
 
-bool ManagedThreadList::Start()
+bool ManagedThreadList::StartImpl()
 {
     // nothing special to start
     return true;
 }
 
-bool ManagedThreadList::Stop()
+bool ManagedThreadList::StopImpl()
 {
     // nothing special to stop
     return true;
@@ -364,4 +364,14 @@ bool ManagedThreadList::RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThre
     }
 
     return false;
+}
+
+void ManagedThreadList::ForEach(std::function<void (ManagedThreadInfo*)> callback)
+{
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
+
+    for (auto& thread : _threads)
+    {
+        callback(thread.get());
+    }
 }

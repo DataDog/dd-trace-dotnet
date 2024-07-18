@@ -44,6 +44,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         [InlineData("disabled", SamplingPriorityValues.UserKeep, "sqlclient", "", "", false)]
         [InlineData("Service", SamplingPriorityValues.AutoReject, "npgsql", "Test.Service-postgres", "/*dddbs='Test.Service-postgres',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/", false)]
         [InlineData("full", SamplingPriorityValues.UserReject, "sqlclient", "Test.Service-sql-server", "/*dddbs='Test.Service-sql-server',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/", false)]
+        [InlineData("full", SamplingPriorityValues.UserReject, "oracle", "Test.Service-oracle", "/*dddbs='Test.Service-oracle',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/", false)]
         [InlineData("fUlL", SamplingPriorityValues.AutoKeep, "mysql", "Test.Service-mysql", "/*dddbs='Test.Service-mysql',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-01'*/", true)]
         public void ExpectedCommentInjected(string propagationMode, int? samplingPriority, string integration, string dbServiceName, string expectedComment, bool traceParentInjected)
         {

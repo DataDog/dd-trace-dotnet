@@ -42,7 +42,7 @@ internal static class SamplingMechanism
     /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
     /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
-    public const int TraceSamplingRule = 3;
+    public const int LocalTraceSamplingRule = 3;
 
     /// <summary>
     /// A sampling decision was made manually by the user.
@@ -110,19 +110,18 @@ internal static class SamplingMechanism
     {
         // the "-" prefix is a left-over separator from a previous iteration of this feature
         // (not a negative sign)
-#pragma warning disable CS0618 // Type or member is obsolete
         return mechanism switch
         {
             Default => "-0",
             AgentRate => "-1",
-            RemoteRateAuto => "-2",
-            TraceSamplingRule => "-3",
+            // RemoteRateAuto => "-2",
+            LocalTraceSamplingRule => "-3",
             Manual => "-4",
             Asm => "-5",
-            RemoteRateUser => "-6",
-            RemoteRateDatadog => "-7",
+            // RemoteRateUser => "-6",
+            // RemoteRateDatadog => "-7",
             SpanSamplingRule => "-8",
-            OtlpIngestProbabilisticSampling => "-9",
+            // OtlpIngestProbabilisticSampling => "-9",
             DataJobsMonitoring => "-10",
             RemoteUserSamplingRule => "-11",
             RemoteAdaptiveSamplingRule => "-12",
@@ -130,6 +129,5 @@ internal static class SamplingMechanism
             // forwards-compatibility for future values
             _ => $"-{mechanism.ToString(CultureInfo.InvariantCulture)}"
         };
-#pragma warning restore CS0618 // Type or member is obsolete
     }
 }

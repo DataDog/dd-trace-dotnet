@@ -2,13 +2,16 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
+#if NETCOREAPP3_1_OR_GREATER
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Ci.Ipc;
+using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -68,6 +71,15 @@ public class SeleniumTests : TestingFrameworkEvpTest
         SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
         SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
+
+        var codeCoverageReceived = new StrongBox<bool>(false);
+        var name = $"session_{sessionId}";
+        using var ipcServer = new IpcServer(name);
+        ipcServer.SetMessageReceivedCallback(
+            o =>
+            {
+                codeCoverageReceived.Value = codeCoverageReceived.Value || o is SessionCodeCoverageMessage;
+            });
 
         using var agent = MockTracerAgent.Create(Output);
 
@@ -139,7 +151,12 @@ public class SeleniumTests : TestingFrameworkEvpTest
         };
 
         SetEnvironmentVariable("SAMPLES_SELENIUM_TEST_URL", $"http://127.0.0.1:{agent.Port}/evp_proxy/v4/rumpage");
-        using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
+        var sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion);
+        var sampleFolder = Path.GetDirectoryName(sampleAppPath);
+        using var processResult = await RunDotnetTestSampleAndWaitForExit(
+                                      agent,
+                                      packageVersion: packageVersion,
+                                      arguments: $"--settings:\"{Path.Combine(sampleFolder, "ci.runsettings")}\"");
 
         // Check if we have the data
         using var s = new AssertionScope();
@@ -161,6 +178,9 @@ public class SeleniumTests : TestingFrameworkEvpTest
                .OrderBy(s => s.Resource)
                .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters)),
             settings);
+
+        // check if we received code coverage information at session level
+        codeCoverageReceived.Value.Should().BeTrue();
     }
 
     public override void Dispose()
@@ -168,3 +188,5 @@ public class SeleniumTests : TestingFrameworkEvpTest
         _gacFixture.RemoveAssembliesFromGac();
     }
 }
+
+#endif

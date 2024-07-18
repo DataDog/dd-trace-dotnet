@@ -108,7 +108,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             for (var i = 0; i < values.Length; i++)
             {
                 var args = MakeDictionary(address, values[i]);
-                var result = context.RunWithEphemeral(args, TimeoutMicroSeconds);
+                var result = context.RunWithEphemeral(args, TimeoutMicroSeconds, false);
+                result.Timeout.Should().BeFalse("Timeout should be false");
 
                 // by convention attack is last item in the array
                 if (matches[i])

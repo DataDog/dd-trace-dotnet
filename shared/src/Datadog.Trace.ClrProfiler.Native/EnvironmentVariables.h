@@ -14,4 +14,8 @@ public:
     inline static const shared::WSTRING IncludeProcessNames = WStr("DD_PROFILER_PROCESSES");
     inline static const shared::WSTRING ExcludeProcessNames = WStr("DD_PROFILER_EXCLUDE_PROCESSES");
     inline static const shared::WSTRING InternalRuntimeId = WStr("DD_INTERNAL_CIVISIBILITY_RUNTIMEID");
+    // DD_INJECTION_ENABLED is non-empty when SSI is enabled
+    inline static const shared::WSTRING SingleStepInstrumentationEnabled = WStr("DD_INJECTION_ENABLED");
+    inline static const shared::WSTRING ForceEolInstrumentation = WStr("DD_INJECT_FORCE");
+    inline static const shared::WSTRING SingleStepInstrumentationTelemetryForwarderPath = WStr("DD_TELEMETRY_FORWARDER_PATH");
 };

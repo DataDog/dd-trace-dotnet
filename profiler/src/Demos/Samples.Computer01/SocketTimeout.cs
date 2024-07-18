@@ -23,8 +23,8 @@ namespace Samples.Computer01
 
         public SocketTimeout()
         {
-            _serverThreadTask = Task.Factory.StartNew(StartServerAsync, TaskCreationOptions.LongRunning);
             _serverReadyEvent = new ManualResetEventSlim(false);
+            _serverThreadTask = Task.Factory.StartNew(StartServer, TaskCreationOptions.LongRunning);
         }
 
         private int TimeoutErrorCode { get; } = OperatingSystem.IsWindows() ? 10060 : 110;
@@ -139,7 +139,7 @@ namespace Samples.Computer01
             }
         }
 
-        private async Task StartServerAsync(object obj)
+        private void StartServer(object obj)
         {
             Thread.CurrentThread.Name = "DD Socket Srv";
 
@@ -157,7 +157,7 @@ namespace Samples.Computer01
             {
                 try
                 {
-                    client = await s.AcceptAsync();
+                    client = s.AcceptAsync().GetAwaiter().GetResult();
                 }
                 catch (Exception e)
                 {

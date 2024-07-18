@@ -24,7 +24,7 @@ internal sealed class TraceClock
     static TraceClock()
     {
         TokenSource = new CancellationTokenSource();
-        LifetimeManager.Instance.AddShutdownTask(() => TokenSource.Cancel());
+        LifetimeManager.Instance.AddShutdownTask(_ => TokenSource.Cancel());
         _instance = new TraceClock();
         _ = UpdateClockAsync();
     }

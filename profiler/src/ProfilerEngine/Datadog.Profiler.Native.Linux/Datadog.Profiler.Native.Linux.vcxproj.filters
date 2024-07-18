@@ -8,6 +8,8 @@
     <ClCompile Include="ProfilerSignalManager.cpp" />
     <ClCompile Include="LinuxThreadInfo.cpp" />
     <ClCompile Include="SystemCallsShield.cpp" />
+    <ClCompile Include="CrashReportingLinux.cpp" />
+    <ClCompile Include="TimerCreateCpuProfiler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Scripts">
@@ -24,5 +26,7 @@
     <ClInclude Include="ProfilerSignalManager.h" />
     <ClInclude Include="LinuxThreadInfo.h" />
     <ClInclude Include="SystemCallsShield.h" />
+    <ClInclude Include="CrashReportingLinux.h" />
+    <ClInclude Include="TimerCreateCpuProfiler.h" />
   </ItemGroup>
 </Project>

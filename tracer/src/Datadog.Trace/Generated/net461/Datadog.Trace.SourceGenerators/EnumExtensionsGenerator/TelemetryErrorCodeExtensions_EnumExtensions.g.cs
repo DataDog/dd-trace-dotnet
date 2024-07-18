@@ -17,7 +17,7 @@ internal static partial class TelemetryErrorCodeExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 16;
+    public const int Length = 17;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.TelemetryErrorCode"/> value.
@@ -46,6 +46,7 @@ internal static partial class TelemetryErrorCodeExtensions
             Datadog.Trace.Telemetry.TelemetryErrorCode.ContinuousProfilerConfigurationError => "Error configuring Continuous Profiler",
             Datadog.Trace.Telemetry.TelemetryErrorCode.DynamicInstrumentationConfigurationError => "Error configuring Dynamic Instrumentation",
             Datadog.Trace.Telemetry.TelemetryErrorCode.PotentiallyInvalidUdsPath => "Potentially invalid UDS path",
+            Datadog.Trace.Telemetry.TelemetryErrorCode.UdsOnUnsupportedPlatform => "Attempting to use UDS on unsupported runtime",
             _ => value.ToString(),
         };
 
@@ -75,6 +76,7 @@ internal static partial class TelemetryErrorCodeExtensions
             Datadog.Trace.Telemetry.TelemetryErrorCode.ContinuousProfilerConfigurationError,
             Datadog.Trace.Telemetry.TelemetryErrorCode.DynamicInstrumentationConfigurationError,
             Datadog.Trace.Telemetry.TelemetryErrorCode.PotentiallyInvalidUdsPath,
+            Datadog.Trace.Telemetry.TelemetryErrorCode.UdsOnUnsupportedPlatform,
         };
 
     /// <summary>
@@ -104,6 +106,7 @@ internal static partial class TelemetryErrorCodeExtensions
             nameof(Datadog.Trace.Telemetry.TelemetryErrorCode.ContinuousProfilerConfigurationError),
             nameof(Datadog.Trace.Telemetry.TelemetryErrorCode.DynamicInstrumentationConfigurationError),
             nameof(Datadog.Trace.Telemetry.TelemetryErrorCode.PotentiallyInvalidUdsPath),
+            nameof(Datadog.Trace.Telemetry.TelemetryErrorCode.UdsOnUnsupportedPlatform),
         };
 
     /// <summary>
@@ -133,5 +136,6 @@ internal static partial class TelemetryErrorCodeExtensions
             "Error configuring Continuous Profiler",
             "Error configuring Dynamic Instrumentation",
             "Potentially invalid UDS path",
+            "Attempting to use UDS on unsupported runtime",
         };
 }

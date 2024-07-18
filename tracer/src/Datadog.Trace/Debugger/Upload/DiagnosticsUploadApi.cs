@@ -16,6 +16,7 @@ namespace Datadog.Trace.Debugger.Upload
 {
     internal class DiagnosticsUploadApi : DebuggerUploadApiBase
     {
+        private const string LegacyEndpoint = "debugger/v1/input";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiagnosticsUploadApi>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
@@ -60,20 +61,15 @@ namespace Datadog.Trace.Debugger.Upload
 
         private Task<IApiResponse> PostAsync(string uri, ArraySegment<byte> data)
         {
-            if (uri.Contains("diagnostics"))
-            {
-                var multipart = _apiRequestFactory.Create(new Uri(uri));
-
-                return
-                    multipart
-                         .PostAsync(new MultipartFormItem[]
-                          {
-                              new("event", MimeTypes.Json, "event.json", data)
-                          });
-            }
-
             var request = _apiRequestFactory.Create(new Uri(uri));
-            return request.PostAsync(data, MimeTypes.Json);
+            var isLegacy = uri.Contains(LegacyEndpoint);
+
+            return isLegacy ?
+                request.PostAsync(data, MimeTypes.Json) :
+                request.PostAsync(new MultipartFormItem[]
+                {
+                    new("event", MimeTypes.Json, "event.json", data)
+                });
         }
     }
 }

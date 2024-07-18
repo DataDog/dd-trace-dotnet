@@ -10,6 +10,7 @@ using Datadog.Trace.AppSec.Waf;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
 using SecurityCoordinator = Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
 #if NETFRAMEWORK
@@ -25,6 +26,7 @@ namespace Benchmarks.Trace.Asm
     [MemoryDiagnoser]
     [BenchmarkAgent7]
     [BenchmarkCategory(Constants.AppSecCategory)]
+    [IgnoreProfile]
     public class AppSecBodyBenchmark
     {
         private static readonly Security _security;
@@ -78,8 +80,8 @@ namespace Benchmarks.Trace.Asm
             context?.Dispose();
             _httpContext.Features.Set<IContext>(null);
 #else
-            var securityTransport = new SecurityCoordinator(_security, _httpContext, span);
-            var result = securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
+            var securityTransport = new SecurityCoordinator(_security, span, new SecurityCoordinator.HttpTransport(_httpContext));
+            securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
             var context = _httpContext.Items["waf"] as IContext;
             context?.Dispose();
             _httpContext.Items["waf"] = null;

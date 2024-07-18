@@ -8,12 +8,12 @@ const char* ThreadsCpuManagerHelper::GetName()
     return "ThreadsCpuManagerHelper";
 }
 
-bool ThreadsCpuManagerHelper::Start()
+bool ThreadsCpuManagerHelper::StartImpl()
 {
     return true;
 }
 
-bool ThreadsCpuManagerHelper::Stop()
+bool ThreadsCpuManagerHelper::StopImpl()
 {
     return true;
 }

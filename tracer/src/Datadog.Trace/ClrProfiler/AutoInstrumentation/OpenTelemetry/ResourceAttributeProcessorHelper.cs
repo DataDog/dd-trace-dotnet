@@ -58,7 +58,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                             {
                                 if (attribute.Key == "service.name")
                                 {
-                                    span.ServiceName = attribute.Value.ToString();
+                                    var resourceServiceName = attribute.Value.ToString();
+
+                                    // if OTEL_SERVICE_NAME isn't set, OpenTelemetry will set "service.name" to:
+                                    // "unknown_service" or "unknown_service:ProcessName"
+                                    if (string.IsNullOrEmpty(resourceServiceName)
+                                     || string.Equals(resourceServiceName, "unknown_service", StringComparison.Ordinal)
+                                     || resourceServiceName.StartsWith("unknown_service:", StringComparison.Ordinal))
+                                    {
+                                        resourceServiceName = Tracer.Instance.DefaultServiceName;
+
+                                        span.SetTag(attribute.Key, resourceServiceName);
+                                    }
+
+                                    span.ServiceName = resourceServiceName;
                                 }
                                 else if (attribute.Key == "service.version")
                                 {

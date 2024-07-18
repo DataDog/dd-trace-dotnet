@@ -23,7 +23,12 @@ public abstract class ConsoleTestHelper : ToolTestHelper
 
     protected Task<ProcessHelper> StartConsole(bool enableProfiler, params (string Key, string Value)[] environmentVariables)
     {
-        return StartConsole(EnvironmentHelper, enableProfiler, environmentVariables);
+        return StartConsole(EnvironmentHelper, enableProfiler, "wait", environmentVariables);
+    }
+
+    protected Task<ProcessHelper> StartConsoleWithArgs(string args, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+    {
+        return StartConsole(EnvironmentHelper, enableProfiler, args, environmentVariables);
     }
 
     protected (string Executable, string Args) PrepareSampleApp(EnvironmentHelper environmentHelper)
@@ -44,18 +49,13 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         return (executable, args);
     }
 
-    protected async Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+    protected async Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, string args, params (string Key, string Value)[] environmentVariables)
     {
-        var (executable, args) = PrepareSampleApp(environmentHelper);
+        var (executable, baseArgs) = PrepareSampleApp(environmentHelper);
 
-        args += " wait";
+        args = $"{baseArgs} {args}";
 
-        var processStart = new ProcessStartInfo(executable, args)
-        {
-            UseShellExecute = false,
-            RedirectStandardError = true,
-            RedirectStandardOutput = true
-        };
+        var processStart = new ProcessStartInfo(executable, args) { UseShellExecute = false, RedirectStandardError = true, RedirectStandardOutput = true };
 
         MockTracerAgent? agent = null;
 
@@ -67,6 +67,14 @@ public abstract class ConsoleTestHelper : ToolTestHelper
                 agent,
                 aspNetCorePort: 1000,
                 processStart.Environment);
+        }
+        else
+        {
+            // We should still apply the custom environment variables
+            foreach (string key in environmentHelper.CustomEnvironmentVariables.Keys)
+            {
+                processStart.Environment[key] = environmentHelper.CustomEnvironmentVariables[key];
+            }
         }
 
         foreach (var (key, value) in environmentVariables)

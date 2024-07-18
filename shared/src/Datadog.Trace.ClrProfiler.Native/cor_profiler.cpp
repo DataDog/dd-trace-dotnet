@@ -4,6 +4,7 @@
 #include "util.h"
 #include "../../../shared/src/native-src/pal.h"
 #include "EnvironmentVariables.h"
+#include "single_step_guard_rails.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_function_control.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_helper.h"
@@ -115,7 +116,7 @@ namespace datadog::shared::nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk)
     {
         Log::Debug("CorProfiler::Initialize");
-        InspectRuntimeCompatibility(pICorProfilerInfoUnk);
+        const auto inferredVersion = InspectRuntimeCompatibility(pICorProfilerInfoUnk);
 
         const auto process_name = ::shared::GetCurrentProcessName();
         Log::Debug("ProcessName: ", process_name);
@@ -153,6 +154,105 @@ namespace datadog::shared::nativeloader
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                 }
             }
+
+            // If we weren't on the explicit include list, then try to filter out `dotnet build` etc.
+            // We don't want to instrument _build_ processes in dotnet by default, as they generally
+            // don't give useful information, add latency, and risk triggering bugs in the runtime,
+            // particularly around shutdown, like this one: https://github.com/dotnet/runtime/issues/55441
+           const auto [process_command_line , tokenized_command_line]  = GetCurrentProcessCommandLine();
+            Log::Info("Process CommandLine: ", process_command_line);
+
+            if (!process_command_line.empty())
+            {
+                const auto isDotNetProcess = process_name == WStr("dotnet") || process_name == WStr("dotnet.exe");
+                const auto token_count = tokenized_command_line.size();
+                if (isDotNetProcess && token_count > 1)
+                {
+                    // Exclude:
+                    // - dotnet build, dotnet build myproject.csproj etc  
+                    // - dotnet build-server
+                    // - (... dotnet COMMAND commands listed below)
+                    // - dotnet tool ...
+                    // - dotnet new ...
+                    //
+                    // There are other commands we're choosing not to check because they
+                    // wouldn't normally be called on a build or production server, just locally
+                    // - dotnet add package, dotnet add reference
+                    // - dotnet sln
+                    // - dotnet workload
+                    // - etc
+                    //
+                    // There are some commands that we explicitly DO want to instrument
+                    // i.e. dotnet run
+                    // i.e. dotnet test
+                    // i.e. dotnet vstest
+                    // i.e. dotnet exec (except specific commands)
+                    bool is_ignored_command = false;
+                    const auto token1 = tokenized_command_line[1];
+                    if(token1 == WStr("exec"))
+                    {
+                        // compiler is invoked with arguments something like this:
+                        // dotnet exec /usr/share/dotnet/sdk/6.0.400/Roslyn/bincore/csc.dll /noconfig @/tmp/tmp8895f601306443a6a54388ecc6dcfc44.rsp
+                        // so we check the arguments to see if any of them are an invocation of one of the dlls we want to ignore.
+                        // We don't just check the second argument because the command could set additional flags
+                        // for the exec function
+                        for (int i = 2; i < token_count; ++i)
+                        {
+                            const auto current_token = tokenized_command_line[i];
+                            if(!current_token.empty() &&
+                                (EndsWith(current_token, WStr("csc.dll"))
+                                    || EndsWith(current_token, WStr("VBCSCompiler.dll"))))
+                            {
+                                is_ignored_command = true;
+                                break;
+                            }
+                        }
+                    }
+                    else if(!token1.empty())
+                    {
+                        is_ignored_command =
+                            token1 == WStr("build") ||
+                            token1 == WStr("build-server") ||
+                            token1 == WStr("clean") ||
+                            token1 == WStr("msbuild") ||
+                            token1 == WStr("new") ||
+                            token1 == WStr("nuget") ||
+                            token1 == WStr("pack") ||
+                            token1 == WStr("publish") ||
+                            token1 == WStr("restore") ||
+                            token1 == WStr("tool");
+                    }
+
+                    if (is_ignored_command)
+                    {
+                        Log::Info("The Tracer Profiler has been disabled because the process is 'dotnet' "
+                            "but an unsupported command was detected");
+                        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                    }
+                }
+            }
+        }
+
+        SingleStepGuardRails single_step_guard_rails;
+
+        //
+        // Get Profiler interface ICorProfilerInfo4
+        //
+        ICorProfilerInfo4* info4 = nullptr;
+        HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &info4);
+        if (FAILED(hr))
+        {
+            Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
+            // we're not recording the exact version here, we just know that at this point it's not enough
+            single_step_guard_rails.RecordBootstrapError(SingleStepGuardRails::NetFrameworkRuntime, inferredVersion, "incompatible_runtime");
+            return E_FAIL;
+        }
+        const auto runtimeInformation = GetRuntimeVersion(info4, inferredVersion);
+
+        if(single_step_guard_rails.CheckRuntime(runtimeInformation, pICorProfilerInfoUnk) != S_OK)
+        {
+            info4->Release();
+            return E_FAIL;
         }
 
         //
@@ -160,6 +260,7 @@ namespace datadog::shared::nativeloader
         //
         if (m_dispatcher == nullptr)
         {
+            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
             return E_FAIL;
         }
         IDynamicInstance* cpInstance = m_dispatcher->GetContinuousProfilerInstance();
@@ -198,18 +299,6 @@ namespace datadog::shared::nativeloader
         // 6. Use the ICorProfilerInfo4 or ICorProfilerInfo5 instance to set the final `mask_low` and `mask_hi`.
         // *******************************************************************************************************
 
-        //
-        // Get Profiler interface ICorProfilerInfo4 and ICorProfilerInfo5
-        //
-        ICorProfilerInfo4* info4 = nullptr;
-        HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &info4);
-        if (FAILED(hr))
-        {
-            Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
-            return E_FAIL;
-        }
-        InspectRuntimeVersion(info4);
-
         ICorProfilerInfo5* info5 = nullptr;
         hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &info5);
         if (FAILED(hr))
@@ -235,6 +324,7 @@ namespace datadog::shared::nativeloader
         if (FAILED(hr))
         {
             Log::Warn("CorProfiler::Initialize: Error getting the event mask.");
+            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
             return E_FAIL;
         }
 
@@ -400,9 +490,11 @@ namespace datadog::shared::nativeloader
         if (FAILED(hr))
         {
             Log::Warn("CorProfiler::Initialize: Error setting the event mask.");
+            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
             return E_FAIL;
         }               
 
+        single_step_guard_rails.RecordBootstrapSuccess(runtimeInformation);
         return S_OK;
     }
 
@@ -992,14 +1084,14 @@ namespace datadog::shared::nativeloader
         RunInAllProfilers(EventPipeProviderCreated(provider));
     }
 
-    void CorProfiler::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk)
+    std::string CorProfiler::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk)
     {
         if (corProfilerInfoUnk == nullptr)
         {
             Log::Info(
                 "No ICorProfilerInfoXxx available. Null pointer was passed to CorProfilerCallback for initialization."
                 " No compatible Profiling API is available.");
-            return;
+            return "";
         }
 
         IUnknown* tstVerProfilerInfo;
@@ -1007,61 +1099,73 @@ namespace datadog::shared::nativeloader
         {
             Log::Info("ICorProfilerInfo12 available. Profiling API compatibility: .NET Core 5.0 or later.");
             tstVerProfilerInfo->Release();
+            return "5.0.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 3.1 or later.");
             tstVerProfilerInfo->Release();
+            return "3.1.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.0 or later.");
             tstVerProfilerInfo->Release();
+            return "3.0.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.2 or later.");
+            Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.1 or later.");
             tstVerProfilerInfo->Release();
+            return "2.1.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo8 available. Profiling API compatibility: .NET Fx 4.7.2 or later.");
             tstVerProfilerInfo->Release();
+            return "4.7.2";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo7), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo7 available. Profiling API compatibility: .NET Fx 4.6.1 or later.");
             tstVerProfilerInfo->Release();
+            return "4.6.1";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo6), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo6 available. Profiling API compatibility: .NET Fx 4.6 or later.");
             tstVerProfilerInfo->Release();
+            return "4.6.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo5 available. Profiling API compatibility: .NET Fx 4.5.2 or later.");
             tstVerProfilerInfo->Release();
+            return "4.5.2";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo4 available. Profiling API compatibility: .NET Fx 4.5 or later.");
             tstVerProfilerInfo->Release();
+            return "4.5.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo3 available. Profiling API compatibility: .NET Fx 4.0 or later.");
             tstVerProfilerInfo->Release();
+            return "4.0.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo2), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo2 available. Profiling API compatibility: .NET Fx 2.0 or later.");
             tstVerProfilerInfo->Release();
+            return "2.0.0";
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo), (void**) &tstVerProfilerInfo))
         {
             Log::Info("ICorProfilerInfo available. Profiling API compatibility: .NET Fx 2 or later.");
             tstVerProfilerInfo->Release();
+            return "2.0.0";
         }
         else
         {
@@ -1069,10 +1173,11 @@ namespace datadog::shared::nativeloader
                  " for initialization, but QueryInterface(..) did not succeed for any of the known "
                  "ICorProfilerInfoXxx ifaces."
                  " No compatible Profiling API is available.");
+            return "";
         }
     }
 
-    void CorProfiler::InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo)
+    RuntimeInformation CorProfiler::GetRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo, const std::string& inferred_version)
     {
         USHORT clrInstanceId;
         COR_PRF_RUNTIME_TYPE runtimeType;
@@ -1089,6 +1194,7 @@ namespace datadog::shared::nativeloader
             std::ostringstream hex;
             hex << std::hex << hrGRI;
             Log::Info("Initializing the Profiler: Exact runtime version could not be obtained (0x", hex.str(), ")");
+            return {};
         }
         else
         {
@@ -1100,6 +1206,7 @@ namespace datadog::shared::nativeloader
                       : (std::string("unknown(") + std::to_string(runtimeType) + std::string(")"))),
                  ",", " majorVersion: ", majorVersion, ", minorVersion: ", minorVersion,
                  ", buildNumber: ", buildNumber, ", qfeVersion: ", qfeVersion, " }.");
+            return {runtimeType, majorVersion, minorVersion, buildNumber, qfeVersion, inferred_version};
         }
     }
 

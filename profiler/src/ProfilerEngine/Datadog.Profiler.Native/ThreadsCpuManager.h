@@ -21,12 +21,13 @@ public:
 // interfaces implementation
 public:
     const char* GetName() override;
-    bool Start() override;
-    bool Stop() override;
     void Map(DWORD threadOSId, const WCHAR* name) override;
     void LogCpuTimes() override;
 
 private:
+    bool StartImpl() override;
+    bool StopImpl() override;
+
     const char* _serviceName = "ThreadsCpuManager";
 
     // Need to protect access to the map. However, it should not trigger a lot of contention

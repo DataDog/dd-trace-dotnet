@@ -2,10 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
+#include "../../../shared/src/native-src/version.h"
+
 #include "class_factory.h"
 #include "cor_profiler.h"
 #include "logger.h"
-#include "version.h"
 
 ClassFactory::ClassFactory() : refCount(0)
 {

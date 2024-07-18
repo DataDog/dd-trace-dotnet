@@ -55,6 +55,8 @@ internal readonly struct TraceChunkModel
 
     public readonly ImmutableAzureAppServiceSettings? AzureAppServiceSettings = null;
 
+    public readonly bool IsApmEnabled = true;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="TraceChunkModel"/> struct.
     /// </summary>
@@ -73,10 +75,12 @@ internal readonly struct TraceChunkModel
     private TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext, int? samplingPriority)
         : this(spans, traceContext?.RootSpan)
     {
+        // sampling decision override takes precedence over TraceContext.SamplingPriority
         SamplingPriority = samplingPriority;
 
         if (traceContext is not null)
         {
+            // only use TraceContext.SamplingPriority if there was  no override value
             SamplingPriority ??= traceContext.SamplingPriority;
 
             Environment = traceContext.Environment;
@@ -92,6 +96,7 @@ internal readonly struct TraceChunkModel
                 {
                     IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
                     AzureAppServiceSettings = settings.AzureAppServiceMetadata ?? null;
+                    IsApmEnabled = !settings.AppsecStandaloneEnabledInternal;
                 }
 
                 if (tracer.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&

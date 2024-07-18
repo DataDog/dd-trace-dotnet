@@ -80,5 +80,6 @@ namespace Datadog.Trace.Configuration
         DotnetTest,
         Selenium,
         DirectoryListingLeak,
+        SessionTimeout,
     }
 }

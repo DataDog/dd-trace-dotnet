@@ -161,6 +161,28 @@ struct GCHeapStatsV1Payload
     uint16_t ClrInstanceID;
 };
 
+struct GCHeapStatsV2Payload
+{
+    uint64_t GenerationSize0;
+    uint64_t TotalPromotedSize0;
+    uint64_t GenerationSize1;
+    uint64_t TotalPromotedSize1;
+    uint64_t GenerationSize2;
+    uint64_t TotalPromotedSize2;
+    uint64_t GenerationSize3;
+    uint64_t TotalPromotedSize3;
+    uint64_t FinalizationPromotedSize;
+    uint64_t FinalizationPromotedCount;
+    uint32_t PinnedObjectCount;
+    uint32_t SinkBlockCount;
+    uint32_t GCHandleCount;
+    uint16_t ClrInstanceID;
+
+    // for POH
+    uint64_t GenerationSize4;
+    uint64_t TotalPromotedSize4;
+};
+
 struct GCGlobalHeapPayload
 {
     uint64_t FinalYoungestDesired;
@@ -185,8 +207,12 @@ struct GCDetails
     uint64_t PauseDuration;
     uint64_t StartTimestamp;
 
+    uint64_t gen2Size;
+    uint64_t lohSize;
+    uint64_t pohSize;
+
     // GlobalHeapHistory and HeapStats events are not received in the same order
-    // between Framewrok and CoreCLR. So we need to keep track of what has been received
+    // between Framework and CoreCLR. So we need to keep track of what has been received
     bool HasGlobalHeapHistoryBeenReceived;
     bool HasHeapStatsBeenReceived;
 };
@@ -233,7 +259,7 @@ private:
     void OnGCEnd(GCEndPayload& payload);
     void OnGCSuspendEEBegin(uint64_t timestamp);
     void OnGCRestartEEEnd(uint64_t timestamp);
-    void OnGCHeapStats(uint64_t timestamp);
+    void OnGCHeapStats(uint64_t timestamp, uint64_t gen2Size, uint64_t lohSize, uint64_t pohSize);
     void OnGCGlobalHeapHistory(uint64_t timestamp, GCGlobalHeapPayload& payload);
     void NotifySuspension(uint64_t timestamp, uint32_t number, uint32_t generation, uint64_t duration);
     void NotifyGarbageCollectionStarted(uint64_t timestamp, int32_t number, uint32_t generation, GCReason reason, GCType type);
@@ -246,7 +272,10 @@ private:
         bool isCompacting,
         uint64_t pauseDuration,
         uint64_t totalDuration,
-        uint64_t endTimestamp
+        uint64_t endTimestamp,
+        uint64_t gen2Size,
+        uint64_t lohSize,
+        uint64_t pohSize
         );
     GCDetails& GetCurrentGC();
     void InitializeGC(uint64_t timestamp, GCDetails& gc, GCStartPayload& payload);

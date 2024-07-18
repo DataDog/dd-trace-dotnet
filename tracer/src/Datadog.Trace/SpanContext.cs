@@ -51,6 +51,7 @@ namespace Datadog.Trace
         private string _rawTraceId;
         private string _rawSpanId;
         private string _origin;
+        private string _additionalW3CTraceState;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
@@ -198,7 +199,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the span id.
         /// </summary>
-        public ulong SpanId { get; }
+        public ulong SpanId { get; internal set; }
 
         /// <summary>
         /// Gets or sets the service name to propagate to child spans.
@@ -250,17 +251,33 @@ namespace Datadog.Trace
         internal string RawTraceId => _rawTraceId ??= HexString.ToHexString(TraceId128);
 
         /// <summary>
-        /// Gets the span id as a hexadecimal string of length 16,
+        /// Gets or sets the span id as a hexadecimal string of length 16,
         /// padded with zeros to the left if needed.
         /// </summary>
-        internal string RawSpanId => _rawSpanId ??= HexString.ToHexString(SpanId);
+        internal string RawSpanId
+        {
+            get => _rawSpanId ??= HexString.ToHexString(SpanId);
+            set => _rawSpanId = value;
+        }
 
         /// <summary>
         /// Gets or sets additional key/value pairs from an upstream "tracestate" W3C header that we will propagate downstream.
         /// This value will _not_ include the "dd" key, which is parsed out into other individual values
         /// (e.g. sampling priority, origin, propagates tags, etc).
         /// </summary>
-        internal string AdditionalW3CTraceState { get; set; }
+        internal string AdditionalW3CTraceState
+        {
+            get => TraceContext?.AdditionalW3CTraceState ?? _additionalW3CTraceState;
+            set
+            {
+                _additionalW3CTraceState = value;
+
+                if (TraceContext is not null)
+                {
+                    TraceContext.AdditionalW3CTraceState = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Gets or sets the last span ID of the most recently seen Datadog span that will be propagated downstream
@@ -360,8 +377,7 @@ namespace Datadog.Trace
 
                 case Keys.SamplingPriority:
                 case HttpHeaderNames.SamplingPriority:
-                    // return the value from TraceContext if available
-                    var samplingPriority = TraceContext?.SamplingPriority ?? SamplingPriority;
+                    var samplingPriority = GetOrMakeSamplingDecision();
                     value = samplingPriority?.ToString(invariant);
                     return true;
 
@@ -415,6 +431,14 @@ namespace Datadog.Trace
                        _ => (TraceId)context.TraceId
                    };
         }
+
+        /// <summary>
+        /// If <see cref="TraceContext"/> is not null, returns <see cref="Trace.TraceContext.GetOrMakeSamplingDecision"/>.
+        /// Otherwise, returns <see cref="SamplingPriority"/>.
+        /// </summary>
+        internal int? GetOrMakeSamplingDecision() =>
+            TraceContext?.GetOrMakeSamplingDecision() ?? // this SpanContext belongs to a local trace
+            SamplingPriority; // this a propagated context (also some tests rely on this)
 
         [return: MaybeNull]
         internal TraceTagCollection PrepareTagsForPropagation()

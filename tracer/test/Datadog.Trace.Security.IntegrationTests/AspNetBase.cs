@@ -13,6 +13,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -41,6 +42,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecWafRulesVersion = new(@"\s*_dd.appsec.event_rules.version: \d+.\d+.\d+(\S*)?,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecEventRulesLoaded = new(@"\s*_dd.appsec.event_rules.loaded: \d+\.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecRaspWafDuration = new(@"_dd.appsec.rasp.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecRaspWafDurationWithBindings = new(@"_dd.appsec.rasp.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecSpanIdRegex = (new Regex("\"span_id\":\\d+"));
+        private static readonly Type MetaStructHelperType = Type.GetType("Datadog.Trace.AppSec.Rasp.MetaStructHelper, Datadog.Trace");
+        private static readonly MethodInfo MetaStructByteArrayToObject = MetaStructHelperType.GetMethod("ByteArrayToObject", BindingFlags.Public | BindingFlags.Static);
         private readonly string _testName;
         private readonly HttpClient _httpClient;
         private readonly CookieContainer _cookieContainer;
@@ -99,7 +105,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             await VerifySpans(spans, settings, testInit, methodNameOverride);
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -135,11 +141,43 @@ namespace Datadog.Trace.Security.IntegrationTests
                                 target.Tags[Tags.AppSecJson] = orderedAppSecJson;
                             }
 
-                            return VerifyHelper.ScrubTags(target, target.Tags);
+                            if (target.MetaStruct != null)
+                            {
+                                // We want to retrieve the appsec event data from the meta struct to validate it in snapshots
+                                // But that's hard to debug if we only see the binary data
+                                // So move the meta struct appsec data to a fake tag to validate it in snapshots
+                                if (target.MetaStruct.TryGetValue("appsec", out var appsec))
+                                {
+                                    var appSecMetaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
+                                    var json = JsonConvert.SerializeObject(appSecMetaStruct);
+                                    var obj = JsonConvert.DeserializeObject<AppSecJson>(json);
+                                    var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
+                                    target.Tags[Tags.AppSecJson] = orderedJson;
+
+                                    target.MetaStruct.Remove("appsec");
+
+                                    // Let the snapshot know that the data comes from the meta struct
+                                    if (forceMetaStruct)
+                                    {
+                                        target.Tags[Tags.AppSecJson + ".metastruct.test"] = "true";
+                                    }
+                                }
+
+                                // Remove all data from meta structs keys, no need to get the binary data for other keys
+                                foreach (var key in target.MetaStruct.Keys.ToList())
+                                {
+                                    target.MetaStruct[key] = [];
+                                }
+                            }
+
+                            return VerifyHelper.ScrubStringTags(target, target.Tags);
                         });
                 });
             settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
             settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
+            settings.AddRegexScrubber(AppSecRaspWafDuration, "_dd.appsec.rasp.duration: 0.0");
+            settings.AddRegexScrubber(AppSecRaspWafDurationWithBindings, "_dd.appsec.rasp.duration_ext: 0.0");
+            settings.AddRegexScrubber(AppSecSpanIdRegex, "\"span_id\": XXX");
             if (!testInit)
             {
                 settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
@@ -148,10 +186,11 @@ namespace Datadog.Trace.Security.IntegrationTests
                 settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
             }
 
-            var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json"));
+            var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json") || (s.MetaStruct != null && s.MetaStruct.ContainsKey("appsec")));
             if (appsecSpans.Any())
             {
-                appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]);
+                appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]
+                || s.Metrics["_dd.appsec.rasp.duration"] < s.Metrics["_dd.appsec.rasp.duration_ext"]);
             }
 
             // Overriding the type name here as we have multiple test classes in the file

@@ -19,16 +19,20 @@ internal class TestApiResponse : IApiResponse
     {
         StatusCode = statusCode;
         _body = body;
-        ContentType = contentType;
+        ContentTypeHeader = contentType;
     }
 
-    public string ContentType { get; }
+    public string ContentTypeHeader { get; }
+
+    public string ContentEncodingHeader { get; set; }
 
     public int StatusCode { get; }
 
     public long ContentLength => _body?.Length ?? 0;
 
-    public Encoding ContentEncoding => Encoding.UTF8;
+    public Encoding GetCharsetEncoding() => Encoding.UTF8;
+
+    public ContentEncodingType GetContentEncodingType() => ApiResponseExtensions.GetContentEncodingType(ContentEncodingHeader);
 
     public void Dispose()
     {
@@ -38,7 +42,7 @@ internal class TestApiResponse : IApiResponse
 
     public Task<Stream> GetStreamAsync()
     {
-        return Task.FromResult((Stream)new MemoryStream(ContentEncoding.GetBytes(_body)));
+        return Task.FromResult((Stream)new MemoryStream(GetCharsetEncoding().GetBytes(_body)));
     }
 
     public Task<string> ReadAsStringAsync() => Task.FromResult(_body);

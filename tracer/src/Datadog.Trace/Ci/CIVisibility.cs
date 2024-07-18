@@ -12,10 +12,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
@@ -38,7 +40,20 @@ namespace Datadog.Trace.Ci
 
         public static bool Enabled => _enabledLazy.Value;
 
-        public static bool IsRunning => Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
+        public static bool IsRunning
+        {
+            get
+            {
+                // We try first the fast path, if the value is 0 we are running, so we can avoid the Interlocked operation.
+                if (_firstInitialization == 0)
+                {
+                    return true;
+                }
+
+                // If the value is not 0, maybe the value hasn't been updated yet, so we use the Interlocked operation to ensure the value is correct.
+                return Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
+            }
+        }
 
         public static CIVisibilitySettings Settings
         {
@@ -144,14 +159,14 @@ namespace Datadog.Trace.Ci
                 {
                     Log.Information("ITR: Update and uploading git tree metadata and getting skippable tests.");
                     _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
-                    LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
+                    LifetimeManager.Instance.AddAsyncShutdownTask(_ => _skippableTestsTask);
                 }
                 else if (settings.GitUploadEnabled != false)
                 {
                     // Update and upload git tree metadata.
                     Log.Information("ITR: Update and uploading git tree metadata.");
                     var tskItrUpdate = UploadGitMetadataAsync();
-                    LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+                    LifetimeManager.Instance.AddAsyncShutdownTask(_ => tskItrUpdate);
                 }
             }
             else if (settings.IntelligentTestRunnerEnabled)
@@ -412,48 +427,57 @@ namespace Datadog.Trace.Ci
         internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings tracerSettings, TimeSpan timeout)
         {
             IApiRequestFactory? factory = null;
-
-#if NETCOREAPP
-            Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            factory = new HttpClientRequestFactory(
-                tracerSettings.ExporterInternal.AgentUriInternal,
-                AgentHttpHeaderNames.DefaultHeaders,
-                handler: new System.Net.Http.HttpClientHandler
-                {
-                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-                },
-                timeout: timeout);
-#else
-            Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            factory = new ApiWebRequestFactory(tracerSettings.ExporterInternal.AgentUriInternal, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
-#endif
-
-            var settings = Settings;
-            if (!string.IsNullOrWhiteSpace(settings.ProxyHttps))
+            var exporterSettings = tracerSettings.ExporterInternal;
+            if (exporterSettings.TracesTransport != TracesTransportType.Default)
             {
-                var proxyHttpsUriBuilder = new UriBuilder(settings.ProxyHttps);
-
-                var userName = proxyHttpsUriBuilder.UserName;
-                var password = proxyHttpsUriBuilder.Password;
-
-                proxyHttpsUriBuilder.UserName = string.Empty;
-                proxyHttpsUriBuilder.Password = string.Empty;
-
-                if (proxyHttpsUriBuilder.Scheme == "https")
+                factory = AgentTransportStrategy.Get(
+                    exporterSettings,
+                    productName: "CI Visibility",
+                    tcpTimeout: null,
+                    AgentHttpHeaderNames.DefaultHeaders,
+                    () => new TraceAgentHttpHeaderHelper(),
+                    uri => uri);
+            }
+            else
+            {
+#if NETCOREAPP
+                Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
+                factory = new HttpClientRequestFactory(
+                    exporterSettings.AgentUriInternal,
+                    AgentHttpHeaderNames.DefaultHeaders,
+                    handler: new System.Net.Http.HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, },
+                    timeout: timeout);
+#else
+                Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
+                factory = new ApiWebRequestFactory(tracerSettings.ExporterInternal.AgentUriInternal, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
+#endif
+                var settings = Settings;
+                if (!string.IsNullOrWhiteSpace(settings.ProxyHttps))
                 {
-                    // HTTPS proxy is not supported by .NET BCL
-                    Log.Error("HTTPS proxy is not supported. ({ProxyHttpsUriBuilder})", proxyHttpsUriBuilder);
-                    return factory;
-                }
+                    var proxyHttpsUriBuilder = new UriBuilder(settings.ProxyHttps);
 
-                NetworkCredential? credential = null;
-                if (!string.IsNullOrWhiteSpace(userName))
-                {
-                    credential = new NetworkCredential(userName, password);
-                }
+                    var userName = proxyHttpsUriBuilder.UserName;
+                    var password = proxyHttpsUriBuilder.Password;
 
-                Log.Information("Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
-                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, settings.ProxyNoProxy, credential), credential);
+                    proxyHttpsUriBuilder.UserName = string.Empty;
+                    proxyHttpsUriBuilder.Password = string.Empty;
+
+                    if (proxyHttpsUriBuilder.Scheme == "https")
+                    {
+                        // HTTPS proxy is not supported by .NET BCL
+                        Log.Error("HTTPS proxy is not supported. ({ProxyHttpsUriBuilder})", proxyHttpsUriBuilder);
+                        return factory;
+                    }
+
+                    NetworkCredential? credential = null;
+                    if (!string.IsNullOrWhiteSpace(userName))
+                    {
+                        credential = new NetworkCredential(userName, password);
+                    }
+
+                    Log.Information("Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
+                    factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, settings.ProxyNoProxy, credential), credential);
+                }
             }
 
             return factory;
@@ -523,8 +547,51 @@ namespace Datadog.Trace.Ci
             _skippableTestsBySuiteAndName = null;
         }
 
-        private static async Task ShutdownAsync()
+        private static async Task ShutdownAsync(Exception? exception)
         {
+            // Let's close any opened test, suite, modules and sessions before shutting down to avoid losing any data.
+            // But marking them as failed.
+
+            foreach (var test in Test.ActiveTests)
+            {
+                if (exception is not null)
+                {
+                    test.SetErrorInfo(exception);
+                }
+
+                test.Close(TestStatus.Fail);
+            }
+
+            foreach (var testSuite in TestSuite.ActiveTestSuites)
+            {
+                if (exception is not null)
+                {
+                    testSuite.SetErrorInfo(exception);
+                }
+
+                testSuite.Close();
+            }
+
+            foreach (var testModule in TestModule.ActiveTestModules)
+            {
+                if (exception is not null)
+                {
+                    testModule.SetErrorInfo(exception);
+                }
+
+                await testModule.CloseAsync().ConfigureAwait(false);
+            }
+
+            foreach (var testSession in TestSession.ActiveTestSessions)
+            {
+                if (exception is not null)
+                {
+                    testSession.SetErrorInfo(exception);
+                }
+
+                await testSession.CloseAsync(TestStatus.Fail).ConfigureAwait(false);
+            }
+
             await FlushAsync().ConfigureAwait(false);
             MethodSymbolResolver.Instance.Clear();
         }
@@ -551,7 +618,9 @@ namespace Datadog.Trace.Ci
                         Environment.CommandLine.IndexOf("dotnet.dll test", StringComparison.OrdinalIgnoreCase) == -1 &&
                         Environment.CommandLine.IndexOf("dotnet.dll\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
                         Environment.CommandLine.IndexOf("dotnet.dll' test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf(" test ", StringComparison.OrdinalIgnoreCase) == -1)
+                        Environment.CommandLine.IndexOf(" test ", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("datacollector", StringComparison.OrdinalIgnoreCase) == -1 &&
+                        Environment.CommandLine.IndexOf("vstest.console.dll", StringComparison.OrdinalIgnoreCase) == -1)
                     {
                         Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
                         return false;
@@ -792,7 +861,7 @@ namespace Datadog.Trace.Ci
             public DiscoveryAgentConfigurationCallback(IDiscoveryService discoveryService)
             {
                 _manualResetEventSlim = new ManualResetEventSlim();
-                LifetimeManager.Instance.AddShutdownTask(() => _manualResetEventSlim.Set());
+                LifetimeManager.Instance.AddShutdownTask(_ => _manualResetEventSlim.Set());
                 _discoveryService = discoveryService;
                 _callback = CallBack;
                 _agentConfiguration = null;

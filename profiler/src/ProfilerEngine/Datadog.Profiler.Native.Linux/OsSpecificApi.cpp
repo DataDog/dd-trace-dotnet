@@ -27,6 +27,7 @@
 
 #include "IConfiguration.h"
 #include "IThreadInfo.h"
+#include "LibrariesInfoCache.h"
 #include "LinuxStackFramesCollector.h"
 #include "LinuxThreadInfo.h"
 #include "Log.h"
@@ -62,7 +63,7 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
     IConfiguration const* const pConfiguration,
     CallstackProvider* callstackProvider)
 {
-    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration, callstackProvider);
+    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider, LibrariesInfoCache::Get());
 }
 
 // https://linux.die.net/man/5/proc
@@ -203,6 +204,47 @@ bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
 int32_t GetProcessorCount()
 {
     return get_nprocs();
+}
+
+std::vector<int32_t> GetProcessThreads(int32_t pid)
+{
+    DIR* proc_dir;
+    char dirname[100];
+    std::string pidPath = (pid == -1) ? "self" : std::to_string(pid);
+
+    snprintf(dirname, sizeof(dirname), "/proc/%s/task", pidPath.c_str());
+
+    proc_dir = opendir(dirname);
+
+    std::vector<int32_t> threads;
+
+    if (proc_dir != nullptr)
+    {
+        on_leave{ closedir(proc_dir); };
+        threads.reserve(512);
+
+        /* /proc available, iterate through tasks... */
+        struct dirent* entry;
+        while ((entry = readdir(proc_dir)) != nullptr)
+        {
+            if (entry->d_name[0] == '.')
+                continue;
+            auto threadId = atoi(entry->d_name);
+            threads.push_back(threadId);
+        }
+    }
+    else
+    {
+        static bool alreadyLogged = false;
+        if (!alreadyLogged)
+        {
+            alreadyLogged = true;
+            auto errorNumber = errno;
+            Log::Error("Failed at opendir ", dirname, " error: ", strerror(errorNumber));
+        }
+    }
+
+    return threads;
 }
 
 std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()

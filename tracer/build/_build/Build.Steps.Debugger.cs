@@ -116,7 +116,7 @@ partial class Build
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(GetResultsDirectory(DebuggerIntegrationTests))
                     .WithDatadogLogger()
                     .SetProjectFile(DebuggerIntegrationTests));
@@ -125,9 +125,9 @@ partial class Build
                 {
                     var filter = (IsWin, IsArm64) switch
                     {
-                        (true, _) => "(RunOnWindows=True)",
-                        (_, true) => "(Category!=ArmUnsupported)",
-                        _ => "(Category!=LinuxUnsupported)",
+                        (true, _) => "(RunOnWindows=True)&(SkipInCI!=True)",
+                        (_, true) => "(Category!=ArmUnsupported)&(SkipInCI!=True)",
+                        _ => "(Category!=LinuxUnsupported)&(SkipInCI!=True)",
                     };
 
                     return Filter is null ? filter : $"{Filter}&{filter}";

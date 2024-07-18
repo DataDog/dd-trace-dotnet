@@ -143,23 +143,22 @@ internal class IntelligentTestRunnerClient
         else
         {
             // Use Agent EVP Proxy
-            var agentUrl = _settings.TracerSettings.ExporterInternal.AgentUriInternal;
             _eventPlatformProxySupport = CIVisibility.EventPlatformProxySupport;
             switch (_eventPlatformProxySupport)
             {
                 case EventPlatformProxySupport.V2:
-                    _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{settingsUrlPath}");
-                    _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{searchCommitsUrlPath}");
-                    _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{packFileUrlPath}");
-                    _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{skippableTestsUrlPath}");
-                    _earlyFlakeDetectionTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{efdTestsUrlPath}");
+                    _settingsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{settingsUrlPath}");
+                    _searchCommitsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{searchCommitsUrlPath}");
+                    _packFileUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{packFileUrlPath}");
+                    _skippableTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{skippableTestsUrlPath}");
+                    _earlyFlakeDetectionTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{efdTestsUrlPath}");
                     break;
                 case EventPlatformProxySupport.V4:
-                    _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{settingsUrlPath}");
-                    _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{searchCommitsUrlPath}");
-                    _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{packFileUrlPath}");
-                    _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{skippableTestsUrlPath}");
-                    _earlyFlakeDetectionTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v4/{efdTestsUrlPath}");
+                    _settingsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{settingsUrlPath}");
+                    _searchCommitsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{searchCommitsUrlPath}");
+                    _packFileUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{packFileUrlPath}");
+                    _skippableTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{skippableTestsUrlPath}");
+                    _earlyFlakeDetectionTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{efdTestsUrlPath}");
                     break;
                 default:
                     throw new NotSupportedException("Event platform proxy not supported by the agent.");
@@ -375,7 +374,8 @@ internal class IntelligentTestRunnerClient
             var sw = Stopwatch.StartNew();
             try
             {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettings();
+                // We currently always send the request uncompressed
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettings(MetricTags.CIVisibilityRequestCompressed.Uncompressed);
                 var request = _apiRequestFactory.Create(_settingsUrl);
                 SetRequestHeader(request);
 
@@ -478,7 +478,8 @@ internal class IntelligentTestRunnerClient
             var sw = Stopwatch.StartNew();
             try
             {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsRequest();
+                // We currently always send the request uncompressed
+                TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsRequest(MetricTags.CIVisibilityRequestCompressed.Uncompressed);
                 var request = _apiRequestFactory.Create(_skippableTestsUrl);
                 SetRequestHeader(request);
 
@@ -491,8 +492,9 @@ internal class IntelligentTestRunnerClient
                 try
                 {
                     using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                    // TODO: Check for compressed responses - if we received one, currently these are not handled and would throw when we attempt to deserialize
                     responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                    TelemetryFactory.Metrics.RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(Encoding.UTF8.GetByteCount(responseContent ?? string.Empty));
+                    TelemetryFactory.Metrics.RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(MetricTags.CIVisibilityResponseCompressed.Uncompressed, Encoding.UTF8.GetByteCount(responseContent ?? string.Empty));
                     if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
                     {
                         TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsRequestErrors(errorType);
@@ -628,7 +630,8 @@ internal class IntelligentTestRunnerClient
             var sw = Stopwatch.StartNew();
             try
             {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsObjectsPack();
+                // We currently always send the request uncompressed
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsObjectsPack(MetricTags.CIVisibilityRequestCompressed.Uncompressed);
                 var request = _apiRequestFactory.Create(_packFileUrl);
                 SetRequestHeader(request);
 
@@ -710,7 +713,8 @@ internal class IntelligentTestRunnerClient
             var sw = Stopwatch.StartNew();
             try
             {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityEarlyFlakeDetectionRequest();
+                // We currently always send the request uncompressed
+                TelemetryFactory.Metrics.RecordCountCIVisibilityEarlyFlakeDetectionRequest(MetricTags.CIVisibilityRequestCompressed.Uncompressed);
                 var request = _apiRequestFactory.Create(_earlyFlakeDetectionTestsUrl);
                 SetRequestHeader(request);
 
@@ -734,7 +738,8 @@ internal class IntelligentTestRunnerClient
                     {
                         if (response.ContentLength is { } contentLength and > 0)
                         {
-                            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(contentLength);
+                            // TODO: Check for compressed responses - currently these are not handled and will throw when we attempt to deserialize
+                            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(MetricTags.CIVisibilityResponseCompressed.Uncompressed, contentLength);
                         }
                     }
                     catch
@@ -839,7 +844,8 @@ internal class IntelligentTestRunnerClient
                 var sw = Stopwatch.StartNew();
                 try
                 {
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommits();
+                    // We currently always send the request uncompressed
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommits(MetricTags.CIVisibilityRequestCompressed.Uncompressed);
                     var request = _apiRequestFactory.Create(_searchCommitsUrl);
                     SetRequestHeader(request);
 
@@ -898,7 +904,7 @@ internal class IntelligentTestRunnerClient
                 }
                 finally
                 {
-                    TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(sw.Elapsed.TotalMilliseconds);
+                    TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(MetricTags.CIVisibilityResponseCompressed.Uncompressed, sw.Elapsed.TotalMilliseconds);
                 }
             }
         }
@@ -1046,10 +1052,6 @@ internal class IntelligentTestRunnerClient
 
     private async Task<T> WithRetries<T, TState>(Func<TState, bool, Task<T>> sendDelegate, TState state, int numOfRetries)
     {
-        // Because there's an integration to Http requests we need to make sure that if the AssemblyResolver.ctor of the TestPlatform started then it has finished
-        // before continuing to avoid a race condition.
-        await ClrProfiler.AutoInstrumentation.Testing.AssemblyResolverCtorIntegration.WaitForCallToBeCompletedAsync().ConfigureAwait(false);
-
         var retryCount = 1;
         var sleepDuration = 100; // in milliseconds
 
@@ -1156,34 +1158,39 @@ internal class IntelligentTestRunnerClient
 
     private async Task<ProcessHelpers.CommandOutput?> RunGitCommandAsync(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
     {
-        // Because there's an integration to Process.Start we need to make sure that if the AssemblyResolver.ctor of the TestPlatform started then it has finished
-        // before continuing to avoid a race condition.
-        await ClrProfiler.AutoInstrumentation.Testing.AssemblyResolverCtorIntegration.WaitForCallToBeCompletedAsync().ConfigureAwait(false);
-
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        var gitOutput = await ProcessHelpers.RunCommandAsync(
-                            new ProcessHelpers.Command(
-                                "git",
-                                arguments,
-                                _workingDirectory,
-                                outputEncoding: Encoding.Default,
-                                errorEncoding: Encoding.Default,
-                                inputEncoding: Encoding.Default,
-                                useWhereIsIfFileNotFound: true),
-                            input).ConfigureAwait(false);
-        TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
-        if (gitOutput is null)
+        try
         {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Unknown);
-            Log.Warning("ITR: 'git {Arguments}' command is null", arguments);
-        }
-        else if (gitOutput.ExitCode != 0)
-        {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(MetricTags.CIVisibilityCommands.GetRepository, TelemetryHelper.GetTelemetryExitCodeFromExitCode(gitOutput.ExitCode));
-        }
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var gitOutput = await ProcessHelpers.RunCommandAsync(
+                                new ProcessHelpers.Command(
+                                    "git",
+                                    arguments,
+                                    _workingDirectory,
+                                    outputEncoding: Encoding.Default,
+                                    errorEncoding: Encoding.Default,
+                                    inputEncoding: Encoding.Default,
+                                    useWhereIsIfFileNotFound: true),
+                                input).ConfigureAwait(false);
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
+            if (gitOutput is null)
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Unknown);
+                Log.Warning("ITR: 'git {Arguments}' command is null", arguments);
+            }
+            else if (gitOutput.ExitCode != 0)
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(MetricTags.CIVisibilityCommands.GetRepository, TelemetryHelper.GetTelemetryExitCodeFromExitCode(gitOutput.ExitCode));
+            }
 
-        return gitOutput;
+            return gitOutput;
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            Log.Warning(ex, "ITR: 'git {Arguments}' threw Win32Exception - git is likely not available", arguments);
+            TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Missing);
+            return null;
+        }
     }
 
     private readonly struct SearchCommitResponse

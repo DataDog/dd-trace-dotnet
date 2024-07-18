@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
 {
@@ -113,6 +115,15 @@ namespace Datadog.Trace.Propagators
             if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
+            // If appsec standalone is enabled and appsec propagation is disabled (no ASM events) -> stop propagation
+            if (context.TraceContext?.Tracer.Settings?.AppsecStandaloneEnabledInternal == true && context.TraceContext.Tags.GetTag(Tags.Propagated.AppSec) != "1")
+            {
+                return;
+            }
+
+            // trigger a sampling decision if it hasn't happened yet
+            _ = context.GetOrMakeSamplingDecision();
+
             for (var i = 0; i < _injectors.Length; i++)
             {
                 _injectors[i].Inject(context, carrier, carrierSetter);
@@ -162,11 +173,26 @@ namespace Datadog.Trace.Propagators
                         return spanContext;
                     }
 
-                    if (localSpanContext is not null && spanContext is not null)
+                    if (localSpanContext is not null && spanContext is not null && _extractors[i] is W3CTraceContextPropagator)
                     {
                         if (localSpanContext.RawTraceId == spanContext.RawTraceId)
                         {
                             localSpanContext.AdditionalW3CTraceState += spanContext.AdditionalW3CTraceState;
+
+                            if (localSpanContext.RawSpanId != spanContext.RawSpanId)
+                            {
+                                if (!string.IsNullOrEmpty(spanContext.LastParentId) && spanContext.LastParentId != W3CTraceContextPropagator.ZeroLastParent)
+                                {
+                                    localSpanContext.LastParentId = spanContext.LastParentId;
+                                }
+                                else
+                                {
+                                    localSpanContext.LastParentId = HexString.ToHexString(localSpanContext.SpanId);
+                                }
+
+                                localSpanContext.SpanId = spanContext.SpanId;
+                                localSpanContext.RawSpanId = spanContext.RawSpanId;
+                            }
                         }
                     }
 

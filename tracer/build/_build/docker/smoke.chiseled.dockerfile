@@ -11,8 +11,8 @@ COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 ARG PUBLISH_FRAMEWORK
 RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish
 
-# Creating a placeholder file we can copy in the publish stage to create the logs folder
-RUN mkdir -p /install && touch /install/.placeholder
+# Creating an empty we can copy in the publish stage to create the logs folder
+RUN mkdir -p /empty
 
 ###########################################################
 FROM $RUNTIME_IMAGE AS publish
@@ -27,15 +27,8 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 
 ENV ASPNETCORE_URLS=http://localhost:5000
 
-USER root
-
-# Copy the placeholder file to create the logs directory
-# THIS DOESN'T WORK, but SOMETHING like it hopefully will... so leaving as inspiration 
-#COPY --chown=64198 --chmod=777 --from=builder /install /var/log/datadog/dotnet
-COPY --from=builder /install/.placeholder /var/log/datadog/dotnet/.placeholder
-
-# Use the non-root user
-USER $APP_UID
+# Copy the empty folder to create the logs directory
+COPY --chown=$APP_UID --from=builder /empty/ /var/log/datadog/dotnet/
 
 WORKDIR /app
 
@@ -62,6 +55,14 @@ ENV LD_PRELOAD=/opt/datadog/continuousprofiler/Datadog.Linux.ApiWrapper.x64.so
 ENV DD_PROFILING_ENABLED=1
 ENV DD_APPSEC_ENABLED=1
 ENV DD_TRACE_DEBUG=1
+ENV COMPlus_DbgEnableMiniDump=1
+ENV COMPlus_DbgMiniDumpType=4
+ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+
+## SSI variables
+ENV DD_INJECTION_ENABLED=tracer
+ENV DD_INJECT_FORCE=1
+ENV DD_TELEMETRY_FORWARDER_PATH=/bin/true
 
 ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
 

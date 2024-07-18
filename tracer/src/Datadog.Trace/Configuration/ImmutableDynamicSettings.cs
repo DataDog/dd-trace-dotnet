@@ -14,13 +14,15 @@ namespace Datadog.Trace.Configuration
     {
         public bool? TraceEnabled { get; init; }
 
+        public bool? AppsecStandaloneEnabled { get; init; }
+
         public bool? RuntimeMetricsEnabled { get; init; }
 
         public bool? DataStreamsMonitoringEnabled { get; init; }
 
         public double? GlobalSamplingRate { get; init; }
 
-        public string? SpanSamplingRules { get; init; }
+        public string? SamplingRules { get; init; }
 
         public bool? LogsInjectionEnabled { get; init; }
 
@@ -44,10 +46,11 @@ namespace Datadog.Trace.Configuration
 
             return
                 TraceEnabled == other.TraceEnabled
+             && AppsecStandaloneEnabled == other.AppsecStandaloneEnabled
              && RuntimeMetricsEnabled == other.RuntimeMetricsEnabled
              && DataStreamsMonitoringEnabled == other.DataStreamsMonitoringEnabled
              && Nullable.Equals(GlobalSamplingRate, other.GlobalSamplingRate)
-             && SpanSamplingRules == other.SpanSamplingRules
+             && SamplingRules == other.SamplingRules
              && LogsInjectionEnabled == other.LogsInjectionEnabled
              && AreEqual(HeaderTags, other.HeaderTags)
              && AreEqual(ServiceNameMappings, other.ServiceNameMappings)
@@ -78,10 +81,11 @@ namespace Datadog.Trace.Configuration
         {
             return HashCode.Combine(
                 TraceEnabled,
+                AppsecStandaloneEnabled,
                 RuntimeMetricsEnabled,
                 DataStreamsMonitoringEnabled,
                 GlobalSamplingRate,
-                SpanSamplingRules,
+                SamplingRules,
                 LogsInjectionEnabled);
         }
 
@@ -89,7 +93,7 @@ namespace Datadog.Trace.Configuration
         {
             if (dictionary1 == null || dictionary2 == null)
             {
-                return dictionary1 == dictionary2;
+                return ReferenceEquals(dictionary1, dictionary2);
             }
 
             if (dictionary1.Count != dictionary2.Count)

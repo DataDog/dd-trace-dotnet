@@ -54,6 +54,13 @@ jobs:
     - uses: ./.github/actions/code-freeze
       name: 'Unfreeze 25 PRs'
       with:
+        page_number: 5
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        end_freeze: "true"
+
+    - uses: ./.github/actions/code-freeze
+      name: 'Unfreeze 25 PRs'
+      with:
         page_number: 4
         github_token: ${{ secrets.GITHUB_TOKEN }}
         end_freeze: "true"

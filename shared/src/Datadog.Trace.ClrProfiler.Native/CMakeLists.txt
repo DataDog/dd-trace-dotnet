@@ -1,11 +1,18 @@
 cmake_minimum_required (VERSION 3.8..3.19)
 cmake_policy(SET CMP0015 NEW)
 
+# macOS uses 3.30 which deprecates FetchContent_Populate in favor of FetchContent_MakeAvailable,
+# but we're using 3.13.4 on Linux, which doesn't have FetchContent_MakeAvailable
+
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+endif()
+
 # ******************************************************
 # Project definition
 # ******************************************************
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 2.52.0)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 2.55.0)
 
 # ******************************************************
 # Environment detection
@@ -144,6 +151,8 @@ endif()
 # ******************************************************
 add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         cor_profiler.cpp
+        process_helper.cpp
+        single_step_guard_rails.cpp
         cor_profiler_class_factory.cpp
         dynamic_dispatcher.cpp
         dynamic_instance.cpp

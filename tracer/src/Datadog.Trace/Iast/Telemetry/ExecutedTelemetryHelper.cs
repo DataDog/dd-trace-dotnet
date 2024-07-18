@@ -152,6 +152,7 @@ internal class ExecutedTelemetryHelper
             IastInstrumentedSinks.InsecureAuthProtocol => BasicExecutedTag + SinkExecutedTag + "insecure_auth_protocol",
             IastInstrumentedSinks.Xss => BasicExecutedTag + SinkExecutedTag + "xss",
             IastInstrumentedSinks.DirectoryListingLeak => BasicExecutedTag + SinkExecutedTag + "directory_listing_leak",
+            IastInstrumentedSinks.SessionTimeout => BasicExecutedTag + SinkExecutedTag + "session_timeout",
             IastInstrumentedSinks.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
             _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
         };

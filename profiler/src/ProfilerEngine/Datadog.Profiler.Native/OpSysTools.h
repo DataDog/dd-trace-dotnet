@@ -38,7 +38,7 @@ public:
     static inline bool QueryThreadCycleTime(HANDLE handle, PULONG64 cycleTime);
     static inline HANDLE GetCurrentProcess();
 
-    static bool SetNativeThreadName(std::thread* pNativeThread, const WCHAR* description);
+    static bool SetNativeThreadName(const WCHAR* description);
 #ifdef _WINDOWS
     static shared::WSTRING GetNativeThreadName(HANDLE threadHandle);
     static ScopedHandle GetThreadHandle(DWORD threadId);
@@ -105,6 +105,18 @@ public:
         }
         return nbElement == 3;
     }
+
+    ///
+    /// This function get the current timestamp in a signal-safe manner
+    ///
+    static inline std::uint64_t GetTimestampSafe()
+    {
+        struct timespec ts;
+        // TODO error handling ?
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        return (std::uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
+    }
+
 #endif
 
     static bool IsSafeToStartProfiler(double coresThreshold, double& cpuLimit);

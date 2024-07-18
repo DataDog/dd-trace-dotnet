@@ -31,21 +31,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private static readonly HashSet<string> ExcludeTags = new HashSet<string>
         {
+            "events",
             "attribute-string",
             "attribute-int",
             "attribute-bool",
             "attribute-double",
-            "attribute-stringArray",
+            "attribute-stringArray.0",
+            "attribute-stringArray.1",
+            "attribute-stringArray.2",
             "attribute-stringArrayEmpty",
-            "attribute-intArray",
+            "attribute-intArray.0",
+            "attribute-intArray.1",
+            "attribute-intArray.2",
             "attribute-intArrayEmpty",
-            "attribute-boolArray",
+            "attribute-boolArray.0",
+            "attribute-boolArray.1",
+            "attribute-boolArray.2",
             "attribute-boolArrayEmpty",
-            "attribute-doubleArray",
+            "attribute-doubleArray.0",
+            "attribute-doubleArray.1",
+            "attribute-doubleArray.2",
             "attribute-doubleArrayEmpty",
             "telemetry.sdk.name",
             "telemetry.sdk.language",
             "telemetry.sdk.version",
+            "http.status_code",
             // excluding all OperationName mapping tags
             "http.request.method",
             "db.system",
@@ -61,6 +71,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         };
 
         private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
+        private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
+        private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
             : base("OpenTelemetrySdk", output)
@@ -97,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 35;
+                const int expectedSpanCount = 37;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
@@ -106,16 +118,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var otelSpans = spans.Where(s => s.Service == "MyServiceName");
                 var activitySourceSpans = spans.Where(s => s.Service == CustomServiceName);
 
-                if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("1.7.0"))
-                {
-                    otelSpans.Count().Should().Be(expectedSpanCount - 3); // there is another span w/ service == ServiceNameOverride
-                    activitySourceSpans.Count().Should().Be(2);
-                }
-                else
-                {
-                    otelSpans.Count().Should().Be(expectedSpanCount - 2); // there is another span w/ service == ServiceNameOverride
-                    activitySourceSpans.Count().Should().Be(1);
-                }
+                otelSpans.Count().Should().Be(expectedSpanCount - 3); // there is another span w/ service == ServiceNameOverride
+                activitySourceSpans.Count().Should().Be(2);
 
                 ValidateIntegrationSpans(otelSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
                 ValidateIntegrationSpans(activitySourceSpans, metadataSchemaVersion: "v0", expectedServiceName: CustomServiceName, isExternalSpan: false);
@@ -125,7 +129,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion, legacyOperationNames);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+                var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
+                var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
+                var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
+                settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
+                settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
+                settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
                 settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
+                settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+                settings.AddRegexScrubber(_exceptionStacktraceRegex, @"exception.stacktrace"":""System.ArgumentException: Example argument exception"",""");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(filename)
                                   .DisableRequireUniquePrefix();
@@ -147,20 +159,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 35;
+                const int expectedSpanCount = 37;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
                 var otelSpans = spans.Where(s => s.Service == "MyServiceName");
 
-                if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("1.7.0"))
-                {
-                    otelSpans.Count().Should().Be(expectedSpanCount - 2); // there is another span w/ service == ServiceNameOverride
-                }
-                else
-                {
-                    otelSpans.Count().Should().Be(expectedSpanCount - 1); // there is another span w/ service == ServiceNameOverride
-                }
+                otelSpans.Count().Should().Be(expectedSpanCount - 2); // there is another span w/ service == ServiceNameOverride
 
                 ValidateIntegrationSpans(otelSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
 
@@ -170,6 +175,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
+                var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
+                var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
+                var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
+                settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
+                settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
+                settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
+                settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+                settings.AddRegexScrubber(_exceptionStacktraceRegex, @"exception.stacktrace"":""System.ArgumentException: Example argument exception"",""");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(filename)
                                   .DisableRequireUniquePrefix();

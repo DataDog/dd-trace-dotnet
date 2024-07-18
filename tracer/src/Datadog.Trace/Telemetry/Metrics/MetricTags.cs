@@ -226,6 +226,7 @@ internal static class MetricTags
         [Description("integration_name:dotnettest")] DotnetTest,
         [Description("integration_name:selenium")] Selenium,
         [Description("integration_name:directorylistingleak")] DirectoryListingLeak,
+        [Description("integration_name:sessiontimeout")] SessionTimeout,
     }
 
     public enum InstrumentationError
@@ -253,6 +254,7 @@ internal static class MetricTags
     {
         [Description("waf_version;rule_type:lfi")] Lfi = 0,
         [Description("waf_version;rule_type:ssrf")] Ssrf = 1,
+        [Description("waf_version;rule_type:sql_injection")] SQlI = 2,
     }
 
     public enum TruncationReason
@@ -308,6 +310,7 @@ internal static class MetricTags
         [Description("vulnerability_type:insecure_auth_protocol")] InsecureAuthProtocol = 22,
         [Description("vulnerability_type:xss")] Xss = 23,
         [Description("vulnerability_type:directory_listing_leak")] DirectoryListingLeak = 24,
+        [Description("vulnerability_type:session_timeout")] SessionTimeout = 25,
     }
 
     public enum CIVisibilityTestFramework
@@ -371,6 +374,14 @@ internal static class MetricTags
         [Description("endpoint:code_coverage")] CodeCoverage,
     }
 
+    public enum CIVisibilityEndpointAndCompression
+    {
+        [Description("endpoint:test_cycle")] TestCycleUncompressed,
+        [Description("endpoint:test_cycle;rq_compressed:true")] TestCycleRequestCompressed,
+        [Description("endpoint:code_coverage")] CodeCoverageUncompressed,
+        [Description("endpoint:code_coverage;rq_compressed:true")] CodeCoverageRequestCompressed,
+    }
+
     public enum CIVisibilityErrorType
     {
         [Description("error_type:timeout")] Timeout,
@@ -378,6 +389,12 @@ internal static class MetricTags
         [Description("error_type:status_code")] StatusCode,
         [Description("error_type:status_code_4xx_response")] StatusCode4xx,
         [Description("error_type:status_code_5xx_response")] StatusCode5xx,
+        [Description("error_type:status_code_4xx_response;status_code:400")] StatusCode400,
+        [Description("error_type:status_code_4xx_response;status_code:401")] StatusCode401,
+        [Description("error_type:status_code_4xx_response;status_code:403")] StatusCode403,
+        [Description("error_type:status_code_4xx_response;status_code:404")] StatusCode404,
+        [Description("error_type:status_code_4xx_response;status_code:408")] StatusCode408,
+        [Description("error_type:status_code_4xx_response;status_code:429")] StatusCode429,
     }
 
     public enum CIVisibilityCommands
@@ -395,6 +412,7 @@ internal static class MetricTags
 
     public enum CIVisibilityExitCodes
     {
+        [Description("exit_code:missing")] Missing,
         [Description("exit_code:unknown")] Unknown,
         [Description("exit_code:-1")] ECMinus1,
         [Description("exit_code:1")] EC1,
@@ -414,5 +432,17 @@ internal static class MetricTags
         [Description("coverage_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipDisabled_EFDEnabled,
         [Description("itrskip_enabled;early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled,
         [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled,
+    }
+
+    public enum CIVisibilityRequestCompressed
+    {
+        [Description("")] Uncompressed,
+        [Description("rq_compressed:true")] Compressed,
+    }
+
+    public enum CIVisibilityResponseCompressed
+    {
+        [Description("")] Uncompressed,
+        [Description("rs_compressed:true")] Compressed,
     }
 }

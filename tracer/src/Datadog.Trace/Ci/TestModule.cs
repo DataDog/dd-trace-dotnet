@@ -14,6 +14,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Ipc;
+using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
@@ -33,12 +35,13 @@ namespace Datadog.Trace.Ci;
 /// </summary>
 public sealed class TestModule
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestModule>();
-
     private static readonly AsyncLocal<TestModule?> CurrentModule = new();
+    private static readonly HashSet<TestModule> OpenedTestModules = new();
+
     private readonly Span _span;
     private readonly Dictionary<string, TestSuite> _suites;
     private readonly TestSession? _fakeSession;
+    private IpcClient? _ipcClient = null;
     private int _finished;
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
@@ -145,7 +148,7 @@ public sealed class TestModule
             }
             else
             {
-                Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
+                CIVisibility.Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
                 _fakeSession = TestSession.InternalGetOrCreate(System.Environment.CommandLine, System.Environment.CurrentDirectory, null, startDate, false);
                 if (_fakeSession.Tags is { } fakeSessionTags)
                 {
@@ -179,6 +182,11 @@ public sealed class TestModule
 
         _span = span;
         Current = this;
+        lock (OpenedTestModules)
+        {
+            OpenedTestModules.Add(this);
+        }
+
         CIVisibility.Log.Debug("### Test Module Created: {Name}", name);
 
         if (startDate is null)
@@ -213,6 +221,20 @@ public sealed class TestModule
     {
         get => CurrentModule.Value;
         set => CurrentModule.Value = value;
+    }
+
+    /// <summary>
+    /// Gets the active test modules
+    /// </summary>
+    internal static IReadOnlyCollection<TestModule> ActiveTestModules
+    {
+        get
+        {
+            lock (OpenedTestModules)
+            {
+                return OpenedTestModules.Count == 0 ? [] : OpenedTestModules.ToArray();
+            }
+        }
     }
 
     internal TestModuleSpanTags Tags => (TestModuleSpanTags)_span.Tags;
@@ -455,22 +477,51 @@ public sealed class TestModule
         if (CIVisibility.Settings.TestsSkippingEnabled.HasValue)
         {
             span.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, CIVisibility.Settings.TestsSkippingEnabled.Value ? "true" : "false");
+            if (CIVisibility.Settings.TestsSkippingEnabled.Value)
+            {
+                // If we detect a module with tests skipping enabled, we ensure we also have the session tag set
+                TrySetSessionTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true");
+            }
         }
 
         if (Tags.IntelligentTestRunnerSkippingCount.HasValue)
         {
             span.SetTag(IntelligentTestRunnerTags.TestsSkipped, "true");
+            // If we detect a module with tests being skipped, we ensure we also have the session tag set
+            // if not we don't affect the session tag (other modules could have skipped tests)
+            TrySetSessionTag(IntelligentTestRunnerTags.TestsSkipped, "true");
         }
         else
         {
             span.SetTag(IntelligentTestRunnerTags.TestsSkipped, CIVisibility.HasSkippableTests() ? "true" : "false");
+            if (CIVisibility.HasSkippableTests())
+            {
+                // If we detect a module with tests being skipped, we ensure we also have the session tag set
+                // if not we don't affect the session tag (other modules could have skipped tests)
+                TrySetSessionTag(IntelligentTestRunnerTags.TestsSkipped, "true");
+            }
         }
 
         if (CIVisibility.Settings.CodeCoverageEnabled.HasValue)
         {
             var value = CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false";
             span.SetTag(CodeCoverageTags.Enabled, value);
-            _fakeSession?.SetTag(CodeCoverageTags.Enabled, value);
+            if (CIVisibility.Settings.CodeCoverageEnabled.Value)
+            {
+                // If we confirm that a module has code coverage enabled, we ensure we also have the session tag set
+                // if not we leave the tag as is (other modules could have code coverage enabled)
+                TrySetSessionTag(CodeCoverageTags.Enabled, "true");
+            }
+            else
+            {
+                _fakeSession?.SetTag(CodeCoverageTags.Enabled, value);
+            }
+        }
+
+        if (_ipcClient is not null)
+        {
+            _ipcClient.Dispose();
+            _ipcClient = null;
         }
 
         span.Finish(duration.Value);
@@ -479,6 +530,11 @@ public sealed class TestModule
         TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Module);
 
         Current = null;
+        lock (OpenedTestModules)
+        {
+            OpenedTestModules.Remove(this);
+        }
+
         CIVisibility.Log.Debug("### Test Module Closed: {Name} | {Status}", Name, Tags.Status);
 
         if (_fakeSession is { } fakeSession)
@@ -578,5 +634,83 @@ public sealed class TestModule
         {
             _suites.Remove(name);
         }
+    }
+
+    internal bool EnableIpcClient()
+    {
+        if (_fakeSession != null || Tags.SessionId == 0)
+        {
+            return false;
+        }
+
+        // Span is created in the .ctor so we can use it here for synchronization
+        lock (_span)
+        {
+            if (_ipcClient is not null)
+            {
+                return true;
+            }
+
+            try
+            {
+                var name = $"session_{Tags.SessionId}";
+                CIVisibility.Log.Debug("TestModule.Enabling IPC client: {Name}", name);
+                _ipcClient = new IpcClient(name);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                CIVisibility.Log.Error(ex, "Error enabling IPC client");
+                return false;
+            }
+        }
+    }
+
+    internal bool TrySetSessionTag(string name, string value)
+    {
+        if (_fakeSession is { } fakeSession)
+        {
+            fakeSession.SetTag(name, value);
+            return true;
+        }
+
+        if (_ipcClient is { } ipcClient)
+        {
+            try
+            {
+                CIVisibility.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
+                return ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
+            }
+            catch (Exception ex)
+            {
+                CIVisibility.Log.Error(ex, "Error sending SetSessionTagMessage");
+            }
+        }
+
+        return false;
+    }
+
+    internal bool TrySetSessionTag(string name, double value)
+    {
+        if (_fakeSession is { } fakeSession)
+        {
+            fakeSession.SetTag(name, value);
+            return true;
+        }
+
+        if (_ipcClient is { } ipcClient)
+        {
+            try
+            {
+                CIVisibility.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
+                return ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
+            }
+            catch (Exception ex)
+            {
+                CIVisibility.Log.Error(ex, "Error sending SetSessionTagMessage");
+            }
+        }
+
+        return false;
     }
 }

@@ -1,0 +1,43 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet_core.request,
+    Resource: GET /health,
+    Service: Samples.Security.AspNetCore5,
+    Type: web,
+    Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.blocked: true,
+      appsec.event: true,
+      component: aspnet_core,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
+      http.response.headers.content-type: application/json,
+      http.status_code: 403,
+      http.url: http://localhost:00000/health?q=fun,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-011","name":"No fun","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"fun","parameters":[{"address":"server.request.uri.raw","highlight":["fun"],"key_path":[],"value":"/health?q=fun"}]}]}]},
+      _dd.appsec.json.metastruct.test: true,
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  }
+]

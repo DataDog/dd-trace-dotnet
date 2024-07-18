@@ -13,6 +13,14 @@ namespace Datadog.Trace
     public static partial class Tags
     {
         /// <summary>
+        /// The name of the instrumented service. Its value is usually constant for the lifetime of a process,
+        /// but can technically change for each trace if the user sets it manually.
+        /// This tag is added during MessagePack serialization using the value from <see cref="SpanContext.ServiceName"/>
+        /// or <see cref="Tracer.DefaultServiceName"/>.
+        /// </summary>
+        internal const string Service = "service";
+
+        /// <summary>
         /// The environment of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.Environment"/>.
@@ -604,6 +612,11 @@ namespace Datadog.Trace
         internal const string IastJson = "_dd.iast.json";
 
         /// <summary>
+        /// Indicates if the vulnerability json has been truncated because it exceeds the maximum tag size
+        /// </summary>
+        internal const string IastJsonTagSizeExceeded = "_dd.iast.json.tag.size.exceeded";
+
+        /// <summary>
         /// Indicates at the end of a request if IAST analisys has been performned
         /// </summary>
         internal const string IastEnabled = "_dd.iast.enabled";
@@ -679,6 +692,12 @@ namespace Datadog.Trace
         /// </summary>
         internal const string BaseService = "_dd.base_service";
 
+        /// <summary>
+        /// Tag used to propagate the unsigned  64 bits last parent Id
+        /// lower-case 16 characters hexadecimal string
+        /// </summary>
+        internal const string LastParentId = "_dd.parent_id";
+
         internal static class User
         {
             internal const string Email = "usr.email";
@@ -706,6 +725,12 @@ namespace Datadog.Trace
             /// lower-case hexadecimal string with no zero-padding or `0x` prefix.
             /// </summary>
             internal const string TraceIdUpper = "_dd.p.tid";
+
+            /// <summary>
+            /// A boolean allowing the propagation to downstream services the information that the current distributed trace
+            /// is containing at least one ASM security event, no matter its type (threats, business logic events, IAST, etc.).
+            /// </summary>
+            internal const string AppSec = "_dd.p.appsec";
         }
     }
 }

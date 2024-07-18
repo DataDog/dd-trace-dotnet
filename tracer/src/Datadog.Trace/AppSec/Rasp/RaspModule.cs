@@ -5,9 +5,11 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
@@ -23,20 +25,42 @@ internal static class RaspModule
     {
         AddressesConstants.FileAccess => RaspRuleType.Lfi,
         AddressesConstants.UrlAccess => RaspRuleType.Ssrf,
+        AddressesConstants.DBStatement => RaspRuleType.SQlI,
         _ => null,
     };
 
     internal static void OnLfi(string file)
     {
-        CheckVulnerability(AddressesConstants.FileAccess, file);
+        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.FileAccess] = file }, AddressesConstants.FileAccess);
     }
 
     internal static void OnSSRF(string url)
     {
-        CheckVulnerability(AddressesConstants.UrlAccess, url);
+        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.UrlAccess] = url }, AddressesConstants.UrlAccess);
     }
 
-    private static void CheckVulnerability(string address, string valueToCheck)
+    internal static void OnSqlQuery(string sql, IntegrationId id)
+    {
+        var ddbbType = SqlIntegrationIdToDDBBType(id);
+        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.DBStatement] = sql, [AddressesConstants.DBSystem] = ddbbType }, AddressesConstants.DBStatement);
+    }
+
+    private static string SqlIntegrationIdToDDBBType(IntegrationId id)
+    {
+        // Check https://datadoghq.atlassian.net/wiki/spaces/APM/pages/2357395856/Span+attributes#db.system
+        return id switch
+        {
+            IntegrationId.SqlClient => "sqlserver",
+            IntegrationId.MySql => "mysql",
+            IntegrationId.Npgsql => "postgresql",
+            IntegrationId.Oracle => "oracle",
+            IntegrationId.Sqlite => "sqlite",
+            IntegrationId.NHibernate => "nhibernate",
+            _ => "generic"
+        };
+    }
+
+    private static void CheckVulnerability(Dictionary<string, object> arguments, string address)
     {
         var security = Security.Instance;
 
@@ -47,12 +71,11 @@ internal static class RaspModule
 
         var rootSpan = Tracer.Instance.InternalActiveScope?.Root?.Span;
 
-        if (rootSpan is null)
+        if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
         {
             return;
         }
 
-        var arguments = new Dictionary<string, object> { [address] = valueToCheck };
         RunWafRasp(arguments, rootSpan, address);
     }
 
@@ -81,8 +104,15 @@ internal static class RaspModule
 
     private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
     {
-        var securityCoordinator = new SecurityCoordinator(Security.Instance, SecurityCoordinator.Context, rootSpan);
-        var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true);
+        var securityCoordinator = new SecurityCoordinator(Security.Instance, rootSpan);
+
+        // We need a context for RASP
+        if (!securityCoordinator.HasContext() || securityCoordinator.IsAdditiveContextDisposed())
+        {
+            return;
+        }
+
+        var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
 
         if (result is not null)
         {
@@ -111,9 +141,31 @@ internal static class RaspModule
             Log.Error(ex, "RASP: Error while sending stack.");
         }
 
+        AddSpanId(result);
+
         // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
         // the blockings, so we report first and then block
         securityCoordinator.ReportAndBlock(result);
+    }
+
+    private static void AddSpanId(IResult? result)
+    {
+        if (result?.ReturnCode == WafReturnCode.Match && result?.Data is not null)
+        {
+            var spanId = Tracer.Instance.InternalActiveScope.Span.SpanId;
+
+            foreach (var item in result.Data)
+            {
+                // we know that the item is a dictionary because of the way we are deserializing the data
+                // Any item contained in the data list comes from the current RASP call, so
+                // it should be tagged with current span_id
+
+                if (item is Dictionary<string, object> dictionary)
+                {
+                    dictionary.Add("span_id", spanId);
+                }
+            }
+        }
     }
 
     private static void SendStack(Span rootSpan, string id)

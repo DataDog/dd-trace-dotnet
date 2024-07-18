@@ -16,7 +16,7 @@ public static class RefStructFourParametersVoidIntegration
         ref var readOnlySpanValue = ref arg02.DangerousGetReadOnlySpan<char>(out success);
         if (success)
         {
-            readOnlySpanValue = "World";
+            readOnlySpanValue = "World".AsSpan();
         }
 
         ref var spanValue = ref arg03.DangerousGetSpan<char>(out success);

@@ -8,7 +8,6 @@
 #include "IConfiguration.h"
 #include "IFrameStore.h"
 #include "IRuntimeIdStore.h"
-#include "IService.h"
 #include "IThreadsCpuManager.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -17,6 +16,7 @@
 #include "RawSamples.hpp"
 #include "SamplesEnumerator.h"
 #include "SampleValueTypeProvider.h"
+#include "ServiceBase.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 #include "shared/src/native-src/string.h"
@@ -47,7 +47,7 @@ using namespace std::chrono_literals;
 template <class TRawSample> // TRawSample is supposed to inherit from RawSample
 class CollectorBase
     :
-    public IService,
+    public ServiceBase,
     public ICollector<TRawSample>, // allows profilers to add TRawSample instances
     public ProviderBase            // returns Samples to the aggregator
 {
@@ -73,15 +73,6 @@ public:
 
     // interfaces implementation
 public:
-    bool Start() override
-    {
-        return true;
-    }
-
-    bool Stop() override
-    {
-        return true;
-    }
 
     const char* GetName() override
     {
@@ -178,6 +169,16 @@ private:
         CollectorBase<TRawSample>* _collector;
         typename RawSamples<TRawSample>::iterator _currentRawSample;
     };
+
+    bool StartImpl() override
+    {
+        return true;
+    }
+
+    bool StopImpl() override
+    {
+        return true;
+    }
 
 private:
     void SetAppDomainDetails(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)

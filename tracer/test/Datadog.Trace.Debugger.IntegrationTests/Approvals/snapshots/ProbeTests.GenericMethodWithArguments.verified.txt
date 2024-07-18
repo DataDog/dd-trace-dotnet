@@ -272,7 +272,7 @@
           "location": {
             "file": "GenericMethodWithArgumentsAndLocals.cs",
             "lines": [
-              22
+              "22"
             ]
           },
           "version": 0
