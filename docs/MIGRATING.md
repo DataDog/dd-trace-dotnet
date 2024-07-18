@@ -99,19 +99,24 @@ Several settings have changed their default values:
 - `DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED` now defaults to `true`. This setting provides a better experience in the majority of cases.
 - `DD_TRACE_SAMPLING_RULES_FORMAT` now defaults to `glob` instead of `regex`. This setting is consistent with other language client libraries. 
 
+Some settings have been removed
+- `DD_TRACE_OTEL_LEGACY_OPERATION_NAME_ENABLED` has been removed. This setting was not widely used and was not necessary for most users, thanks to an improved operation name calculation.
+
 #### What action should you take?
-We recommend using the new settings if possible. If this is not possible, you can manually change the value for each setting to it's previous value, for example: `DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED=false`
+We recommend using the new settings if possible. If this is not possible, you can manually change the value for each setting to its previous value, for example: `DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED=false`
 
 ### Changes in behavior
 
 #### What changed and why?
-Some settings have changed their behavior, and there are some changes to reported tags
+Some settings have changed their behavior:
 - `DD_TRACE_HEADER_TAGS` [no longer replaces periods or spaces in names](https://github.com/DataDog/dd-trace-dotnet/pull/4599). The new behavior is consistent with the behavior of other tracer languages.
 - `DD_TRACE_HEADER_TAGS` [now considers trailing `:` in entries as invalid, and splits key-value pairs on the last `:` in the entry](https://github.com/DataDog/dd-trace-dotnet/pull/5438). The new behavior is consistent with the behavior of other tracer languages.
-- The `language` tag is [now added to added to all spans](https://github.com/DataDog/dd-trace-dotnet/pull/4839) with the value `dotnet`. Previously, some spans were not tagged, but were subsequently tagged with the value `.NET`. This change removes the inconsistency
 - `DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON` now refers to an absolute file path instead of providing the template content directly. This makes it easier to provide custom values.
 - `DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML` now refers to an absolute file path instead of providing the template content directly. This makes it easier to provide custom values.
 - `DD_API_SECURITY_REQUEST_SAMPLING ` now requires a value from 0 to 1.0, not a percentage from 0 to 100.
+
+There are also changes to some reported tags added to spans:
+- The `language` tag is [now added to added to all spans](https://github.com/DataDog/dd-trace-dotnet/pull/4839) with the value `dotnet`. Previously, some spans were not tagged, but were subsequently tagged with the value `.NET`. This change removes the inconsistency.
 
 #### What action should you take?
 If you require the previous `DD_TRACE_HEADER_TAGS` normalization behavior, you must apply this normalization yourself, replacing periods and spaces with underscores in the value you pass to `DD_TRACE_HEADER_TAGS`.
@@ -154,7 +159,7 @@ If you don't set `COR_ENABLE_PROFILING=0`/`CORECLR_ENABLE_PROFILING=1` and conti
 
 In version 1.x.x and 2.x.x of the tracer, it was possible to reference the `Datadog.Trace.AspNet` module in your application's `web.config` file, although this wasn't required for ASP.NET support in general. In version 3.x.x, referencing the `Datadog.Trace.AspNet` in your application's `web.config` will cause an error, and may cause your application to fail to start, with the error:
 
-> "There was an error when performing this operation"
+> "Could not load file or assembly 'Datadog.Trace.AspNet' or one of its dependencies. The system cannot find the file specified."
 
 #### Why did we change it?
 The `Datadog.Trace.AspNet` module is obsolete and is not required for tracing ASP.NET applications. We are removing the `Datadog.Trace.AspNet` module to remove a point of failure when upgrading the .NET client library. Referencing the module in an application's `web.config` file, and the required installation into the [Global Assembly Cache (GAC)](https://learn.microsoft.com/en-us/dotnet/framework/app-domains/gac), can make the update experience harder; by removing the module, we remove this constraint. 
