@@ -1,6 +1,49 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
 
+
+## [Release 2.55.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.55.0)
+
+## Summary
+
+- [Dynamic Instrumentation] Fixed rewriting issues stemmed from combination of multiple instrumentations
+- [Tracing] dd support for MySql.Data 9.0.0
+- [Tracing] Handle unknown service names for OpenTelemetry/Activities
+- [ASM] Standalone Billing
+
+## Changes
+
+### Tracer
+* Add support for MySql.Data 9.0 (#5786)
+* Correctly set `activityKey` when we change the Trace ID (#5771)
+* Change unknown_service to DefaultServiceName (#5671)
+
+### ASM
+* [ASM] Standalone Billing (#5565)
+* [ASM] Standalone Billing (part 2: Propagation) (#5743)
+* [ASM] Appsec events in meta struct (#5779)
+
+### Continuous Profiler
+* [Profiler] Support "auto" for profiler enablement (#5766)
+* [Profiler] Fix bug when create thread lifetime event (#5769)
+
+### Debugger
+* [Dynamic Instrumentation] Fixed Instrumentation failures revealed by the Exploration Tests of Line & Method probes (#5784)
+* [Dynamic Instrumentation] Fixed SymDB upload when PDB is absent (#5789)
+* [Exception Replay] Mitigating an exception thrown while processing the methods participating in exception stack traces (#5783)
+
+### Miscellaneous
+* [SSI] Bail out on known-faulty .NET 6 version (#5761)
+
+### Build / Test
+* Integration test for Oracle (#5607)
+* Skip flaky `ActivityTests` on macos (#5763)
+* Fix macOS cmake warnings/errors (#5788)
+
+
+[Changes since 2.54.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.54.0...v2.55.0)
+
+
 ## [Release 2.54.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.54.0)
 
 ## Summary
@@ -85,7 +128,8 @@
 * Revert native changes that moved the definitions to the native side (#5768)
 
 
-[Changes since 2.53.2](https://github.com/DataDog/dd-trace-dotnet/compare/v2.53.2...v2.54.0)
+[Changes since 2.53.2](https://github.com/DataDog/dd-trace-dotnet/compare/v2.53.2...v2.54.0)
+
 
 ## [Release 2.53.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.53.0)
 
