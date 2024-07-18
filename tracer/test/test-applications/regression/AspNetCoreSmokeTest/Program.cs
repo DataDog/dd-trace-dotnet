@@ -15,9 +15,9 @@ namespace AspNetCoreSmokeTest
         public static volatile int ExitCode = 0;
         public static async Task<int> Main(string[] args)
         {
-            if (!IsProfilerAttached())
+            if (!IsProfilerAttached() && Environment.GetEnvironmentVariable("PROFILER_IS_NOT_REQUIRED") != "True")
             {
-                Console.WriteLine("Error: Profiler is required and is not loaded.");
+                Console.WriteLine($"Error: Profiler is required and is not loaded. PROFILER_IS_NOT_REQUIRED={Environment.GetEnvironmentVariable("PROFILER_IS_NOT_REQUIRED")}.");
                 return 1;
             }
 
