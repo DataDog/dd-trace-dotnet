@@ -244,7 +244,7 @@
         "minVersionTestedInclusive": "3.1.5.3",
         "maxVersionSupportedInclusive": "3.7.305",
         "maxVersionAvailableInclusive": "3.7.305",
-        "maxVersionTestedInclusive": "3.7.304.1"
+        "maxVersionTestedInclusive": "3.7.305"
       }
     ]
   },
@@ -261,7 +261,7 @@
         "minVersionTestedInclusive": "3.1.3.5",
         "maxVersionSupportedInclusive": "3.7.301.111",
         "maxVersionAvailableInclusive": "3.7.301.111",
-        "maxVersionTestedInclusive": "3.7.301.104"
+        "maxVersionTestedInclusive": "3.7.301.111"
       }
     ]
   },
@@ -312,7 +312,7 @@
         "minVersionTestedInclusive": "3.1.2.1",
         "maxVersionSupportedInclusive": "3.7.302",
         "maxVersionAvailableInclusive": "3.7.302",
-        "maxVersionTestedInclusive": "3.7.301.60"
+        "maxVersionTestedInclusive": "3.7.302"
       }
     ]
   },
@@ -329,7 +329,7 @@
         "minVersionTestedInclusive": "3.1.0.13",
         "maxVersionSupportedInclusive": "3.7.301.32",
         "maxVersionAvailableInclusive": "3.7.301.32",
-        "maxVersionTestedInclusive": "3.7.301.25"
+        "maxVersionTestedInclusive": "3.7.301.32"
       }
     ]
   },
@@ -418,7 +418,7 @@
         "minVersionTestedInclusive": "2.4.8",
         "maxVersionSupportedInclusive": "3.6.1",
         "maxVersionAvailableInclusive": "3.6.1",
-        "maxVersionTestedInclusive": "3.6.0"
+        "maxVersionTestedInclusive": "3.6.1"
       }
     ]
   },
@@ -603,7 +603,7 @@
         "minVersionTestedInclusive": "11.3.8",
         "maxVersionSupportedInclusive": "13.9.7",
         "maxVersionAvailableInclusive": "13.9.7",
-        "maxVersionTestedInclusive": "13.9.6"
+        "maxVersionTestedInclusive": "13.9.7"
       }
     ]
   },
@@ -719,10 +719,10 @@
         "name": "Microsoft.Extensions.Telemetry",
         "minVersionAvailableInclusive": "8.0.0",
         "minVersionSupportedInclusive": "8.0.0",
-        "minVersionTestedInclusive": "8.6.0",
+        "minVersionTestedInclusive": "8.7.0",
         "maxVersionSupportedInclusive": "8.7.0",
         "maxVersionAvailableInclusive": "8.7.0",
-        "maxVersionTestedInclusive": "8.6.0"
+        "maxVersionTestedInclusive": "8.7.0"
       }
     ]
   },
@@ -739,7 +739,7 @@
         "minVersionTestedInclusive": "1.4.4",
         "maxVersionSupportedInclusive": "2.5.0",
         "maxVersionAvailableInclusive": "2.5.0",
-        "maxVersionTestedInclusive": "2.4.0"
+        "maxVersionTestedInclusive": "2.5.0"
       }
     ]
   },
@@ -804,8 +804,8 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.4.3",
-        "maxVersionAvailableInclusive": "3.4.3",
+        "maxVersionSupportedInclusive": "3.5.0",
+        "maxVersionAvailableInclusive": "3.5.0",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -831,14 +831,14 @@
     "integrationName": "MySql",
     "assemblyName": "MySql.Data",
     "minAssemblyVersionInclusive": "6.7.0",
-    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "maxAssemblyVersionInclusive": "9.65535.65535",
     "packages": [
       {
         "name": "MySql.Data",
         "minVersionAvailableInclusive": "5.1.7",
         "minVersionSupportedInclusive": "6.7.4",
         "minVersionTestedInclusive": "6.7.9",
-        "maxVersionSupportedInclusive": "8.4.0",
+        "maxVersionSupportedInclusive": "9.0.0",
         "maxVersionAvailableInclusive": "9.0.0",
         "maxVersionTestedInclusive": "9.0.0"
       }
@@ -1106,7 +1106,7 @@
         "minVersionTestedInclusive": "2.2.6",
         "maxVersionSupportedInclusive": "8.0.7",
         "maxVersionAvailableInclusive": "8.0.7",
-        "maxVersionTestedInclusive": "8.0.6"
+        "maxVersionTestedInclusive": "8.0.7"
       }
     ]
   },
@@ -1249,7 +1249,7 @@
         "minVersionTestedInclusive": "2.2.0",
         "maxVersionSupportedInclusive": "2.9.0",
         "maxVersionAvailableInclusive": "2.9.0",
-        "maxVersionTestedInclusive": "2.8.1"
+        "maxVersionTestedInclusive": "2.9.0"
       }
     ]
   },
