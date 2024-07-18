@@ -141,6 +141,11 @@ internal enum Count
     [TelemetryMetric("version_conflict_tracers_created", isCommon: false)] VersionConflictTracerCreated,
 
     /// <summary>
+    /// The number of services in which the customer has installed manual instrumentation that is greater than the automatic instrumentation (and so won't work)
+    /// </summary>
+    [TelemetryMetric("unsupported_custom_instrumentation_services", isCommon: false)] UnsupportedCustomInstrumentationServices,
+
+    /// <summary>
     /// The number of logs sent to the direct log submission sink, tagged by IntegrationName. Includes only logs that were sent, not filtered logs
     /// </summary>
     [TelemetryMetric<MetricTags.IntegrationName>("direct_log_logs", isCommon: false)] DirectLogLogs,

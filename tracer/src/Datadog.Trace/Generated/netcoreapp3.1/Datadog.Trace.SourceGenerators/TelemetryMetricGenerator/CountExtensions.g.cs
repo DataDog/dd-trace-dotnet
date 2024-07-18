@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 38;
+    public const int Length = 39;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -45,6 +45,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiResponses => "telemetry_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiErrors => "telemetry_api.errors",
             Datadog.Trace.Telemetry.Metrics.Count.VersionConflictTracerCreated => "version_conflict_tracers_created",
+            Datadog.Trace.Telemetry.Metrics.Count.UnsupportedCustomInstrumentationServices => "unsupported_custom_instrumentation_services",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogLogs => "direct_log_logs",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiRequests => "direct_log_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiResponses => "direct_log_api.responses",
@@ -72,6 +73,7 @@ internal static partial class CountExtensions
         => metric switch
         {
             Datadog.Trace.Telemetry.Metrics.Count.VersionConflictTracerCreated => false,
+            Datadog.Trace.Telemetry.Metrics.Count.UnsupportedCustomInstrumentationServices => false,
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogLogs => false,
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiRequests => false,
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiResponses => false,
