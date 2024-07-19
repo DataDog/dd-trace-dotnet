@@ -3779,6 +3779,14 @@ stages:
             path: $(Build.ArtifactStagingDirectory)
 
         - bash: |
+            # Write tracer version number to version.txt
+            echo "$(tracer_version)" > $(Build.ArtifactStagingDirectory)/version.txt
+
+            # Write file list to index.txt
+            ls "$(Build.ArtifactStagingDirectory)" > $(Build.ArtifactStagingDirectory)/index.txt
+          displayName: Write description of assets
+
+        - bash: |
             az storage blob upload-batch \
               --destination "$(AZURE_STORAGE_CONTAINER_NAME)" \
               --destination-path "$(Build.SourceVersion)" \
