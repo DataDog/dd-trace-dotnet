@@ -81,14 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion(string.Empty);
         }
 
-        public static IEnumerable<object[]> GetData()
-        {
-            foreach (var version in PackageVersions.OpenTelemetry)
-            {
-                yield return new object[] { version[0] };
-                yield return new object[] { version[0] };
-            }
-        }
+        public static IEnumerable<object[]> GetData() => PackageVersions.OpenTelemetry;
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsOpenTelemetry(metadataSchemaVersion, Resources, ExcludeTags);
 
