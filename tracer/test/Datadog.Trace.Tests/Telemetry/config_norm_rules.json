@@ -381,6 +381,7 @@
   "DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED": "trace_wcf_obfuscation_enabled",
   "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED": "trace_header_tag_normalization_fix_enabled",
   "DD_TRACE_OTEL_ENABLED": "trace_otel_enabled",
+  "DD_TRACE_OTEL_LEGACY_OPERATION_NAME_ENABLED": "trace_otel_legacy_operation_name_enabled",
   "DD_TRACE_ACTIVITY_LISTENER_ENABLED": "trace_activity_listener_enabled",
   "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED": "trace_128_bits_id_enabled",
   "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED": "trace_128_bits_id_logging_enabled",
