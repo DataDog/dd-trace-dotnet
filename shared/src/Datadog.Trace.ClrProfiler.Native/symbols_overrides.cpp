@@ -76,6 +76,17 @@ struct DlcloseHook : HookBase
         return ret;
     }
 };
+struct DatadogCheckFn : HookBase
+{
+    static constexpr auto name = "dd_inside_wrapped_functions2";
+    using FuncType = decltype(&dd_inside_wrapped_functions2);
+    static inline FuncType ref{};
+
+    static int hook(void* handle) noexcept
+    {
+        return dd_inside_wrapped_functions2();
+    }
+};
 
 std::mutex g_mutex;
 std::unique_ptr<ddprof::SymbolOverrides> g_symbol_overrides;
@@ -90,6 +101,7 @@ void register_hook()
 void register_hooks()
 {
     register_hook<DlIteratePphdrHook>();
+    register_hook<DatadogCheckFn>();
     register_hook<DlcloseHook>();
     register_hook<DlopenHook>();
 }
