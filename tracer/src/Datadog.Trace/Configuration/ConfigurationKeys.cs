@@ -652,19 +652,6 @@ namespace Datadog.Trace.Configuration
             public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
 
             /// <summary>
-            /// Enables the use of the <see cref="ISpan.OperationName"/> being set to the legacy value of:
-            /// <c>$"{Activity.Source.Name}.{Activity.Kind}"</c> when instrumenting OpenTelemetry Spans and Activities.
-            /// This will override the default mapping that is used to create an operation name based on
-            /// <c>Activity.Kind</c> and various tags on the <c>Activity</c>.
-            /// <para>
-            /// This flag defaults to <see langword="false"/> and is intended to allow previous beta customers
-            /// of the .NET Tracer's OpenTelemetry instrumentation (and System.Diagnostics)
-            /// to have an easier migration path.
-            /// </para>
-            /// </summary>
-            public const string OpenTelemetryLegacyOperationNameEnabled = "DD_TRACE_OTEL_LEGACY_OPERATION_NAME_ENABLED";
-
-            /// <summary>
             /// Enables generating 128-bit trace ids instead of 64-bit trace ids.
             /// Note that a 128-bit trace id may be received from an upstream service or from
             /// an Activity even if we are not generating them ourselves.
