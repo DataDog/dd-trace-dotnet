@@ -135,7 +135,6 @@ namespace Datadog.Trace.Configuration
             PropagationExtractFirstOnly = settings.PropagationExtractFirstOnly;
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
-            OpenTelemetryLegacyOperationNameEnabled = settings.OpenTelemetryLegacyOperationNameEnabled;
 
             _isDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
             IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
@@ -520,11 +519,6 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether <see cref="ISpan.OperationName"/> should be set to the legacy value for OpenTelemetry.
-        /// </summary>
-        internal bool OpenTelemetryLegacyOperationNameEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.
