@@ -370,10 +370,6 @@ namespace Datadog.Trace.Configuration
                                        .AsBoolResult()
                                        .OverrideWith(in otelActivityListenerEnabled, defaultValue: false);
 
-            OpenTelemetryLegacyOperationNameEnabled = config
-                                                     .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled)
-                                                     .AsBool(false);
-
             Func<string[], bool> injectionValidator = styles => styles is { Length: > 0 };
             Func<string, ParsingResult<string[]>> otelConverter =
                 style => TrimSplitString(style, commaSeparator)
@@ -950,11 +946,6 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether <see cref="ISpan.OperationName"/> should be set to the legacy value for OpenTelemetry.
-        /// </summary>
-        internal bool OpenTelemetryLegacyOperationNameEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.

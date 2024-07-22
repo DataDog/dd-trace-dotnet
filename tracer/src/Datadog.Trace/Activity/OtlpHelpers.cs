@@ -99,18 +99,7 @@ namespace Datadog.Trace.Activity
 
             // Later: Support config 'span_name_as_resource_name'
             // Later: Support config 'span_name_remappings'
-            if (tracer.Settings.OpenTelemetryLegacyOperationNameEnabled && activity5 is not null && string.IsNullOrEmpty(span.OperationName))
-            {
-                span.OperationName = activity5.Source.Name switch
-                {
-                    string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{GetSpanKind(activity5.Kind)}",
-                    _ => $"opentelemetry.{GetSpanKind(activity5.Kind)}",
-                };
-            }
-            else
-            {
-                OperationNameMapper.MapToOperationName(span);
-            }
+            OperationNameMapper.MapToOperationName(span);
 
             // TODO: Add container tags from attributes if the tag isn't already in the span
 
