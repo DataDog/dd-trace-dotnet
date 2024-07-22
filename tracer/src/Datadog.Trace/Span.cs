@@ -429,10 +429,7 @@ namespace Datadog.Trace
                     SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
                     SetTag(Trace.Tags.ErrorStack, exception.ToString());
 
-                    if (IsRootSpan)
-                    {
-                        ExceptionDebugging.Report(this, exception);
-                    }
+                    ExceptionDebugging.Report(this, exception);
                 }
                 catch (Exception ex)
                 {

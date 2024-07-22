@@ -381,21 +381,24 @@ internal static class DebuggerTestHelper
             BindingFlags.Static |
             BindingFlags.Instance;
 
-        return type.GetNestedTypes(allMask)
-                   .SelectMany(
-                        nestedType =>
-                            nestedType.GetMethods(allMask | BindingFlags.DeclaredOnly)
-                                      .Concat(nestedType.GetConstructors(allMask | BindingFlags.DeclaredOnly).As<IEnumerable<MethodBase>>()))
-                   .Concat(
-                        type.GetMethods(allMask | BindingFlags.DeclaredOnly)
-                            .Concat(type.GetConstructors(allMask | BindingFlags.DeclaredOnly).As<IEnumerable<MethodBase>>()))
-                   .As<IEnumerable<MethodBase>>()
-                   .Where(
-                        m =>
-                        {
-                            var atts = m.GetCustomAttributes<T>();
-                            return atts.Any() && atts.All(att => att?.Skip == false && att.Unlisted == unlisted && att.SkipOnFrameworks.Contains(targetFramework) == false);
-                        });
+        IEnumerable<MethodBase> GetMethodsRecursive(Type currentType)
+        {
+            var methods = currentType.GetMethods(allMask | BindingFlags.DeclaredOnly)
+                                     .Concat(currentType.GetConstructors(allMask | BindingFlags.DeclaredOnly).As<IEnumerable<MethodBase>>());
+
+            var nestedMethods = currentType.GetNestedTypes(allMask)
+                                           .SelectMany(GetMethodsRecursive);
+
+            return methods.Concat(nestedMethods);
+        }
+
+        var allMethods = GetMethodsRecursive(type);
+
+        return allMethods.Where(m =>
+        {
+            var atts = m.GetCustomAttributes<T>();
+            return atts.Any() && atts.All(att => att?.Skip == false && att.Unlisted == unlisted && !att.SkipOnFrameworks.Contains(targetFramework));
+        });
     }
 
     private static T ParseEnum<T>(string enumValue)
