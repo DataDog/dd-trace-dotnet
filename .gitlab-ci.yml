@@ -1,7 +1,7 @@
 
 stages:
   - build
-  - wait_for_artifacts
+  - single-step-testing
   - package
   - publish
   - deploy
@@ -42,7 +42,7 @@ build:
     - artifacts
 
 wait-for-single-step-artifacts:
-  stage: wait_for_artifacts
+  stage: single-step-testing
   image: registry.ddbuild.io/images/ci_docker_base
   tags: [ "runner:docker" ]
   when: delayed
@@ -104,7 +104,7 @@ wait-for-single-step-artifacts:
 compute-ci-package-snapshot-version:
   image: registry.ddbuild.io/ci/auto_inject/gitlab:current
   tags: ["arch:amd64"]
-  stage: wait_for_artifacts
+  stage: single-step-testing
   needs:
     - wait-for-single-step-artifacts
   script:
@@ -113,9 +113,11 @@ compute-ci-package-snapshot-version:
       echo "Generating CI DEV configuration from template"
       if test -f "artifacts/version.txt"; then
         #Set the version of the package
-        DOTNET_PACKAGE_DEV_VERSION=$(cat artifacts/version.txt).dev.${CI_COMMIT_SHORT_SHA}
+        DOTNET_PACKAGE_SPECIFIC_VERSION=$(cat artifacts/version.txt)
+        DOTNET_PACKAGE_DEV_VERSION=${DOTNET_PACKAGE_SPECIFIC_VERSION}.dev.${CI_COMMIT_SHORT_SHA}
       
         DOTNET_PACKAGE_MAJOR_VERSION=$(cat artifacts/version.txt | cut -d '.' -f 1)
+        echo "DOTNET_PACKAGE_SPECIFIC_VERSION=${DOTNET_PACKAGE_SPECIFIC_VERSION}"
         echo "DOTNET_PACKAGE_DEV_VERSION=${DOTNET_PACKAGE_DEV_VERSION}"
         echo "DOTNET_PACKAGE_MAJOR_VERSION=${DOTNET_PACKAGE_MAJOR_VERSION}"
 
@@ -133,6 +135,18 @@ compute-ci-package-snapshot-version:
   artifacts:
     paths:
       - gitlab-ci-snapshot-package-test.yml
+
+trigger-package-snapshot-testing:
+  stage: single-step-testing
+  needs:
+    - compute-ci-package-snapshot-version
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+  trigger:
+    strategy: depend
+    include:
+      - artifact: gitlab-ci-snapshot-package-test.yml
+        job: compute-ci-package-snapshot-version
 
 publish:
   only:

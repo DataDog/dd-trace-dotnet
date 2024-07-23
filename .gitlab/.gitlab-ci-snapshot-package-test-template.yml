@@ -19,24 +19,12 @@ variables:
     description: "Major version. By default all builds are generated with the same major version"
   DOCKER_BINARIES_IMAGE: ghcr.io/datadog/dd-trace-dotnet/apm-library-dotnet
 
-download-extract-binaries:
-  stage: package
-  image: registry.ddbuild.io/images/ci_docker_base
-  tags: ["runner:docker"]
-  before_script:
-    - export GH_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.gh_ghcr_token --with-decryption --query "Parameter.Value" --out text)
-  script:
-    - mkdir -p artifacts
-    - echo $GH_TOKEN|docker login ghcr.io -u publisher --password-stdin
-    - .gitlab/extract_docker_image.sh ${DOCKER_BINARIES_IMAGE}:${CI_COMMIT_SHA} artifacts
-  artifacts:
-    expire_in: 2 weeks
-    paths:
-      - artifacts/
 
 package-snapshot:
   extends: .package
-  needs: [download-extract-binaries]
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: wait-for-single-step-artifacts
   rules:
     - if: $DOTNET_PACKAGE_DEV_VERSION
       when: on_success
@@ -47,7 +35,9 @@ package-snapshot:
 
 package-arm-snapshot:
   extends: .package-arm
-  needs: [download-extract-binaries]
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: wait-for-single-step-artifacts
   rules:
     - if: $DOTNET_PACKAGE_DEV_VERSION
       when: on_success
@@ -58,7 +48,9 @@ package-arm-snapshot:
 
 package-oci-snapshot:
   stage: package
-  needs: [download-extract-binaries]
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: wait-for-single-step-artifacts
   extends: .package-oci
   rules:
     - if: $DOTNET_PACKAGE_DEV_VERSION
