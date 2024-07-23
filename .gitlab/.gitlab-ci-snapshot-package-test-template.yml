@@ -1,0 +1,95 @@
+
+stages:
+  - package
+  - single-step-instrumentation-tests
+  - publish
+  - release
+
+include:
+  - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
+  - remote: https://gitlab-templates.ddbuild.io/libdatadog/include/single-step-instrumentation-tests.yml
+
+variables:
+  GIT_PROFILER_REF: master
+  DOTNET_PACKAGE_SPECIFIC_VERSION:
+    description: "Three parts version for current build"
+  DOTNET_PACKAGE_DEV_VERSION:
+    description: "Specific version for current build"
+  DOTNET_PACKAGE_MAJOR_VERSION:
+    description: "Major version. By default all builds are generated with the same major version"
+  DOCKER_BINARIES_IMAGE: ghcr.io/datadog/dd-trace-dotnet/apm-library-dotnet
+
+download-extract-binaries:
+  stage: package
+  image: registry.ddbuild.io/images/ci_docker_base
+  tags: ["runner:docker"]
+  before_script:
+    - export GH_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.gh_ghcr_token --with-decryption --query "Parameter.Value" --out text)
+  script:
+    - mkdir -p artifacts
+    - echo $GH_TOKEN|docker login ghcr.io -u publisher --password-stdin
+    - .gitlab/extract_docker_image.sh ${DOCKER_BINARIES_IMAGE}:${CI_COMMIT_SHA} artifacts
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+      - artifacts/
+
+package-snapshot:
+  extends: .package
+  needs: [download-extract-binaries]
+  rules:
+    - if: $DOTNET_PACKAGE_DEV_VERSION
+      when: on_success
+  script:
+    - ../.gitlab/build-deb-rpm.sh
+  variables:
+    ARCH: amd64
+
+package-arm-snapshot:
+  extends: .package-arm
+  needs: [download-extract-binaries]
+  rules:
+    - if: $DOTNET_PACKAGE_DEV_VERSION
+      when: on_success
+  script:
+    - ../.gitlab/build-deb-rpm.sh
+  variables:
+    ARCH: arm64
+
+package-oci-snapshot:
+  stage: package
+  needs: [download-extract-binaries]
+  extends: .package-oci
+  rules:
+    - if: $DOTNET_PACKAGE_DEV_VERSION
+      when: on_success
+  script:
+    - ../.gitlab/build-oci.sh
+  parallel:
+    matrix:
+      - ARCH:
+          - arm64
+          - amd64
+
+onboarding_tests:
+  extends: .base_job_onboarding
+  stage: single-step-instrumentation-tests
+  needs: [package-snapshot,package-arm-snapshot,package-oci-snapshot]
+  allow_failure: false
+  variables:
+    TEST_LIBRARY: dotnet
+    ONBOARDING_FILTER_ENV: prod
+  parallel:
+    matrix:
+      - ONBOARDING_FILTER_WEBLOG: [test-app-dotnet]
+        SCENARIO: [SIMPLE_HOST_AUTO_INJECTION]
+      - ONBOARDING_FILTER_WEBLOG: [test-app-dotnet-container]
+        SCENARIO: [SIMPLE_CONTAINER_AUTO_INJECTION]
+  script:
+    - git clone https://git@github.com/DataDog/system-tests.git system-tests
+    - cp packaging/*.rpm system-tests/binaries
+    - cp packaging/*.deb system-tests/binaries
+    - ls system-tests/binaries
+    - cd system-tests
+    - ./build.sh -i runner
+    - timeout 2700s ./run.sh $SCENARIO --vm-weblog ${ONBOARDING_FILTER_WEBLOG} --vm-env prod --vm-library ${TEST_LIBRARY} --vm-provider aws --vm-skip-branches ubuntu18_amd64

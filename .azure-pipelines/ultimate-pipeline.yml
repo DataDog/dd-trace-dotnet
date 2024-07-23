@@ -3589,6 +3589,53 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+- stage: store_ssi_artifacts
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
+  dependsOn: [package_linux, package_arm64, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - job: combine
+      timeoutInMinutes: 60 #default value
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+        - checkout: none
+        # Linux packages
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Alpine tar packages
+          inputs:
+            artifact: linux-packages-linux-musl-x64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux x64 packages
+          inputs:
+            artifact: linux-packages-linux-x64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Arm64 packages
+          inputs:
+            artifact: linux-packages-linux-arm64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - bash: |
+            TAR_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.arm64.tar.gz)
+            VERSION_NUMBER=${TAR_NAME:19:-13}
+            echo "Detected version: $VERSION_NUMBER"
+            echo "$VERSION_NUMBER" > $(Build.ArtifactStagingDirectory)/version.txt
+          displayName: Write tracer version number to version.txt
+
+        # publish all tar files as single artifact
+        - publish: "$(Build.ArtifactStagingDirectory)"
+          displayName: Publish ssi artifacts
+          artifact: ssi-artifacts
+
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
   dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, merge_commit_id]
