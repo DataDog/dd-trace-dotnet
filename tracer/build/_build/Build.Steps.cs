@@ -834,70 +834,10 @@ partial class Build
             CompressZip(MonitoringHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
         });
 
-    Target PrepareMonitoringHomeLinux => _ => _
-        .Unlisted()
-        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
-        .OnlyWhenStatic(() => IsLinux)
-        .DependsOn(CopyDdDotnet)
-        .Requires(() => Version)
-        .Executes(() =>
-        {
-            var fpm = Fpm.Value;
-            var gzip = GZip.Value;
-            var chmod = Chmod.Value;
-
-            // For legacy back-compat reasons, we _must_ add certain files to their expected locations
-            // in the linux packages, as customers may have environment variables pointing to them
-            // we do this work in the temp folder to avoid "messing" with the artifacts directory
-            var (arch, ext) = GetUnixArchitectureAndExtension();
-            var assetsDirectory = TemporaryDirectory / arch;
-            EnsureCleanDirectory(assetsDirectory);
-            CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
-
-            // For back-compat reasons, we must always have the Datadog.ClrProfiler.Native.so file in the root folder
-            // as it's set in the COR_PROFILER_PATH etc env var
-            // so create a symlink to avoid bloating package sizes
-            var archSpecificFile = assetsDirectory / arch / $"{FileNames.NativeLoader}.{ext}";
-            var linkLocation = assetsDirectory / $"{FileNames.NativeLoader}.{ext}";
-            HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
-
-            // For back-compat reasons, we have to keep the libddwaf.so file in the root folder
-            // because the way AppSec probes the paths won't find the linux-musl-x64 target currently
-            archSpecificFile = assetsDirectory / arch / FileNames.AppSecLinuxWaf;
-            linkLocation = assetsDirectory / FileNames.AppSecLinuxWaf;
-            HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
-
-            // we must always have the Datadog.Linux.ApiWrapper.x64.so file in the continuousprofiler subfolder
-            // as it's set in the LD_PRELOAD env var
-            var continuousProfilerDir = assetsDirectory / "continuousprofiler";
-            EnsureExistingDirectory(continuousProfilerDir);
-            archSpecificFile = assetsDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
-            linkLocation = continuousProfilerDir / FileNames.ProfilerLinuxApiWrapper;
-            HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
-
-            // Copy the loader.conf to the root folder, this is required for when the "root" native loader is used,
-            // It needs to include the architecture in the paths to the native dlls
-            //
-            // The regex replaces (for example):
-            //      PROFILER;{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A};linux-x64;./Datadog.Profiler.Native.so
-            // with (adds folder prefix):
-            //      PROFILER;{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A};linux-x64;./linux-x64/Datadog.Profiler.Native.so
-            var loaderConfContents = File.ReadAllText(MonitoringHomeDirectory / arch / FileNames.LoaderConf);
-            loaderConfContents = Regex.Replace(
-                input: loaderConfContents,
-                pattern: @";(linux-.*?);\.\/Datadog\.",
-                replacement: $@";$1;./{arch}/Datadog.");
-            File.WriteAllText(assetsDirectory / FileNames.LoaderConf, contents: loaderConfContents);
-
-            // Copy createLogPath.sh script and set the permissions
-            CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
-            chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
-        });
-
     Target ZipMonitoringHomeLinux => _ => _
         .Unlisted()
-        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
-        .DependsOn(PrepareMonitoringHomeLinux)
+        .After(BuildTracerHome, BuildManagedTracerHome, BuildNativeTracerHome, BuildProfilerHome, BuildNativeLoader)
+        .DependsOn(CopyDdDotnet)
         .OnlyWhenStatic(() => IsLinux)
         .Requires(() => Version)
         .Executes(() =>
@@ -906,13 +846,20 @@ partial class Build
             var gzip = GZip.Value;
 
             var (arch, ext) = GetUnixArchitectureAndExtension();
-            var assetsDirectory = TemporaryDirectory / arch;
             var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}";
             EnsureCleanDirectory(workingDirectory);
 
             const string packageName = "datadog-dotnet-apm";
             foreach (var packageType in LinuxPackageTypes)
             {
+                Logger.Information("Creating '{PackageType}' package", packageType);
+                var assetsDirectory = TemporaryDirectory / arch / packageType;
+                var includeMuslArtifacts = packageType == "tar" && !IsAlpine && !IsArm64;
+                var muslArch = GetUnixArchitectureAndExtension(isOsx: false, isAlpine: true).Arch;
+
+                // On x64, for tar only, we package the linux-musl-x64 target as well, to simplify onboarding
+                PrepareMonitoringHomeLinuxForPackaging(assetsDirectory, arch, ext, muslArch, includeMuslArtifacts);
+
                 var args = new List<string>()
                 {
                     "-f",
@@ -924,6 +871,11 @@ partial class Build
                     $"--chdir {assetsDirectory}",
                     $"--after-install {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}",
                     $"--after-remove {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}",
+                    "--license \"Apache License 2.0\"",
+                    "--description \"Datadog APM client library for .NET\"",
+                    "--url \"https://github.com/DataDog/dd-trace-dotnet\"",
+                    "--vendor \"Datadog <package@datadoghq.com>\"",
+                    "--maintainer \"Datadog Packages <package@datadoghq.com>\"",
                     "createLogPath.sh",
                     "dd-dotnet.sh",
                     "netstandard2.0/",
@@ -935,6 +887,12 @@ partial class Build
                     "loader.conf",
                     $"{arch}/",
                 };
+
+                // on x64, we also include the musl assets in the glibc package  
+                if (includeMuslArtifacts)
+                {
+                    args.Add("linux-musl-x64/");
+                }
 
                 var arguments = string.Join(" ", args);
                 fpm(arguments, workingDirectory: workingDirectory);
@@ -953,6 +911,77 @@ partial class Build
             RenameFile(
                 workingDirectory / $"{packageName}.tar.gz",
                 workingDirectory / versionedName);
+
+            return;
+
+            void PrepareMonitoringHomeLinuxForPackaging(AbsolutePath assetsDirectory, string arch, string ext, string muslArch, bool includeMuslArtifacts)
+            {
+                var chmod = Chmod.Value;
+
+                // On x64 we package the linux-musl-x64 target as well, to simplify onboarding,
+                // but we don't need this on arm64 (currently) or on deb/rpm artifacts
+                // (as those aren't installable on alpine)
+                EnsureCleanDirectory(assetsDirectory);
+                CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
+
+                if (!includeMuslArtifacts && !IsAlpine)
+                {
+                    // Remove the linux-musl-x64 folder entirely
+                    Logger.Information("Removing musl assets as not required");
+                    DeleteDirectory(assetsDirectory / muslArch);
+                }
+
+                // For back-compat reasons, we must always have the Datadog.ClrProfiler.Native.so file in the root folder
+                // as it's set in the COR_PROFILER_PATH etc env var
+                // so create a symlink to avoid bloating package sizes
+                var archSpecificFile = assetsDirectory / arch / $"{FileNames.NativeLoader}.{ext}";
+                var linkLocation = assetsDirectory / $"{FileNames.NativeLoader}.{ext}";
+                HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+
+                // For back-compat reasons, we have to keep the libddwaf.so file in the root folder
+                // because the way AppSec probes the paths won't find the linux-musl-x64 target currently
+                archSpecificFile = assetsDirectory / arch / FileNames.AppSecLinuxWaf;
+                linkLocation = assetsDirectory / FileNames.AppSecLinuxWaf;
+                HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+
+                // we must always have the Datadog.Linux.ApiWrapper.x64.so file in the continuousprofiler subfolder
+                // as it's set in the LD_PRELOAD env var
+                var continuousProfilerDir = assetsDirectory / "continuousprofiler";
+                EnsureExistingDirectory(continuousProfilerDir);
+                archSpecificFile = assetsDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
+                linkLocation = continuousProfilerDir / FileNames.ProfilerLinuxApiWrapper;
+                HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+
+                // Need to copy in the loader.conf file into the musl arch folder
+                if(includeMuslArtifacts)
+                {
+                    // The files are identical in the glibc and musl folders, as they point to
+                    // relative files, so we can just hardlink them
+                    archSpecificFile = assetsDirectory / arch / FileNames.LoaderConf;
+                    var muslLinkLocation = assetsDirectory / muslArch / FileNames.LoaderConf;
+                    DeleteFile(muslLinkLocation); // probably won't exist, but be safe
+                    // copy the loader.conf into the musl arch folder
+                    HardLinkUtil.Value($"-v {archSpecificFile} {muslLinkLocation}");
+                }
+
+                // Copy the loader.conf to the root folder, this is required for when the "root" native loader is used,
+                // It needs to include the architecture in the paths to the native dlls
+                //
+                // The regex replaces (for example):
+                //      PROFILER;{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A};linux-x64;./Datadog.Profiler.Native.so
+                // with (adds folder prefix):
+                //      PROFILER;{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A};linux-x64;./linux-x64/Datadog.Profiler.Native.so
+                var loaderConfContents = File.ReadAllText(MonitoringHomeDirectory / arch / FileNames.LoaderConf);
+                loaderConfContents = Regex.Replace(
+                    input: loaderConfContents,
+                    pattern: @";(linux-.*?);\.\/Datadog\.",
+                    replacement: $@";$1;./{arch}/Datadog.");
+                File.WriteAllText(assetsDirectory / FileNames.LoaderConf, contents: loaderConfContents);
+
+                // Copy createLogPath.sh script and set the permissions
+                CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
+                chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
+            }
         });
 
     Target ZipMonitoringHomeOsx => _ => _
@@ -2773,8 +2802,9 @@ partial class Build
             (false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
         };
 
-    private (string Arch, string Ext) GetUnixArchitectureAndExtension() =>
-        (IsOsx, IsAlpine) switch
+    private (string Arch, string Ext) GetUnixArchitectureAndExtension() => GetUnixArchitectureAndExtension(IsOsx, IsAlpine);
+    private (string Arch, string Ext) GetUnixArchitectureAndExtension(bool isOsx, bool isAlpine) =>
+        (isOsx, isAlpine) switch
         {
             (true, _) => ($"osx-{UnixArchitectureIdentifier}", "dylib"),
             (false, false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
