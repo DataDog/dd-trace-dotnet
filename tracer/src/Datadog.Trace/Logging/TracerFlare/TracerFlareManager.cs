@@ -354,9 +354,17 @@ internal class TracerFlareManager : ITracerFlareManager
     {
         try
         {
+            var remoteConfigPath = remoteConfig.Path;
+
+            if (remoteConfigPath.Id.Equals("flare-log-level.debug", StringComparison.Ordinal)
+                || remoteConfigPath.Id.Equals("flare-log-level.trace", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
             var json = JObject.Parse(EncodingHelpers.Utf8NoBom.GetString(remoteConfig.Contents));
 
-            var logLevel = json["log_level"]?.Value<string>();
+            var logLevel = json["config"]?["log_level"]?.Value<string>();
 
             return logLevel is not null
                 && (logLevel.Equals("debug", StringComparison.OrdinalIgnoreCase)
