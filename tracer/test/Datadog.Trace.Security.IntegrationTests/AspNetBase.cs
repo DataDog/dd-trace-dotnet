@@ -6,8 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -18,8 +16,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -177,6 +173,8 @@ namespace Datadog.Trace.Security.IntegrationTests
                                     var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
                                     target.Tags[Tags.AppSecJson] = orderedJson;
 
+                                    target.MetaStruct.Remove("appsec");
+
                                     // Let the snapshot know that the data comes from the meta struct
                                     if (forceMetaStruct)
                                     {
@@ -249,6 +247,26 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var metaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
                 var json = JsonConvert.SerializeObject(metaStruct, Formatting.Indented);
                 target.Tags[key] = json;
+            }
+        }
+
+        protected void AppsecMetaStructScrubbing(MockSpan target, bool forceMetaStruct = false)
+        {
+            // We want to retrieve the appsec event data from the meta struct to validate it in snapshots
+            // But that's hard to debug if we only see the binary data
+            // So move the meta struct appsec data to a fake tag to validate it in snapshots
+            if (target.MetaStruct.TryGetValue("appsec", out var appsec))
+            {
+                var appSecMetaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
+                var json = JsonConvert.SerializeObject(appSecMetaStruct);
+                var obj = JsonConvert.DeserializeObject<AppSecJson>(json);
+                var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
+                target.Tags[Tags.AppSecJson] = orderedJson;
+
+                target.MetaStruct.Remove("appsec");
+
+                // Let the snapshot know that the data comes from the meta struct
+                if (forceMetaStruct) { target.Tags[Tags.AppSecJson + ".metastruct.test"] = "true"; }
             }
         }
 
