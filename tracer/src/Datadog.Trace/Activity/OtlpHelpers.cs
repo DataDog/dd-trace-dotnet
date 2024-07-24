@@ -339,8 +339,8 @@ namespace Datadog.Trace.Activity
                     span.SetMetric(key, us);
                     break;
                 case int i: // TODO: Can't get here from OTEL API, test with Activity API
-                    // special case where we need to remap "http.response.status_code"
-                    if (key == "http.response.status_code")
+                    // special case where we need to remap "http.response.status_code" and the deprecated "http.status_code"
+                    if (key == "http.response.status_code" || key == "http.status_code")
                     {
                         span.SetTag(Tags.HttpStatusCode, i.ToString(CultureInfo.InvariantCulture));
                     }
