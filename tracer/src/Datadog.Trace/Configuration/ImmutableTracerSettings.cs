@@ -160,7 +160,7 @@ namespace Datadog.Trace.Configuration
             IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
 
-            IsRunningInAzureFunctionsConsumptionPlan = settings.IsRunningInAzureFunctionsConsumptionPlan;
+            IsRunningMiniAgentInAzureFunctions = settings.IsRunningMiniAgentInAzureFunctions;
 
             IsRunningInGCPFunctions = settings.IsRunningInGCPFunctions;
             LambdaMetadata = settings.LambdaMetadata;
@@ -549,7 +549,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in Azure Functions
         /// on a consumption plan
         /// </summary>
-        internal bool IsRunningInAzureFunctionsConsumptionPlan { get; }
+        internal bool IsRunningMiniAgentInAzureFunctions { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in Google Cloud Functions
@@ -626,7 +626,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal bool IsRemoteConfigurationAvailable =>
             !(IsRunningInAzureAppService
-           || IsRunningInAzureFunctionsConsumptionPlan
+           || IsRunningMiniAgentInAzureFunctions
            || IsRunningInGCPFunctions
            || LambdaMetadata.IsRunningInLambda);
 
