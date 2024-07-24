@@ -1000,8 +1000,8 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
     }
   },
   {
-    TraceId: Id_42,
-    SpanId: Id_43,
+    TraceId: Id_43,
+    SpanId: Id_44,
     Name: internal,
     Resource: Transform,
     Service: MyServiceName,

@@ -159,11 +159,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-<<<<<<< HEAD
                 const int expectedSpanCount = 38;
-=======
-                const int expectedSpanCount = 37;
->>>>>>> 69e3c1cea (Map http.status_code to meta dictionary)
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
