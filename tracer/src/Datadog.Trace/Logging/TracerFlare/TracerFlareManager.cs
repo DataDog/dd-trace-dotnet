@@ -6,11 +6,9 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -110,7 +108,7 @@ internal class TracerFlareManager : ITracerFlareManager
          && requestedConfig.Count > 0)
         {
             var handled = await HandleTracerFlareRequested(requestedConfig).ConfigureAwait(false);
-            results = results is null ? handled : [.. results, .. handled];
+            results = results is null ? handled : [..results, ..handled];
         }
 
         if (removedConfigByProduct?.TryGetValue(RcmProducts.TracerFlareInitiated, out var removedConfig) == true
