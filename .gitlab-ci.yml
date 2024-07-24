@@ -56,13 +56,20 @@ wait-for-single-step-artifacts:
     artifactName="ssi-artifacts"
 
     echo "Waiting for the azure devops build for branch '$branchName' for commit '$CI_COMMIT_SHA' to start"
-    allBuildsUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=10&queryOrder=queueTimeDescending&branchName=$branchName"
+    allBuildsForBranchUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=10&queryOrder=queueTimeDescending&branchName=$branchName&reasonFilter=manual,individualCI"
 
-    # We should _definitely_ have the build by now, so if not, we bail out straight away with an error
-    buildId=$(curl -sS $allBuildsUrl | jq --arg version $CI_COMMIT_SHA '.value[] | select(.sourceVersion == $version and .reason != "schedule")  | .id' | head -n 1)
+    # We should _definitely_ have the build by now, so if not, there probably won't be one
+    buildId=$(curl -sS $allBuildsForBranchUrl | jq --arg version $CI_COMMIT_SHA '.value[] | select(.sourceVersion == $version and .reason != "schedule")  | .id' | head -n 1)
 
     if [ -z "${buildId}" ]; then
-      echo "No build found for commit '$CI_COMMIT_SHA' on branch '$branchName'"
+      echo "No build found for commit '$CI_COMMIT_SHA' on branch '$branchName'. Checking for PR builds..."
+      allBuildsForPrUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=10&queryOrder=queueTimeDescending&reasonFilter=pullRequest"
+    
+      buildId=$(curl -sS $allBuildsForPrUrl | jq --arg version $CI_COMMIT_SHA --arg branch $CI_COMMIT_BRANCH '.value[] | select(.triggerInfo["pr.sourceBranch"] == $branch and .triggerInfo["pr.sourceSha"] == $version)  | .id' | head -n 1)
+    fi
+
+    if [ -z "${buildId}" ]; then
+      echo "No build found for commit '$CI_COMMIT_SHA' on branch '$branchName' (including PRs)"
       exit 1
     fi
 
