@@ -4,6 +4,8 @@ using System.Data.SqlClient;
 using System.Threading;
 using Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 using Xunit;
+using FluentAssertions;
+using Remotion.Linq.Clauses.ResultOperators;
 
 #nullable enable
 
@@ -37,16 +39,30 @@ public class SqlDbReaderTests : InstrumentationTestsBase, IDisposable
     {
         using (var reader = TestRealDDBBLocalCall(() => new SqlCommand(allPersonsQuery, databaseConnection).ExecuteReader()))
         {
-            while (reader.Read())
+            reader.Read().Should().BeTrue();
             {
                 for (int x = 0; x < reader.FieldCount; x++)
                 {
-                    var value = reader.GetString(x);
-                    AssertTainted(value);
-                    break;
+                    if (reader.GetFieldType(x) == typeof(string) && !reader.IsDBNull(x))
+                    {
+                        var value = reader.GetString(x);
+                        AssertTainted(value);
+                    }
                 }
-                break;
             }
+
+            reader.Read().Should().BeTrue();
+            {
+                for (int x = 0; x < reader.FieldCount; x++)
+                {
+                    if (reader.GetFieldType(x) == typeof(string) && !reader.IsDBNull(x))
+                    {
+                        var value = reader.GetString(x);
+                        AssertNotTainted(value);
+                    }
+                }
+            }
+
         }
     }
 
