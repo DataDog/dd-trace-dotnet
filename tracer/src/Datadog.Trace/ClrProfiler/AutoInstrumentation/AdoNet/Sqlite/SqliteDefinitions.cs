@@ -59,3 +59,19 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         // int System.Data.SQLite.SQLiteCommand.ExecuteNonQuery(CommandBehavior)
         typeof(CommandExecuteNonQueryWithBehaviorAttribute),
     })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "System.Data.SQLite",
+    TypeName = "System.Data.SQLite.SQLiteDataReader",
+    MinimumVersion = "1.0.0",
+    MaximumVersion = "2.*.*",
+    IntegrationName = nameof(IntegrationId.SqlClient),
+    DataReaderType = "System.Data.SQLite.SQLiteDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[System.Data.SQLite.SQLiteDataReader]",
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(ReaderReadAttribute),
+        typeof(ReaderCloseAttribute),
+        typeof(ReaderGetStringAttribute),
+    })]
