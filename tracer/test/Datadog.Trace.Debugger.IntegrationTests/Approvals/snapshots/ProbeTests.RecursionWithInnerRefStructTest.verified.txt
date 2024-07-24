@@ -1,0 +1,1905 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "0"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "0"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "1"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "1"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "10"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "10"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "2"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "2"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "3"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "3"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "4"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "4"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "5"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "5"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "6"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "6"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "7"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "7"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "8"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "8"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "9"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "9"
+              },
+              "this": {
+                "type": "RecursionWithInnerRefStructTest",
+                "value": "RecursionWithInnerRefStructTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "0"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "0"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "evaluationErrors": [
+          {
+            "expr": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Me",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Me",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "1"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "1"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "evaluationErrors": [
+          {
+            "expr": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Me",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Me",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "2"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "2"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "evaluationErrors": [
+          {
+            "expr": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Me",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Me",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "3"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "3"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "evaluationErrors": [
+          {
+            "expr": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Me",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Me",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "4"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "4"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "evaluationErrors": [
+          {
+            "expr": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Me",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Me",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "5"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "5"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "evaluationErrors": [
+          {
+            "expr": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Me",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Me",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "6"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "6"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "evaluationErrors": [
+          {
+            "expr": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Me",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Me",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "7"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "7"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "evaluationErrors": [
+          {
+            "expr": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Me",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Me",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "8"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "8"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "evaluationErrors": [
+          {
+            "expr": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Me",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Me",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "9"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "9"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "evaluationErrors": [
+          {
+            "expr": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Me",
+            "type": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Me",
+      "name": "Samples.Probes.TestRuns.SmokeTests.RecursionWithInnerRefStructTest+Deeper+PingPonged",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]
