@@ -10,11 +10,13 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlTypes;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DatabaseMonitoring;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -103,11 +105,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        var propagatedCommand = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, integrationId, out var traceParentInjected);
+                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer, tracer.Settings.DbmPropagationMode, integrationId, command.Connection, serviceName, scope, tags);
+                        var propagatedCommand = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, integrationId, out var traceParentInjectedInComment);
                         if (!string.IsNullOrEmpty(propagatedCommand))
                         {
                             command.CommandText = $"{propagatedCommand} {commandText}";
-                            if (traceParentInjected)
+                            if (traceParentInjectedInComment || traceParentInjectedInContext)
                             {
                                 tags.DbmTraceInjected = "true";
                             }
