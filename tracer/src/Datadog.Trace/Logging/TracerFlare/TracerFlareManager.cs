@@ -370,7 +370,7 @@ internal class TracerFlareManager : ITracerFlareManager
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Invalid configuration provided for tracer flare");
+            Log.Error(ex, "Invalid configuration provided for tracer flare");
         }
 
         return false;
