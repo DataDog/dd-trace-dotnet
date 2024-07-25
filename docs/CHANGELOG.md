@@ -2,6 +2,39 @@
 
 
 
+
+## [Release 2.56.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.56.0)
+
+## Summary
+
+- [Tracing] Fix mapping of `http.status_code` OpenTelemetry tag
+- [Tracing] Fix bug where runtime metrics turns a recoverable OOM into an unrecoverable crash
+- [Dynamic Instrumentation] Improve exception replay capturing accuracy
+- [Dynamic Instrumentation] Fix potential crash related to exception replay
+
+## Changes
+
+### Tracer
+* Map `http.status_code` to meta dictionary (#5782)
+* Record when we use v2 instrumentation with a v3 version of the manual tracer (#5791)
+* Improve handling of OOM (#5797)
+
+### Debugger
+* [Exception Replay] Improved exceptions capturing accuracy + fixed a crash caused by mishandling of exception case probe statuses (#5798)
+
+### Miscellaneous
+* Tracer flare - Inspect the AGENT_CONFIG content to set the log level (#5802)
+
+### Build / Test
+* [Test Package Versions Bump] Updating package versions (#5776)
+* [Test Package Versions Bump] Updating package versions (#5796)
+* Include a version.txt and index.txt in the uploaded Azure assets (#5794)
+* Build OCI images for every branch (#5800)
+* Package musl assets in linux glibc tar folder (#5801)
+
+
+[Changes since 2.55.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.55.0...v2.56.0)
+
 ## [Release 2.55.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.55.0)
 
 ## Summary
