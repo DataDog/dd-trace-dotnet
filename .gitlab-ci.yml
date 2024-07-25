@@ -121,10 +121,6 @@ compute-ci-package-snapshot-version:
   image: registry.ddbuild.io/ci/auto_inject/gitlab:current
   tags: ["arch:amd64"]
   stage: single-step-testing
-  rules:
-    # We don't run on commit pushes, because there's no associated build
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-      when: never
   needs:
     - wait-for-single-step-artifacts
   script:
@@ -158,10 +154,6 @@ compute-ci-package-snapshot-version:
 
 trigger-package-snapshot-testing:
   stage: single-step-testing
-  rules:
-    # We don't run on commit pushes, because there's no associated build
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-      when: never
   needs:
     - compute-ci-package-snapshot-version
   variables:
