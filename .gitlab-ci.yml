@@ -1,8 +1,8 @@
 
 stages:
   - build
-  - single-step-testing
   - package
+  - single-step-testing
   - publish
   - deploy
   - benchmarks
@@ -55,6 +55,11 @@ wait-for-single-step-artifacts:
     #Create a directory to store the files
     target_dir=artifacts
     mkdir -p $target_dir
+
+    if [ -z "${CI_COMMIT_BRANCH}" ]; then
+      echo "Not on a branch, skipping test"
+      exit 0
+    fi
 
     branchName="refs/heads/$CI_COMMIT_BRANCH"
     artifactName="ssi-artifacts"
