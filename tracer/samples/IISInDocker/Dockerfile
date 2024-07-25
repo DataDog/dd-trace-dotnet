@@ -22,9 +22,7 @@ COPY install-dd-trace-dotnet.ps1 startup.ps1 ./
 # Install the Datadog SDK for .NET using the msi installer
 RUN .\install-dd-trace-dotnet.ps1
 
-# Remove the default ENTRYPOINT "C:\ServiceMonitor.exe w3svc"
-ENTRYPOINT []
-
 # Note: Normally an IIS reset is also required but 'C:\ServiceMonitor.exe w3svc'
 # will restart IIS and update the environment variables received by the child w3wp processes
-CMD .\startup.ps1
+# Replace the default ENTRYPOINT "C:\ServiceMonitor.exe w3svc"
+ENTRYPOINT .\startup.ps1
