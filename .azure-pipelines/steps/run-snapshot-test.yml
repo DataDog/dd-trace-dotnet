@@ -9,10 +9,14 @@ parameters:
     type: boolean
     default: true
 
+  - name: isNoop
+    type: boolean
+    default: false
+
   - name: 'apiKey'
     type: string
     default: ''
-  
+
   - name: 'dockerComposePath'
     type: string
     default: 'docker-compose'
@@ -75,7 +79,7 @@ steps:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
 
 - bash: |
-    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) ${{ parameters.target }}
+    ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e PROFILER_IS_NOT_REQUIRED=${{ parameters.isNoop }} ${{ parameters.target }}
   env:
     dockerTag: $(dockerTag)
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
@@ -94,13 +98,29 @@ steps:
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
 
-- ${{ if eq(parameters.isLinux, true) }}:
+- ${{ if and(eq(parameters.isLinux, true), eq(parameters.isNoop, false)) }}:
   - bash: |
       echo "Verifying snapshot session (fail on mis-match)"
       ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --w '\nGetting a 400 means there is a diff in snapshots. You can diff the files with the artifacts generated. You can also run the tests locally. Follow the doc in /docs/development/CI/RunSmokeTestsLocally\n' --fail "http://localhost:8126$(VERIFY_ENDPOINT)"
     displayName: check snapshots
     env:
       DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
+- ${{ elseif and(eq(parameters.isLinux, true), eq(parameters.isNoop, true)) }}:
+    - bash: |
+        path="/debug_snapshots/${{ parameters.snapshotPrefix }}_requests.json"
+        echo "Verifying noop snapshot session (requests should be empty)"
+        if [ -s $path ]; then
+          echo "$path is not empty"
+          if [ "$(cat "$path" | tr -d '\n')" = "[]" ]; then
+            echo "$path contains no requests[]"
+          else
+            echo "The file unexpectedly contained requests"
+          exit 1
+          fi
+        else
+          echo "$path was empty"
+        fi
+      displayName: check noop snapshots
 - ${{ else }}:
   - bash: |
       echo "Verifying snapshot session (fail on mis-match)"
@@ -124,7 +144,7 @@ steps:
   continueOnError: true
 
 # Run crash tests
-- ${{ if eq(parameters.isLinux, true) }}:
+- ${{ if and(eq(parameters.isLinux, true), eq(parameters.isNoop, false)) }}:
   - bash: |
       LOGS=$(${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e CRASH_APP_ON_STARTUP=1 -e COMPlus_DbgEnableMiniDump=0 ${{ parameters.target }})
       echo $LOGS
@@ -156,4 +176,3 @@ steps:
   condition: succeededOrFailed()
   continueOnError: true
 
-    
