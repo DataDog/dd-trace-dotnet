@@ -5,6 +5,7 @@
 
 using System;
 using System.Data;
+using System.Numerics;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -96,23 +97,53 @@ namespace Datadog.Trace.DatabaseMonitoring
                 // this tag serves as "documentation" for users to realize this is something done by the instrumentation
                 instrumentationScope.Span.Tags.SetTag("dd.instrumentation", "true");
 
-                var version = 0; // version can have a maximum value of 7 in the current format
-                var sampled = SamplingPriorityValues.IsKeep(scope.Span.Context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default)
-                                  ? 1
-                                  : 0;
-                var versionAndSampling = (((version << 1) & 0b1110) | (sampled & 0b0001)).ToString("X");
-                var injectionSql = "set context_info 0x" + versionAndSampling + scope.Span.Context.RawSpanId + scope.Span.Context.RawTraceId;
+                byte version = 0; // version can have a maximum value of 15 in the current format
+                var sampled = SamplingPriorityValues.IsKeep(scope.Span.Context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default);
+                var contextValue = BuildContextValue(version, sampled, scope.Span.SpanId, scope.Span.TraceId128);
+                var injectionSql = "set context_info @context";
                 // important to set the resource name before running the command so that we don't re-instrument
                 instrumentationScope.Span.ResourceName = injectionSql;
 
-                var injectionCommand = connection.CreateCommand();
-                injectionCommand.CommandText = injectionSql;
-                injectionCommand.ExecuteNonQuery();
+                using (var injectionCommand = connection.CreateCommand())
+                {
+                    injectionCommand.CommandText = injectionSql;
+
+                    var parameter = injectionCommand.CreateParameter();
+                    parameter.ParameterName = "@context";
+                    parameter.Value = contextValue;
+                    parameter.DbType = DbType.VarNumeric;
+                    injectionCommand.Parameters.Add(parameter);
+
+                    injectionCommand.ExecuteNonQuery();
+                }
             } // closing instrumentation span
 
             // we don't want to measure the time spent in "set_context" in the actual query span
             scope.Span.ResetStartTime();
             return true;
+        }
+
+        /// <summary>
+        /// Writes the given info in a biginteger with the following format:
+        /// 4 bits: protocol version, 3 bits: reserved, 1 bit: sampling decision, 64 bits: spanID, 128 bits: traceID
+        /// </summary>
+        private static BigInteger BuildContextValue(byte version, bool isSampled, ulong spanId, TraceId traceId)
+        {
+            var sampled = isSampled ? 1 : 0;
+            var versionAndSampling = (byte)(((version << 4) & 0b1111_0000) | (sampled & 0b0000_0001));
+            var contextBytes = new byte[1 + sizeof(ulong) + TraceId.Size];
+            // one pass to write 3 64 integers at once: span ID, upper, and lower traceID
+            for (var i = 0; i < sizeof(ulong); i++)
+            {
+                var bitshift = i * sizeof(ulong); // we write the LSB first
+                contextBytes[i] = (byte)(traceId.Lower >> bitshift);
+                contextBytes[i + sizeof(ulong)] = (byte)(traceId.Upper >> bitshift);
+                contextBytes[i + sizeof(ulong) + sizeof(ulong)] = (byte)(spanId >> bitshift);
+            }
+
+            contextBytes[contextBytes.Length - 1] = versionAndSampling;
+
+            return new BigInteger(contextBytes); // little endian
         }
     }
 }
