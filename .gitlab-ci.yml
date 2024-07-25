@@ -111,6 +111,10 @@ onboarding_tests_k8s_injection:
   variables:
     WEBLOG_VARIANT: dd-lib-dotnet-init-test-app
 
+deploy_to_reliability_env:
+  rules:
+    - when: never # dd-trace-dotnet does not use reliability environment
+
 benchmark-serverless:
   stage: benchmarks
   image: registry.ddbuild.io/ci/serverless-tools:1
