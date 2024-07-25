@@ -5,6 +5,7 @@
 
 using System;
 using System.Data;
+using System.Numerics;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -123,33 +124,48 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         }
 
         [Theory]
-        [InlineData("full", "sqlclient", SamplingPriorityValues.UserKeep, "set context_info 0x1000000000000beef0000000000000000000000000000cafe")]
-        [InlineData("full", "sqlclient", SamplingPriorityValues.UserReject, "set context_info 0x0000000000000beef0000000000000000000000000000cafe")]
-        [InlineData("nope", "sqlclient", SamplingPriorityValues.UserKeep, null)]
+        [InlineData("full", "sqlclient", SamplingPriorityValues.UserKeep, true, "01000000000000beef0000000000000000000000000000cafe")]
+        [InlineData("full", "sqlclient", SamplingPriorityValues.UserReject, true, "00000000000000beef0000000000000000000000000000cafe")]
+        [InlineData("nope", "sqlclient", SamplingPriorityValues.UserKeep, false, null)]
         // disabled for all db types except mysql for now
-        [InlineData("full", "npgsql", SamplingPriorityValues.UserKeep, null)]
-        [InlineData("full", "sqlite", SamplingPriorityValues.UserKeep, null)]
-        [InlineData("full", "oracle", SamplingPriorityValues.UserKeep, null)]
-        [InlineData("full", "mysql", SamplingPriorityValues.UserKeep, null)]
-        public void ExpectedContextSet(string propagationMode, string integration, int? samplingPriority, string expectedCommand)
+        [InlineData("full", "npgsql", SamplingPriorityValues.UserKeep, false, null)]
+        [InlineData("full", "sqlite", SamplingPriorityValues.UserKeep, false, null)]
+        [InlineData("full", "oracle", SamplingPriorityValues.UserKeep, false, null)]
+        [InlineData("full", "mysql", SamplingPriorityValues.UserKeep, false, null)]
+        public void ExpectedContextSet(string propagationMode, string integration, int? samplingPriority, bool shouldInject, string expectedContext)
         {
             Enum.TryParse(propagationMode, ignoreCase: true, out DbmPropagationLevel dbmPropagationLevel);
             Enum.TryParse(integration, ignoreCase: true, out IntegrationId integrationId);
 
-            // capture command sent
-            string contextSet = null;
-            var commandMock = new Mock<IDbCommand>();
+            // capture command and parameter sent
+            string sql = null;
+            var context = BigInteger.Zero;
             var connectionMock = new Mock<IDbConnection>(MockBehavior.Strict);
+            var commandMock = new Mock<IDbCommand>();
+            var parameterMock = new Mock<IDbDataParameter>();
             connectionMock.Setup(c => c.CreateCommand()).Returns(commandMock.Object);
             commandMock.SetupSet(c => c.CommandText = It.IsAny<string>())
-                       .Callback<string>(value => contextSet = value);
+                       .Callback<string>(value => sql = value);
+            commandMock.Setup(c => c.CreateParameter()).Returns(parameterMock.Object);
+            commandMock.SetupGet(c => c.Parameters).Returns(Mock.Of<IDataParameterCollection>());
+            parameterMock.SetupSet(p => p.Value = It.IsAny<BigInteger>())
+                         .Callback<object>(value => context = (BigInteger)value);
 
             var span = _v0Tracer.StartSpan("mysql.query", parent: SpanContext.None, serviceName: "pouet", traceId: (TraceId)0xCAFE, spanId: 0xBEEF);
             span.SetTraceSamplingPriority((SamplingPriority)samplingPriority.Value);
 
             DatabaseMonitoringPropagator.PropagateDataViaContext(_v0Tracer, dbmPropagationLevel, integrationId, connectionMock.Object, "pouet", new Scope(parent: null, span, scopeManager: null, finishOnClose: false), new SqlTags());
 
-            contextSet.Should().Be(expectedCommand);
+            if (shouldInject)
+            {
+                sql.Should().StartWith("set context_info ");
+                context.ToString("x50").Should().Be(expectedContext);
+            }
+            else
+            {
+                sql.Should().BeNull();
+                context.IsZero.Should().BeTrue();
+            }
         }
     }
 }
