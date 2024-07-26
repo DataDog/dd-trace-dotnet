@@ -91,7 +91,10 @@ namespace Datadog.Trace.DatabaseMonitoring
 
             // we want the instrumentation span to be a sibling of the actual query span
             var instrumentationParent = scope.Parent?.Span?.Context;
-            using (var instrumentationScope = tracer.StartActiveInternal("set context_info", instrumentationParent, tags: tags, serviceName: serviceName))
+            // copy the tags so that modifications on one span don't impact the other
+            var copyProcessor = new ITags.CopyProcessor<SqlTags>();
+            tags.EnumerateTags(ref copyProcessor);
+            using (var instrumentationScope = tracer.StartActiveInternal("set context_info", instrumentationParent, tags: copyProcessor.TagsCopy, serviceName: serviceName))
             {
                 instrumentationScope.Span.Type = SpanTypes.Sql;
                 // this tag serves as "documentation" for users to realize this is something done by the instrumentation

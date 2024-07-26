@@ -27,5 +27,24 @@ namespace Datadog.Trace.Tagging
 
         void EnumerateMetaStruct<TProcessor>(ref TProcessor processor)
             where TProcessor : struct, IItemProcessor<byte[]>;
+
+        /// <summary>
+        /// To be used in combination with <see cref="ITags.EnumerateTags"/> to create a copy of the tags.
+        /// </summary>
+        public readonly struct CopyProcessor<T> : IItemProcessor<string>
+            where T : ITags, new()
+        {
+            public readonly ITags TagsCopy;
+
+            public CopyProcessor()
+            {
+                TagsCopy = new T();
+            }
+
+            public void Process(TagItem<string> item)
+            {
+                TagsCopy.SetTag(item.Key, item.Value);
+            }
+        }
     }
 }
