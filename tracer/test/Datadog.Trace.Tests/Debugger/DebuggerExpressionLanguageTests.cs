@@ -43,6 +43,8 @@ namespace Datadog.Trace.Tests.Debugger
                 IntNumber = 42,
                 DoubleNumber = 3.14159,
                 String = "Hello world!",
+                Char = 'C',
+                AnotherChar = 'A',
                 BooleanValue = true,
                 Null = null,
                 Nested = new TestStruct.NestedObject { NestedString = "Hello from nested object", Nested = new TestStruct.NestedObject { NestedString = "Hello from another nested object" } },
@@ -327,6 +329,10 @@ namespace Datadog.Trace.Tests.Debugger
             public double DoubleNumber;
 
             public string String;
+
+            public char Char;
+
+            public char AnotherChar;
 
             public NestedObject Nested;
 
