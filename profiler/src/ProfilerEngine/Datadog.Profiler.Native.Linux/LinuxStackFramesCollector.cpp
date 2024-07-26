@@ -96,6 +96,28 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
     // If there a timer associated to the managed thread, we have to disarm it.
     // Otherwise, the CPU consumption to collect the callstack, will be accounted as "user app CPU time"
     auto timerId = pThreadInfo->GetTimerId();
+    
+    // we must not account for the uniwinding CPU usage.
+    // So disarm the timer (if any), and re-arm it at the end
+    struct itimerspec old;
+
+    if (timerId != -1)
+    {
+        struct itimerspec ts;
+        ts.it_interval.tv_sec = 0;
+        ts.it_interval.tv_nsec = 0;
+        ts.it_value = ts.it_interval;
+        // disarm the timer so this is not accounted for the managed thread cpu usage
+        syscall(__NR_timer_settime, timerId, 0, &ts, &old);
+    }
+    on_leave
+    {
+        if (timerId != -1)
+        {
+            // re-arm the timer
+            syscall(__NR_timer_settime, timerId, 0, &old, nullptr);
+        }
+    };
 
     _plibrariesInfo->UpdateCache();
 
@@ -120,28 +142,6 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
             *pHR = E_FAIL;
             return GetStackSnapshotResult();
         }
-
-        struct itimerspec old;
-
-        if (timerId != -1)
-        {
-            struct itimerspec ts;
-            ts.it_interval.tv_sec = 0;
-            ts.it_interval.tv_nsec = 0;
-            ts.it_value = ts.it_interval;
-
-            // disarm the timer so this is not accounted for the managed thread cpu usage
-            syscall(__NR_timer_settime, timerId, 0, &ts, &old);
-        }
-
-        on_leave
-        {
-            if (timerId != -1)
-            {
-                // re-arm the timer
-                syscall(__NR_timer_settime, timerId, 0, &old, nullptr);
-            }
-        };
 
         std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
 
