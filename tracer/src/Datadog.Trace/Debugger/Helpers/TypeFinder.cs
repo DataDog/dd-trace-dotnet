@@ -3,30 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Helpers;
 
 internal class TypeFinder
 {
-    private class TrieNode
-    {
-        internal Dictionary<string, TrieNode> Children { get; } = new Dictionary<string, TrieNode>(StringComparer.OrdinalIgnoreCase);
-
-        internal List<Lazy<Type>> Types { get; } = new List<Lazy<Type>>();
-    }
-
+    // ReSharper disable once InconsistentNaming
     private static readonly Lazy<TypeFinder> _instance = new Lazy<TypeFinder>(() => new TypeFinder(), LazyThreadSafetyMode.ExecutionAndPublication);
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TypeFinder));
 
     private readonly TrieNode _root = new TrieNode();
     private readonly HashSet<string> _processedAssemblies = new HashSet<string>();
     private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
 
-    internal static TypeFinder Instance => _instance.Value;
-
     private TypeFinder()
     {
         Initialize();
     }
+
+    internal static TypeFinder Instance => _instance.Value;
 
     private void Initialize()
     {
@@ -45,7 +41,7 @@ internal class TypeFinder
         _lock.EnterReadLock();
         try
         {
-            string[] parts = typeName.Split('.');
+            var parts = typeName.Split('.');
             return FindTypesRecursive(_root, parts, 0);
         }
         finally
@@ -61,7 +57,7 @@ internal class TypeFinder
 
     private void LoadTypesFromLoadedAssemblies()
     {
-        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
         {
             LoadTypesFromAssembly(assembly);
         }
@@ -81,16 +77,17 @@ internal class TypeFinder
                         InsertType(typeInfo);
                     }
                 }
-                catch (ReflectionTypeLoadException ex)
+                catch (ReflectionTypeLoadException e)
                 {
-                    foreach (Type type in ex.Types)
+                    Log.Warning(e, "Fail when reading types from assembly {Assembly}", assembly.FullName);
+
+                    if (e.Types is { } types)
                     {
-                        if (type != null)
+                        foreach (var type in types)
                         {
-                            InsertType(type.GetTypeInfo());
+                            InsertType(type?.GetTypeInfo());
                         }
                     }
-                    // Log the exception details here
                 }
             }
         }
@@ -102,30 +99,46 @@ internal class TypeFinder
 
     private void InsertType(TypeInfo typeInfo)
     {
-        string fullName = GetFullTypeName(typeInfo);
-        string[] parts = fullName.Split('.');
-        TrieNode current = _root;
-
-        foreach (string part in parts)
+        if (typeInfo == null)
         {
-            if (!current.Children.TryGetValue(part, out TrieNode node))
-            {
-                node = new TrieNode();
-                current.Children[part] = node;
-            }
-            current = node;
+            return;
         }
 
-        current.Types.Add(new Lazy<Type>(() => typeInfo.AsType(), LazyThreadSafetyMode.ExecutionAndPublication));
+        string fullName = null;
+        try
+        {
+            fullName = GetFullTypeName(typeInfo);
+            var parts = fullName.Split('.');
+            TrieNode current = _root;
+
+            foreach (var part in parts)
+            {
+                if (!current.Children.TryGetValue(part, out var node))
+                {
+                    node = new TrieNode();
+                    current.Children[part] = node;
+                }
+
+                current = node;
+            }
+
+            current.Types.Add(new Lazy<Type>(typeInfo.AsType, LazyThreadSafetyMode.ExecutionAndPublication));
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Fail when insert type {Type} to trie node", fullName ?? typeInfo.FullName ?? typeInfo.Name);
+        }
     }
 
     private string GetFullTypeName(TypeInfo typeInfo)
     {
         if (!typeInfo.IsGenericType)
+        {
             return typeInfo.FullName ?? typeInfo.Name;
+        }
 
         var genericArguments = typeInfo.GenericTypeParameters.Select(t => t.Name).ToArray();
-        string genericTypeName = typeInfo.Name.Split('`')[0];
+        var genericTypeName = typeInfo.Name.Split('`')[0];
         return $"{typeInfo.Namespace}.{genericTypeName}<{string.Join(",", genericArguments)}>";
     }
 
@@ -154,5 +167,12 @@ internal class TypeFinder
         }
 
         return results;
+    }
+
+    private class TrieNode
+    {
+        internal Dictionary<string, TrieNode> Children { get; } = new Dictionary<string, TrieNode>(StringComparer.OrdinalIgnoreCase);
+
+        internal List<Lazy<Type>> Types { get; } = new List<Lazy<Type>>();
     }
 }
