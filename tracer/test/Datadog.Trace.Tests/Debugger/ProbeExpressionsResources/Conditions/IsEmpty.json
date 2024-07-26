@@ -1,0 +1,8 @@
+{
+  "dsl": "isEmpty(ref EmptyString)",
+  "isEmpty": [
+    {
+      "ref": "EmptyString"
+    }
+  ]
+}
