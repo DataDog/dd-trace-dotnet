@@ -82,7 +82,7 @@ publish:
 
 download-single-step-artifacts:
   stage: package
-  image: registry.ddbuild.io/images/base/gbi-ubuntu_2204:release
+  image: registry.ddbuild.io/docker:20.10.13-gbi-focal
   tags: [ "arch:amd64" ]
   rules:
     - if: $DOTNET_PACKAGE_VERSION
@@ -91,7 +91,7 @@ download-single-step-artifacts:
       when: manual
       allow_failure: false
     - when: delayed # Artifacts come from Azure pipeline, wait a reasonable time before polling
-      start_in: 20 minutes
+      start_in: 1 minutes
   script:
     - .gitlab/download-single-step-artifacts.sh
   artifacts:
