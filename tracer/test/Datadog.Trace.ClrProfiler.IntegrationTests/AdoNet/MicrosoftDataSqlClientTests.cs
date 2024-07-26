@@ -26,7 +26,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public static IEnumerable<object[]> GetEnabledConfig()
             => from packageVersionArray in PackageVersions.MicrosoftDataSqlClient
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
+               from dbmEnabled in new[] { true, false }
+               from propagation in new[] { "disabled", "service", "full" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion, dbmEnabled, propagation };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
 
@@ -34,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, bool dbmEnabled, string propagation)
         {
             // ALWAYS: 133 spans
             // - SqlCommand: 21 spans (3 groups * 7 spans)
@@ -65,9 +67,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
 
             var expectedSpanCount = isVersion4 ? 91 : 147;
+            // there are as many spans for the instrumentation as regular spans, since we create one extra for each query.
+            var expectedInstrumentationSpanCount = propagation == "full" ? expectedSpanCount : 0;
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
 
+            SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, dbmEnabled ? "1" : "0");
+            SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", propagation);
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
@@ -75,10 +81,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-            int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
+            var actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
+            var instrumentationSpans = agent.WaitForSpans(expectedInstrumentationSpanCount, operationName: "set context_info");
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
+            Assert.Equal(expectedInstrumentationSpanCount, instrumentationSpans.Count);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
         }
