@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Expressions;
@@ -66,23 +67,18 @@ internal partial class ProbeExpressionParser<T>
 
             HandleDurationBinaryOperation(ref left, ref right);
 
-            switch (operand)
+            NumericImplicitConversion(ref left, ref right);
+
+            return operand switch
             {
-                case ">":
-                    return Expression.GreaterThan(left, right);
-                case ">=":
-                    return Expression.GreaterThanOrEqual(left, right);
-                case "<":
-                    return Expression.LessThan(left, right);
-                case "<=":
-                    return Expression.LessThanOrEqual(left, right);
-                case "==":
-                    return Expression.Equal(left, right);
-                case "!=":
-                    return Expression.NotEqual(left, right);
-                default:
-                    throw new ArgumentException("Unknown operand" + operand, nameof(operand));
-            }
+                ">" => Expression.GreaterThan(left, right),
+                ">=" => Expression.GreaterThanOrEqual(left, right),
+                "<" => Expression.LessThan(left, right),
+                "<=" => Expression.LessThanOrEqual(left, right),
+                "==" => Expression.Equal(left, right),
+                "!=" => Expression.NotEqual(left, right),
+                _ => throw new ArgumentException("Unknown operand" + operand, nameof(operand))
+            };
         }
         catch (Exception e)
         {
@@ -91,16 +87,32 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    private void HandleDurationBinaryOperation(ref Expression left, ref Expression right)
+    private void NumericImplicitConversion(ref Expression left, ref Expression right)
     {
-        if (left is ParameterExpression { Name: Duration })
+        if (left.Type == right.Type)
         {
-            right = ConvertToDouble(right);
+            return;
         }
 
-        if (right is ParameterExpression { Name: Duration })
+        if (left.Type.IsNumeric() && right.Type.IsNumeric())
         {
-            left = ConvertToDouble(left);
+            var type = GetWiderType(left.Type, right.Type);
+            left = Expression.Convert(left, type);
+            right = Expression.Convert(right, type);
+        }
+    }
+
+    private void HandleDurationBinaryOperation(ref Expression left, ref Expression right)
+    {
+        // Duration is double
+        if (left is ParameterExpression { Name: Duration } && right.Type.IsNumeric() && right.Type != typeof(double) && right.Type != typeof(decimal))
+        {
+            right = Expression.Convert(right, typeof(double));
+        }
+
+        if (right is ParameterExpression { Name: Duration } && left.Type.IsNumeric() && left.Type != typeof(double) && left.Type != typeof(decimal))
+        {
+            left = Expression.Convert(right, typeof(double));
         }
     }
 
