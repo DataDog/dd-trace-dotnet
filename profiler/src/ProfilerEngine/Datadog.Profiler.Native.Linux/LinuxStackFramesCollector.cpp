@@ -97,14 +97,14 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
     // Otherwise, the CPU consumption to collect the callstack, will be accounted as "user app CPU time"
     auto timerId = pThreadInfo->GetTimerId();
 
-    _plibrariesInfo->UpdateCache();
-
     if (selfCollect)
     {
         // In case we are self-unwinding, we do not want to be interrupted by the signal-based profilers (walltime and cpu)
         // This will crashing in libunwind (accessing a memory area  which was unmapped)
         // This lock is acquired by the signal-based profiler (see StackSamplerLoop->StackSamplerLoopManager)
         pThreadInfo->GetStackWalkLock().Acquire();
+
+        _plibrariesInfo->UpdateCache();
 
         on_leave
         {
@@ -142,6 +142,8 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
                 syscall(__NR_timer_settime, timerId, 0, &old, nullptr);
             }
         };
+
+        _plibrariesInfo->UpdateCache();
 
         std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
 
