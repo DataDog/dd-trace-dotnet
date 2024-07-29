@@ -91,8 +91,56 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "System.Data",
     TypeName = "System.Data.Common.DbDataReader",
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = nameof(IntegrationId.AdoNet),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(ReaderReadAttribute),
+        typeof(ReaderCloseAttribute),
+        typeof(ReaderGetStringAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "System.Data.Common",
+    TypeName = "System.Data.Common.DbDataReader",
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "8.*.*",
+    IntegrationName = nameof(IntegrationId.AdoNet),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(ReaderReadAttribute),
+        typeof(ReaderCloseAttribute),
+        typeof(ReaderGetStringAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "System.Data",
+    TypeName = "System.Data.Common.DbDataReader",
     MinimumVersion = "2.0.0",
     MaximumVersion = "4.*.*",
+    IntegrationName = nameof(IntegrationId.AdoNet),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(ReaderReadAttribute),
+        typeof(ReaderCloseAttribute),
+        typeof(ReaderGetStringAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "netstandard",
+    TypeName = "System.Data.Common.DbDataReader",
+    MinimumVersion = "2.0.0",
+    MaximumVersion = "2.*.*",
     IntegrationName = nameof(IntegrationId.AdoNet),
     DataReaderType = TypeNames.DbDataReaderType,
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,

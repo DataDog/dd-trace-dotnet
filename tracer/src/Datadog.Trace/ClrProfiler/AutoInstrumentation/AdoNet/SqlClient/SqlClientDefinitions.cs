@@ -122,10 +122,10 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     })]
 
 [assembly: AdoNetClientInstrumentMethods(
-    AssemblyName = "Microsoft.Data.SqlClient",
-    TypeName = "Microsoft.Data.SqlClient.SqlDataReader",
-    MinimumVersion = "1.0.0",
-    MaximumVersion = "5.*.*",
+    AssemblyName = "System.Data.SqlClient",
+    TypeName = "System.Data.SqlClient.SqlDataReader",
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
     IntegrationName = nameof(IntegrationId.SqlClient),
     DataReaderType = TypeNames.DbDataReaderType,
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
@@ -138,8 +138,8 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     })]
 
 [assembly: AdoNetClientInstrumentMethods(
-    AssemblyName = "System.Data.SqlClient",
-    TypeName = "System.Data.SqlClient.SqlDataReader",
+    AssemblyName = "Microsoft.Data.SqlClient",
+    TypeName = "Microsoft.Data.SqlClient.SqlDataReader",
     MinimumVersion = "1.0.0",
     MaximumVersion = "5.*.*",
     IntegrationName = nameof(IntegrationId.SqlClient),

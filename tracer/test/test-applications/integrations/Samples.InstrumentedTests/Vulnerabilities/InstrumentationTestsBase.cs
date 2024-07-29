@@ -112,9 +112,9 @@ public class InstrumentationTestsBase : IDisposable
         return tainted;
     }
 
-    protected void AssertTainted(object tainted)
+    protected void AssertTainted(object tainted, string additionalInfo = "")
     {
-        GetTainted(tainted).Should().NotBeNull(tainted.ToString() + " is not tainted.");
+        GetTainted(tainted).Should().NotBeNull(tainted.ToString() + " is not tainted. " + additionalInfo);
     }
 
     private object GetTainted(object tainted)
@@ -122,9 +122,9 @@ public class InstrumentationTestsBase : IDisposable
         return _getTaintedObjectsMethod.Invoke(_taintedObjects, new object[] { tainted });
     }
 
-    protected void AssertNotTainted(object value)
+    protected void AssertNotTainted(object value, string additionalInfo = "")
     {
-        GetTainted(value).Should().BeNull(value + " is tainted.");
+        GetTainted(value).Should().BeNull(value + " is tainted. " + additionalInfo);
     }
 
     protected void AssertInstrumented()

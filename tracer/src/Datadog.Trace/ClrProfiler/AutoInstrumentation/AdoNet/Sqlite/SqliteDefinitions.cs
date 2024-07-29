@@ -61,6 +61,22 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     })]
 
 [assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "Microsoft.Data.Sqlite",
+    TypeName = "Microsoft.Data.Sqlite.SQLiteDataReader",
+    MinimumVersion = "2.0.0",
+    MaximumVersion = "8.*.*",
+    IntegrationName = nameof(IntegrationId.SqlClient),
+    DataReaderType = "System.Data.SQLite.SQLiteDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[System.Data.SQLite.SQLiteDataReader]",
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(ReaderReadAttribute),
+        typeof(ReaderCloseAttribute),
+        typeof(ReaderGetStringAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "System.Data.SQLite",
     TypeName = "System.Data.SQLite.SQLiteDataReader",
     MinimumVersion = "1.0.0",
