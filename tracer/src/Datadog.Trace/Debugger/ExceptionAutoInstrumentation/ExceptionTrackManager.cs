@@ -45,6 +45,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static Task? _exceptionProcessorTask;
         private static bool _isInitialized;
 
+        internal static bool IsEditAndContinueFeatureEnabled { get; private set; }
+
         private static async Task StartExceptionProcessingAsync(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -443,8 +445,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 if (probe.MayBeOmittedFromCallStack)
                 {
-                    // Frame is non-optimized in .NET 6+.
-                    noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} could not be captured because it resides in a module that is not optimized. In .NET 6 and later versions, the code must be compiled with optimizations enabled.";
+                    // The process is spawned with `COMPLUS_ForceEnc` & the module of the method is non-optimized.
+                    noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} could not be captured because the process is spawned with Edit and Continue feature turned on and the module is compiled as Debug. Set the environment variable `COMPLUS_ForceEnc` to `0`. For further info, visit: https://github.com/dotnet/runtime/issues/91963.";
                 }
                 else if (probe.ProbeStatus == Status.ERROR)
                 {
@@ -522,8 +524,25 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _exceptionProcessorTask = Task.Factory.StartNew(
                                                async () => await StartExceptionProcessingAsync(Cts.Token).ConfigureAwait(false), TaskCreationOptions.LongRunning)
                                           .Unwrap();
-
+            IsEditAndContinueFeatureEnabled = IsEnCFeatureEanbled();
             _isInitialized = true;
+        }
+
+        /// <summary>
+        /// In .NET 6+ there's a bug that prevents Rejit-related APIs to work properly when Edit and Continue feature is turned on.
+        /// See https://github.com/dotnet/runtime/issues/91963 for addiitonal details.
+        /// </summary>
+        private static bool IsEnCFeatureEanbled()
+        {
+            try
+            {
+                var encEnabled = Environment.GetEnvironmentVariable("COMPLUS_ForceEnc");
+                return !string.IsNullOrEmpty(encEnabled) && (encEnabled == "1" || encEnabled == "true");
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public static bool IsSupportedExceptionType(Type ex) =>
