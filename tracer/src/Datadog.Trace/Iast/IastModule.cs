@@ -57,12 +57,10 @@ internal static partial class IastModule
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static IastSettings iastSettings = Iast.Instance.Settings;
-    private static ConcurrentDictionary<string, Exception> errors = new ConcurrentDictionary<string, Exception>();
-    private static ConditionalWeakTable<object, DbRecordData> dataBaseRows = new ConditionalWeakTable<object, DbRecordData>();
+    private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
 
     static IastModule()
     {
-        EvidenceRedactorLazy = new(() => CreateRedactor(iastSettings));
     }
 
     internal static string? OnUnvalidatedRedirect(string? evidence)
@@ -525,7 +523,7 @@ internal static partial class IastModule
 
     public static IastRequestContext? GetIastContext()
     {
-        if (!iastSettings.Enabled)
+        if (!IastSettings.Enabled)
         {
             // integration disabled, don't create a scope, skip this span
             return null;
@@ -538,14 +536,14 @@ internal static partial class IastModule
 
     internal static VulnerabilityBatch GetVulnerabilityBatch()
     {
-        return new VulnerabilityBatch(iastSettings.TruncationMaxValueLength, EvidenceRedactorLazy.Value);
+        return new VulnerabilityBatch(IastSettings.TruncationMaxValueLength, EvidenceRedactorLazy.Value);
     }
 
     // This method adds web vulnerabilities, with no location, only on web environments
     private static IastModuleResponse AddWebVulnerability(string? evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
     {
         var tracer = Tracer.Instance;
-        if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
+        if (!IastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
             return IastModuleResponse.Empty;
@@ -567,7 +565,7 @@ internal static partial class IastModule
             string.IsNullOrEmpty(evidenceValue) ? null : new Evidence(evidenceValue!, null),
             integrationId);
 
-        if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
+        if (!IastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
             traceContext.IastRequestContext?.AddVulnerability(vulnerability);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
@@ -590,7 +588,7 @@ internal static partial class IastModule
     private static IastModuleResponse GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null, bool addLocation = true, int? hash = null, StackTrace? externalStack = null, SecureMarks exclusionSecureMarks = SecureMarks.None)
     {
         var tracer = Tracer.Instance;
-        if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
+        if (!IastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
             return IastModuleResponse.Empty;
@@ -641,7 +639,7 @@ internal static partial class IastModule
             new Vulnerability(vulnerabilityType, location, new Evidence(evidenceValue, unsafeRanges), integrationId) :
             new Vulnerability(vulnerabilityType, (int)hash, location, new Evidence(evidenceValue, unsafeRanges), integrationId);
 
-        if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
+        if (!IastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
             if (isRequest)
             {
@@ -709,7 +707,7 @@ internal static partial class IastModule
 
     private static bool InvalidHashAlgorithm(string algorithm)
     {
-        foreach (var weakHashAlgorithm in iastSettings.WeakHashAlgorithmsArray)
+        foreach (var weakHashAlgorithm in IastSettings.WeakHashAlgorithmsArray)
         {
             if (string.Equals(algorithm, weakHashAlgorithm, StringComparison.OrdinalIgnoreCase))
             {
@@ -728,7 +726,7 @@ internal static partial class IastModule
             return false;
         }
 #endif
-        foreach (var weakCipherAlgorithm in iastSettings.WeakCipherAlgorithmsArray)
+        foreach (var weakCipherAlgorithm in IastSettings.WeakCipherAlgorithmsArray)
         {
             if (string.Equals(algorithm, weakCipherAlgorithm, StringComparison.OrdinalIgnoreCase))
             {
@@ -819,56 +817,81 @@ internal static partial class IastModule
 
     internal static void RegisterDbRecord(object instance)
     {
-        var tracer = Tracer.Instance;
-        if (!iastSettings.Enabled || iastSettings.DataBaseRowsToTaint <= 0)
-        {
-            return;
-        }
-
-        var recordData = dataBaseRows.GetOrCreateValue(instance);
-        recordData.Count++;
+        DbRecords.RegisterDbRecord(instance);
     }
 
     internal static void UnregisterDbRecord(object instance)
     {
-        var tracer = Tracer.Instance;
-        if (!iastSettings.Enabled || iastSettings.DataBaseRowsToTaint <= 0)
-        {
-            return;
-        }
-
-        dataBaseRows.Remove(instance);
+        DbRecords.UnregisterDbRecord(instance);
     }
 
-    internal static void AddDbValue(object instance, string? column, string value)
+    internal static bool AddDbValue(object instance, string? column, string value)
     {
-        var tracer = Tracer.Instance;
-        if (!iastSettings.Enabled || dataBaseRows is null)
+        return DbRecords.AddDbValue(instance, column, value);
+    }
+
+    internal class DbRecordManager
+    {
+        private ConditionalWeakTable<object, DbRecordData> dataBaseRows = new ConditionalWeakTable<object, DbRecordData>();
+        private IastSettings iastSettings;
+
+        public DbRecordManager(IastSettings settings)
         {
-            return;
+            iastSettings = settings;
         }
 
-        if (iastSettings.DataBaseRowsToTaint > 0)
+        public void RegisterDbRecord(object instance)
         {
-            if (!dataBaseRows.TryGetValue(instance, out var recordData))
+            if (!iastSettings.Enabled || iastSettings.DataBaseRowsToTaint <= 0)
             {
                 return;
             }
 
-            if (recordData.Count > iastSettings.DataBaseRowsToTaint)
+            var recordData = dataBaseRows.GetOrCreateValue(instance);
+            recordData.Count++;
+        }
+
+        public void UnregisterDbRecord(object instance)
+        {
+            if (!iastSettings.Enabled || iastSettings.DataBaseRowsToTaint <= 0)
             {
                 return;
             }
+
+            dataBaseRows.Remove(instance);
         }
 
-        var scope = tracer.ActiveScope as Scope;
-        var currentSpan = scope?.Span;
-        var traceContext = currentSpan?.Context?.TraceContext;
-        traceContext?.IastRequestContext?.AddDbValue(column, value);
-    }
+        public bool AddDbValue(object instance, string? column, string value)
+        {
+            if (!iastSettings.Enabled || iastSettings.DataBaseRowsToTaint <= 0)
+            {
+                return false;
+            }
 
-    private class DbRecordData
-    {
-        public int Count { get; set; } = 0;
+            if (iastSettings.DataBaseRowsToTaint > 0)
+            {
+                if (!dataBaseRows.TryGetValue(instance, out var recordData))
+                {
+                    return false;
+                }
+
+                if (recordData.Count > iastSettings.DataBaseRowsToTaint)
+                {
+                    return false;
+                }
+            }
+
+            var tracer = Tracer.Instance;
+            var scope = tracer.ActiveScope as Scope;
+            var currentSpan = scope?.Span;
+            var traceContext = currentSpan?.Context?.TraceContext;
+            traceContext?.IastRequestContext?.AddDbValue(column, value);
+            return true;
+        }
+
+        private class DbRecordData
+        {
+            public int Count { get; set; } = 0;
+        }
     }
 }

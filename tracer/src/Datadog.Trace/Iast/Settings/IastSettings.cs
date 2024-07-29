@@ -93,7 +93,7 @@ internal class IastSettings
 
         DataBaseRowsToTaint = config
             .WithKeys(ConfigurationKeys.Iast.DataBaseRowsToTaint)
-            .AsInt32(DataBaseRowsToTaintDefault, x => x > 0)
+            .AsInt32(DataBaseRowsToTaintDefault, x => x >= 0)
             .Value;
     }
 

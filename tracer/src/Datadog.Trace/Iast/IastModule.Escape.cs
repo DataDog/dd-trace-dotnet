@@ -18,7 +18,7 @@ internal static partial class IastModule
     {
         try
         {
-            if (!iastSettings.Enabled || string.IsNullOrEmpty(text))
+            if (!IastSettings.Enabled || string.IsNullOrEmpty(text))
             {
                 return encoded;
             }
