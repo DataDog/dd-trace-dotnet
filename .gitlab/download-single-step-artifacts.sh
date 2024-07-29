@@ -21,7 +21,7 @@ if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
 fi
 
 # hardcode commit for speed
-CI_COMMIT_SHA=26d6cec72172c0b9546845417cd8eed614074faa
+CI_COMMIT_SHA=7c00fb058f02406133dcb24fb81333f6fa44d885
 
 branchName="refs/heads/$CI_COMMIT_BRANCH"
 artifactName="ssi-artifacts"
@@ -34,7 +34,7 @@ buildId=$(curl -sS $allBuildsForBranchUrl | jq --arg version $CI_COMMIT_SHA '.va
 
 if [ -z "${buildId}" ]; then
   echo "No build found for commit '$CI_COMMIT_SHA' on branch '$branchName'. Checking for PR builds..."
-  allBuildsForPrUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=10&queryOrder=queueTimeDescending&reasonFilter=pullRequest"
+  allBuildsForPrUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=100&queryOrder=queueTimeDescending&reasonFilter=pullRequest"
 
   buildId=$(curl -sS $allBuildsForPrUrl | jq --arg version $CI_COMMIT_SHA --arg branch $CI_COMMIT_BRANCH '.value[] | select(.triggerInfo["pr.sourceBranch"] == $branch and .triggerInfo["pr.sourceSha"] == $version)  | .id' | head -n 1)
 fi
