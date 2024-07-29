@@ -1,11 +1,8 @@
 using System;
-using System.Data;
 using System.Data.SqlClient;
-using System.Threading;
+using FluentAssertions;
 using Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 using Xunit;
-using FluentAssertions;
-using Remotion.Linq.Clauses.ResultOperators;
 
 #nullable enable
 
@@ -33,37 +30,4 @@ public class SqlDbReaderTests : InstrumentationTestsBase, IDisposable
         }
         base.Dispose();
     }
-
-    [Fact]
-    public void GivenASqlReader_WhenCallingGetString_OutputIsTainted()
-    {
-        using (var reader = TestRealDDBBLocalCall(() => new SqlCommand(allPersonsQuery, databaseConnection).ExecuteReader()))
-        {
-            reader.Read().Should().BeTrue();
-            {
-                for (int x = 0; x < reader.FieldCount; x++)
-                {
-                    if (reader.GetFieldType(x) == typeof(string) && !reader.IsDBNull(x))
-                    {
-                        var value = reader.GetString(x);
-                        AssertTainted(value);
-                    }
-                }
-            }
-
-            reader.Read().Should().BeTrue();
-            {
-                for (int x = 0; x < reader.FieldCount; x++)
-                {
-                    if (reader.GetFieldType(x) == typeof(string) && !reader.IsDBNull(x))
-                    {
-                        var value = reader.GetString(x);
-                        AssertNotTainted(value);
-                    }
-                }
-            }
-
-        }
-    }
-
 }
