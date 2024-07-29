@@ -1,12 +1,16 @@
 #!/bin/bash
 
-PACKAGE_VERSION=$(< ../artifacts/artifacts.txt)
+set -eo pipefail
+
+PACKAGE_VERSION=$(< ../artifacts/version.txt)
 
 if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
   VERSION=$PACKAGE_VERSION
 else
   VERSION=$PACKAGE_VERSION$CI_VERSION_SUFFIX
 fi
+
+echo "VERSION=$VERSION"
 
 if [ -z "$ARCH" ]; then
   ARCH=amd64
