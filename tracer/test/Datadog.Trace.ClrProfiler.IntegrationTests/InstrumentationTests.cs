@@ -20,6 +20,8 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    // These tests are based on SSI variables, so we have to explicitly reset them
+    [EnvironmentRestorer("DD_INJECTION_ENABLED", "DD_INJECT_FORCE", "DD_TELEMETRY_FORWARDER_PATH")]
     public class InstrumentationTests : TestHelper, IClassFixture<InstrumentationTests.TelemetryReporterFixture>
     {
         private const string WatchFileEnvironmentVariable = "DD_INTERNAL_TEST_FILE_TO_WATCH";
