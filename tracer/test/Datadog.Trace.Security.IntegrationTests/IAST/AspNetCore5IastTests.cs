@@ -556,6 +556,9 @@ public class AspNetCore5IastTestsFullSamplingRedactionEnabled : AspNetCore5IastT
 [CollectionDefinition(nameof(AspNetCore5IastTestsFullSampling), DisableParallelization = true)]
 public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 {
+    private static (Regex RegexPattern, string Replacement) aspNetCorePathScrubber = (new Regex("\"path\": \"AspNetCore[^\\.]+\\."), "\"path\": \"AspNetCore.");
+    private static (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": .+,"), "\"hash\": XXX,");
+
     public AspNetCore5IastTestsFullSampling(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? vulnerabilitiesPerRequest = null, bool redactionEnabled = false)
         : base(fixture, outputHelper, enableIast: enableIast, testName: testName, samplingRate: 100, isIastDeduplicationEnabled: isIastDeduplicationEnabled, vulnerabilitiesPerRequest: vulnerabilitiesPerRequest, redactionEnabled: redactionEnabled)
     {
@@ -941,9 +944,6 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [Trait("RunOnWindows", "True")]
     public async Task TestIastReflectedXssRequest()
     {
-        (Regex RegexPattern, string Replacement) pathScrubber = (new Regex("\"path\": \"AspNetCore[^\\.]+\\."), "\"path\": \"AspNetCore.");
-        (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": -1018721842,"), "\"hash\": -1004380463,");
-
         var filename = "Iast.ReflectedXss.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/Iast/ReflectedXss?param=<b>RawValue</b>";
@@ -955,7 +955,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        settings.AddRegexScrubber(pathScrubber);
+        settings.AddRegexScrubber(aspNetCorePathScrubber);
         settings.AddRegexScrubber(hashScrubber);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
@@ -970,6 +970,52 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     {
         var filename = "Iast.ReflectedXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var url = "/Iast/ReflectedXssEscaped?param=" + param;
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+
+        // Add a scrubber to remove the "?param=<value>"
+        (Regex RegexPattern, string Replacement) scrubber = (new Regex(@"\?param=[^ ]+"), "?param=...,\n");
+        settings.AddRegexScrubber(scrubber);
+
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastStoredXssRequest()
+    {
+        var filename = "Iast.StoredXss.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/StoredXss?param=<b>RawValue</b>";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        settings.AddRegexScrubber(aspNetCorePathScrubber);
+        settings.AddRegexScrubber(hashScrubber);
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastStoredXssEscapedRequest()
+    {
+        var filename = "Iast.StoredXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        var url = "/Iast/StoredXssEscaped";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
