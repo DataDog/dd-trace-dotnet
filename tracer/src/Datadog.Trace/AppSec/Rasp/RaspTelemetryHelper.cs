@@ -13,7 +13,7 @@ internal class RaspTelemetryHelper
     private ulong _raspWafDuration = 0;
     private ulong _raspWafAndBindingsDuration = 0;
     private uint _raspRuleEval = 0;
-    private uint _raspTimeouts = 0;
+    private bool _raspTimeout = false;
 
     public void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings, bool timeout)
     {
@@ -22,7 +22,7 @@ internal class RaspTelemetryHelper
 
         if (timeout)
         {
-            _raspTimeouts++;
+            _raspTimeout = true;
         }
 
         _raspRuleEval++;
@@ -36,9 +36,9 @@ internal class RaspTelemetryHelper
             tags.SetMetric(Metrics.RaspWafDuration, _raspWafDuration);
             tags.SetMetric(Metrics.RaspWafAndBindingsDuration, _raspWafAndBindingsDuration);
 
-            if (_raspTimeouts > 0)
+            if (_raspTimeout)
             {
-                tags.SetMetric(Metrics.RaspWafTimeout, _raspTimeouts);
+                tags.SetMetric(Metrics.RaspWafTimeout, 1);
             }
         }
     }
