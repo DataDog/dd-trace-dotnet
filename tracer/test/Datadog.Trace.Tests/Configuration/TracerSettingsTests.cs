@@ -133,7 +133,7 @@ namespace Datadog.Trace.Tests.Configuration
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings), NullConfigurationTelemetry.Instance, errorLog);
 
             Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
-            errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.TracesExporter, ConfigurationKeys.TraceEnabled);
+            errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.TracesExporter.ToLowerInvariant(), ConfigurationKeys.TraceEnabled.ToLowerInvariant());
 
             _writerMock.Invocations.Clear();
 
@@ -284,7 +284,7 @@ namespace Datadog.Trace.Tests.Configuration
                 "ignored_otel" => Count.OpenTelemetryConfigHiddenByDatadogConfig,
                 _ => null,
             };
-            errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.ServiceName, ConfigurationKeys.ServiceName);
+            errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.ServiceName.ToLowerInvariant(), ConfigurationKeys.ServiceName.ToLowerInvariant());
         }
 
         [Theory]
@@ -557,7 +557,7 @@ namespace Datadog.Trace.Tests.Configuration
                 _ => null,
             };
 
-            errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.MetricsExporter, ConfigurationKeys.RuntimeMetricsEnabled);
+            errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.MetricsExporter.ToLowerInvariant(), ConfigurationKeys.RuntimeMetricsEnabled.ToLowerInvariant());
         }
 
         [Theory]
@@ -679,12 +679,12 @@ namespace Datadog.Trace.Tests.Configuration
                 // hidden metrics
                 if (otelSampler is not null)
                 {
-                    metrics.Add((Count.OpenTelemetryConfigHiddenByDatadogConfig, ConfigurationKeys.OpenTelemetry.TracesSampler, ConfigurationKeys.GlobalSamplingRate));
+                    metrics.Add((Count.OpenTelemetryConfigHiddenByDatadogConfig, ConfigurationKeys.OpenTelemetry.TracesSampler.ToLowerInvariant(), ConfigurationKeys.GlobalSamplingRate.ToLowerInvariant()));
                 }
 
                 if (otelSampleRate is not null)
                 {
-                    metrics.Add((Count.OpenTelemetryConfigHiddenByDatadogConfig, ConfigurationKeys.OpenTelemetry.TracesSamplerArg, ConfigurationKeys.GlobalSamplingRate));
+                    metrics.Add((Count.OpenTelemetryConfigHiddenByDatadogConfig, ConfigurationKeys.OpenTelemetry.TracesSamplerArg.ToLowerInvariant(), ConfigurationKeys.GlobalSamplingRate.ToLowerInvariant()));
                 }
             }
             else if (otelSampler is "invalid")
@@ -695,7 +695,7 @@ namespace Datadog.Trace.Tests.Configuration
                   && otelSampleRate is "invalid" or null)
             {
                 // we _only_ report this one if we need to use it
-                metrics.Add((Count.OpenTelemetryConfigInvalid, ConfigurationKeys.OpenTelemetry.TracesSamplerArg, ConfigurationKeys.GlobalSamplingRate));
+                metrics.Add((Count.OpenTelemetryConfigInvalid, ConfigurationKeys.OpenTelemetry.TracesSamplerArg.ToLowerInvariant(), ConfigurationKeys.GlobalSamplingRate.ToLowerInvariant()));
             }
 
             errorLog.ShouldHaveExpectedOtelMetric(metrics.ToArray());
@@ -875,7 +875,7 @@ namespace Datadog.Trace.Tests.Configuration
                 _ => null,
             };
 
-            errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.SdkDisabled, ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled);
+            errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.SdkDisabled.ToLowerInvariant(), ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled.ToLowerInvariant());
         }
 
         [Theory]
@@ -914,7 +914,7 @@ namespace Datadog.Trace.Tests.Configuration
                     _ => null,
                 };
 
-                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators, ConfigurationKeys.PropagationStyle);
+                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), ConfigurationKeys.PropagationStyle.ToLowerInvariant());
             }
         }
 
@@ -954,7 +954,7 @@ namespace Datadog.Trace.Tests.Configuration
                     _ => null,
                 };
 
-                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators, ConfigurationKeys.PropagationStyle);
+                errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.Propagators.ToLowerInvariant(), ConfigurationKeys.PropagationStyle.ToLowerInvariant());
             }
         }
 

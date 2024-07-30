@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance, errorLog);
 
             settings.DebugEnabled.Should().Be(expected);
-            errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.LogLevel, ConfigurationKeys.DebugEnabled);
+            errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.LogLevel.ToLowerInvariant(), ConfigurationKeys.DebugEnabled.ToLowerInvariant());
         }
 
         [Theory]

@@ -118,29 +118,29 @@ internal static class MetricTags
 
     internal enum DatadogConfiguration
     {
-        [Description("config.datadog:DD_TRACE_DEBUG")] DebugEnabled,
-        [Description("config.datadog:DD_RUNTIME_METRICS_ENABLED")] RuntimeMetricsEnabled,
-        [Description("config.datadog:DD_SERVICE")] Service,
-        [Description("config.datadog:DD_TAGS")] Tags,
-        [Description("config.datadog:DD_TRACE_ENABLED")] TraceEnabled,
-        [Description("config.datadog:DD_TRACE_PROPAGATION_STYLE")] PropagationStyle,
-        [Description("config.datadog:DD_TRACE_SAMPLE_RATE")] SampleRate,
-        [Description("config.datadog:DD_TRACE_OTEL_ENABLED")] OpenTelemetryEnabled,
-        [Description("config.datadog:Unknown")] Unknown,
+        [Description("config_datadog:dd_trace_debug")] DebugEnabled,
+        [Description("config_datadog:dd_runtime_metrics_enabled")] RuntimeMetricsEnabled,
+        [Description("config_datadog:dd_service")] Service,
+        [Description("config_datadog:dd_tags")] Tags,
+        [Description("config_datadog:dd_trace_enabled")] TraceEnabled,
+        [Description("config_datadog:dd_trace_propagation_style")] PropagationStyle,
+        [Description("config_datadog:dd_trace_sample_rate")] SampleRate,
+        [Description("config_datadog:dd_trace_otel_enabled")] OpenTelemetryEnabled,
+        [Description("config_datadog:unknown")] Unknown,
     }
 
     internal enum OpenTelemetryConfiguration
     {
-        [Description("config.opentelemetry:OTEL_LOG_LEVEL")] LogLevel,
-        [Description("config.opentelemetry:OTEL_METRICS_EXPORTER")] MetricsExporter,
-        [Description("config.opentelemetry:OTEL_PROPAGATORS")] Propagators,
-        [Description("config.opentelemetry:OTEL_RESOURCE_ATTRIBUTES")] ResourceAttributes,
-        [Description("config.opentelemetry:OTEL_SDK_DISABLED")] SdkDisabled,
-        [Description("config.opentelemetry:OTEL_SERVICE_NAME")] ServiceName,
-        [Description("config.opentelemetry:OTEL_TRACES_EXPORTER")] TracesExporter,
-        [Description("config.opentelemetry:OTEL_TRACES_SAMPLER")] TracesSampler,
-        [Description("config.opentelemetry:OTEL_TRACES_SAMPLER_ARG")] TracesSamplerArg,
-        [Description("config.opentelemetry:Unknown")] Unknown,
+        [Description("config_opentelemetry:otel_log_level")] LogLevel,
+        [Description("config_opentelemetry:otel_metrics_exporter")] MetricsExporter,
+        [Description("config_opentelemetry:otel_propagators")] Propagators,
+        [Description("config_opentelemetry:otel_resource_attributes")] ResourceAttributes,
+        [Description("config_opentelemetry:otel_sdk_disabled")] SdkDisabled,
+        [Description("config_opentelemetry:otel_service_name")] ServiceName,
+        [Description("config_opentelemetry:otel_traces_exporter")] TracesExporter,
+        [Description("config_opentelemetry:otel_traces_sampler")] TracesSampler,
+        [Description("config_opentelemetry:otel_traces_sampler_arg")] TracesSamplerArg,
+        [Description("config_opentelemetry:unknown")] Unknown,
     }
 
     internal enum PartialFlushReason

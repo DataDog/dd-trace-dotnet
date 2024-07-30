@@ -1,4 +1,4 @@
-﻿// <copyright file="OverrideErrorLogExtensions.cs" company="Datadog">
+// <copyright file="OverrideErrorLogExtensions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -37,7 +37,7 @@ internal static class OverrideErrorLogExtensions
                       .Select(metric => new
                        {
                            Metric = metric.Metric.Value.GetName(),
-                           Tags = new[] { $"config.opentelemetry:{metric.OtelSetting}", $"config.datadog:{metric.DdSetting}" },
+                           Tags = new[] { $"config_datadog:{metric.DdSetting}", $"config_opentelemetry:{metric.OtelSetting}" },
                        })
                       .ToList();
 

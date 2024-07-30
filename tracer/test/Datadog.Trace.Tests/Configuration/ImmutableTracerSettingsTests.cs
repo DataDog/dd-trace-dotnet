@@ -185,7 +185,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void DDTagsTakesPrecdenceOverOTELTags()
+        public void DDTagsTakesPrecedenceOverOTELTags()
         {
             var source = new NameValueConfigurationSource(new()
             {
@@ -202,7 +202,7 @@ namespace Datadog.Trace.Tests.Configuration
             // Since the DD_TAGS config is set, the OTEL_RESOURCE_ATTRIBUTES config is ignored
             immutableTracerSettings.ServiceVersionInternal.Should().NotBe("datadog_version");
             immutableTracerSettings.ServiceNameInternal.Should().NotBe("datadog_service");
-            errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigHiddenByDatadogConfig, "OTEL_RESOURCE_ATTRIBUTES", "DD_TAGS");
+            errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigHiddenByDatadogConfig, "OTEL_RESOURCE_ATTRIBUTES".ToLowerInvariant(), "DD_TAGS".ToLowerInvariant());
         }
     }
 }
