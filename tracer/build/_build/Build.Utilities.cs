@@ -297,9 +297,9 @@ partial class Build
        .Requires(() => NewIsPrerelease)
        .Executes(() =>
         {
-            if (NewVersion == Version)
+            if (NewVersion == Version && IsPrerelease == NewIsPrerelease)
             {
-                throw new Exception($"Cannot set versions, new version {NewVersion} was the same as {Version}");
+                throw new Exception($"Cannot set versions, new version {NewVersion} was the same as {Version} and {IsPrerelease} == {NewIsPrerelease}");
             }
 
             // Samples need to use the latest version (i.e. the _current_ build version, before updating)
