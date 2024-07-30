@@ -72,6 +72,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     {
         // string System.Data.Common.DbDataReader.GetString()
         typeof(ReaderReadAttribute),
+        typeof(ReaderReadAsyncAttribute),
         typeof(ReaderCloseAttribute),
         typeof(ReaderGetStringAttribute),
     })]
@@ -88,6 +89,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     {
         // string System.Data.Common.DbDataReader.GetString()
         typeof(ReaderReadAttribute),
+        typeof(ReaderReadAsyncAttribute),
         typeof(ReaderCloseAttribute),
         typeof(ReaderGetStringAttribute),
     })]
