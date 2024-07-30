@@ -295,6 +295,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         }
 
         [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ReadAsync,
+            ReturnTypeName = AdoNetConstants.TypeNames.ObjectTaskType,
+            ParameterTypeNames = new[] { ClrNames.CancellationToken },
+            CallTargetType = typeof(ReaderReadAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class ReaderReadAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.Close,
             ReturnTypeName = ClrNames.Void,
             CallTargetType = typeof(ReaderCloseIntegration))]

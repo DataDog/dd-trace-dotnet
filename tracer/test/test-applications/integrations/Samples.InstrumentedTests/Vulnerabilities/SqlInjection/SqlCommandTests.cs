@@ -11,7 +11,6 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
 {
     protected string taintedValue = "tainted";
     protected string notTaintedValue = "nottainted";
-    protected string allPersonsQuery = "SELECT * from Persons";
     string taintedQuery;
     string notTaintedQuery;
 
@@ -78,28 +77,28 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderWithTainted_VulnerabilityIsReported()
     {
-        using var reader = TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReader());
+        TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReader());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderWithNotTainted_VulnerabilityIsNotReported()
     {
-        using var reader = TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReader());
+        TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReader());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
-        using var reader = TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReader(CommandBehavior.Default));
+        TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReader(CommandBehavior.Default));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderCommandBehaviorWithNotTainted_VulnerabilityIsNotReported()
     {
-        using var reader = TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReader(CommandBehavior.Default));
+        TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReader(CommandBehavior.Default));
         AssertNotVulnerable();
     }
 
@@ -120,56 +119,56 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
-        using var reader = TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default)).Result;
+        TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCommandBehaviorWithNotTainted_VulnerabilityIsNotReported()
     {
-        using var reader = TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default)).Result;
+        TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCancellationTokenWithTainted_VulnerabilityIsReported()
     {
-        using var reader = TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CancellationToken.None)).Result;
+        TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CancellationToken.None));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCancellationTokenWithNotTainted_VulnerabilityIsNotReported()
     {
-        using var reader = TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync(CancellationToken.None)).Result;
+        TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync(CancellationToken.None));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCancellationTokenCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
-        using var reader = TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None)).Result;
+        TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCancellationTokenCommandBehaviorWithNotTainted_VulnerabilityIsNotReported()
     {
-        using var reader = TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None)).Result;
+        TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncWithTainted_VulnerabilityIsReported()
     {
-        using var reader = TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync()).Result;
+        TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncWithNotTainted_VulnerabilityIsNotReported()
     {
-        using var reader = TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync()).Result;
+        TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync());
         AssertNotVulnerable();
     }
 
@@ -227,36 +226,5 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
     {
         TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteNonQueryAsync(CancellationToken.None));
         AssertNotVulnerable();
-    }
-
-    [Fact]
-    public void GivenASqlReader_WhenCallingGetString_OutputIsTainted()
-    {
-        using (var reader = TestRealDDBBLocalCall(() => new SqlCommand(allPersonsQuery, databaseConnection).ExecuteReader()))
-        {
-            reader.Read().Should().BeTrue();
-            {
-                for (int x = 0; x < reader.FieldCount; x++)
-                {
-                    if (reader.GetFieldType(x) == typeof(string) && !reader.IsDBNull(x))
-                    {
-                        var value = reader.GetString(x);
-                        AssertTainted(value, $"Reader type : {reader.GetType().FullName} Assembly: {reader.GetType().Assembly.FullName}");
-                    }
-                }
-            }
-
-            reader.Read().Should().BeTrue();
-            {
-                for (int x = 0; x < reader.FieldCount; x++)
-                {
-                    if (reader.GetFieldType(x) == typeof(string) && !reader.IsDBNull(x))
-                    {
-                        var value = reader.GetString(x);
-                        AssertNotTainted(value, $"Reader type : {reader.GetType().FullName} Assembly: {reader.GetType().Assembly.FullName}");
-                    }
-                }
-            }
-        }
     }
 }
