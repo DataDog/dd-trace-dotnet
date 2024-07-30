@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -25,6 +26,8 @@ using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.StatsdClient;
 using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
@@ -246,15 +249,17 @@ namespace Datadog.Trace.Debugger
 
                         case ProbeLocationType.Method:
                         {
+                            var signature = SignatureParser.SafeParse(probe.Where.Signature);
+
                             fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0));
                             if (probe is SpanProbe)
                             {
-                                var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
+                                var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, signature);
                                 spanProbes.Add(spanDefinition);
                             }
                             else
                             {
-                                var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
+                                var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, signature);
                                 methodProbes.Add(nativeDefinition);
                                 ProbeExpressionsProcessor.Instance.AddProbeProcessor(probe);
                                 SetRateLimit(probe);
