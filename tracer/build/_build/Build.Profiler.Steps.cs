@@ -303,25 +303,25 @@ partial class Build
         .After(BuildProfilerSamples)
         .Description("Run the profiler container tests")
         .Requires(() => IsLinux && !IsArm64)
-        .Executes(async () =>
+        .Executes(() =>
         {
-            await BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
+            BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
         });
 
     Target BuildAndRunProfilerIntegrationTests => _ => _
         .After(BuildProfilerSamples)
         .Description("Builds and runs the profiler integration tests")
         .Requires(() => !IsArm64)
-        .Executes(async () =>
+        .Executes(() =>
         {
             // Exclude CpuLimitTest from this path: They are already launched in a specific step + specific setup
             var filter = $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)";
-            await BuildAndRunProfilerIntegrationTestsInternal(filter);
+            BuildAndRunProfilerIntegrationTestsInternal(filter);
         });
 
-    private async Task BuildAndRunProfilerIntegrationTestsInternal(string filter)
+    private void BuildAndRunProfilerIntegrationTestsInternal(string filter)
     {
-        var isDebugRun = await IsDebugRun();
+        var isDebugRun = IsDebugRun();
 
         EnsureExistingDirectory(ProfilerTestLogsDirectory);
 
