@@ -64,7 +64,7 @@ partial class Build : NukeBuild
 
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
                 {
-                    const string baseBranch = "origin/master";
+                    var baseBranch = string.IsNullOrEmpty(TargetBranch) ? "origin/master" : $"origin/{TargetBranch}";
                     bool isChanged;
                     var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{variableName}";
 
