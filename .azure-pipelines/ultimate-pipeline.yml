@@ -199,7 +199,7 @@ stages:
         if [[ "$TARGET_BRANCH" == refs/heads/hotfix/* ]] || [[ "$TARGET_BRANCH" == refs/heads/release/* ]]; then
           TARGET_BRANCH=$(echo $TARGET_BRANCH| cut -c 11-)
         elif [[ "$TARGET_BRANCH" == hotfix/* ]] || [[ "$TARGET_BRANCH" == release/* ]]; then
-          echo "No ned to change the branch name"
+          echo "No need to change the branch name"
         else
           TARGET_BRANCH=master
         fi
