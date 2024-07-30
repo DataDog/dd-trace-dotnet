@@ -128,11 +128,15 @@
 
     <div><a href="javascript:getWithHeaders('/Iast/InsecureAuthProtocol', {'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='})">GET /Iast/InsecureAuthProtocol [Basic Scheme]</a></div>
     
-	<div><a href="/Iast/ReflectedXss/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXss </a></div>
+	<div><a href="/Iast/ReflectedXss/?param=<script>alert('Reflected XSS Injection!')</script>">GET /Iast/ReflectedXss </a></div>
 
-	<div><a href="/Iast/ReflectedXssEscaped/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXssEscaped with INJECTION</a></div>
+	<div><a href="/Iast/ReflectedXssEscaped/?param=<script>alert('Reflected XSS Injection!')</script>">GET /Iast/ReflectedXssEscaped with INJECTION</a></div>
 
 	<div><a href="/Iast/ReflectedXssEscaped/?param=Normal Texxt">GET /Iast/ReflectedXssEscaped with normal text</a></div>
+
+	<div><a href="/Iast/StoredXss/">GET /Iast/StoredXss </a></div>
+
+	<div><a href="/Iast/StoredXssEscaped/">GET /Iast/StoredXssEscaped with INJECTION</a></div>
     
     <div><a href="/Iast/JsonParseTainting?json=%7B%22key%22%3A%20%22value%22%7D">GET /Iast/JsonParseTainting [Vuln CommandExecution]</a></div>
     
