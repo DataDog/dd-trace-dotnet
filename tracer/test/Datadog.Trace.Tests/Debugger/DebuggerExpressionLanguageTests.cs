@@ -194,7 +194,7 @@ namespace Datadog.Trace.Tests.Debugger
 
         private MethodScopeMembers CreateScopeMembers()
         {
-            var scope = new MethodScopeMembers(5, 5);
+            var scope = new MethodScopeMembers(10, 5);
 
             // Add locals
             scope.AddMember(new ScopeMember("IntLocal", TestObject.IntNumber.GetType(), TestObject.IntNumber, ScopeMemberKind.Local));
@@ -205,6 +205,8 @@ namespace Datadog.Trace.Tests.Debugger
             scope.AddMember(new ScopeMember("NestedObjectLocal", TestObject.Nested.GetType(), TestObject.Nested, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("NullLocal", TestObject.Nested.GetType(), TestObject.Null, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("BooleanValue", TestObject.BooleanValue.GetType(), TestObject.BooleanValue, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("Char", TestObject.Char.GetType(), TestObject.Char, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("AnotherChar", TestObject.AnotherChar.GetType(), TestObject.AnotherChar, ScopeMemberKind.Local));
 
             // Add arguments
             scope.AddMember(new ScopeMember("IntArg", TestObject.IntNumber.GetType(), TestObject.IntNumber, ScopeMemberKind.Argument));

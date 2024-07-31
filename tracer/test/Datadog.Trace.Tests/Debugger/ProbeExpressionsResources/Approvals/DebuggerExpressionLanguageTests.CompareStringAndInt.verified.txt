@@ -39,11 +39,14 @@ Expression: (
     var DictionaryLocal = (Dictionary<string, string>)scopeMemberArray[4].Value;
     var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[5].Value;
     var NullLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[6].Value;
-    var IntArg = (int)scopeMemberArray[7].Value;
-    var DoubleArg = (double)scopeMemberArray[8].Value;
-    var StringArg = (string)scopeMemberArray[9].Value;
-    var CollectionArg = (List<string>)scopeMemberArray[10].Value;
-    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[11].Value;
+    var BooleanValue = (bool)scopeMemberArray[7].Value;
+    var Char = (char)scopeMemberArray[8].Value;
+    var AnotherChar = (char)scopeMemberArray[9].Value;
+    var IntArg = (int)scopeMemberArray[10].Value;
+    var DoubleArg = (double)scopeMemberArray[11].Value;
+    var StringArg = (string)scopeMemberArray[12].Value;
+    var CollectionArg = (List<string>)scopeMemberArray[13].Value;
+    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[14].Value;
 
     return true;
 }
