@@ -691,7 +691,7 @@ namespace Datadog.Trace.Debugger.Symbols
             foreach (var parameterHandle in parameters)
             {
                 var parameterDef = MetadataReader.GetParameter(parameterHandle);
-                if (index == 0)
+                if (index == 0 && !method.IsStaticMethod())
                 {
                     argsSymbol[index] = new Symbol { Name = "this", SymbolType = SymbolType.Arg, Line = UnknownFieldAndArgLine, Type = method.GetDeclaringType().FullName(MetadataReader) };
                     index++;
@@ -700,12 +700,6 @@ namespace Datadog.Trace.Debugger.Symbols
                     {
                         continue;
                     }
-                }
-
-                // Since we increment the index for `index == 0`, we have to make sure we don't exceed the bound of the array
-                if (index >= argsSymbol.Length)
-                {
-                    break;
                 }
 
                 argsSymbol[index] = new Symbol
