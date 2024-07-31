@@ -28,7 +28,7 @@ public class ReplaceAspectAnalyzer : DiagnosticAnalyzer
     /// <summary>
     /// The severity of the diagnostic
     /// </summary>
-    public const DiagnosticSeverity Severity = DiagnosticSeverity.Warning;
+    public const DiagnosticSeverity Severity = DiagnosticSeverity.Info;
 
 #pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
     private static readonly DiagnosticDescriptor MissingTryCatchRule = new(
