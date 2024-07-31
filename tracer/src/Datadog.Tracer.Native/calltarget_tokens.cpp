@@ -556,7 +556,7 @@ ModuleMetadata* CallTargetTokens::GetMetadata()
 
 HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
 {
-    std::lock_guard<std::mutex> guard(metadata_mutex);
+    std::lock_guard<std::recursive_mutex> guard(metadata_mutex);
 
     auto hr = EnsureCorLibTokens();
     if (FAILED(hr))

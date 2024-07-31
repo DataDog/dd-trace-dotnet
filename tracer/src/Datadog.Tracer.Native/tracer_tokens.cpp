@@ -157,6 +157,8 @@ const shared::WSTRING& TracerTokens::GetCallTargetRefStructType()
 
 HRESULT TracerTokens::EnsureBaseCalltargetTokens()
 {
+    std::lock_guard<std::recursive_mutex> guard(metadata_mutex);
+
     HRESULT hr = CallTargetTokens::EnsureBaseCalltargetTokens();
     if (FAILED(hr))
     {
