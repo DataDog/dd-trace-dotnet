@@ -1,3 +1,8 @@
+// <copyright file="TypeFinderTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,12 +15,6 @@ namespace Datadog.Trace.Tests.Debugger
 {
     public class TypeFinderTests
     {
-        public TypeFinderTests()
-        {
-            // Ensure TypeFinder.Instance is initialized
-            TypeFinder.EnsureInitialized();
-        }
-
         [Fact]
         public void FindTypes_NonGenericType_ReturnsCorrectType()
         {
@@ -129,7 +128,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             for (int i = 0; i < 5; i++)
             {
-                TypeFinder.EnsureInitialized();
+                _ = TypeFinder.Instance;
             }
 
             // If we reach here without exception, the test passes
@@ -155,7 +154,6 @@ namespace Datadog.Trace.Tests.Debugger
     public class GenericClass<T>
 #pragma warning restore SA1402 // File may only contain a single type
     {
-
     }
 
 #pragma warning disable SA1402 // File may only contain a single type
@@ -163,7 +161,6 @@ namespace Datadog.Trace.Tests.Debugger
 #pragma warning restore SA1402 // File may only contain a single type
         where T : class
     {
-
     }
 
 #pragma warning disable SA1402 // File may only contain a single type
@@ -172,7 +169,6 @@ namespace Datadog.Trace.Tests.Debugger
     {
         public class NestedClass
         {
-
         }
     }
 }
