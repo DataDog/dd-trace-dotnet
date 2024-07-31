@@ -196,8 +196,10 @@ stages:
     - bash: |
         TARGET_BRANCH=$SYSTEM_PULLREQUEST_TARGETBRANCH
         echo "SYSTEM_PULLREQUEST_TARGETBRANCH=$TARGET_BRANCH"
-        if [[ "$TARGET_BRANCH" == refs/heads/hotfix/* ]]; then
+        if [[ "$TARGET_BRANCH" == refs/heads/hotfix/* ]] || [[ "$TARGET_BRANCH" == refs/heads/release/* ]]; then
           TARGET_BRANCH=$(echo $TARGET_BRANCH| cut -c 11-)
+        elif [[ "$TARGET_BRANCH" == hotfix/* ]] || [[ "$TARGET_BRANCH" == release/* ]]; then
+          echo "No need to change the branch name"
         else
           TARGET_BRANCH=master
         fi

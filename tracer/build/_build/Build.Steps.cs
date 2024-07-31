@@ -181,7 +181,8 @@ partial class Build
 
     bool RequiresThoroughTesting()
     {
-        var gitChangedFiles = GetGitChangedFiles(baseBranch: "origin/master");
+        var baseBranch = string.IsNullOrEmpty(TargetBranch) ? "origin/master" : $"origin/{TargetBranch}";
+        var gitChangedFiles = GetGitChangedFiles(baseBranch);
         var integrationChangedFiles = TargetFrameworks
             .SelectMany(tfm => new[]
             {
