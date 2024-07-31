@@ -6,7 +6,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Logging;
