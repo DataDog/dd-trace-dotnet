@@ -98,7 +98,7 @@ namespace Datadog.Trace
         public const string RaspWafAndBindingsDuration = "_dd.appsec.rasp.duration_ext";
 
         /// <summary>
-        /// Counts the number of WAF timeouts in RASP.
+        /// Is set to 1 if there was a RASP timeout.
         /// </summary>
         public const string RaspWafTimeout = "_dd.appsec.rasp.timeout";
 
