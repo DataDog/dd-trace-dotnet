@@ -132,7 +132,7 @@ internal static class CookieAnalyzer
 
     private static bool IsExcluded(string cookieName)
     {
-        return string.IsNullOrWhiteSpace(cookieName) || cookieName.StartsWith(".AspNetCore.Correlation.", StringComparison.OrdinalIgnoreCase);
+        return string.IsNullOrWhiteSpace(cookieName) || cookieName.StartsWith(".AspNetCore.", StringComparison.OrdinalIgnoreCase);
     }
 
 #endif
