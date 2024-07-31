@@ -322,5 +322,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         internal class ReaderGetStringAttribute : Attribute
         {
         }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.GetValue,
+            ReturnTypeName = ClrNames.Object,
+            ParameterTypeNames = new[] { ClrNames.Int32 },
+            CallTargetType = typeof(ReaderGetStringIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class ReaderGetValueAttribute : Attribute
+        {
+        }
     }
 }

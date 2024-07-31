@@ -120,6 +120,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
         typeof(ReaderReadAsyncAttribute),
         typeof(ReaderCloseAttribute),
         typeof(ReaderGetStringAttribute),
+        typeof(ReaderGetValueAttribute),
     })]
 
 [assembly: AdoNetClientInstrumentMethods(
@@ -137,6 +138,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
         typeof(ReaderReadAsyncAttribute),
         typeof(ReaderCloseAttribute),
         typeof(ReaderGetStringAttribute),
+        typeof(ReaderGetValueAttribute),
     })]
 
 [assembly: AdoNetClientInstrumentMethods(
@@ -154,4 +156,5 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
         typeof(ReaderReadAsyncAttribute),
         typeof(ReaderCloseAttribute),
         typeof(ReaderGetStringAttribute),
+        typeof(ReaderGetValueAttribute),
     })]
