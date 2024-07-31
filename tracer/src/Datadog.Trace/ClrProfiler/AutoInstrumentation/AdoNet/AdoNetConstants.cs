@@ -35,14 +35,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public const string ExecuteDbDataReader = "ExecuteDbDataReader";
             public const string ExecuteDbDataReaderAsync = "ExecuteDbDataReaderAsync";
 
-            public const string GetString = "GetString";
-            public const string GetStringAsync = "GetString";
-
             public const string Read = "Read";
             public const string ReadAsync = "ReadAsync";
 
             public const string Close = "Close";
             public const string CloseAsync = "CloseAsync";
+
+            public const string GetString = "GetString";
+            public const string GetValue = "GetValue";
         }
     }
 }
