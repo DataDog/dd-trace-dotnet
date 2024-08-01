@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 catch
                 {
                     // sigh, nothing works, _pretend_ we're in SSI so that we don't crash the app
-                    return false;
+                    return true;
                 }
             }
         }
