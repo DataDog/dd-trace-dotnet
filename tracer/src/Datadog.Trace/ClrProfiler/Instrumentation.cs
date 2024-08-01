@@ -89,66 +89,68 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            TracerDebugger.WaitForDebugger();
-
-            var swTotal = Stopwatch.StartNew();
-            Log.Debug("Initialization started.");
-
-            var sw = Stopwatch.StartNew();
-            legacyMode = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
-            if (legacyMode)
+            try
             {
-                InitializeLegacy();
-            }
-            else
-            {
-                InitializeNoNativeParts(sw);
+                TracerDebugger.WaitForDebugger();
 
-                try
+                var swTotal = Stopwatch.StartNew();
+                Log.Debug("Initialization started.");
+
+                var sw = Stopwatch.StartNew();
+                legacyMode = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
+                if (legacyMode)
                 {
-                    Log.Debug("Enabling CallTarget integration definitions in native library.");
+                    InitializeLegacy();
+                }
+                else
+                {
+                    InitializeNoNativeParts(sw);
 
-                    InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
-                    if (Security.Instance.Enabled)
+                    try
                     {
-                        Log.Debug("Enabling AppSec call target category");
-                        enabledCategories |= InstrumentationCategory.AppSec;
-                    }
+                        Log.Debug("Enabling CallTarget integration definitions in native library.");
 
-                    var defs = NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
-                    Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
-                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
-
-                    var raspEnabled = Security.Instance.Settings.RaspEnabled;
-                    var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
-
-                    if (raspEnabled || iastEnabled)
-                    {
-                        InstrumentationCategory category = 0;
-                        if (iastEnabled)
+                        InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
+                        if (Security.Instance.Enabled)
                         {
-                            Log.Debug("Enabling Iast call target category");
-                            category |= InstrumentationCategory.Iast;
+                            Log.Debug("Enabling AppSec call target category");
+                            enabledCategories |= InstrumentationCategory.AppSec;
                         }
 
-                        if (raspEnabled)
+                        var defs = NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
+                        Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
+                        TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
+
+                        var raspEnabled = Security.Instance.Settings.RaspEnabled;
+                        var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
+
+                        if (raspEnabled || iastEnabled)
                         {
-                            Log.Debug("Enabling Rasp");
+                            InstrumentationCategory category = 0;
+                            if (iastEnabled)
+                            {
+                                Log.Debug("Enabling Iast call target category");
+                                category |= InstrumentationCategory.Iast;
+                            }
+
+                            if (raspEnabled)
+                            {
+                                Log.Debug("Enabling Rasp");
+                            }
+
+                            EnableTracerInstrumentations(category, raspEnabled: raspEnabled);
                         }
-
-                        EnableTracerInstrumentations(category, raspEnabled: raspEnabled);
                     }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error sending CallTarget integration definitions to native library");
-                }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error sending CallTarget integration definitions to native library");
+                    }
 
-                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
-                sw.Restart();
+                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
+                    sw.Restart();
 
-                InitializeTracer(sw);
-            }
+                    InitializeTracer(sw);
+                }
 
 #if NETSTANDARD2_0 || NETCOREAPP3_1
             try
@@ -165,11 +167,16 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error triggering eager OpenSSL load");
             }
 #endif
-            LifetimeManager.Instance.AddShutdownTask(RunShutdown);
+                LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
-            Log.Debug("Initialization finished.");
+                Log.Debug("Initialization finished.");
 
-            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, swTotal.ElapsedMilliseconds);
+                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, swTotal.ElapsedMilliseconds);
+            }
+            catch
+            {
+                // Swallowing any errors here, as something went _very_ wrong, so trying to log might cause issues itself
+            }
         }
 
         /// <summary>
