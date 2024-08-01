@@ -3,8 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 
@@ -37,7 +37,7 @@ public class EntityFrameworkCoreAspect
             VulnerabilitiesModule.OnSqlQuery(sqlAsString, IntegrationId.SqlClient);
             return sqlAsString;
         }
-        catch (global::System.Exception ex)
+        catch (Exception ex) when (ex is not BlockException)
         {
             IastModule.Log.Error(ex, $"Error invoking {nameof(EntityFrameworkCoreAspect)}.{nameof(ReviewSqlString)}");
             return sqlAsString;

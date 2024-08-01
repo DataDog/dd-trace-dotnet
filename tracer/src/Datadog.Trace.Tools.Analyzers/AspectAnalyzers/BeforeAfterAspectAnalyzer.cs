@@ -135,7 +135,7 @@ public class BeforeAfterAspectAnalyzer : DiagnosticAnalyzer
             isRethrowing = false;
 
             // check that it's catching _everything_
-            hasFilter = catchClause.Filter is not null;
+            hasFilter = catchClause.Filter is not null && catchClause.Filter.FilterExpression is not null && catchClause.Filter.FilterExpression.ToString() != "ex is not BlockException";
             if (hasFilter)
             {
                 // Skipping because we shouldn't be letting anything through

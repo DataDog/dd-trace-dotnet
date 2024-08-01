@@ -59,7 +59,7 @@ public class HttpClientAspect
             VulnerabilitiesModule.OnSSRF(parameter);
             return parameter;
         }
-        catch (global::System.Exception ex)
+        catch (Exception ex) when (ex is not BlockException)
         {
             IastModule.Log.Error(ex, $"Error invoking {nameof(HttpClientAspect)}.{nameof(Review)}");
             return parameter;
@@ -101,7 +101,7 @@ public class HttpClientAspect
             VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
             return parameter;
         }
-        catch (global::System.Exception ex)
+        catch (Exception ex) when (ex is not BlockException)
         {
             IastModule.Log.Error(ex, $"Error invoking {nameof(HttpClientAspect)}.{nameof(ReviewUri)}");
             return parameter;
@@ -138,7 +138,7 @@ public class HttpClientAspect
 
             return parameter;
         }
-        catch (global::System.Exception ex)
+        catch (Exception ex) when (ex is not BlockException)
         {
             IastModule.Log.Error(ex, $"Error invoking {nameof(HttpClientAspect)}.{nameof(ReviewHttpRequestMessage)}");
             return parameter;
@@ -158,7 +158,7 @@ public class HttpClientAspect
 
             return parameter;
         }
-        catch (global::System.Exception ex)
+        catch (Exception ex) when (ex is not BlockException)
         {
             IastModule.Log.Error(ex, $"Error invoking {nameof(HttpClientAspect)}.{nameof(ReviewHttpRequestMessage)}");
             return parameter;

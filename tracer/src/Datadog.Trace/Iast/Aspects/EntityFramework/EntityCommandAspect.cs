@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Data.Common;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 
@@ -39,7 +39,7 @@ public class EntityCommandAspect
 
             return command;
         }
-        catch (global::System.Exception ex)
+        catch (Exception ex) when (ex is not BlockException)
         {
             IastModule.Log.Error(ex, $"Error invoking {nameof(EntityCommandAspect)}.{nameof(ReviewSqlCommand)}");
             return command;

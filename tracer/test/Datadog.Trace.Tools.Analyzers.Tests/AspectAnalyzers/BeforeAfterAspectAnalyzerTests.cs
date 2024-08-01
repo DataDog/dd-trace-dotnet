@@ -68,6 +68,30 @@ public class BeforeAfterAspectAnalyzerTests
     }
 
     [Fact]
+    public async Task ShouldNotFlagMethodWithTryCatchAndBlockExceptionFilter()
+    {
+        var method =
+            """
+            [AspectMethodInsertBefore("Microsoft.AspNetCore.Http.HttpResponse::Redirect(System.String)")]
+            string TestMethod(string myParam)
+            {
+                try
+                {
+                    // does something
+                    return myParam;
+                }
+                catch (Exception ex) when (ex is not BlockException)
+                {
+                    // the contents don't actually matter here
+                    return myParam;
+                }
+            }
+            """;
+
+        await Verifier.VerifyAnalyzerAsync(GetTestCode(method));
+    }
+
+    [Fact]
     public async Task ShouldNotFlagEmptyMethod()
     {
         var method =
@@ -290,6 +314,10 @@ public class BeforeAfterAspectAnalyzerTests
                   static class IastModule
                   {
                       public static readonly IDatadogLogger Log = new DatadogLogging();
+                  }
+
+                  class BlockException : Exception
+                  {
                   }
               }
               """;

@@ -7,7 +7,6 @@
 
 using System;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
@@ -109,7 +108,7 @@ public class FileAspect
             VulnerabilitiesModule.OnPathTraversal(path);
             return path;
         }
-        catch (global::System.Exception ex)
+        catch (Exception ex) when (ex is not BlockException)
         {
             IastModule.Log.Error(ex, $"Error invoking {nameof(FileAspect)}.{nameof(ReviewPath)}");
             return path;

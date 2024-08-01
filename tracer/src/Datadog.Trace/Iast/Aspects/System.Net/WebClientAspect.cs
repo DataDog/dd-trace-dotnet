@@ -58,7 +58,7 @@ public class WebClientAspect
             VulnerabilitiesModule.OnSSRF(parameter);
             return parameter;
         }
-        catch (global::System.Exception ex)
+        catch (Exception ex) when (ex is not BlockException)
         {
             IastModule.Log.Error(ex, $"Error invoking {nameof(WebClientAspect)}.{nameof(Review)}");
             return parameter;
@@ -128,7 +128,7 @@ public class WebClientAspect
             VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
             return parameter;
         }
-        catch (global::System.Exception ex)
+        catch (Exception ex) when (ex is not BlockException)
         {
             IastModule.Log.Error(ex, $"Error invoking {nameof(WebClientAspect)}.{nameof(ReviewUri)}");
             return parameter;
