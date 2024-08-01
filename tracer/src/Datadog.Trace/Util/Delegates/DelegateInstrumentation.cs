@@ -229,7 +229,7 @@ internal static class DelegateInstrumentation
                 // This method is only called once, so no point saving the logger in the static field forever
                 // If we throw, then _activator will continue to have the default activator which is fine
                 DatadogLogging.GetLoggerFor<ActivatorHelper>()
-                              .Warning(ex, "Error Creating the custom activator for: {Type}", typeof(TCallbacks).FullName);
+                              .Warning(ex, "Error creating the custom activator for: {Type}", typeof(TCallbacks).FullName);
             }
         }
     }
