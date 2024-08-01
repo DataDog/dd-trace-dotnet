@@ -22,5 +22,7 @@ namespace Datadog.Trace.AppSec.Waf
         internal unsafe WafReturnCode Run(IntPtr contextHandle, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
 
         UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus);
+
+        public string[] GetKnownAddresses();
     }
 }

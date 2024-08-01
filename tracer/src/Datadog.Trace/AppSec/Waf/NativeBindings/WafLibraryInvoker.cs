@@ -44,6 +44,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly SetupLoggingDelegate _setupLogging;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
         private readonly UpdateDelegate _updateField;
+        private readonly GetKnownAddressesDelegate _getKnownAddresses;
         private string _version = null;
 
         private WafLibraryInvoker(IntPtr libraryHandle)
@@ -75,6 +76,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(libraryHandle, "ddwaf_get_version");
             // setup logging
             _setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
+            // Get know addresses
+            _getKnownAddresses = GetDelegateForNativeFunction<GetKnownAddressesDelegate>(libraryHandle, "ddwaf_known_addresses");
             // convert to a delegate and attempt to pin it by assigning it to  field
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
         }
@@ -122,6 +125,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private delegate bool ObjectMapAddDelegateX86(ref DdwafObjectStruct map, string entryName, uint entryNameLength, ref DdwafObjectStruct entry);
 
         private delegate void FreeObjectDelegate(ref DdwafObjectStruct input);
+
+        private delegate IntPtr GetKnownAddressesDelegate(IntPtr wafHandle, ref uint size);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void SetupLogCallbackDelegate(
@@ -229,6 +234,28 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         {
             var logLevel = wafDebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
             _setupLogging(_setupLogCallbackField, logLevel);
+        }
+
+        internal string[] GetKnownAddresses(IntPtr wafHandle)
+        {
+            uint size = 0;
+            IntPtr result = _getKnownAddresses(wafHandle, ref size);
+
+            if (size == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            string[] knownAddresses = new string[size];
+
+            for (uint i = 0; i < size; i++)
+            {
+                // Calculate the pointer to each string
+                IntPtr stringPtr = Marshal.ReadIntPtr(result, (int)i * IntPtr.Size);
+                knownAddresses[i] = Marshal.PtrToStringAnsi(stringPtr);
+            }
+
+            return knownAddresses;
         }
 
         internal string GetVersion()
