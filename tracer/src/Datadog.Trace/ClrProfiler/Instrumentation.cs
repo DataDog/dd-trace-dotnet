@@ -519,17 +519,24 @@ namespace Datadog.Trace.ClrProfiler
                     // TODO: LiveDebugger should be initialized in TracerManagerFactory so it can respond
                     // to changes in ExporterSettings etc.
 
-                    var sw = Stopwatch.StartNew();
-                    var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
-                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
-
-                    if (isDiscoverySuccessful)
+                    try
                     {
-                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
+                        var sw = Stopwatch.StartNew();
+                        var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
+                        TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
 
-                        Log.Debug("Initializing live debugger.");
+                        if (isDiscoverySuccessful)
+                        {
+                            var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
 
-                        await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
+                            Log.Debug("Initializing live debugger.");
+
+                            await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error initializing live debugger.");
                     }
                 });
         }
