@@ -279,7 +279,7 @@ namespace Datadog.Trace
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Error occured in keep-live for {Process}.", path);
+                        Log.Error(ex, "Error occured in keep-alive for {Process}.", path);
                     }
                     finally
                     {
