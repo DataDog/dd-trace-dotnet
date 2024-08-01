@@ -102,6 +102,10 @@ download-single-step-artifacts:
 package-oci:
   needs: [ download-single-step-artifacts ]
 
+generate-lib-init-pinned-tag-values:
+  variables:
+    ADDITIONAL_TAG_SUFFIXES: musl #add -musl to all generated image tags
+
 onboarding_tests_installer:
   parallel:
     matrix:
