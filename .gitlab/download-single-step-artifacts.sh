@@ -20,9 +20,6 @@ if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
   exit 0
 fi
 
-# hardcode commit for speed
-CI_COMMIT_SHA=7c00fb058f02406133dcb24fb81333f6fa44d885
-
 branchName="refs/heads/$CI_COMMIT_BRANCH"
 artifactName="ssi-artifacts"
 

@@ -91,7 +91,7 @@ download-single-step-artifacts:
       when: manual
       allow_failure: false
     - when: delayed # Artifacts come from Azure pipeline, wait a reasonable time before polling
-      start_in: 1 minutes
+      start_in: 15 minutes
   script:
     - .gitlab/download-single-step-artifacts.sh
   artifacts:
