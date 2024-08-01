@@ -177,31 +177,31 @@ public class StringJoinTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+:eee", String.Join(null, new string[] { taintedValue2, "eee" }, 0, 2), () => String.Join(null, new string[] { taintedValue2, "eee" }, 0, 2));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedObject_WhenCallingJoinWithGenericListNullSeparator_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+:eee", String.Join<string>(null, new List<string> { taintedValue2, "eee" }), () => String.Join<string>(null, new List<string> { taintedValue2, "eee" }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedObject_WhenCallingJoinWithGenericListOneNullParams_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+::+-tainted-+:", String.Join<string>(taintedValue, new List<string> { taintedValue2, null }), () => String.Join<string>(taintedValue, new List<string> { taintedValue2, null }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedObject_WhenCallingJoinWithGenericList_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+::+-tainted-+:eee", String.Join<string>(taintedValue, new List<string> { taintedValue2, "eee" }), () => String.Join<string>(taintedValue, new List<string> { taintedValue2, "eee" }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedStringInStruct_WhenCallingJoin_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck("UntaintedString,:+-tainted-+:", String.Join<StructForStringTest>(",", new List<StructForStringTest> { new StructForStringTest("UntaintedString"), new StructForStringTest(taintedValue) }), () => String.Join<StructForStringTest>(",", new List<StructForStringTest> { new StructForStringTest("UntaintedString"), new StructForStringTest(taintedValue) }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedStringInStruct_WhenCallingJoin_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck("UntaintedString,:+-tainted-+:", String.Join(",", new List<StructForStringTest> { new StructForStringTest("UntaintedString"), new StructForStringTest(taintedValue) }), () => String.Join(",", new List<StructForStringTest> { new StructForStringTest("UntaintedString"), new StructForStringTest(taintedValue) }));
@@ -219,13 +219,13 @@ public class StringJoinTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck("UntaintedString,:+-tainted-+:", String.Join(",", new StructForStringTest("UntaintedString"), new StructForStringTest(taintedValue)), () => String.Join(",", new StructForStringTest("UntaintedString"), new StructForStringTest(taintedValue)));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedStringInClass_WhenCallingJoin_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck("UntaintedString,:+-tainted-+:", String.Join<ClassForStringTest>(",", new List<ClassForStringTest> { new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue) }), () => String.Join<ClassForStringTest>(",", new List<ClassForStringTest> { new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue) }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedStringInClass_WhenCallingJoin_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck("UntaintedString,:+-tainted-+:", String.Join(",", new List<ClassForStringTest> { new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue) }), () => String.Join(",", new List<ClassForStringTest> { new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue) }));
@@ -249,9 +249,9 @@ public class StringJoinTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Join(",", new ClassForStringTest(taintedValue)), () => String.Join(",", new ClassForStringTest(taintedValue)));
     }
 
-#if !NET462
+#if NETCOREAPP3_0_OR_GREATER
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedStringInList_WhenCallingJoinWithChar_ResultIsTainted10()
     {
         var objectList = new List<object> { TaintedObject, UntaintedObject, OtherTaintedObject };
@@ -272,7 +272,7 @@ public class StringJoinTests : InstrumentationTestsBase
         NestedMethod(new List<string> { taintedValue });
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedStringInNestedMethodObject_WhenCallingJoinWithChar_ResultIsTainted7()
     {
         void NestedMethod<T>(List<T> parameters)
@@ -283,7 +283,7 @@ public class StringJoinTests : InstrumentationTestsBase
         NestedMethod(new List<string> { taintedValue, "NonTainted" });
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedStringInList_WhenCallingJoinWithChar_ResultIsTainted8()
     {
         var parameters = new List<string> { taintedValue, "NonTainted" };
@@ -323,7 +323,7 @@ public class StringJoinTests : InstrumentationTestsBase
             () => String.Join('a', new string[] { taintedValue, taintedValue }, 0, 2));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedString_WhenCallingJoin_ResultIsTainted12()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:a:+-tainted-+:",
@@ -331,7 +331,7 @@ public class StringJoinTests : InstrumentationTestsBase
             () => String.Join('a', new List<string> { taintedValue, taintedValue }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedString_WhenCallingJoin_ResultIsTainted13()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:aa:+-tainted-+:",
@@ -339,7 +339,7 @@ public class StringJoinTests : InstrumentationTestsBase
             () => String.Join('a', new List<string> { taintedValue, null, taintedValue }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedString_WhenCallingJoin_ResultIsTainted14()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:a:+-tainted-+:",
@@ -347,7 +347,7 @@ public class StringJoinTests : InstrumentationTestsBase
             () => String.Join('a', new List<string> { taintedValue, taintedValue }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedString_WhenCallingJoin_ResultIsTainted15()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:aa:+-tainted-+:",
@@ -509,7 +509,7 @@ public class StringJoinTests : InstrumentationTestsBase
             () => String.Join("|", list));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenStringJoinTGenericStruct_WhenJoin_ResultIsOk()
     {
         var list = new List<StructForStringTest> { new StructForStringTest(UntaintedString), new StructForStringTest(TaintedString) };
@@ -518,7 +518,7 @@ public class StringJoinTests : InstrumentationTestsBase
             () => string.Join<StructForStringTest>("|", list));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenStringJoinTGenericClass_WhenJoin_ResultIsOk()
     {
         var list = new List<ClassForStringTest> { new ClassForStringTest(UntaintedString), new ClassForStringTest(TaintedString) };

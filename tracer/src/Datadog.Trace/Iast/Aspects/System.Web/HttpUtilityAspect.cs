@@ -26,6 +26,16 @@ public class HttpUtilityAspect
     [AspectMethodReplace("System.Web.HttpUtility::HtmlEncode(System.String)")]
     public static string? Review(string? parameter)
     {
-        return IastModule.OnXssEscape(parameter);
+        var result = parameter; // This looks unnecessary, but it's to seathe the analyzer
+        try
+        {
+            return IastModule.OnXssEscape(parameter);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpUtilityAspect)}.{nameof(Review)}");
+        }
+
+        return result;
     }
 }

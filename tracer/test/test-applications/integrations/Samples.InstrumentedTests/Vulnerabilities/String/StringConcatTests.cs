@@ -31,7 +31,7 @@ public class StringConcatTests : InstrumentationTestsBase
     //Basic cases
 
     [Fact]
-    public void GivenStringConcatBasicOperations_WhenPerformed_ResultIsOK()
+    public void GivenStringConcatOperations_WhenPerformed_ResultIsOK()
     {
         var testString1 = AddTaintedString("01");
         var testString2 = AddTaintedString("abc");
@@ -58,7 +58,6 @@ public class StringConcatTests : InstrumentationTestsBase
 
         FormatTainted(String.Concat(new string[] { testString1, testString2, testString3, testString4, testString5 })).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
         FormatTainted(String.Concat(new object[] { testString1, testString2, testString3, testString4, testString5 })).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
-        FormatTainted(String.Concat(new List<string> { testString1, testString2, testString3, testString4, testString5 })).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
         FormatTainted(String.Concat(testString1, " dummy ")).Should().Be(":+-01-+: dummy ");
         FormatTainted(String.Concat(" dummy ", testString2, " dummy ")).Should().Be(" dummy :+-abc-+: dummy ");
         FormatTainted(String.Concat(" dummy ", testString3)).Should().Be(" dummy :+-ABCD-+:");
@@ -67,6 +66,18 @@ public class StringConcatTests : InstrumentationTestsBase
         FormatTainted(String.Concat(null, testString2, " dummy ")).Should().Be(":+-abc-+: dummy ");
         FormatTainted(String.Concat(null, testString2, (object)" dummy ")).Should().Be(":+-abc-+: dummy ");
         FormatTainted(String.Concat((object)" dummy ", null, testString2, (object)" dummy ")).Should().Be(" dummy :+-abc-+: dummy ");
+    }
+
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+    public void GivenStringConcatOperations_WhenPerformedWithGenerics_ResultIsOK()
+    {
+        var testString1 = AddTaintedString("01");
+        var testString2 = AddTaintedString("abc");
+        var testString3 = AddTaintedString("ABCD");
+        var testString4 = AddTaintedString(".,;:?");
+        var testString5 = AddTaintedString("+-*/{}");
+
+        FormatTainted(String.Concat(new List<string> { testString1, testString2, testString3, testString4, testString5 })).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
     }
 
     [Fact]
@@ -485,7 +496,7 @@ public class StringConcatTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+:concat:+-tainted-+:concat2", String.Concat(taintedValue2, (object)"concat", taintedValue, (object)"concat2"), () => String.Concat(taintedValue2, (object)"concat", taintedValue, (object)"concat2"));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenAnObjectList_WhenConcat_ResultIsOk()
     {
         AssertTaintedFormatWithOriginalCallCheck("123:+-TaintedObject-+:", String.Concat<object>(new List<object> { 1, 2, 3, TaintedObject }), () => String.Concat<object>(new List<object> { 1, 2, 3, TaintedObject }));
@@ -493,14 +504,14 @@ public class StringConcatTests : InstrumentationTestsBase
 
     // structs and built-in types
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void Given_StringConcatGenericStruct_WhenConcat_ResultIsTainted()
     {
         string str = String.Concat<StructForStringTest>(new List<StructForStringTest> { new StructForStringTest(UntaintedString), new StructForStringTest(TaintedString) });
         FormatTainted(str).Should().Be("UntaintedString:+-TaintedString-+:");
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedStringInStruct_WhenCallingConcat_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck("UntaintedString:+-tainted-+:", String.Concat<StructForStringTest>(new List<StructForStringTest> { new StructForStringTest("UntaintedString"), new StructForStringTest(taintedValue) }), () => String.Concat<StructForStringTest>(new List<StructForStringTest> { new StructForStringTest("UntaintedString"), new StructForStringTest(taintedValue) }));
@@ -535,7 +546,7 @@ public class StringConcatTests : InstrumentationTestsBase
 
     // Classes
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedStringInClassList_WhenCallingConcat_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck("UntaintedString:+-TaintedString-+:",
@@ -543,7 +554,7 @@ public class StringConcatTests : InstrumentationTestsBase
             () => String.Concat<ClassForStringTest>(new List<ClassForStringTest> { new ClassForStringTest(UntaintedString), new ClassForStringTest(TaintedString) }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedStringInClassArray_WhenCallingConcat_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck("UntaintedString:+-tainted-+:", 
@@ -551,7 +562,7 @@ public class StringConcatTests : InstrumentationTestsBase
             () => String.Concat<ClassForStringTest>(new List<ClassForStringTest> { new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue) }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedStringInStruct_WhenCallingConcat_ResultIsTainted3()
     {
         AssertTaintedFormatWithOriginalCallCheck("UntaintedString:+-tainted-+:", String.Concat<ClassForStringTest>(new List<ClassForStringTest> { new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue) }), () => String.Concat<ClassForStringTest>(new List<ClassForStringTest> { new ClassForStringTest("UntaintedString"), new ClassForStringTest(taintedValue) }));
@@ -571,19 +582,19 @@ public class StringConcatTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck("concatCONCAT2:+-tainted-+::+-TAINTED2-+:", String.Concat(new string[] { "concat", "CONCAT2", taintedValue, taintedValue2 }), () => String.Concat(new string[] { "concat", "CONCAT2", taintedValue, taintedValue2 }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedString_WhenCallingConcatWithStringIEnumerableStringParam_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck("concatCONCAT2:+-tainted-+::+-TAINTED2-+:", String.Concat(new List<string> { "concat", "CONCAT2", taintedValue, taintedValue2 }), () => String.Concat(new List<string> { "concat", "CONCAT2", taintedValue, taintedValue2 }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedString_WhenCallingConcatWithStringIEnumerableNullParam_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck("concatCONCAT2:+-TAINTED2-+:", String.Concat(new List<string> { "concat", "CONCAT2", null, taintedValue2 }), () => String.Concat(new List<string> { "concat", "CONCAT2", null, taintedValue2 }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedString_WhenCallingConcatWithStringIEnumerableStringParam_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck("concatCONCAT2:+-tainted-+::+-TAINTED2-+:", String.Concat<string>(new List<string> { "concat", "CONCAT2", taintedValue, taintedValue2 }), () => String.Concat<string>(new List<string> { "concat", "CONCAT2", taintedValue, taintedValue2 }));
@@ -603,21 +614,21 @@ public class StringConcatTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", String.Concat(new object[] { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat(new object[] { "concat", "concat2", taintedValue, taintedValue2 }));
     }
 
-    [Fact]
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedObject_WhenCallingConcatWithObjectListParam_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", String.Concat(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }));
     }
 
-    [Fact]
-    
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+
     public void GivenATaintedObject_WhenCallingConcatWithGenericObjectArrayParam_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", String.Concat<object>(new object[] { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat<object>(new object[] { "concat", "concat2", taintedValue, taintedValue2 }));
     }
 
-    [Fact]
-    
+    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+
     public void GivenATaintedObject_WhenCallingConcatWithGenericObjectListParam_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", String.Concat<object>(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat<object>(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }));
