@@ -72,9 +72,31 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 StartupLogger.Log("Invoking managed tracer.");
                 TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
             }
-            catch
+            catch (Exception ex) when (IsInSsi())
             {
-                // Swallowing any errors here, as something went _very_ wrong, so trying to log might cause issues itself
+                // if we're in SSI we want to be as safe as possible, so catching to avoid the possibility of a crash
+                try
+                {
+                    StartupLogger.Log(ex, "Error in Datadog.Trace.ClrProfiler.Managed.Loader.Startup.Startup(). Functionality may be impacted.");
+                }
+                catch
+                {
+                    // Swallowing any errors here, as something went _very_ wrong, even with logging
+                }
+            }
+
+            static bool IsInSsi()
+            {
+                try
+                {
+                    // Not using the ReadEnvironmentVariable method here to avoid logging (which could cause a crash itself)
+                    return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_INJECTION_ENABLED"));
+                }
+                catch
+                {
+                    // sigh, nothing works, _pretend_ we're in SSI so that we don't crash the app
+                    return false;
+                }
             }
         }
 
