@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -89,24 +90,91 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Constant(false);
         }
 
+        // This logic runs on the initial parsing of the expression.
+        // If the assembly containing the type referenced in the expression isn't loaded yet, we'll fail to retrieve the type.
+        // Despite this limitation, it's preferable to perform an expensive type lookup during each execution of the expression.
         Type type = null;
         try
         {
-            type = Type.GetType(typeName);
+            if (!TryGetSingleTypeByName(typeName, out type, out var error))
+            {
+                AddError($"{value} is {typeName}", error);
+                return Expression.Constant(true);
+            }
+            else
+            {
+
+            }
         }
         catch (Exception e)
         {
             AddError($"{value} is {typeName}", e.Message);
-            return Expression.Constant(false);
-        }
-
-        if (type == null)
-        {
-            AddError($"{value} is {typeName}", $"'{typeName}' is unknown type");
-            return Expression.Constant(false);
+            return Expression.Constant(true);
         }
 
         return Expression.TypeIs(value, type);
+    }
+
+    private bool TryGetSingleTypeByName(string name, [NotNullWhen(true)] out Type type, [NotNullWhen(false)] out string error)
+    {
+        type = null;
+        error = null;
+
+        try
+        {
+            type = Type.GetType(name);
+            if (type != null)
+            {
+                // Although there might be multiple types with this name,
+                // it's likely the user intended this specific type, as it exists in the currently running assembly or is a corlib type
+                return true;
+            }
+        }
+        catch
+        {
+            // ignored
+        }
+
+        string failToLoadTypeName = null;
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            foreach (var typeInfo in assembly.DefinedTypes)
+            {
+                try
+                {
+                    if (string.Equals(typeInfo.Name, name, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(typeInfo.FullName, name, StringComparison.OrdinalIgnoreCase) ||
+                        (typeInfo.IsGenericType && string.Equals(GetGenericTypeName(typeInfo), name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        if (type != null || string.IsNullOrEmpty(failToLoadTypeName))
+                        {
+                            error = "Multiple types were found. Please be more specific, for example, by providing the fully qualified name of the type.";
+                            return false;
+                        }
+
+                        type = typeInfo.AsType();
+                    }
+                }
+                catch (TypeLoadException e)
+                {
+                    if (string.Equals(name, e.TypeName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        failToLoadTypeName = e.TypeName;
+                    }
+
+                    continue;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private string GetGenericTypeName(TypeInfo typeInfo)
+    {
+        var genericArguments = typeInfo.GenericTypeParameters.Select(t => t.Name).ToArray();
+        var genericTypeName = typeInfo.Name.Split('`')[0];
+        return $"{typeInfo.Namespace}.{genericTypeName}<{string.Join(",", genericArguments)}>";
     }
 
     private Expression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
