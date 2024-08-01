@@ -28,12 +28,20 @@ public class DbCommandAspect
     [AspectMethodInsertBefore("System.Data.Common.DbCommand::ExecuteNonQueryAsync()")]
     public static object ReviewExecuteNonQuery(object command)
     {
-        if (command is DbCommand entityCommand && command.GetType().Name == "EntityCommand")
+        try
         {
-            var commandText = entityCommand.CommandText;
-            VulnerabilitiesModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
-        }
+            if (command is DbCommand entityCommand && command.GetType().Name == "EntityCommand")
+            {
+                var commandText = entityCommand.CommandText;
+                VulnerabilitiesModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
+            }
 
-        return command;
+            return command;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(DbCommandAspect)}.{nameof(ReviewExecuteNonQuery)}");
+            return command;
+        }
     }
 }

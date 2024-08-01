@@ -104,7 +104,15 @@ public class FileAspect
     [AspectMethodInsertBefore("System.IO.File::Replace(System.String,System.String,System.String,System.Boolean)", new int[] { 1, 2, 3 })]
     public static string ReviewPath(string path)
     {
-        VulnerabilitiesModule.OnPathTraversal(path);
-        return path;
+        try
+        {
+            VulnerabilitiesModule.OnPathTraversal(path);
+            return path;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(FileAspect)}.{nameof(ReviewPath)}");
+            return path;
+        }
     }
 }

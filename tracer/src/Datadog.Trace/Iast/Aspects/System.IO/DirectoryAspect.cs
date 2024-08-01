@@ -75,7 +75,15 @@ public class DirectoryAspect
     [AspectMethodInsertBefore("System.IO.Directory::SetCurrentDirectory(System.String)")]
     public static string ReviewPath(string path)
     {
-        VulnerabilitiesModule.OnPathTraversal(path);
-        return path;
+        try
+        {
+            VulnerabilitiesModule.OnPathTraversal(path);
+            return path;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(DirectoryAspect)}.{nameof(ReviewPath)}");
+            return path;
+        }
     }
 }

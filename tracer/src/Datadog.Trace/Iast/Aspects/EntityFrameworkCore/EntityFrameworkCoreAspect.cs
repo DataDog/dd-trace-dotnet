@@ -32,8 +32,16 @@ public class EntityFrameworkCoreAspect
     [AspectMethodInsertBefore("Microsoft.EntityFrameworkCore.RelationalQueryableExtensions::FromSqlRaw(Microsoft.EntityFrameworkCore.DbSet`1<!!0>,System.String,System.Object[])", 1)]
     public static object ReviewSqlString(string sqlAsString)
     {
-        VulnerabilitiesModule.OnSqlQuery(sqlAsString, IntegrationId.SqlClient);
-        return sqlAsString;
+        try
+        {
+            VulnerabilitiesModule.OnSqlQuery(sqlAsString, IntegrationId.SqlClient);
+            return sqlAsString;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(EntityFrameworkCoreAspect)}.{nameof(ReviewSqlString)}");
+            return sqlAsString;
+        }
     }
 }
 #endif

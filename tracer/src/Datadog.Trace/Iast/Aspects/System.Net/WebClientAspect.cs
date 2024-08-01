@@ -53,8 +53,16 @@ public class WebClientAspect
     [AspectMethodInsertBefore("System.Net.WebClient::set_BaseAddress(System.String)")]
     public static object Review(string parameter)
     {
-        VulnerabilitiesModule.OnSSRF(parameter);
-        return parameter;
+        try
+        {
+            VulnerabilitiesModule.OnSSRF(parameter);
+            return parameter;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(WebClientAspect)}.{nameof(Review)}");
+            return parameter;
+        }
     }
 
     /// <summary>
@@ -115,7 +123,15 @@ public class WebClientAspect
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.Uri,System.String,System.Collections.Specialized.NameValueCollection)", 2)]
     public static object ReviewUri(Uri parameter)
     {
-        VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
-        return parameter;
+        try
+        {
+            VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
+            return parameter;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(WebClientAspect)}.{nameof(ReviewUri)}");
+            return parameter;
+        }
     }
 }

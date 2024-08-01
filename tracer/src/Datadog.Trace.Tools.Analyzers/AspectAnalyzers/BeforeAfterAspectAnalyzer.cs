@@ -1,4 +1,4 @@
-﻿// <copyright file="BeforeAfterAspectAnalyzer.cs" company="Datadog">
+// <copyright file="BeforeAfterAspectAnalyzer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,7 +29,7 @@ public class BeforeAfterAspectAnalyzer : DiagnosticAnalyzer
     /// <summary>
     /// The severity of the diagnostic
     /// </summary>
-    public const DiagnosticSeverity Severity = DiagnosticSeverity.Info;
+    public const DiagnosticSeverity Severity = DiagnosticSeverity.Error;
 
 #pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
     private static readonly DiagnosticDescriptor MissingTryCatchRule = new(

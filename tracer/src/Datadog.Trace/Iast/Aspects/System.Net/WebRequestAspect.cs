@@ -26,8 +26,16 @@ public class WebRequestAspect
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.String)")]
     public static object Review(string parameter)
     {
-        VulnerabilitiesModule.OnSSRF(parameter);
-        return parameter;
+        try
+        {
+            VulnerabilitiesModule.OnSSRF(parameter);
+            return parameter;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(WebRequestAspect)}.{nameof(Review)}");
+            return parameter;
+        }
     }
 
     /// <summary>
@@ -40,7 +48,15 @@ public class WebRequestAspect
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.Uri)")]
     public static object Review(Uri parameter)
     {
-        VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
-        return parameter;
+        try
+        {
+            VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
+            return parameter;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(WebRequestAspect)}.{nameof(Review)}");
+            return parameter;
+        }
     }
 }

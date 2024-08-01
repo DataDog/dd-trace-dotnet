@@ -28,7 +28,15 @@ public class ISessionAspect
     [AspectMethodInsertBefore("NHibernate.ISession::CreateSQLQuery(System.String)", 0)]
     public static object AnalyzeQuery(string query)
     {
-        VulnerabilitiesModule.OnSqlQuery(query, IntegrationId.NHibernate);
-        return query;
+        try
+        {
+            VulnerabilitiesModule.OnSqlQuery(query, IntegrationId.NHibernate);
+            return query;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(ISessionAspect)}.{nameof(AnalyzeQuery)}");
+            return query;
+        }
     }
 }

@@ -25,6 +25,14 @@ public class HttpControllerAspect
     [AspectMethodInsertBefore("System.Web.Mvc.Controller::RedirectPermanent(System.String)")]
     public static string? Redirect(string? url)
     {
-        return IastModule.OnUnvalidatedRedirect(url);
+        try
+        {
+            return IastModule.OnUnvalidatedRedirect(url);
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpControllerAspect)}.{nameof(Redirect)}");
+            return url;
+        }
     }
 }
