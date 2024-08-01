@@ -149,7 +149,7 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         rawSample.SpanId = result->GetSpanId();
         rawSample.AppDomainId = threadInfo->GetAppDomainId();
         rawSample.Timestamp = result->GetUnixTimeUtc();
-        rawSample.Stack = result->GetCallstack();
+        rawSample.Stack = result->ReleaseCallstack();
         rawSample.ThreadInfo = threadInfo;
     }
     else

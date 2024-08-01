@@ -8,6 +8,7 @@
 #include "cor.h"
 #include "corprof.h"
 
+#include "Callstack.h"
 #include "IThreadInfo.h"
 #include "ScopedHandle.h"
 #include "Semaphore.h"
@@ -18,6 +19,10 @@
 #include <mutex>
 #include <shared_mutex>
 #include <utility>
+
+#ifdef LINUX
+#include <ucontext.h>
+#endif
 
 static constexpr int32_t MinFieldAlignRequirement = 8;
 static constexpr int32_t FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
@@ -149,11 +154,15 @@ private:
     ICorProfilerInfo4* _info;
     std::shared_mutex _threadIdMutex;
     std::shared_mutex _threadNameMutex;
-#ifdef LINUX
-    std::int32_t _timerId;
-#endif
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
+#ifdef LINUX
+    std::int32_t _timerId;
+
+public:
+    Callstack PreviousCallstack;
+    ucontext_t PreviousCtx;
+#endif
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()

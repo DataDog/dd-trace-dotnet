@@ -67,6 +67,7 @@ public:
     inline static const shared::WSTRING CpuProfilingInterval        = WStr("DD_INTERNAL_CPU_PROFILING_INTERVAL");
     inline static const shared::WSTRING SsiLongLivedThreshold       = WStr("DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD");
     inline static const shared::WSTRING TelemetryToDiskEnabled      = WStr("DD_INTERNAL_PROFILING_TELEMETRY_TO_DISK_ENABLED");
+    inline static const shared::WSTRING CacheCallstack              = WStr("DD_INTERNAL_CACHE_CALLSTACKS");
 
     inline static const shared::WSTRING CIVisibilityEnabled         = WStr("DD_CIVISIBILITY_ENABLED");
     inline static const shared::WSTRING InternalCIVisibilitySpanId  = WStr("DD_INTERNAL_CIVISIBILITY_SPANID");

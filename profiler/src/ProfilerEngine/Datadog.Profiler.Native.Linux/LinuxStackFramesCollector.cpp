@@ -23,6 +23,17 @@
 
 using namespace std::chrono_literals;
 
+int32_t DD_OK = 0x00000000;
+int32_t DD_REUSE_CALLSTACK = 0x00010001;
+// failing error codes are negative
+int32_t DD_ABORTED = 0xFFFF0001;
+int32_t DD_FAILED = 0xFFFF0002;
+
+bool Succeeded(int32_t code)
+{
+    return code >= DD_OK;
+}
+
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
@@ -86,7 +97,6 @@ void LinuxStackFramesCollector::UpdateErrorStats(std::int32_t errorCode)
     }
 }
 
-
 StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                        uint32_t* pHR,
                                                                                        bool selfCollect)
@@ -117,7 +127,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
     {
         if (_signalManager == nullptr || !_signalManager->IsHandlerInPlace())
         {
-            *pHR = E_FAIL;
+            *pHR = DD_FAILED;
             return GetStackSnapshotResult();
         }
 
@@ -174,11 +184,11 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
             if (status == std::cv_status::timeout)
             {
-                _lastStackWalkErrorCode = E_ABORT;
+                _lastStackWalkErrorCode = DD_ABORTED;
                 
                 if (!_signalManager->CheckSignalHandler())
                 {
-                    _lastStackWalkErrorCode = E_FAIL;
+                    _lastStackWalkErrorCode = DD_FAILED;
                     Log::Info("Profiler signal handler was replaced but we failed or stopped at restoring it. We won't be able to collect callstacks.");
                     *pHR = E_FAIL;
                     return GetStackSnapshotResult();
@@ -189,16 +199,30 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         }
     }
 
-    // errorCode domain values
-    // * < 0 : libunwind error codes
-    // * > 0 : other errors (ex: failed to create frame while walking the stack)
-    // * == 0 : success
-    if (errorCode < 0)
+#ifdef DD_TEST
+    _wasCallstackReused = errorCode == DD_REUSE_CALLSTACK;
+#endif
+
+    if (GetStackSnapshotResult()->IsCallstackCachingEnabled())
+    {
+        if (errorCode == DD_OK)
+        {
+            _pCurrentCollectionThreadInfo->PreviousCallstack.CopyFrom(GetStackSnapshotResult()->GetCallstack());
+        }
+        else if (errorCode == DD_REUSE_CALLSTACK)
+        {
+            GetStackSnapshotResult()->GetCallstack().CopyFrom(_pCurrentCollectionThreadInfo->PreviousCallstack);
+        }
+    }
+
+    auto const succeeded = Succeeded(errorCode);
+
+    if (!succeeded)
     {
         UpdateErrorStats(errorCode);
     }
 
-    *pHR = (errorCode == 0) ? S_OK : E_FAIL;
+    *pHR = succeeded ? S_OK : E_FAIL;
 
     return GetStackSnapshotResult();
 }
@@ -214,23 +238,48 @@ void LinuxStackFramesCollector::NotifyStackWalkCompleted(std::int32_t resultErro
 // contains a frame of a function that might cause a deadlock.
 extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak));
 
+bool LinuxStackFramesCollector::CanReuseCallstack(ucontext_t* ctx, ucontext_t* oldCtx)
+{
+    if (!GetStackSnapshotResult()->IsCallstackCachingEnabled())
+    {
+        return false;
+    }
+
+    if (ctx == nullptr || oldCtx == nullptr)
+    {
+        return false;
+    }
+
+    return memcmp(ctx, oldCtx, sizeof(ucontext_t)) == 0;
+}
+
 std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 {
     if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
-        return E_ABORT;
+        return DD_ABORTED;
+    }
+
+    TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
+
+    if (CanReuseCallstack(reinterpret_cast<ucontext_t*>(ctx), &_pCurrentCollectionThreadInfo->PreviousCtx))
+    {
+        return DD_REUSE_CALLSTACK;
     }
 
     try
     {
-        // Collect data for TraceContext tracking:
-        TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
-
-        return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
+        auto result = _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
+        if (GetStackSnapshotResult()->IsCallstackCachingEnabled())
+        {
+            // copy only the ucontext_t, the callstack will be copied by the sampling thread
+            memcpy(&_pCurrentCollectionThreadInfo->PreviousCtx, ctx, sizeof(ucontext_t));
+        }
+        return result;
     }
     catch (...)
     {
-        return E_ABORT;
+        return DD_ABORTED;
     }
 }
 
@@ -252,7 +301,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackManually(void* ctx)
         resultErrorCode = unw_getcontext(&context);
         if (resultErrorCode != 0)
         {
-            return E_ABORT; // unw_getcontext does not return a specific error code. Only -1
+            return DD_ABORTED; // unw_getcontext does not return a specific error code. Only -1
         }
 
         flag = static_cast<unw_init_local2_flags_t>(0);
@@ -272,7 +321,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackManually(void* ctx)
         if (IsCurrentCollectionAbortRequested())
         {
             AddFakeFrame();
-            return E_ABORT;
+            return DD_ABORTED;
         }
 
         unw_word_t ip;
@@ -284,7 +333,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackManually(void* ctx)
 
         if (!AddFrame(ip))
         {
-            return S_FALSE;
+            return DD_ABORTED;
         }
 
         resultErrorCode = unw_step(&cursor);
@@ -303,12 +352,12 @@ std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
 
     if (count == 0)
     {
-        return E_FAIL;
+        return DD_FAILED;
     }
 
     SetFrameCount(count);
 
-    return S_OK;
+    return DD_OK;
 }
 
 bool LinuxStackFramesCollector::CanCollect(int32_t threadId, pid_t processId) const

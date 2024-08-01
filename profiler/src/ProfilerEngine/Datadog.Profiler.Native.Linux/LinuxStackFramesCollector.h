@@ -33,6 +33,13 @@ public:
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
 
+#ifdef DD_TEST
+    inline bool WasCallstackReused() const
+    {
+        return _wasCallstackReused;
+    }
+#endif
+
 protected:
     // Linux collector is different from Windows:
     // There is no notion to Suspend/Resume a thread and to have an external thread walk the suspended thread.
@@ -79,14 +86,17 @@ private:
 private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
 
-    static char const* ErrorCodeToString(int32_t errorCode);
     static std::mutex s_stackWalkInProgressMutex;
 
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 
     std::int32_t CollectCallStackCurrentThread(void* ucontext);
+    bool CanReuseCallstack(ucontext_t* ctx, ucontext_t* oldCtx);
 
     ErrorStatistics _errorStatistics;
     bool _useBacktrace2;
     LibrariesInfoCache* _plibrariesInfo;
+#ifdef DD_TEST
+    bool _wasCallstackReused;
+#endif
 };

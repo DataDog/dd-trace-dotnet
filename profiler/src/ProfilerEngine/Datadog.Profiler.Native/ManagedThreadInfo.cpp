@@ -48,4 +48,5 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pC
     _info{pCorProfilerInfo},
     _blockingThreadId{0}
 {
+    
 }

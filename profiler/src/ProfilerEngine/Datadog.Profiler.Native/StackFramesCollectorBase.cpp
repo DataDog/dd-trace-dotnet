@@ -150,8 +150,6 @@ void StackFramesCollectorBase::PrepareForNextCollection()
     // This is because malloc() uses a lock and so if we suspend a thread that was allocating, we will deadlock.
     // So we pre-allocate the memory buffer and reset it before suspending the target thread.
     _pStackSnapshotResult->Reset();
-    _pStackSnapshotResult->SetCallstack(_callstackProvider->Get());
-
 
     // Clear the current collection thread pointer:
     _pCurrentCollectionThreadInfo = nullptr;
@@ -174,10 +172,22 @@ void StackFramesCollectorBase::ResumeTargetThreadIfRequired(ManagedThreadInfo* p
     ResumeTargetThreadIfRequiredImplementation(pThreadInfo, isTargetThreadSuspended, pErrorCodeHR);
 }
 
-StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR)
+StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, bool shouldCacheCallstacks)
 {
     // Update state with the info for the thread that we are collecting:
     _pCurrentCollectionThreadInfo = pThreadInfo;
+    
+    _pStackSnapshotResult->SetCallstack(_callstackProvider->Get());
+
+    if (shouldCacheCallstacks)
+    {
+        // We need to initialize the PreviousCallstack field the first time
+        if (_pCurrentCollectionThreadInfo->PreviousCallstack.Capacity() == 0)
+        {
+            pThreadInfo->PreviousCallstack = _callstackProvider->Get();
+        }
+        _pStackSnapshotResult->EnableCallstacksCaching();
+    }
 
     const auto currentThreadId = OpSysTools::GetThreadId();
 

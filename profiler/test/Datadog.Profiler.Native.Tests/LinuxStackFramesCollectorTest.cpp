@@ -157,8 +157,7 @@ public:
 
         _isStopped = false;
 
-        _stopWorker = false;
-        _workerThread = std::make_unique<WorkerThread>(_stopWorker);
+        _workerThread = std::make_unique<LoopWorker>();
 
         ResetCallbackState();
 
@@ -185,12 +184,18 @@ public:
             return;
 
         _isStopped = true;
-        _stopWorker = true;
+        _workerThread->Stop();
     }
 
     static void SimulateInsideWrappedFunctions()
     {
         inside_wrapped_functions = 1; // do not profile
+    }
+
+    void UseSleepyWorker()
+    {
+        _workerThread->Stop();
+        _workerThread = std::make_unique<SleepyWorker>();
     }
 
     pid_t GetWorkerThreadId()
@@ -254,11 +259,11 @@ public:
     }
 
 private:
+
     class WorkerThread
     {
     public:
-        WorkerThread(const std::atomic<bool>& stopWorker) :
-            _stopWorker(stopWorker),
+        WorkerThread() :
             _workerThreadIdPromise(),
             _workerThreadIdFuture{_workerThreadIdPromise.get_future()},
             _callstack{shared::span<std::uintptr_t>(_framesBuffer.data(), _framesBuffer.size())}
@@ -267,8 +272,20 @@ private:
             _worker = std::thread(&WorkerThread::Work, this);
         }
 
-        ~WorkerThread()
+        virtual ~WorkerThread()
         {
+            Stop();
+        }
+
+        void Stop()
+        {
+            auto stopped = std::exchange(_isStopped, true);
+            if (stopped)
+            {
+                return;
+            }
+
+            StopImpl();
             _worker.join();
         }
 
@@ -283,6 +300,10 @@ private:
         }
 
     private:
+
+        virtual void WorkImpl() = 0;
+        virtual void StopImpl() = 0;
+
         void Work()
         {
             // Get the callstack
@@ -291,13 +312,10 @@ private:
             _callstack.SetCount(nb);
 
             _workerThreadIdPromise.set_value(OpSysTools::GetThreadId());
-            while (!_stopWorker.load())
-            {
-                // do nothing
-            }
+            WorkImpl();
         }
 
-        const std::atomic<bool>& _stopWorker;
+        bool _isStopped = false;
         std::promise<pid_t> _workerThreadIdPromise;
         std::shared_future<pid_t> _workerThreadIdFuture;
         std::thread _worker;
@@ -306,10 +324,46 @@ private:
         Callstack _callstack;
     };
 
+    class LoopWorker : public WorkerThread
+    {
+    private:
+        void StopImpl() override
+        {
+            _stopWorker = 1;
+        }
+
+        void WorkImpl() override
+        {
+            while (!_stopWorker.load())
+            {
+                // do nothing
+            }
+        }
+
+        std::atomic<bool> _stopWorker = 0;
+    };
+
+    class SleepyWorker : public WorkerThread
+    {
+    private:
+
+        void StopImpl() override
+        {
+            _stopWorker.set_value();
+        }
+
+        void WorkImpl() override
+        {
+            auto future = _stopWorker.get_future();
+            future.wait();
+        }
+
+        std::promise<void> _stopWorker;
+    };
+
     bool _isStopped;
     struct sigaction _oldAction;
     pid_t _processId;
-    std::atomic<bool> _stopWorker;
     std::promise<void> _callbackCalledPromise;
     std::future<void> _callbackCalledFuture;
     std::unique_ptr<WorkerThread> _workerThread;
@@ -335,7 +389,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
-    auto callstack = buffer->GetCallstack();
+    auto const& callstack = buffer->GetCallstack();
 
     ValidateCallstack(callstack);
 }
@@ -360,7 +414,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWith
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
-    auto callstack = buffer->GetCallstack();
+    auto const& callstack = buffer->GetCallstack();
 
     ValidateCallstack(callstack);
 }
@@ -435,7 +489,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
-    auto callstack = buffer->GetCallstack();
+    auto callstack = buffer->ReleaseCallstack();
 
     ValidateCallstack(callstack);
 
@@ -456,7 +510,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 
-    callstack = buffer->GetCallstack();
+    callstack = buffer->ReleaseCallstack();
 
     ValidateCallstack(callstack);
 
@@ -500,7 +554,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
 
     EXPECT_EQ(hr, S_OK);
 
-    auto callstack = buffer->GetCallstack();
+    auto const& callstack = buffer->GetCallstack();
 
     ValidateCallstack(callstack);
 
@@ -544,7 +598,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
 
     EXPECT_EQ(hr, S_OK);
 
-    auto callstack = buffer->GetCallstack();
+    auto const& callstack = buffer->GetCallstack();
 
     ValidateCallstack(callstack);
 
@@ -589,7 +643,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
 
     EXPECT_EQ(hr, S_OK);
 
-    auto callstack = buffer->GetCallstack();
+    auto const& callstack = buffer->GetCallstack();
 
     ValidateCallstack(callstack);
 
@@ -656,7 +710,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandler
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
-    auto callstack = buffer->GetCallstack();
+    auto const& callstack = buffer->GetCallstack();
     ValidateCallstack(callstack);
 
     SendSignal();
@@ -713,7 +767,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, S_OK);
 
-        auto callstack = buffer->GetCallstack();
+        auto const& callstack = buffer->GetCallstack();
         ValidateCallstack(callstack);
     }
 
@@ -750,4 +804,87 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     }
 }
 
+TEST_F(LinuxStackFramesCollectorFixture, CheckCallstackAreCachedAndReused)
+{
+    auto* signalManager = GetSignalManager();
+
+    UseSleepyWorker();
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+    EXPECT_CALL(mockConfiguration, IsCallstackCachingEnabled()).WillRepeatedly(Return(true));
+
+    CallstackProvider p(MemoryResourceManager::GetDefault());
+    auto collector = CreateStackFramesCollector(signalManager, configuration.get(), &p);
+
+    // Validate the profiler is working correctly
+    auto threadId = (DWORD)GetWorkerThreadId();
+    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
+    threadInfo.SetOsInfo(threadId, (HANDLE)0);
+
+    ASSERT_EQ(threadInfo.PreviousCallstack.Capacity(), 0);
+
+    collector.PrepareForNextCollection();
+
+    std::uint32_t hr;
+    StackSnapshotResultBuffer* buffer;
+    const bool enableCaching = true;
+    ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr, enableCaching));
+    ASSERT_NE(threadInfo.PreviousCallstack.Capacity(), 0);
+    EXPECT_EQ(hr, S_OK);
+    EXPECT_FALSE(collector.WasCallstackReused());
+
+    auto callstack = buffer->ReleaseCallstack();
+
+    ValidateCallstack(callstack);
+
+    collector.PrepareForNextCollection();
+
+    ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr, enableCaching));
+    EXPECT_EQ(hr, S_OK);
+    EXPECT_TRUE(collector.WasCallstackReused());
+
+    ValidateCallstack(callstack);
+}
+
+TEST_F(LinuxStackFramesCollectorFixture, CheckCallstackAreNotReusedWithThreadConsumingCPU)
+{
+    auto* signalManager = GetSignalManager();
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
+    EXPECT_CALL(mockConfiguration, IsCallstackCachingEnabled()).WillRepeatedly(Return(true));
+
+    CallstackProvider p(MemoryResourceManager::GetDefault());
+    auto collector = CreateStackFramesCollector(signalManager, configuration.get(), &p);
+
+    // Validate the profiler is working correctly
+    auto threadId = (DWORD)GetWorkerThreadId();
+    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
+    threadInfo.SetOsInfo(threadId, (HANDLE)0);
+
+    ASSERT_EQ(threadInfo.PreviousCallstack.Capacity(), 0);
+
+    collector.PrepareForNextCollection();
+
+    std::uint32_t hr;
+    StackSnapshotResultBuffer* buffer;
+    const bool enableCaching = true;
+    ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr, enableCaching));
+    ASSERT_NE(threadInfo.PreviousCallstack.Capacity(), 0);
+    EXPECT_EQ(hr, S_OK);
+    EXPECT_FALSE(collector.WasCallstackReused());
+
+    auto callstack = buffer->ReleaseCallstack();
+
+    ValidateCallstack(callstack);
+
+    collector.PrepareForNextCollection();
+
+    ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr, enableCaching));
+    EXPECT_EQ(hr, S_OK);
+    EXPECT_FALSE(collector.WasCallstackReused());
+
+    ValidateCallstack(callstack);
+}
 #endif

@@ -65,7 +65,8 @@ StackSamplerLoop::StackSamplerLoop(
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
     _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
     _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled() && pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime},
-    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()}
+    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()},
+    _canReuseCallstacks{_pConfiguration->IsCallstackCachingEnabled()}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
     Log::Info("Processor cores = ", _nbCores);
@@ -77,6 +78,7 @@ StackSamplerLoop::StackSamplerLoop(
     Log::Info("Max CPU sampled threads = ", _cpuThreadsThreshold);
     Log::Info("Manual Cpu profiler is ", (_isCpuEnabled) ? "enabled" : "disabled");
     Log::Info("Wall-time profiler is ", (_isWalltimeEnabled) ? "enabled" : "disabled");
+    Log::Info("Cache and Reuse Wall-time callstacks", _pConfiguration->IsCallstackCachingEnabled());
 
     _pCorProfilerInfo->AddRef();
 
@@ -472,7 +474,9 @@ void StackSamplerLoop::CollectOneThreadStackSample(
                 on_leave { _pManager->NotifyCollectionEnd(); };
 
                 _pManager->NotifyCollectionStart();
-                pStackSnapshotResult = _pStackFramesCollector->CollectStackSample(pThreadInfo.get(), &hrCollectStack);
+                // Enables cache/reuse callstacks optimization only for walltime only
+                const bool cacheAndReuseCallstacks = _canReuseCallstacks && (profilingType == WallTime);
+                pStackSnapshotResult = _pStackFramesCollector->CollectStackSample(pThreadInfo.get(), &hrCollectStack, cacheAndReuseCallstacks);
             }
 
             // DoStackSnapshot may return a non-S_OK result even if a part of the stack was walked successfully.
@@ -564,7 +568,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
     std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
     PROFILING_TYPE profilingType)
 {
-    auto callstack = pSnapshotResult->GetCallstack();
+    auto callstack = pSnapshotResult->ReleaseCallstack();
     if (pSnapshotResult == nullptr || callstack.Size() == 0)
     {
         return;

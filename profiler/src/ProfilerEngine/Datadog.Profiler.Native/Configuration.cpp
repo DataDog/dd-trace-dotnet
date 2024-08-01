@@ -72,6 +72,7 @@ Configuration::Configuration()
     _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
     _isInternalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::InternalMetricsEnabled, false);
     _isSystemCallsShieldEnabled = GetEnvironmentValue(EnvironmentVariables::SystemCallsShieldEnabled, true);
+    _callstackCachingEnabled = GetEnvironmentValue(EnvironmentVariables::CacheCallstack, false);
 
     // Check CI Visibility mode
     _isCIVisibilityEnabled = GetEnvironmentValue(EnvironmentVariables::CIVisibilityEnabled, false);
@@ -587,6 +588,16 @@ CpuProfilerType Configuration::GetCpuProfilerType() const
 std::chrono::milliseconds Configuration::GetCpuProfilingInterval() const
 {
     return _cpuProfilingInterval;
+}
+
+bool Configuration::IsCallstackCachingEnabled() const
+{
+#ifdef LINUX
+    return _callstackCachingEnabled;
+#else
+    // For now we explicitly deactivate the calltack caching for Windows
+    return false;
+#endif
 }
 
 static bool convert_to(shared::WSTRING const& s, bool& result)

@@ -38,6 +38,7 @@ public:
     inline std::uint64_t GetSpanId() const;
     inline std::uint64_t SetSpanId(std::uint64_t value);
 
+    inline Callstack& GetCallstack();
     inline std::size_t GetFramesCount() const;
     inline void SetFramesCount(std::uint16_t count);
 
@@ -47,8 +48,11 @@ public:
     inline bool AddFakeFrame();
 
     inline shared::span<uintptr_t> Data();
-    inline Callstack GetCallstack();
+    inline Callstack ReleaseCallstack();
     inline void SetCallstack(Callstack callstack);
+
+    inline void EnableCallstacksCaching();
+    inline bool IsCallstackCachingEnabled() const;
 
     StackSnapshotResultBuffer();
     ~StackSnapshotResultBuffer();
@@ -61,6 +65,7 @@ protected:
 
     std::uint64_t _localRootSpanId;
     std::uint64_t _spanId;
+    bool _cacheCallstacks = false;
 };
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
@@ -113,6 +118,11 @@ inline std::uint64_t StackSnapshotResultBuffer::SetSpanId(std::uint64_t value)
     return prevValue;
 }
 
+inline Callstack& StackSnapshotResultBuffer::GetCallstack()
+{
+    return _callstack;
+}
+
 inline std::size_t StackSnapshotResultBuffer::GetFramesCount() const
 {
     return _callstack.Size();
@@ -140,7 +150,7 @@ inline shared::span<uintptr_t> StackSnapshotResultBuffer::Data()
     return _callstack.Data();
 }
 
-inline Callstack StackSnapshotResultBuffer::GetCallstack()
+inline Callstack StackSnapshotResultBuffer::ReleaseCallstack()
 {
     return std::exchange(_callstack, {});
 }
@@ -148,4 +158,14 @@ inline Callstack StackSnapshotResultBuffer::GetCallstack()
 inline void StackSnapshotResultBuffer::SetCallstack(Callstack callstack)
 {
     _callstack = std::move(callstack);
+}
+
+inline void StackSnapshotResultBuffer::EnableCallstacksCaching()
+{
+    _cacheCallstacks = true;
+}
+
+inline bool StackSnapshotResultBuffer::IsCallstackCachingEnabled() const
+{
+    return _cacheCallstacks;
 }
