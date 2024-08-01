@@ -61,7 +61,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.18.0";
+    const string LibDdwafVersion = "1.19.1";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
 
@@ -181,7 +181,8 @@ partial class Build
 
     bool RequiresThoroughTesting()
     {
-        var gitChangedFiles = GetGitChangedFiles(baseBranch: "origin/master");
+        var baseBranch = string.IsNullOrEmpty(TargetBranch) ? "origin/master" : $"origin/{TargetBranch}";
+        var gitChangedFiles = GetGitChangedFiles(baseBranch);
         var integrationChangedFiles = TargetFrameworks
             .SelectMany(tfm => new[]
             {
@@ -1439,9 +1440,9 @@ partial class Build
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
-        .Executes(async () =>
+        .Executes(() =>
         {
-            var isDebugRun = await IsDebugRun();
+            var isDebugRun = IsDebugRun();
             EnsureExistingDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
@@ -1533,9 +1534,9 @@ partial class Build
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
-        .Executes(async () =>
+        .Executes(() =>
         {
-            var isDebugRun = await IsDebugRun();
+            var isDebugRun = IsDebugRun();
             var project = Solution.GetProject(Projects.ClrProfilerIntegrationTests);
             EnsureExistingDirectory(TestLogsDirectory);
             EnsureResultsDirectory(project);
@@ -1575,9 +1576,9 @@ partial class Build
         .After(BuildNativeLoader)
         .Requires(() => IsWin)
         .Requires(() => Framework)
-        .Executes(async () =>
+        .Executes(() =>
         {
-            var isDebugRun = await IsDebugRun();
+            var isDebugRun = IsDebugRun();
             EnsureExistingDirectory(TestLogsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
@@ -1616,7 +1617,7 @@ partial class Build
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
-        .Executes(async () => await RunWindowsIisIntegrationTests(
+        .Executes(() => RunWindowsIisIntegrationTests(
                       Solution.GetProject(Projects.ClrProfilerIntegrationTests)));
 
     Target RunWindowsSecurityIisIntegrationTests => _ => _
@@ -1626,12 +1627,12 @@ partial class Build
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
-        .Executes(async () => await RunWindowsIisIntegrationTests(
+        .Executes(() => RunWindowsIisIntegrationTests(
                       Solution.GetProject(Projects.AppSecIntegrationTests)));
 
-    async Task RunWindowsIisIntegrationTests(Project project)
+    void RunWindowsIisIntegrationTests(Project project)
     {
-        var isDebugRun = await IsDebugRun();
+        var isDebugRun = IsDebugRun();
         EnsureResultsDirectory(project);
         try
         {
@@ -1666,9 +1667,9 @@ partial class Build
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
-        .Executes(async () =>
+        .Executes(() =>
         {
-            var isDebugRun = await IsDebugRun();
+            var isDebugRun = IsDebugRun();
             var project = Solution.GetProject(Projects.ClrProfilerIntegrationTests);
             var resultsDirectory = GetResultsDirectory(project);
             EnsureCleanDirectory(resultsDirectory);
@@ -1962,9 +1963,9 @@ partial class Build
         .Requires(() => Framework)
         .Requires(() => !IsWin)
         .Triggers(PrintSnapshotsDiff)
-        .Executes(async () =>
+        .Executes(() =>
         {
-            var isDebugRun = await IsDebugRun();
+            var isDebugRun = IsDebugRun();
             EnsureExistingDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
@@ -2043,9 +2044,9 @@ partial class Build
         .Requires(() => Framework)
         .Requires(() => IsOsx)
         .Triggers(PrintSnapshotsDiff)
-        .Executes(async () =>
+        .Executes(() =>
         {
-            var isDebugRun = await IsDebugRun();
+            var isDebugRun = IsDebugRun();
             EnsureExistingDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
@@ -2194,9 +2195,9 @@ partial class Build
     Target RunToolArtifactTests => _ => _
        .Description("Runs the tool artifacts tests")
        .After(BuildToolArtifactTests)
-       .Executes(async () =>
+       .Executes(() =>
         {
-            var isDebugRun = await IsDebugRun();
+            var isDebugRun = IsDebugRun();
             var project = Solution.GetProject(Projects.DdTraceArtifactsTests);
 
             DotNetTest(config => config
@@ -2216,11 +2217,11 @@ partial class Build
        .Description("Runs the dd-dotnet artifacts tests")
        .After(BuildDdDotnetArtifactTests)
        .After(CopyDdDotnet)
-       .Executes(async () =>
+       .Executes(() =>
        {
            try
            {
-               var isDebugRun = await IsDebugRun();
+               var isDebugRun = IsDebugRun();
                var project = Solution.GetProject(Projects.DdDotnetArtifactsTests);
 
                DotNetTest(config => config

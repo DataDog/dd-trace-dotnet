@@ -98,6 +98,11 @@ namespace Datadog.Trace
         public const string RaspWafAndBindingsDuration = "_dd.appsec.rasp.duration_ext";
 
         /// <summary>
+        /// Is set to 1 if there was a RASP timeout.
+        /// </summary>
+        public const string RaspWafTimeout = "_dd.appsec.rasp.timeout";
+
+        /// <summary>
         /// Counts the number of times a rule type is evaluated.
         /// </summary>
         public const string RaspRuleEval = "_dd.appsec.rasp.rule.eval";

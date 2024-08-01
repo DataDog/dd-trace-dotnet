@@ -297,9 +297,9 @@ partial class Build
        .Requires(() => NewIsPrerelease)
        .Executes(() =>
         {
-            if (NewVersion == Version)
+            if (NewVersion == Version && IsPrerelease == NewIsPrerelease)
             {
-                throw new Exception($"Cannot set versions, new version {NewVersion} was the same as {Version}");
+                throw new Exception($"Cannot set versions, new version {NewVersion} was the same as {Version} and {IsPrerelease} == {NewIsPrerelease}");
             }
 
             // Samples need to use the latest version (i.e. the _current_ build version, before updating)
@@ -452,7 +452,7 @@ partial class Build
         }
     }
 
-    private async Task<bool> IsDebugRun()
+    private bool IsDebugRun()
     {
         var forceDebugRun = Environment.GetEnvironmentVariable("ForceDebugRun");
         if (!string.IsNullOrEmpty(forceDebugRun)
@@ -461,36 +461,14 @@ partial class Build
             return true;
         }
 
-        var buildId = Environment.GetEnvironmentVariable("BUILD_BUILDID");
-        if (string.IsNullOrEmpty(buildId))
+        var scheduleName = Environment.GetEnvironmentVariable("BUILD_CRONSCHEDULE_DISPLAYNAME");
+        if (string.IsNullOrEmpty(scheduleName))
         {
             // not in CI
             return false;
         }
-
-        try
-        {
-            var azDoApi = $"https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/{buildId}";
-            using var client = new HttpClient();
-            using var stream = await client.GetStreamAsync(azDoApi);
-            using var json = await JsonDocument.ParseAsync(stream);
-            var triggerInfo = json.RootElement.GetProperty("triggerInfo");
-            if (triggerInfo.TryGetProperty("scheduleName", out var scheduleNameElement))
-            {
-                var scheduleName = scheduleNameElement.ToString();
-                return scheduleName == "Daily Debug Run";
-            }
-            else
-            {
-                // scheduleName not found - this will happen on PRs etc
-                return false;
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning(ex, "Error calling Azdo API to check for debug run");
-            return false;
-        }
+        
+        return scheduleName == "Daily Debug Run";
     } 
 
     private static MSBuildTargetPlatform GetDefaultTargetPlatform()

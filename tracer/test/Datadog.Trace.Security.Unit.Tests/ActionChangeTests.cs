@@ -22,8 +22,9 @@ public class ActionChangeTests : WafLibraryRequiredTest
     [Theory]
     [InlineData("dummy_rule", "test-dummy-rule", "rasp-rule-set.json", "block", BlockingAction.BlockRequestType, 500)]
     [InlineData("dummyrule2", "test-dummy-rule2", "rasp-rule-set.json", "customblock", BlockingAction.BlockRequestType, 500)]
-    [InlineData("dummyrule2", "test-dummy-rule2", "rasp-rule-set.json", "customblock", BlockingAction.RedirectRequestType, 312)]
-    [InlineData("dummy_rule", "test-dummy-rule", "rasp-rule-set.json", "block", BlockingAction.RedirectRequestType, 312)]
+    // Redirect status code is restricted in newer versions of the WAF to 301, 302, 303, 307
+    [InlineData("dummyrule2", "test-dummy-rule2", "rasp-rule-set.json", "customblock", BlockingAction.RedirectRequestType, 303)]
+    [InlineData("dummy_rule", "test-dummy-rule", "rasp-rule-set.json", "block", BlockingAction.RedirectRequestType, 303)]
     public void GivenADummyRule_WhenActionReturnCodeIsChanged_ThenChangesAreApplied(string paramValue, string rule, string ruleFile, string action, string actionType, int newStatus)
     {
         var args = CreateArgs(paramValue);

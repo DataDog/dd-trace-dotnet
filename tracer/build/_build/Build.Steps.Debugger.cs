@@ -95,9 +95,9 @@ partial class Build
         .After(BuildDebuggerIntegrationTests)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
-        .Executes(async () =>
+        .Executes(() =>
         {
-            var isDebugRun = await IsDebugRun();
+            var isDebugRun = IsDebugRun();
             EnsureExistingDirectory(TestLogsDirectory);
             EnsureResultsDirectory(DebuggerIntegrationTests);
 
