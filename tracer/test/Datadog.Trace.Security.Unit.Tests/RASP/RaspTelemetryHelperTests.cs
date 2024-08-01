@@ -18,11 +18,10 @@ namespace Datadog.Trace.Security.Unit.Tests.RASP
         public void GivenARaspTelemetryHelper_WhenGenerateRaspSpanMetricTagsIsCalledWithTimeout_ThenTagIsSet()
         {
             var raspTelemetryHelper = new RaspTelemetryHelper();
-            var tags = new Dictionary<string, string>();
+            var tags = new CommonTags();
             raspTelemetryHelper.AddRaspSpanMetrics(1000, 2000, true);
-            Mock<ITags> mockTags = new Mock<ITags>();
-            raspTelemetryHelper.GenerateRaspSpanMetricTags(mockTags.Object);
-            mockTags.Verify(m => m.SetMetric(Metrics.RaspWafTimeout, 1));
+            raspTelemetryHelper.GenerateRaspSpanMetricTags(tags);
+            tags.GetMetric(Metrics.RaspWafTimeout).Should().Be(1);
         }
     }
 }
