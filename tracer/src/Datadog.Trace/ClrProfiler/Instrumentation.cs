@@ -153,19 +153,19 @@ namespace Datadog.Trace.ClrProfiler
                 }
 
 #if NETSTANDARD2_0 || NETCOREAPP3_1
-            try
-            {
-                // On .NET Core 2.0-3.0 we see an occasional hang caused by OpenSSL being loaded
-                // while the app is shutting down, which results in flaky tests due to the short-
-                // lived nature of our apps. This appears to be a bug in the runtime (although
-                // we haven't yet confirmed that). Calling the `ToUuid()` method uses an MD5
-                // hash which calls into the native library, triggering the load.
-                _ = string.Empty.ToUUID();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error triggering eager OpenSSL load");
-            }
+                try
+                {
+                    // On .NET Core 2.0-3.0 we see an occasional hang caused by OpenSSL being loaded
+                    // while the app is shutting down, which results in flaky tests due to the short-
+                    // lived nature of our apps. This appears to be a bug in the runtime (although
+                    // we haven't yet confirmed that). Calling the `ToUuid()` method uses an MD5
+                    // hash which calls into the native library, triggering the load.
+                    _ = string.Empty.ToUUID();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error triggering eager OpenSSL load");
+                }
 #endif
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
