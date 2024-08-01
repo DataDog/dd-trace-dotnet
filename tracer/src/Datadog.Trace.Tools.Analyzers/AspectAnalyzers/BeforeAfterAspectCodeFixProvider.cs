@@ -104,7 +104,7 @@ public class BeforeAfterAspectCodeFixProvider : CodeFixProvider
         }
 
         // create the trystatementsyntax with the internals of the method declaration
-        var catchDeclaration = SyntaxFactory.CatchDeclaration(SyntaxFactory.IdentifierName("global::System.Exception"), SyntaxFactory.Identifier("ex"));
+        var catchDeclaration = SyntaxFactory.CatchDeclaration(SyntaxFactory.IdentifierName("Exception"), SyntaxFactory.Identifier("ex"));
         var logExpression = SyntaxFactory.ExpressionStatement(
             SyntaxFactory.ParseExpression($$"""IastModule.Log.Error(ex, $"Error invoking {nameof({{typeName}})}.{nameof({{methodName}})}")"""));
         var returnStatement = paramName is not null
