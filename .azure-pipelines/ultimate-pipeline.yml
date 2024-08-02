@@ -5676,7 +5676,7 @@ stages:
 
           displayName: Run artifact test (expecting failure)
 
-        - publish: tracer/build_data
+        - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
