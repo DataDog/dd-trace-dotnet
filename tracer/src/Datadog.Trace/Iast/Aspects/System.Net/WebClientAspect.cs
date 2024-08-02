@@ -55,8 +55,12 @@ public class WebClientAspect
     {
         try
         {
-            VulnerabilitiesModule.OnSSRF(parameter);
-            return parameter;
+            if (parameter is not null)
+            {
+                VulnerabilitiesModule.OnSSRF(parameter);
+            }
+
+            return parameter!;
         }
         catch (Exception ex) when (ex is not BlockException)
         {
@@ -125,8 +129,12 @@ public class WebClientAspect
     {
         try
         {
-            VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
-            return parameter;
+            if (parameter is not null && parameter.OriginalString is not null)
+            {
+                VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
+            }
+
+            return parameter!;
         }
         catch (Exception ex) when (ex is not BlockException)
         {
