@@ -101,8 +101,9 @@ public class HttpClientAspect
             if (parameter is not null)
             {
                 VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
-                return parameter;
             }
+
+            return parameter!;
         }
         catch (Exception ex) when (ex is not BlockException)
         {
