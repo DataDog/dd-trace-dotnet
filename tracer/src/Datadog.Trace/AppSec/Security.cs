@@ -24,6 +24,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Vendors.Serilog.Core;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.AppSec
@@ -580,9 +581,11 @@ namespace Datadog.Trace.AppSec
 
         internal void UpdateActiveAddresses()
         {
+            // So far, RASP is the only one that uses this
             if (_settings.RaspEnabled)
             {
                 var addresses = _waf?.GetKnownAddresses();
+                Log.Debug("Updating WAF active addresses to {Addresses}", addresses);
                 _activeAddresses = addresses is null ? null : new HashSet<string>(addresses);
             }
             else
