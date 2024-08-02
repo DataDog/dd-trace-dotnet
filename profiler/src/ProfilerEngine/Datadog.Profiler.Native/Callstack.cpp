@@ -95,6 +95,6 @@ std::uintptr_t* Callstack::end() const
 
 void Callstack::CopyFrom(Callstack const& other)
 {
-    memcpy(_buffer.begin(), other._buffer.begin(), other._count * sizeof(uintptr_t));
+    memcpy(_buffer.data(), other._buffer.data(), other._count * sizeof(uintptr_t));
     _count = other._count;
 }
