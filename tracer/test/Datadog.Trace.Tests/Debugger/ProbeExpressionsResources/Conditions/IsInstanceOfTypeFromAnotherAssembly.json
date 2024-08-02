@@ -1,0 +1,14 @@
+{
+  "dsl": "{instanceof(this.String, DynamicTypeForExpressionLanguageTesting)}",
+  "instanceof": [
+    {
+      "getmember": [
+        {
+          "ref": "this"
+        },
+        "String"
+      ]
+    },
+    "DynamicTypeForExpressionLanguageTesting"
+  ]
+}

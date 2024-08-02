@@ -1,0 +1,14 @@
+{
+  "dsl": "{instanceof(this.String, DebuggerExpressionLanguageTests)}",
+  "instanceof": [
+    {
+      "getmember": [
+        {
+          "ref": "this"
+        },
+        "String"
+      ]
+    },
+    "DebuggerExpressionLanguageTests"
+  ]
+}
