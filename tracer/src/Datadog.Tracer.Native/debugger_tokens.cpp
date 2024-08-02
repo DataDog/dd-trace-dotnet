@@ -158,6 +158,8 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
 
 HRESULT DebuggerTokens::EnsureBaseCalltargetTokens()
 {
+    std::lock_guard<std::recursive_mutex> guard(metadata_mutex);
+
     auto hr = CallTargetTokens::EnsureBaseCalltargetTokens();
 
     IfFailRet(hr);
