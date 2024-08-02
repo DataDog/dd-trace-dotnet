@@ -26,10 +26,13 @@ public class HttpUtilityAspect
     [AspectMethodReplace("System.Web.HttpUtility::HtmlEncode(System.String)")]
     public static string? Review(string? parameter)
     {
-        var result = parameter; // This looks unnecessary, but it's to seathe the analyzer
+        var result = WebUtility.HtmlEncode(parameter);
         try
         {
-            return IastModule.OnXssEscape(parameter);
+            if (parameter is not null && result is not null)
+            {
+                return IastModule.OnXssEscape(parameter, result);
+            }
         }
         catch (Exception ex)
         {

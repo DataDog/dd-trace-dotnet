@@ -196,7 +196,7 @@ public class StringBuilderAspects
             if (target is not null && value is not null)
             {
                 var initialLength = target.Length - count;
-                return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, value?.Length ?? 0, startIndex, count);
+                return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, value.Length, startIndex, count);
             }
         }
         catch (Exception ex)
@@ -222,9 +222,8 @@ public class StringBuilderAspects
         {
             if (target is not null && value is not null)
             {
-                var length = value.Length;
                 var initialLength = target.Length - count;
-                return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, value?.Length ?? 0, startIndex, count);
+                return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, value.Length, startIndex, count);
             }
         }
         catch (Exception ex)
@@ -250,9 +249,8 @@ public class StringBuilderAspects
         {
             if (target is not null && value is not null)
             {
-                var length = value.Length;
                 var initialLength = target.Length - charCount;
-                return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, value?.Length ?? 0, startIndex, charCount);
+                return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, value.Length, startIndex, charCount);
             }
         }
         catch (Exception ex)
