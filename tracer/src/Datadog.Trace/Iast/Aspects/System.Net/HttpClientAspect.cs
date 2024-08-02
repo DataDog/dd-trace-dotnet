@@ -98,8 +98,11 @@ public class HttpClientAspect
     {
         try
         {
-            VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
-            return parameter;
+            if (parameter is not null)
+            {
+                VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
+                return parameter;
+            }
         }
         catch (Exception ex) when (ex is not BlockException)
         {
@@ -129,14 +132,12 @@ public class HttpClientAspect
     {
         try
         {
-            var uri = parameter.RequestUri;
-
-            if (uri is not null)
+            if (parameter is not null && parameter.RequestUri is not null && parameter.RequestUri.OriginalString is not null)
             {
-                VulnerabilitiesModule.OnSSRF(uri.OriginalString);
+                VulnerabilitiesModule.OnSSRF(parameter.RequestUri.OriginalString);
             }
 
-            return parameter;
+            return parameter!;
         }
         catch (Exception ex) when (ex is not BlockException)
         {
@@ -149,14 +150,17 @@ public class HttpClientAspect
     {
         try
         {
-            var uri = parameter.DuckCast<ClrProfiler.AutoInstrumentation.AspNet.IHttpRequestMessage>()?.RequestUri;
-
-            if (uri is not null)
+            if (parameter is not null)
             {
-                VulnerabilitiesModule.OnSSRF(uri.OriginalString);
+                var uri = parameter.DuckCast<ClrProfiler.AutoInstrumentation.AspNet.IHttpRequestMessage>()?.RequestUri;
+
+                if (uri is not null)
+                {
+                    VulnerabilitiesModule.OnSSRF(uri.OriginalString);
+                }
             }
 
-            return parameter;
+            return parameter!;
         }
         catch (Exception ex) when (ex is not BlockException)
         {
