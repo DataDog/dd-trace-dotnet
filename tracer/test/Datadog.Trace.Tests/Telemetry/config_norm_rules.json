@@ -466,6 +466,8 @@
   "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_UPLOAD_ENABLED": "dynamic_instrumentation_symbol_database_upload_enabled",
   "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES": "symbol_database_third_party_detection_includes",
   "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_EXCLUDES": "symbol_database_third_party_detection_excludes",
+  "DD_THIRD_PARTY_DETECTION_INCLUDES": "third_party_detection_includes",
+  "DD_THIRD_PARTY_DETECTION_EXCLUDES": "third_party_detection_excludes",
   "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS": "logs_direct_submission_integrations",
   "DD_LOGS_DIRECT_SUBMISSION_HOST": "logs_direct_submission_host",
   "DD_LOGS_DIRECT_SUBMISSION_SOURCE": "logs_direct_submission_source",
