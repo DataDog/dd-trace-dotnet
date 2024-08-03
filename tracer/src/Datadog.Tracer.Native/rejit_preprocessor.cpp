@@ -5,6 +5,7 @@
 #include "integration.h"
 #include "logger.h"
 #include "stats.h"
+#include "cor_profiler.h"
 
 namespace trace
 {
@@ -480,7 +481,7 @@ void RejitPreprocessor<RejitRequestDefinition>::RequestRejit(std::vector<MethodI
             vtMethodDefs.push_back(rejitRequest.methodToken);
         }
 
-        if (enqueueInSameThread)
+        if (enqueueInSameThread || m_corProfiler->IsAotInstrumentation())
         {
             m_rejit_handler->RequestRejit(vtModules, vtMethodDefs, callRevertExplicitly);
         }
@@ -533,18 +534,13 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
     const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
     std::shared_ptr<std::promise<ULONG>> promise)
 {
-    if (m_rejit_handler->IsShutdownRequested())
+    if (m_rejit_handler->IsShutdownRequested() || modulesVector.size() == 0 || definitions.size() == 0)
     {
         if (promise != nullptr)
         {
             promise->set_value(0);
         }
 
-        return;
-    }
-
-    if (modulesVector.size() == 0 || definitions.size() == 0)
-    {
         return;
     }
 
@@ -875,18 +871,13 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(
 {
     std::vector<MethodIdentifier> rejitRequests;
 
-    if (m_rejit_handler->IsShutdownRequested())
+    if (m_rejit_handler->IsShutdownRequested() || modulesVector.size() == 0 || definitions.size() == 0)
     {
         if (promise != nullptr)
         {
             promise->set_value(rejitRequests);
         }
 
-        return;
-    }
-
-    if (modulesVector.size() == 0 || definitions.size() == 0)
-    {
         return;
     }
 

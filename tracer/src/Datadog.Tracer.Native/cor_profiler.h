@@ -65,6 +65,7 @@ private:
     std::unordered_map<AppDomainID, Version> managed_profiler_loaded_app_domains;
     std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
     bool is_desktop_iis = false;
+    bool is_aot_instrumentation = false;
 
     //
     // CallTarget Members
@@ -146,7 +147,13 @@ public:
     bool IsAttached() const;
 
     void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
-                                    int* symbolsSize) ;
+                                    int* symbolsSize);
+
+    static void GetAssemblyAndSymbolsBytes(bool isDesktop, BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
+                                           int* symbolsSize);
+
+    void SetAotInstrumentation();
+    bool IsAotInstrumentation();
 
     //
     // ICorProfilerCallback methods

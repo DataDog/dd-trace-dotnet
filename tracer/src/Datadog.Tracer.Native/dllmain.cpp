@@ -30,12 +30,16 @@ EXTERN_C HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID rii
     // {50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}
     const GUID CLSID_New_CorProfiler = {0x50da5eed, 0xf1ed, 0xb00b, {0x10, 0x55, 0x5a, 0xfe, 0x55, 0xa1, 0xad, 0xe5}};
 
-    if (ppv == nullptr || (rclsid != CLSID_CorProfiler && rclsid != CLSID_New_CorProfiler))
+    // {426CE820-97B3-4FFD-9BE7-155B4B5B5E42}
+    static const GUID CLSID_AoT_CorProfiler = {0x426ce820, 0x97b3, 0x4ffd, {0x9b, 0xe7, 0x15, 0x5b, 0x4b, 0x5b, 0x5e, 0x42}};
+
+    if (ppv == nullptr || 
+        (rclsid != CLSID_CorProfiler && rclsid != CLSID_New_CorProfiler && rclsid != CLSID_AoT_CorProfiler))
     {
         return E_FAIL;
     }
 
-    auto factory = new ClassFactory;
+    auto factory = new ClassFactory(rclsid);
 
     if (factory == nullptr)
     {

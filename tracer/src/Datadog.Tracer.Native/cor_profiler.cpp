@@ -55,6 +55,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     // we used to bail-out if tracing was disabled, but we now allow the tracer to be loaded
     // in all cases, so that we can enable other products
 
+    if (is_aot_instrumentation)
+    {
+        Logger::Info(" * AoT Instrumentation Mode ENABLED *");
+    }
+
     const auto process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
@@ -1192,8 +1197,15 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         {
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_,
-                                                                                promise);
+
+            if (!profiler->IsAotInstrumentation())
+            {
+                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_, promise);
+            }
+            else
+            {
+                tracer_integration_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_, true);
+            }
 
             // wait and get the value from the future<ULONG>
             const auto status = future.wait_for(100ms);
@@ -3379,7 +3391,9 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def, 0, WStr("GetAssemblyAndSymbolsBytes"), profiler_ref);
+    hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def, 0x300, //STD_CALL
+                                         WStr("GetAssemblyAndSymbolsBytes"),
+                                         profiler_ref);
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefinePinvokeMap failed");
@@ -3783,7 +3797,7 @@ extern uint8_t pdb_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader
 extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
 #endif
 
-void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
+void CorProfiler::GetAssemblyAndSymbolsBytes(bool isDesktop, BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
                                              int* symbolsSize) 
 {
 #ifdef _WIN32
@@ -3791,7 +3805,7 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
     LPCWSTR dllLpName;
     LPCWSTR symbolsLpName;
 
-    if (runtime_information_.is_desktop())
+    if (isDesktop)
     {
         dllLpName = MAKEINTRESOURCE(NET461_MANAGED_ENTRYPOINT_DLL);
         symbolsLpName = MAKEINTRESOURCE(NET461_MANAGED_ENTRYPOINT_SYMBOLS);
@@ -3842,6 +3856,23 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
     }
 #endif
 }
+
+void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
+                                             int* symbolsSize)
+{
+    GetAssemblyAndSymbolsBytes(runtime_information_.is_desktop(), pAssemblyArray, assemblySize, pSymbolsArray,
+                               symbolsSize);
+}
+
+void CorProfiler::SetAotInstrumentation()
+{
+    is_aot_instrumentation = true;
+}
+bool CorProfiler::IsAotInstrumentation()
+{
+    return is_aot_instrumentation;
+}
+
 
 // ***
 // * ReJIT Methods

@@ -12,15 +12,18 @@ class ClassFactory : public IClassFactory
 {
 private:
     std::atomic<int> refCount;
+    GUID classId;
 
 public:
-    ClassFactory();
+    ClassFactory(const GUID& classId);
     virtual ~ClassFactory();
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
     ULONG STDMETHODCALLTYPE AddRef() override;
     ULONG STDMETHODCALLTYPE Release() override;
     HRESULT STDMETHODCALLTYPE CreateInstance(IUnknown* pUnkOuter, REFIID riid, void** ppvObject) override;
     HRESULT STDMETHODCALLTYPE LockServer(BOOL fLock) override;
+
+    const GUID& GetClassId();
 };
 
 #endif // DD_CLR_PROFILER_CLASS_FACTORY_H_

@@ -8,12 +8,22 @@
 #include "cor_profiler.h"
 #include "logger.h"
 
-ClassFactory::ClassFactory() : refCount(0)
+// {426CE820-97B3-4FFD-9BE7-155B4B5B5E42}
+const GUID CLSID_AoT_CorProfiler = {
+    0x426ce820, 0x97b3, 0x4ffd, {0x9b, 0xe7, 0x15, 0x5b, 0x4b, 0x5b, 0x5e, 0x42}};
+
+
+ClassFactory::ClassFactory(const GUID& classId) : refCount(0), classId(classId)
 {
 }
 
 ClassFactory::~ClassFactory()
 {
+}
+
+const GUID& ClassFactory::GetClassId()
+{
+    return this->classId;
 }
 
 HRESULT STDMETHODCALLTYPE ClassFactory::QueryInterface(REFIID riid, void** ppvObject)
@@ -80,6 +90,10 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter, REFI
     trace::Logger::Debug("ClassFactory::CreateInstance");
 
     auto profiler = new trace::CorProfiler();
+    if (this->classId == CLSID_AoT_CorProfiler)
+    {
+        profiler->SetAotInstrumentation();
+    }
     return profiler->QueryInterface(riid, ppvObject);
 }
 
