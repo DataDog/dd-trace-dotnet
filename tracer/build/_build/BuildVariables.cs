@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using Nuke.Common;
 using Logger = Serilog.Log;
 
@@ -12,6 +13,14 @@ partial class Build
         {
             envVars.Add("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "1");
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
+        }
+
+        if (LineScenario)
+        {
+            var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
+
+            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES", "1");
+            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH", $"{ExplorationTestsDirectory}/{testDescription.Name}/lineprobes");
         }
 
         envVars.Add("COMPlus_DbgEnableMiniDump", "1");
