@@ -249,7 +249,7 @@ public class StringJoinTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Join(",", new ClassForStringTest(taintedValue)), () => String.Join(",", new ClassForStringTest(taintedValue)));
     }
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
 
     [Fact(Skip = "Aspect disabled until undefined generics are supported")]
     public void GivenATaintedStringInList_WhenCallingJoinWithChar_ResultIsTainted10()

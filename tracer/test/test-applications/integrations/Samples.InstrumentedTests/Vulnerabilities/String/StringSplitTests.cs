@@ -370,7 +370,7 @@ public class StringSplitTests : InstrumentationTestsBase
 
     // Test System.String::Split(System.String,System.Int32,System.StringSplitOptions)
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithStringAndOptions_ResultIsTainted2()
     {
