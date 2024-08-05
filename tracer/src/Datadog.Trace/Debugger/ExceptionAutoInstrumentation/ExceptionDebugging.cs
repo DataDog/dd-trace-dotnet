@@ -88,7 +88,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 snapshotBatchUploader: snapshotBatchUploader,
                 debuggerSettings);
 
-            Task.Run(async () => await _uploader.StartFlushingAsync().ConfigureAwait(false));
+            Task.Run(() => _uploader.StartFlushingAsync())
+                .ContinueWith(t => Log.Error(t.Exception, "Error in flushing task"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public static void Report(Span span, Exception exception)

@@ -44,56 +44,94 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 return;
             }
 
-            ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
-            if (ManagedProfilerDirectory is null)
-            {
-                StartupLogger.Log("Managed profiler directory doesn't exist. Automatic instrumentation will be disabled");
-                return;
-            }
-
-            StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
-
             try
             {
-                AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
+                ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
+                if (ManagedProfilerDirectory is null)
+                {
+                    StartupLogger.Log("Managed profiler directory doesn't exist. Automatic instrumentation will be disabled");
+                    return;
+                }
+
+                StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
+
+                try
+                {
+                    AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
+                }
+                catch (Exception ex)
+                {
+                    StartupLogger.Log(ex, "Unable to register a callback to the CurrentDomain.AssemblyResolve event.");
+                }
+
+                var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
+                if (!runInAas)
+                {
+                    TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
+                    return;
+                }
+
+                // In AAS, the loader can be used to load the tracer, the traceagent only (if only custom tracing is enabled),
+                // dogstatsd or all of them.
+                var customTracingEnabled = ReadBooleanEnvironmentVariable(AasCustomTracingKey, false);
+                var needsDogStatsD = ReadBooleanEnvironmentVariable(AasCustomMetricsKey, false);
+                var automaticTraceEnabled = ReadBooleanEnvironmentVariable(TraceEnabledKey, true);
+
+                var profilingManuallyEnabled = ReadEnvironmentVariable(ProfilingEnabledKey);
+
+                var automaticProfilingEnabled = profilingManuallyEnabled switch
+                {
+                    "auto" => true,
+                    null => false,
+                    _ => ReadBooleanEnvironmentVariable(ProfilingEnabledKey, false)
+                };
+
+                if (automaticTraceEnabled || customTracingEnabled || needsDogStatsD || automaticProfilingEnabled)
+                {
+                    StartupLogger.Log("Invoking managed method to start external processes.");
+                    TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
+                }
+
+                if (automaticTraceEnabled)
+                {
+                    StartupLogger.Log("Invoking managed tracer.");
+                    TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
+                }
             }
             catch (Exception ex)
             {
-                StartupLogger.Log(ex, "Unable to register a callback to the CurrentDomain.AssemblyResolve event.");
+                // if we're in SSI we want to be as safe as possible, so catching to avoid the possibility of a crash
+                try
+                {
+                    StartupLogger.Log(ex, "Error in Datadog.Trace.ClrProfiler.Managed.Loader.Startup.Startup(). Functionality may be impacted.");
+                    return;
+                }
+                catch
+                {
+                    // Swallowing any errors here, as something went _very_ wrong, even with logging
+                    // and we 100% don't want to crash in SSI. Outside of SSI we do want to see the crash
+                    // so that it's visible to the user.
+                    if (IsInSsi())
+                    {
+                        return;
+                    }
+                }
+
+                throw;
             }
 
-            var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
-            if (!runInAas)
+            static bool IsInSsi()
             {
-                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
-                return;
-            }
-
-            // In AAS, the loader can be used to load the tracer, the traceagent only (if only custom tracing is enabled),
-            // dogstatsd or all of them.
-            var customTracingEnabled = ReadBooleanEnvironmentVariable(AasCustomTracingKey, false);
-            var needsDogStatsD = ReadBooleanEnvironmentVariable(AasCustomMetricsKey, false);
-            var automaticTraceEnabled = ReadBooleanEnvironmentVariable(TraceEnabledKey, true);
-
-            var profilingManuallyEnabled = ReadEnvironmentVariable(ProfilingEnabledKey);
-
-            var automaticProfilingEnabled = profilingManuallyEnabled switch
-            {
-                "auto" => true,
-                null => false,
-                _ => ReadBooleanEnvironmentVariable(ProfilingEnabledKey, false)
-            };
-
-            if (automaticTraceEnabled || customTracingEnabled || needsDogStatsD || automaticProfilingEnabled)
-            {
-                StartupLogger.Log("Invoking managed method to start external processes.");
-                TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
-            }
-
-            if (automaticTraceEnabled)
-            {
-                StartupLogger.Log("Invoking managed tracer.");
-                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
+                try
+                {
+                    // Not using the ReadEnvironmentVariable method here to avoid logging (which could cause a crash itself)
+                    return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_INJECTION_ENABLED"));
+                }
+                catch
+                {
+                    // sigh, nothing works, _pretend_ we're in SSI so that we don't crash the app
+                    return true;
+                }
             }
         }
 
