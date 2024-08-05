@@ -1,0 +1,21 @@
+{
+  "dsl": "this.Char > 'B'",
+  "gt": [
+    {
+      "getmember": [
+        {
+          "ref": "this"
+        },
+        "Char"
+      ]
+    },
+    {
+      "getmember": [
+        {
+          "ref": "this"
+        },
+        "AnotherChar"
+      ]
+    }
+  ]
+}

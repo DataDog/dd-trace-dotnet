@@ -1,14 +1,25 @@
 ﻿Condition:
 Json:
 {
-  "eq": [
+  "gt": [
     {
-      "ref": "BooleanValue"
+      "getmember": [
+        {
+          "ref": "this"
+        },
+        "Char"
+      ]
     },
-    tru
+    {
+      "getmember": [
+        {
+          "ref": "this"
+        },
+        "AnotherChar"
+      ]
+    }
   ]
 }
-
 Expression: (
     scopeMember,
     scopeMember,
@@ -16,7 +27,6 @@ Expression: (
     exception,
     scopeMemberArray) =>
 {
-    bool $dd_el_result;
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
     var @return = (string)scopeMember.Value;
     var @duration = (TimeSpan)scopeMember.Value;
@@ -36,9 +46,8 @@ Expression: (
     var StringArg = (string)scopeMemberArray[12].Value;
     var CollectionArg = (List<string>)scopeMemberArray[13].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[14].Value;
+    var $dd_el_result = this.Char > this.AnotherChar;
 
-    return true;
+    return $dd_el_result;
 }
 Result: True
-Errors:
-EvaluationError { Expression = BooleanValue == N/A, Message = Error parsing boolean value. Path 'eq[0]', line 7, position 7. }
