@@ -31,6 +31,13 @@ internal abstract partial class MetricsTelemetryCollectorBase
         _aggregationInterval = aggregationInterval;
         _aggregationNotification = aggregationNotification;
         _aggregateTask = Task.Run(AggregateMetricsLoopAsync);
+        _aggregateTask
+           .ContinueWith(
+                t =>
+                {
+                    // There's a complex relationship between metrics and logs initialization, so we don't log anything in this case
+                },
+                TaskContinuationOptions.OnlyOnFaulted);
     }
 
     /// <summary>

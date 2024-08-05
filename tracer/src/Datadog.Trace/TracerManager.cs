@@ -299,36 +299,36 @@ namespace Datadog.Trace
 
         private static async Task WriteDiagnosticLog(TracerManager instance)
         {
-            if (instance._isClosing)
-            {
-                return;
-            }
-
-            string agentError = null;
-            var instanceSettings = instance.Settings;
-
-            // In AAS, the trace agent is deployed alongside the tracer and managed by the tracer
-            // Disable this check as it may hit the trace agent before it is ready to receive requests and give false negatives
-            // Also disable if tracing is not enabled (as likely to be in an environment where agent is not available)
-            if (instanceSettings.TraceEnabledInternal && !instanceSettings.IsRunningInAzureAppService)
-            {
-                try
-                {
-                    var success = await instance.AgentWriter.Ping().ConfigureAwait(false);
-
-                    if (!success)
-                    {
-                        agentError = "An error occurred while sending traces to the agent";
-                    }
-                }
-                catch (Exception ex)
-                {
-                    agentError = ex.Message;
-                }
-            }
-
             try
             {
+                if (instance._isClosing)
+                {
+                    return;
+                }
+
+                string agentError = null;
+                var instanceSettings = instance.Settings;
+
+                // In AAS, the trace agent is deployed alongside the tracer and managed by the tracer
+                // Disable this check as it may hit the trace agent before it is ready to receive requests and give false negatives
+                // Also disable if tracing is not enabled (as likely to be in an environment where agent is not available)
+                if (instanceSettings.TraceEnabledInternal && !instanceSettings.IsRunningInAzureAppService)
+                {
+                    try
+                    {
+                        var success = await instance.AgentWriter.Ping().ConfigureAwait(false);
+
+                        if (!success)
+                        {
+                            agentError = "An error occurred while sending traces to the agent";
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        agentError = ex.Message;
+                    }
+                }
+
                 var stringWriter = new StringWriter();
 
                 using (var writer = new JsonTextWriter(stringWriter))
