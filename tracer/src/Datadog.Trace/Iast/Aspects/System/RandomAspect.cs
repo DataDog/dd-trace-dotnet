@@ -24,6 +24,14 @@ public class RandomAspect
     [AspectMethodInsertAfter("System.Random::.ctor(System.Int32)")]
     public static void Init()
     {
-        IastModule.OnWeakRandomness(_evidenceValue);
+        try
+        {
+            IastModule.OnWeakRandomness(_evidenceValue);
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(RandomAspect)}.{nameof(Init)}");
+            return;
+        }
     }
 }
