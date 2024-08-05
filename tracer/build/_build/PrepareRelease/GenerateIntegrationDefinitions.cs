@@ -35,7 +35,7 @@ namespace PrepareRelease
 
         static IEnumerable<InstrumentedAssembly> GetCallTargetIntegrations(Assembly assembly)
         {
-            var definitionsClass = assembly.GetType("Datadog.Trace.ClrProfiler.InstrumentationDefinitions");
+            var definitionsClass = assembly.GetType("Datadog.Trace.Internal.ClrProfiler.InstrumentationDefinitions");
             var definitionsMethod = definitionsClass
                .GetMethod("GetAllDefinitionsNative", BindingFlags.Static | BindingFlags.NonPublic);
             var derivedDefinitionsMethod = definitionsClass
@@ -45,10 +45,10 @@ namespace PrepareRelease
             var getAdoNetIntegrationIdMethod = definitionsClass
                    .GetMethod("GetAdoNetIntegrationId", BindingFlags.Static | BindingFlags.Public);
 
-            var integrationIdExtensionsClass = assembly.GetType("Datadog.Trace.Configuration.IntegrationIdExtensions");
+            var integrationIdExtensionsClass = assembly.GetType("Datadog.Trace.Internal.Configuration.IntegrationIdExtensions");
             var toStringFastMethod = integrationIdExtensionsClass.GetMethod("ToStringFast", BindingFlags.Static | BindingFlags.Public);
 
-            var structDefinition = assembly.GetType("Datadog.Trace.ClrProfiler.NativeCallTargetDefinition");
+            var structDefinition = assembly.GetType("Datadog.Trace.Internal.ClrProfiler.NativeCallTargetDefinition");
 
             Array definitions = (Array)definitionsMethod.Invoke(null, Array.Empty<object>());
             Array derivedDefinitions = (Array)derivedDefinitionsMethod.Invoke(null, Array.Empty<object>());
