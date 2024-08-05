@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private const string AssemblyName = "Datadog.Trace, Version=2.55.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        private const string AssemblyName = "Datadog.Trace, Version=3.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
         private const string AasCustomTracingKey = "DD_AAS_ENABLE_CUSTOM_TRACING";
         private const string AasCustomMetricsKey = "DD_AAS_ENABLE_CUSTOM_METRICS";
@@ -87,15 +87,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             if (automaticTraceEnabled || customTracingEnabled || needsDogStatsD || automaticProfilingEnabled)
             {
+                // With V3, pretty much all scenarios require the trace-agent and dogstatsd, so we enable them by default
                 StartupLogger.Log("Invoking managed method to start external processes.");
                 TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
             }
 
-            if (automaticTraceEnabled)
-            {
-                StartupLogger.Log("Invoking managed tracer.");
-                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
-            }
+            // We need to invoke the managed tracer regardless of whether tracing is enabled
+            // because other products rely on it
+            StartupLogger.Log("Invoking managed tracer.");
+            TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
         }
 
         internal static string? ManagedProfilerDirectory { get; }

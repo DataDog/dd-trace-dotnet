@@ -196,8 +196,10 @@ stages:
     - bash: |
         TARGET_BRANCH=$SYSTEM_PULLREQUEST_TARGETBRANCH
         echo "SYSTEM_PULLREQUEST_TARGETBRANCH=$TARGET_BRANCH"
-        if [[ "$TARGET_BRANCH" == refs/heads/hotfix/* ]]; then
+        if [[ "$TARGET_BRANCH" == refs/heads/hotfix/* ]] || [[ "$TARGET_BRANCH" == refs/heads/release/* ]]; then
           TARGET_BRANCH=$(echo $TARGET_BRANCH| cut -c 11-)
+        elif [[ "$TARGET_BRANCH" == hotfix/* ]] || [[ "$TARGET_BRANCH" == release/* ]]; then
+          echo "No need to change the branch name"
         else
           TARGET_BRANCH=master
         fi
@@ -376,7 +378,7 @@ stages:
         target: builder
         baseImage: $(nativeBaseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildNativeTracerHome BuildNativeLoader CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests"
+        command: "BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests"
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -402,6 +404,45 @@ stages:
     - publish: tracer/build_data/tests
       displayName: publish tracer and native loader test results
       artifact: build_linux_tracer_unit_tests_results_$(artifactSuffix)_$(System.JobAttempt)
+
+- stage: build_linux_universal
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    pool:
+      name: azure-linux-scale-set-2
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: "universal"
+        useNativeSdkVersion: true
+        command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
+
+    - publish: $(monitoringHome)/linux-musl-x64
+      displayName: Uploading linux universal artifacts
+      artifact: linux-universal-home-linux-x64
+
+    - publish: $(symbols)/linux-musl-x64
+      displayName: Upload linux universal symbols
+      artifact: linux-universal-symbols-linux-x64
 
 - stage: build_linux_profiler
   dependsOn: [merge_commit_id]
@@ -441,7 +482,8 @@ stages:
         target: builder
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "Clean BuildProfilerHome CompileProfilerNativeTests RunProfilerNativeTests ExtractDebugInfoLinux"
+        # We only need the native wrapper for the unit tests but we do not want to publish it (universal binary)
+        command: "Clean BuildProfilerHome CompileNativeWrapper CompileProfilerNativeTests RunProfilerNativeTests CompileNativeWrapperNativeTests RunNativeWrapperNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -458,7 +500,7 @@ stages:
       artifact: build_linux_profiler_unit_tests_results_$(artifactSuffix)_$(System.JobAttempt)
 
 - stage: package_linux
-  dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler, build_dd_dotnet_linux]
+  dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler, build_dd_dotnet_linux, build_linux_universal]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -487,27 +529,58 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
+    # Download _both_ musl and glibc if we're building the universal package
+    # but only the musl package if we're building alpine package
     - task: DownloadPipelineArtifact@2
-      displayName: Download tracer linux native binary
+      displayName: Download tracer linux native binary (linux-x64)
+      condition: eq(variables['artifactSuffix'], 'linux-x64')
       inputs:
-        artifact: linux-tracer-home-$(artifactSuffix)
+        artifact: linux-tracer-home-linux-x64
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download profiler linux native binary
+      displayName: Download profiler linux native binary (linux-x64)
+      condition: eq(variables['artifactSuffix'], 'linux-x64')
       inputs:
-        artifact: linux-profiler-home-$(artifactSuffix)
+        artifact: linux-profiler-home-linux-x64
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet $(artifactSuffix)
+      displayName: Download dd-dotnet (linux-x64)
+      condition: eq(variables['artifactSuffix'], 'linux-x64')
       inputs:
-        artifact: dd-dotnet-$(artifactSuffix)
-        path: $(monitoringHome)/$(artifactSuffix)
+        artifact: dd-dotnet-linux-x64
+        path: $(monitoringHome)/linux-x64
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tracer linux native binary (linux-musl-x64)
+      inputs:
+        artifact: linux-tracer-home-linux-musl-x64
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download profiler linux native binary (linux-musl-x64)
+      inputs:
+        artifact: linux-profiler-home-linux-musl-x64
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet (linux-musl-x64)
+      inputs:
+        artifact: dd-dotnet-linux-musl-x64
+        path: $(monitoringHome)/linux-musl-x64
 
     - script: |
-        chmod +x $(monitoringHome)/$(artifactSuffix)/dd-dotnet
+        chmod +x $(monitoringHome)/linux-musl-x64/dd-dotnet
+        # don't panic if the file doesn't exist
+        chmod +x $(monitoringHome)/linux-x64/dd-dotnet | :
       displayName: chmod dd-dotnet
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download universal native binaries
+      inputs:
+        artifact: linux-universal-home-linux-x64
+        path: $(monitoringHome)/$(artifactSuffix)
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -552,7 +625,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
+        command: "Clean CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
@@ -609,8 +682,48 @@ stages:
       displayName: Upload linux profiler symbols
       artifact: linux-profiler-symbols-linux-arm64
 
+- stage: build_arm64_universal
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    pool:
+      name: aws-arm64-auto-scaling
+    workspace:
+      clean: all
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: "universal"
+        useNativeSdkVersion: true
+        command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
+
+    - publish: $(monitoringHome)/linux-musl-arm64
+      displayName: Uploading linux universal arm64 artifacts
+      artifact: linux-universal-home-linux-arm64
+
+    - publish: $(symbols)/linux-musl-arm64
+      displayName: Upload linux universal arm64 symbols
+      artifact: linux-universal-symbols-linux-arm64
+
 - stage: package_arm64
-  dependsOn: [merge_commit_id, build_arm64_tracer, build_arm64_profiler, build_dd_dotnet_linux_arm64]
+  dependsOn: [merge_commit_id, build_arm64_tracer, build_arm64_profiler, build_dd_dotnet_linux_arm64, build_arm64_universal]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -653,6 +766,12 @@ stages:
         chmod +x $(monitoringHome)/linux-arm64/dd-dotnet
       displayName: chmod dd-dotnet
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download universal native binaries
+      inputs:
+        artifact: linux-universal-home-linux-arm64
+        path: $(monitoringHome)/linux-arm64
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -692,7 +811,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome
+    - script: ./tracer/build.sh CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome BuildNativeLoader
       displayName: Build native-tracer
       retryCountOnTaskFailure: 1
 
@@ -790,10 +909,6 @@ stages:
       - publish: $(artifacts)/windows-tracer-home.zip
         displayName: Publish tracer-home.zip
         artifact: windows-tracer-home.zip
-
-      - publish: $(artifacts)/x86/en-us
-        displayName: Publish Windows x86 MSI
-        artifact: windows-msi-x86
 
       - publish: $(artifacts)/x64/en-us
         displayName: Publish Windows x64 MSI
@@ -3212,7 +3327,7 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, build_windows_profiler, build_linux_tracer, build_linux_profiler, build_arm64_tracer, build_arm64_profiler, build_macos, build_dd_dotnet_windows, build_dd_dotnet_linux, build_dd_dotnet_linux_arm64, merge_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_profiler, build_linux_tracer, build_linux_profiler, build_arm64_tracer, build_arm64_profiler, build_linux_universal, build_arm64_universal, build_macos, build_dd_dotnet_windows, build_dd_dotnet_linux, build_dd_dotnet_linux_arm64, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -3335,6 +3450,24 @@ stages:
       displayName: Download dd-dotnet linux-arm64
       inputs:
         artifact: dd-dotnet-linux-arm64
+        path: $(monitoringHome)/linux-arm64
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux universal artifacts 
+      inputs:
+        artifact: linux-universal-home-linux-x64
+        path: $(monitoringHome)/linux-x64
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux universal artifacts 
+      inputs:
+        artifact: linux-universal-home-linux-x64
+        path: $(monitoringHome)/linux-musl-x64
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux universal artifacts 
+      inputs:
+        artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/linux-arm64
 
     - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
@@ -3495,14 +3628,17 @@ stages:
           baseImage: debian
           artifactSuffix: linux-x64
           poolName: azure-linux-scale-set-2
+          targetArch: x64
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
           poolName: azure-linux-scale-set-2
+          targetArch: x64
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
           poolname: aws-arm64-auto-scaling
+          targetArch: arm64
 
     pool:
       name: $(poolName)
@@ -3539,6 +3675,12 @@ stages:
       displayName: Download dd-dotnet $(artifactSuffix)
       inputs:
         artifact: dd-dotnet-$(artifactSuffix)
+        path: $(monitoringHome)/$(artifactSuffix)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download universal native binaries
+      inputs:
+        artifact: linux-universal-home-linux-$(targetArch)
         path: $(monitoringHome)/$(artifactSuffix)
 
     - task: ExtractFiles@1
@@ -3588,6 +3730,53 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+- stage: store_ssi_artifacts
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
+  dependsOn: [package_linux, package_arm64, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - job: combine
+      timeoutInMinutes: 60 #default value
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+        - checkout: none
+        # Linux packages
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Alpine tar packages
+          inputs:
+            artifact: linux-packages-linux-musl-x64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux x64 packages
+          inputs:
+            artifact: linux-packages-linux-x64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Arm64 packages
+          inputs:
+            artifact: linux-packages-linux-arm64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - bash: |
+            TAR_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.arm64.tar.gz)
+            VERSION_NUMBER=${TAR_NAME:19:-13}
+            echo "Detected version: $VERSION_NUMBER"
+            echo "$VERSION_NUMBER" > $(Build.ArtifactStagingDirectory)/version.txt
+          displayName: Write tracer version number to version.txt
+
+        # publish all tar files as single artifact
+        - publish: "$(Build.ArtifactStagingDirectory)"
+          displayName: Publish ssi artifacts
+          artifact: ssi-artifacts
 
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
@@ -3675,6 +3864,24 @@ stages:
           inputs:
             artifact: linux-tracer-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux universal libraries linux x64 symbols
+          inputs:
+            artifact: linux-universal-symbols-linux-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64/linux-x64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux universal libraries linux musl x64 symbols
+          inputs:
+            artifact: linux-universal-symbols-linux-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64/linux-musl-x64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux universal libraries linux arm64 symbols
+          inputs:
+            artifact: linux-universal-symbols-linux-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64/linux-arm64
 
         - task: DownloadPipelineArtifact@2
           displayName: Download dd-dotnet linux-x64 symbols
@@ -3772,11 +3979,13 @@ stages:
             artifact: windows-msi-x64
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download x86 MSI
-          inputs:
-            artifact: windows-msi-x86
-            path: $(Build.ArtifactStagingDirectory)
+        - bash: |
+            # Write tracer version number to version.txt
+            echo "$(tracer_version)" > $(Build.ArtifactStagingDirectory)/version.txt
+
+            # Write file list to index.txt
+            ls "$(Build.ArtifactStagingDirectory)" > $(Build.ArtifactStagingDirectory)/index.txt
+          displayName: Write description of assets
 
         - bash: |
             az storage blob upload-batch \
@@ -3887,12 +4096,20 @@ stages:
         artifact: linux-monitoring-home-linux-x64
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download Datadog.Trace.Manual
+      inputs:
+        artifact: build-windows-working-directory
+        itemPattern: tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll
+        path: $(Agent.TempDirectory)
+
     - script: |
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp $(Agent.TempDirectory)/tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll tracer/bin/netcoreapp3.1/
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
-        mkdir -p tracer/bin/netcoreapp3.1
-        cp tracer/tracer-home-linux/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
+        test ! -s "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll" && echo "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll does not exist" && exit 1
         mkdir -p $(CrankDir)/results/logs
         cd $(CrankDir)
         chmod +x ./run.sh
@@ -3932,12 +4149,20 @@ stages:
         artifact: windows-tracer-home
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-win
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download Datadog.Trace.Manual
+      inputs:
+        artifact: build-windows-working-directory
+        itemPattern: tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll
+        path: $(Agent.TempDirectory)
+
     - script: |
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp $(Agent.TempDirectory)/tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll tracer/bin/netcoreapp3.1/
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
-        mkdir -p tracer/bin/netcoreapp3.1
-        cp tracer/tracer-home-win/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll
+        test ! -s "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll" && echo "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll does not exist" && exit 1
         mkdir -p $(CrankDir)/results/logs
         cd $(CrankDir)
         chmod +x ./run.sh
@@ -3976,12 +4201,20 @@ stages:
         artifact: linux-monitoring-home-linux-arm64
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux-arm64
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download Datadog.Trace.Manual
+      inputs:
+        artifact: build-windows-working-directory
+        itemPattern: tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll
+        path: $(Agent.TempDirectory)
+
     - script: |
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp $(Agent.TempDirectory)/tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll tracer/bin/netcoreapp3.1/
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so does not exist" && exit 1
-        mkdir -p tracer/bin/netcoreapp3.1
-        cp tracer/tracer-home-linux-arm64/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll
+        test ! -s "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll" && echo "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll does not exist" && exit 1
         mkdir -p $(CrankDir)/results
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
@@ -5379,6 +5612,79 @@ stages:
         baseImage: debian
         command: "CheckSmokeTestsForErrors"
 
+- stage: installer_noop_smoke_tests_arm64
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [package_arm64, generate_variables, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [linux]
+
+    - job: linux
+      timeoutInMinutes: 45 # should take ~15 mins
+      strategy:
+        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_noop_smoke_tests_arm64_matrix'] ]
+      variables:
+        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+      pool:
+        name: aws-arm64-auto-scaling
+
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download artifacts to smoke test directory
+          inputs:
+            artifact: $(linuxArtifacts)
+            path: $(smokeTestAppDir)/artifacts
+
+        # Run the "normal" noop installer smoke tests 
+        - script: |
+            docker-compose -p $(DockerComposeProjectName) build \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
+              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+              smoke-tests
+          env:
+            dockerTag: $(dockerTag)
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
+          displayName: docker-compose build smoke-tests
+          retryCountOnTaskFailure: 3
+
+        - template: steps/run-snapshot-test.yml
+          parameters:
+            target: 'smoke-tests'
+            snapshotPrefix: "smoke_test"
+            isNoop: true
+        
+        # Run the "dd-dotnet" "unsupported tfm" installer smoke tests
+        - script: |
+            echo "Expected installer: $(expectedInstaller)"
+
+            cd tracer/build/artifacts
+            result=$(docker run --rm -v ${PWD}:/app --entrypoint /app/dd-dotnet.sh $(runtimeImage))
+            if [[ "$result" != *"$(expectedInstaller)"* ]]; then
+              echo "Incorrect message. Expected '$(expectedInstaller)', but found:"
+              echo $result
+              exit 1
+            fi
+
+            echo "Received expected response:"
+            echo $result
+
+          displayName: Run artifact test (expecting failure)
+
+        - publish: tracer/build_data
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
 - stage: nuget_installer_smoke_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
@@ -5633,11 +5939,8 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download MSI to temp directory
           inputs:
-#            artifact: windows-msi-$(targetPlatform)
-#            patterns: '**/*-$(targetPlatform).msi'
-            # I give up, I can't get x86 to work in the docker file
-            artifact: windows-msi-x64
-            patterns: '**/*-x64.msi'
+            artifact: windows-msi-$(targetPlatform)
+            patterns: '**/*-$(targetPlatform).msi'
             path: $(Agent.TempDirectory)
 
         - powershell: |
@@ -5806,7 +6109,7 @@ stages:
           failOnStderr: true
 
         - script: |
-            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/.
+            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/. --prerelease
           displayName: Install tracer
 
         - script: |

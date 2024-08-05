@@ -29,6 +29,7 @@ namespace Datadog.Trace.Configuration
     public partial record ImmutableTracerSettings
     {
         private readonly bool _traceEnabled;
+        private readonly bool _appsecStandaloneEnabled;
         private readonly DomainMetadata _domainMetadata;
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly bool _logsInjectionEnabled;
@@ -94,6 +95,7 @@ namespace Datadog.Trace.Configuration
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
             _traceEnabled = settings.TraceEnabledInternal;
+            _appsecStandaloneEnabled = settings.AppsecStandaloneEnabledInternal;
             ExporterInternal = new ImmutableExporterSettings(settings.ExporterInternal, true);
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
@@ -105,7 +107,6 @@ namespace Datadog.Trace.Configuration
             _globalSamplingRate = settings.GlobalSamplingRateInternal;
             IntegrationsInternal = new ImmutableIntegrationSettingsCollection(settings.IntegrationsInternal, settings.DisabledIntegrationNamesInternal);
             _headerTags = new ReadOnlyDictionary<string, string>(settings.HeaderTagsInternal);
-            HeaderTagsNormalizationFixEnabled = settings.HeaderTagsNormalizationFixEnabled;
             GrpcTagsInternal = new ReadOnlyDictionary<string, string>(settings.GrpcTagsInternal);
             IpHeader = settings.IpHeader;
             IpHeaderEnabled = settings.IpHeaderEnabled;
@@ -134,7 +135,6 @@ namespace Datadog.Trace.Configuration
             PropagationExtractFirstOnly = settings.PropagationExtractFirstOnly;
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
-            OpenTelemetryLegacyOperationNameEnabled = settings.OpenTelemetryLegacyOperationNameEnabled;
 
             _isDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
             IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
@@ -259,6 +259,13 @@ namespace Datadog.Trace.Configuration
         internal bool TraceEnabledInternal => DynamicSettings.TraceEnabled ?? _traceEnabled;
 
         /// <summary>
+        /// Gets a value indicating whether Appsec standalone billing is enabled.
+        /// Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AppsecStandaloneEnabled"/>
+        internal bool AppsecStandaloneEnabledInternal => DynamicSettings.AppsecStandaloneEnabled ?? _appsecStandaloneEnabled;
+
+        /// <summary>
         /// Gets the exporter settings that dictate how the tracer exports data.
         /// </summary>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_Exporter_Get)]
@@ -347,8 +354,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_GrpcTags_Get)]
         internal IReadOnlyDictionary<string, string> GrpcTagsInternal { get; }
-
-        internal bool HeaderTagsNormalizationFixEnabled { get; }
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
@@ -514,11 +519,6 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether <see cref="ISpan.OperationName"/> should be set to the legacy value for OpenTelemetry.
-        /// </summary>
-        internal bool OpenTelemetryLegacyOperationNameEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.

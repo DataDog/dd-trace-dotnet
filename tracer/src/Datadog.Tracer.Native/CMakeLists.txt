@@ -1,11 +1,18 @@
 cmake_minimum_required (VERSION 3.8..3.19)
 cmake_policy(SET CMP0015 NEW)
 
+# macOS uses 3.30 which deprecates FetchContent_Populate in favor of FetchContent_MakeAvailable,
+# but we're using 3.13.4 on Linux, which doesn't have FetchContent_MakeAvailable
+
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+endif()
+
 # ******************************************************
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 2.55.0)
+project("Datadog.Tracer.Native" VERSION 3.1.0)
 
 # ******************************************************
 # Environment detection

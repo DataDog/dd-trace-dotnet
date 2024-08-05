@@ -1,0 +1,26 @@
+set(sysroot /sysroot/x86_64-none-linux-musl)
+set(arch x86_64)
+set(interpreter ld-musl-x86_64.so.1)
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR ${arch})
+set(CMAKE_SYSROOT ${sysroot})
+set(CMAKE_AR /usr/bin/llvm-ar-16)
+set(triple ${arch}-none-linux-musl)
+set(CMAKE_ASM_COMPILER_TARGET ${triple})
+# set(CMAKE_C_COMPILER /usr/bin/clang)
+set(CMAKE_C_COMPILER_TARGET ${triple})
+
+set(c_cxx_flags "-Qunused-arguments -fPIC -rtlib=compiler-rt -unwindlib=libunwind -static-libgcc -fno-omit-frame-pointer -ffunction-sections -fdata-sections")
+set(CMAKE_C_FLAGS ${c_cxx_flags})
+# set(CMAKE_CXX_COMPILER /usr/bin/clang++)
+set(CMAKE_CXX_COMPILER_TARGET ${triple})
+set(CMAKE_CXX_FLAGS "-stdlib=libc++ ${c_cxx_flags}")
+
+# To debug linker add -v
+set(linker_flags "-fPIC -fuse-ld=lld-16 -nodefaultlibs -Wl,-Bstatic -lc++ -lc++abi ${sysroot}/usr/lib/libclang_rt.builtins.a -lunwind -Wl,-Bdynamic -lc ${sysroot}/usr/lib/libclang_rt.builtins.a -Wl,--dynamic-linker,${sysroot}/lib/${interpreter} -Wl,-rpath=${sysroot} -resource-dir ${sysroot}/usr/lib/resource_dir -Wl,--gc-sections -Wl,--discard-all -Wl,--icf=safe -Wl,--print-icf-sections")
+set(CMAKE_EXE_LINKER_FLAGS_INIT "${linker_flags} -Wl,--dynamic-linker,${sysroot}/lib/${interpreter}")
+set(CMAKE_SHARED_LINKER_FLAGS_INIT ${linker_flags})
+
+set(CMAKE_NM /usr/bin/llvm-nm-16)
+set(CMAKE_RANLIB /usr/bin/llvm-ranlib-16)
+set(CMAKE_STRIP /usr/bin/x86_64-linux-gnu-strip) # llvm-strip-11 doesn't seem to work correctly

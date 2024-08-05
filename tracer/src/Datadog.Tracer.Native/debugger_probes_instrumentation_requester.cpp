@@ -656,6 +656,12 @@ int DebuggerProbesInstrumentationRequester::GetProbesStatuses(WCHAR** probeIds, 
 
     for (auto probeIndex = 0; probeIndex < probeIdsLength; probeIndex++)
     {
+        if (probeIds[probeIndex] == nullptr)
+        {
+            Logger::Warn("Received null probeId at index ", probeIndex);
+            continue;
+        }
+
         const auto& probeId = shared::WSTRING(probeIds[probeIndex]);
         std::shared_ptr<ProbeMetadata> probeMetadata;
         if (ProbesMetadataTracker::Instance()->TryGetMetadata(probeId, probeMetadata))

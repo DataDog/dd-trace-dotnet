@@ -307,11 +307,12 @@
     "SampleProjectName": "Samples.MySql",
     "NugetPackageSearchName": "MySql.Data",
     "MinVersion": "6.7.9",
-    "MaxVersionExclusive": "9.0.0",
+    "MaxVersionExclusive": "10.0.0",
     "SpecificVersions": [
       "6.7.*",
       "6.*.*",
-      "8.*.*"
+      "8.*.*",
+      "9.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "8.0.33",

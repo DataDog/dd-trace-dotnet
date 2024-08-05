@@ -60,15 +60,21 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             if (!_isInitialized)
             {
-                Log.Information(exception, "Exception Track Manager is not initialized yet. Skipping the processing of an exception. Span = {Span}", span);
+                Log.Information(exception, "Exception Track Manager is not initialized yet. Skipping the processing of an exception. Exception = {Exception}, Span = {Span}", exception?.ToString(), span);
+                SetDiagnosticTag(span, ExceptionReplayDiagnosticTagNames.ExceptionTrackManagerNotInitialized);
                 return;
             }
 
             // For V1 of Exception Debugging, we only care about exceptions propagating up the stack
             // and marked as error by the service entry/root span.
-            if (!span.IsRootSpan || exception == null || !IsSupportedExceptionType(exception))
+            if (span.IsRootSpan == false || exception == null || !IsSupportedExceptionType(exception))
             {
-                Log.Information(exception, "Skipping the processing of the exception. Span = {Span}", span);
+                Log.Information(exception, "Skipping the processing of the exception. Exception = {Exception}, Span = {Span}", exception?.ToString(), span.ToString());
+
+                var failureReason =
+                    span.IsRootSpan == false ? ExceptionReplayDiagnosticTagNames.NotRootSpan :
+                                    exception == null ? ExceptionReplayDiagnosticTagNames.ExceptionObjectIsNull : ExceptionReplayDiagnosticTagNames.NonSupportedExceptionType;
+                SetDiagnosticTag(span, failureReason);
                 return;
             }
 
@@ -78,7 +84,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "An exception was thrown while processing an exception for tracking.");
+                Log.Error(ex, "An exception was thrown while processing an exception for tracking. Exception = {Exception}, Span = {Span}", exception.ToString(), span.ToString());
             }
         }
 
@@ -89,12 +95,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             if (CachedDoneExceptions.Contains(exToString))
             {
                 // Quick exit.
+                SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.CachedDoneExceptionCase);
                 return;
             }
 
             if (_invalidatedCases.Contains(exToString))
             {
                 Log.Information("Encountered invalidated exception.ToString(), exception: {Exception}", exToString);
+                SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.InvalidatedExceptionCase);
                 ProcessException(exception, errorOrigin, rootSpan);
                 return;
             }
@@ -106,16 +114,19 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     Log.Debug(exception, "The circuit breaker is opened, skipping the processing of an exception.");
                 }
 
+                SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.CircuitBreakerIsOpen);
                 return;
             }
 
             var nonEmptyShadowStack = ShadowStackHolder.IsShadowStackTrackingEnabled && ShadowStackHolder.ShadowStack!.ContainsReport(exception);
             if (nonEmptyShadowStack)
             {
+                SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.Eligible);
                 ProcessException(exception, errorOrigin, rootSpan);
             }
             else
             {
+                SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.EmptyShadowStack);
                 ExceptionProcessQueue.Enqueue(exception);
                 WorkAvailable.Release();
             }
@@ -157,7 +168,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 if (rootSpan == null)
                 {
-                    Log.Warning("rootSpan is null while processing invalidated case. Should not happen. exception: {Exception}", exception.ToString());
+                    Log.Error("rootSpan is null while processing invalidated case. Should not happen. exception: {Exception}", exception.ToString());
                     return;
                 }
 
@@ -192,53 +203,53 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
             else if (trackedExceptionCase.IsCollecting)
             {
-                Log.Information("Exception case re-occurred, data can be collected. Exception details: {FullName} {Message}.", exception.GetType().FullName, exception.Message);
+                Log.Information("Exception case re-occurred, data can be collected. Exception : {FullName} {Message}.", exception.GetType().FullName, exception.Message);
 
                 var shouldCheckWhyThereAreNoFrames = false;
 
                 if (rootSpan == null)
                 {
-                    Log.Information("The RootSpan is null. Exception: {Exception}", exception.ToString());
+                    Log.Error("The RootSpan is null. Exception: {Exception}", exception.ToString());
                     shouldCheckWhyThereAreNoFrames = true;
                 }
 
                 if (!ShadowStackHolder.IsShadowStackTrackingEnabled)
                 {
-                    Log.Warning("The shadow stack is not enabled, while processing IsCollecting state of an exception. Exception details: {FullName} {Message}.", exception.GetType().FullName, exception.Message);
+                    Log.Error("The shadow stack is not enabled, while processing IsCollecting state of an exception. Exception: {Exception}.", exception.ToString());
                     shouldCheckWhyThereAreNoFrames = true;
                 }
 
                 var resultCallStackTree = shouldCheckWhyThereAreNoFrames ? null : ShadowStackHolder.ShadowStack!.CreateResultReport(exceptionPath: exception);
                 if (resultCallStackTree == null || !resultCallStackTree.Frames.Any())
                 {
-                    Log.Error("ExceptionTrackManager: Checking why there are no frames captured for exception: {Exception}.", exception.ToString());
+                    Log.Warning("ExceptionTrackManager: Checking why there are no frames captured for exception: {Exception}.", exception.ToString());
 
                     // Check if we failed to instrument all the probes.
 
-                    if (trackedExceptionCase.ExceptionCase.Probes.Any(p => p.ProbeStatus == Status.RECEIVED))
+                    if (trackedExceptionCase.ExceptionCase.Probes.Any(p => p.ProbeStatus == Status.RECEIVED || p.ProbeStatus == Status.INSTALLED))
                     {
-                        // Determine if there are any errored probe statuses by P/Invoking the native for RECEIVED probes.
+                        // Determine if there are any errored probe statuses by P/Invoking the native for RECEIVED/INSTALLED probes.
 
-                        var receivedStatusProbeIds = trackedExceptionCase.ExceptionCase.Probes.Where(p => p.ProbeStatus == Status.RECEIVED).ToList();
+                        var receivedOrRequestedRejitStatusProbeIds = trackedExceptionCase.ExceptionCase.Probes.Where(p => p.IsInstrumented && (p.ProbeStatus == Status.RECEIVED || p.ProbeStatus == Status.INSTALLED)).ToList();
 
-                        if (receivedStatusProbeIds.Any())
+                        if (receivedOrRequestedRejitStatusProbeIds.Any())
                         {
-                            var statuses = DebuggerNativeMethods.GetProbesStatuses(receivedStatusProbeIds.Select(p => p.ProbeId).ToArray());
+                            var statuses = DebuggerNativeMethods.GetProbesStatuses(receivedOrRequestedRejitStatusProbeIds.Select(p => p.ProbeId).ToArray());
 
                             // Update the status only if we're dealing with probes marked as ERRORs.
                             foreach (var status in statuses)
                             {
-                                var probe = receivedStatusProbeIds.FirstOrDefault(p => p.ProbeId == status.ProbeId);
-                                if (probe != null && status.Status is Status.ERROR)
+                                var probe = receivedOrRequestedRejitStatusProbeIds.FirstOrDefault(p => p.ProbeId == status.ProbeId);
+                                if (probe != null)
                                 {
                                     probe.ProbeStatus = status.Status;
-                                    probe.ErrorMessage = status.ErrorMessage;
+                                    probe.ErrorMessage = status.Status is Status.ERROR ? status.ErrorMessage : null;
                                 }
                             }
                         }
                     }
 
-                    if (trackedExceptionCase.ExceptionCase.Probes.All(p => p.IsInstrumented && (p.ProbeStatus == Status.ERROR || p.ProbeStatus == Status.BLOCKED || p.MayBeOmittedFromCallStack)))
+                    if (trackedExceptionCase.ExceptionCase.Probes.All(p => p.IsInstrumented && (p.ProbeStatus == Status.ERROR || p.ProbeStatus == Status.BLOCKED || p.ProbeStatus == Status.RECEIVED || p.MayBeOmittedFromCallStack)))
                     {
                         Log.Information("Invalidating the exception case of the empty stack tree since none of the methods were instrumented, for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
                         trackedExceptionCase.InvalidateCase();
@@ -251,7 +262,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 {
                     if (rootSpan == null)
                     {
-                        Log.Warning("The RootSpan is null in the branch of extracing snapshots. Should not happen. Exception: {Exception}", exception.ToString());
+                        Log.Error("The RootSpan is null in the branch of extracing snapshots. Should not happen. Exception: {Exception}", exception.ToString());
                         return;
                     }
 
@@ -286,8 +297,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     {
                         frame = capturedFrames[capturedFrameIndex];
 
-                        if (!allFrames[frameIndex--].Method.Equals(frame.MethodInfo.Method))
+                        var participatingFrame = allFrames[frameIndex--];
+
+                        if (!participatingFrame.Method.Equals(frame.MethodInfo.Method))
                         {
+                            var noCaptureReason = GetNoCaptureReason(participatingFrame, @case.Probes.FirstOrDefault(p => p.Method.Equals(participatingFrame.MethodIdentifier)));
+
+                            if (noCaptureReason != string.Empty)
+                            {
+                                TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, noCaptureReason);
+                            }
+
                             assignIndex += 1;
                             continue;
                         }
@@ -366,6 +386,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     // Frame is failed to instrument.
                     noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} has failed in instrumentation. Failure reason: {probe.ErrorMessage}";
                 }
+
+                if (probe.ProbeStatus == Status.RECEIVED)
+                {
+                    // Frame is failed to instrument.
+                    noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} could not be found.";
+                }
             }
 
             return noCaptureReason;
@@ -399,26 +425,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
             span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
 
-            if (Log.IsEnabled(LogEventLevel.Debug))
-            {
-                tagPrefix = tagPrefix.Replace("_", string.Empty);
-
-                span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
-                span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
-                span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
-            }
-
             ExceptionDebugging.AddSnapshot(probeId, snapshot);
         }
 
         private static void TagMissingFrame(Span span, string tagPrefix, MethodBase method, string reason)
         {
-            span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
-            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
-            span.Tags.SetTag(tagPrefix + "no_capture_reason", reason);
-
-            tagPrefix = tagPrefix.Replace("_", string.Empty);
-
             span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
             span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
             span.Tags.SetTag(tagPrefix + "no_capture_reason", reason);
@@ -518,7 +529,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                           Reverse().
                                           SkipWhile(frame =>
                                           {
-                                              var method = frame?.GetMethod();
+                                              MethodBase? method;
+
+                                              try
+                                              {
+                                                  method = frame?.GetMethod();
+                                                  var token = method?.MetadataToken;
+                                              }
+                                              catch
+                                              {
+                                                  return true;
+                                              }
 
                                               if (method == null)
                                               {
@@ -543,7 +564,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     continue;
                 }
 
-                var method = frame.GetMethod();
+                MethodBase? method;
+                try
+                {
+                    method = frame.GetMethod();
+                    var token = method?.MetadataToken;
+                }
+                catch
+                {
+                    continue;
+                }
 
                 if (method == null)
                 {
@@ -585,6 +615,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 return true;
             }
+        }
+
+        private static void SetDiagnosticTag(Span span, string tag)
+        {
+            span.Tags.SetTag("_dd.di.er", tag);
         }
     }
 }

@@ -64,7 +64,7 @@ partial class Build : NukeBuild
 
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
                 {
-                    const string baseBranch = "origin/master";
+                    var baseBranch = string.IsNullOrEmpty(TargetBranch) ? "origin/master" : $"origin/{TargetBranch}";
                     bool isChanged;
                     var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{variableName}";
 
@@ -204,15 +204,17 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsWindowsMsiMatrix(params TargetFramework[] targetFrameworks)
             {
-                var targetPlatforms = new[] { "x86", "x64" };
+                var targetPlatforms = new[] { 
+                    (targetPlaform: "x64", enable32Bit: false),
+                    (targetPlaform: "x64", enable32Bit: true),
+                };
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
                 {
-                    foreach (var targetPlatform in targetPlatforms)
+                    foreach (var (targetPlatform, enable32Bit) in targetPlatforms)
                     {
-                        var enable32bit = targetPlatform == "x86";
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit });
+                        matrix.Add($"{targetPlatform}_{(enable32Bit ? "32bit" : "64bit")}_{framework}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32Bit });
                     }
                 }
 
@@ -374,6 +376,9 @@ partial class Build : NukeBuild
                 GenerateLinuxChiseledInstallerSmokeTestsMatrix();
                 GenerateLinuxChiseledInstallerArm64SmokeTestsMatrix();
 
+                // noop smoke tests
+                GenerateLinuxInstallerArm64NoopSmokeTestsMatrix();
+
                 // nuget smoke tests
                 GenerateLinuxNuGetSmokeTestsMatrix();
                 GenerateLinuxNuGetSmokeTestsArm64Matrix();
@@ -447,9 +452,36 @@ partial class Build : NukeBuild
                         dockerName: "andrewlock/dotnet-fedora"
                     );
 
+                    // Alpine tests with the default package
                     AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "alpine",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
+                            new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
+                            new (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
+                        },
+                        // currently we direct customers to the musl-specific package in the command line.
+                        // Should we update this to point to the default artifact instead?
+                        installer: "datadog-dotnet-apm*-musl.tar.gz", // used by the dd-dotnet checks to direct customers to the right place
+                        installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.tar.gz",
+                        linuxArtifacts: "linux-packages-linux-x64", // these are what we download
+                        runtimeId: "linux-musl-x64", // used by the dd-dotnet checks to direct customers to the right place
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    // Alpine tests with the musl-specific package
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "alpine_musl",
                         new SmokeTestImage[]
                         {
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
@@ -974,7 +1006,7 @@ partial class Build : NukeBuild
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available 
                             new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye"),
-                        }.Where(x=> IsPrerelease || x.PublishFramework != TargetFramework.NETCOREAPP3_1).ToArray(),
+                        }.Where(x=> !IsPrerelease || x.PublishFramework != TargetFramework.NETCOREAPP3_1).ToArray(),
                         platformSuffix: "linux-x64",
                         dockerName: "mcr.microsoft.com/dotnet/sdk"
                     );
@@ -988,7 +1020,7 @@ partial class Build : NukeBuild
                             new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
                             new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.15"),
                             // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available 
-                        }.Where(x=> IsPrerelease || x.PublishFramework != TargetFramework.NETCOREAPP3_1).ToArray(),
+                        }.Where(x=> !IsPrerelease || x.PublishFramework != TargetFramework.NETCOREAPP3_1).ToArray(),
                         platformSuffix: "linux-musl-x64",
                         dockerName: "mcr.microsoft.com/dotnet/sdk"
                     );
@@ -1029,7 +1061,6 @@ partial class Build : NukeBuild
                     var platforms = new(MSBuildTargetPlatform platform, bool enable32Bit)[] {
                         (MSBuildTargetPlatform.x64, false),
                         (MSBuildTargetPlatform.x64, true),
-                        (MSBuildTargetPlatform.x86, true)
                     };
                     var runtimeImages = new SmokeTestImage[]
                     {
@@ -1181,6 +1212,36 @@ partial class Build : NukeBuild
                     Logger.Information($"Installer smoke tests dotnet-tool NuGet matrix MacOs");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetOutputVariable("dotnet_tool_nuget_installer_macos_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void GenerateLinuxInstallerArm64NoopSmokeTestsMatrix()
+                {
+                    var matrix = new Dictionary<string, object>();
+
+                    // Alpine tests with the default package (alpine isn't supported on arm64 currently, so this is a noop)
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "alpine",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
+                            new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
+                            new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
+                            new (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
+                        },
+                        // currently we direct customers to the musl-specific package in the command line.
+                        // Should we update this to point to the default artifact instead?
+                        installer: "Alpine ARM64 is not supported", // used by the dd-dotnet checks to direct customers to the right place
+                        installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.tar.gz",
+                        linuxArtifacts: "linux-packages-linux-arm64", // these are what we download
+                        runtimeId: "linux-musl-arm64", // used by the dd-dotnet checks to direct customers to the right place
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    Logger.Information($"Installer noop smoke tests arm64 matrix");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetOutputVariable("installer_noop_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
                 static string GetInstallerChannel(string publishFramework) =>

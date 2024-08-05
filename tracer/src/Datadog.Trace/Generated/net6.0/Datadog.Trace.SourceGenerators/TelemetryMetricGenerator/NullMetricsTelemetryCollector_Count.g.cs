@@ -104,6 +104,10 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountUnsupportedCustomInstrumentationServices(int increment = 1)
+    {
+    }
+
     public void RecordCountDirectLogLogs(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag, int increment = 1)
     {
     }

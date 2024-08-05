@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             _ciAgentWriter.WriteTrace(spans1);
             await _ciAgentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
-            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Once);
+            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
             _api.Invocations.Clear();
 
             var spans2 = new ArraySegment<Span>(new[] { new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow) });
@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             _ciAgentWriter.WriteTrace(spans2);
             await _ciAgentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
-            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData2)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Once);
+            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData2)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
 
             await _ciAgentWriter.FlushAndCloseAsync();
         }

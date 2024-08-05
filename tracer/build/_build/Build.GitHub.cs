@@ -446,9 +446,9 @@ partial class Build
                 "tracer/samples/OpenTelemetry/Debian.dockerfile",
                 "tracer/samples/WindowsContainer/Dockerfile",
                 "tracer/src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
-                "tracer/src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
+                "tracer/src/Datadog.Trace.Manual/Datadog.Trace.Manual.csproj",
                 "tracer/src/Datadog.Tracer.Native/CMakeLists.txt",
                 "tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h",
                 "tracer/src/Datadog.Tracer.Native/Resource.rc",
@@ -979,7 +979,7 @@ partial class Build
                  // current (not released version)
                  var version = new Version(Version);
                  var versionsToCheck = 3;
-                 while (versionsToCheck > 0)
+                 while (versionsToCheck > 0 && version.Minor > 0)
                  {
                      // only looking back across minor releases (ignoring patch etc)
                      versionsToCheck--;
@@ -1303,7 +1303,6 @@ partial class Build
         var artifactsFiles= new []
         {
             $"{awsUri}x64/en-us/datadog-dotnet-apm-{version}-x64.msi",
-            $"{awsUri}x86/en-us/datadog-dotnet-apm-{version}-x86.msi",
             $"{awsUri}windows-native-symbols.zip",
             $"{awsUri}windows-tracer-home.zip",
         };

@@ -68,6 +68,12 @@ namespace Datadog.Trace.Configuration
         public const string TraceEnabled = "DD_TRACE_ENABLED";
 
         /// <summary>
+        /// Configuration key for enabling Standalone ASM, thus disabling APM tracing and its billing.
+        /// Default is value is false (disabled).
+        /// </summary>
+        public const string AppsecStandaloneEnabled = "DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.
         /// Default is value is false (disabled).
         /// </summary>
@@ -620,7 +626,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key to enable or disable improved template-based resource names
             /// when using WCF Web HTTP. Requires <see cref="DelayWcfInstrumentationEnabled"/> be set
-            /// to true. Disabled by default
+            /// to true. Enabled by default
             /// </summary>
             /// <seealso cref="TracerSettings.WcfWebHttpResourceNamesEnabled"/>
             public const string WcfWebHttpResourceNamesEnabled = "DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED";
@@ -634,9 +640,9 @@ namespace Datadog.Trace.Configuration
             public const string WcfObfuscationEnabled = "DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED";
 
             /// <summary>
-            /// Enables a fix around header tags normalization.
-            /// We used to normalize periods even if a tag was provided for a header, whereas we should not.
-            /// This flag defaults to true and is here only in case customers need backwards compatibility.
+            /// Enables a fix for header tags normalization.
+            /// We used to normalize tag names even if they were specified in user configuration, but we should not.
+            /// Default value is <c>true</c>.
             /// </summary>
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
 
@@ -644,19 +650,6 @@ namespace Datadog.Trace.Configuration
             /// Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
             /// </summary>
             public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
-
-            /// <summary>
-            /// Enables the use of the <see cref="ISpan.OperationName"/> being set to the legacy value of:
-            /// <c>$"{Activity.Source.Name}.{Activity.Kind}"</c> when instrumenting OpenTelemetry Spans and Activities.
-            /// This will override the default mapping that is used to create an operation name based on
-            /// <c>Activity.Kind</c> and various tags on the <c>Activity</c>.
-            /// <para>
-            /// This flag defaults to <see langword="false"/> and is intended to allow previous beta customers
-            /// of the .NET Tracer's OpenTelemetry instrumentation (and System.Diagnostics)
-            /// to have an easier migration path.
-            /// </para>
-            /// </summary>
-            public const string OpenTelemetryLegacyOperationNameEnabled = "DD_TRACE_OTEL_LEGACY_OPERATION_NAME_ENABLED";
 
             /// <summary>
             /// Enables generating 128-bit trace ids instead of 64-bit trace ids.

@@ -12,6 +12,7 @@ using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
@@ -114,6 +115,12 @@ namespace Datadog.Trace.Propagators
         {
             if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+
+            // If appsec standalone is enabled and appsec propagation is disabled (no ASM events) -> stop propagation
+            if (context.TraceContext?.Tracer.Settings?.AppsecStandaloneEnabledInternal == true && context.TraceContext.Tags.GetTag(Tags.Propagated.AppSec) != "1")
+            {
+                return;
+            }
 
             // trigger a sampling decision if it hasn't happened yet
             _ = context.GetOrMakeSamplingDecision();
@@ -273,7 +280,7 @@ namespace Datadog.Trace.Propagators
                     var cacheKey = new Key(headerName, defaultTagPrefix);
                     var tagNameResult = _defaultTagMappingCache.GetOrAdd(cacheKey, key =>
                     {
-                        if (key.HeaderName.TryConvertToNormalizedTagName(normalizePeriods: true, out var normalizedHeaderTagName))
+                        if (SpanTagHelper.TryNormalizeTagName(key.HeaderName, normalizeSpaces: true, out var normalizedHeaderTagName))
                         {
                             return key.TagPrefix + "." + normalizedHeaderTagName;
                         }

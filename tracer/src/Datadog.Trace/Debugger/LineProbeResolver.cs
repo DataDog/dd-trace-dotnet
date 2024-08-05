@@ -16,32 +16,37 @@ using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger
 {
     internal class LineProbeResolver : ILineProbeResolver
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LineProbeResolver>();
+        private readonly ImmutableHashSet<string> _thirdPartyDetectionExcludes;
+        private readonly ImmutableHashSet<string> _thirdPartyDetectionIncludes;
 
         private readonly object _locker;
         private readonly Dictionary<Assembly, FilePathLookup?> _loadedAssemblies;
 
-        private LineProbeResolver()
+        private LineProbeResolver(ImmutableHashSet<string> thirdPartyDetectionExcludes, ImmutableHashSet<string> thirdPartyDetectionIncludes)
         {
             _locker = new object();
             _loadedAssemblies = new Dictionary<Assembly, FilePathLookup?>();
+            _thirdPartyDetectionExcludes = thirdPartyDetectionExcludes;
+            _thirdPartyDetectionIncludes = thirdPartyDetectionIncludes;
         }
 
-        public static LineProbeResolver Create()
+        public static LineProbeResolver Create(ImmutableHashSet<string> thirdPartyDetectionExcludes, ImmutableHashSet<string> thirdPartyDetectionIncludes)
         {
-            return new LineProbeResolver();
+            return new LineProbeResolver(thirdPartyDetectionExcludes, thirdPartyDetectionIncludes);
         }
 
-        private static IList<string>? GetDocumentsFromPDB(Assembly loadedAssembly)
+        private IList<string>? GetDocumentsFromPDB(Assembly loadedAssembly)
         {
             try
             {
-                if (AssemblyFilter.ShouldSkipAssembly(loadedAssembly))
+                if (AssemblyFilter.ShouldSkipAssembly(loadedAssembly, _thirdPartyDetectionExcludes, _thirdPartyDetectionIncludes))
                 {
                     return null;
                 }
