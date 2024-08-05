@@ -15,6 +15,12 @@ public:
     static LibrariesInfoCache* Get();
     ~LibrariesInfoCache();
 
+    LibrariesInfoCache(LibrariesInfoCache const &) = delete;
+    LibrariesInfoCache& operator=(LibrariesInfoCache const&) = delete;
+
+    LibrariesInfoCache(LibrariesInfoCache&&) = delete;
+    LibrariesInfoCache& operator=(LibrariesInfoCache&&) = delete;
+
     void UpdateCache();
 
 private:

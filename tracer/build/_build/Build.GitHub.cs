@@ -1303,7 +1303,6 @@ partial class Build
         var artifactsFiles= new []
         {
             $"{awsUri}x64/en-us/datadog-dotnet-apm-{version}-x64.msi",
-            $"{awsUri}x86/en-us/datadog-dotnet-apm-{version}-x86.msi",
             $"{awsUri}windows-native-symbols.zip",
             $"{awsUri}windows-tracer-home.zip",
         };

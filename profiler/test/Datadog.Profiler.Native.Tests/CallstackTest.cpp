@@ -79,3 +79,24 @@ TEST(CallstackTest, CheckBufferSetCountApi)
         ASSERT_EQ(ip, expectedIp++);
     }
 }
+
+
+TEST(CallstackTest, CheckCopyFrom)
+{
+    auto p = CallstackProvider(MemoryResourceManager::GetDefault());
+
+    auto s = p.Get();
+
+    for (int i = 0; i < 100; i++)
+    {
+        s.Add(i);
+    }
+
+    ASSERT_EQ(s.Size(), 100);
+
+    auto s2 = p.Get();
+
+    s2.CopyFrom(s);
+    
+    ASSERT_EQ(s, s2);
+}
