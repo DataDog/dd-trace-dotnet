@@ -18,6 +18,10 @@ on:
 jobs:
   build-and-publish-init-image:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # read secrets
+      packages: write # pushing to ghcr.io
     env:
       AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
       COMMIT_SHA: "${{ github.event.inputs.commit_id || github.sha }}" 

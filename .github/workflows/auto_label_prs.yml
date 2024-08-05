@@ -7,6 +7,10 @@ jobs:
   add-labels:
 
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write # Update labels on PRs (might not be necessary, but we call the UpdateIssue API so...)
+      pull-requests: write # Update labels on PRs
 
     steps:
       - name: Checkout

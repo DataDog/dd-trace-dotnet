@@ -7,6 +7,9 @@ on:
 jobs:
   trigger_aas_release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # read secrets
 
     steps:
       - name: Trigger AAS release

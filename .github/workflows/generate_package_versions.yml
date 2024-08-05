@@ -6,6 +6,8 @@ on:
 jobs:
   generate_package_versions:
     runs-on: windows-latest
+    permissions:
+      contents: write # Pushes to a branch
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
