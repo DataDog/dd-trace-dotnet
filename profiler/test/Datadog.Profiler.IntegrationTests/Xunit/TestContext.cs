@@ -14,5 +14,7 @@ namespace Datadog.Profiler.IntegrationTests.Xunit
         public static TestContext Current => _context.Value ??= new TestContext();
 
         public string TestName { get; internal set; }
+
+        public bool WithTracer { get; internal set; } = false;
     }
 }

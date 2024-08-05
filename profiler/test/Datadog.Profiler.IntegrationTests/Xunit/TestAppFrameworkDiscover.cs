@@ -127,44 +127,10 @@ namespace Datadog.Profiler.IntegrationTests.Xunit
             var result = new List<KeyValuePair<string, string>>();
 
             var method = testMethod.Method.ToRuntimeMethod();
-            result.AddRange(ExtractTraits(method.CustomAttributes));
+            result.AddRange(TraitHelper.GetTraits(method));
 
             var clazz = testMethod.TestClass.Class.ToRuntimeType();
-            result.AddRange(ExtractTraits(clazz.CustomAttributes));
-
-            return result;
-        }
-
-        private static List<KeyValuePair<string, string>> ExtractTraits(IEnumerable<CustomAttributeData> attributes)
-        {
-            var result = new List<KeyValuePair<string, string>>();
-            var messageSink = new NullMessageSink();
-            foreach (var traitAttributeData in attributes)
-            {
-                var traitAttributeType = traitAttributeData.AttributeType;
-                if (!typeof(ITraitAttribute).GetTypeInfo().IsAssignableFrom(traitAttributeType.GetTypeInfo()))
-                {
-                    continue;
-                }
-
-                var discovererAttributeData = traitAttributeType.GetTypeInfo().CustomAttributes.FirstOrDefault(cad => cad.AttributeType == typeof(TraitDiscovererAttribute));
-                if (discovererAttributeData == null)
-                {
-                    continue;
-                }
-
-                var discoverer = ExtensibilityPointFactory.GetTraitDiscoverer(messageSink, Reflector.Wrap(discovererAttributeData));
-                if (discoverer == null)
-                {
-                    continue;
-                }
-
-                var traits = discoverer.GetTraits(Reflector.Wrap(traitAttributeData));
-                if (traits != null)
-                {
-                    result.AddRange(traits);
-                }
-            }
+            result.AddRange(TraitHelper.GetTraits(clazz));
 
             return result;
         }
