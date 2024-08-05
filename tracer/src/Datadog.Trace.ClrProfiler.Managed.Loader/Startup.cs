@@ -72,17 +72,26 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 StartupLogger.Log("Invoking managed tracer.");
                 TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
             }
-            catch (Exception ex) when (IsInSsi())
+            catch (Exception ex)
             {
                 // if we're in SSI we want to be as safe as possible, so catching to avoid the possibility of a crash
                 try
                 {
                     StartupLogger.Log(ex, "Error in Datadog.Trace.ClrProfiler.Managed.Loader.Startup.Startup(). Functionality may be impacted.");
+                    return;
                 }
                 catch
                 {
                     // Swallowing any errors here, as something went _very_ wrong, even with logging
+                    // and we 100% don't want to crash in SSI. Outside of SSI we do want to see the crash
+                    // so that it's visible to the user.
+                    if (IsInSsi())
+                    {
+                        return;
+                    }
                 }
+
+                throw;
             }
 
             static bool IsInSsi()
