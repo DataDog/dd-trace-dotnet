@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
@@ -15,17 +16,19 @@ namespace Datadog.Trace.Debugger
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SignatureParser));
 
-        internal static string[]? SafeParse(string? signature)
+        internal static bool TryParse(string? signature, [NotNullWhen(true)] out string[]? signatures)
         {
             try
             {
-                return Parse(signature);
+                signatures = Parse(signature);
             }
             catch (Exception e)
             {
                 Log.Error(e, "Error parsing the signature {Signature}. Fall back to empty signature", signature);
-                return null;
+                signatures = null;
             }
+
+            return !string.IsNullOrEmpty(signature);
         }
 
         internal static string[]? Parse(string? signature)
