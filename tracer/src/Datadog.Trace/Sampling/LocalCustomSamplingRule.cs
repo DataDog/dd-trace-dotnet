@@ -7,10 +7,10 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Sampling;
+namespace Datadog.Trace.Internal.Sampling;
 
 internal sealed class LocalCustomSamplingRule : CustomSamplingRule
 {

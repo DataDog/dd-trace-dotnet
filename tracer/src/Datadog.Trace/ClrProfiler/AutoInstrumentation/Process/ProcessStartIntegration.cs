@@ -5,11 +5,11 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Process
 {
     /// <summary>
     /// System.Diagnostics.Process calltarget instrumentation

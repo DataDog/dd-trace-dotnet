@@ -7,10 +7,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.DiagnosticListeners
+namespace Datadog.Trace.Internal.DiagnosticListeners
 {
     internal abstract class DiagnosticObserver : IObserver<KeyValuePair<string, object>>
     {

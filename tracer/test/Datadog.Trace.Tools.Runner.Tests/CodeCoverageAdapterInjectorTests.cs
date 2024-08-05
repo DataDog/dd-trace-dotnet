@@ -4,10 +4,10 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Util;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;

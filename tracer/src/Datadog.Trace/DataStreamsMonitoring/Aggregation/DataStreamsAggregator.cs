@@ -8,9 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.DataStreamsMonitoring.Utils;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Utils;
 
-namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Aggregation;
 
 /// <summary>
 /// Aggregates multiple <see cref="StatsPoint"/>s into their correct buckets

@@ -6,10 +6,10 @@
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
-using Datadog.Trace.Debugger.Symbols;
+using Datadog.Trace.Internal.Debugger.Symbols;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     internal static class FrameFilter
     {

@@ -5,9 +5,9 @@
 
 #nullable enable
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Internal.Debugger.Sink;
 
-namespace Datadog.Trace.Debugger.Symbols
+namespace Datadog.Trace.Internal.Debugger.Symbols
 {
     internal class NoOpSymbolUploader : IDebuggerUploader
     {

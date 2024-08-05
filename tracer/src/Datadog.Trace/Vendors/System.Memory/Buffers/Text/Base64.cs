@@ -12,12 +12,12 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using Unsafe = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers.Text
 {
     internal static class Base64
   {

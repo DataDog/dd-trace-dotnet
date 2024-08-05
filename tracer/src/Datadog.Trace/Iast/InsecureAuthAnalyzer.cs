@@ -4,15 +4,15 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 #endif
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 #nullable enable
 

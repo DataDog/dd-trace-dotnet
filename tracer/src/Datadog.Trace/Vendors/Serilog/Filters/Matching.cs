@@ -17,10 +17,10 @@
 // limitations under the License.
 
 using System;
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Core;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Vendors.Serilog.Filters
+namespace Datadog.Trace.Internal.Vendors.Serilog.Filters
 {
     /// <summary>
     /// Predicates applied to log events that can be used

@@ -6,9 +6,9 @@
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
 using System;
 using System.Runtime.InteropServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Utilities
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal.Utilities
 {
     #nullable enable
 internal static class Interop

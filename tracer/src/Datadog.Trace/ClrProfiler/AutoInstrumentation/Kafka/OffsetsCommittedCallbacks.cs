@@ -5,10 +5,10 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Util.Delegates;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Util.Delegates;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Kafka
 {
     internal readonly struct OffsetsCommittedCallbacks : IBegin2Callbacks, IVoidReturnCallback
     {

@@ -8,10 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Sink.PeriodicBatching;
 
-namespace Datadog.Trace.Logging.DirectSubmission
+namespace Datadog.Trace.Internal.Logging.DirectSubmission
 {
     /// <summary>
     /// Contains direct-log-submission-specific settings

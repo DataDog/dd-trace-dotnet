@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Worker
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Worker
 {
     /// <summary>
     /// AsynchronousWorker performs tasks asynchronously.

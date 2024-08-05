@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Sampling;
+namespace Datadog.Trace.Internal.Sampling;
 
 /// <summary>
 /// The provenance of a sampling rule.

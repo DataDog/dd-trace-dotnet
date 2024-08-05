@@ -7,11 +7,11 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Rasp;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.AppSec.Rasp;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.AppSec;
+namespace Datadog.Trace.Internal.AppSec;
 
 internal class AppSecRequestContext
 {

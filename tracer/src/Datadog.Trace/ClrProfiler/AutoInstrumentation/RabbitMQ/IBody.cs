@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     /// <summary>
     /// Body interface for ducktyping

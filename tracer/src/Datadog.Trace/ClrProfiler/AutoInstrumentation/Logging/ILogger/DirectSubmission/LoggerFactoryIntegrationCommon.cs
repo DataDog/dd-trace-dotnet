@@ -7,10 +7,10 @@
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission
 {
     internal static class LoggerFactoryIntegrationCommon<TLoggerFactory>
     {

@@ -4,11 +4,11 @@
 //------------------------------------------------------------------------------
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 
-using Datadog.Trace.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Internal.Vendors.MessagePack.Formatters;
 using System;
 using System.Reflection;
 
-namespace Datadog.Trace.Vendors.MessagePack
+namespace Datadog.Trace.Internal.Vendors.MessagePack
 {
     internal interface IFormatterResolver
     {

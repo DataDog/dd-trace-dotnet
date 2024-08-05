@@ -7,14 +7,14 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using static Datadog.Trace.Telemetry.Metrics.MetricTags;
+using Datadog.Trace.Internal.AppSec.Coordinator;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry;
+using static Datadog.Trace.Internal.Telemetry.Metrics.MetricTags;
 
-namespace Datadog.Trace.AppSec.Rasp;
+namespace Datadog.Trace.Internal.AppSec.Rasp;
 
 internal static class RaspModule
 {

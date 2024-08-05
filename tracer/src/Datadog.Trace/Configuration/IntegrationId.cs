@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     [EnumExtensions]
     internal enum IntegrationId

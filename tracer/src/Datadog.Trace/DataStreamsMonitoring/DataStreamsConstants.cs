@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.DataStreamsMonitoring;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring;
 
 internal static class DataStreamsConstants
 {

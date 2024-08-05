@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.AppSec.Rcm.Models.AsmData;
+namespace Datadog.Trace.Internal.AppSec.Rcm.Models.AsmData;
 
 internal class Payload
 {

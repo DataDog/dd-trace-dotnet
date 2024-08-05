@@ -12,9 +12,9 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers
 {
     internal struct MemoryHandle : IDisposable
   {

@@ -6,7 +6,7 @@
 using System;
 using System.IO;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SDK;
 
 /// <summary>
 /// Interface that contains all the information necessary to handle an invocation of an AWS Lambda function.

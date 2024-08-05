@@ -5,10 +5,10 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {
     /// <summary>
     /// Msmq calltarget instrumentation

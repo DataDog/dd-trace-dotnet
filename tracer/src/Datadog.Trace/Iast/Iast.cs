@@ -5,13 +5,13 @@
 
 using System;
 using System.Threading;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast.Analyzers;
-using Datadog.Trace.Iast.Settings;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast.Analyzers;
+using Datadog.Trace.Internal.Iast.Settings;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Sampling;
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 /// <summary>
 /// The class responsible for coordinating IAST

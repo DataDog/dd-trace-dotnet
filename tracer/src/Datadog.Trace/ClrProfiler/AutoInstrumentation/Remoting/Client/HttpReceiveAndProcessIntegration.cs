@@ -12,10 +12,10 @@ using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Runtime.Remoting.Channels;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ExtensionMethods;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Remoting.Client
 {
     /// <summary>
     /// System.Runtime.Remoting.Channels.Http.HttpClientTransportSink.ReceiveAndProcess calltarget instrumentation

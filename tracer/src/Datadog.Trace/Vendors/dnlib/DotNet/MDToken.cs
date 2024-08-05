@@ -7,9 +7,9 @@
 
 using System;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Metadata token
 	/// </summary>

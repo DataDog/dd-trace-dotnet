@@ -7,10 +7,10 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Internal.Configuration.Telemetry;
 
-namespace Datadog.Trace.Configuration;
+namespace Datadog.Trace.Internal.Configuration;
 
 internal class NullConfigurationSource : IConfigurationSource, ITelemeteredConfigurationSource
 {

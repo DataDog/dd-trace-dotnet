@@ -5,7 +5,7 @@
 
 using System;
 using System.Threading;
-using Datadog.Trace.Debugger.RateLimiting;
+using Datadog.Trace.Internal.Debugger.RateLimiting;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;

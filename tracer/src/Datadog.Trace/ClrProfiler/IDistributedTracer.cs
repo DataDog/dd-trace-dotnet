@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal interface IDistributedTracer
     {

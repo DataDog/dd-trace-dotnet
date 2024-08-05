@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {
     /// <summary>
     /// Ducktype for type OpenTelemetry.Resources.Resource

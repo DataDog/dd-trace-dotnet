@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Process
 {
     internal static class EnvironmentVariablesScrubber
     {

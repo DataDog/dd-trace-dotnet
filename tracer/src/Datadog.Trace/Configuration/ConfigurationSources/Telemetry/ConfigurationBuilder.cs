@@ -8,9 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Internal.Configuration.ConfigurationSources.Telemetry;
 
-namespace Datadog.Trace.Configuration.Telemetry;
+namespace Datadog.Trace.Internal.Configuration.Telemetry;
 
 internal readonly struct ConfigurationBuilder
 {

@@ -7,10 +7,10 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration.Schema;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Configuration.Schema;
+using Datadog.Trace.Internal.Sampling;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     internal class PerTraceSettings
     {

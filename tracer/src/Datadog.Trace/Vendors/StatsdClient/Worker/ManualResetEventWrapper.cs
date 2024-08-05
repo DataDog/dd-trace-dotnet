@@ -5,7 +5,7 @@
 using System;
 using System.Threading;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Worker
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Worker
 {
     /// <summary>
     /// Simple wrapper arround ManualResetEventSlim.

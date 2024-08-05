@@ -6,12 +6,12 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Util;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Template;
 
-namespace Datadog.Trace.DiagnosticListeners;
+namespace Datadog.Trace.Internal.DiagnosticListeners;
 
 internal class AspNetCoreResourceNameHelper
 {

@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 internal class ApplicationTelemetryData
 {

@@ -5,11 +5,11 @@
 
 #if !NETFRAMEWORK
 using System.ComponentModel;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore;
 
 /// <summary>
 /// The ASP.NET Core middleware integration.

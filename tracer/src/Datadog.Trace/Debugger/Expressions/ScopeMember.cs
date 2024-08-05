@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.Debugger.Expressions
+namespace Datadog.Trace.Internal.Debugger.Expressions
 {
     internal enum ScopeMemberKind
     {

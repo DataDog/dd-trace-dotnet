@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Ci.Tags;
+namespace Datadog.Trace.Internal.Ci.Tags;
 
 /// <summary>
 /// Span tags for benchmark test data model

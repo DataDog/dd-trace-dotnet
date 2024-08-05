@@ -7,14 +7,14 @@
 
 using System;
 using System.Collections;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using ILoggingRuleProxy = Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.ILoggingRuleProxy;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
+using ILoggingRuleProxy = Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.ILoggingRuleProxy;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection
 {
     /// <summary>
     /// Helper class to add necessary configuration when logs injection is enabled.

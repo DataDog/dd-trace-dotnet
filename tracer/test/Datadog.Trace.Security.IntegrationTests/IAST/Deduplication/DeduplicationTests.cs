@@ -5,7 +5,7 @@
 
 using System.IO;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;

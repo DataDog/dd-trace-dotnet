@@ -6,9 +6,9 @@
 #nullable enable
 
 using System.IO;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement
 {
     internal readonly struct NamedRawFile
     {

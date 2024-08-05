@@ -9,13 +9,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Propagators
+namespace Datadog.Trace.Internal.Propagators
 {
     internal class SpanContextPropagator
     {

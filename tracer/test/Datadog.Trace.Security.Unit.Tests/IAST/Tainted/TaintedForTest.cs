@@ -6,8 +6,8 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Iast;
-using Range = Datadog.Trace.Iast.Range;
+using Datadog.Trace.Internal.Iast;
+using Range = Datadog.Trace.Internal.Iast.Range;
 
 namespace Datadog.Trace.Security.Unit.Tests.Iast.Tainted;
 

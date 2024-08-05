@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Xml;
-using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Internal.Ci.Configuration;
 
 namespace Datadog.Trace.Coverage.Collector;
 
@@ -43,7 +43,7 @@ internal class CoverageSettings
     }
 
     public CoverageSettings(XmlElement? configurationElement)
-        : this(configurationElement, Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME"), CIVisibilitySettings.FromDefaultSources())
+        : this(configurationElement, Internal.Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME"), CIVisibilitySettings.FromDefaultSources())
     {
     }
 

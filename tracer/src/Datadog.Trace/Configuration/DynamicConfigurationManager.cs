@@ -10,13 +10,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.Configuration.ConfigurationSources;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Configuration.ConfigurationSources;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.Telemetry;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     internal class DynamicConfigurationManager : IDynamicConfigurationManager
     {

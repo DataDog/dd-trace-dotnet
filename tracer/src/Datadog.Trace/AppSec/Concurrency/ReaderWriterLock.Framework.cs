@@ -4,10 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Vendors.Serilog;
 
-namespace Datadog.Trace.AppSec.Concurrency;
+namespace Datadog.Trace.Internal.AppSec.Concurrency;
 
 internal partial class ReaderWriterLock : IDisposable
 {

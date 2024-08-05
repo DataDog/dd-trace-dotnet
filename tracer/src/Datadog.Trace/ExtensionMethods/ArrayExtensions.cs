@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.ExtensionMethods
+namespace Datadog.Trace.Internal.ExtensionMethods
 {
     internal static class ArrayExtensions
     {

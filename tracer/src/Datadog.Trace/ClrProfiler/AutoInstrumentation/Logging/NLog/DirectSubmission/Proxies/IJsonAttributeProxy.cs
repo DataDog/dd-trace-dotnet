@@ -5,7 +5,7 @@
 
 using System.ComponentModel;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
 {
     internal interface IJsonAttributeProxy
     {

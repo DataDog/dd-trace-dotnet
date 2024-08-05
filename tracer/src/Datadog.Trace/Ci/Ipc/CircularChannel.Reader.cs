@@ -8,9 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
 
-namespace Datadog.Trace.Ci.Ipc;
+namespace Datadog.Trace.Internal.Ci.Ipc;
 
 internal partial class CircularChannel
 {

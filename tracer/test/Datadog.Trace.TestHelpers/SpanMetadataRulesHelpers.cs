@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 
 namespace Datadog.Trace.TestHelpers
 {

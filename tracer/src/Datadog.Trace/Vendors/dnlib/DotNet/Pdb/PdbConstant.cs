@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb {
 	/// <summary>
 	/// A constant in a method scope, eg. "const int SomeConstant = 123;"
 	/// </summary>

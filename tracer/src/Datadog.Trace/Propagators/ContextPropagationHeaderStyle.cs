@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.Propagators;
+namespace Datadog.Trace.Internal.Propagators;
 
 /// <summary>
 /// Values used to indicate propagation header styles in user settings.

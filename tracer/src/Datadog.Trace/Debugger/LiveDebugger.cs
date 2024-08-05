@@ -12,26 +12,26 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Debugger.Configurations;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.Debugger.PInvoke;
-using Datadog.Trace.Debugger.ProbeStatuses;
-using Datadog.Trace.Debugger.RateLimiting;
-using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.DogStatsd;
-using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.dnlib.DotNet;
-using Datadog.Trace.Vendors.StatsdClient;
-using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Debugger.Configurations;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Expressions;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Models;
+using Datadog.Trace.Internal.Debugger.PInvoke;
+using Datadog.Trace.Internal.Debugger.ProbeStatuses;
+using Datadog.Trace.Internal.Debugger.RateLimiting;
+using Datadog.Trace.Internal.Debugger.Sink;
+using Datadog.Trace.Internal.Debugger.Snapshots;
+using Datadog.Trace.Internal.DogStatsd;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
+using ProbeInfo = Datadog.Trace.Internal.Debugger.Expressions.ProbeInfo;
 
-namespace Datadog.Trace.Debugger
+namespace Datadog.Trace.Internal.Debugger
 {
     internal class LiveDebugger
     {

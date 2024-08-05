@@ -7,13 +7,13 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
 
 #if !NETFRAMEWORK
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 
 /// <summary>
 /// SignInManagerIntegration for when the user has been found, but need to check password

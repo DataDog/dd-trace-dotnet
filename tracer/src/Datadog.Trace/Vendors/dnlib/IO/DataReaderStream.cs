@@ -8,7 +8,7 @@
 using System;
 using System.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.IO {
+namespace Datadog.Trace.Internal.Vendors.dnlib.IO {
 	sealed class DataReaderStream : Stream {
 		public override bool CanRead => true;
 		public override bool CanSeek => true;

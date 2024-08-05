@@ -8,19 +8,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.AppSec.WafEncoding;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Internal.AppSec.WafEncoding;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
 #nullable enable
 
-namespace Datadog.Trace.AppSec.Waf.Initialization
+namespace Datadog.Trace.Internal.AppSec.Waf.Initialization
 {
     internal class WafConfigurator
     {

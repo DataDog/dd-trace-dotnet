@@ -6,10 +6,10 @@
 #if NETFRAMEWORK
 using System;
 using System.Linq;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 using Microsoft.Win32;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     internal partial class FrameworkDescription
     {

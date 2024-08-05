@@ -10,7 +10,7 @@
 
 #pragma warning disable SA1600 // Elements should be documented
 
-namespace Datadog.Trace.Vendors.Datadog.Sketches.Mappings;
+namespace Datadog.Trace.Internal.Vendors.Datadog.Sketches.Mappings;
 
 internal interface IIndexMapping
 {

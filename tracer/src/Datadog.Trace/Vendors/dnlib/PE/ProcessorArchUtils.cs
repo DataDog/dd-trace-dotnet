@@ -10,7 +10,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.Vendors.dnlib.PE {
+namespace Datadog.Trace.Internal.Vendors.dnlib.PE {
 	static class ProcessorArchUtils {
 		static Machine cachedMachine = 0;
 

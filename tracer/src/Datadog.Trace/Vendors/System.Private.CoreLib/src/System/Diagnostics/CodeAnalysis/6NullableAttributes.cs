@@ -25,7 +25,7 @@
 #nullable enable
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis
 {
   [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter | AttributeTargets.ReturnValue, AllowMultiple = true, Inherited = false)]
   internal sealed class NotNullIfNotNullAttribute : Attribute

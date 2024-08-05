@@ -9,9 +9,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Agent.Transports
+namespace Datadog.Trace.Internal.Agent.Transports
 {
     internal class HttpClientResponse : IApiResponse
     {

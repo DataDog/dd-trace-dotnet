@@ -5,7 +5,7 @@
 
 using System.ComponentModel;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 
 /// <summary>
 /// Duck type of the SignInResult aspnet core type

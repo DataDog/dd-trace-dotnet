@@ -4,7 +4,7 @@
 // </copyright>
 // based on https://github.com/serilog/serilog-formatting-compact/blob/8393e0ab8c2bc746fc733a4f20731b9e1f20f811/test/Serilog.Formatting.Compact.Tests/EventIdHashTests.cs
 
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Formatting;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting

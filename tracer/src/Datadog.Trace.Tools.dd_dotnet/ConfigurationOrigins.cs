@@ -4,7 +4,7 @@
 // </copyright>
 
 // ReSharper disable once CheckNamespace - Needed for compatibility with linked files
-namespace Datadog.Trace.Configuration.Telemetry;
+namespace Datadog.Trace.Internal.Configuration.Telemetry;
 
 public enum ConfigurationOrigins
 {

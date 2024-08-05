@@ -8,7 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.HttpOverStreams
+namespace Datadog.Trace.Internal.HttpOverStreams
 {
     internal class HttpHeaders : IEnumerable<HttpHeaders.HttpHeader>
     {

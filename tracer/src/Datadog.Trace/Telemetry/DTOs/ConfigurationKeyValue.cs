@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 /// <summary>
 /// V2 implementation of <c>conf_key_value</c>

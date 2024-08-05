@@ -6,7 +6,7 @@
 
 using System.ComponentModel;
 
-namespace Datadog.Trace.Logging.DirectSubmission
+namespace Datadog.Trace.Internal.Logging.DirectSubmission
 {
     /// <summary>
     /// The unified log levels to use with direct submission

@@ -6,7 +6,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.AppSec.Waf.NativeBindings
+namespace Datadog.Trace.Internal.AppSec.Waf.NativeBindings
 {
     [StructLayout(LayoutKind.Sequential)]
     internal struct DdwafResultStruct

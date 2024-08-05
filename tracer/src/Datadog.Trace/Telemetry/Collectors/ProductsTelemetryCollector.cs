@@ -7,7 +7,7 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 internal class ProductsTelemetryCollector
 {

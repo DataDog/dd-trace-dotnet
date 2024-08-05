@@ -5,7 +5,7 @@
 
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Telemetry
+namespace Datadog.Trace.Internal.Telemetry
 {
     internal interface ITelemetryTransport
     {

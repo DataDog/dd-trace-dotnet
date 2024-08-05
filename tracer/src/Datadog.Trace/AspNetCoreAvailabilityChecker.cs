@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace;
+namespace Datadog.Trace.Internal;
 
 internal static class AspNetCoreAvailabilityChecker
 {

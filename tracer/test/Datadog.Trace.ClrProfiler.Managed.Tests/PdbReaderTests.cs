@@ -6,9 +6,9 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Datadog.Trace.Pdb;
-using Datadog.Trace.Pdb.SourceLink;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Pdb;
+using Datadog.Trace.Internal.Pdb.SourceLink;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
 

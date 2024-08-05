@@ -5,11 +5,11 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Sink;
 
-namespace Datadog.Trace.Logging.DirectSubmission
+namespace Datadog.Trace.Internal.Logging.DirectSubmission
 {
     internal static class LogsTransportStrategy
     {

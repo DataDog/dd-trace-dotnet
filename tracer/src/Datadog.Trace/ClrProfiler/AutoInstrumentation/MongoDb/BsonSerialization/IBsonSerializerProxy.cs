@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 
 internal interface IBsonSerializerProxy
 {

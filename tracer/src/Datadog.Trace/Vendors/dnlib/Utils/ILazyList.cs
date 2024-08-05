@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Vendors.dnlib.Utils {
+namespace Datadog.Trace.Internal.Vendors.dnlib.Utils {
 	/// <summary>
 	/// Interface to access a lazily initialized list
 	/// </summary>

@@ -6,9 +6,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger.RateLimiting
+namespace Datadog.Trace.Internal.Debugger.RateLimiting
 {
     internal class ProbeRateLimiter
     {

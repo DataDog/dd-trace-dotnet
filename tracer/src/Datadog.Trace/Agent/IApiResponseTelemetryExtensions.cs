@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.Agent;
+namespace Datadog.Trace.Internal.Agent;
 
 internal static class IApiResponseTelemetryExtensions
 {

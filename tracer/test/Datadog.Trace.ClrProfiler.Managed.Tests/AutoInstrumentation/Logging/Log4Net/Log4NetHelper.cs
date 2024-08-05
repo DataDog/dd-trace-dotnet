@@ -5,10 +5,10 @@
 
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Sink;
 using log4net.Core;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Log4Net

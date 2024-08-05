@@ -5,13 +5,13 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Rcm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmData;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.AppSec.Rcm;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.AsmData;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.AppSec.Waf
+namespace Datadog.Trace.Internal.AppSec.Waf
 {
     internal interface IWaf : IDisposable
     {

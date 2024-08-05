@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.Debugger.Configurations.Models;
+namespace Datadog.Trace.Internal.Debugger.Configurations.Models;
 
 internal class SpanProbe : ProbeDefinition, IEquatable<SpanProbe>
 {

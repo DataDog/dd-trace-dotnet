@@ -14,7 +14,7 @@ using System.IO;
 using System.Reflection;
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal
 {
     internal abstract class MemoryBlockProvider : IDisposable
   {

@@ -6,9 +6,9 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Internal.Agent.Transports;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Internal.Agent
 {
     internal interface IApiRequest
     {

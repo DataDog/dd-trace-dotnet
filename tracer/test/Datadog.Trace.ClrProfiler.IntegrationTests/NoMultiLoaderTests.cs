@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_TRACE_LOG_PATH", tmpFile);
 
             // Clear any existing log path values, as these take precedence over DD_TRACE_LOG_PATH
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.LogDirectory, string.Empty);
+            SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.LogDirectory, string.Empty);
 
             using ProcessResult processResult = await RunSampleAndWaitForExit(MockTracerAgent.Create(Output, 9696, doNotBindPorts: true));
             string[] logFileContent = File.ReadAllLines(tmpFile);

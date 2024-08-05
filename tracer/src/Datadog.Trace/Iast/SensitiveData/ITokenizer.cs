@@ -4,11 +4,11 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.SensitiveData;
+namespace Datadog.Trace.Internal.Iast.SensitiveData;
 
 internal interface ITokenizer
 {

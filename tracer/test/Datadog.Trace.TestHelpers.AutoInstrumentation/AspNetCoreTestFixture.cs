@@ -228,7 +228,7 @@ namespace Datadog.Trace.TestHelpers
 
         private bool IsNotServerLifeCheck(MockSpan span)
         {
-            span.Tags.TryGetValue(Tags.HttpUrl, out var url);
+            span.Tags.TryGetValue(Internal.Tags.HttpUrl, out var url);
             if (url == null)
             {
                 return true;

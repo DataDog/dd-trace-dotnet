@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     /// <summary>
     /// HTTP method

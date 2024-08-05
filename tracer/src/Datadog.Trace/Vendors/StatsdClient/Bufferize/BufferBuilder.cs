@@ -5,7 +5,7 @@
 using System;
 using System.Text;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Bufferize
 {
     /// <summary>
     /// Append string values to a fixed size bytes buffer.

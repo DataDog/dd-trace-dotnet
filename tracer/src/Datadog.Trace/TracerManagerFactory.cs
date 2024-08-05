@@ -6,32 +6,32 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DogStatsd;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.TracerFlare;
-using Datadog.Trace.Processors;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Transport;
-using Datadog.Trace.RuntimeMetrics;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.StatsdClient;
-using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
-using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.ContinuousProfiler;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.DogStatsd;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Logging.TracerFlare;
+using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Transport;
+using Datadog.Trace.Internal.RuntimeMetrics;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
+using ConfigurationKeys = Datadog.Trace.Internal.Configuration.ConfigurationKeys;
+using MetricsTransportType = Datadog.Trace.Internal.Vendors.StatsdClient.Transport.TransportType;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     internal class TracerManagerFactory
     {

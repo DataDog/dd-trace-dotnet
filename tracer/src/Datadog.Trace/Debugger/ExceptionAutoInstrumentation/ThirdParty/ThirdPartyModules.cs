@@ -4,10 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation.ThirdParty
 {
     internal class ThirdPartyModules
     {

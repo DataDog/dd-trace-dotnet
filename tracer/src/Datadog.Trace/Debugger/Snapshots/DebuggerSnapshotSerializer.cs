@@ -10,12 +10,12 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Debugger.Expressions;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 
-namespace Datadog.Trace.Debugger.Snapshots
+namespace Datadog.Trace.Internal.Debugger.Snapshots
 {
     internal static partial class DebuggerSnapshotSerializer
     {

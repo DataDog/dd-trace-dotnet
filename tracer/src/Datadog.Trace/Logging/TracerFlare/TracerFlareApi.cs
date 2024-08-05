@@ -9,13 +9,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.HttpOverStreams;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.Logging.TracerFlare;
+namespace Datadog.Trace.Internal.Logging.TracerFlare;
 
 internal class TracerFlareApi
 {

@@ -1,10 +1,10 @@
-﻿// <copyright file="SpanContextPropagatorFactoryTests.cs" company="Datadog">
+// <copyright file="SpanContextPropagatorFactoryTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System.Linq;
-using Datadog.Trace.Propagators;
+using Datadog.Trace.Internal.Propagators;
 using FluentAssertions;
 using Xunit;
 
@@ -31,8 +31,8 @@ public class SpanContextPropagatorFactoryTests
         var propagators = SpanContextPropagatorFactory.GetPropagators<IContextExtractor>(headerStyles).ToArray();
 
         propagators.Should().NotBeNull().And.HaveCount(2);
-        propagators[0].Should().BeSameAs(Datadog.Trace.Propagators.DatadogContextPropagator.Instance);
-        propagators[1].Should().BeSameAs(Datadog.Trace.Propagators.W3CTraceContextPropagator.Instance);
+        propagators[0].Should().BeSameAs(Datadog.Trace.Internal.Propagators.DatadogContextPropagator.Instance);
+        propagators[1].Should().BeSameAs(Datadog.Trace.Internal.Propagators.W3CTraceContextPropagator.Instance);
     }
 
     [Theory]

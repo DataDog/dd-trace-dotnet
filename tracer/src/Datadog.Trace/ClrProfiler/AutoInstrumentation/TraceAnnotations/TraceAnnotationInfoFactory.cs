@@ -7,9 +7,9 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
     internal static class TraceAnnotationInfoFactory
     {

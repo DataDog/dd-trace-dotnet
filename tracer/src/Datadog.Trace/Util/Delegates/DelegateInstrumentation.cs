@@ -11,10 +11,10 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers.Continuations;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Util.Delegates;
+namespace Datadog.Trace.Internal.Util.Delegates;
 
 #pragma warning disable SA1124
 

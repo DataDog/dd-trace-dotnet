@@ -6,7 +6,7 @@
 #pragma warning disable SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
 
 #nullable enable
-namespace Datadog.Trace.Debugger.Configurations.Models;
+namespace Datadog.Trace.Internal.Debugger.Configurations.Models;
 
 internal record Decoration
 {

@@ -12,9 +12,9 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers.Text
 {
     internal static class FormattingHelpers
   {

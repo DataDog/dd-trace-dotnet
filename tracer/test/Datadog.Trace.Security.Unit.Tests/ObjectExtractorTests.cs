@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Waf;
 using FluentAssertions;
 using Xunit;
 

@@ -6,7 +6,7 @@
 
 using System.Reflection.Emit;
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers;
 
 internal readonly struct CreateAsyncEndMethodResult
 {

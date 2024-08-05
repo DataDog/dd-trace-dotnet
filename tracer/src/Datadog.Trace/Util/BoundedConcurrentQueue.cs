@@ -23,7 +23,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
-namespace Datadog.Trace.Util
+namespace Datadog.Trace.Internal.Util
 {
     internal class BoundedConcurrentQueue<T>
     {

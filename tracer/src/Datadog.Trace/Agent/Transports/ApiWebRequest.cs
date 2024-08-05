@@ -9,11 +9,11 @@ using System.IO.Compression;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
-using static Datadog.Trace.HttpOverStreams.DatadogHttpValues;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
+using static Datadog.Trace.Internal.HttpOverStreams.DatadogHttpValues;
 
-namespace Datadog.Trace.Agent.Transports
+namespace Datadog.Trace.Internal.Agent.Transports
 {
     internal class ApiWebRequest : IApiRequest
     {

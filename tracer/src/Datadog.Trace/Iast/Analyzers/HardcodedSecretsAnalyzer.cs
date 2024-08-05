@@ -11,11 +11,11 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.ClrProfiler;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Iast.Analyzers;
+namespace Datadog.Trace.Internal.Iast.Analyzers;
 
 internal class HardcodedSecretsAnalyzer : IDisposable
 {

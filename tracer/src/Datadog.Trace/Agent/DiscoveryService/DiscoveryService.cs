@@ -10,12 +10,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.HttpOverStreams;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.Agent.DiscoveryService
+namespace Datadog.Trace.Internal.Agent.DiscoveryService
 {
     internal class DiscoveryService : IDiscoveryService
     {

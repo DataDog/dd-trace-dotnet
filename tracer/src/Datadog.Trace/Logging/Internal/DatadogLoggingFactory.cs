@@ -7,19 +7,19 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging.Internal;
-using Datadog.Trace.Logging.Internal.Configuration;
-using Datadog.Trace.RuntimeMetrics;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog;
-using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Logging.Internal;
+using Datadog.Trace.Internal.Logging.Internal.Configuration;
+using Datadog.Trace.Internal.RuntimeMetrics;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Serilog;
+using Datadog.Trace.Internal.Vendors.Serilog.Core;
 
-namespace Datadog.Trace.Logging;
+namespace Datadog.Trace.Internal.Logging;
 
 internal static class DatadogLoggingFactory
 {

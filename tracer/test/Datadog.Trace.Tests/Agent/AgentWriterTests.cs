@@ -8,13 +8,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DogStatsd;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.MessagePack;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DogStatsd;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
             span.Finish();
             var traceChunk = new ArraySegment<Span>(new[] { span });
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
+            var expectedData1 = Internal.Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
@@ -117,7 +117,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var expectedChunk = new ArraySegment<Span>(new[] { rootSpan, keptChildSpan });
             var size = ComputeSize(expectedChunk);
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
+            var expectedData1 = Internal.Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
@@ -167,7 +167,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new ArraySegment<Span>(spans, 5, 4);
             var expectedChunk = new ArraySegment<Span>(new[] { rootSpan, keptChildSpan });
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
+            var expectedData1 = Internal.Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
             agent.WriteTrace(traceChunk);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
@@ -200,7 +200,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var spans = CreateTraceChunk(1);
             var traceChunk = new TraceChunkModel(spans);
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance);
+            var expectedData1 = Internal.Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance);
 
             _agentWriter.WriteTrace(spans);
             await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
@@ -211,7 +211,7 @@ namespace Datadog.Trace.Tests.Agent
 
             spans = CreateTraceChunk(1, 2);
             traceChunk = new TraceChunkModel(spans);
-            var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance);
+            var expectedData2 = Internal.Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance);
 
             _agentWriter.WriteTrace(spans);
             await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
@@ -461,7 +461,7 @@ namespace Datadog.Trace.Tests.Agent
             rootSpan.SetMetric(Metrics.TracesKeepRate, expectedTraceKeepRate);
 
             var traceChunk = new TraceChunkModel(spans);
-            var expectedData = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance);
+            var expectedData = Internal.Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance);
             await agent.FlushAndCloseAsync();
 
             api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
@@ -529,7 +529,7 @@ namespace Datadog.Trace.Tests.Agent
         private static int ComputeSize(ArraySegment<Span> spans)
         {
             var traceChunk = new TraceChunkModel(spans);
-            return Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance).Length;
+            return Internal.Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance).Length;
         }
 
         private static ArraySegment<Span> CreateTraceChunk(int spanCount, ulong startingId = 1)

@@ -6,7 +6,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.Serilog.Core
+namespace Datadog.Trace.Internal.Vendors.Serilog.Core
 {
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Interface)]
     sealed class CustomDefaultMethodImplementationAttribute : Attribute

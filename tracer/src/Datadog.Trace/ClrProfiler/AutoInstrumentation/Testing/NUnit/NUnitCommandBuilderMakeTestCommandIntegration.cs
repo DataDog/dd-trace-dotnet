@@ -6,9 +6,9 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
 /// <summary>
 /// NUnit.Framework.Internal.Commands.TestCommand NUnit.Framework.Internal.Execution.CommandBuilder::MakeTestCommand(NUnit.Framework.Internal.TestMethod) calltarget instrumentation

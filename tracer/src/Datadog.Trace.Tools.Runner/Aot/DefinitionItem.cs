@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Internal.ClrProfiler;
 using Mono.Cecil;
 
 namespace Datadog.Trace.Tools.Runner.Aot

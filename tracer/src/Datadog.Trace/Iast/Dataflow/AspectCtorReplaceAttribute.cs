@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Internal.AppSec.Waf.ReturnTypes.Managed;
 
-namespace Datadog.Trace.Iast.Dataflow;
+namespace Datadog.Trace.Internal.Iast.Dataflow;
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal sealed class AspectCtorReplaceAttribute : AspectAttribute

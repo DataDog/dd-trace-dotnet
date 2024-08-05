@@ -37,12 +37,12 @@ public class SourceCodeIntegrationGitMetadataTests : TestHelper
         foreach (var trace in spans.GroupBy(s => s.TraceId))
         {
             // Only a single tagging per trace
-            trace.Should().ContainSingle(s => s.Tags.ContainsKey(Trace.Tags.GitCommitSha));
-            trace.Should().ContainSingle(s => s.Tags.ContainsKey(Trace.Tags.GitRepositoryUrl));
+            trace.Should().ContainSingle(s => s.Tags.ContainsKey(Internal.Tags.GitCommitSha));
+            trace.Should().ContainSingle(s => s.Tags.ContainsKey(Internal.Tags.GitRepositoryUrl));
 
             // Must be the first span of the trace
-            trace.First().Tags.Should().ContainKey(Trace.Tags.GitCommitSha);
-            trace.First().Tags.Should().ContainKey(Trace.Tags.GitRepositoryUrl);
+            trace.First().Tags.Should().ContainKey(Internal.Tags.GitCommitSha);
+            trace.First().Tags.Should().ContainKey(Internal.Tags.GitRepositoryUrl);
         }
     }
 

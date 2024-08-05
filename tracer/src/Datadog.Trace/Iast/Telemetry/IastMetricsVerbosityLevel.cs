@@ -6,7 +6,7 @@
 
 using System.ComponentModel;
 
-namespace Datadog.Trace.Iast.Telemetry;
+namespace Datadog.Trace.Internal.Iast.Telemetry;
 
 /// <summary>
 /// The verbosity telemetry level to be used by Iast

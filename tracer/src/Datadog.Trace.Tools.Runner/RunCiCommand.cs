@@ -7,8 +7,8 @@ using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Logging;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner

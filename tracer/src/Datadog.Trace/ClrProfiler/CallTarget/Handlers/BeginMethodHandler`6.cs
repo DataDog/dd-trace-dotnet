@@ -6,10 +6,11 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.ClrProfiler;
 
 #pragma warning disable SA1649 // File name must match first type name
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers;
 
 internal static class BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>
 {

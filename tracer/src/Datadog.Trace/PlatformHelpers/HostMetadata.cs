@@ -7,9 +7,9 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.PlatformHelpers
+namespace Datadog.Trace.Internal.PlatformHelpers
 {
     internal class HostMetadata
     {

@@ -5,10 +5,10 @@
 
 #nullable enable
 using System.Linq;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.HttpOverStreams;
 
-namespace Datadog.Trace.DataStreamsMonitoring.Transport;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Transport;
 
 internal class DataStreamsHttpHeaderHelper : HttpHeaderHelperBase
 {

@@ -17,11 +17,11 @@
 // limitations under the License.
 
 using System;
-using Datadog.Trace.Vendors.Serilog.Debugging;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Parsing;
+using Datadog.Trace.Internal.Vendors.Serilog.Debugging;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Parsing;
 
-namespace Datadog.Trace.Vendors.Serilog.Capturing
+namespace Datadog.Trace.Internal.Vendors.Serilog.Capturing
 {
     // Performance relevant - on the hot path when creating log events from existing templates.
     class PropertyBinder

@@ -11,8 +11,8 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Iast.Dataflow;
 using Datadog.Trace.SourceGenerators.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -37,7 +37,7 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
         IncrementalValuesProvider<Result<(ClassAspects Aspects, bool IsValid)>> aspectsClassesToGenerate =
             context.SyntaxProvider
                    .ForAttributeWithMetadataName(
-                        "Datadog.Trace.Iast.Dataflow.AspectClassAttribute",
+                        "Datadog.Trace.Internal.Iast.Dataflow.AspectClassAttribute",
                         predicate: (node, _) => node is ClassDeclarationSyntax,
                         transform: GetAspectsToGenerate)
                    .WithTrackingName(TrackingNames.PostTransform)
@@ -76,7 +76,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {

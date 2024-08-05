@@ -14,7 +14,7 @@ using System.Text;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.PortableExecutable
 {
     /// <summary>
     /// Simple BinaryReader wrapper to:

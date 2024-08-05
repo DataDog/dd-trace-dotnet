@@ -33,10 +33,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 using System.Globalization;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Linq
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq
 {
     /// <summary>
     /// Represents a JSON constructor.

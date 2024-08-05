@@ -5,7 +5,7 @@
 
 #nullable enable
 using System;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests.Utils;

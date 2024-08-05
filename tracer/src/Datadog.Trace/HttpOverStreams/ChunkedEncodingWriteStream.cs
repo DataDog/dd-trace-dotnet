@@ -9,9 +9,9 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Util.Streams;
+using Datadog.Trace.Internal.Util.Streams;
 
-namespace Datadog.Trace.HttpOverStreams;
+namespace Datadog.Trace.Internal.HttpOverStreams;
 
 internal class ChunkedEncodingWriteStream(Stream innerStream) : LeaveOpenDelegatingStream(innerStream)
 {

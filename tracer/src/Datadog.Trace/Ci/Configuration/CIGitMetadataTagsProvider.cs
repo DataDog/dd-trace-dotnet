@@ -5,11 +5,11 @@
 
 #nullable enable
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Ci.CiEnvironment;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Telemetry;
 
-namespace Datadog.Trace.Ci.Configuration;
+namespace Datadog.Trace.Internal.Ci.Configuration;
 
 internal class CIGitMetadataTagsProvider : IGitMetadataTagsProvider
 {

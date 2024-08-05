@@ -6,9 +6,9 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.Telemetry.Transports
+namespace Datadog.Trace.Internal.Telemetry.Transports
 {
     internal class TelemetryTransportFactory
     {

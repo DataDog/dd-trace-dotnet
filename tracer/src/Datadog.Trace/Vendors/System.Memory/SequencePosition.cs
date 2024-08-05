@@ -12,9 +12,9 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.VendoredMicrosoftCode.System.Numerics.Hashing;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Numerics.Hashing;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System
 {
     internal readonly struct SequencePosition : IEquatable<SequencePosition>
     {

@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
 {
     internal interface IApiCallDetails
     {

@@ -5,13 +5,13 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
 /// <summary>
 /// NUnit.Framework.Internal.Execution.WorkItem.PerformWork() calltarget instrumentation

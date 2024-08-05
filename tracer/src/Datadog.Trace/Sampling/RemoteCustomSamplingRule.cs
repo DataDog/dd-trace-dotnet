@@ -1,4 +1,4 @@
-﻿// <copyright file="RemoteCustomSamplingRule.cs" company="Datadog">
+// <copyright file="RemoteCustomSamplingRule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,10 +7,10 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Sampling;
+namespace Datadog.Trace.Internal.Sampling;
 
 internal sealed class RemoteCustomSamplingRule : CustomSamplingRule
 {
@@ -37,9 +37,9 @@ internal sealed class RemoteCustomSamplingRule : CustomSamplingRule
 
         SamplingMechanism = Provenance switch
         {
-            SamplingRuleProvenance.RemoteCustomer => Datadog.Trace.Sampling.SamplingMechanism.RemoteUserSamplingRule,
-            SamplingRuleProvenance.RemoteDynamic => Datadog.Trace.Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule,
-            _ => Datadog.Trace.Sampling.SamplingMechanism.Default
+            SamplingRuleProvenance.RemoteCustomer => Datadog.Trace.Internal.Sampling.SamplingMechanism.RemoteUserSamplingRule,
+            SamplingRuleProvenance.RemoteDynamic => Datadog.Trace.Internal.Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule,
+            _ => Datadog.Trace.Internal.Sampling.SamplingMechanism.Default
         };
     }
 

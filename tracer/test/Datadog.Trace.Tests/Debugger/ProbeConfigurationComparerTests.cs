@@ -4,8 +4,8 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Debugger.Configurations;
-using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Configurations;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
 using FluentAssertions;
 using Xunit;
 
@@ -28,7 +28,7 @@ public class ProbeConfigurationComparerTests
     public void CurrentSamplingNull_IncomingSamplingEmpty_RateLimitChanged()
     {
         var current = new ProbeConfiguration();
-        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling() } };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Internal.Debugger.Configurations.Models.Sampling() } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();
@@ -38,8 +38,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentSamplingEmpty_IncomingSamplingEmpty_RateLimitNotChanged()
     {
-        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling() } };
-        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling() } };
+        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Internal.Debugger.Configurations.Models.Sampling() } };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Internal.Debugger.Configurations.Models.Sampling() } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();
@@ -49,8 +49,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentSamplingHasValue_IncomingSamplingEmpty_RateLimitChanged()
     {
-        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 5 } } };
-        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling() } };
+        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Internal.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 5 } } };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Internal.Debugger.Configurations.Models.Sampling() } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();
@@ -60,8 +60,8 @@ public class ProbeConfigurationComparerTests
     [Fact]
     public void CurrentSamplingHasValue_IncomingSamplingSameValue_RateLimitNotChanged()
     {
-        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 5 } } };
-        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Trace.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 5 } } };
+        var current = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Internal.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 5 } } };
+        var incoming = new ProbeConfiguration { ServiceConfiguration = new ServiceConfiguration() { Sampling = new Internal.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 5 } } };
 
         var comparer = new ProbeConfigurationComparer(current, incoming);
         comparer.HasProbeRelatedChanges.Should().BeFalse();

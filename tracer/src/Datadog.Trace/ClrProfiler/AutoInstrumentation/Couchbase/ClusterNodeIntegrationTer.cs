@@ -5,9 +5,9 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Couchbase
 {
     /// <summary>
     /// Couchbase clusterNode 3.0 calltarget instrumentation

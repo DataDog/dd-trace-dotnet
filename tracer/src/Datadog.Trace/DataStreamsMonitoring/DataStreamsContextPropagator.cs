@@ -7,10 +7,10 @@
 
 using System;
 using System.Text;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.DataStreamsMonitoring;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring;
 
 /// <summary>
 /// Used for injecting the data streams pipeline context into headers

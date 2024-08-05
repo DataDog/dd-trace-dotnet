@@ -13,7 +13,7 @@ using System.Text;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
     /// <summary>
     /// Provides the <see cref="T:System.Reflection.Metadata.MetadataReader" /> with a custom mechanism for decoding

@@ -18,11 +18,11 @@
 
 using System;
 using System.Threading;
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Debugging;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Core;
+using Datadog.Trace.Internal.Vendors.Serilog.Debugging;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Vendors.Serilog.Sinks.File
+namespace Datadog.Trace.Internal.Vendors.Serilog.Sinks.File
 {
     /// <summary>
     /// A sink wrapper that periodically flushes the wrapped sink to disk.

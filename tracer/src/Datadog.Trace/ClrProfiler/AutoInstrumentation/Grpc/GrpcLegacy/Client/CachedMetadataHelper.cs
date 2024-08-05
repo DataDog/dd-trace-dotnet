@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 {
     internal static class CachedMetadataHelper<TMarkerType>
     {

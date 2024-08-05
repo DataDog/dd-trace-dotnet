@@ -13,12 +13,12 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using Unsafe = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 #pragma warning disable CS8625
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers
 {
     [DebuggerTypeProxy(typeof(ReadOnlySequenceDebugView<>))]
     [DebuggerDisplay("{ToString(),raw}")]

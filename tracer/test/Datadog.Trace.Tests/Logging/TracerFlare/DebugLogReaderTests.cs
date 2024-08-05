@@ -11,7 +11,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.Internal.Logging.TracerFlare;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;

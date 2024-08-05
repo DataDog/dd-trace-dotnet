@@ -8,7 +8,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Linq;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tools.Runner
             if (enableCIVisibilityMode)
             {
                 // Enable CI Visibility mode by configuration
-                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
+                profilerEnvironmentVariables[Internal.Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
             }
 
             var setEnvironmentVariables = _legacySettings.SetEnvironmentVariablesOption.GetValue(context);
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tools.Runner
                     // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
                     if (enableCIVisibilityMode)
                     {
-                        var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
+                        var ciVisibilitySettings = Internal.Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
                         if (ciVisibilitySettings.Agentless)
                         {
                             if (string.IsNullOrWhiteSpace(ciVisibilitySettings.ApiKey))

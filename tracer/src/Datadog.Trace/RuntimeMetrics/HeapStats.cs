@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.RuntimeMetrics
+namespace Datadog.Trace.Internal.RuntimeMetrics
 {
     internal readonly struct HeapStats
     {

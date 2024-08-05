@@ -42,10 +42,10 @@ static const WSTRING managed_profiler_debugger_endmethod_endmarker_name = WStr("
 static const WSTRING managed_profiler_debugger_logexception_name = WStr("LogException");
 static const WSTRING managed_profiler_debugger_logarg_name = WStr("LogArg");
 static const WSTRING managed_profiler_debugger_loglocal_name = WStr("LogLocal");
-static const WSTRING managed_profiler_debugger_method_type = WStr("Datadog.Trace.Debugger.Instrumentation.MethodDebuggerInvoker");
-static const WSTRING managed_profiler_debugger_methodstatetype = WStr("Datadog.Trace.Debugger.Instrumentation.MethodDebuggerState");
-static const WSTRING managed_profiler_debugger_returntype = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerReturn");
-static const WSTRING managed_profiler_debugger_returntype_generics = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerReturn`1");
+static const WSTRING managed_profiler_debugger_method_type = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.MethodDebuggerInvoker");
+static const WSTRING managed_profiler_debugger_methodstatetype = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.MethodDebuggerState");
+static const WSTRING managed_profiler_debugger_returntype = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.DebuggerReturn");
+static const WSTRING managed_profiler_debugger_returntype_generics = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.DebuggerReturn`1");
 
 // Line Probe Methods & Types
 static const WSTRING managed_profiler_debugger_should_update_probe_info_name = WStr("ShouldUpdateProbeInfo");
@@ -53,30 +53,30 @@ static const WSTRING managed_profiler_debugger_update_probe_info_name = WStr("Up
 static const WSTRING managed_profiler_debugger_rent_array_name = WStr("RentArray");
 static const WSTRING managed_profiler_debugger_dispose_name = WStr("Dispose");
 
-static const WSTRING managed_profiler_debugger_line_type = WStr("Datadog.Trace.Debugger.Instrumentation.LineDebuggerInvoker");
-static const WSTRING managed_profiler_debugger_linestatetype = WStr("Datadog.Trace.Debugger.Instrumentation.LineDebuggerState");
+static const WSTRING managed_profiler_debugger_line_type = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.LineDebuggerInvoker");
+static const WSTRING managed_profiler_debugger_linestatetype = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.LineDebuggerState");
 static const WSTRING managed_profiler_debugger_beginline_name = WStr("BeginLine");
 static const WSTRING managed_profiler_debugger_endline_name = WStr("EndLine");
 
 // Async line probe
-static const WSTRING managed_profiler_debugger_async_line_type = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncLineDebuggerInvoker");
-static const WSTRING managed_profiler_debugger_async_linestatetype = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncLineDebuggerState");
+static const WSTRING managed_profiler_debugger_async_line_type = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.AsyncLineDebuggerInvoker");
+static const WSTRING managed_profiler_debugger_async_linestatetype = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.AsyncLineDebuggerState");
 
 // Async method probes
 static const WSTRING managed_profiler_debugger_is_first_entry_field_name = WStr("<>dd_liveDebugger_isReEntryToMoveNext");
 static const WSTRING managed_profiler_debugger_async_method_debugger_state_field_name = WStr("LogState"); // See `Datadog.Trace.Debugger.Instrumentation.AsyncDebuggerState.LogState`
 static const WSTRING managed_profiler_debugger_begin_async_method_name = WStr("BeginMethod");
-static const WSTRING managed_profiler_debugger_async_method_invoker_type = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncMethodDebuggerInvoker");
-static const WSTRING managed_profiler_debugger_async_method_state_type = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncDebuggerState");
+static const WSTRING managed_profiler_debugger_async_method_invoker_type = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.AsyncMethodDebuggerInvoker");
+static const WSTRING managed_profiler_debugger_async_method_state_type = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.AsyncDebuggerState");
 
 // Span probe
 static const WSTRING managed_profiler_debugger_begin_span_name = WStr("BeginSpan");
 static const WSTRING managed_profiler_debugger_end_span_name = WStr("EndSpan");
-static const WSTRING managed_profiler_debugger_span_invoker_type = WStr("Datadog.Trace.Debugger.Instrumentation.SpanDebuggerInvoker");
-static const WSTRING managed_profiler_debugger_span_state_type = WStr("Datadog.Trace.Debugger.Instrumentation.SpanDebuggerState");
+static const WSTRING managed_profiler_debugger_span_invoker_type = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.SpanDebuggerInvoker");
+static const WSTRING managed_profiler_debugger_span_state_type = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.SpanDebuggerState");
 
 // Instrumentation Allocator
-static const WSTRING instrumentation_allocator_invoker_name = WStr("Datadog.Trace.Debugger.Instrumentation.InstrumentationAllocator");
+static const WSTRING instrumentation_allocator_invoker_name = WStr("Datadog.Trace.Internal.Debugger.Instrumentation.InstrumentationAllocator");
 
 
 /// <summary>

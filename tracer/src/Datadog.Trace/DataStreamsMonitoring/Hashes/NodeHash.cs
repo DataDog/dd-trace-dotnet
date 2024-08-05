@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.DataStreamsMonitoring.Hashes;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Hashes;
 
 internal readonly struct NodeHash
 {

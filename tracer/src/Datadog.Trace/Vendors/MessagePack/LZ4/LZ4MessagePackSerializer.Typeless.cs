@@ -8,11 +8,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.Vendors.MessagePack.Resolvers;
-using Datadog.Trace.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Internal.Vendors.MessagePack.Resolvers;
+using Datadog.Trace.Internal.Vendors.MessagePack.Formatters;
 using System.IO;
 
-namespace Datadog.Trace.Vendors.MessagePack
+namespace Datadog.Trace.Internal.Vendors.MessagePack
 {
     // Typeless API
     internal static partial class LZ4MessagePackSerializer

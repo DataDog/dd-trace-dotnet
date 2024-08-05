@@ -6,10 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Debugger.Models;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Debugger.Snapshots
+namespace Datadog.Trace.Internal.Debugger.Snapshots
 {
     internal class SnapshotSummary
     {

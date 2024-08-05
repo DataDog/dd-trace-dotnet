@@ -4,10 +4,11 @@
 // </copyright>
 
 using System.Linq;
-using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
-using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.Debugger;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Models;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
 using FluentAssertions;
 using Samples.Probes.TestRuns.SmokeTests;
 using Xunit;

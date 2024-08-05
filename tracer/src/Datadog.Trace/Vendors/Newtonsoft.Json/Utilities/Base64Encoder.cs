@@ -37,7 +37,7 @@ using System.Threading;
 using System.Threading.Tasks;
 #endif
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities
 {
     internal class Base64Encoder
     {

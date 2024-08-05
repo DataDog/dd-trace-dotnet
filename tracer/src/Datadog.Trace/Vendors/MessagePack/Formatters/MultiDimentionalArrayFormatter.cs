@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Datadog.Trace.Vendors.MessagePack.Formatters
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Formatters
 {
     // multi dimentional array serialize to [i, j, [seq]]
 

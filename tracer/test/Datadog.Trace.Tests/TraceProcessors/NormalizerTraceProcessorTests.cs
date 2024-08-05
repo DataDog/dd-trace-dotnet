@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
                 var inValue = (string)value[0];
                 var expectedValue = (string)value[1];
 
-                var actualValue = Trace.Processors.TraceUtil.NormalizeTag(inValue);
+                var actualValue = Internal.Processors.TraceUtil.NormalizeTag(inValue);
                 Assert.Equal(expectedValue, actualValue);
             }
 
@@ -86,14 +86,14 @@ namespace Datadog.Trace.Tests.TraceProcessors
                 var inValue = (string)value[0];
                 var expectedValue = (string)value[1];
 
-                var actualValue = Trace.Processors.NormalizerTraceProcessor.NormalizeName(inValue);
+                var actualValue = Internal.Processors.NormalizerTraceProcessor.NormalizeName(inValue);
                 Assert.Equal(expectedValue, actualValue);
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L100-L119
             static IEnumerable<object[]> GetNormalizeNameValues()
             {
-                yield return new object[] { string.Empty, Trace.Processors.NormalizerTraceProcessor.DefaultSpanName };
+                yield return new object[] { string.Empty, Internal.Processors.NormalizerTraceProcessor.DefaultSpanName };
                 yield return new object[] { "good", "good" };
                 yield return new object[] { "Too-Long-.Too-Long-.Too-Long-.Too-Long-.Too-Long-.Too-Long-.Too-Long-.Too-Long-.Too-Long-.Too-Long-.Too-Long-.", "Too_Long.Too_Long.Too_Long.Too_Long.Too_Long.Too_Long.Too_Long.Too_Long.Too_Long.Too_Long." };
                 yield return new object[] { "bad-name", "bad_name" };
@@ -109,14 +109,14 @@ namespace Datadog.Trace.Tests.TraceProcessors
                 var inValue = (string)value[0];
                 var expectedValue = (string)value[1];
 
-                var actualValue = Trace.Processors.NormalizerTraceProcessor.NormalizeService(inValue);
+                var actualValue = Internal.Processors.NormalizerTraceProcessor.NormalizeService(inValue);
                 Assert.Equal(expectedValue, actualValue);
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L134-L153
             static IEnumerable<object[]> GetNormalizeServiceValues()
             {
-                yield return new object[] { string.Empty, Trace.Processors.NormalizerTraceProcessor.DefaultServiceName };
+                yield return new object[] { string.Empty, Internal.Processors.NormalizerTraceProcessor.DefaultServiceName };
                 yield return new object[] { "good", "good" };
                 yield return new object[] { "Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.", "too_long_.too_long_.too_long_.too_long_.too_long_.too_long_.too_long_.too_long_.too_long_.too_long_." };
                 yield return new object[] { "bad$service", "bad_service" };

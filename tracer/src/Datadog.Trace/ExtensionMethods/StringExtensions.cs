@@ -8,9 +8,9 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ExtensionMethods
+namespace Datadog.Trace.Internal.ExtensionMethods
 {
     internal static class StringExtensions
     {

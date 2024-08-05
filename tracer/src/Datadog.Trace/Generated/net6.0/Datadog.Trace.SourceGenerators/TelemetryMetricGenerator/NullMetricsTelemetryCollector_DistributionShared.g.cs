@@ -8,11 +8,11 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 internal partial class NullMetricsTelemetryCollector
 {
 
-    public void RecordDistributionSharedInitTime(Datadog.Trace.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value)
+    public void RecordDistributionSharedInitTime(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value)
     {
     }
 }

@@ -6,7 +6,7 @@
 #if NETFRAMEWORK
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// RequestHeaders interface for ducktyping

@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Sampling;
 
-namespace Datadog.Trace.Ci.Sampling
+namespace Datadog.Trace.Internal.Ci.Sampling
 {
     internal class CISampler : ITraceSampler
     {

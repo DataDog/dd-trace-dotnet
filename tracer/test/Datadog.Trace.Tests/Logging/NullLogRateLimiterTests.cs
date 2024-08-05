@@ -8,8 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Logging

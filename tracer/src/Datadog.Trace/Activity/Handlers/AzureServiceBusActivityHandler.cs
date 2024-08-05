@@ -6,14 +6,14 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Activity.DuckTypes;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.Activity.Handlers
+namespace Datadog.Trace.Internal.Activity.Handlers
 {
     /// <summary>
     /// This Activity handler captures the "Message" Activity objects, whose span context

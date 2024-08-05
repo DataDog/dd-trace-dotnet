@@ -8,7 +8,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     internal class ImmutableDynamicSettings : IEquatable<ImmutableDynamicSettings>
     {

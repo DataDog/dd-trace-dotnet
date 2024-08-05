@@ -5,8 +5,8 @@
 
 #nullable enable
 
-global using ThrowHelper = Datadog.Trace.Util.ThrowHelper;
+global using ThrowHelper = Datadog.Trace.Internal.Util.ThrowHelper;
 
 #if NETFRAMEWORK || NETSTANDARD2_0
-global using Datadog.Trace.VendoredMicrosoftCode.System;
+global using Datadog.Trace.Internal.VendoredMicrosoftCode.System;
 #endif

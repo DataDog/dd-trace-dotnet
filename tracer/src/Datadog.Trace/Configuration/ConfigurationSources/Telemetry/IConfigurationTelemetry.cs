@@ -6,9 +6,9 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Telemetry;
 
-namespace Datadog.Trace.Configuration.Telemetry;
+namespace Datadog.Trace.Internal.Configuration.Telemetry;
 
 internal interface IConfigurationTelemetry
 {

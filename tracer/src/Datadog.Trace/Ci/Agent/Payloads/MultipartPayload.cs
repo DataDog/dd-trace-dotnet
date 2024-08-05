@@ -5,13 +5,13 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Ci.Agent.MessagePack;
-using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Ci.Agent.MessagePack;
+using Datadog.Trace.Internal.Ci.Configuration;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.MessagePack;
 
-namespace Datadog.Trace.Ci.Agent.Payloads
+namespace Datadog.Trace.Internal.Ci.Agent.Payloads
 {
     internal abstract class MultipartPayload : EventPlatformPayload
     {

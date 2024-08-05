@@ -7,9 +7,9 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ExtensionMethods
+namespace Datadog.Trace.Internal.ExtensionMethods
 {
     internal static class DictionaryExtensions
     {

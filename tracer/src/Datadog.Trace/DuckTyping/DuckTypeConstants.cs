@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.DuckTyping
+namespace Datadog.Trace.Internal.DuckTyping
 {
     internal static class DuckTypeConstants
     {

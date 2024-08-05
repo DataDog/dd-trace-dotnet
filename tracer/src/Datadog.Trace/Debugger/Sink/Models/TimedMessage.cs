@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.Debugger.Sink.Models
+namespace Datadog.Trace.Internal.Debugger.Sink.Models
 {
     internal class TimedMessage
     {

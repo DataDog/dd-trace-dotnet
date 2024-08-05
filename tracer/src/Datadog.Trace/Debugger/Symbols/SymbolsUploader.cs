@@ -11,21 +11,21 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
-using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.Debugger.Symbols.Model;
-using Datadog.Trace.Debugger.Upload;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation.ThirdParty;
+using Datadog.Trace.Internal.Debugger.Sink;
+using Datadog.Trace.Internal.Debugger.Symbols.Model;
+using Datadog.Trace.Internal.Debugger.Upload;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Debugger.Symbols
+namespace Datadog.Trace.Internal.Debugger.Symbols
 {
     internal class SymbolsUploader : IDebuggerUploader
     {

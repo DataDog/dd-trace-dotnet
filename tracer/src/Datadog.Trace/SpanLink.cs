@@ -4,12 +4,12 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Propagators;
 
 #nullable enable
 
-namespace Datadog.Trace;
+namespace Datadog.Trace.Internal;
 
 /// <summary>
 /// A SpanLink is a lightweight representation of a Span.

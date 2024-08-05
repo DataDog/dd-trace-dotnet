@@ -26,8 +26,8 @@ using Microsoft.CodeAnalysis.Text;
 [Generator]
 public class TelemetryMetricGenerator : IIncrementalGenerator
 {
-    private const string TelemetryMetricTypeAttributeFullName = "Datadog.Trace.SourceGenerators.TelemetryMetricTypeAttribute";
-    private const string TelemetryMetricAttributeFullName = "Datadog.Trace.SourceGenerators.TelemetryMetricAttribute";
+    private const string TelemetryMetricTypeAttributeFullName = "Datadog.Trace.Internal.SourceGenerators.TelemetryMetricTypeAttribute";
+    private const string TelemetryMetricAttributeFullName = "Datadog.Trace.Internal.SourceGenerators.TelemetryMetricAttribute";
     private const string DescriptionAttribute = "System.ComponentModel.DescriptionAttribute";
 
     /// <inheritdoc />

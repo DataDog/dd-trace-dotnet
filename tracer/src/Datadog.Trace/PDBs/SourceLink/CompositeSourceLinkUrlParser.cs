@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Datadog.Trace.Pdb.SourceLink
+namespace Datadog.Trace.Internal.Pdb.SourceLink
 {
     internal class CompositeSourceLinkUrlParser : SourceLinkUrlParser
     {

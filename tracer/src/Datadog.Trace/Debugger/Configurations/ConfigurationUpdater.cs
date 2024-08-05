@@ -6,10 +6,10 @@
 #nullable enable
 using System;
 using System.Linq;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger.Configurations
+namespace Datadog.Trace.Internal.Debugger.Configurations
 {
     internal class ConfigurationUpdater
     {

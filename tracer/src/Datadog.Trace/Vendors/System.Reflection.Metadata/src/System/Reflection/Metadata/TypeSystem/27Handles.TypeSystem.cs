@@ -11,11 +11,11 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
   /// <summary>A handle that represents a namespace definition.</summary>
   internal readonly struct NamespaceDefinitionHandle : IEquatable<NamespaceDefinitionHandle>

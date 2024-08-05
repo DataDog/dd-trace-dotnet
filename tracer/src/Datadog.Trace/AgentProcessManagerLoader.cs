@@ -6,7 +6,7 @@
 
 using System.ComponentModel;
 
-namespace Datadog.Trace;
+namespace Datadog.Trace.Internal;
 
 /// <summary>
 /// AgentProcessManager Loader.

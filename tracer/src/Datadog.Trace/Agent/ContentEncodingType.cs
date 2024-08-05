@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Agent;
+namespace Datadog.Trace.Internal.Agent;
 
 /// <summary>
 /// The encoding used on the content body.

@@ -8,7 +8,7 @@
 using System.Net;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Http.WebRequest;
 
 internal static class HeadersInjectedCache
 {

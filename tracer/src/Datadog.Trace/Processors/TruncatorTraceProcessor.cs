@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Processors
+namespace Datadog.Trace.Internal.Processors
 {
     internal class TruncatorTraceProcessor : ITraceProcessor
     {

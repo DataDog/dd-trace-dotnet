@@ -1,4 +1,4 @@
-﻿// <copyright file="LoggerLogFormatterTests.cs" company="Datadog">
+// <copyright file="LoggerLogFormatterTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,9 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
 
             public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
             {
-                var provider = _provider.DuckCast<Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.IExternalScopeProvider>();
+                var provider = _provider.DuckCast<Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.IExternalScopeProvider>();
                 var logEntry = new LogEntry<TState>(_timestamp, (int)logLevel, "some_cat", eventId.GetHashCode(), state, exception, formatter, provider);
                 var log = LoggerLogFormatter.FormatLogEvent(_formatter, in logEntry);
                 Logs.Add(log);

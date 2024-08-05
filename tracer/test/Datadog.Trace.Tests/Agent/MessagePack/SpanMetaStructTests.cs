@@ -5,11 +5,11 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.AppSec.Rasp;
-using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.MessagePack;
+using Datadog.Trace.Internal.AppSec.Rasp;
+using Datadog.Trace.Internal.Vendors.MessagePack;
+using Datadog.Trace.Internal.Vendors.MessagePack.Formatters;
 using FluentAssertions;
 using Xunit;
 

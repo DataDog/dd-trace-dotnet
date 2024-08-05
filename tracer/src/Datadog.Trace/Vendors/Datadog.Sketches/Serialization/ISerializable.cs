@@ -8,7 +8,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Vendors.Datadog.Sketches.Serialization
+namespace Datadog.Trace.Internal.Vendors.Datadog.Sketches.Serialization
 {
     /// <summary>
     /// Object serializable to protobuf using the dedicated serializer

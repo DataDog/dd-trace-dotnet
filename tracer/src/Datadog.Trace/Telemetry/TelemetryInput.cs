@@ -5,9 +5,9 @@
 
 #nullable enable
 using System.Collections.Generic;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 internal readonly struct TelemetryInput
 {

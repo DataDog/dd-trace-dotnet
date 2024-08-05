@@ -5,10 +5,10 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.Debugger.Instrumentation.Collections;
+using Datadog.Trace.Internal.Debugger.Instrumentation.Collections;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation;
 
 internal class ExceptionStackNodeRecord
 {

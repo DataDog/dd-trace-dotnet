@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ServiceFabric;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.ServiceFabric;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.PlatformHelpers
+namespace Datadog.Trace.Internal.PlatformHelpers
 {
     internal static class ServiceFabric
     {

@@ -18,10 +18,10 @@ using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
 #endif
 using System.Text;
-using Datadog.Trace.Util;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+using Datadog.Trace.Internal.Util;
+using Unsafe = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
-namespace Datadog.Trace.Ci.Coverage.Util;
+namespace Datadog.Trace.Internal.Ci.Coverage.Util;
 
 /// <summary>
 /// Represents a memory-efficient, modifiable file bitmap, optimized for high performance using unsafe code and SIMD instructions when available.

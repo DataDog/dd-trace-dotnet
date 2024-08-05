@@ -8,11 +8,11 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 
 internal abstract class LambdaCommon
 {

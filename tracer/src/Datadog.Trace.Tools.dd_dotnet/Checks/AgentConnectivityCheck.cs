@@ -11,8 +11,8 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
 using Spectre.Console;
 using static Datadog.Trace.Tools.dd_dotnet.Checks.Resources;
 

@@ -7,10 +7,10 @@
 
 using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Sampling
+namespace Datadog.Trace.Internal.Sampling
 {
     internal class TraceSampler : ITraceSampler
     {

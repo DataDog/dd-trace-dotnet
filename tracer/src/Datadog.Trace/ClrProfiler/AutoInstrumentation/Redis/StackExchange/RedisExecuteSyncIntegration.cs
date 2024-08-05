@@ -7,11 +7,11 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
     /// <summary>
     /// StackExchange.Redis.RedisBase.ExecuteSync[T] calltarget instrumentation

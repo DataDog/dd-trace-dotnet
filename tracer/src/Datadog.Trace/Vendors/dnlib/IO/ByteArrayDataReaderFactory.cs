@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.dnlib.IO {
+namespace Datadog.Trace.Internal.Vendors.dnlib.IO {
 	/// <summary>
 	/// A <see cref="DataReaderFactory"/> that reads from a byte array
 	/// </summary>

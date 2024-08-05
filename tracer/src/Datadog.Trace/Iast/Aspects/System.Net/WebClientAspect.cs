@@ -4,12 +4,12 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Aspects.System.Net;
+namespace Datadog.Trace.Internal.Iast.Aspects.System.Net;
 
 /// <summary> WebClient class aspects </summary>
 [AspectClass("System.Net.WebClient,System", AspectType.RaspIastSink, VulnerabilityType.Ssrf)]

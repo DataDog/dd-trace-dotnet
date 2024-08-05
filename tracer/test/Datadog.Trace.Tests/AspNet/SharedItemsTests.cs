@@ -6,7 +6,7 @@
 #if NETFRAMEWORK
 using System.IO;
 using System.Web;
-using Datadog.Trace.AspNet;
+using Datadog.Trace.Internal.AspNet;
 using Xunit;
 
 namespace Datadog.Trace.Tests.AspNet

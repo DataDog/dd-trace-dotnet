@@ -8,11 +8,11 @@
 #if NETCOREAPP
 using System;
 using System.Text.Json;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Iast.Aspects.System.Text.Json;
+namespace Datadog.Trace.Internal.Iast.Aspects.System.Text.Json;
 
 /// <summary> System.Text.Json JsonDocument class aspect </summary>
 [AspectClass("System.Text.Json", AspectType.Source)]

@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Tagging;
 
 #nullable enable
-namespace Datadog.Trace.AppSec.Rasp;
+namespace Datadog.Trace.Internal.AppSec.Rasp;
 
 internal class RaspTelemetryHelper
 {

@@ -7,10 +7,10 @@
 
 using System;
 using System.Net;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast.Helpers;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast.Helpers;
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 internal static partial class IastModule
 {

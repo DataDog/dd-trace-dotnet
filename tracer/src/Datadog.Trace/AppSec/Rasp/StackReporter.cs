@@ -9,7 +9,7 @@ using System.Diagnostics;
 
 #nullable enable
 
-namespace Datadog.Trace.AppSec.Rasp;
+namespace Datadog.Trace.Internal.AppSec.Rasp;
 
 internal static class StackReporter
 {

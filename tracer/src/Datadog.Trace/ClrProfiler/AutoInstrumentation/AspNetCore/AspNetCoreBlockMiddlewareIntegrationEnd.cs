@@ -7,12 +7,12 @@
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
 using Microsoft.AspNetCore.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     /// <summary>
     /// The ASP.NET Core middleware integration.

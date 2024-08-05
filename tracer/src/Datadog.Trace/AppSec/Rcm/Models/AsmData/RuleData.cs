@@ -7,7 +7,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.AppSec.Rcm.Models.AsmData;
+namespace Datadog.Trace.Internal.AppSec.Rcm.Models.AsmData;
 
 internal class RuleData
 {

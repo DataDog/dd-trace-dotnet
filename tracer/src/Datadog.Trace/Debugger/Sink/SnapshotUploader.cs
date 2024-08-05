@@ -6,7 +6,7 @@
 #nullable enable
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Debugger.Sink
+namespace Datadog.Trace.Internal.Debugger.Sink
 {
     internal class SnapshotUploader : DebuggerUploaderBase, ISnapshotUploader
     {

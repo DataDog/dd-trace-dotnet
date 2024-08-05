@@ -6,10 +6,10 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.AppSec
+namespace Datadog.Trace.Internal.AppSec
 {
     internal class BlockException : CallTargetBubbleUpException
     {

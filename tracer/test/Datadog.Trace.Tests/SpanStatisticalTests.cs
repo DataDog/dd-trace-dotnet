@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;

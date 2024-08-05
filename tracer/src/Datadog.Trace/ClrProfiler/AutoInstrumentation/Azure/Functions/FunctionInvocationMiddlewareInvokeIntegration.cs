@@ -6,13 +6,13 @@
 #if !NETFRAMEWORK
 using System;
 using System.ComponentModel;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.PlatformHelpers;
 using Microsoft.AspNetCore.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     /// <summary>
     /// Azure Function calltarget instrumentation

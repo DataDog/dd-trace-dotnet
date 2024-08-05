@@ -10,21 +10,22 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Agent.StreamFactories;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Pdb;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Processors;
-using Datadog.Trace.Util;
+using Datadog.Trace.Ci;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Agent.StreamFactories;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.Ci.CiEnvironment;
+using Datadog.Trace.Internal.Ci.Configuration;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.HttpOverStreams;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Pdb;
+using Datadog.Trace.Internal.PlatformHelpers;
+using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Ci
+namespace Datadog.Trace.Internal.Ci
 {
     internal class CIVisibility
     {

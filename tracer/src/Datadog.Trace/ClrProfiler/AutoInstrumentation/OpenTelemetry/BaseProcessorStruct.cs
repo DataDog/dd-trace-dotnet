@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {
     /// <summary>
     /// Ducktype for type OpenTelemetry.BaseProcessor`1

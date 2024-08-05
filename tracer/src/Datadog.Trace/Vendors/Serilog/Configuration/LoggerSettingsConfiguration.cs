@@ -18,9 +18,9 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.Serilog.Settings.KeyValuePairs;
+using Datadog.Trace.Internal.Vendors.Serilog.Settings.KeyValuePairs;
 
-namespace Datadog.Trace.Vendors.Serilog.Configuration
+namespace Datadog.Trace.Internal.Vendors.Serilog.Configuration
 {
     /// <summary>
     /// Allows additional setting sources to drive the logger configuration.

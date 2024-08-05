@@ -6,7 +6,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.Vendors.MessagePack
+namespace Datadog.Trace.Internal.Vendors.MessagePack
 {
     // safe accessor of Single/Double's underlying byte.
     // This code is borrowed from MsgPack-Cli https://github.com/msgpack/msgpack-cli

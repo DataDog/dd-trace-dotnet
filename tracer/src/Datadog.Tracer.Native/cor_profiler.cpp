@@ -455,7 +455,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
                 EnableCallTargetStateByRef();
                 auto traceAnnotationIntegrationId = WSTRING(WStr("9C6EB897BD4946D0BB492E062FB0AE67"));
                 auto traceAnnotationType = WSTRING(
-                    WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration"));
+                    WStr("Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration"));
                 AddTraceAttributeInstrumentation(traceAnnotationIntegrationId.data(),
                                                  expected_assembly_reference.str().data(), traceAnnotationType.data());
             }

@@ -9,16 +9,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Tagging;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Ci.Telemetry;
-using Datadog.Trace.Pdb;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Ci;
+using Datadog.Trace.Internal.Ci.CiEnvironment;
+using Datadog.Trace.Internal.Ci.Tagging;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Ci.Telemetry;
+using Datadog.Trace.Internal.Pdb;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.Ci;
+namespace Datadog.Trace.Internal.Ci;
 
 /// <summary>
 /// CI Visibility test
@@ -158,11 +159,11 @@ public sealed class Test
     {
         var span = _scope.Span;
         span.Error = true;
-        span.SetTag(Trace.Tags.ErrorType, type);
-        span.SetTag(Trace.Tags.ErrorMsg, message);
+        span.SetTag(Trace.Internal.Tags.ErrorType, type);
+        span.SetTag(Trace.Internal.Tags.ErrorMsg, message);
         if (callStack is not null)
         {
-            span.SetTag(Trace.Tags.ErrorStack, callStack);
+            span.SetTag(Trace.Internal.Tags.ErrorStack, callStack);
         }
     }
 

@@ -1,4 +1,4 @@
-﻿// <copyright file="CountCIVisibility.cs" company="Datadog">
+// <copyright file="CountCIVisibility.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,10 +6,10 @@
 #nullable enable
 
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.SourceGenerators;
-using NS = Datadog.Trace.Telemetry.MetricNamespaceConstants;
+using Datadog.Trace.Internal.SourceGenerators;
+using NS = Datadog.Trace.Internal.Telemetry.MetricNamespaceConstants;
 
-namespace Datadog.Trace.Telemetry.Metrics;
+namespace Datadog.Trace.Internal.Telemetry.Metrics;
 
 [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1134:Attributes should not share line", Justification = "It's easier to read")]
 [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "It's easier to read")]

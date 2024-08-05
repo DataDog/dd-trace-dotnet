@@ -6,12 +6,12 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Logging;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     /// <summary>
     /// A collection of <see cref="IntegrationSettings"/> instances, referenced by name.

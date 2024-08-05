@@ -6,9 +6,9 @@
 #nullable enable
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Debugger.Sink
+namespace Datadog.Trace.Internal.Debugger.Sink
 {
     internal class DiagnosticsUploader : DebuggerUploaderBase
     {

@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Msmq
 {
     /// <summary>
     /// message queue proxy

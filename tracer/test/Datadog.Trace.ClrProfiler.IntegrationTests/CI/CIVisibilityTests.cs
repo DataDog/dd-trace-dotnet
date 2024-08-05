@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Ci;
+using Datadog.Trace.Internal.Ci;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 
@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [InlineData("%^&*", "")]
         public void GetServiceNameFromRepository(string repository, string serviceName)
         {
-            Assert.Equal(serviceName, Ci.CIVisibility.GetServiceNameFromRepository(repository));
+            Assert.Equal(serviceName, Internal.Ci.CIVisibility.GetServiceNameFromRepository(repository));
         }
 
         [SkippableTheory]

@@ -8,31 +8,31 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
 
-    public void RecordDistributionCIVisibilityEndpointPayloadBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
+    public void RecordDistributionCIVisibilityEndpointPayloadBytes(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
     {
     }
 
-    public void RecordDistributionCIVisibilityEndpointPayloadRequestsMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
+    public void RecordDistributionCIVisibilityEndpointPayloadRequestsMs(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
     {
     }
 
-    public void RecordDistributionCIVisibilityEndpointPayloadEventsCount(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
+    public void RecordDistributionCIVisibilityEndpointPayloadEventsCount(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
     {
     }
 
-    public void RecordDistributionCIVisibilityEndpointEventsSerializationMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
+    public void RecordDistributionCIVisibilityEndpointEventsSerializationMs(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
     {
     }
 
-    public void RecordDistributionCIVisibilityGitCommandMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag, double value)
+    public void RecordDistributionCIVisibilityGitCommandMs(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag, double value)
     {
     }
 
-    public void RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
+    public void RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
     {
     }
 
@@ -56,7 +56,7 @@ internal partial class MetricsTelemetryCollector
     {
     }
 
-    public void RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
+    public void RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
     {
     }
 
@@ -68,7 +68,7 @@ internal partial class MetricsTelemetryCollector
     {
     }
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
     {
     }
 

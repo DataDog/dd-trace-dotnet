@@ -15,7 +15,7 @@ using System.Threading;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal
 {
     internal sealed class PinnedObject : CriticalDisposableObject
   {

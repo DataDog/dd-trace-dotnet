@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
+namespace Datadog.Trace.Internal.Iast.Aspects.MongoDB.DuckTyping;
 
 /// <summary>
 /// MongoDB.Driver.BsonDocumentCommand

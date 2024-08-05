@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
     /// <summary>
     /// RequestHeaders interface for ducktyping

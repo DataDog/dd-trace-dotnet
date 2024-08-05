@@ -3,11 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.Ci.CiEnvironment;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.Ci.Telemetry;
+namespace Datadog.Trace.Internal.Ci.Telemetry;
 
 internal static class TelemetryHelper
 {

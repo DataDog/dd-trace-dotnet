@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Iast.Dataflow;
+namespace Datadog.Trace.Internal.Iast.Dataflow;
 
 /// <summary>
 /// Type of an aspect function

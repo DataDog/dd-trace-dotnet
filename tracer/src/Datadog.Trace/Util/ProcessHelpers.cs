@@ -13,9 +13,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Util
+namespace Datadog.Trace.Internal.Util
 {
     internal static class ProcessHelpers
     {

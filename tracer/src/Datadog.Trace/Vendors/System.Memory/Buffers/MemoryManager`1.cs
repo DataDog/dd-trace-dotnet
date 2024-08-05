@@ -13,7 +13,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers
 {
     internal abstract class MemoryManager<T> : IMemoryOwner<T>, IDisposable, IPinnable
   {

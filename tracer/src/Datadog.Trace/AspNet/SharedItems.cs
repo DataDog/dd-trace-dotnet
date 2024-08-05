@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Web;
 
-namespace Datadog.Trace.AspNet
+namespace Datadog.Trace.Internal.AspNet
 {
     internal static class SharedItems
     {

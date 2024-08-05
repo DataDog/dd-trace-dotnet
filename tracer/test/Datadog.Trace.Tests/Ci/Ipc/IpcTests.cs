@@ -6,7 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.Ipc;
+using Datadog.Trace.Internal.Ci.Ipc;
 using FluentAssertions;
 using Xunit;
 

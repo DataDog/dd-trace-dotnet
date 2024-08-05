@@ -7,7 +7,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     /// <summary>
     /// For duck typing

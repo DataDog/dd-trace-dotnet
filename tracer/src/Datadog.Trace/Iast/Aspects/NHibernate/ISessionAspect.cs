@@ -6,11 +6,12 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using static Datadog.Trace.Internal.Configuration.ConfigurationKeys;
 
-namespace Datadog.Trace.Iast.Aspects.NHibernate;
+namespace Datadog.Trace.Internal.Iast.Aspects.NHibernate;
 
 /// <summary> NHibernate class aspect </summary>
 [AspectClass("NHibernate", AspectType.RaspIastSink, VulnerabilityType.SqlInjection)]

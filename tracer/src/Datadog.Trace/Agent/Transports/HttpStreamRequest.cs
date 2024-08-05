@@ -7,11 +7,11 @@ using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.HttpOverStreams.HttpContent;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.HttpOverStreams;
+using Datadog.Trace.Internal.HttpOverStreams.HttpContent;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Agent.Transports
+namespace Datadog.Trace.Internal.Agent.Transports
 {
     internal class HttpStreamRequest : IApiRequest
     {

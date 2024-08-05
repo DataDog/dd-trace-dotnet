@@ -6,7 +6,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Internal.Agent
 {
     internal interface IAgentWriter
     {

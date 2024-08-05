@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     /// <summary>
     /// IRequest interface for ducktyping

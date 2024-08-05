@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.RuntimeMetrics
+namespace Datadog.Trace.Internal.RuntimeMetrics
 {
     /// <summary>
     /// Keywords used by the CLR events.

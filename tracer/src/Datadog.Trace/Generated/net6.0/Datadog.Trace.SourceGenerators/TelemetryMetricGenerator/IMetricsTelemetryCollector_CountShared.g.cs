@@ -6,8 +6,8 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 internal partial interface IMetricsTelemetryCollector
 {
-    public void RecordCountSharedIntegrationsError(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationError tag2, int increment = 1);
+    public void RecordCountSharedIntegrationsError(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IntegrationName tag1, Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.InstrumentationError tag2, int increment = 1);
 }

@@ -7,9 +7,9 @@
 
 using System;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Portable {
 	struct LocalConstantSigBlobReader {
 		readonly ModuleDef module;
 		DataReader reader;

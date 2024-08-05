@@ -13,12 +13,12 @@ using System.IO;
 using System.Net;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Messaging;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Util.Http;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Util.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Remoting.Client
 {
     /// <summary>
     /// System.Runtime.Remoting.Channels.Http.HttpClientTransportSink.ProcessAndSend calltarget instrumentation

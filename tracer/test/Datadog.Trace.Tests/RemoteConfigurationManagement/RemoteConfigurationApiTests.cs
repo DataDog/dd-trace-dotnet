@@ -1,17 +1,17 @@
-﻿// <copyright file="RemoteConfigurationApiTests.cs" company="Datadog">
+// <copyright file="RemoteConfigurationApiTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
-using Datadog.Trace.RemoteConfigurationManagement.Transport;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Transport;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Tests.Agent;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 

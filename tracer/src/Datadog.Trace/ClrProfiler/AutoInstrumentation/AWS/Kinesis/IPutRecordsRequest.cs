@@ -7,7 +7,7 @@
 
 using System.Collections;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     /// <summary>
     /// PutRecordsRequest interface for duck typing.

@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// Interface for managing a scope.

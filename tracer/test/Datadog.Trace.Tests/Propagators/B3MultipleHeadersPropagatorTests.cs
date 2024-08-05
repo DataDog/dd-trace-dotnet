@@ -3,8 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Headers;
-using Datadog.Trace.Propagators;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Propagators;
 using FluentAssertions;
 using Moq;
 using Xunit;

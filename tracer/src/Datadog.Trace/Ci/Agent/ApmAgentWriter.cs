@@ -6,12 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Ci.EventModel;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Ci.EventModel;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.Ci.Agent
+namespace Datadog.Trace.Internal.Ci.Agent
 {
     /// <summary>
     /// APM Agent Writer for CI Visibility

@@ -11,16 +11,16 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
+using Datadog.Trace.Internal.ClrProfiler;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Expressions;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Models;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using ProbeLocation = Datadog.Trace.Internal.Debugger.Expressions.ProbeLocation;
 
-namespace Datadog.Trace.Debugger.Snapshots
+namespace Datadog.Trace.Internal.Debugger.Snapshots
 {
     internal class DebuggerSnapshotCreator : IDebuggerSnapshotCreator, IDisposable
     {

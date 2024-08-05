@@ -8,7 +8,7 @@
 using System;
 using System.ComponentModel;
 
-namespace Datadog.Trace.DuckTyping
+namespace Datadog.Trace.Internal.DuckTyping
 {
     /// <summary>
     /// Duck type interface

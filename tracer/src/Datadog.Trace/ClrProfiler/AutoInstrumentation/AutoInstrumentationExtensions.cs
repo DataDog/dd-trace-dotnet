@@ -6,7 +6,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation
 {
     internal static class AutoInstrumentationExtensions
     {

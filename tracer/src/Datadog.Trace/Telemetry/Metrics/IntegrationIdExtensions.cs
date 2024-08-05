@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.Telemetry.Metrics;
+namespace Datadog.Trace.Internal.Telemetry.Metrics;
 
 internal static class IntegrationIdExtensions
 {

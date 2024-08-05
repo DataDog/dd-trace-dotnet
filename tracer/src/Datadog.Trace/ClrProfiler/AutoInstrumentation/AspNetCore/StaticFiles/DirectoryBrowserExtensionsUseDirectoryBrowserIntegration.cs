@@ -6,12 +6,12 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles;
 
 /// <summary>
 /// Microsoft.AspNetCore.Builder.IApplicationBuilder Microsoft.AspNetCore.Builder.DirectoryBrowserExtensions::UseDirectoryBrowser(Microsoft.AspNetCore.Builder.IApplicationBuilder) calltarget instrumentation

@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Agent;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.ILogger;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DogStatsd;
 using FluentAssertions;
 using Moq;
 using Xunit;

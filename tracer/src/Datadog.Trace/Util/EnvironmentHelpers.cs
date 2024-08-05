@@ -8,9 +8,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Util
+namespace Datadog.Trace.Internal.Util
 {
     /// <summary>
     /// Helpers to access environment variables

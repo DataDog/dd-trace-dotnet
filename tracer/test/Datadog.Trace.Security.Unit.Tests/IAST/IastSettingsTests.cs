@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Iast.Settings;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;

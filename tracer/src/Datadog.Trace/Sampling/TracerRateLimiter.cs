@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Threading;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Sampling
+namespace Datadog.Trace.Internal.Sampling
 {
     internal class TracerRateLimiter : RateLimiter
     {

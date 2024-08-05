@@ -10,10 +10,10 @@ using System.Diagnostics;
 using System.Diagnostics.SymbolStore;
 using System.IO;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.WindowsPdb;
-using Datadog.Trace.Vendors.dnlib.DotNet.Writer;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.WindowsPdb;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Dss {
 	sealed class SymbolWriterImpl : SymbolWriter {
 		readonly ISymUnmanagedWriter2 writer;
 		readonly ISymUnmanagedAsyncMethodPropertiesWriter asyncMethodWriter;

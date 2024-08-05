@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
+namespace Datadog.Trace.Internal.Iast.Aspects.Newtonsoft.Json;
 
 internal interface IJObject
 {

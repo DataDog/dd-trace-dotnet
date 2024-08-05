@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerSettingsSnapshotGenerator.cs" company="Datadog">
+// <copyright file="TracerSettingsSnapshotGenerator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,10 +18,10 @@ using Microsoft.CodeAnalysis.Text;
 [Generator]
 public class TracerSettingsSnapshotGenerator : IIncrementalGenerator
 {
-    private const string PublicApiAttributeFullName = "Datadog.Trace.SourceGenerators.PublicApiAttribute";
-    private const string ConfigKeyAttributeFullName = "Datadog.Trace.SourceGenerators.ConfigKeyAttribute";
-    private const string GenerateSnapshotFullName = "Datadog.Trace.SourceGenerators.GenerateSnapshotAttribute";
-    private const string IgnoreForSnapshotFullName = "Datadog.Trace.SourceGenerators.IgnoreForSnapshotAttribute";
+    private const string PublicApiAttributeFullName = "Datadog.Trace.Internal.SourceGenerators.PublicApiAttribute";
+    private const string ConfigKeyAttributeFullName = "Datadog.Trace.Internal.SourceGenerators.ConfigKeyAttribute";
+    private const string GenerateSnapshotFullName = "Datadog.Trace.Internal.SourceGenerators.GenerateSnapshotAttribute";
+    private const string IgnoreForSnapshotFullName = "Datadog.Trace.Internal.SourceGenerators.IgnoreForSnapshotAttribute";
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)

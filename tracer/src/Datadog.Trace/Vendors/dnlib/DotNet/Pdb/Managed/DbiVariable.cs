@@ -6,10 +6,10 @@
 // dnlib: See LICENSE.txt for more info
 
 using System;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Managed {
 	sealed class DbiVariable : SymbolVariable {
 		public override string Name => name;
 		string name;

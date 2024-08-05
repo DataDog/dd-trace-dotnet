@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 #nullable enable
 
-namespace Datadog.Trace.Telemetry.DTOs;
+namespace Datadog.Trace.Internal.Telemetry.DTOs;
 
 internal class LogsPayload : IPayload
 {

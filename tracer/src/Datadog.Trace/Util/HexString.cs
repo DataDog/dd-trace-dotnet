@@ -8,16 +8,16 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.DataStreamsMonitoring.Utils;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Utils;
 #if NETCOREAPP
 using BitConverter = System.BitConverter;
 using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
 #else
-using BitConverter = Datadog.Trace.Util.BitConverterShim;
-using MemoryMarshal = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices.MemoryMarshal;
+using BitConverter = Datadog.Trace.Internal.Util.BitConverterShim;
+using MemoryMarshal = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices.MemoryMarshal;
 #endif
 
-namespace Datadog.Trace.Util;
+namespace Datadog.Trace.Internal.Util;
 
 /// <summary>
 /// Utility class with helpers method that wrap HexConverter to convert values to and from hexadecimal strings.

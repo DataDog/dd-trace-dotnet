@@ -8,10 +8,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.Threading;
-using Datadog.Trace.Vendors.dnlib.Utils;
+using Datadog.Trace.Internal.Vendors.dnlib.Threading;
+using Datadog.Trace.Internal.Vendors.dnlib.Utils;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// A list of all method parameters
 	/// </summary>

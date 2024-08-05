@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.AppSec.Waf
+namespace Datadog.Trace.Internal.AppSec.Waf
 {
     internal interface IResult
     {

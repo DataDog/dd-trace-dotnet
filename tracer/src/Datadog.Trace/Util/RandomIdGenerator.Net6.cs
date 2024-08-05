@@ -8,7 +8,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.Util;
+namespace Datadog.Trace.Internal.Util;
 
 /// <summary>
 /// Generates random numbers suitable for use as Datadog trace ids and span ids.

@@ -7,12 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Datadog.Trace.Debugger.PInvoke;
-using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Debugger.PInvoke;
+using Datadog.Trace.Internal.Debugger.Sink;
+using Datadog.Trace.Internal.Debugger.Sink.Models;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger.ProbeStatuses
+namespace Datadog.Trace.Internal.Debugger.ProbeStatuses
 {
     internal class ProbeStatusPoller : IProbeStatusPoller
     {

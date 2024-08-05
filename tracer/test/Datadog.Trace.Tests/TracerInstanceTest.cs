@@ -6,11 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging.TracerFlare;
-using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging.TracerFlare;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;

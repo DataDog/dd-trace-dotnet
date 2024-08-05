@@ -5,8 +5,8 @@
 
 using System;
 using System.Linq;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.MessagePack;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using MessagePack; // use nuget MessagePack to deserialize

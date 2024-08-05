@@ -5,7 +5,7 @@
 
 using System.Net;
 
-namespace Datadog.Trace.AppSec;
+namespace Datadog.Trace.Internal.AppSec;
 
 internal record BlockingAction
 {

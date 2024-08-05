@@ -11,9 +11,9 @@
 // MVID: 805945F3-27B0-47AD-B8F6-389D9D8F82C3
 
 using System;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices
 {
   internal static class SequenceMarshal
   {

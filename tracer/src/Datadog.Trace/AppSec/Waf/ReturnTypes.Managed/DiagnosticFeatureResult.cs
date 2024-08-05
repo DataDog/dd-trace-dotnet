@@ -7,9 +7,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal.ExtensionMethods;
 
-namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+namespace Datadog.Trace.Internal.AppSec.Waf.ReturnTypes.Managed;
 
 internal class DiagnosticFeatureResult
 {

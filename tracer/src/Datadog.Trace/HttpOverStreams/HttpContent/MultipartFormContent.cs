@@ -9,13 +9,13 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
-using static Datadog.Trace.HttpOverStreams.DatadogHttpValues;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
+using static Datadog.Trace.Internal.HttpOverStreams.DatadogHttpValues;
 
-namespace Datadog.Trace.HttpOverStreams.HttpContent;
+namespace Datadog.Trace.Internal.HttpOverStreams.HttpContent;
 
 /// <summary>
 /// Provides an <see cref="HttpContent"/> implementation that exposes an output <see cref="Stream"/>

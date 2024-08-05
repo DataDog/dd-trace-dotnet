@@ -6,10 +6,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Internal.Agent
 {
     /// <summary>
     /// Used to calculate the Trace Keep Rate, tracking the number of

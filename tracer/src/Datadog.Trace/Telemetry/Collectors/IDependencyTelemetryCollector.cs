@@ -8,7 +8,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 internal interface IDependencyTelemetryCollector
 {

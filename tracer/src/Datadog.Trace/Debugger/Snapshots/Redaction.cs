@@ -12,10 +12,10 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
-using Datadog.Trace.Debugger.Configurations;
-using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Configurations;
+using Datadog.Trace.Internal.Debugger.Helpers;
 
-namespace Datadog.Trace.Debugger.Snapshots
+namespace Datadog.Trace.Internal.Debugger.Snapshots
 {
     internal enum RedactionReason
     {

@@ -12,10 +12,11 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DiagnosticListeners;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DiagnosticListeners;
+using Datadog.Trace.Internal.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
@@ -425,7 +426,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             });
             var tracer = GetTracer(writer, configSource);
 
-            var security = new AppSec.Security();
+            var security = new Internal.AppSec.Security();
             var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security) };
 
             using (var diagnosticManager = new DiagnosticManager(observers))

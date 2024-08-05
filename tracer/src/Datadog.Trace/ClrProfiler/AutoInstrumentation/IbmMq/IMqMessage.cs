@@ -6,9 +6,9 @@
 #nullable enable
 
 using System.Collections;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.IbmMq;
 
 internal interface IMqMessage
 {

@@ -6,7 +6,7 @@
 using System;
 using System.Net;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Internal.Agent
 {
     internal interface IApiRequestFactory
     {

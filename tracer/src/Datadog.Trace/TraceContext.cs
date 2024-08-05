@@ -8,20 +8,20 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.ContinuousProfiler;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     internal class TraceContext
     {
@@ -306,12 +306,12 @@ namespace Datadog.Trace
             if (SamplingPriorityValues.IsKeep(p) && mechanism is { } m)
             {
                 // add the tag once if trace is sampled, but never overwrite an existing tag
-                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(m));
+                Tags.TryAddTag(Trace.Internal.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(m));
             }
             else if (SamplingPriorityValues.IsDrop(p))
             {
                 // remove tag if trace is not sampled
-                Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
+                Tags.RemoveTag(Trace.Internal.Tags.Propagated.DecisionMaker);
             }
 
             if (notifyDistributedTracer)

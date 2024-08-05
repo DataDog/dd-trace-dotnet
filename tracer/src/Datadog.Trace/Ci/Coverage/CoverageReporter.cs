@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Ci.Coverage;
+namespace Datadog.Trace.Internal.Ci.Coverage;
 
 /// <summary>
 /// Coverage Reporter

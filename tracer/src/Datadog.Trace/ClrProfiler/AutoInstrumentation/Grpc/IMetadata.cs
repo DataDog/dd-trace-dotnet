@@ -7,7 +7,7 @@
 
 using System.Collections;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc
 {
     /// <summary>
     /// Duck type for Metadata

@@ -7,12 +7,12 @@
 
 using System.Collections.Generic;
 using System.ComponentModel;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec;
 
 /// <summary>
 /// System.Void Datadog.Trace.AppSec.EventTrackingSdk::TrackUserLoginSuccessEvent(System.String,System.Collections.Generic.IDictionary`2[System.String,System.String]) calltarget instrumentation
@@ -33,7 +33,7 @@ public class EventTrackingSdkTrackUserLoginSuccessEventMetadataIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(string userId, IDictionary<string, string> metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata);
-        EventTrackingSdk.TrackUserLoginSuccessEvent(userId, metadata, Datadog.Trace.Tracer.Instance);
+        EventTrackingSdk.TrackUserLoginSuccessEvent(userId, metadata, Datadog.Trace.Internal.Tracer.Instance);
         return CallTargetState.GetDefault();
     }
 }

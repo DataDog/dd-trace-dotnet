@@ -3,19 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     internal partial class CommonTags : TagsList
     {
-        [Metric(Trace.Metrics.SamplingLimitDecision)]
+        [Metric(Trace.Internal.Metrics.SamplingLimitDecision)]
         public double? SamplingLimitDecision { get; set; }
 
-        [Metric(Trace.Metrics.TracesKeepRate)]
+        [Metric(Trace.Internal.Metrics.TracesKeepRate)]
         public double? TracesKeepRate { get; set; }
 
-        [Metric(Trace.Metrics.SamplingAgentDecision)]
+        [Metric(Trace.Internal.Metrics.SamplingAgentDecision)]
         public double? SamplingAgentDecision { get; set; }
     }
 }

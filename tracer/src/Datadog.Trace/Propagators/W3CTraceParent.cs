@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Propagators;
+namespace Datadog.Trace.Internal.Propagators;
 
 internal readonly struct W3CTraceParent
 {

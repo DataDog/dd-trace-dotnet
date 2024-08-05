@@ -6,12 +6,12 @@
 using System;
 using System.Reflection;
 using System.Threading;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing
 {
     internal static class Common
     {

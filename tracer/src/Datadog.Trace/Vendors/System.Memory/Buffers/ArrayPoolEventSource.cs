@@ -8,7 +8,7 @@
 using System;
 using System.Diagnostics.Tracing;
 //todo: fix
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers
 {
     [EventSource(Guid = "0866B2B8-5CEF-5DB9-2612-0C0FFD814A44", Name = "System.Buffers.ArrayPoolEventSource")]
     //[EventSourceAutoGenerate]

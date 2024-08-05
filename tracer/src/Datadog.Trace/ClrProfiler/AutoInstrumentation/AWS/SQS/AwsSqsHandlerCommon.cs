@@ -6,12 +6,12 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SQS;
 
 /// <summary>
 /// Contains the code that is shared between the integrations of sync/async and batch/single send and receive.

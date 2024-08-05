@@ -6,9 +6,9 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.Util.Delegates;
+namespace Datadog.Trace.Internal.Util.Delegates;
 
 internal static class DelegatesExtensions
 {

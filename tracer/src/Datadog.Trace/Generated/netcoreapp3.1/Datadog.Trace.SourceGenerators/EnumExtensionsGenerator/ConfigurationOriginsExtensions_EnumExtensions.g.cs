@@ -6,10 +6,10 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Configuration.Telemetry;
+namespace Datadog.Trace.Internal.Configuration.Telemetry;
 
 /// <summary>
-/// Extension methods for <see cref="Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins" />
+/// Extension methods for <see cref="Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins" />
 /// </summary>
 internal static partial class ConfigurationOriginsExtensions
 {
@@ -20,76 +20,76 @@ internal static partial class ConfigurationOriginsExtensions
     public const int Length = 8;
 
     /// <summary>
-    /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins"/> value.
+    /// Returns the string representation of the <see cref="Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins"/> value.
     /// If the attribute is decorated with a <c>[Description]</c> attribute, then
     /// uses the provided value. Otherwise uses the name of the member, equivalent to
     /// calling <c>ToString()</c> on <paramref name="value"/>.
     /// </summary>
     /// <param name="value">The value to retrieve the string value for</param>
     /// <returns>The string representation of the value</returns>
-    public static string ToStringFast(this Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins value)
+    public static string ToStringFast(this Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins value)
         => value switch
         {
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.EnvVars => "env_var",
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code => "code",
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.DdConfig => "dd_config",
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.RemoteConfig => "remote_config",
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.AppConfig => "app.config",
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Default => "default",
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Calculated => "calculated",
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Unknown => "unknown",
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.EnvVars => "env_var",
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.Code => "code",
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.DdConfig => "dd_config",
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.RemoteConfig => "remote_config",
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.AppConfig => "app.config",
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.Default => "default",
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.Calculated => "calculated",
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.Unknown => "unknown",
             _ => value.ToString(),
         };
 
     /// <summary>
     /// Retrieves an array of the values of the members defined in
-    /// <see cref="Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins" />.
+    /// <see cref="Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins" />.
     /// Note that this returns a new array with every invocation, so
     /// should be cached if appropriate.
     /// </summary>
-    /// <returns>An array of the values defined in <see cref="Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins" /></returns>
-    public static Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins[] GetValues()
+    /// <returns>An array of the values defined in <see cref="Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins" /></returns>
+    public static Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins[] GetValues()
         => new []
         {
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.EnvVars,
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code,
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.DdConfig,
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.RemoteConfig,
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.AppConfig,
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Default,
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Calculated,
-            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Unknown,
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.EnvVars,
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.Code,
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.DdConfig,
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.RemoteConfig,
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.AppConfig,
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.Default,
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.Calculated,
+            Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.Unknown,
         };
 
     /// <summary>
     /// Retrieves an array of the names of the members defined in
-    /// <see cref="Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins" />.
+    /// <see cref="Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins" />.
     /// Note that this returns a new array with every invocation, so
     /// should be cached if appropriate.
     /// Ignores <c>[Description]</c> definitions.
     /// </summary>
-    /// <returns>An array of the names of the members defined in <see cref="Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins" /></returns>
+    /// <returns>An array of the names of the members defined in <see cref="Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins" /></returns>
     public static string[] GetNames()
         => new []
         {
-            nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.EnvVars),
-            nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code),
-            nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.DdConfig),
-            nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.RemoteConfig),
-            nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.AppConfig),
-            nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Default),
-            nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Calculated),
-            nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Unknown),
+            nameof(Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.EnvVars),
+            nameof(Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.Code),
+            nameof(Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.DdConfig),
+            nameof(Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.RemoteConfig),
+            nameof(Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.AppConfig),
+            nameof(Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.Default),
+            nameof(Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.Calculated),
+            nameof(Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins.Unknown),
         };
 
     /// <summary>
     /// Retrieves an array of the names of the members defined in
-    /// <see cref="Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins" />.
+    /// <see cref="Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins" />.
     /// Note that this returns a new array with every invocation, so
     /// should be cached if appropriate.
     /// Uses <c>[Description]</c> definition if available, otherwise uses the name of the property
     /// </summary>
-    /// <returns>An array of the names of the members defined in <see cref="Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins" /></returns>
+    /// <returns>An array of the names of the members defined in <see cref="Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationOrigins" /></returns>
     public static string[] GetDescriptions()
         => new []
         {

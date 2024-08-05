@@ -5,10 +5,10 @@
 #if !NETFRAMEWORK
 
 using System.Runtime.CompilerServices;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Coordinator;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// Extension methods for the <see cref="ISpan"/> interface

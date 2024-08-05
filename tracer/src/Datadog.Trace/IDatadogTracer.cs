@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// Internal interface used for mocking the Tracer in <see cref="TraceContext"/>, its associated tests,

@@ -3,22 +3,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     internal partial class AspNetTags : WebTags
     {
-        [Tag(Trace.Tags.AspNetRoute)]
+        [Tag(Trace.Internal.Tags.AspNetRoute)]
         public string AspNetRoute { get; set; }
 
-        [Tag(Trace.Tags.AspNetController)]
+        [Tag(Trace.Internal.Tags.AspNetController)]
         public string AspNetController { get; set; }
 
-        [Tag(Trace.Tags.AspNetAction)]
+        [Tag(Trace.Internal.Tags.AspNetAction)]
         public string AspNetAction { get; set; }
 
-        [Tag(Trace.Tags.AspNetArea)]
+        [Tag(Trace.Internal.Tags.AspNetArea)]
         public string AspNetArea { get; set; }
 
         [Tag(Tags.HttpRoute)]

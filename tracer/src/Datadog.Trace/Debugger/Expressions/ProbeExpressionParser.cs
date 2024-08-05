@@ -7,14 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Models;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
+using static Datadog.Trace.Internal.Debugger.Expressions.ProbeExpressionParserHelper;
 
-namespace Datadog.Trace.Debugger.Expressions;
+namespace Datadog.Trace.Internal.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {

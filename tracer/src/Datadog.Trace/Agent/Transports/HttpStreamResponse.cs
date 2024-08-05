@@ -6,9 +6,9 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Internal.HttpOverStreams;
 
-namespace Datadog.Trace.Agent.Transports
+namespace Datadog.Trace.Internal.Agent.Transports
 {
     internal class HttpStreamResponse : IApiResponse
     {

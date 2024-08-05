@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Util;
+namespace Datadog.Trace.Internal.Util;
 
 /// <summary>
 /// This interface is not used at run time. It is here only to ensure that the different implementations

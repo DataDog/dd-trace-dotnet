@@ -6,7 +6,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Datadog.Trace.ClrProfiler.Helpers
+namespace Datadog.Trace.Internal.ClrProfiler.Helpers
 {
     /// <summary>
     /// Convenience properties and methods for integration definitions.

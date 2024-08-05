@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Reflection;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     internal enum ParticipatingFrameState
     {

@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Sampling;
 
-namespace Datadog.Trace.AppSec
+namespace Datadog.Trace.Internal.AppSec
 {
     internal class AppSecRateLimiter : RateLimiter
     {

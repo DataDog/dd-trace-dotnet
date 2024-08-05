@@ -20,7 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Datadog.Trace.Vendors.Serilog.Events
+namespace Datadog.Trace.Internal.Vendors.Serilog.Events
 {
     /// <summary>
     /// A log event.

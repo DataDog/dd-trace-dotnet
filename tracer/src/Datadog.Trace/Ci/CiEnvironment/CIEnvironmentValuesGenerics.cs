@@ -11,10 +11,10 @@ using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Ci.CiEnvironment;
+namespace Datadog.Trace.Internal.Ci.CiEnvironment;
 
 #pragma warning disable SA1649
 // ReSharper disable once InconsistentNaming

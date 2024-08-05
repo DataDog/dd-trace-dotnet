@@ -4,7 +4,7 @@
 // </copyright>
 #nullable disable
 
-namespace Datadog.Trace.Debugger
+namespace Datadog.Trace.Internal.Debugger
 {
     internal enum ProbeLocationType
     {

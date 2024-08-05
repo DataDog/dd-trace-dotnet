@@ -19,10 +19,10 @@
 using System;
 using System.Globalization;
 using System.IO;
-using Datadog.Trace.Vendors.Serilog.Data;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Data;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Vendors.Serilog.Formatting.Json
+namespace Datadog.Trace.Internal.Vendors.Serilog.Formatting.Json
 {
     /// <summary>
     /// Converts Serilog's structured property value format into JSON.

@@ -6,12 +6,12 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Instrumentation.Collections;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Pdb;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Instrumentation.Collections;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Pdb;
 
-namespace Datadog.Trace.Debugger.Instrumentation
+namespace Datadog.Trace.Internal.Debugger.Instrumentation
 {
     /// <summary>
     /// Responsible to create <see cref="MethodMetadataInfo"/> structures.

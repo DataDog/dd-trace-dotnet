@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.Activity.DuckTypes
+namespace Datadog.Trace.Internal.Activity.DuckTypes
 {
     // Using interface instead of [DuckCopy] struct as we need to set values too
     internal interface IActivityListener : IDuckType

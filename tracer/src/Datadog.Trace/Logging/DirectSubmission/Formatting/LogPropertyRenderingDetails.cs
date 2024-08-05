@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-namespace Datadog.Trace.Logging.DirectSubmission.Formatting
+namespace Datadog.Trace.Internal.Logging.DirectSubmission.Formatting
 {
     internal readonly struct LogPropertyRenderingDetails
     {

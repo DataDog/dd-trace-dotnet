@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Reflection;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.CosmosDb
 {
     /// <summary>
     /// Microsoft.Azure.Cosmos.Database for duck typing

@@ -10,9 +10,9 @@ using System.Reflection;
 #if NETCOREAPP
 using System.Runtime.Loader;
 #endif
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing;
 
 /// <summary>
 /// System.Void Microsoft.VisualStudio.TestPlatform.PlatformAbstractions.PlatformAssemblyResolver::.ctor() calltarget instrumentation

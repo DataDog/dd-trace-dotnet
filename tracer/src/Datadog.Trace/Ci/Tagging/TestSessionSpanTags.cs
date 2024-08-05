@@ -5,13 +5,13 @@
 
 using System;
 using System.Globalization;
-using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.Ci.CiEnvironment;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace.Ci.Tagging;
+namespace Datadog.Trace.Internal.Ci.Tagging;
 
-internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
+internal partial class TestSessionSpanTags : Trace.Internal.Tagging.CommonTags
 {
     public TestSessionSpanTags()
     {

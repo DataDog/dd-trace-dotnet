@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.Internal.AppSec.Rasp;
 using FluentAssertions;
 using Xunit;
 

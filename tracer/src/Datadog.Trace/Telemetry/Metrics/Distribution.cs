@@ -5,10 +5,10 @@
 
 // #nullable enable
 // using System.Diagnostics.CodeAnalysis;
-// using Datadog.Trace.SourceGenerators;
+// using Datadog.Trace.Internal.SourceGenerators;
 // using NS = Datadog.Trace.Telemetry.MetricNamespaceConstants;
 //
-// namespace Datadog.Trace.Telemetry.Metrics;
+// namespace Datadog.Trace.Internal.Telemetry.Metrics;
 //
 // [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1134:Attributes should not share line", Justification = "It's easier to read")]
 // [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "It's easier to read")]

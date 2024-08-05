@@ -1,4 +1,4 @@
-﻿// <copyright file="MockTelemetryAgent.cs" company="Datadog">
+// <copyright file="MockTelemetryAgent.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,12 +15,12 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.DTOs;
-using Datadog.Trace.Telemetry.Transports;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.DTOs;
+using Datadog.Trace.Internal.Telemetry.Transports;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers

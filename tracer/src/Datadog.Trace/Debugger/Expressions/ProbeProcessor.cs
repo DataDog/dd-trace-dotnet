@@ -8,14 +8,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Instrumentation.Collections;
-using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.Debugger.RateLimiting;
-using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Instrumentation.Collections;
+using Datadog.Trace.Internal.Debugger.Models;
+using Datadog.Trace.Internal.Debugger.RateLimiting;
+using Datadog.Trace.Internal.Debugger.Snapshots;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger.Expressions
+namespace Datadog.Trace.Internal.Debugger.Expressions
 {
     internal class ProbeProcessor : IProbeProcessor
     {

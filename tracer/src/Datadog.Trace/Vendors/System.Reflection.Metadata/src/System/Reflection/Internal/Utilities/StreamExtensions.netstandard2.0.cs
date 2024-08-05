@@ -11,12 +11,12 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Utilities;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal.Utilities;
 using System.Runtime.InteropServices;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal
 {
   internal static class StreamExtensions
   {

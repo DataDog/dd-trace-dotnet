@@ -8,7 +8,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ExtensionMethods;
+namespace Datadog.Trace.Internal.ExtensionMethods;
 
 internal static class EnumerableExtensions
 {

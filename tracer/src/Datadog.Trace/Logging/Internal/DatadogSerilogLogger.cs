@@ -8,13 +8,13 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.Serilog;
-using Datadog.Trace.Vendors.Serilog.Core.Pipeline;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Vendors.Serilog;
+using Datadog.Trace.Internal.Vendors.Serilog.Core.Pipeline;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Logging
+namespace Datadog.Trace.Internal.Logging
 {
     internal class DatadogSerilogLogger : IDatadogLogger
     {

@@ -12,10 +12,10 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.Helpers
+namespace Datadog.Trace.Internal.Debugger.Helpers
 {
     internal static class MethodExtensions
     {

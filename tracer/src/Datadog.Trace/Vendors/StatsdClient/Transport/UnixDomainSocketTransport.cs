@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Mono.Unix;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Transport
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Transport
 {
     internal class UnixDomainSocketTransport : ITransport
     {

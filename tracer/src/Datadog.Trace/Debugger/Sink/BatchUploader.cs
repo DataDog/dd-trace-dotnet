@@ -8,10 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Upload;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Debugger.Upload;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger.Sink
+namespace Datadog.Trace.Internal.Debugger.Sink
 {
     internal class BatchUploader : IBatchUploader
     {

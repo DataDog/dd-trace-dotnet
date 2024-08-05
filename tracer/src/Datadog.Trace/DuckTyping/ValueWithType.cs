@@ -7,7 +7,7 @@
 using System;
 using System.ComponentModel;
 
-namespace Datadog.Trace.DuckTyping;
+namespace Datadog.Trace.Internal.DuckTyping;
 
 /// <summary>
 /// DuckType return value with original type

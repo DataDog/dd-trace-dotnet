@@ -13,14 +13,14 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Generic;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+using Unsafe = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 #pragma warning disable CS8625
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices
 {
     internal static class MemoryMarshal
   {

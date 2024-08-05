@@ -5,7 +5,7 @@
 
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Util
+namespace Datadog.Trace.Internal.Util
 {
     /// <summary>
     /// Array slice.

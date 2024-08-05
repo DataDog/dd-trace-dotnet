@@ -11,7 +11,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Datadog.Trace.Vendors.Datadog.Sketches.Stores;
+namespace Datadog.Trace.Internal.Vendors.Datadog.Sketches.Stores;
 
 /// <summary>
 /// A pair of index and count.

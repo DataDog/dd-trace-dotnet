@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.DataStreamsMonitoring.Hashes;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.Internal.Util;
 using FluentAssertions;
 using Xunit;
 

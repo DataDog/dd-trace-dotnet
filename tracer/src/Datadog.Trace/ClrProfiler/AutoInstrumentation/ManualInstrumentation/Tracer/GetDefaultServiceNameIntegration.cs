@@ -1,4 +1,4 @@
-﻿// <copyright file="GetDefaultServiceNameIntegration.cs" company="Datadog">
+// <copyright file="GetDefaultServiceNameIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,10 +6,10 @@
 #nullable enable
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 
 /// <summary>
 /// System.String Datadog.Trace.Tracer::get_DefaultServiceName() calltarget instrumentation
@@ -31,7 +31,7 @@ public class GetDefaultServiceNameIntegration
         where TTarget : ITracerProxy
     {
         // TODO: Add telemetry?
-        var tracer = (Datadog.Trace.Tracer)instance.AutomaticTracer;
+        var tracer = (Datadog.Trace.Internal.Tracer)instance.AutomaticTracer;
         return new CallTargetReturn<string>(tracer.DefaultServiceName);
     }
 }

@@ -5,14 +5,14 @@
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 #if NETSTANDARD || NETFRAMEWORK
 
-using Datadog.Trace.Vendors.MessagePack.Resolvers;
+using Datadog.Trace.Internal.Vendors.MessagePack.Resolvers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Datadog.Trace.Vendors.MessagePack.Formatters
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Formatters
 {
     internal sealed class DynamicObjectTypeFallbackFormatter : IMessagePackFormatter<object>
     {

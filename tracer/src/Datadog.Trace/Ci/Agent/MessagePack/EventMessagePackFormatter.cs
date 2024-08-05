@@ -4,11 +4,11 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Vendors.MessagePack;
+using Datadog.Trace.Internal.Vendors.MessagePack.Formatters;
 
-namespace Datadog.Trace.Ci.Agent.MessagePack
+namespace Datadog.Trace.Internal.Ci.Agent.MessagePack
 {
     internal abstract class EventMessagePackFormatter<T> : IMessagePackFormatter<T>
     {

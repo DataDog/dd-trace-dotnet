@@ -7,14 +7,14 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.Selenium;
 
 internal static class SeleniumCommon
 {

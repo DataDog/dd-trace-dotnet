@@ -7,10 +7,10 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.dnlib.IO;
-using Datadog.Trace.Vendors.dnlib.W32Resources;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.W32Resources;
 
-namespace Datadog.Trace.Vendors.dnlib.PE {
+namespace Datadog.Trace.Internal.Vendors.dnlib.PE {
 	/// <summary>
 	/// Converts <see cref="RVA"/>s to/from <see cref="FileOffset"/>s
 	/// </summary>

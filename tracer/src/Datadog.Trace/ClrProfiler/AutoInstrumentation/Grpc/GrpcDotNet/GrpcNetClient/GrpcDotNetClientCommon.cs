@@ -7,16 +7,16 @@
 #if !NET461
 
 using System;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util.Http;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Http.HttpClient;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Util.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient
 {
     internal static class GrpcDotNetClientCommon
     {

@@ -5,22 +5,22 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Ci.Agent;
-using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.Sampling;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.TracerFlare;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RuntimeMetrics;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Ci.Agent;
+using Datadog.Trace.Internal.Ci.Configuration;
+using Datadog.Trace.Internal.Ci.Sampling;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Logging.TracerFlare;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.RuntimeMetrics;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 
-namespace Datadog.Trace.Ci
+namespace Datadog.Trace.Internal.Ci
 {
     internal class CITracerManagerFactory : TracerManagerFactory
     {

@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection;
+using Datadog.Trace.Internal.DuckTyping;
 using FluentAssertions;
 using Serilog.Events;
 using Xunit;

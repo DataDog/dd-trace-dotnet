@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Internal.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 

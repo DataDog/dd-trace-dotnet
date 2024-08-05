@@ -8,7 +8,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 internal readonly struct Location
 {

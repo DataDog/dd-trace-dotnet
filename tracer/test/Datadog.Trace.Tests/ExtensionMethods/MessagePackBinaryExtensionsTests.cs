@@ -6,7 +6,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Internal.Vendors.MessagePack;
 using FluentAssertions;
 using Xunit;
 

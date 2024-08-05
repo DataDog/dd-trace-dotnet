@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Sampling
+namespace Datadog.Trace.Internal.Sampling
 {
     internal class GlobalSamplingRateRule : ISamplingRule
     {
@@ -16,7 +16,7 @@ namespace Datadog.Trace.Sampling
             _globalRate = rate;
         }
 
-        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.LocalTraceSamplingRule;
+        public int SamplingMechanism => Datadog.Trace.Internal.Sampling.SamplingMechanism.LocalTraceSamplingRule;
 
         public bool IsMatch(Span span) => true;
 

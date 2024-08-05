@@ -8,9 +8,9 @@
 using System;
 using System.IO;
 using System.Security;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb {
 	static class DataReaderFactoryUtils {
 		public static DataReaderFactory TryCreateDataReaderFactory(string filename) {
 			try {

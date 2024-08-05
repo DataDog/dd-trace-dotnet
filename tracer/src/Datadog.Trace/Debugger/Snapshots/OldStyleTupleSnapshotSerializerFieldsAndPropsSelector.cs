@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 
-namespace Datadog.Trace.Debugger.Snapshots
+namespace Datadog.Trace.Internal.Debugger.Snapshots
 {
     internal class OldStyleTupleSnapshotSerializerFieldsAndPropsSelector : SnapshotSerializerFieldsAndPropsSelector
     {

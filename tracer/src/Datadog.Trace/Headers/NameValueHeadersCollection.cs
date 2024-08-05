@@ -7,9 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Headers
+namespace Datadog.Trace.Internal.Headers
 {
     internal readonly struct NameValueHeadersCollection : IHeadersCollection
     {

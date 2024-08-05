@@ -7,9 +7,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Vendors.Serilog.Capturing;
-using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Internal.Vendors.Serilog.Capturing;
+using Datadog.Trace.Internal.Vendors.Serilog.Core;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Serilog
 {

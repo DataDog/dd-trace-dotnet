@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Collections;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Aerospike
 {
     [DuckCopy]
     internal struct HasKeys

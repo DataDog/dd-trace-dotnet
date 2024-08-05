@@ -6,11 +6,11 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
-using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation.ThirdParty;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
 
-namespace Datadog.Trace.Debugger.Symbols
+namespace Datadog.Trace.Internal.Debugger.Symbols
 {
     internal class AssemblyFilter
     {

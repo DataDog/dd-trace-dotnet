@@ -6,7 +6,7 @@
 #nullable enable
 using System.Diagnostics.CodeAnalysis;
 
-namespace Datadog.Trace.Configuration;
+namespace Datadog.Trace.Internal.Configuration;
 
 internal class NullGitMetadataProvider : IGitMetadataTagsProvider
 {

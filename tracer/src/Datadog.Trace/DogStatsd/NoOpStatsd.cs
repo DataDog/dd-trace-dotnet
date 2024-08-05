@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 
-namespace Datadog.Trace.DogStatsd
+namespace Datadog.Trace.Internal.DogStatsd
 {
     internal class NoOpStatsd : IDogStatsd
     {

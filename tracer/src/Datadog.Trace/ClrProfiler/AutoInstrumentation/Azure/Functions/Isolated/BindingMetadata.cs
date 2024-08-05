@@ -5,9 +5,9 @@
 
 #if !NETFRAMEWORK
 #nullable enable
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
 [DuckCopy]
 internal struct BindingMetadata

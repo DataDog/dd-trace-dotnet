@@ -5,6 +5,8 @@
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
 
+using Datadog.Trace.Internal;
+
 namespace Datadog.Trace.Tools.Runner.Crank
 {
     internal interface IResultConverter

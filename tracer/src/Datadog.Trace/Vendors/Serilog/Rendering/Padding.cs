@@ -18,9 +18,9 @@
 
 using System.IO;
 using System.Linq;
-using Datadog.Trace.Vendors.Serilog.Parsing;
+using Datadog.Trace.Internal.Vendors.Serilog.Parsing;
 
-namespace Datadog.Trace.Vendors.Serilog.Rendering
+namespace Datadog.Trace.Internal.Vendors.Serilog.Rendering
 {
     static class Padding
     {

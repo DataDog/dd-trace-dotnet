@@ -7,12 +7,12 @@
 
 using System;
 using System.Net;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb
 {
     /// <summary>
     /// Tracing integration for MongoDB.Driver.Core.

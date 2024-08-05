@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.DataStreamsMonitoring.Transport
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Transport
 {
     internal static class DataStreamsHttpHeaderNames
     {

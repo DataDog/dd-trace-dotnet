@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Dataflow;
+namespace Datadog.Trace.Internal.Iast.Dataflow;
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal sealed class AspectMethodReplaceAttribute : AspectAttribute

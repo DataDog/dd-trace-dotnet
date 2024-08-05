@@ -6,10 +6,10 @@
 #nullable enable
 
 using System.Reflection;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols;
 
-namespace Datadog.Trace.Debugger.Symbols;
+namespace Datadog.Trace.Internal.Debugger.Symbols;
 
 internal static class SymbolsExtensions
 {

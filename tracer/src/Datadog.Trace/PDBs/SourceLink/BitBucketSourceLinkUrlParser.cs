@@ -8,7 +8,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-namespace Datadog.Trace.Pdb.SourceLink
+namespace Datadog.Trace.Internal.Pdb.SourceLink
 {
     internal class BitBucketSourceLinkUrlParser : SourceLinkUrlParser
     {

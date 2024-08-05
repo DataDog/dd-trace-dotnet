@@ -12,10 +12,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
-using Datadog.Trace.Vendors.dnlib.DotNet.Writer;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.WindowsPdb {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.WindowsPdb {
 	sealed class PdbCustomDebugInfoWriterContext {
 		public ILogger Logger;
 		public readonly MemoryStream MemoryStream;

@@ -6,13 +6,13 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Collectors;
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.ClrProfiler;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Collectors;
+using Datadog.Trace.Internal.Vendors.Serilog.Core;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Logging.Internal;
+namespace Datadog.Trace.Internal.Logging.Internal;
 
 internal class RedactedErrorLogSink : ILogEventSink
 {

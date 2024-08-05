@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.DuckTyping
+namespace Datadog.Trace.Internal.DuckTyping
 {
     /// <summary>
     /// Use to include a member that would normally be ignored

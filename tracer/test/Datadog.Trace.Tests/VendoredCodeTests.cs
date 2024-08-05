@@ -125,7 +125,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void UnsafeTypePrepareMethodTest()
         {
-            var vendoredType = typeof(VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe);
+            var vendoredType = typeof(Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe);
             var allMethods = vendoredType.GetMethods(_flags).Cast<MethodBase>().Union(vendoredType.GetConstructors(_flags)).ToList();
 
             foreach (var method in allMethods)
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void UnsafeTypeReflectionInvokeTest()
         {
-            var vendoredType = typeof(VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe);
+            var vendoredType = typeof(Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe);
             var allMethods = vendoredType.GetMethods(_flags).Cast<MethodBase>().Union(vendoredType.GetConstructors(_flags)).ToList();
             foreach (var method in allMethods)
             {

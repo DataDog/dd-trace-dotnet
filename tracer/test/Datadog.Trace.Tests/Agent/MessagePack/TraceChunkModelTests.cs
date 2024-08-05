@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Internal.Agent.MessagePack;
 using FluentAssertions;
 using Moq;
 using Xunit;

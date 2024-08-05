@@ -3,11 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Vendors.Datadog.Sketches;
-using Datadog.Trace.Vendors.Datadog.Sketches.Mappings;
-using Datadog.Trace.Vendors.Datadog.Sketches.Stores;
+using Datadog.Trace.Internal.Vendors.Datadog.Sketches;
+using Datadog.Trace.Internal.Vendors.Datadog.Sketches.Mappings;
+using Datadog.Trace.Internal.Vendors.Datadog.Sketches.Stores;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Internal.Agent
 {
     internal class StatsBucket
     {

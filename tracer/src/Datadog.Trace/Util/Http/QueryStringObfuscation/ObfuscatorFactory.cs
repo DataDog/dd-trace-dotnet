@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Util.Http.QueryStringObfuscation
+namespace Datadog.Trace.Internal.Util.Http.QueryStringObfuscation
 {
     internal class ObfuscatorFactory
     {

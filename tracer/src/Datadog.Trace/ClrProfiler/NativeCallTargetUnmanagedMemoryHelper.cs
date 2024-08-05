@@ -7,9 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler;
+namespace Datadog.Trace.Internal.ClrProfiler;
 
 internal static class NativeCallTargetUnmanagedMemoryHelper
 {

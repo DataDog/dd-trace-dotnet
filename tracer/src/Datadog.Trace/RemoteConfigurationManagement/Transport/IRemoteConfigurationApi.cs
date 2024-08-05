@@ -6,9 +6,9 @@
 #nullable enable
 
 using System.Threading.Tasks;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Transport
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement.Transport
 {
     internal interface IRemoteConfigurationApi
     {

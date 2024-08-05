@@ -6,10 +6,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     internal class ShadowStackHolder
     {

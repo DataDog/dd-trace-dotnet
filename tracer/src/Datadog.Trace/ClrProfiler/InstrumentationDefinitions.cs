@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler
                 // Fixed Id for definitions payload (to avoid loading same integrations from multiple AppDomains)
                 DefinitionsId = "9C6EB897BD4946D0BB492E062FB0AE67",
                 AssemblyName = assemblyFullName,
-                TypeName = typeof(Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration).FullName
+                TypeName = typeof(Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration).FullName
             };
         }
 
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler
                 // Fixed Id for definitions payload (to avoid loading same integrations from multiple AppDomains)
                 DefinitionsId = "CDEF904668434E7693E99DBD91341808",
                 AssemblyName = assemblyFullName,
-                TypeName = typeof(Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration).FullName
+                TypeName = typeof(Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration).FullName
             };
         }
 

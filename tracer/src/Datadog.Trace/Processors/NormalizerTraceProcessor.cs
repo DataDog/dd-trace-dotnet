@@ -4,11 +4,11 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.Processors
+namespace Datadog.Trace.Internal.Processors
 {
     internal class NormalizerTraceProcessor : ITraceProcessor
     {

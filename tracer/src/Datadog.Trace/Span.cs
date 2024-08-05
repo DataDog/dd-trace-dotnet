@@ -8,16 +8,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// A Span represents a logical unit of work in the system. It may be
@@ -83,7 +83,7 @@ namespace Datadog.Trace
                 // Ignore case because service name and _dd.base_service are normalized in the agent and backend
                 if (!_baseServiceTagSet && !string.Equals(value, Context.ServiceNameInternal, StringComparison.OrdinalIgnoreCase))
                 {
-                    Tags.SetTag(Trace.Tags.BaseService, Context.ServiceNameInternal);
+                    Tags.SetTag(Trace.Internal.Tags.BaseService, Context.ServiceNameInternal);
                     _baseServiceTagSet = true;
                 }
 
@@ -209,7 +209,7 @@ namespace Datadog.Trace
             // also, some "pseudo-tags" have special meaning, such as "manual.keep" and "_dd.measured".
             switch (key)
             {
-                case Trace.Tags.Env:
+                case Trace.Internal.Tags.Env:
                     if (Context.TraceContext == null)
                     {
                         LogMissingTraceContext(key, value);
@@ -218,7 +218,7 @@ namespace Datadog.Trace
 
                     Context.TraceContext.Environment = value;
                     break;
-                case Trace.Tags.Version:
+                case Trace.Internal.Tags.Version:
                     if (Context.TraceContext == null)
                     {
                         LogMissingTraceContext(key, value);
@@ -227,7 +227,7 @@ namespace Datadog.Trace
 
                     Context.TraceContext.ServiceVersion = value;
                     break;
-                case Trace.Tags.Origin:
+                case Trace.Internal.Tags.Origin:
                     if (Context.TraceContext == null)
                     {
                         LogMissingTraceContext(key, value);
@@ -237,21 +237,21 @@ namespace Datadog.Trace
                     Context.TraceContext.Origin = value;
                     break;
 
-                case Trace.Tags.AzureAppServicesSiteName:
-                case Trace.Tags.AzureAppServicesSiteKind:
-                case Trace.Tags.AzureAppServicesSiteType:
-                case Trace.Tags.AzureAppServicesResourceGroup:
-                case Trace.Tags.AzureAppServicesSubscriptionId:
-                case Trace.Tags.AzureAppServicesResourceId:
-                case Trace.Tags.AzureAppServicesInstanceId:
-                case Trace.Tags.AzureAppServicesInstanceName:
-                case Trace.Tags.AzureAppServicesOperatingSystem:
-                case Trace.Tags.AzureAppServicesRuntime:
-                case Trace.Tags.AzureAppServicesExtensionVersion:
+                case Trace.Internal.Tags.AzureAppServicesSiteName:
+                case Trace.Internal.Tags.AzureAppServicesSiteKind:
+                case Trace.Internal.Tags.AzureAppServicesSiteType:
+                case Trace.Internal.Tags.AzureAppServicesResourceGroup:
+                case Trace.Internal.Tags.AzureAppServicesSubscriptionId:
+                case Trace.Internal.Tags.AzureAppServicesResourceId:
+                case Trace.Internal.Tags.AzureAppServicesInstanceId:
+                case Trace.Internal.Tags.AzureAppServicesInstanceName:
+                case Trace.Internal.Tags.AzureAppServicesOperatingSystem:
+                case Trace.Internal.Tags.AzureAppServicesRuntime:
+                case Trace.Internal.Tags.AzureAppServicesExtensionVersion:
                     Log.Warning("This tag is reserved for Azure App Service tagging. Value will be ignored");
                     break;
 
-                case Trace.Tags.SamplingPriority:
+                case Trace.Internal.Tags.SamplingPriority:
                     if (Context.TraceContext == null)
                     {
                         LogMissingTraceContext(key, value);
@@ -270,7 +270,7 @@ namespace Datadog.Trace
                     }
 
                     break;
-                case Trace.Tags.ManualKeep:
+                case Trace.Internal.Tags.ManualKeep:
                     if (Context.TraceContext == null)
                     {
                         LogMissingTraceContext(key, value);
@@ -284,7 +284,7 @@ namespace Datadog.Trace
                     }
 
                     break;
-                case Trace.Tags.ManualDrop:
+                case Trace.Internal.Tags.ManualDrop:
                     if (Context.TraceContext == null)
                     {
                         LogMissingTraceContext(key, value);
@@ -298,11 +298,11 @@ namespace Datadog.Trace
                     }
 
                     break;
-                case Trace.Tags.Analytics:
+                case Trace.Internal.Tags.Analytics:
                     if (string.IsNullOrEmpty(value))
                     {
                         // remove metric
-                        SetMetric(Trace.Tags.Analytics, null);
+                        SetMetric(Trace.Internal.Tags.Analytics, null);
                         return this;
                     }
 
@@ -313,12 +313,12 @@ namespace Datadog.Trace
                     if (analyticsSamplingRate == true)
                     {
                         // always sample
-                        SetMetric(Trace.Tags.Analytics, 1.0);
+                        SetMetric(Trace.Internal.Tags.Analytics, 1.0);
                     }
                     else if (analyticsSamplingRate == false)
                     {
                         // never sample
-                        SetMetric(Trace.Tags.Analytics, 0.0);
+                        SetMetric(Trace.Internal.Tags.Analytics, 0.0);
                     }
                     else if (double.TryParse(
                         value,
@@ -327,19 +327,19 @@ namespace Datadog.Trace
                         out double analyticsSampleRate))
                     {
                         // use specified sample rate
-                        SetMetric(Trace.Tags.Analytics, analyticsSampleRate);
+                        SetMetric(Trace.Internal.Tags.Analytics, analyticsSampleRate);
                     }
                     else
                     {
-                        Log.Warning("Value {Value} has incorrect format for tag {TagName}", value, Trace.Tags.Analytics);
+                        Log.Warning("Value {Value} has incorrect format for tag {TagName}", value, Trace.Internal.Tags.Analytics);
                     }
 
                     break;
-                case Trace.Tags.Measured:
+                case Trace.Internal.Tags.Measured:
                     if (string.IsNullOrEmpty(value))
                     {
                         // Remove metric if value is null
-                        SetMetric(Trace.Tags.Measured, null);
+                        SetMetric(Trace.Internal.Tags.Measured, null);
                         return this;
                     }
 
@@ -348,20 +348,20 @@ namespace Datadog.Trace
                     if (measured == true)
                     {
                         // Set metric to true by passing the value of 1.0
-                        SetMetric(Trace.Tags.Measured, 1.0);
+                        SetMetric(Trace.Internal.Tags.Measured, 1.0);
                     }
                     else if (measured == false)
                     {
                         // Set metric to false by passing the value of 0.0
-                        SetMetric(Trace.Tags.Measured, 0.0);
+                        SetMetric(Trace.Internal.Tags.Measured, 0.0);
                     }
                     else
                     {
-                        Log.Warning("Value {Value} has incorrect format for tag {TagName}", value, Trace.Tags.Measured);
+                        Log.Warning("Value {Value} has incorrect format for tag {TagName}", value, Trace.Internal.Tags.Measured);
                     }
 
                     break;
-                case Trace.Tags.PeerService:
+                case Trace.Internal.Tags.PeerService:
                     Tags.SetTag(key, value);
                     Context.TraceContext.CurrentTraceSettings.Schema.RemapPeerService(Tags);
                     break;
@@ -425,9 +425,9 @@ namespace Datadog.Trace
                         exception = aggregateException.InnerExceptions[0];
                     }
 
-                    SetTag(Trace.Tags.ErrorMsg, exception.Message);
-                    SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
-                    SetTag(Trace.Tags.ErrorStack, exception.ToString());
+                    SetTag(Trace.Internal.Tags.ErrorMsg, exception.Message);
+                    SetTag(Trace.Internal.Tags.ErrorType, exception.GetType().ToString());
+                    SetTag(Trace.Internal.Tags.ErrorStack, exception.ToString());
 
                     ExceptionDebugging.Report(this, exception);
                 }
@@ -450,11 +450,11 @@ namespace Datadog.Trace
             // allow retrieval through any span in the trace
             return key switch
             {
-                Trace.Tags.SamplingPriority => SamplingPriorityValues.ToString(Context.TraceContext?.SamplingPriority),
-                Trace.Tags.Env => Context.TraceContext?.Environment,
-                Trace.Tags.Version => Context.TraceContext?.ServiceVersion,
-                Trace.Tags.Origin => Context.TraceContext?.Origin,
-                Trace.Tags.TraceId => Context.RawTraceId,
+                Trace.Internal.Tags.SamplingPriority => SamplingPriorityValues.ToString(Context.TraceContext?.SamplingPriority),
+                Trace.Internal.Tags.Env => Context.TraceContext?.Environment,
+                Trace.Internal.Tags.Version => Context.TraceContext?.ServiceVersion,
+                Trace.Internal.Tags.Origin => Context.TraceContext?.Origin,
+                Trace.Internal.Tags.TraceId => Context.RawTraceId,
                 _ => Tags.GetTag(key)
             };
         }

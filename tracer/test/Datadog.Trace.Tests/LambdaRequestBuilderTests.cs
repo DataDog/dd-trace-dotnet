@@ -4,12 +4,12 @@
 // </copyright>
 #if NET6_0_OR_GREATER
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 using Datadog.Trace.TestHelpers;
 
 using FluentAssertions;
 using Xunit;
-using LambdaCommon = Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda.LambdaCommon;
+using LambdaCommon = Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.Lambda.LambdaCommon;
 
 namespace Datadog.Trace.Tests
 {

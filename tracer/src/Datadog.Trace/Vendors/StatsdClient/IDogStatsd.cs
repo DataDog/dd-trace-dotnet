@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 using System;
 
-namespace Datadog.Trace.Vendors.StatsdClient
+namespace Datadog.Trace.Internal.Vendors.StatsdClient
 {
     /// <summary>
     /// IDogStatsd is an interface over DogStatsdService.

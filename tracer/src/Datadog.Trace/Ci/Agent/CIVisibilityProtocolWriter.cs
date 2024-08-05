@@ -8,15 +8,15 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.Agent.Payloads;
-using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.EventModel;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Internal.Ci.Agent.Payloads;
+using Datadog.Trace.Internal.Ci.Configuration;
+using Datadog.Trace.Internal.Ci.EventModel;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.MessagePack;
 
-namespace Datadog.Trace.Ci.Agent
+namespace Datadog.Trace.Internal.Ci.Agent
 {
     /// <summary>
     /// CI Visibility Protocol Writer

@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Text.RegularExpressions;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.RemoteConfigurationManagement
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement
 {
     internal record RemoteConfigurationPath
     {

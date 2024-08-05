@@ -5,7 +5,7 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.ContinuousProfiler
+namespace Datadog.Trace.Internal.ContinuousProfiler
 {
     internal class Profiler
     {

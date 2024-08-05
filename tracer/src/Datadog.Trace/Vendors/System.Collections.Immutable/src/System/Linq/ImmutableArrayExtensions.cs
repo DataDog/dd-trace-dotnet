@@ -11,13 +11,13 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Linq
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Linq
 {
     /// <summary>LINQ extension method overrides that offer greater efficiency for <see cref="T:System.Collections.Immutable.ImmutableArray`1" /> than the standard LINQ methods
     /// 

@@ -6,11 +6,11 @@
 
 #nullable enable
 
-using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Tagging;
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Redis
 {
     partial class RedisTags
     {

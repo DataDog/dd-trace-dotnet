@@ -6,9 +6,9 @@
 #nullable enable
 
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Tagging;
+namespace Datadog.Trace.Internal.Tagging;
 
 internal static class SpanTagHelper
 {

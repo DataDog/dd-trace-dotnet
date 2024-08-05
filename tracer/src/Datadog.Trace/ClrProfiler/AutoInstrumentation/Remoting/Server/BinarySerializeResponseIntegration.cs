@@ -12,11 +12,11 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Messaging;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Remoting.Server
 {
     /// <summary>
     /// System.Runtime.Remoting.Channels.BinaryServerFormatterSink.SerializeResponse calltarget instrumentation

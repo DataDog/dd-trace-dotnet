@@ -6,11 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
-using Datadog.Trace.Vendors.StatsdClient.Bufferize;
-using Datadog.Trace.Vendors.StatsdClient.Statistic;
-using Datadog.Trace.Vendors.StatsdClient.Transport;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Bufferize;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Statistic;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Transport;
 
-namespace Datadog.Trace.Vendors.StatsdClient
+namespace Datadog.Trace.Internal.Vendors.StatsdClient
 {
     /// <summary>
     /// Telemetry sends telemetry metrics.

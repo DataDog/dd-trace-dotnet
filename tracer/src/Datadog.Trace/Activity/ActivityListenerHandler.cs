@@ -6,11 +6,11 @@
 #nullable enable
 
 using System.Collections.Concurrent;
-using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.Activity.Handlers;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Activity.DuckTypes;
+using Datadog.Trace.Internal.Activity.Handlers;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Activity
+namespace Datadog.Trace.Internal.Activity
 {
     internal static class ActivityListenerHandler
     {

@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.MessagePack
+namespace Datadog.Trace.Internal.Vendors.MessagePack
 {
     internal static partial class MessagePackBinary
     {

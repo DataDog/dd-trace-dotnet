@@ -7,10 +7,10 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Debugger.Sink.Models;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Debugger.Sink
+namespace Datadog.Trace.Internal.Debugger.Sink
 {
     internal class DiagnosticsSink
     {

@@ -7,7 +7,7 @@ using System;
 // ReSharper disable once RedundantUsingDirective
 using System.ComponentModel;
 using System.Linq;
-using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Internal.Debugger.Snapshots;
 using FluentAssertions;
 using Xunit;
 

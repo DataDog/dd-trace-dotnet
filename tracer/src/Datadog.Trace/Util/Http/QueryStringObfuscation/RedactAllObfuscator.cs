@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Util.Http.QueryStringObfuscation;
+namespace Datadog.Trace.Internal.Util.Http.QueryStringObfuscation;
 
 internal class RedactAllObfuscator : ObfuscatorBase
 {

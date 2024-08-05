@@ -6,9 +6,9 @@
 #nullable enable
 
 using System.Net;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     /// <summary>
     /// AmazonWebServiceResponse interface for ducktyping

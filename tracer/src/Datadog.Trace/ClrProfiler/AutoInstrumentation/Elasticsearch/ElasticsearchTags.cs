@@ -4,30 +4,30 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Tagging;
 
 #pragma warning disable SA1402 // File must contain single type
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     internal partial class ElasticsearchTags : InstrumentationTags
     {
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Trace.Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Internal.Tags.InstrumentationName)]
         public string InstrumentationName => ElasticsearchNetCommon.ComponentValue;
 
-        [Tag(Trace.Tags.ElasticsearchAction)]
+        [Tag(Trace.Internal.Tags.ElasticsearchAction)]
         public string Action { get; set; }
 
-        [Tag(Trace.Tags.ElasticsearchMethod)]
+        [Tag(Trace.Internal.Tags.ElasticsearchMethod)]
         public string Method { get; set; }
 
-        [Tag(Trace.Tags.ElasticsearchUrl)]
+        [Tag(Trace.Internal.Tags.ElasticsearchUrl)]
         public string Url { get; set; }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Trace.Internal.Tags.OutHost)]
         public string Host { get; set; }
     }
 
@@ -40,14 +40,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Trace.Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? Host;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Trace.Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

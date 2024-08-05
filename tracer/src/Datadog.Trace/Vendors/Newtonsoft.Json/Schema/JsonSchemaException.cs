@@ -34,7 +34,7 @@ using System.Runtime.Serialization;
 
 #nullable disable
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Schema
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Schema
 {
     /// <summary>
     /// <para>

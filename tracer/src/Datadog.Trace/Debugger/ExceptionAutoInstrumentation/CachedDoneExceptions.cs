@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     /// <summary>
     /// Acts as a proxy to a static `CachedItems` object to make the Exception that are in done cases easily accesible, throughout the codebase

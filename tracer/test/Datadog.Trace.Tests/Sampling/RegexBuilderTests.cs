@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Sampling;
 using FluentAssertions;
 using Xunit;
 

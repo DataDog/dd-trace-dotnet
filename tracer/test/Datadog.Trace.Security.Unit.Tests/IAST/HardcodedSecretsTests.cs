@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Iast.Analyzers;
+using Datadog.Trace.Internal.Iast.Analyzers;
 using FluentAssertions;
 using Xunit;
 

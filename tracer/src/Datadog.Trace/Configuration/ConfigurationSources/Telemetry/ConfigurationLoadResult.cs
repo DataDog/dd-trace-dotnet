@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+namespace Datadog.Trace.Internal.Configuration.ConfigurationSources.Telemetry;
 
 internal enum ConfigurationLoadResult
 {

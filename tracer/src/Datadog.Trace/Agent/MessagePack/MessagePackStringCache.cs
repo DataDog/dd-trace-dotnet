@@ -1,4 +1,4 @@
-﻿// <copyright file="MessagePackStringCache.cs" company="Datadog">
+// <copyright file="MessagePackStringCache.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,9 +6,9 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Internal.Vendors.MessagePack;
 
-namespace Datadog.Trace.Agent.MessagePack;
+namespace Datadog.Trace.Internal.Agent.MessagePack;
 
 /// <summary>
 /// A cache of string values encoded as MessagePack bytes. These strings are usually
@@ -92,27 +92,27 @@ internal static class MessagePackStringCache
     {
         switch (key)
         {
-            case Datadog.Trace.Tags.AzureAppServicesSiteName:
+            case Datadog.Trace.Internal.Tags.AzureAppServicesSiteName:
                 return GetBytes(value, ref _aasSiteNameBytes);
-            case Datadog.Trace.Tags.AzureAppServicesSiteType:
+            case Datadog.Trace.Internal.Tags.AzureAppServicesSiteType:
                 return GetBytes(value, ref _aasSiteTypeBytes);
-            case Datadog.Trace.Tags.AzureAppServicesSiteKind:
+            case Datadog.Trace.Internal.Tags.AzureAppServicesSiteKind:
                 return GetBytes(value, ref _aasSiteKindBytes);
-            case Datadog.Trace.Tags.AzureAppServicesResourceGroup:
+            case Datadog.Trace.Internal.Tags.AzureAppServicesResourceGroup:
                 return GetBytes(value, ref _aasResourceGroupBytes);
-            case Datadog.Trace.Tags.AzureAppServicesSubscriptionId:
+            case Datadog.Trace.Internal.Tags.AzureAppServicesSubscriptionId:
                 return GetBytes(value, ref _aasSubscriptionIdBytes);
-            case Datadog.Trace.Tags.AzureAppServicesResourceId:
+            case Datadog.Trace.Internal.Tags.AzureAppServicesResourceId:
                 return GetBytes(value, ref _aasResourceIdBytes);
-            case Datadog.Trace.Tags.AzureAppServicesInstanceId:
+            case Datadog.Trace.Internal.Tags.AzureAppServicesInstanceId:
                 return GetBytes(value, ref _aasInstanceIdBytes);
-            case Datadog.Trace.Tags.AzureAppServicesInstanceName:
+            case Datadog.Trace.Internal.Tags.AzureAppServicesInstanceName:
                 return GetBytes(value, ref _aasInstanceNameBytes);
-            case Datadog.Trace.Tags.AzureAppServicesOperatingSystem:
+            case Datadog.Trace.Internal.Tags.AzureAppServicesOperatingSystem:
                 return GetBytes(value, ref _aasOperatingSystemBytes);
-            case Datadog.Trace.Tags.AzureAppServicesRuntime:
+            case Datadog.Trace.Internal.Tags.AzureAppServicesRuntime:
                 return GetBytes(value, ref _aasRuntimeBytes);
-            case Datadog.Trace.Tags.AzureAppServicesExtensionVersion:
+            case Datadog.Trace.Internal.Tags.AzureAppServicesExtensionVersion:
                 return GetBytes(value, ref _aasExtensionVersionBytes);
             default:
                 throw new InvalidOperationException("The given key isn't yet handled in the cache");

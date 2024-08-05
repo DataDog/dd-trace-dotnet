@@ -6,7 +6,7 @@
 #nullable enable
 using System;
 
-namespace Datadog.Trace.DuckTyping;
+namespace Datadog.Trace.Internal.DuckTyping;
 
 /// <summary>
 /// The type is used as a duck type.

@@ -7,11 +7,11 @@
 
 using System;
 using System.Reflection.Emit;
-using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.Activity.Handlers;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.Activity.DuckTypes;
+using Datadog.Trace.Internal.Activity.Handlers;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {
     internal static class ResourceAttributeProcessorHelper
     {

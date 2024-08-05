@@ -5,9 +5,9 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Util.Delegates;
+using Datadog.Trace.Internal.Util.Delegates;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Kafka;
 
 internal struct ProduceDeliveryCallbacks : IBegin1Callbacks, IVoidReturnCallback
 {

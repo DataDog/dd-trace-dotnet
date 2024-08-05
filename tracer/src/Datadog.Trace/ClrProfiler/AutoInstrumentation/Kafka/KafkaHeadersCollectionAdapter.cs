@@ -7,10 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Kafka
 {
     internal readonly struct KafkaHeadersCollectionAdapter : IHeadersCollection, IBinaryHeadersCollection
     {

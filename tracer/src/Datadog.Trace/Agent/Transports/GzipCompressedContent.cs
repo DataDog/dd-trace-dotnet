@@ -11,9 +11,9 @@ using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Agent.Transports;
+namespace Datadog.Trace.Internal.Agent.Transports;
 
 internal class GzipCompressedContent : HttpContent
 {

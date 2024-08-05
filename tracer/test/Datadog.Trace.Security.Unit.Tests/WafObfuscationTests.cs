@@ -5,11 +5,11 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Security.Unit.Tests.Utils;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 

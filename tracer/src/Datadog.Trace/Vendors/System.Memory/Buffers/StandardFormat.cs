@@ -12,7 +12,7 @@
 
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers
 {
   internal readonly struct StandardFormat : IEquatable<StandardFormat>
   {
@@ -58,10 +58,10 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
         {
           uint num2 = (uint) format[index] - 48U;
           if (num2 > 9U)
-            throw new FormatException(SR.Format(Datadog.Trace.VendoredMicrosoftCode.System.Memory.SR.Argument_CannotParsePrecision, (object) (byte) 99));
+            throw new FormatException(SR.Format(Datadog.Trace.Internal.VendoredMicrosoftCode.System.Memory.SR.Argument_CannotParsePrecision, (object) (byte) 99));
           num1 = num1 * 10U + num2;
           if (num1 > 99U)
-            throw new FormatException(SR.Format(Datadog.Trace.VendoredMicrosoftCode.System.Memory.SR.Argument_PrecisionTooLarge, (object) (byte) 99));
+            throw new FormatException(SR.Format(Datadog.Trace.Internal.VendoredMicrosoftCode.System.Memory.SR.Argument_PrecisionTooLarge, (object) (byte) 99));
         }
         precision = (byte) num1;
       }

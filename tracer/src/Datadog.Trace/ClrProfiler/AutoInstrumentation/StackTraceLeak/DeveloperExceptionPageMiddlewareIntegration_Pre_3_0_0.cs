@@ -10,11 +10,11 @@
 using System;
 using System.ComponentModel;
 using System.Reflection;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.StackTraceLeak;
 
 /// <summary>
 /// DeveloperExceptionPageMiddlewareImpl integration

@@ -7,10 +7,10 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.Sampling
+namespace Datadog.Trace.Internal.Sampling
 {
     // These "default" sampling rule contains the mapping of service/env names to sampling rates.
     // These rates are received in http responses from the trace agent after we send a trace payload.
@@ -25,8 +25,8 @@ namespace Datadog.Trace.Sampling
         // if there are no rules, this normally means we haven't sent any payloads to the Agent yet (aka cold start), so the mechanism is "Default".
         // if there are rules, there should always be at least one match (the fallback "service:,env:") and the mechanism is "AgentRate".
         public int SamplingMechanism => _sampleRates.Count == 0 && _defaultSamplingRate == null ?
-                                            Datadog.Trace.Sampling.SamplingMechanism.Default :
-                                            Datadog.Trace.Sampling.SamplingMechanism.AgentRate;
+                                            Datadog.Trace.Internal.Sampling.SamplingMechanism.Default :
+                                            Datadog.Trace.Internal.Sampling.SamplingMechanism.AgentRate;
 
         public bool IsMatch(Span span) => true;
 

@@ -8,13 +8,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Util;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -207,7 +207,7 @@ namespace Datadog.Trace.Tests.Tagging
             using (var scope = _tracer.StartActiveInternal("root", serviceName: "service1", tags: tags))
             {
                 // Read only property, so shouldn't be able to set it
-                tags.SetTag(Trace.Tags.SpanKind, SpanKinds.Client);
+                tags.SetTag(Internal.Tags.SpanKind, SpanKinds.Client);
             }
 
             await _tracer.FlushAsync();

@@ -34,7 +34,7 @@ using System;
 
 // ReSharper disable InconsistentNaming
 
-namespace Datadog.Trace.Vendors.MessagePack.LZ4
+namespace Datadog.Trace.Internal.Vendors.MessagePack.LZ4
 {
     internal static partial class LZ4Codec
     {

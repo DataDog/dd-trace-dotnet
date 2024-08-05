@@ -7,7 +7,7 @@
 
 using System.Text;
 
-namespace Datadog.Trace.DataStreamsMonitoring.Utils;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Utils;
 
 internal static class MessageSizeHelper
 {

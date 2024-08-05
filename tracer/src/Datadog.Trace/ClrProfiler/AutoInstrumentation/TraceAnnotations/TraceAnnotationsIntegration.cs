@@ -10,11 +10,11 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Reflection;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
     /// <summary>
     /// Calltarget instrumentation to generate a span for any arbitrary method

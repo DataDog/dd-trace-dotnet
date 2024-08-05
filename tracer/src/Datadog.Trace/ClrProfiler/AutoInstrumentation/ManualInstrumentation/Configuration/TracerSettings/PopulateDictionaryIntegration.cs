@@ -1,4 +1,4 @@
-﻿// <copyright file="PopulateDictionaryIntegration.cs" company="Datadog">
+// <copyright file="PopulateDictionaryIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,11 +7,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
 
 /// <summary>
 /// System.Boolean Datadog.Trace.Configuration.TracerSettings::PopulateDictionary() calltarget instrumentation
@@ -32,8 +32,8 @@ public class PopulateDictionaryIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(Dictionary<string, object?> values, bool useDefaultSources)
     {
         var settings = useDefaultSources
-                           ? Trace.Configuration.TracerSettings.FromDefaultSourcesInternal()
-                           : new Trace.Configuration.TracerSettings(null, new ConfigurationTelemetry());
+                           ? Trace.Internal.Configuration.TracerSettings.FromDefaultSourcesInternal()
+                           : new Trace.Internal.Configuration.TracerSettings(null, new ConfigurationTelemetry());
 
         PopulateSettings(values, settings);
 
@@ -41,7 +41,7 @@ public class PopulateDictionaryIntegration
     }
 
     // Internal for testing
-    internal static void PopulateSettings(Dictionary<string, object?> values, Trace.Configuration.TracerSettings settings)
+    internal static void PopulateSettings(Dictionary<string, object?> values, Trace.Internal.Configuration.TracerSettings settings)
     {
         // record all the settings in the dictionary
         values[TracerSettingKeyConstants.AgentUriKey] = settings.ExporterInternal.AgentUriInternal;

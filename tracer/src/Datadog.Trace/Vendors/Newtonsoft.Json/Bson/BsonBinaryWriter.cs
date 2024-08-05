@@ -33,11 +33,11 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 
 #nullable disable
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Bson
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Bson
 {
     internal class BsonBinaryWriter
     {

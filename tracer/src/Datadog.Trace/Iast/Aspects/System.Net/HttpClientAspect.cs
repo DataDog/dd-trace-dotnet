@@ -7,16 +7,16 @@
 using System.Net.Http;
 #endif
 using System;
-using Datadog.Trace.AppSec;
+using Datadog.Trace.Internal.AppSec;
 
 #if NETFRAMEWORK
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 #endif
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Aspects.System.Net;
+namespace Datadog.Trace.Internal.Iast.Aspects.System.Net;
 
 /// <summary> HttpClient class aspects </summary>
 [AspectClass("System.Net.Http", AspectType.RaspIastSink, VulnerabilityType.Ssrf)]

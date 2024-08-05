@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
+namespace Datadog.Trace.Internal.Logging.DirectSubmission.Sink.PeriodicBatching
 {
     /// <summary>
     /// A simple circuit breaker for periodic batching, which, if never succeeds remains permanently broken

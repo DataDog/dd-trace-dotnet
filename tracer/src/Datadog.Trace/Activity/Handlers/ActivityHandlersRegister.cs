@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Activity.Handlers
+namespace Datadog.Trace.Internal.Activity.Handlers
 {
     internal static class ActivityHandlersRegister
     {

@@ -7,10 +7,10 @@
 
 using System;
 using System.Text;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 internal class Source
 {

@@ -35,7 +35,7 @@ using System.IO;
 using System.Xml;
 using System.Globalization;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities
 {
     internal static class DateTimeUtils
     {

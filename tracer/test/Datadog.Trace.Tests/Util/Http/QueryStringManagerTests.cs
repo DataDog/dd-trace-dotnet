@@ -3,8 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util.Http;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util.Http;
 using FluentAssertions;
 using Moq;
 using Xunit;

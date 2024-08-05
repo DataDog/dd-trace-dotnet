@@ -6,7 +6,7 @@
 #if NETFRAMEWORK
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
+using Datadog.Trace.Internal.AppSec;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -64,8 +64,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+            SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+            SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.DebugEnabled, "1");
 
             _classicMode = classicMode;
             _iisFixture = iisFixture;

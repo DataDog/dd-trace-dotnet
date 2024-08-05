@@ -5,9 +5,9 @@
 #nullable enable
 
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
 /// <summary>
 /// System.Void NUnit.Framework.Internal.Execution.SimpleWorkItem::.ctor(NUnit.Framework.Internal.TestMethod,NUnit.Framework.Interfaces.ITestFilter) calltarget instrumentation

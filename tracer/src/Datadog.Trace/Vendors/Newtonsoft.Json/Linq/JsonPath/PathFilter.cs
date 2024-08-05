@@ -7,9 +7,9 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Globalization;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JsonPath
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq.JsonPath
 {
     internal abstract class PathFilter
     {

@@ -13,7 +13,7 @@ using System.Runtime.Serialization;
 using System.Threading;
 using Microsoft.Win32.SafeHandles;
 
-namespace Datadog.Trace.Vendors.dnlib.IO {
+namespace Datadog.Trace.Internal.Vendors.dnlib.IO {
 	/// <summary>
 	/// Creates <see cref="DataReader"/>s that read memory mapped data
 	/// </summary>

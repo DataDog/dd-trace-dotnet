@@ -8,7 +8,7 @@ using System;
 
 #if !NET461
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient;
 
 internal interface IChannel
 {

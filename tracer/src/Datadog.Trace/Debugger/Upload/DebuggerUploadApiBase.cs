@@ -8,13 +8,13 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Processors;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Debugger.Upload;
+namespace Datadog.Trace.Internal.Debugger.Upload;
 
 internal abstract class DebuggerUploadApiBase : IBatchUploadApi
 {

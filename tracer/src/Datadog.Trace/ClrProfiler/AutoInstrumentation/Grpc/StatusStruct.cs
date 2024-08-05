@@ -4,11 +4,11 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc
 {
     /// <summary>
     /// Duck type for Grpc.Core.Status

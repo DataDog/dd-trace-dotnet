@@ -5,9 +5,9 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Aerospike
 {
     /// <summary>
     /// AsyncCommand ExecuteCommand calltarget instrumentation

@@ -37,13 +37,13 @@ using System.IO;
 using System.Numerics;
 #endif
 using System.Text;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 using System.Globalization;
 
 #nullable disable
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Bson
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Bson
 {
     /// <summary>
     /// Represents a writer that provides a fast, non-cached, forward-only way of generating BSON data.

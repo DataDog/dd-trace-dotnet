@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Collections;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection
 {
     /// <summary>
     /// Ducktyping proxy for https://github.com/serilog/serilog/blob/1aabe1d6bde10382233fb2a50e0e2c6e0c9b8287/src/Serilog/Events/LogEvent.cs

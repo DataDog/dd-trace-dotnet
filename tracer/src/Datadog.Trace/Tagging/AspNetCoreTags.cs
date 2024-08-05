@@ -3,19 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     internal partial class AspNetCoreTags : WebTags
     {
         private const string ComponentName = "aspnet_core";
 
         // Read/write instead of readonly as AzureFunctions updates the component name
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Internal.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; } = ComponentName;
 
-        [Tag(Trace.Tags.AspNetCoreRoute)]
+        [Tag(Trace.Internal.Tags.AspNetCoreRoute)]
         public string AspNetCoreRoute { get; set; }
 
         [Tag(Tags.HttpRoute)]

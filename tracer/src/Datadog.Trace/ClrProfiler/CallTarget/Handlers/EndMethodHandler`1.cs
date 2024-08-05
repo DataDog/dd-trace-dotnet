@@ -8,10 +8,11 @@ using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers.Continuations;
 #pragma warning disable SA1649 // File name must match first type name
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers;
 
 internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
 {

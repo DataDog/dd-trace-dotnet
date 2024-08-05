@@ -6,10 +6,11 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util.Http.QueryStringObfuscation;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Util.Http.QueryStringObfuscation;
+
 using FluentAssertions;
 using Moq;
 using Xunit;

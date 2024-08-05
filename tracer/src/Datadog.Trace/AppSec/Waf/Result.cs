@@ -5,9 +5,9 @@
 
 #nullable enable
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
 
-namespace Datadog.Trace.AppSec.Waf
+namespace Datadog.Trace.Internal.AppSec.Waf
 {
     internal class Result : IResult
     {

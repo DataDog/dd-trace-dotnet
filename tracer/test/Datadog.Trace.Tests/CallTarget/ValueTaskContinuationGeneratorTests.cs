@@ -7,8 +7,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers.Continuations;
 using Xunit;
 
 namespace Datadog.Trace.Tests.CallTarget

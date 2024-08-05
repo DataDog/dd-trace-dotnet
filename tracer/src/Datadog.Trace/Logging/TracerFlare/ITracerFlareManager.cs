@@ -7,7 +7,7 @@
 
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Logging.TracerFlare;
+namespace Datadog.Trace.Internal.Logging.TracerFlare;
 
 internal interface ITracerFlareManager
 {

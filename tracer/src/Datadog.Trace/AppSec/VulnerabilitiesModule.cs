@@ -3,13 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.AppSec.Rasp;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast;
+using Datadog.Trace.Internal.AppSec.Rasp;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast;
 
 #nullable enable
 
-namespace Datadog.Trace.AppSec;
+namespace Datadog.Trace.Internal.AppSec;
 
 internal static class VulnerabilitiesModule
 {

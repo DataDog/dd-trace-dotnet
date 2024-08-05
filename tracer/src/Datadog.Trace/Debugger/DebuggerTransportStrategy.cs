@@ -5,11 +5,11 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger
+namespace Datadog.Trace.Internal.Debugger
 {
     internal static class DebuggerTransportStrategy
     {

@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
 
-namespace Datadog.Trace.Headers.Ip
+namespace Datadog.Trace.Internal.Headers.Ip
 {
     internal static class IpExtractor
     {

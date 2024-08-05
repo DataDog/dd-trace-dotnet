@@ -8,10 +8,10 @@
 using System;
 using System.Reflection.Emit;
 using System.Threading.Tasks;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Util;
+namespace Datadog.Trace.Internal.Util;
 
 internal class ActivatorHelper
 {

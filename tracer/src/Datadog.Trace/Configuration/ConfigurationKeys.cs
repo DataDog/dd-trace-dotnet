@@ -5,9 +5,9 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Telemetry;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     /// <summary>
     /// String constants for standard Datadog configuration keys.
@@ -352,7 +352,7 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for setting the header injection propagation style.
         /// If <see cref="PropagationStyle"/> is also defined, this value overrides the header injection styles.
         /// </summary>
-        /// <seealso cref="Datadog.Trace.Propagators.ContextPropagationHeaderStyle"/>
+        /// <seealso cref="Datadog.Trace.Internal.Propagators.ContextPropagationHeaderStyle"/>
         /// <seealso cref="TracerSettings.PropagationStyleInject"/>
         public const string PropagationStyleInject = "DD_TRACE_PROPAGATION_STYLE_INJECT";
 
@@ -360,7 +360,7 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for setting the header extraction propagation style.
         /// If <see cref="PropagationStyle"/> is also defined, this value overrides the header extraction styles.
         /// </summary>
-        /// <seealso cref="Datadog.Trace.Propagators.ContextPropagationHeaderStyle"/>
+        /// <seealso cref="Datadog.Trace.Internal.Propagators.ContextPropagationHeaderStyle"/>
         /// <seealso cref="TracerSettings.PropagationStyleExtract"/>
         public const string PropagationStyleExtract = "DD_TRACE_PROPAGATION_STYLE_EXTRACT";
 

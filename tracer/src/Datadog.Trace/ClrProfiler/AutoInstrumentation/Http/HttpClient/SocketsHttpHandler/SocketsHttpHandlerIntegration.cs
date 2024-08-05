@@ -6,10 +6,10 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler
 {
     /// <summary>
     /// System.Net.Http.SocketsHttpHandler calltarget instrumentation

@@ -5,7 +5,7 @@
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, SYSLIB0011,SYSLIB0032
 // dnlib: See LICENSE.txt for more info
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Emit {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit {
 	/// <summary>
 	/// A CIL opcode. If the high byte is 0 or if it's <see cref="UNKNOWN1"/>, it's a 1-byte opcode,
 	/// else it's a two-byte opcode and the highest byte is the first byte of the opcode.

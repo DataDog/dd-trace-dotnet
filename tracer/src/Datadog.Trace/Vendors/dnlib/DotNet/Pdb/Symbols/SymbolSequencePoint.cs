@@ -8,7 +8,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols {
 	/// <summary>
 	/// Sequence point
 	/// </summary>

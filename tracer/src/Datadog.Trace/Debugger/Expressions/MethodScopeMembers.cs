@@ -4,10 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
 
-namespace Datadog.Trace.Debugger.Expressions;
+namespace Datadog.Trace.Internal.Debugger.Expressions;
 
 internal class MethodScopeMembers
 {

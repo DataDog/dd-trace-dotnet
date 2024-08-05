@@ -9,13 +9,13 @@ using System.ComponentModel;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Util.Delegates;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SDK;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Util.Delegates;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 
 /// <summary>
 /// Instrumenting the HandlerWrapper's GetHandlerWrapper method to wrap the Handler with Datadog wrapping methods

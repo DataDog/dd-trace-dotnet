@@ -5,11 +5,11 @@
 
 using System;
 using System.Threading;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Processors;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Processors;
 
-namespace Datadog.Trace.Ci.Processors
+namespace Datadog.Trace.Internal.Ci.Processors
 {
     internal class OriginTagTraceProcessor : ITraceProcessor
     {

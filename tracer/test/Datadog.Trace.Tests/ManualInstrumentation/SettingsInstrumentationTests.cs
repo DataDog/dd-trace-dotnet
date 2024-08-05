@@ -1,4 +1,4 @@
-﻿// <copyright file="SettingsInstrumentationTests.cs" company="Datadog">
+// <copyright file="SettingsInstrumentationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,13 +8,13 @@ extern alias DatadogTraceManual;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
+using Datadog.Trace.Internal.Configuration;
 using FluentAssertions;
 using Xunit;
-using CtorIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.CtorIntegration;
+using CtorIntegration = Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.CtorIntegration;
 using ImmutableManualSettings = DatadogTraceManual::Datadog.Trace.Configuration.ImmutableTracerSettings;
 using ManualSettings = DatadogTraceManual::Datadog.Trace.Configuration.TracerSettings;
 

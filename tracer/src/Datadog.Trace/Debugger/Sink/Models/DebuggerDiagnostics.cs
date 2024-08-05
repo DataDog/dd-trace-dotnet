@@ -4,10 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Converters;
 
-namespace Datadog.Trace.Debugger.Sink.Models
+namespace Datadog.Trace.Internal.Debugger.Sink.Models
 {
     internal record DebuggerDiagnostics
     {

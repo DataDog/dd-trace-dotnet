@@ -8,11 +8,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Instrumentation;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Debugger.Expressions;
+using Datadog.Trace.Internal.Debugger.Instrumentation;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger.Helpers
+namespace Datadog.Trace.Internal.Debugger.Helpers
 {
     internal static class AsyncHelper
     {

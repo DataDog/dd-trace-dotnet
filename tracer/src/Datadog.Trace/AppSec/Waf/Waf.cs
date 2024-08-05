@@ -9,17 +9,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Datadog.Trace.AppSec.Rcm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmData;
-using Datadog.Trace.AppSec.Waf.Initialization;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.AppSec.WafEncoding;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.AppSec.Rcm;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.AsmData;
+using Datadog.Trace.Internal.AppSec.Waf.Initialization;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Internal.AppSec.WafEncoding;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.AppSec.Waf
+namespace Datadog.Trace.Internal.AppSec.Waf
 {
     internal class Waf : IWaf
     {

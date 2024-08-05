@@ -8,7 +8,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     internal static class SamplingPriorityValues
     {

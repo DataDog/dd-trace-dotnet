@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AdoNet
 {
     /// <summary>
     /// Attribute that indicates that the decorated class is meant to intercept a method

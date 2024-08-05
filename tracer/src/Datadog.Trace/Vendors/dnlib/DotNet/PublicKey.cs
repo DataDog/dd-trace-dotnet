@@ -7,7 +7,7 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Represents a public key
 	/// </summary>

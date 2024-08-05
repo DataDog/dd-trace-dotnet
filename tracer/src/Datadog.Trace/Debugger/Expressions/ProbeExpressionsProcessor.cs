@@ -6,12 +6,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Snapshots;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Debugger.Expressions
+namespace Datadog.Trace.Internal.Debugger.Expressions
 {
     internal class ProbeExpressionsProcessor
     {

@@ -6,16 +6,16 @@
 using System;
 using System.Diagnostics;
 using System.Text;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Ci.Agent.MessagePack;
-using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.Coverage.Models.Tests;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.Ci.Agent.MessagePack;
+using Datadog.Trace.Internal.Ci.Configuration;
+using Datadog.Trace.Internal.Ci.Coverage.Models.Tests;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Vendors.MessagePack;
 
-namespace Datadog.Trace.Ci.Agent.Payloads
+namespace Datadog.Trace.Internal.Ci.Agent.Payloads
 {
     internal class CICodeCoveragePayload : MultipartPayload
     {

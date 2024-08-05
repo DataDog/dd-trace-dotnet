@@ -9,11 +9,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Iast.Propagation;
+namespace Datadog.Trace.Internal.Iast.Propagation;
 
 internal static class StringModuleImpl
 {

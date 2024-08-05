@@ -7,7 +7,7 @@
 
 using System.Text;
 
-namespace Datadog.Trace.Vendors.dnlib.IO {
+namespace Datadog.Trace.Internal.Vendors.dnlib.IO {
 	sealed unsafe class EmptyDataStream : DataStream {
 		public static readonly DataStream Instance = new EmptyDataStream();
 

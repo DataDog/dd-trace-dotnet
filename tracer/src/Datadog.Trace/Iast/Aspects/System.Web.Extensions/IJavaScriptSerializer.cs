@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Aspects.System.Web.Extensions;
+namespace Datadog.Trace.Internal.Iast.Aspects.System.Web.Extensions;
 
 internal interface IJavaScriptSerializer
 {

@@ -11,10 +11,10 @@
 // MVID: 805945F3-27B0-47AD-B8F6-389D9D8F82C3
 
 using System;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers.Text;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System
 {
     internal static class Number
   {

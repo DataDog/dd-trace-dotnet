@@ -5,9 +5,9 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+namespace Datadog.Trace.Internal.ClrProfiler.ServerlessInstrumentation;
 
 internal class LambdaMetadata
 {

@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Debugger.Configurations;
+using Datadog.Trace.Internal.Debugger.Configurations;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests;

@@ -10,18 +10,18 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Util;
-using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
+using Datadog.Trace.Internal.Debugger.Snapshots;
+using Datadog.Trace.Internal.Util;
+using static Datadog.Trace.Internal.Debugger.Expressions.ProbeExpressionParserHelper;
 using Enumerable = System.Linq.Enumerable;
 
-namespace Datadog.Trace.Debugger.Expressions;
+namespace Datadog.Trace.Internal.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
-        if (Datadog.Trace.Debugger.Helpers.TypeExtensions.IsSimple(expression.Type) ||
+        if (Datadog.Trace.Internal.Debugger.Helpers.TypeExtensions.IsSimple(expression.Type) ||
             Redaction.AllowedTypesSafeToCallToString.Contains(expression.Type))
         {
             return Expression.Call(expression, GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes));

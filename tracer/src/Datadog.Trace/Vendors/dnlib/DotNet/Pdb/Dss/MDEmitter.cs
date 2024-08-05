@@ -8,9 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices.ComTypes;
-using Datadog.Trace.Vendors.dnlib.DotNet.Writer;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Dss {
 	sealed unsafe class MDEmitter : MetaDataImport, IMetaDataEmit {
 		readonly Metadata metadata;
 		readonly Dictionary<uint, TypeDef> tokenToTypeDef;

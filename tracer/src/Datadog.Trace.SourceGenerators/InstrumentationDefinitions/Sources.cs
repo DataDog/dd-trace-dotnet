@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Internal.ClrProfiler;
 
 namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
 {
@@ -94,7 +94,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {{
     internal static partial class InstrumentationDefinitions
     {{
@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler
 
             sb.Append($@";
 
-        internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
+        internal static Datadog.Trace.Internal.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {{
             return integrationTypeName switch
             {{
@@ -153,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler
                         // write the previous result
                         // Assumes that IntegrationName is a valid IntegrationId
                         // (Will cause compilation failures if not (so "safe")
-                        sb.Append(@"=> Datadog.Trace.Configuration.IntegrationId.")
+                        sb.Append(@"=> Datadog.Trace.Internal.Configuration.IntegrationId.")
                           .Append(integrationName)
                           .Append(@",
                 ");
@@ -171,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler
             if (integrationName is not null)
             {
                 // write the last one
-                sb.Append(@"=> Datadog.Trace.Configuration.IntegrationId.")
+                sb.Append(@"=> Datadog.Trace.Internal.Configuration.IntegrationId.")
                   .Append(integrationName)
                   .Append(',')
                   .AppendLine();
@@ -217,7 +217,7 @@ namespace Datadog.Trace.ClrProfiler
             };
         }
 
-        public static Datadog.Trace.Configuration.IntegrationId? GetAdoNetIntegrationId(string? integrationTypeName, string? targetTypeName, string? assemblyName)
+        public static Datadog.Trace.Internal.Configuration.IntegrationId? GetAdoNetIntegrationId(string? integrationTypeName, string? targetTypeName, string? assemblyName)
         {
             return new System.Collections.Generic.KeyValuePair<string?, string?>(assemblyName, targetTypeName) switch
             {
@@ -243,7 +243,7 @@ namespace Datadog.Trace.ClrProfiler
                         // write the previous result
                         // Assumes that IntegrationName is a valid IntegrationId
                         // (Will cause compilation failures if not (so "safe")
-                        sb.Append(@"=> Datadog.Trace.Configuration.IntegrationId.")
+                        sb.Append(@"=> Datadog.Trace.Internal.Configuration.IntegrationId.")
                           .Append(integrationName)
                           .Append(@",
                     ");
@@ -263,14 +263,14 @@ namespace Datadog.Trace.ClrProfiler
             if (integrationName is not null)
             {
                 // write the last one
-                sb.Append(@"=> Datadog.Trace.Configuration.IntegrationId.")
+                sb.Append(@"=> Datadog.Trace.Internal.Configuration.IntegrationId.")
                   .Append(integrationName)
                   .Append(@",
                 ");
             }
 
             sb.Append(@"// derived attribute, assume ADO.NET
-                _ => Datadog.Trace.Configuration.IntegrationId.AdoNet,
+                _ => Datadog.Trace.Internal.Configuration.IntegrationId.AdoNet,
             };
         }
     }

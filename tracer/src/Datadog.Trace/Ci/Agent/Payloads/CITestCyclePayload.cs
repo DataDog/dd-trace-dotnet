@@ -4,12 +4,12 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.EventModel;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Internal.Ci.Configuration;
+using Datadog.Trace.Internal.Ci.EventModel;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Vendors.MessagePack;
 
-namespace Datadog.Trace.Ci.Agent.Payloads
+namespace Datadog.Trace.Internal.Ci.Agent.Payloads
 {
     internal class CITestCyclePayload : CIVisibilityProtocolPayload
     {

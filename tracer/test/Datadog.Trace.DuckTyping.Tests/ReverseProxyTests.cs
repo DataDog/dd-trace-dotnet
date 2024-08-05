@@ -22,7 +22,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         [Fact]
         public void PrivateInterfaceReverseProxyTest()
         {
-            Type iLogEventEnricherType = typeof(Datadog.Trace.Vendors.Serilog.Core.ILogEventEnricher);
+            Type iLogEventEnricherType = typeof(Datadog.Trace.Internal.Vendors.Serilog.Core.ILogEventEnricher);
 
             var resetEvent = new ManualResetEventSlim();
 
@@ -30,10 +30,10 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var proxy = instance.DuckImplement(iLogEventEnricherType);
 
-            var log = new Vendors.Serilog.LoggerConfiguration()
-                .Enrich.With((Vendors.Serilog.Core.ILogEventEnricher)proxy)
+            var log = new Internal.Vendors.Serilog.LoggerConfiguration()
+                .Enrich.With((Internal.Vendors.Serilog.Core.ILogEventEnricher)proxy)
                 .MinimumLevel.Debug()
-                .WriteTo.Sink(new Vendors.Serilog.Sinks.File.NullSink())
+                .WriteTo.Sink(new Internal.Vendors.Serilog.Sinks.File.NullSink())
                 .CreateLogger();
 
             log.Information("Hello world");
@@ -48,11 +48,11 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var eventInstance = new LogEventPropertyValueImpl(resetEvent);
 
-            var type = typeof(Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue);
+            var type = typeof(Datadog.Trace.Internal.Vendors.Serilog.Events.LogEventPropertyValue);
             var proxy2 = eventInstance.DuckImplement(type);
             eventInstance.SetBaseInstance(proxy2);
 
-            ((Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue)proxy2).ToString("Hello world", null);
+            ((Datadog.Trace.Internal.Vendors.Serilog.Events.LogEventPropertyValue)proxy2).ToString("Hello world", null);
 
             Assert.True(resetEvent.Wait(5_000));
         }
@@ -102,15 +102,15 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var formatterInstance = new JsonValueFormatterImpl(expected);
 
-            var type = typeof(Datadog.Trace.Vendors.Serilog.Formatting.Json.JsonValueFormatter);
+            var type = typeof(Datadog.Trace.Internal.Vendors.Serilog.Formatting.Json.JsonValueFormatter);
 
             var proxy2 = formatterInstance.DuckImplement(type);
 
-            var value = new Vendors.Serilog.Events.ScalarValue("original");
+            var value = new Internal.Vendors.Serilog.Events.ScalarValue("original");
 
             var sb = new StringBuilder();
             var sw = new StringWriter(sb);
-            ((Datadog.Trace.Vendors.Serilog.Formatting.Json.JsonValueFormatter)proxy2).Format(value, sw);
+            ((Datadog.Trace.Internal.Vendors.Serilog.Formatting.Json.JsonValueFormatter)proxy2).Format(value, sw);
 
             var actual = sb.ToString();
             Assert.Equal(expected, actual);

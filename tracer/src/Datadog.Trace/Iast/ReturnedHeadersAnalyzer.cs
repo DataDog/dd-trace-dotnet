@@ -7,16 +7,16 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 #endif
-using static Datadog.Trace.Telemetry.Metrics.MetricTags;
+using static Datadog.Trace.Internal.Telemetry.Metrics.MetricTags;
 
 #nullable enable
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 internal static class ReturnedHeadersAnalyzer
 {

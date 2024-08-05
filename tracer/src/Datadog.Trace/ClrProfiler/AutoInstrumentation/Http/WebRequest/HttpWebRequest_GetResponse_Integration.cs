@@ -6,10 +6,10 @@
 using System;
 using System.ComponentModel;
 using System.Net;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ExtensionMethods;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Http.WebRequest
 {
     /// <summary>
     /// CallTarget integration for HttpWebRequest.GetResponse

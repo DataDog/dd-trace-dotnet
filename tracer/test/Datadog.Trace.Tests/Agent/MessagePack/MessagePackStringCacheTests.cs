@@ -5,7 +5,7 @@
 
 using System;
 using System.Threading;
-using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Internal.Agent.MessagePack;
 using FluentAssertions;
 using MessagePack;
 using Xunit;

@@ -10,11 +10,12 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Tagging;
 using Datadog.Trace.Security.Unit.Tests.Iast;
-using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -35,7 +36,7 @@ public class ApiSecurityTests
         var apiSec = new ApiSecurity(
             new SecuritySettings(
                 new CustomSettingsForTests(
-                    new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, enable } }),
+                    new Dictionary<string, object> { { Datadog.Trace.Internal.Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, enable } }),
                 new NullConfigurationTelemetry()));
         var dic = new Dictionary<string, object>();
         var tc = new TraceContext(Mock.Of<IDatadogTracer>(), new TraceTagCollection());
@@ -64,7 +65,7 @@ public class ApiSecurityTests
     public void ApiSecurityTestMaxRoutes()
     {
         var maxRouteSize = 50;
-        var apiSec = new ApiSecurity(new SecuritySettings(new CustomSettingsForTests(new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, true } }), new NullConfigurationTelemetry()), maxRouteSize);
+        var apiSec = new ApiSecurity(new SecuritySettings(new CustomSettingsForTests(new Dictionary<string, object> { { Datadog.Trace.Internal.Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, true } }), new NullConfigurationTelemetry()), maxRouteSize);
         var queue = new Queue<int>(maxRouteSize);
         for (var i = 0; i < maxRouteSize + 1; i++)
         {
@@ -104,7 +105,7 @@ public class ApiSecurityTests
         var apiSec = new ApiSecurity(
             new SecuritySettings(
                 new CustomSettingsForTests(
-                    new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, true }, { Configuration.ConfigurationKeys.AppSec.ApiSecuritySampleDelay, 120 } }),
+                    new Dictionary<string, object> { { Datadog.Trace.Internal.Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, true }, { Datadog.Trace.Internal.Configuration.ConfigurationKeys.AppSec.ApiSecuritySampleDelay, 120 } }),
                 new NullConfigurationTelemetry()));
         var dic = new Dictionary<string, object> { { "controller", "test" }, { "action", "test" } };
         var tc = new TraceContext(Mock.Of<IDatadogTracer>(), new TraceTagCollection());

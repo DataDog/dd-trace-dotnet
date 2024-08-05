@@ -4,9 +4,9 @@
 // </copyright>
 
 #nullable enable
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
 
 /// <summary>
 /// Reverse duck type for Datadog.Trace.Ci.BenchmarkJobInfo in Datadog.Trace.Manual

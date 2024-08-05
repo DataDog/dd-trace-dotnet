@@ -9,12 +9,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using Datadog.Trace.AspNet;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.AspNet;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNet;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.AppSec
+namespace Datadog.Trace.Internal.AppSec
 {
     internal static class ControllerContextExtensions
     {

@@ -4,11 +4,11 @@
 // </copyright>
 #nullable enable
 
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Converters;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization;
 
-namespace Datadog.Trace.Debugger.Symbols.Model;
+namespace Datadog.Trace.Internal.Debugger.Symbols.Model;
 
 internal record struct Symbol
 {

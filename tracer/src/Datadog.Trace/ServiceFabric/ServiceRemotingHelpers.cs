@@ -8,10 +8,10 @@
 using System;
 using System.Globalization;
 using System.Reflection;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ServiceFabric
+namespace Datadog.Trace.Internal.ServiceFabric
 {
     internal static class ServiceRemotingHelpers
     {

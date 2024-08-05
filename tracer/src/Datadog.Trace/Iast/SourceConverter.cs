@@ -7,16 +7,16 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Iast.SensitiveData;
-using Datadog.Trace.Iast.Settings;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Iast.SensitiveData;
+using Datadog.Trace.Internal.Iast.Settings;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 /// <summary>
-/// Custom JSON serializer for <see cref="Datadog.Trace.Iast.Source"/> struct
+/// Custom JSON serializer for <see cref="Datadog.Trace.Internal.Iast.Source"/> struct
 /// </summary>
 internal class SourceConverter : JsonConverter<Source>
 {

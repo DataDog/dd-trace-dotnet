@@ -7,10 +7,10 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Iast;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Iast;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Html
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore.Html
 {
     /// <summary>
     /// System.Diagnostics.Process calltarget instrumentation

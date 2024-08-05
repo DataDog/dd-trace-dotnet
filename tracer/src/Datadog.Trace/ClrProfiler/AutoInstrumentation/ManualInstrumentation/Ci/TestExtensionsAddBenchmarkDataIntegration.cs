@@ -1,4 +1,4 @@
-﻿// <copyright file="TestExtensionsAddBenchmarkDataIntegration.cs" company="Datadog">
+// <copyright file="TestExtensionsAddBenchmarkDataIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,12 +6,13 @@
 #nullable enable
 using System.ComponentModel;
 using Datadog.Trace.Ci;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Vendors.StatsdClient.Statistic;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Statistic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci;
 
 /// <summary>
 /// Datadog.Trace.Ci.TestExtensions::AddBenchmarkData() calltarget instrumentation

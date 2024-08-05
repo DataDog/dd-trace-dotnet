@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.Data;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 using Moq;
 using Xunit;
 

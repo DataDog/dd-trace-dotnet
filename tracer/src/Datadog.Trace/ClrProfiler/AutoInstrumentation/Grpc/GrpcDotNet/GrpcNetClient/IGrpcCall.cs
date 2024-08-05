@@ -8,7 +8,7 @@
 
 using System.Net.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient
 {
     /// <summary>
     /// Duck type for Grpc.Net.Client.Internal.GrpcCall{TRequest, TResponse}

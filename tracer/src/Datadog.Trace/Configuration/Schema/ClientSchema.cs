@@ -6,10 +6,10 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.ServiceFabric;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.ServiceFabric;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.Configuration.Schema
+namespace Datadog.Trace.Internal.Configuration.Schema
 {
     internal class ClientSchema
     {

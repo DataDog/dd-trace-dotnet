@@ -1,10 +1,10 @@
-﻿// <copyright file="AspNetCoreResourceNameHelperTests.cs" company="Datadog">
+// <copyright file="AspNetCoreResourceNameHelperTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #if !NETFRAMEWORK
-using Datadog.Trace.DiagnosticListeners;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DiagnosticListeners;
+using Datadog.Trace.Internal.DuckTyping;
 using FluentAssertions;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Constraints;
@@ -120,7 +120,7 @@ public class AspNetCoreResourceNameHelperTests
     public void SimplifyRoutePattern_CleansValidRouteTemplates(string template, string expected, bool expandRouteTemplates)
     {
         var originalPattern = RoutePatternFactory.Parse(template);
-        var duckTypedPattern = originalPattern.DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
+        var duckTypedPattern = originalPattern.DuckCast<Datadog.Trace.Internal.DiagnosticListeners.RoutePattern>();
         var resource = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
             routePattern: duckTypedPattern,
             routeValueDictionary: Values,
@@ -137,7 +137,7 @@ public class AspNetCoreResourceNameHelperTests
     public void SimplifyRoutePattern_CleansValidRouteTemplatesWithDefaults(string template, string expected, bool expandRouteTemplates)
     {
         var originalPattern = RoutePatternFactory.Parse(template, Defaults, parameterPolicies: ParameterPolicies);
-        var duckTypedPattern = originalPattern.DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
+        var duckTypedPattern = originalPattern.DuckCast<Datadog.Trace.Internal.DiagnosticListeners.RoutePattern>();
         var resource = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
             routePattern: duckTypedPattern,
             routeValueDictionary: Values,

@@ -4,9 +4,9 @@
 // </copyright>
 
 #nullable enable
-using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Hashes;
 
-namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Aggregation;
 
 internal readonly struct StatsPoint
 {

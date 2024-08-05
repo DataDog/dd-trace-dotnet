@@ -6,7 +6,7 @@
 using System;
 using System.Globalization;
 
-namespace Datadog.Trace.Sampling;
+namespace Datadog.Trace.Internal.Sampling;
 
 /// <summary>
 /// The mechanism used to make a trace sampling decision.

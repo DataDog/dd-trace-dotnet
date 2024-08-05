@@ -5,10 +5,10 @@
 
 using System;
 using System.Linq;
-using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Debugger;
+using Datadog.Trace.Internal.Debugger.Sink;
+using Datadog.Trace.Internal.Debugger.Sink.Models;
+using Datadog.Trace.Internal.Util;
 using FluentAssertions;
 using Xunit;
 

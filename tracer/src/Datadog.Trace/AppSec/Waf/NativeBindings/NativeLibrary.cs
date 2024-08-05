@@ -6,10 +6,10 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.AppSec.Waf.NativeBindings
+namespace Datadog.Trace.Internal.AppSec.Waf.NativeBindings
 {
     /// <summary>
     /// APIs for managing Native Libraries

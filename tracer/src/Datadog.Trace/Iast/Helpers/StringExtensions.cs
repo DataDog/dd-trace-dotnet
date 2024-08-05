@@ -6,7 +6,7 @@
 #nullable enable
 using System;
 
-namespace Datadog.Trace.Iast.Helpers;
+namespace Datadog.Trace.Internal.Iast.Helpers;
 
 internal static class StringExtensions
 {

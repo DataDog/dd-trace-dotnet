@@ -6,9 +6,9 @@
 #if NETFRAMEWORK
 using System.Web;
 using System.Web.Routing;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// ControllerContext struct copy target for ducktyping

@@ -8,10 +8,10 @@
 using System;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Redis
 {
     internal static class RedisHelper
     {

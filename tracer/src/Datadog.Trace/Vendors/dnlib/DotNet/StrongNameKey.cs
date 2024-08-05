@@ -11,7 +11,7 @@ using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Threading;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Thrown if the strong name key or public key is invalid
 	/// </summary>

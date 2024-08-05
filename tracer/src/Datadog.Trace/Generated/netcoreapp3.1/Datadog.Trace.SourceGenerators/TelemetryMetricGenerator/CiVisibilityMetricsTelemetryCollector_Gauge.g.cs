@@ -8,7 +8,7 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 internal partial class CiVisibilityMetricsTelemetryCollector
 {
 
@@ -16,7 +16,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
-    public void RecordGaugeInstrumentations(Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationComponent tag, int value)
+    public void RecordGaugeInstrumentations(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.InstrumentationComponent tag, int value)
     {
     }
 

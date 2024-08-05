@@ -5,9 +5,9 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.ILogger
 {
     /// <summary>
     /// LoggerFactoryScopeProvider.ForEach&lt;TState&gt; calltarget instrumentation

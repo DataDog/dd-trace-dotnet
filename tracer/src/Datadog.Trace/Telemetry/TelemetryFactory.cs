@@ -5,14 +5,14 @@
 #nullable enable
 using System;
 using System.Threading;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Collectors;
-using Datadog.Trace.Telemetry.Transports;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry.Collectors;
+using Datadog.Trace.Internal.Telemetry.Transports;
 
-namespace Datadog.Trace.Telemetry
+namespace Datadog.Trace.Internal.Telemetry
 {
     internal class TelemetryFactory
     {

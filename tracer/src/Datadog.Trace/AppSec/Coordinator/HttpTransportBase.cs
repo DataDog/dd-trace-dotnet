@@ -5,15 +5,15 @@
 
 #nullable enable
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Headers;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.Headers;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 #else
 using System.Web;
 #endif
 
-namespace Datadog.Trace.AppSec.Coordinator;
+namespace Datadog.Trace.Internal.AppSec.Coordinator;
 
 internal abstract class HttpTransportBase
 {

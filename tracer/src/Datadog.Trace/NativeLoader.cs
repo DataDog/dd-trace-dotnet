@@ -6,9 +6,9 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     internal static class NativeLoader
     {

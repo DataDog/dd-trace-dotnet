@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Processors
+namespace Datadog.Trace.Internal.Processors
 {
     internal class ObfuscatorTagsProcessor : ITagProcessor
     {
@@ -20,7 +20,7 @@ namespace Datadog.Trace.Processors
         public void ProcessMeta(ref string key, ref string value)
         {
             // https://github.dev/DataDog/datadog-agent/blob/712c7a7835e0f5aaa47211c4d75a84323eed7fd9/pkg/trace/obfuscate/redis.go#L91
-            if (_redisObfuscationEnabled && key == Trace.Tags.RedisRawCommand)
+            if (_redisObfuscationEnabled && key == Trace.Internal.Tags.RedisRawCommand)
             {
                 value = RedisObfuscationUtil.Obfuscate(value);
                 Log.Debug("span.obfuscate: obfuscating `redis.raw_command` value");

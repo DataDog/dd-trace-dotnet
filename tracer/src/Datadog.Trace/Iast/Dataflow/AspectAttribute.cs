@@ -11,9 +11,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Iast.Helpers;
+using Datadog.Trace.Internal.Iast.Helpers;
 
-namespace Datadog.Trace.Iast.Dataflow;
+namespace Datadog.Trace.Internal.Iast.Dataflow;
 
 /// <summary>
 /// Attribute to define am aspect method for Dataflow

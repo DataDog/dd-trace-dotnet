@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Datadog.Trace.Vendors.Serilog.Events
+namespace Datadog.Trace.Internal.Vendors.Serilog.Events
 {
     /// <summary>
     /// A value represented as a collection of name-value properties.

@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections;
-using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
 using FluentAssertions;
 using Xunit;
 

@@ -3,29 +3,29 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     internal partial class AerospikeTags : InstrumentationTags
     {
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Trace.Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Internal.Tags.InstrumentationName)]
         public string InstrumentationName => "aerospike";
 
-        [Tag(Trace.Tags.AerospikeKey)]
+        [Tag(Trace.Internal.Tags.AerospikeKey)]
         public string Key { get; set; }
 
-        [Tag(Trace.Tags.AerospikeNamespace)]
+        [Tag(Trace.Internal.Tags.AerospikeNamespace)]
         public string Namespace { get; set; }
 
-        [Tag(Trace.Tags.AerospikeSetName)]
+        [Tag(Trace.Internal.Tags.AerospikeSetName)]
         public string SetName { get; set; }
 
-        [Tag(Trace.Tags.AerospikeUserKey)]
+        [Tag(Trace.Internal.Tags.AerospikeUserKey)]
         public string UserKey { get; set; }
     }
 
@@ -38,14 +38,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Trace.Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? Namespace;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Trace.Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tagging
                 return _peerServiceOverride is not null
                         ? "peer.service"
                         : Namespace is not null
-                            ? Trace.Tags.AerospikeNamespace
+                            ? Trace.Internal.Tags.AerospikeNamespace
                             : null;
             }
         }

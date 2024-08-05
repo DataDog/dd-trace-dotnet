@@ -13,7 +13,7 @@ using System.Linq;
 using System.Collections.Concurrent;
 #endif
 
-namespace Datadog.Trace.Vendors.MessagePack.Formatters
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Formatters
 {
     internal sealed class ArrayFormatter<T> : IMessagePackFormatter<T[]>
     {

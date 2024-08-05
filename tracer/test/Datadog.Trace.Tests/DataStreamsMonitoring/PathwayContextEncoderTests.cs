@@ -4,8 +4,8 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Hashes;
 using FluentAssertions;
 using Xunit;
 

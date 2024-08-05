@@ -6,7 +6,7 @@
 #if !NETFRAMEWORK
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
 /// <summary>
 /// Duck type for auto-generated proto message.

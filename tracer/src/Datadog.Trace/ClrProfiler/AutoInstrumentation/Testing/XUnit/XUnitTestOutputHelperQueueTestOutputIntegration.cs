@@ -5,14 +5,14 @@
 #nullable enable
 
 using System.ComponentModel;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Logging.DirectSubmission;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.Logging.DirectSubmission;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 /// <summary>
 /// Xunit.Sdk.TestOutputHelper.QueueTestOutput calltarget instrumentation

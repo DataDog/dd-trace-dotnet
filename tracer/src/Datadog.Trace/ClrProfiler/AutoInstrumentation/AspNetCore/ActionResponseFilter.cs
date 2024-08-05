@@ -7,12 +7,12 @@
 
 #if !NETFRAMEWORK
 
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Coordinator;
+using Datadog.Trace.Internal.DuckTyping;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore;
 
 internal class ActionResponseFilter : IActionFilter
 {

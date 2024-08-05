@@ -7,10 +7,10 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.Agent.Payloads;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Ci.Agent.Payloads;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Ci.Agent
+namespace Datadog.Trace.Internal.Ci.Agent
 {
     /// <summary>
     /// This class is for debugging purposes only.

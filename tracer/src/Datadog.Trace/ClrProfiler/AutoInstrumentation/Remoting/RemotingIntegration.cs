@@ -9,11 +9,11 @@
 
 using System;
 using System.Runtime.Remoting.Messaging;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Remoting
 {
     internal static class RemotingIntegration
     {

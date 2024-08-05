@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Logging.Internal.Configuration;
+namespace Datadog.Trace.Internal.Logging.Internal.Configuration;
 
 internal static class LogSinkOptions
 {

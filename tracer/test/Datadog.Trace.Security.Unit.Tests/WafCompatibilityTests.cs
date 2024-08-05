@@ -4,8 +4,8 @@
 // </copyright>
 
 using System.Diagnostics;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;

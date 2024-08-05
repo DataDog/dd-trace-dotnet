@@ -8,10 +8,10 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     /// <summary>
     /// AWSSDK.Kinesis PutRecordsAsync CallTarget instrumentation

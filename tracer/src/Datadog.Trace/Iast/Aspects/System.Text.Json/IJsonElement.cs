@@ -3,11 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Aspects.System.Text.Json;
+namespace Datadog.Trace.Internal.Iast.Aspects.System.Text.Json;
 
 internal interface IJsonElement
 {

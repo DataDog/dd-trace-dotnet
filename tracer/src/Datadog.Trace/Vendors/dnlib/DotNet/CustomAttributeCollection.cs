@@ -6,10 +6,10 @@
 // dnlib: See LICENSE.txt for more info
 
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.dnlib.Utils;
+using Datadog.Trace.Internal.Vendors.dnlib.Utils;
 using System;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Stores <see cref="CustomAttribute"/>s
 	/// </summary>

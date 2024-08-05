@@ -9,7 +9,7 @@ using System;
 using System.ComponentModel;
 
 #pragma warning disable SA1649 // File name must match first type name
-namespace Datadog.Trace.ServiceFabric
+namespace Datadog.Trace.Internal.ServiceFabric
 {
     /// <summary>
     /// For internal use only.

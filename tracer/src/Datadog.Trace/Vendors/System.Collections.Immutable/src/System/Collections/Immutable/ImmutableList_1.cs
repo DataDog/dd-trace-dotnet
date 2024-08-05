@@ -21,7 +21,7 @@ using System.Threading;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable
 {
     /// <summary>Represents an immutable list, which is a strongly typed list of objects that can be accessed by index.
     /// 

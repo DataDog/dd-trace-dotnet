@@ -6,11 +6,11 @@
 
 #nullable enable
 
-using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Tagging;
 using System;
 
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     partial class AwsSqsTags
     {

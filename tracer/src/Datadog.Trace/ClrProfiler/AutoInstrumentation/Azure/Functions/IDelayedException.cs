@@ -9,7 +9,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     internal interface IDelayedException
     {

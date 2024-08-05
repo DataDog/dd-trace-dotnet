@@ -14,7 +14,7 @@ using System.Reflection;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
   internal readonly struct DeclarativeSecurityAttribute
   {

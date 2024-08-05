@@ -16,18 +16,18 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Iast.Telemetry;
-using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Ci.CiEnvironment;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Iast.Telemetry;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol.Tuf;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -458,7 +458,7 @@ namespace Datadog.Trace.TestHelpers
         protected void SetSecurity(bool security)
         {
             SecurityEnabled = security;
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, security ? "true" : "false");
+            SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.AppSec.Enabled, security ? "true" : "false");
         }
 
         protected void SetInstrumentationVerification()

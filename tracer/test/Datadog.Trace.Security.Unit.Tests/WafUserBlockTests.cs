@@ -6,12 +6,12 @@
 #nullable enable
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rcm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmData;
-using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Rcm;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.AsmData;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Security.Unit.Tests.Utils;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 

@@ -12,12 +12,12 @@
 using System;
 using System.IO;
 using System.Reflection;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.PortableExecutable
 {
     /// <summary>
     /// An object used to read PE (Portable Executable) and COFF (Common Object File Format) headers from a stream.

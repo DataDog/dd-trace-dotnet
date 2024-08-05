@@ -4,8 +4,8 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.DataStreamsMonitoring.Utils;
-using Datadog.Trace.Vendors.Datadog.Sketches;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Utils;
+using Datadog.Trace.Internal.Vendors.Datadog.Sketches;
 using FluentAssertions;
 using Xunit;
 

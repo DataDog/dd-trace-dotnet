@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource();
             var settings = new RemoteConfigurationSettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.RuntimeId.Should().Be(Datadog.Trace.Util.RuntimeId.Get());
+            settings.RuntimeId.Should().Be(Datadog.Trace.Internal.Util.RuntimeId.Get());
         }
 
         [Fact]

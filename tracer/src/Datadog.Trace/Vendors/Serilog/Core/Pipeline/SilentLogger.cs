@@ -18,9 +18,9 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Vendors.Serilog.Core.Pipeline
+namespace Datadog.Trace.Internal.Vendors.Serilog.Core.Pipeline
 {
     class SilentLogger : ILogger
     {

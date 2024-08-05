@@ -7,9 +7,9 @@
 
 using System;
 using System.Diagnostics.SymbolStore;
-using Datadog.Trace.Vendors.dnlib.DotNet.Writer;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.WindowsPdb {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.WindowsPdb {
 	abstract class SymbolWriter : IDisposable {
 		public abstract bool IsDeterministic { get; }
 		public abstract bool SupportsAsyncMethods { get; }

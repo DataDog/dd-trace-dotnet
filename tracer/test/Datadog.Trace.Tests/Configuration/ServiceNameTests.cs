@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using FluentAssertions;
 using Moq;
 using Xunit;

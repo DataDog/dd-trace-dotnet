@@ -3,33 +3,33 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Tagging;
 
 #pragma warning disable SA1402 // File must contain single type
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb
 {
     internal partial class MongoDbTags : InstrumentationTags
     {
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Trace.Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Internal.Tags.InstrumentationName)]
         public string InstrumentationName => MongoDbIntegration.IntegrationName;
 
-        [Tag(Trace.Tags.DbName)]
+        [Tag(Trace.Internal.Tags.DbName)]
         public string DbName { get; set; }
 
-        [Tag(Trace.Tags.MongoDbQuery)]
+        [Tag(Trace.Internal.Tags.MongoDbQuery)]
         public string Query { get; set; }
 
-        [Tag(Trace.Tags.MongoDbCollection)]
+        [Tag(Trace.Internal.Tags.MongoDbCollection)]
         public string Collection { get; set; }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Trace.Internal.Tags.OutHost)]
         public string Host { get; set; }
 
-        [Tag(Trace.Tags.OutPort)]
+        [Tag(Trace.Internal.Tags.OutPort)]
         public string Port { get; set; }
     }
 
@@ -42,14 +42,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Trace.Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? DbName ?? Host;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Trace.Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

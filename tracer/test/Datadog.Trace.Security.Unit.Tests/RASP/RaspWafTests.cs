@@ -6,17 +6,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rcm;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Rcm;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 
-using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
+using Action = Datadog.Trace.Internal.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
@@ -162,7 +162,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         var newAction = new Action();
         newAction.Id = action;
         newAction.Type = actionType;
-        newAction.Parameters = new AppSec.Rcm.Models.Asm.Parameter();
+        newAction.Parameters = new Internal.AppSec.Rcm.Models.Asm.Parameter();
         newAction.Parameters.StatusCode = newStatus;
         newAction.Parameters.Type = "auto";
 

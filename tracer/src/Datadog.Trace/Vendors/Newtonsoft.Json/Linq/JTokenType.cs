@@ -30,7 +30,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Linq
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq
 {
     /// <summary>
     /// Specifies the type of token.

@@ -15,7 +15,7 @@ using System.Threading;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal
 {
     /// <summary>
     /// Generic implementation of object pooling pattern with predefined pool size limit. The main

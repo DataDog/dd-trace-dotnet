@@ -5,11 +5,11 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Agent.TraceSamplers
+namespace Datadog.Trace.Internal.Agent.TraceSamplers
 {
     internal class RareSampler : ITraceChunkSampler
     {

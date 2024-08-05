@@ -34,7 +34,7 @@ using System.Collections.ObjectModel;
 
 #nullable disable
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Schema
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Schema
 {
     [Obsolete("JSON Schema validation has been moved to its own package. See https://www.newtonsoft.com/jsonschema for more details.")]
     internal class JsonSchemaNodeCollection : KeyedCollection<string, JsonSchemaNode>

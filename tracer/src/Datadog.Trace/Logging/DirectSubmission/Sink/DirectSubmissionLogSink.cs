@@ -9,11 +9,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Sink.PeriodicBatching;
+using Datadog.Trace.Internal.Telemetry;
 
-namespace Datadog.Trace.Logging.DirectSubmission.Sink
+namespace Datadog.Trace.Internal.Logging.DirectSubmission.Sink
 {
     internal class DirectSubmissionLogSink : BatchingSink<DirectSubmissionLogEvent>, IDirectSubmissionLogSink
     {

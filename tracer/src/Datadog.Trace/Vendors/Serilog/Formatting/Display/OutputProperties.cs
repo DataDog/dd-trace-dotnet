@@ -19,12 +19,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Formatting.Display.Obsolete;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Formatting.Display.Obsolete;
 
 #pragma warning disable 618
 
-namespace Datadog.Trace.Vendors.Serilog.Formatting.Display
+namespace Datadog.Trace.Internal.Vendors.Serilog.Formatting.Display
 {
     /// <summary>
     /// Describes the properties available in standard message template-based

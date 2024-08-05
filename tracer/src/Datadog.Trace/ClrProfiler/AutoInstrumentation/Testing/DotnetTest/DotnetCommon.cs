@@ -1,4 +1,4 @@
-﻿// <copyright file="DotnetCommon.cs" company="Datadog">
+// <copyright file="DotnetCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,15 +11,16 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 {
     internal static class DotnetCommon
     {

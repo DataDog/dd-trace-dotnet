@@ -9,7 +9,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Util
+namespace Datadog.Trace.Internal.Util
 {
     internal class ThrowHelper
     {

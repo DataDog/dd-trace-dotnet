@@ -6,11 +6,11 @@
 using System;
 using System.Globalization;
 using System.Net;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.Util;
 #pragma warning disable CS0618 // WebRequest, HttpWebRequest, ServicePoint, and WebClient are obsolete. Use HttpClient instead.
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 
 internal class LambdaRequestBuilder : ILambdaExtensionRequest
 {

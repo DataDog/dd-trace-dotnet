@@ -7,7 +7,7 @@ using System.ComponentModel;
 
 #pragma warning disable SA1300
 
-namespace Datadog.Trace.Debugger.Snapshots
+namespace Datadog.Trace.Internal.Debugger.Snapshots
 {
     internal static partial class DebuggerSnapshotSerializer
     {

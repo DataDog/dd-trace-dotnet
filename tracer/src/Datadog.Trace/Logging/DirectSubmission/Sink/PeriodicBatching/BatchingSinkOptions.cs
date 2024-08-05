@@ -21,7 +21,7 @@
 
 using System;
 
-namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
+namespace Datadog.Trace.Internal.Logging.DirectSubmission.Sink.PeriodicBatching
 {
     internal class BatchingSinkOptions
     {

@@ -32,7 +32,7 @@
 using System;
 using System.Collections.Generic;
 #if !HAVE_LINQ
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.LinqBridge;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities.LinqBridge;
 #else
 using System.Linq;
 
@@ -40,7 +40,7 @@ using System.Linq;
 
 #nullable disable
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Schema
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Schema
 {
     /// <summary>
     /// <para>

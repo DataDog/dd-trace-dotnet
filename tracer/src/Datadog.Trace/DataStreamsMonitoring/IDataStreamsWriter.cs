@@ -5,9 +5,9 @@
 
 #nullable enable
 using System.Threading.Tasks;
-using Datadog.Trace.DataStreamsMonitoring.Aggregation;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Aggregation;
 
-namespace Datadog.Trace.DataStreamsMonitoring;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring;
 
 internal interface IDataStreamsWriter
 {

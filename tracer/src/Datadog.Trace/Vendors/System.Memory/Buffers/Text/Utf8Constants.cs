@@ -12,7 +12,7 @@
 
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers.Text
 {
   internal static class Utf8Constants
   {

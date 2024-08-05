@@ -9,7 +9,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.HttpOverStreams.HttpContent;
+namespace Datadog.Trace.Internal.HttpOverStreams.HttpContent;
 
 /// <summary>
 /// Provides an <see cref="HttpContent"/> implementation that exposes an output <see cref="Stream"/>

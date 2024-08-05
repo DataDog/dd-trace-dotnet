@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.MessagePack.Internal
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Internal
 {
     // Safe for multiple-read, single-write.
 

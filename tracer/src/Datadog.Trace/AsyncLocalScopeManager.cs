@@ -5,10 +5,10 @@
 
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.ContinuousProfiler;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     internal class AsyncLocalScopeManager : IScopeManager, IScopeRawAccess
     {

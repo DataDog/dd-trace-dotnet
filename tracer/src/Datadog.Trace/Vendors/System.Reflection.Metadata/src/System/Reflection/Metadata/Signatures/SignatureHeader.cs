@@ -15,7 +15,7 @@ using System.Diagnostics.CodeAnalysis;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
     /// <summary>
     /// Represents the signature characteristics specified by the leading byte of signature blobs.

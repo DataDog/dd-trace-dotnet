@@ -6,10 +6,10 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Debugger.ProbeStatuses;
-using Datadog.Trace.Debugger.Sink.Models;
+using Datadog.Trace.Internal.Debugger.ProbeStatuses;
+using Datadog.Trace.Internal.Debugger.Sink.Models;
 
-namespace Datadog.Trace.Debugger.PInvoke
+namespace Datadog.Trace.Internal.Debugger.PInvoke
 {
     internal static class DebuggerNativeMethods
     {

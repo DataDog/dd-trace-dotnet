@@ -8,9 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol;
 
-namespace Datadog.Trace.RemoteConfigurationManagement;
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement;
 
 internal interface IRcmSubscriptionManager
 {

@@ -8,13 +8,13 @@ using System;
 using System.ComponentModel;
 using System.Reflection;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Tagging;
-using CommonTags = Datadog.Trace.Ci.Tags.CommonTags;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Tagging;
+using CommonTags = Datadog.Trace.Internal.Ci.Tags.CommonTags;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 /// <summary>
 /// Xunit.Sdk.TestAssemblyRunner`1.RunAsync calltarget instrumentation

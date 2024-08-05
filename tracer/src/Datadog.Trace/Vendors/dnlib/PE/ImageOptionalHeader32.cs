@@ -6,9 +6,9 @@
 // dnlib: See LICENSE.txt for more info
 
 using System;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.PE {
+namespace Datadog.Trace.Internal.Vendors.dnlib.PE {
 	/// <summary>
 	/// Represents the IMAGE_OPTIONAL_HEADER (32-bit) PE section
 	/// </summary>

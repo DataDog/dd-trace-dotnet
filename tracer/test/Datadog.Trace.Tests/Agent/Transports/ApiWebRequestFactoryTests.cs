@@ -6,7 +6,7 @@
 using System;
 using System.Net;
 using System.Reflection;
-using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Internal.Agent.Transports;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Agent.Transports

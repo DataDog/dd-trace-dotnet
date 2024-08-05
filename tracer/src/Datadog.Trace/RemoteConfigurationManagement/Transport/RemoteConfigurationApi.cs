@@ -9,15 +9,15 @@ using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.PlatformHelpers;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Transport
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement.Transport
 {
     internal class RemoteConfigurationApi : IRemoteConfigurationApi
     {

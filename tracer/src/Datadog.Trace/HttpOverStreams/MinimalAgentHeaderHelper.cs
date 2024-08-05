@@ -6,7 +6,7 @@
 
 using System.Linq;
 
-namespace Datadog.Trace.HttpOverStreams;
+namespace Datadog.Trace.Internal.HttpOverStreams;
 
 internal class MinimalAgentHeaderHelper : HttpHeaderHelperBase
 {

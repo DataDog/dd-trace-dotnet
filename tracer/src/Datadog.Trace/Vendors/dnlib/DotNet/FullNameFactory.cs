@@ -8,7 +8,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Helps <see cref="FullNameFactory"/> create a name
 	/// </summary>

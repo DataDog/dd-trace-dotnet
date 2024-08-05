@@ -4,10 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.DataStreamsMonitoring.Transport;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Transport;
 
 internal static class DataStreamsTransportStrategy
 {

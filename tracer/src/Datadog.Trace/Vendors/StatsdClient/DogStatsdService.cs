@@ -4,9 +4,9 @@
 //------------------------------------------------------------------------------
 using System;
 using System.Globalization;
-using Datadog.Trace.Vendors.StatsdClient.Bufferize;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Bufferize;
 
-namespace Datadog.Trace.Vendors.StatsdClient
+namespace Datadog.Trace.Internal.Vendors.StatsdClient
 {
     /// <summary>
     /// DogStatsdService is a <a href="https://docs.datadoghq.com/developers/dogstatsd/?tab=net">DogStatsD client</a>.

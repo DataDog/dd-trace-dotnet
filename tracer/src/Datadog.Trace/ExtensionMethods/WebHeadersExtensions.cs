@@ -7,10 +7,10 @@
 
 using System;
 using System.Net;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ExtensionMethods
+namespace Datadog.Trace.Internal.ExtensionMethods
 {
     /// <summary>
     /// Extension methods for <see cref="WebHeaderCollection"/> objects.

@@ -12,7 +12,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Datadog.Trace.Vendors.Datadog.Sketches.Serialization
+namespace Datadog.Trace.Internal.Vendors.Datadog.Sketches.Serialization
 {
     /// <summary>
     /// This class is used to perform protobuf serialization compliant with the official schema used to

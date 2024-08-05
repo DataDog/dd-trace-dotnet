@@ -6,7 +6,7 @@
 using System;
 using System.Text;
 
-namespace Datadog.Trace.Util;
+namespace Datadog.Trace.Internal.Util;
 
 /// <summary>
 /// Calculates the FNV 64 bit hash

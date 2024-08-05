@@ -14,10 +14,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using Unsafe = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System
 {
     internal static class MemoryExtensions
   {
@@ -124,111 +124,111 @@ label_8:
     public static int IndexOf<T>(this Span<T> span, T value) where T : IEquatable<T>
     {
       if (typeof (T) == typeof (byte))
-        return SpanHelpers.IndexOf(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value), span.Length);
-      return typeof (T) == typeof (char) ? SpanHelpers.IndexOf(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref value), span.Length) : SpanHelpers.IndexOf<T>(ref MemoryMarshal.GetReference<T>(span), value, span.Length);
+        return SpanHelpers.IndexOf(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value), span.Length);
+      return typeof (T) == typeof (char) ? SpanHelpers.IndexOf(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref value), span.Length) : SpanHelpers.IndexOf<T>(ref MemoryMarshal.GetReference<T>(span), value, span.Length);
     }
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int IndexOf<T>(this Span<T> span, ReadOnlySpan<T> value) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOf(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), value.Length) : SpanHelpers.IndexOf<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(value), value.Length);
+    public static int IndexOf<T>(this Span<T> span, ReadOnlySpan<T> value) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOf(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), value.Length) : SpanHelpers.IndexOf<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(value), value.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
     public static int LastIndexOf<T>(this Span<T> span, T value) where T : IEquatable<T>
     {
       if (typeof (T) == typeof (byte))
-        return SpanHelpers.LastIndexOf(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value), span.Length);
-      return typeof (T) == typeof (char) ? SpanHelpers.LastIndexOf(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref value), span.Length) : SpanHelpers.LastIndexOf<T>(ref MemoryMarshal.GetReference<T>(span), value, span.Length);
+        return SpanHelpers.LastIndexOf(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value), span.Length);
+      return typeof (T) == typeof (char) ? SpanHelpers.LastIndexOf(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref value), span.Length) : SpanHelpers.LastIndexOf<T>(ref MemoryMarshal.GetReference<T>(span), value, span.Length);
     }
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int LastIndexOf<T>(this Span<T> span, ReadOnlySpan<T> value) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOf(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), value.Length) : SpanHelpers.LastIndexOf<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(value), value.Length);
+    public static int LastIndexOf<T>(this Span<T> span, ReadOnlySpan<T> value) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOf(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), value.Length) : SpanHelpers.LastIndexOf<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(value), value.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
     public static bool SequenceEqual<T>(this Span<T> span, ReadOnlySpan<T> other) where T : IEquatable<T>
     {
       int length = span.Length;
       nuint size;
-      return default (T) != null && MemoryExtensions.IsTypeComparableAsBytes<T>(out size) ? length == other.Length && SpanHelpers.SequenceEqual(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(other)), (int)((nuint) length * size)) : length == other.Length && SpanHelpers.SequenceEqual<T>(ref MemoryMarshal.GetReference<T>(span), ref MemoryMarshal.GetReference<T>(other), length);
+      return default (T) != null && MemoryExtensions.IsTypeComparableAsBytes<T>(out size) ? length == other.Length && SpanHelpers.SequenceEqual(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(other)), (int)((nuint) length * size)) : length == other.Length && SpanHelpers.SequenceEqual<T>(ref MemoryMarshal.GetReference<T>(span), ref MemoryMarshal.GetReference<T>(other), length);
     }
 
     public static int SequenceCompareTo<T>(this Span<T> span, ReadOnlySpan<T> other) where T : IComparable<T>
     {
       if (typeof (T) == typeof (byte))
-        return SpanHelpers.SequenceCompareTo(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(other)), other.Length);
-      return typeof (T) == typeof (char) ? SpanHelpers.SequenceCompareTo(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(other)), other.Length) : SpanHelpers.SequenceCompareTo<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(other), other.Length);
+        return SpanHelpers.SequenceCompareTo(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(other)), other.Length);
+      return typeof (T) == typeof (char) ? SpanHelpers.SequenceCompareTo(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(other)), other.Length) : SpanHelpers.SequenceCompareTo<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(other), other.Length);
     }
 
     [MethodImpl((MethodImplOptions) 256)]
     public static int IndexOf<T>(this ReadOnlySpan<T> span, T value) where T : IEquatable<T>
     {
       if (typeof (T) == typeof (byte))
-        return SpanHelpers.IndexOf(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value), span.Length);
-      return typeof (T) == typeof (char) ? SpanHelpers.IndexOf(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref value), span.Length) : SpanHelpers.IndexOf<T>(ref MemoryMarshal.GetReference<T>(span), value, span.Length);
+        return SpanHelpers.IndexOf(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value), span.Length);
+      return typeof (T) == typeof (char) ? SpanHelpers.IndexOf(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref value), span.Length) : SpanHelpers.IndexOf<T>(ref MemoryMarshal.GetReference<T>(span), value, span.Length);
     }
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int IndexOf<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> value) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOf(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), value.Length) : SpanHelpers.IndexOf<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(value), value.Length);
+    public static int IndexOf<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> value) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOf(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), value.Length) : SpanHelpers.IndexOf<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(value), value.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
     public static int LastIndexOf<T>(this ReadOnlySpan<T> span, T value) where T : IEquatable<T>
     {
       if (typeof (T) == typeof (byte))
-        return SpanHelpers.LastIndexOf(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value), span.Length);
-      return typeof (T) == typeof (char) ? SpanHelpers.LastIndexOf(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref value), span.Length) : SpanHelpers.LastIndexOf<T>(ref MemoryMarshal.GetReference<T>(span), value, span.Length);
+        return SpanHelpers.LastIndexOf(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value), span.Length);
+      return typeof (T) == typeof (char) ? SpanHelpers.LastIndexOf(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref value), span.Length) : SpanHelpers.LastIndexOf<T>(ref MemoryMarshal.GetReference<T>(span), value, span.Length);
     }
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int LastIndexOf<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> value) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOf(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), value.Length) : SpanHelpers.LastIndexOf<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(value), value.Length);
+    public static int LastIndexOf<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> value) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOf(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), value.Length) : SpanHelpers.LastIndexOf<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(value), value.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int IndexOfAny<T>(this Span<T> span, T value0, T value1) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOfAny(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value0), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value1), span.Length) : SpanHelpers.IndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, span.Length);
+    public static int IndexOfAny<T>(this Span<T> span, T value0, T value1) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOfAny(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value0), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value1), span.Length) : SpanHelpers.IndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, span.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int IndexOfAny<T>(this Span<T> span, T value0, T value1, T value2) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOfAny(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value0), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value1), Unsafe.As<T, byte>(ref value2), span.Length) : SpanHelpers.IndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, value2, span.Length);
+    public static int IndexOfAny<T>(this Span<T> span, T value0, T value1, T value2) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOfAny(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value0), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value1), Unsafe.As<T, byte>(ref value2), span.Length) : SpanHelpers.IndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, value2, span.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int IndexOfAny<T>(this Span<T> span, ReadOnlySpan<T> values) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOfAny(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(values)), values.Length) : SpanHelpers.IndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(values), values.Length);
+    public static int IndexOfAny<T>(this Span<T> span, ReadOnlySpan<T> values) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOfAny(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(values)), values.Length) : SpanHelpers.IndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(values), values.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int IndexOfAny<T>(this ReadOnlySpan<T> span, T value0, T value1) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOfAny(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value0), Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value1), span.Length) : SpanHelpers.IndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, span.Length);
+    public static int IndexOfAny<T>(this ReadOnlySpan<T> span, T value0, T value1) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOfAny(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value0), Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref value1), span.Length) : SpanHelpers.IndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, span.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int IndexOfAny<T>(this ReadOnlySpan<T> span, T value0, T value1, T value2) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOfAny(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Unsafe.As<T, byte>(ref value0), Unsafe.As<T, byte>(ref value1), Unsafe.As<T, byte>(ref value2), span.Length) : SpanHelpers.IndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, value2, span.Length);
+    public static int IndexOfAny<T>(this ReadOnlySpan<T> span, T value0, T value1, T value2) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOfAny(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Unsafe.As<T, byte>(ref value0), Unsafe.As<T, byte>(ref value1), Unsafe.As<T, byte>(ref value2), span.Length) : SpanHelpers.IndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, value2, span.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int IndexOfAny<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> values) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOfAny(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(values)), values.Length) : SpanHelpers.IndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(values), values.Length);
+    public static int IndexOfAny<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> values) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.IndexOfAny(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(values)), values.Length) : SpanHelpers.IndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(values), values.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int LastIndexOfAny<T>(this Span<T> span, T value0, T value1) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOfAny(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Unsafe.As<T, byte>(ref value0), Unsafe.As<T, byte>(ref value1), span.Length) : SpanHelpers.LastIndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, span.Length);
+    public static int LastIndexOfAny<T>(this Span<T> span, T value0, T value1) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOfAny(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Unsafe.As<T, byte>(ref value0), Unsafe.As<T, byte>(ref value1), span.Length) : SpanHelpers.LastIndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, span.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int LastIndexOfAny<T>(this Span<T> span, T value0, T value1, T value2) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOfAny(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Unsafe.As<T, byte>(ref value0), Unsafe.As<T, byte>(ref value1), Unsafe.As<T, byte>(ref value2), span.Length) : SpanHelpers.LastIndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, value2, span.Length);
+    public static int LastIndexOfAny<T>(this Span<T> span, T value0, T value1, T value2) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOfAny(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Unsafe.As<T, byte>(ref value0), Unsafe.As<T, byte>(ref value1), Unsafe.As<T, byte>(ref value2), span.Length) : SpanHelpers.LastIndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, value2, span.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int LastIndexOfAny<T>(this Span<T> span, ReadOnlySpan<T> values) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOfAny(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(values)), values.Length) : SpanHelpers.LastIndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(values), values.Length);
+    public static int LastIndexOfAny<T>(this Span<T> span, ReadOnlySpan<T> values) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOfAny(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(values)), values.Length) : SpanHelpers.LastIndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(values), values.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int LastIndexOfAny<T>(this ReadOnlySpan<T> span, T value0, T value1) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOfAny(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Unsafe.As<T, byte>(ref value0), Unsafe.As<T, byte>(ref value1), span.Length) : SpanHelpers.LastIndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, span.Length);
+    public static int LastIndexOfAny<T>(this ReadOnlySpan<T> span, T value0, T value1) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOfAny(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Unsafe.As<T, byte>(ref value0), Unsafe.As<T, byte>(ref value1), span.Length) : SpanHelpers.LastIndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, span.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int LastIndexOfAny<T>(this ReadOnlySpan<T> span, T value0, T value1, T value2) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOfAny(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Unsafe.As<T, byte>(ref value0), Unsafe.As<T, byte>(ref value1), Unsafe.As<T, byte>(ref value2), span.Length) : SpanHelpers.LastIndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, value2, span.Length);
+    public static int LastIndexOfAny<T>(this ReadOnlySpan<T> span, T value0, T value1, T value2) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOfAny(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), Unsafe.As<T, byte>(ref value0), Unsafe.As<T, byte>(ref value1), Unsafe.As<T, byte>(ref value2), span.Length) : SpanHelpers.LastIndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), value0, value1, value2, span.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
-    public static int LastIndexOfAny<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> values) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOfAny(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(values)), values.Length) : SpanHelpers.LastIndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(values), values.Length);
+    public static int LastIndexOfAny<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> values) where T : IEquatable<T> => typeof (T) == typeof (byte) ? SpanHelpers.LastIndexOfAny(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(values)), values.Length) : SpanHelpers.LastIndexOfAny<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(values), values.Length);
 
     [MethodImpl((MethodImplOptions) 256)]
     public static bool SequenceEqual<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> other) where T : IEquatable<T>
     {
       int length = span.Length;
       nuint size;
-      return (object) default (T) != null && MemoryExtensions.IsTypeComparableAsBytes<T>(out size) ? length == other.Length && SpanHelpers.SequenceEqual(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(other)), (int)((nuint) length * size)) : length == other.Length && SpanHelpers.SequenceEqual<T>(ref MemoryMarshal.GetReference<T>(span), ref MemoryMarshal.GetReference<T>(other), length);
+      return (object) default (T) != null && MemoryExtensions.IsTypeComparableAsBytes<T>(out size) ? length == other.Length && SpanHelpers.SequenceEqual(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(other)), (int)((nuint) length * size)) : length == other.Length && SpanHelpers.SequenceEqual<T>(ref MemoryMarshal.GetReference<T>(span), ref MemoryMarshal.GetReference<T>(other), length);
     }
 
     [MethodImpl((MethodImplOptions) 256)]
     public static int SequenceCompareTo<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> other) where T : IComparable<T>
     {
       if (typeof (T) == typeof (byte))
-        return SpanHelpers.SequenceCompareTo(ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(other)), other.Length);
-      return typeof (T) == typeof (char) ? SpanHelpers.SequenceCompareTo(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(other)), other.Length) : SpanHelpers.SequenceCompareTo<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(other), other.Length);
+        return SpanHelpers.SequenceCompareTo(ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(other)), other.Length);
+      return typeof (T) == typeof (char) ? SpanHelpers.SequenceCompareTo(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(span)), span.Length, ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, char>(ref MemoryMarshal.GetReference<T>(other)), other.Length) : SpanHelpers.SequenceCompareTo<T>(ref MemoryMarshal.GetReference<T>(span), span.Length, ref MemoryMarshal.GetReference<T>(other), other.Length);
     }
 
     [MethodImpl((MethodImplOptions) 256)]
@@ -236,7 +236,7 @@ label_8:
     {
       int length = value.Length;
       nuint size;
-      return (object) default (T) != null && MemoryExtensions.IsTypeComparableAsBytes<T>(out size) ? length <= span.Length && SpanHelpers.SequenceEqual(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), (int)((nuint) length * size)) : length <= span.Length && SpanHelpers.SequenceEqual<T>(ref MemoryMarshal.GetReference<T>(span), ref MemoryMarshal.GetReference<T>(value), length);
+      return (object) default (T) != null && MemoryExtensions.IsTypeComparableAsBytes<T>(out size) ? length <= span.Length && SpanHelpers.SequenceEqual(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), (int)((nuint) length * size)) : length <= span.Length && SpanHelpers.SequenceEqual<T>(ref MemoryMarshal.GetReference<T>(span), ref MemoryMarshal.GetReference<T>(value), length);
     }
 
     [MethodImpl((MethodImplOptions) 256)]
@@ -244,7 +244,7 @@ label_8:
     {
       int length = value.Length;
       nuint size;
-      return (object) default (T) != null && MemoryExtensions.IsTypeComparableAsBytes<T>(out size) ? length <= span.Length && SpanHelpers.SequenceEqual(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), (int)((nuint) length * size)) : length <= span.Length && SpanHelpers.SequenceEqual<T>(ref MemoryMarshal.GetReference<T>(span), ref MemoryMarshal.GetReference<T>(value), length);
+      return (object) default (T) != null && MemoryExtensions.IsTypeComparableAsBytes<T>(out size) ? length <= span.Length && SpanHelpers.SequenceEqual(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(span)), ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), (int)((nuint) length * size)) : length <= span.Length && SpanHelpers.SequenceEqual<T>(ref MemoryMarshal.GetReference<T>(span), ref MemoryMarshal.GetReference<T>(value), length);
     }
 
     [MethodImpl((MethodImplOptions) 256)]
@@ -253,7 +253,7 @@ label_8:
       int length1 = span.Length;
       int length2 = value.Length;
       nuint size;
-      return (object) default (T) != null && MemoryExtensions.IsTypeComparableAsBytes<T>(out size) ? length2 <= length1 && SpanHelpers.SequenceEqual(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.Add<T>(ref MemoryMarshal.GetReference<T>(span), length1 - length2)), ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), (int)((nuint) length2 * size)) : length2 <= length1 && SpanHelpers.SequenceEqual<T>(ref Unsafe.Add<T>(ref MemoryMarshal.GetReference<T>(span), length1 - length2), ref MemoryMarshal.GetReference<T>(value), length2);
+      return (object) default (T) != null && MemoryExtensions.IsTypeComparableAsBytes<T>(out size) ? length2 <= length1 && SpanHelpers.SequenceEqual(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.Add<T>(ref MemoryMarshal.GetReference<T>(span), length1 - length2)), ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), (int)((nuint) length2 * size)) : length2 <= length1 && SpanHelpers.SequenceEqual<T>(ref Unsafe.Add<T>(ref MemoryMarshal.GetReference<T>(span), length1 - length2), ref MemoryMarshal.GetReference<T>(value), length2);
     }
 
     [MethodImpl((MethodImplOptions) 256)]
@@ -262,7 +262,7 @@ label_8:
       int length1 = span.Length;
       int length2 = value.Length;
       nuint size;
-      return (object) default (T) != null && MemoryExtensions.IsTypeComparableAsBytes<T>(out size) ? length2 <= length1 && SpanHelpers.SequenceEqual(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.Add<T>(ref MemoryMarshal.GetReference<T>(span), length1 - length2)), ref Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), (int)((nuint) length2 * size)) : length2 <= length1 && SpanHelpers.SequenceEqual<T>(ref Unsafe.Add<T>(ref MemoryMarshal.GetReference<T>(span), length1 - length2), ref MemoryMarshal.GetReference<T>(value), length2);
+      return (object) default (T) != null && MemoryExtensions.IsTypeComparableAsBytes<T>(out size) ? length2 <= length1 && SpanHelpers.SequenceEqual(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.Add<T>(ref MemoryMarshal.GetReference<T>(span), length1 - length2)), ref Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<T, byte>(ref MemoryMarshal.GetReference<T>(value)), (int)((nuint) length2 * size)) : length2 <= length1 && SpanHelpers.SequenceEqual<T>(ref Unsafe.Add<T>(ref MemoryMarshal.GetReference<T>(span), length1 - length2), ref MemoryMarshal.GetReference<T>(value), length2);
     }
 
     public static void Reverse<T>(this Span<T> span)
@@ -345,8 +345,8 @@ label_8:
     {
       if (span.IsEmpty || other.IsEmpty)
         return false;
-      IntPtr num = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.ByteOffset<T>(ref MemoryMarshal.GetReference<T>(span), ref MemoryMarshal.GetReference<T>(other));
-      return Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<IntPtr>() == 4 ? (uint) (int) num < (uint) (span.Length * Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>()) || (uint) (int) num > (uint) -(other.Length * Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>()) : (ulong) (long) num < (ulong) span.Length * (ulong) Unsafe.SizeOf<T>() || (ulong) (long) num > (ulong) -((long) other.Length * (long) Unsafe.SizeOf<T>());
+      IntPtr num = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.ByteOffset<T>(ref MemoryMarshal.GetReference<T>(span), ref MemoryMarshal.GetReference<T>(other));
+      return Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<IntPtr>() == 4 ? (uint) (int) num < (uint) (span.Length * Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>()) || (uint) (int) num > (uint) -(other.Length * Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>()) : (ulong) (long) num < (ulong) span.Length * (ulong) Unsafe.SizeOf<T>() || (ulong) (long) num > (ulong) -((long) other.Length * (long) Unsafe.SizeOf<T>());
     }
 
     public static bool Overlaps<T>(
@@ -359,24 +359,24 @@ label_8:
         elementOffset = 0;
         return false;
       }
-      IntPtr num = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.ByteOffset<T>(ref MemoryMarshal.GetReference<T>(span), ref MemoryMarshal.GetReference<T>(other));
-      if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<IntPtr>() == 4)
+      IntPtr num = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.ByteOffset<T>(ref MemoryMarshal.GetReference<T>(span), ref MemoryMarshal.GetReference<T>(other));
+      if (Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<IntPtr>() == 4)
       {
-        if ((uint) (int) num < (uint) (span.Length * Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>()) || (uint) (int) num > (uint) -(other.Length * Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>()))
+        if ((uint) (int) num < (uint) (span.Length * Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>()) || (uint) (int) num > (uint) -(other.Length * Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>()))
         {
-          if ((int) num % Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>() != 0)
+          if ((int) num % Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>() != 0)
             ThrowHelper.ThrowArgumentException_OverlapAlignmentMismatch();
-          elementOffset = (int) num / Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>();
+          elementOffset = (int) num / Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>();
           return true;
         }
         elementOffset = 0;
         return false;
       }
-      if ((ulong) (long) num < (ulong) span.Length * (ulong) Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>() || (ulong) (long) num > (ulong) -((long) other.Length * (long) Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>()))
+      if ((ulong) (long) num < (ulong) span.Length * (ulong) Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>() || (ulong) (long) num > (ulong) -((long) other.Length * (long) Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>()))
       {
-        if ((long) num % (long) Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>() != 0L)
+        if ((long) num % (long) Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>() != 0L)
           ThrowHelper.ThrowArgumentException_OverlapAlignmentMismatch();
-        elementOffset = (int) ((long) num / (long) Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>());
+        elementOffset = (int) ((long) num / (long) Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.SizeOf<T>());
         return true;
       }
       elementOffset = 0;

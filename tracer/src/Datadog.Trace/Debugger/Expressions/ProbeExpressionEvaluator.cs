@@ -7,13 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Models;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Debugger.Expressions;
+namespace Datadog.Trace.Internal.Debugger.Expressions;
 
 internal class ProbeExpressionEvaluator
 {

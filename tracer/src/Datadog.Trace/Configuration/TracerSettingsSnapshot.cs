@@ -7,9 +7,9 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration.Telemetry;
 
-namespace Datadog.Trace.Configuration;
+namespace Datadog.Trace.Internal.Configuration;
 
 /// <summary>
 /// Holds a snapshot of the mutable <see cref="TracerSettings"/> values after

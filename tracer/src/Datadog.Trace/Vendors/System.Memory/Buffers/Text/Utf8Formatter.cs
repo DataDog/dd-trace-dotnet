@@ -14,9 +14,9 @@ using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers.Binary;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers.Text
 {
     internal static class Utf8Formatter
   {

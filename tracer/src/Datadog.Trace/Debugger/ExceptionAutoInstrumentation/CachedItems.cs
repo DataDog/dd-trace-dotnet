@@ -10,11 +10,11 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Vendors.MessagePack;
-using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
+using Datadog.Trace.Internal.Vendors.MessagePack;
+using Fnv1aHash = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     internal class CachedItems
     {

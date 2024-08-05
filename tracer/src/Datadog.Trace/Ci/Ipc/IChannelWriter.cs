@@ -6,7 +6,7 @@
 
 using System;
 
-namespace Datadog.Trace.Ci.Ipc;
+namespace Datadog.Trace.Internal.Ci.Ipc;
 
 internal interface IChannelWriter : IDisposable
 {

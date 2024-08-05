@@ -6,9 +6,9 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     /// <summary>
     /// A source of configuration settings, identifiable by a string key.

@@ -5,9 +5,9 @@
 #nullable enable
 
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata;
 
-namespace Datadog.Trace.Debugger.Symbols;
+namespace Datadog.Trace.Internal.Debugger.Symbols;
 
 internal sealed class AsyncStateMachineAttributeTypeProvider : ICustomAttributeTypeProvider<string>
 {

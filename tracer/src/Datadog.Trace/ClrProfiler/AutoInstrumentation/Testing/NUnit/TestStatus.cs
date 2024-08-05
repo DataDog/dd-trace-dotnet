@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     /// <summary>
     /// The TestStatus enum indicates the result of running a test

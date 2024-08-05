@@ -5,10 +5,10 @@
 
 using System;
 using System.Net;
-using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.HttpOverStreams;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Agent.Transports
+namespace Datadog.Trace.Internal.Agent.Transports
 {
     internal class HttpStreamRequestFactory : IApiRequestFactory
     {

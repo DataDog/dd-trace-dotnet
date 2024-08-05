@@ -13,9 +13,9 @@ using System.Web.Routing;
 #else
 using Microsoft.AspNetCore.Routing;
 #endif
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.WafEncoding;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec.WafEncoding;
+using Datadog.Trace.Internal.Util;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Util;

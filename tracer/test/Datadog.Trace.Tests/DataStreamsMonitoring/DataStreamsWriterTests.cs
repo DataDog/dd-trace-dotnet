@@ -1,4 +1,4 @@
-﻿// <copyright file="DataStreamsWriterTests.cs" company="Datadog">
+// <copyright file="DataStreamsWriterTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,14 +10,14 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DataStreamsMonitoring.Aggregation;
-using Datadog.Trace.DataStreamsMonitoring.Hashes;
-using Datadog.Trace.DataStreamsMonitoring.Transport;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Aggregation;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Transport;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Util;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using Datadog.Trace.Tests.Agent;
-using Datadog.Trace.Util;
 using FluentAssertions;
 using MessagePack;
 using Xunit;

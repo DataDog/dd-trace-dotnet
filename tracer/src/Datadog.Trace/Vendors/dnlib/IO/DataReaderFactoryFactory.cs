@@ -8,7 +8,7 @@
 using System;
 using System.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.IO {
+namespace Datadog.Trace.Internal.Vendors.dnlib.IO {
 	static class DataReaderFactoryFactory {
 		static readonly bool isUnix;
 

@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Telemetry;
 using FluentAssertions;
 using Xunit;
 

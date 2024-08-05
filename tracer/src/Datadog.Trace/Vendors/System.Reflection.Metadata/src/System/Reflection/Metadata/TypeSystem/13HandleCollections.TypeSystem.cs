@@ -15,7 +15,7 @@ using System.Collections.Generic;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
     /// <summary>
     /// Represents a collection of <see cref="T:System.Reflection.Metadata.TypeReferenceHandle" />.

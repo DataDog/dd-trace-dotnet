@@ -8,12 +8,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.SensitiveData;
+namespace Datadog.Trace.Internal.Iast.SensitiveData;
 
 internal class JsonTokenizer : ITokenizer
 {

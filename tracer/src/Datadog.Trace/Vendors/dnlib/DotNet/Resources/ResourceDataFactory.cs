@@ -11,7 +11,7 @@ using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Resources {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Resources {
 	/// <summary>
 	/// Creates resource data
 	/// </summary>

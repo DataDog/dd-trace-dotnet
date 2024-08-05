@@ -16,7 +16,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Datadog.Trace.Vendors.Serilog.Events
+namespace Datadog.Trace.Internal.Vendors.Serilog.Events
 {
     /// <summary>
     /// Descriptive aliases for <see cref="LogEventLevel"/>.

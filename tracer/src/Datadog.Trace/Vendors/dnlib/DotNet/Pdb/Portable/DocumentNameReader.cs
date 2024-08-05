@@ -7,10 +7,10 @@
 
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Portable {
 	struct DocumentNameReader {
 		const int MAX_NAME_LENGTH = 64 * 1024;
 		readonly Dictionary<uint, string> docNamePartDict;

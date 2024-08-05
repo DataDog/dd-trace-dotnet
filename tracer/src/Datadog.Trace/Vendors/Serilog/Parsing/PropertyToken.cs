@@ -21,10 +21,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Rendering;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Rendering;
 
-namespace Datadog.Trace.Vendors.Serilog.Parsing
+namespace Datadog.Trace.Internal.Vendors.Serilog.Parsing
 {
     /// <summary>
     /// A message template token representing a log event property.

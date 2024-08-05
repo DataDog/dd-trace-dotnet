@@ -8,7 +8,7 @@
 using System;
 using System.Threading;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers
 {
     internal sealed partial class ConfigurableArrayPool<T> : ArrayPool<T>
     {

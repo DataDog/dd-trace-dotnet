@@ -6,11 +6,11 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+namespace Datadog.Trace.Internal.ClrProfiler.ServerlessInstrumentation;
 
 internal static class ServerlessMiniAgent
 {

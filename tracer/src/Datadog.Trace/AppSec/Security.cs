@@ -9,24 +9,24 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.AppSec.Rcm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.Initialization;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.AppSec.WafEncoding;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Telemetry;
-using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.AppSec.Rcm;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.AsmDd;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec.Waf.Initialization;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Internal.AppSec.WafEncoding;
+using Datadog.Trace.Internal.ClrProfiler;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Telemetry;
+using Action = Datadog.Trace.Internal.AppSec.Rcm.Models.Asm.Action;
 
-namespace Datadog.Trace.AppSec
+namespace Datadog.Trace.Internal.AppSec
 {
     /// <summary>
     /// The Secure is responsible coordinating ASM

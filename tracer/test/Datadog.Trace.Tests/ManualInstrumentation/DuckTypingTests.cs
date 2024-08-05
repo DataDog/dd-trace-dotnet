@@ -1,4 +1,4 @@
-﻿// <copyright file="DuckTypingTests.cs" company="Datadog">
+// <copyright file="DuckTypingTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,14 +8,15 @@ extern alias DatadogTraceManual;
 using System;
 using System.Linq;
 using System.Reflection;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tagging;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.Tagging;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;

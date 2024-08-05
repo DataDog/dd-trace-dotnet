@@ -7,11 +7,11 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
 // https://learn.microsoft.com/dotnet/api/system.diagnostics.activityevent
 
-namespace Datadog.Trace.Activity.DuckTypes
+namespace Datadog.Trace.Internal.Activity.DuckTypes
 {
     [DuckCopy]
     internal struct ActivityEvent

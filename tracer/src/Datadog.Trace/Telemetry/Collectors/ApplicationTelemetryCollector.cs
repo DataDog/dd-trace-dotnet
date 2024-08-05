@@ -6,10 +6,10 @@
 #nullable enable
 using System;
 using System.Threading;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.PlatformHelpers;
 
-namespace Datadog.Trace.Telemetry.Collectors;
+namespace Datadog.Trace.Internal.Telemetry.Collectors;
 
 internal class ApplicationTelemetryCollector
 {

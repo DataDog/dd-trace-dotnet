@@ -5,13 +5,13 @@
 
 using System;
 using System.Collections;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using Datadog.Trace.Internal.Logging;
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Aspects.Newtonsoft.Json;
+namespace Datadog.Trace.Internal.Iast.Aspects.Newtonsoft.Json;
 
 /// <summary> Newtonsoft.Json class aspects </summary>
 [AspectClass("Newtonsoft.Json")]

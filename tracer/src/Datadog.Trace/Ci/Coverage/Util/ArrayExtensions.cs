@@ -8,7 +8,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.Ci.Coverage.Util;
+namespace Datadog.Trace.Internal.Ci.Coverage.Util;
 
 internal static class ArrayExtensions
 {

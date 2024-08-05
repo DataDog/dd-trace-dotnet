@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     /// <summary>
     /// IRegionEndpoint interface for ducktyping

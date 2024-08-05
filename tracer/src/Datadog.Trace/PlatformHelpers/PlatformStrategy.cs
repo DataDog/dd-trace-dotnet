@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.PlatformHelpers
+namespace Datadog.Trace.Internal.PlatformHelpers
 {
     internal static class PlatformStrategy
     {

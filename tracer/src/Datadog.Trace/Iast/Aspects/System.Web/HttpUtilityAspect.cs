@@ -5,12 +5,12 @@
 
 using System;
 using System.Net;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Propagation;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using Datadog.Trace.Internal.Iast.Propagation;
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Aspects.System.Net;
+namespace Datadog.Trace.Internal.Iast.Aspects.System.Net;
 
 /// <summary> WebClient class aspects </summary>
 [AspectClass("System.Web;System.Runtime.Extensions;System.Web.HttpUtility", AspectType.Sink, VulnerabilityType.Ssrf)]

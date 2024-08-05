@@ -11,17 +11,17 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.ClrProfiler.ServerlessInstrumentation;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     /// <summary>
     /// Contains Tracer settings.

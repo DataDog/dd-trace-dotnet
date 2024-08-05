@@ -9,7 +9,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 
 /// <summary>
 /// Derived from TextWriter to stop writing at 5k characters since the UI/Backend would truncate anyways for tag key values:

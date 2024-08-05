@@ -7,12 +7,12 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
 
 #if !NETFRAMEWORK
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 
 /// <summary>
 /// UserManagerCreateIntegration for sign up events

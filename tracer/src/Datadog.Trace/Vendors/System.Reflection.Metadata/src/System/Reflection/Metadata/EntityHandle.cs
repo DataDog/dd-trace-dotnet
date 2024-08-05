@@ -14,7 +14,7 @@ using System.Diagnostics.CodeAnalysis;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
   /// <summary>
   /// Represents a metadata entity (type reference/definition/specification, method definition, custom attribute, etc.).

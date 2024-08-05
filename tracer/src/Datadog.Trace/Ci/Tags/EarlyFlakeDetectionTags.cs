@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-namespace Datadog.Trace.Ci.Tags;
+namespace Datadog.Trace.Internal.Ci.Tags;
 
 /// <summary>
 /// Early Flake Detection span tags

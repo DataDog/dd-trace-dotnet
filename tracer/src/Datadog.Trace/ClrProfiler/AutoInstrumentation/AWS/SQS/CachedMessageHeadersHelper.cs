@@ -8,10 +8,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     internal static class CachedMessageHeadersHelper<TMarkerType>
     {

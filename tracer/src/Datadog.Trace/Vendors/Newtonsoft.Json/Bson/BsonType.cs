@@ -31,7 +31,7 @@
 
 #nullable disable
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Bson
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Bson
 {
     internal enum BsonType : sbyte
     {

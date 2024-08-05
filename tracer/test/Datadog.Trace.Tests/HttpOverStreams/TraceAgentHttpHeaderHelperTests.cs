@@ -6,8 +6,8 @@
 using System;
 using System.IO;
 using System.Text;
-using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.HttpOverStreams.HttpContent;
+using Datadog.Trace.Internal.HttpOverStreams;
+using Datadog.Trace.Internal.HttpOverStreams.HttpContent;
 using FluentAssertions;
 using Xunit;
 

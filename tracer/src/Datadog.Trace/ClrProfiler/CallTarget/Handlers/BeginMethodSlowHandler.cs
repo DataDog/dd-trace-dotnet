@@ -6,8 +6,9 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.ClrProfiler;
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers;
 
 internal static class BeginMethodSlowHandler<TIntegration, TTarget>
 {

@@ -11,7 +11,7 @@ using System.Reflection;
 using System.IO;
 using System.Linq.Expressions;
 
-namespace Datadog.Trace.Vendors.MessagePack
+namespace Datadog.Trace.Internal.Vendors.MessagePack
 {
     internal static partial class LZ4MessagePackSerializer
     {

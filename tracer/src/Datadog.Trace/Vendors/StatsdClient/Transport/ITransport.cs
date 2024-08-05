@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 using System;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Transport
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Transport
 {
     internal enum TransportType
     {

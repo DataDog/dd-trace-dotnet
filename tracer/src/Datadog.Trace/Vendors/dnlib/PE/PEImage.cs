@@ -8,12 +8,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.Vendors.dnlib.IO;
-using Datadog.Trace.Vendors.dnlib.Utils;
-using Datadog.Trace.Vendors.dnlib.W32Resources;
-using Datadog.Trace.Vendors.dnlib.Threading;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.Utils;
+using Datadog.Trace.Internal.Vendors.dnlib.W32Resources;
+using Datadog.Trace.Internal.Vendors.dnlib.Threading;
 
-namespace Datadog.Trace.Vendors.dnlib.PE {
+namespace Datadog.Trace.Internal.Vendors.dnlib.PE {
 	/// <summary>
 	/// Image layout
 	/// </summary>

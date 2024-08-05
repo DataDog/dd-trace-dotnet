@@ -5,12 +5,12 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.MessagePack.Formatters;
-using Datadog.Trace.Vendors.MessagePack.Resolvers;
+using Datadog.Trace.Internal.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Internal.Vendors.MessagePack.Resolvers;
 
 #nullable enable
 
-namespace Datadog.Trace.AppSec.Rasp;
+namespace Datadog.Trace.Internal.AppSec.Rasp;
 
 internal static class MetaStructHelper
 {

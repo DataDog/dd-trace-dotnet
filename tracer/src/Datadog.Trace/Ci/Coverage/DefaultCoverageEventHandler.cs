@@ -7,15 +7,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Coverage.Models.Tests;
-using Datadog.Trace.Ci.Coverage.Util;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Ci.CiEnvironment;
+using Datadog.Trace.Internal.Ci.Coverage.Models.Tests;
+using Datadog.Trace.Internal.Ci.Coverage.Util;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Ci.Coverage;
+namespace Datadog.Trace.Internal.Ci.Coverage;
 
 internal class DefaultCoverageEventHandler : CoverageEventHandler
 {

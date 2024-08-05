@@ -8,13 +8,13 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 internal partial class CiVisibilityMetricsTelemetryCollector
 {
     private const int DistributionCIVisibilityLength = 31;
 
     /// <summary>
-    /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility" /> values.
+    /// Creates the buffer for the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.DistributionCIVisibility" /> values.
     /// </summary>
     private static AggregatedDistribution[] GetDistributionCIVisibilityBuffer()
         => new AggregatedDistribution[]
@@ -69,44 +69,44 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         };
 
     /// <summary>
-    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility" />.
+    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.DistributionCIVisibility" />.
     /// Each value represents the number of unique entries in the buffer returned by <see cref="GetDistributionCIVisibilityBuffer()" />
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] DistributionCIVisibilityEntryCounts { get; }
         = new int[]{ 2, 2, 2, 2, 9, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, };
 
-    public void RecordDistributionCIVisibilityEndpointPayloadBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
+    public void RecordDistributionCIVisibilityEndpointPayloadBytes(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
     {
         var index = 0 + (int)tag;
         _buffer.DistributionCIVisibility[index].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityEndpointPayloadRequestsMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
+    public void RecordDistributionCIVisibilityEndpointPayloadRequestsMs(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
     {
         var index = 2 + (int)tag;
         _buffer.DistributionCIVisibility[index].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityEndpointPayloadEventsCount(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
+    public void RecordDistributionCIVisibilityEndpointPayloadEventsCount(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
     {
         var index = 4 + (int)tag;
         _buffer.DistributionCIVisibility[index].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityEndpointEventsSerializationMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
+    public void RecordDistributionCIVisibilityEndpointEventsSerializationMs(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
     {
         var index = 6 + (int)tag;
         _buffer.DistributionCIVisibility[index].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityGitCommandMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag, double value)
+    public void RecordDistributionCIVisibilityGitCommandMs(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag, double value)
     {
         var index = 8 + (int)tag;
         _buffer.DistributionCIVisibility[index].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
+    public void RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
     {
         var index = 17 + (int)tag;
         _buffer.DistributionCIVisibility[index].TryEnqueue(value);
@@ -137,7 +137,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         _buffer.DistributionCIVisibility[23].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
+    public void RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
     {
         var index = 24 + (int)tag;
         _buffer.DistributionCIVisibility[index].TryEnqueue(value);
@@ -153,7 +153,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         _buffer.DistributionCIVisibility[27].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
     {
         var index = 28 + (int)tag;
         _buffer.DistributionCIVisibility[index].TryEnqueue(value);

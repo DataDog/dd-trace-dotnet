@@ -4,7 +4,7 @@
 // </copyright>
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SDK;
 
 /// <summary>
 /// Object that allows you to access useful information available within

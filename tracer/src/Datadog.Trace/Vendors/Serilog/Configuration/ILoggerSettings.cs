@@ -16,7 +16,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Datadog.Trace.Vendors.Serilog.Configuration
+namespace Datadog.Trace.Internal.Vendors.Serilog.Configuration
 {
     /// <summary>
     /// Implemented on types that apply settings to a logger configuration.

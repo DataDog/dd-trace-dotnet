@@ -6,7 +6,7 @@
 using System.IO;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.HttpOverStreams
+namespace Datadog.Trace.Internal.HttpOverStreams
 {
     internal interface IHttpContent
     {

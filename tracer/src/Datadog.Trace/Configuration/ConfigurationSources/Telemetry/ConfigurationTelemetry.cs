@@ -7,9 +7,9 @@
 
 using System.Collections.Concurrent;
 using System.Threading;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Telemetry;
 
-namespace Datadog.Trace.Configuration.Telemetry;
+namespace Datadog.Trace.Internal.Configuration.Telemetry;
 
 internal partial class ConfigurationTelemetry : IConfigurationTelemetry
 {

@@ -12,11 +12,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Datadog.Trace.Vendors.Datadog.Sketches.Mappings;
-using Datadog.Trace.Vendors.Datadog.Sketches.Serialization;
-using Datadog.Trace.Vendors.Datadog.Sketches.Stores;
+using Datadog.Trace.Internal.Vendors.Datadog.Sketches.Mappings;
+using Datadog.Trace.Internal.Vendors.Datadog.Sketches.Serialization;
+using Datadog.Trace.Internal.Vendors.Datadog.Sketches.Stores;
 
-namespace Datadog.Trace.Vendors.Datadog.Sketches;
+namespace Datadog.Trace.Internal.Vendors.Datadog.Sketches;
 
 /// <summary>
 /// A quantile sketch with relative-error guarantees. This sketch computes

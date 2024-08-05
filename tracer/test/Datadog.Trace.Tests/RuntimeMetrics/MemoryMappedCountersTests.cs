@@ -5,8 +5,8 @@
 
 #if NETFRAMEWORK
 
-using Datadog.Trace.RuntimeMetrics;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal.RuntimeMetrics;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 using Moq;
 using Xunit;
 

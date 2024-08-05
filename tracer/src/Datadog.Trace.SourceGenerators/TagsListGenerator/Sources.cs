@@ -11,7 +11,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
     internal static class Sources
     {
         public const string Attributes = Constants.FileHeader +
-            @"namespace Datadog.Trace.SourceGenerators;
+            @"namespace Datadog.Trace.Internal.SourceGenerators;
 
 /// <summary>
 /// Used to designate a property as corresponding to the provided
@@ -59,8 +59,8 @@ internal sealed class MetricAttribute : System.Attribute
         public static string CreateTagsList(StringBuilder sb, TagListGenerator.TagList tagList)
         {
             sb.Append(Constants.FileHeader);
-            sb.Append(@"using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
+            sb.Append(@"using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Tagging;
 using System;
 
 namespace ");

@@ -7,7 +7,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Datadog.Trace.Pdb.SourceLink;
+namespace Datadog.Trace.Internal.Pdb.SourceLink;
 
 internal class GitLabSourceLinkUrlParser : SourceLinkUrlParser
 {

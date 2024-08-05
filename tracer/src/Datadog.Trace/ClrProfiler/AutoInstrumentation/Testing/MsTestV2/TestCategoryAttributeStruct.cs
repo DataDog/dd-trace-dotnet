@@ -4,11 +4,11 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
 #pragma warning disable CS0649 // Field 'TestCategories' is never assigned to
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
     /// <summary>
     /// TestCategoryAttribute ducktype struct

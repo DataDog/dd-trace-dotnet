@@ -8,12 +8,12 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
     /// <summary>
     /// Azure.Messaging.ServiceBus.ReceiverManager.ProcessOneMessage calltarget instrumentation
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 var consumeTime = span.StartTime.UtcDateTime;
                 var produceTime = message.EnqueuedTime.UtcDateTime;
                 var messageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
-                span.Tags.SetMetric(Trace.Metrics.MessageQueueTimeMs, messageQueueTimeMs);
+                span.Tags.SetMetric(Trace.Internal.Metrics.MessageQueueTimeMs, messageQueueTimeMs);
 
                 var namespaceString = instance.Processor.EntityPath;
 

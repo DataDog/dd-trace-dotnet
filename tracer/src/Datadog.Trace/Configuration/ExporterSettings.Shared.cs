@@ -8,11 +8,11 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Telemetry;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     /// <summary>
     /// Methods of ExporterSettings shared with other projects

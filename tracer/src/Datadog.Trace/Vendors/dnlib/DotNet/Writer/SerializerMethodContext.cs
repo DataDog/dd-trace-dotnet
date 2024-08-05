@@ -7,9 +7,9 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Writer {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer {
 	sealed class SerializerMethodContext {
 		readonly Dictionary<Instruction, uint> toOffset;
 		readonly IWriterError helper;

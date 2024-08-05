@@ -6,7 +6,7 @@
 #if NETFRAMEWORK
 using System;
 using System.Web;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 using FluentAssertions;
 using Xunit;
 

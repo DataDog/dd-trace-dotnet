@@ -11,12 +11,12 @@ using System.CommandLine.Invocation;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.CiEnvironment;
+using Datadog.Trace.Internal.Ci.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner;
@@ -56,7 +56,7 @@ internal static class CiUtils
         ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
 
         // We force CIVisibility mode on child process
-        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
+        profilerEnvironmentVariables[Internal.Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
 
         // We check the settings and merge with the command settings options
         var agentless = ciVisibilitySettings.Agentless;
@@ -67,8 +67,8 @@ internal static class CiUtils
         {
             agentless = true;
             apiKey = customApiKey;
-            profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled] = "1";
-            profilerEnvironmentVariables[Configuration.ConfigurationKeys.ApiKey] = customApiKey;
+            profilerEnvironmentVariables[Internal.Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled] = "1";
+            profilerEnvironmentVariables[Internal.Configuration.ConfigurationKeys.ApiKey] = customApiKey;
         }
 
         var agentUrl = commonTracerSettings.AgentUrl.GetValue(context);
@@ -107,7 +107,7 @@ internal static class CiUtils
 
         if (!string.IsNullOrEmpty(agentUrl))
         {
-            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.AgentUri, agentUrl);
+            EnvironmentHelpers.SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.AgentUri, agentUrl);
         }
 
         // Initialize flags to enable code coverage and test skipping
@@ -141,8 +141,8 @@ internal static class CiUtils
                 uploadRepositoryChangesTask = Task.Run(() => lazyItrClient.Value.UploadRepositoryChangesAsync());
 
                 // Once the repository has been uploaded we switch off the git upload in children processes
-                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled] = "0";
-                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled, "0");
+                profilerEnvironmentVariables[Internal.Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled] = "0";
+                EnvironmentHelpers.SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled, "0");
             }
 
             // We can activate all features here (Agentless or EVP proxy mode)
@@ -152,8 +152,8 @@ internal static class CiUtils
                 // By setting the environment variables we avoid the usage of the DiscoveryService in each child process
                 // to ask for EVP proxy support.
                 var evpProxyMode = CIVisibility.EventPlatformProxySupportFromEndpointUrl(agentConfiguration?.EventPlatformProxyEndpoint).ToString();
-                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy] = evpProxyMode;
-                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, evpProxyMode);
+                profilerEnvironmentVariables[Internal.Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy] = evpProxyMode;
+                EnvironmentHelpers.SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, evpProxyMode);
                 Log.Debug("RunCiCommand: EVP proxy was detected: {Mode}", evpProxyMode);
             }
 
@@ -201,21 +201,21 @@ internal static class CiUtils
         Log.Debug("RunCiCommand: EarlyFlakeDetectionEnabled = {Value}", earlyFlakeDetectionEnabled);
         ciVisibilitySettings.SetCodeCoverageEnabled(codeCoverageEnabled);
         ciVisibilitySettings.SetEarlyFlakeDetectionEnabled(earlyFlakeDetectionEnabled);
-        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
-        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled] = earlyFlakeDetectionEnabled ? "1" : "0";
+        profilerEnvironmentVariables[Internal.Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
+        profilerEnvironmentVariables[Internal.Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled] = earlyFlakeDetectionEnabled ? "1" : "0";
 
         if (!testSkippingEnabled)
         {
             // If test skipping is disabled we set this to the child process so we avoid to query the settings api again.
             // If is not disabled we need to query the backend again in the child process with more runtime info.
             ciVisibilitySettings.SetTestsSkippingEnabled(testSkippingEnabled);
-            profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled] = "0";
+            profilerEnvironmentVariables[Internal.Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled] = "0";
         }
 
         // Let's set the code coverage datacollector if the code coverage is enabled
         if (codeCoverageEnabled)
         {
-            profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath] = AppContext.BaseDirectory;
+            profilerEnvironmentVariables[Internal.Configuration.ConfigurationKeys.CIVisibility.CodeCoverageCollectorPath] = AppContext.BaseDirectory;
 
             var isDotnetCommand = string.Equals(program, "dotnet", StringComparison.OrdinalIgnoreCase) ||
                                   string.Equals(program, "dotnet.exe", StringComparison.OrdinalIgnoreCase) ||
@@ -318,8 +318,8 @@ internal static class CiUtils
                             try
                             {
                                 Directory.CreateDirectory(outputPath);
-                                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath] = outputPath;
-                                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, outputPath);
+                                profilerEnvironmentVariables[Internal.Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath] = outputPath;
+                                EnvironmentHelpers.SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, outputPath);
                                 break;
                             }
                             catch (Exception ex)

@@ -8,11 +8,11 @@
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
-using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Activity.DuckTypes;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Activity
+namespace Datadog.Trace.Internal.Activity
 {
     internal static class ActivityListenerDelegatesBuilder
     {

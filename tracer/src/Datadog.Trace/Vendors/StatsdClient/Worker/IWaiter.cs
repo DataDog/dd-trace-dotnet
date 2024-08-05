@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 using System;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Worker
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Worker
 {
     internal interface IWaiter
     {

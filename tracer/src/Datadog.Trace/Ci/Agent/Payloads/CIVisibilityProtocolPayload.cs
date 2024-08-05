@@ -6,12 +6,12 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using Datadog.Trace.Ci.Agent.MessagePack;
-using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Internal.Ci.Agent.MessagePack;
+using Datadog.Trace.Internal.Ci.Configuration;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Vendors.MessagePack;
 
-namespace Datadog.Trace.Ci.Agent.Payloads
+namespace Datadog.Trace.Internal.Ci.Agent.Payloads
 {
     internal abstract class CIVisibilityProtocolPayload : EventPlatformPayload
     {

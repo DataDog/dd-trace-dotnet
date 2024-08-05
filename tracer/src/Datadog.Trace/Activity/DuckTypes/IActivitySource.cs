@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Activity.DuckTypes
+namespace Datadog.Trace.Internal.Activity.DuckTypes
 {
     internal interface IActivitySource : ISource
     {

@@ -6,7 +6,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.CallTarget
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget
 {
     /// <summary>
     /// Apply on a calltarget async callback to indicate that the method

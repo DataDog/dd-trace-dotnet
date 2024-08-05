@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
     /// <summary>
     /// Connection multiplexer ducktype structure

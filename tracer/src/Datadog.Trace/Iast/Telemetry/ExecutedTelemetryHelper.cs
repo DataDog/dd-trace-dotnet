@@ -5,12 +5,12 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
-using static Datadog.Trace.Telemetry.Metrics.MetricTags;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Telemetry;
+using static Datadog.Trace.Internal.Telemetry.Metrics.MetricTags;
 
 #nullable enable
-namespace Datadog.Trace.Iast.Telemetry;
+namespace Datadog.Trace.Internal.Iast.Telemetry;
 
 internal class ExecutedTelemetryHelper
 {
@@ -20,8 +20,8 @@ internal class ExecutedTelemetryHelper
     private const string PropagationExecutedTag = BasicExecutedTag + "executed.propagation";
     private const string RequestTaintedTag = BasicExecutedTag + "request.tainted";
     private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.TelemetryVerbosity;
-    private int[] _executedSinks = new int[Trace.Telemetry.Metrics.IastInstrumentedSinksExtensions.Length];
-    private int[] _executedSources = new int[Trace.Telemetry.Metrics.IastInstrumentedSourcesExtensions.Length];
+    private int[] _executedSinks = new int[Trace.Internal.Telemetry.Metrics.IastInstrumentedSinksExtensions.Length];
+    private int[] _executedSources = new int[Trace.Internal.Telemetry.Metrics.IastInstrumentedSourcesExtensions.Length];
     private int _executedPropagations = 0;
     private object _metricsLock = new();
 

@@ -8,13 +8,13 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
     private const int GaugeLength = 8;
 
     /// <summary>
-    /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Gauge" /> values.
+    /// Creates the buffer for the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.Gauge" /> values.
     /// </summary>
     private static AggregatedMetric[] GetGaugeBuffer()
         => new AggregatedMetric[]
@@ -33,7 +33,7 @@ internal partial class MetricsTelemetryCollector
         };
 
     /// <summary>
-    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Telemetry.Metrics.Gauge" />.
+    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.Gauge" />.
     /// Each value represents the number of unique entries in the buffer returned by <see cref="GetGaugeBuffer()" />
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
@@ -45,7 +45,7 @@ internal partial class MetricsTelemetryCollector
         Interlocked.Exchange(ref _buffer.Gauge[0], value);
     }
 
-    public void RecordGaugeInstrumentations(Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationComponent tag, int value)
+    public void RecordGaugeInstrumentations(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.InstrumentationComponent tag, int value)
     {
         var index = 1 + (int)tag;
         Interlocked.Exchange(ref _buffer.Gauge[index], value);

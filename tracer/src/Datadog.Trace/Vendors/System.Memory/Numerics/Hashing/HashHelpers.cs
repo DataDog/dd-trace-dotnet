@@ -12,7 +12,7 @@
 
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Numerics.Hashing
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Numerics.Hashing
 {
   internal static class HashHelpers
   {

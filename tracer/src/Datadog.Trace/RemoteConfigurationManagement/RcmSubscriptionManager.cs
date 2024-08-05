@@ -11,12 +11,12 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
-using Datadog.Trace.RemoteConfigurationManagement.Transport;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Transport;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.RemoteConfigurationManagement;
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement;
 
 internal class RcmSubscriptionManager : IRcmSubscriptionManager
 {

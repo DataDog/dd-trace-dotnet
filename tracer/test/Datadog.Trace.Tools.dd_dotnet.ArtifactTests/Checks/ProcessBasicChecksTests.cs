@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Datadog.Trace.Internal;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.dd_dotnet.Checks;
 using FluentAssertions;

@@ -25,7 +25,7 @@
 #nullable enable
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices
 {
   [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
   internal sealed class LibraryImportAttribute : Attribute

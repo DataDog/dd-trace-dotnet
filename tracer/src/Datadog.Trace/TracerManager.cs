@@ -9,29 +9,29 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Schema;
-using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DogStatsd;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.TracerFlare;
-using Datadog.Trace.Processors;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RuntimeMetrics;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Util.Http;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.ClrProfiler;
+using Datadog.Trace.Internal.ClrProfiler.ServerlessInstrumentation;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Schema;
+using Datadog.Trace.Internal.ContinuousProfiler;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.DogStatsd;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Logging.TracerFlare;
+using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.RuntimeMetrics;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Util.Http;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// This class is responsible for managing the singleton objects associated with a Tracer.
@@ -472,16 +472,16 @@ namespace Datadog.Trace
                     WriteAsmInfo(writer);
 
                     writer.WritePropertyName("iast_enabled");
-                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.Enabled);
+                    writer.WriteValue(Datadog.Trace.Internal.Iast.Iast.Instance.Settings.Enabled);
 
                     writer.WritePropertyName("iast_deduplication_enabled");
-                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.DeduplicationEnabled);
+                    writer.WriteValue(Datadog.Trace.Internal.Iast.Iast.Instance.Settings.DeduplicationEnabled);
 
                     writer.WritePropertyName("iast_weak_hash_algorithms");
-                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.WeakHashAlgorithms);
+                    writer.WriteValue(Datadog.Trace.Internal.Iast.Iast.Instance.Settings.WeakHashAlgorithms);
 
                     writer.WritePropertyName("iast_weak_cipher_algorithms");
-                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.WeakCipherAlgorithms);
+                    writer.WriteValue(Datadog.Trace.Internal.Iast.Iast.Instance.Settings.WeakCipherAlgorithms);
 
                     writer.WritePropertyName("direct_logs_submission_enabled_integrations");
                     writer.WriteStartArray();

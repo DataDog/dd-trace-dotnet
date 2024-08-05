@@ -6,11 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Sampling
+namespace Datadog.Trace.Internal.Sampling
 {
     /// <summary>
     /// Represents a sampling rules for single span ingestion.

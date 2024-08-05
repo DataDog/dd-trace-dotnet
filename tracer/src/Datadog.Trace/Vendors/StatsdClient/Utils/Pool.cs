@@ -6,7 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Utils
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Utils
 {
     internal class Pool<T>
         : IPool

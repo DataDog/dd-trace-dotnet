@@ -7,7 +7,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Util.Delegates;
+namespace Datadog.Trace.Internal.Util.Delegates;
 
 #pragma warning disable SA1649
 

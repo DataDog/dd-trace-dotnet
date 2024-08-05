@@ -10,10 +10,10 @@ using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Ci.CiEnvironment;
+namespace Datadog.Trace.Internal.Ci.CiEnvironment;
 
 // ReSharper disable once InconsistentNaming
 
@@ -180,7 +180,7 @@ internal abstract class CIEnvironmentValues
         SetTagIfNotNullOrEmpty(span, CommonTags.CINodeName, NodeName);
         if (NodeLabels is { } nodeLabels)
         {
-            SetTagIfNotNullOrEmpty(span, CommonTags.CINodeLabels, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(nodeLabels));
+            SetTagIfNotNullOrEmpty(span, CommonTags.CINodeLabels, Datadog.Trace.Internal.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(nodeLabels));
         }
 
         SetTagIfNotNullOrEmpty(span, CommonTags.StageName, StageName);
@@ -199,7 +199,7 @@ internal abstract class CIEnvironmentValues
         SetTagIfNotNullOrEmpty(span, CommonTags.BuildSourceRoot, SourceRoot);
         if (VariablesToBypass is { } variablesToBypass)
         {
-            span.SetTag(CommonTags.CiEnvVars, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass));
+            span.SetTag(CommonTags.CiEnvVars, Datadog.Trace.Internal.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass));
         }
     }
 

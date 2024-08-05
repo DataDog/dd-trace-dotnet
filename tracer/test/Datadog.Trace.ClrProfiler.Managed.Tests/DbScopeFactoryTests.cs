@@ -9,13 +9,13 @@ using System.Collections.Specialized;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AdoNet;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
-using DbType = Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.DbType;
+using DbType = Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AdoNet.DbType;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {

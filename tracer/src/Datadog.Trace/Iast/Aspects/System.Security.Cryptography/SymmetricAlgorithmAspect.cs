@@ -8,12 +8,12 @@
 
 using System;
 using System.Security.Cryptography;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.ClrProfiler;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Iast.Aspects;
+namespace Datadog.Trace.Internal.Iast.Aspects;
 
 /// <summary> SymmetricAlgorithm class aspects </summary>
 [AspectClass("mscorlib")]

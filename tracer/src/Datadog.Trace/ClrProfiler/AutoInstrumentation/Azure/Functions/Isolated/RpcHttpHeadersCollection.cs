@@ -7,9 +7,9 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Headers;
+using Datadog.Trace.Internal.Headers;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
 internal readonly struct RpcHttpHeadersCollection<T> : IHeadersCollection
 {

@@ -6,10 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.ConfigurationSources;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.ConfigurationSources;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;

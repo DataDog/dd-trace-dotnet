@@ -5,11 +5,11 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
     internal class HotChocolateCommon : GraphQLCommonBase
     {
@@ -71,9 +71,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 }
                 else
                 {
-                    var operationNameTag = span.GetTag(Trace.Tags.GraphQLOperationName);
+                    var operationNameTag = span.GetTag(Trace.Internal.Tags.GraphQLOperationName);
                     span.ResourceName = $"{operationType} {operationNameTag ?? "operation"}";
-                    span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
+                    span.SetTag(Trace.Internal.Tags.GraphQLOperationType, operationType);
                 }
             }
             catch (Exception ex)

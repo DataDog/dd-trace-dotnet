@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Collections;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.DiagnosticListeners
+namespace Datadog.Trace.Internal.DiagnosticListeners
 {
     /// <summary>
     /// RoutePattern for duck typing

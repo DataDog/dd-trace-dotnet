@@ -15,7 +15,7 @@ using System.Linq;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable
 {
     /// <summary>Provides methods for creating an array that is immutable; meaning it cannot be changed once it is created.
     /// 

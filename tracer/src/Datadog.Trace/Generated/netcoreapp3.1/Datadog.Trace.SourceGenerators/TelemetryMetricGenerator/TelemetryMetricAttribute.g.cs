@@ -6,7 +6,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.SourceGenerators;
+namespace Datadog.Trace.Internal.SourceGenerators;
 
 /// <summary>/
 /// Used to designate a property as corresponding to the provided

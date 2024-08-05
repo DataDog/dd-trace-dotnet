@@ -10,13 +10,13 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Sink.PeriodicBatching;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
-using BatchingSink = Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching.BatchingSink<Datadog.Trace.Logging.DirectSubmission.Sink.DirectSubmissionLogEvent>;
+using BatchingSink = Datadog.Trace.Internal.Logging.DirectSubmission.Sink.PeriodicBatching.BatchingSink<Datadog.Trace.Internal.Logging.DirectSubmission.Sink.DirectSubmissionLogEvent>;
 
 namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 {

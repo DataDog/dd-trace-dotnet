@@ -8,7 +8,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Resources {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Resources {
 	/// <summary>
 	/// Resource element set
 	/// </summary>

@@ -16,7 +16,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Datadog.Trace.Vendors.Serilog.Sinks.File
+namespace Datadog.Trace.Internal.Vendors.Serilog.Sinks.File
 {
     /// <summary>
     /// Supported by (file-based) sinks that can be explicitly flushed.

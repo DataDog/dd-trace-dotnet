@@ -11,11 +11,12 @@ using System.Threading;
 using System.Web.Routing;
 #else
 #endif
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rcm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.Initialization;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Rcm;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.AsmDd;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec.Waf.Initialization;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using FluentAssertions;
@@ -35,7 +36,7 @@ public class ContextTests : WafLibraryRequiredTest
     {
         if (useUnsafeEncoder)
         {
-            AppSec.WafEncoding.Encoder.SetPoolSize(0);
+            Internal.AppSec.WafEncoding.Encoder.SetPoolSize(0);
         }
 
         var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, useUnsafeEncoder: useUnsafeEncoder);

@@ -6,7 +6,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.SourceGenerators;
+namespace Datadog.Trace.Internal.SourceGenerators;
 
 /// <summary>
 /// Add to enums to indicate that extension methods should be generated for the type

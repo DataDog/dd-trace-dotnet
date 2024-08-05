@@ -7,16 +7,16 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Iast.Settings;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Iast.Settings;
+using Datadog.Trace.Internal.Telemetry;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Moq;
 using Xunit;
-using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
+using ConfigurationKeys = Datadog.Trace.Internal.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Tests.Telemetry;
 

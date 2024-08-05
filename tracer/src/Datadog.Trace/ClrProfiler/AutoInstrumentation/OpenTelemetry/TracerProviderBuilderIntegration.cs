@@ -7,11 +7,11 @@ using System;
 using System.ComponentModel;
 using System.Reflection;
 using System.Reflection.Emit;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {
     /// <summary>
     /// OpenTelemetry.Trace.TracerProviderBuilderExtensions.Build calltarget instrumentation,

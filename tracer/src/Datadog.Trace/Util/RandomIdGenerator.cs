@@ -27,9 +27,9 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.DataStreamsMonitoring.Utils;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Utils;
 
-namespace Datadog.Trace.Util;
+namespace Datadog.Trace.Internal.Util;
 
 /// <summary>
 /// Generates random numbers suitable for use as Datadog trace ids and span ids.

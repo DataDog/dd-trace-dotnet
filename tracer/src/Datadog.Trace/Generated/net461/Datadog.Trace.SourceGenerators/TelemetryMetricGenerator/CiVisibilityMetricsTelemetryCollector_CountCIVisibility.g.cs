@@ -8,13 +8,13 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 internal partial class CiVisibilityMetricsTelemetryCollector
 {
     private const int CountCIVisibilityLength = 343;
 
     /// <summary>
-    /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> values.
+    /// Creates the buffer for the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility" /> values.
     /// </summary>
     private static AggregatedMetric[] GetCountCIVisibilityBuffer()
         => new AggregatedMetric[]
@@ -394,38 +394,38 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         };
 
     /// <summary>
-    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" />.
+    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility" />.
     /// Each value represents the number of unique entries in the buffer returned by <see cref="GetCountCIVisibilityBuffer()" />
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountCIVisibilityEntryCounts { get; }
         = new int[]{ 40, 80, 10, 10, 4, 1, 4, 22, 2, 9, 72, 2, 11, 2, 11, 2, 11, 8, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, };
 
-    public void RecordCountCIVisibilityEventCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
+    public void RecordCountCIVisibilityEventCreated(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
     {
         var index = 0 + ((int)tag1 * 8) + (int)tag2;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityEventFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum tag2, int increment = 1)
+    public void RecordCountCIVisibilityEventFinished(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum tag2, int increment = 1)
     {
         var index = 40 + ((int)tag1 * 16) + (int)tag2;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityCodeCoverageStarted(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCoverageLibrary tag2, int increment = 1)
+    public void RecordCountCIVisibilityCodeCoverageStarted(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityCoverageLibrary tag2, int increment = 1)
     {
         var index = 120 + ((int)tag1 * 2) + (int)tag2;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityCodeCoverageFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCoverageLibrary tag2, int increment = 1)
+    public void RecordCountCIVisibilityCodeCoverageFinished(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityCoverageLibrary tag2, int increment = 1)
     {
         var index = 130 + ((int)tag1 * 2) + (int)tag2;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityManualApiEvent(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    public void RecordCountCIVisibilityManualApiEvent(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
         var index = 140 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
@@ -436,85 +436,85 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         Interlocked.Add(ref _buffer.CountCIVisibility[144], increment);
     }
 
-    public void RecordCountCIVisibilityEndpointPayloadRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpointAndCompression tag, int increment = 1)
+    public void RecordCountCIVisibilityEndpointPayloadRequests(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityEndpointAndCompression tag, int increment = 1)
     {
         var index = 145 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityEndpointPayloadRequestsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag2, int increment = 1)
+    public void RecordCountCIVisibilityEndpointPayloadRequestsErrors(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag1, Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag2, int increment = 1)
     {
         var index = 149 + ((int)tag1 * 11) + (int)tag2;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityEndpointPayloadDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, int increment = 1)
+    public void RecordCountCIVisibilityEndpointPayloadDropped(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, int increment = 1)
     {
         var index = 171 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityGitCommand(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag, int increment = 1)
+    public void RecordCountCIVisibilityGitCommand(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag, int increment = 1)
     {
         var index = 173 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityGitCommandErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityExitCodes tag2, int increment = 1)
+    public void RecordCountCIVisibilityGitCommandErrors(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag1, Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityExitCodes tag2, int increment = 1)
     {
         var index = 182 + ((int)tag1 * 8) + (int)tag2;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityGitRequestsSearchCommits(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsSearchCommits(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
         var index = 254 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityGitRequestsSearchCommitsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsSearchCommitsErrors(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
         var index = 256 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityGitRequestsObjectsPack(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsObjectsPack(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
         var index = 267 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityGitRequestsObjectsPackErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsObjectsPackErrors(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
         var index = 269 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityGitRequestsSettings(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsSettings(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
         var index = 280 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityGitRequestsSettingsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsSettingsErrors(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
         var index = 282 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityGitRequestsSettingsResponse(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityITRSettingsResponse tag, int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsSettingsResponse(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityITRSettingsResponse tag, int increment = 1)
     {
         var index = 293 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityITRSkippableTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    public void RecordCountCIVisibilityITRSkippableTestsRequest(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
         var index = 301 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityITRSkippableTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    public void RecordCountCIVisibilityITRSkippableTestsRequestErrors(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
         var index = 303 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
@@ -530,19 +530,19 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         Interlocked.Add(ref _buffer.CountCIVisibility[315], increment);
     }
 
-    public void RecordCountCIVisibilityITRSkipped(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    public void RecordCountCIVisibilityITRSkipped(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
         var index = 316 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityITRUnskippable(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    public void RecordCountCIVisibilityITRUnskippable(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
         var index = 320 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityITRForcedRun(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    public void RecordCountCIVisibilityITRForcedRun(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
         var index = 324 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
@@ -558,13 +558,13 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         Interlocked.Add(ref _buffer.CountCIVisibility[329], increment);
     }
 
-    public void RecordCountCIVisibilityEarlyFlakeDetectionRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    public void RecordCountCIVisibilityEarlyFlakeDetectionRequest(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
         var index = 330 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    public void RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
         var index = 332 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);

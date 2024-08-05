@@ -7,12 +7,12 @@
 
 using System;
 using System.Threading;
-using Datadog.Trace.Vendors.dnlib.Utils;
-using Datadog.Trace.Vendors.dnlib.IO;
-using Datadog.Trace.Vendors.dnlib.PE;
-using Datadog.Trace.Vendors.dnlib.Threading;
+using Datadog.Trace.Internal.Vendors.dnlib.Utils;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.PE;
+using Datadog.Trace.Internal.Vendors.dnlib.Threading;
 
-namespace Datadog.Trace.Vendors.dnlib.W32Resources {
+namespace Datadog.Trace.Internal.Vendors.dnlib.W32Resources {
 	/// <summary>
 	/// Win32 resources base class
 	/// </summary>

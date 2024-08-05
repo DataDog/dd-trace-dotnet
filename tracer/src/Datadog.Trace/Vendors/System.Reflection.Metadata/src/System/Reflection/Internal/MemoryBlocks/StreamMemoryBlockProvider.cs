@@ -19,7 +19,7 @@ using System.Diagnostics.CodeAnalysis;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal
 {
     /// <summary>Represents data read from a stream.</summary>
     /// <remarks>

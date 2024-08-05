@@ -21,7 +21,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Agent.Transports;
+namespace Datadog.Trace.Internal.Agent.Transports;
 
 /// <summary>
 /// Provides an <see cref="HttpContent"/> implementation that exposes an output <see cref="Stream"/>

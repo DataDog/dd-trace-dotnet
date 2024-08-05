@@ -5,10 +5,10 @@
 
 using System;
 using Confluent.Kafka;
-using Datadog.Trace.Agent;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Kafka;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Sampling;
 using FluentAssertions;
 using Moq;
 using Xunit;

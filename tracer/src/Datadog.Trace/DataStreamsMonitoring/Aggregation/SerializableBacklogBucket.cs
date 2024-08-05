@@ -6,7 +6,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Aggregation;
 
 internal readonly struct SerializableBacklogBucket
 {

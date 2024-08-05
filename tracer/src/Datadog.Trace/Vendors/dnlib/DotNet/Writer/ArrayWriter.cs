@@ -8,7 +8,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Writer {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer {
 	/// <summary>
 	/// Writes data
 	/// </summary>

@@ -5,11 +5,11 @@
 
 using System;
 using System.Data.Common;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
-namespace Datadog.Trace.Iast.Aspects;
+namespace Datadog.Trace.Internal.Iast.Aspects;
 
 #nullable enable
 

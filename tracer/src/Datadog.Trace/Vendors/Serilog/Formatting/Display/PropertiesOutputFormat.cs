@@ -20,10 +20,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Formatting.Json;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Formatting.Json;
 
-namespace Datadog.Trace.Vendors.Serilog.Formatting.Display
+namespace Datadog.Trace.Internal.Vendors.Serilog.Formatting.Display
 {
     static class PropertiesOutputFormat
     {

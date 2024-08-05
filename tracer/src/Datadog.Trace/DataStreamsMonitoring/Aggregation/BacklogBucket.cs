@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Aggregation;
 
 internal readonly struct BacklogBucket
 {

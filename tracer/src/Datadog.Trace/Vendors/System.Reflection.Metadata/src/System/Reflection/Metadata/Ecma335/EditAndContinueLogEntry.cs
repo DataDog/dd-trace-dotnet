@@ -14,7 +14,7 @@ using System.Diagnostics.CodeAnalysis;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
 {
   internal readonly struct EditAndContinueLogEntry : IEquatable<EditAndContinueLogEntry>
   {

@@ -4,9 +4,9 @@
 // </copyright>
 #nullable enable
 using System;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
 
-namespace Datadog.Trace.AppSec.WafEncoding;
+namespace Datadog.Trace.Internal.AppSec.WafEncoding;
 
 internal interface IEncodeResult : IDisposable
 {

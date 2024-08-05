@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.Sampling;
+namespace Datadog.Trace.Internal.Sampling;
 
 internal static class SamplingRulesFormat
 {

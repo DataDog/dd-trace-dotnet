@@ -7,7 +7,7 @@ using System;
 using System.Reflection;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Vendors.MessagePack.Formatters
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Formatters
 {
     internal sealed class PrimitiveObjectFormatter : IMessagePackFormatter<object>
     {

@@ -20,7 +20,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -364,7 +364,7 @@ public class IastInstrumentationUnitTests : TestHelper
     private void TestMethodOverloads(Type typeToCheck, string methodToCheck, List<string> overloadsToExclude = null, bool excludeParameterlessMethods = false)
     {
         var overloadsToExcludeNormalized = overloadsToExclude?.Select(NormalizeName).ToList();
-        var aspects = ClrProfiler.AspectDefinitions.GetAspects().Where(x => x.Contains(typeToCheck.FullName + "::")).ToList();
+        var aspects = Internal.ClrProfiler.AspectDefinitions.GetAspects().Where(x => x.Contains(typeToCheck.FullName + "::")).ToList();
         List<MethodBase> typeMethods = new();
         typeMethods.AddRange(string.IsNullOrEmpty(methodToCheck) ?
             typeToCheck?.GetMethods().Where(x => x.IsPublic && !x.IsVirtual) :
@@ -394,7 +394,7 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         var aspectsToExcludeNormalized = aspectsToExclude?.Select(NormalizeName).ToList();
 
-        foreach (var aspect in ClrProfiler.AspectDefinitions.GetAspects())
+        foreach (var aspect in Internal.ClrProfiler.AspectDefinitions.GetAspects())
         {
             if (aspectsToExcludeNormalized?.FirstOrDefault(x => NormalizeName(x).Contains(x)) is null)
             {

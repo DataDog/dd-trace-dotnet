@@ -6,9 +6,9 @@
 using System.Linq;
 using System.Reflection;
 using AgileObjects.NetStandardPolyfills;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.SourceGenerators;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;

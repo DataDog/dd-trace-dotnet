@@ -8,9 +8,9 @@ using System;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Threading;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Ci.Ipc;
+namespace Datadog.Trace.Internal.Ci.Ipc;
 
 internal partial class CircularChannel : IChannel
 {

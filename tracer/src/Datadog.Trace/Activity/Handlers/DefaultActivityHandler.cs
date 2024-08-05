@@ -5,10 +5,10 @@
 
 #nullable enable
 
-using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Activity.DuckTypes;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.Activity.Handlers
+namespace Datadog.Trace.Internal.Activity.Handlers
 {
     /// <summary>
     /// The default handler catches an activity and creates a datadog span from it.

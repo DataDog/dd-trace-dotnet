@@ -5,7 +5,7 @@
 
 using System.Reflection;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Couchbase;
 
 /// <summary>
 /// Ducktyping of Couchbase.Configuration.Client.PoolConfiguration

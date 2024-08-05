@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.DuckTyping
+namespace Datadog.Trace.Internal.DuckTyping
 {
     internal readonly struct TypesTuple : IEquatable<TypesTuple>
     {

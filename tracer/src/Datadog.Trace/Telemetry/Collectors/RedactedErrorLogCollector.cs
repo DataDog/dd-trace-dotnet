@@ -10,11 +10,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Telemetry.DTOs;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.Telemetry.DTOs;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Telemetry.Collectors;
+namespace Datadog.Trace.Internal.Telemetry.Collectors;
 
 internal class RedactedErrorLogCollector
 {

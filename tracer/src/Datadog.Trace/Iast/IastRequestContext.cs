@@ -12,15 +12,15 @@ using System.Web;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 #endif
-using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
-using Datadog.Trace.Iast.Telemetry;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
-using static Datadog.Trace.Telemetry.Metrics.MetricTags;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SDK;
+using Datadog.Trace.Internal.Iast.Telemetry;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
+using static Datadog.Trace.Internal.Telemetry.Metrics.MetricTags;
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 internal class IastRequestContext
 {

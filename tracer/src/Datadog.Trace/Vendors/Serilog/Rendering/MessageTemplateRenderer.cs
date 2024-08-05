@@ -20,11 +20,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Formatting.Json;
-using Datadog.Trace.Vendors.Serilog.Parsing;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Formatting.Json;
+using Datadog.Trace.Internal.Vendors.Serilog.Parsing;
 
-namespace Datadog.Trace.Vendors.Serilog.Rendering
+namespace Datadog.Trace.Internal.Vendors.Serilog.Rendering
 {
     static class MessageTemplateRenderer
     {

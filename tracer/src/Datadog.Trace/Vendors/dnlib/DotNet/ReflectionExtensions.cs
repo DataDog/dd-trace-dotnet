@@ -10,7 +10,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Extension methods for reflection types, methods, fields
 	/// </summary>

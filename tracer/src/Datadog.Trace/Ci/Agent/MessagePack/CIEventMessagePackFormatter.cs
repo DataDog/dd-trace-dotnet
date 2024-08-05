@@ -6,18 +6,18 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Ci.Agent.Payloads;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Internal.Ci.Agent.Payloads;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Vendors.MessagePack;
 
-namespace Datadog.Trace.Ci.Agent.MessagePack
+namespace Datadog.Trace.Internal.Ci.Agent.MessagePack
 {
     internal class CIEventMessagePackFormatter : EventMessagePackFormatter<CIVisibilityProtocolPayload>
     {
         private readonly byte[] _metadataBytes = StringEncoding.UTF8.GetBytes("metadata");
         private readonly byte[] _asteriskBytes = StringEncoding.UTF8.GetBytes("*");
-        private readonly byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
+        private readonly byte[] _runtimeIdBytes = StringEncoding.UTF8.GetBytes(Trace.Internal.Tags.RuntimeId);
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
         private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes("language");
         private readonly byte[] _languageNameValueBytes = StringEncoding.UTF8.GetBytes("dotnet");

@@ -8,9 +8,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Util.Delegates;
+using Datadog.Trace.Internal.Util.Delegates;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Kafka;
 
 internal static class ProducerCache
 {

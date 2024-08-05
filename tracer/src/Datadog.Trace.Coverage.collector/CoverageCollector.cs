@@ -9,17 +9,17 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Datadog.Trace.Ci.Coverage.Exceptions;
-using Datadog.Trace.Ci.Ipc;
-using Datadog.Trace.Ci.Ipc.Messages;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Ci.Coverage.Exceptions;
+using Datadog.Trace.Internal.Ci.Ipc;
+using Datadog.Trace.Internal.Ci.Ipc.Messages;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.ClrProfiler;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
-using Formatting = Datadog.Trace.Vendors.Newtonsoft.Json.Formatting;
+using Formatting = Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Formatting;
 
 namespace Datadog.Trace.Coverage.Collector
 {
@@ -161,7 +161,7 @@ namespace Datadog.Trace.Coverage.Collector
 
             var processedDirectories = new HashSet<string>();
             var numAssemblies = 0;
-            var tracerAssemblyName = typeof(Tracer).Assembly.GetName().Name;
+            var tracerAssemblyName = typeof(Internal.Tracer).Assembly.GetName().Name;
 
             // Process assemblies in parallel.
             Parallel.ForEach(

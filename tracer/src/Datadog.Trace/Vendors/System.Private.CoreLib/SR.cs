@@ -24,7 +24,7 @@ namespace FxResources.System.Reflection.Metadata
 {
     internal static class SR { }
 }
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System
 {
     internal static partial class SR
     {

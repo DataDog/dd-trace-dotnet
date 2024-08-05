@@ -7,15 +7,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using Datadog.Trace.Ci;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// The SpanContext contains all the information needed to express relationships between spans inside or outside the process boundaries.
@@ -46,7 +46,7 @@ namespace Datadog.Trace
         /// <see cref="SpanCreationSettings.Parent"/> in <see cref="Tracer.StartActive(string, SpanCreationSettings)"/>
         /// to specify that the new span should not inherit the currently active scope as its parent.
         /// </summary>
-        public static readonly ISpanContext None = new ReadOnlySpanContext(traceId: Trace.TraceId.Zero, spanId: 0, serviceName: null);
+        public static readonly ISpanContext None = new ReadOnlySpanContext(traceId: Trace.Internal.TraceId.Zero, spanId: 0, serviceName: null);
 
         private string _rawTraceId;
         private string _rawSpanId;
@@ -157,7 +157,7 @@ namespace Datadog.Trace
 
         private SpanContext(TraceId traceId, string serviceName)
         {
-            TraceId128 = traceId == Trace.TraceId.Zero
+            TraceId128 = traceId == Trace.Internal.TraceId.Zero
                           ? RandomIdGenerator.Shared.NextTraceId(useAllBits: false)
                           : traceId;
 
@@ -433,7 +433,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// If <see cref="TraceContext"/> is not null, returns <see cref="Trace.TraceContext.GetOrMakeSamplingDecision"/>.
+        /// If <see cref="TraceContext"/> is not null, returns <see cref="Trace.Internal.TraceContext.GetOrMakeSamplingDecision"/>.
         /// Otherwise, returns <see cref="SamplingPriority"/>.
         /// </summary>
         internal int? GetOrMakeSamplingDecision() =>

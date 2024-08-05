@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.Selenium;
 
 /// <summary>
 /// DuckTyping interface for OpenQA.Selenium.ICapabilities
