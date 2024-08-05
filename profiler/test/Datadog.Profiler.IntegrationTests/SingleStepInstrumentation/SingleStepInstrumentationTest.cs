@@ -26,7 +26,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckManualAndProfilingEnvVarNotSet(string appName, string framework, string appAssembly)
+        public void ManualAndProfilingEnvVarNotSet(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
@@ -47,7 +47,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckManualAndProfilingEnvVarTrue(string appName, string framework, string appAssembly)
+        public void ManualAndProfilingEnvVarTrue(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
 
@@ -68,7 +68,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckManualAndProfilingEnvVarFalse(string appName, string framework, string appAssembly)
+        public void ManualAndProfilingEnvVarFalse(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
@@ -113,47 +113,6 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             bool hasSentProfile = parser.HasSentProfile();
             Assert.True(hasSentProfile, "We must have some serie(s) with has_sent_profiles:true");
             Assert.True(parser.RuntimeIds.Count == 1);
-        }
-
-        [TestAppFact("Samples.Computer01")]
-        public void CheckSsiAndProfilingEnvVarTrue(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
-
-            // deployed with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            List<Serie> series = [];
-            agent.TelemetryMetricsRequestReceived += (_, ctx) =>
-            {
-                var s = GetRequestText(ctx.Value.Request);
-                series.AddRange(GetSeries(s));
-            };
-
-            runner.Run(agent);
-            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
-
-            var expectedTags = new[]
-            {
-                "heuristic_hypothetical_decision:no_span_short_lived",
-                "installation:ssi",
-                "enablement_choice:manually_enabled"
-            };
-            bool hasSentProfile = false;
-            series.Should().AllSatisfy(s =>
-            {
-                if (s.Tags.Contains("has_sent_profiles:true"))
-                {
-                    hasSentProfile = true;
-                }
-
-                string error = string.Empty;
-                Assert.True(ContainTags(s.Tags, expectedTags, mandatory: false, ref error), $"{error}");
-            });
-            Assert.True(hasSentProfile, "We must have some serie(s) with has_sent_profiles:true");
-            series.Should().ContainSingle(x => x.Metric == "ssi_heuristic.number_of_runtime_id");
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -223,44 +182,6 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void CheckSsiAndProfilingNotSsiEnabled_ShortLivedAndNoSpan(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
-
-            // deployed with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
-            // short lived
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            List<Serie> nbProfilesSeries = [];
-            Serie runtimeIdSerie = null;
-            agent.TelemetryMetricsRequestReceived += (_, ctx) =>
-            {
-                var s = GetRequestText(ctx.Value.Request);
-
-                var (nbRuntimeId, nbProfiles) = ExtractSeries(s);
-
-                if (nbRuntimeId != null && runtimeIdSerie != null)
-                {
-                    Assert.Fail("There must be only one 'ssi_heuristic.number_of_runtime_id' serie'");
-                }
-
-                runtimeIdSerie = nbRuntimeId;
-                nbProfilesSeries.AddRange(nbProfiles);
-            };
-
-            runner.Run(agent);
-
-            var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:no_span_short_lived", "installation:ssi", "enablement_choice:not_enabled" };
-            runtimeIdSerie?.Tags.Should().BeEquivalentTo(expectedTags);
-            nbProfilesSeries.Should().AllSatisfy(x => x.Tags.Should().BeEquivalentTo(expectedTags));
-
-            agent.NbCallsOnProfilingEndpoint.Should().Be(0);
-        }
-
-        [TestAppFact("Samples.Computer01")]
         public void SsiAndProfilingNotSsiEnabled_NoSpan(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
@@ -284,45 +205,6 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckSsiAndProfilingNotSsiEnabled_NoSpan(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
-
-            // deployed with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
-
-            // simulate long lived
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            List<Serie> nbProfilesSeries = [];
-            Serie runtimeIdSerie = null;
-            agent.TelemetryMetricsRequestReceived += (_, ctx) =>
-            {
-                var s = GetRequestText(ctx.Value.Request);
-
-                var (nbRuntimeId, nbProfiles) = ExtractSeries(s);
-
-                if (nbRuntimeId != null && runtimeIdSerie != null)
-                {
-                    Assert.Fail("There must be only one 'ssi_heuristic.number_of_runtime_id' serie'");
-                }
-
-                runtimeIdSerie = nbRuntimeId;
-                nbProfilesSeries.AddRange(nbProfiles);
-            };
-
-            runner.Run(agent);
-
-            var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:no_span", "installation:ssi", "enablement_choice:not_enabled" };
-            runtimeIdSerie?.Tags.Should().BeEquivalentTo(expectedTags);
-            nbProfilesSeries.Should().AllSatisfy(x => x.Tags.Should().BeEquivalentTo(expectedTags));
-
-            agent.NbCallsOnProfilingEndpoint.Should().Be(0);
-        }
-
         [TestAppFact("Samples.BuggyBits")]
         public void SsiAndProfilingNotSsiEnabled_ShortLived(string appName, string framework, string appAssembly)
         {
@@ -342,45 +224,6 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:short_lived", "installation:ssi", "enablement_choice:not_enabled" };
             parser.ShouldContainTags(expectedTags, mandatory: true);
-
-            agent.NbCallsOnProfilingEndpoint.Should().Be(0);
-        }
-
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckSsiAndProfilingNotSsiEnabled_ShortLived(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
-
-            // deployed with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
-            // short lived with span
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            List<Serie> nbProfilesSeries = [];
-            Serie runtimeIdSerie = null;
-            agent.TelemetryMetricsRequestReceived += (_, ctx) =>
-            {
-                var s = GetRequestText(ctx.Value.Request);
-
-                var (nbRuntimeId, nbProfiles) = ExtractSeries(s);
-
-                if (nbRuntimeId != null && runtimeIdSerie != null)
-                {
-                    Assert.Fail("There must be only one 'ssi_heuristic.number_of_runtime_id' serie'");
-                }
-
-                runtimeIdSerie = nbRuntimeId;
-                nbProfilesSeries.AddRange(nbProfiles);
-            };
-
-            runner.Run(agent);
-
-            var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:short_lived", "installation:ssi", "enablement_choice:not_enabled" };
-            string error = string.Empty;
-            Assert.True(ContainTags(runtimeIdSerie?.Tags, expectedTags, mandatory: true, ref error), $"{error}");
-            nbProfilesSeries.Should().AllSatisfy(x => Assert.True(ContainTags(x.Tags, expectedTags, mandatory: true, ref error), $"{error}"));
 
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
         }
@@ -422,58 +265,6 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
         }
 
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckSsiAndProfilingNotSsiEnabled_AllTriggered(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
-
-            // deployed with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
-            // simulate long lived
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            List<Serie> nbProfilesSeries = [];
-            Serie runtimeIdSerie = null;
-            agent.TelemetryMetricsRequestReceived += (_, ctx) =>
-            {
-                var s = GetRequestText(ctx.Value.Request);
-
-                var (nbRuntimeId, nbProfiles) = ExtractSeries(s);
-
-                if (nbRuntimeId != null && runtimeIdSerie != null)
-                {
-                    Assert.Fail("There must be only one 'ssi_heuristic.number_of_runtime_id' serie'");
-                }
-
-                runtimeIdSerie = nbRuntimeId;
-                nbProfilesSeries.AddRange(nbProfiles);
-            };
-
-            runner.Run(agent);
-
-            runtimeIdSerie.Should().NotBeNull();
-            var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:triggered", "installation:ssi", "enablement_choice:not_enabled" };
-            runtimeIdSerie.Tags.Should().BeEquivalentTo(expectedTags);
-
-            var hasTriggeredSeries = false;
-            nbProfilesSeries.Should().AllSatisfy(s =>
-            {
-                s.Metric.Should().Be("ssi_heuristic.number_of_profiles");
-                s.Tags.Should().HaveCount(4).And.OnlyHaveUniqueItems().And.Contain("installation:ssi", "enablement_choice:ssi_enabled");
-                if (s.Tags.Contains("has_sent_profiles:false"))
-                {
-                    s.Tags.Should().Contain("heuristic_hypothetical_decision:triggered");
-                    hasTriggeredSeries = true;
-                }
-            });
-
-            hasTriggeredSeries.Should().BeTrue("We must have some triggered serie(s)");
-
-            agent.NbCallsOnProfilingEndpoint.Should().Be(0);
-        }
-
         [TestAppFact("Samples.Computer01")]
         public void SsiAndProfilingSsiEnabled_ShortLivedAndNoSpan(string appName, string framework, string appAssembly)
         {
@@ -493,44 +284,6 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:no_span_short_lived", "installation:ssi", "enablement_choice:ssi_enabled" };
             parser.ShouldContainTags(expectedTags, mandatory: true);
-
-            agent.NbCallsOnProfilingEndpoint.Should().Be(0);
-        }
-
-        [TestAppFact("Samples.Computer01")]
-        public void CheckSsiAndProfilingSsiEnabled_ShortLivedAndNoSpan(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
-
-            // deployed and enabled with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
-            // short lived
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            List<Serie> nbProfilesSeries = [];
-            Serie runtimeIdSerie = null;
-            agent.TelemetryMetricsRequestReceived += (_, ctx) =>
-            {
-                var s = GetRequestText(ctx.Value.Request);
-
-                var (nbRuntimeId, nbProfiles) = ExtractSeries(s);
-
-                if (nbRuntimeId != null && runtimeIdSerie != null)
-                {
-                    Assert.Fail("There must be only one 'ssi_heuristic.number_of_runtime_id' serie'");
-                }
-
-                runtimeIdSerie = nbRuntimeId;
-                nbProfilesSeries.AddRange(nbProfiles);
-            };
-
-            runner.Run(agent);
-
-            var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:no_span_short_lived", "installation:ssi", "enablement_choice:ssi_enabled" };
-            runtimeIdSerie?.Tags.Should().BeEquivalentTo(expectedTags);
-            nbProfilesSeries.Should().AllSatisfy(x => x.Tags.Should().BeEquivalentTo(expectedTags));
 
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
         }
@@ -559,45 +312,6 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckSsiAndProfilingSsiEnabled_NoSpan(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
-
-            // deployed and enabled with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
-
-            // simulate long lived
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            List<Serie> nbProfilesSeries = [];
-            Serie runtimeIdSerie = null;
-            agent.TelemetryMetricsRequestReceived += (_, ctx) =>
-            {
-                var s = GetRequestText(ctx.Value.Request);
-
-                var (nbRuntimeId, nbProfiles) = ExtractSeries(s);
-
-                if (nbRuntimeId != null && runtimeIdSerie != null)
-                {
-                    Assert.Fail("There must be only one 'ssi_heuristic.number_of_runtime_id' serie'");
-                }
-
-                runtimeIdSerie = nbRuntimeId;
-                nbProfilesSeries.AddRange(nbProfiles);
-            };
-
-            runner.Run(agent);
-
-            var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:no_span", "installation:ssi", "enablement_choice:ssi_enabled" };
-            runtimeIdSerie?.Tags.Should().BeEquivalentTo(expectedTags);
-            nbProfilesSeries.Should().AllSatisfy(x => x.Tags.Should().BeEquivalentTo(expectedTags));
-
-            agent.NbCallsOnProfilingEndpoint.Should().Be(0);
-        }
-
         [TestAppFact("Samples.BuggyBits")]
         public void SsiAndProfilingSsiEnabled_ShortLived(string appName, string framework, string appAssembly)
         {
@@ -617,44 +331,6 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:short_lived", "installation:ssi", "enablement_choice:ssi_enabled" };
             parser.ShouldContainTags(expectedTags, mandatory: true);
-
-            agent.NbCallsOnProfilingEndpoint.Should().Be(0);
-        }
-
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckSsiAndProfilingSsiEnabled_ShortLived(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
-
-            // deployed and enabled with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
-            // short lived with span
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            List<Serie> nbProfilesSeries = [];
-            Serie runtimeIdSerie = null;
-            agent.TelemetryMetricsRequestReceived += (_, ctx) =>
-            {
-                var s = GetRequestText(ctx.Value.Request);
-
-                var (nbRuntimeId, nbProfiles) = ExtractSeries(s);
-
-                if (nbRuntimeId != null && runtimeIdSerie != null)
-                {
-                    Assert.Fail("There must be only one 'ssi_heuristic.number_of_runtime_id' serie'");
-                }
-
-                runtimeIdSerie = nbRuntimeId;
-                nbProfilesSeries.AddRange(nbProfiles);
-            };
-
-            runner.Run(agent);
-
-            var expectedTags = new[] { "has_sent_profiles:false", "heuristic_hypothetical_decision:short_lived", "installation:ssi", "enablement_choice:ssi_enabled" };
-            runtimeIdSerie?.Tags.Should().BeEquivalentTo(expectedTags);
-            nbProfilesSeries.Should().AllSatisfy(x => x.Tags.Should().BeEquivalentTo(expectedTags));
 
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
         }
@@ -688,58 +364,6 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
                 if (tm.Tags.Contains("has_sent_profiles", "true"))
                 {
                     tm.AssertTagsContains("heuristic_hypothetical_decision", "triggered");
-                    hasTriggeredSeries = true;
-                }
-            });
-
-            hasTriggeredSeries.Should().BeTrue("We must have some triggered serie(s)");
-
-            agent.NbCallsOnProfilingEndpoint.Should().NotBe(0);
-        }
-
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckSsiAndProfilingSsiEnabled_AllTriggered(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
-
-            // deployed and enabled with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
-            // simulate long lived
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            List<Serie> nbProfilesSeries = [];
-            Serie runtimeIdSerie = null;
-            agent.TelemetryMetricsRequestReceived += (_, ctx) =>
-            {
-                var s = GetRequestText(ctx.Value.Request);
-
-                var (nbRuntimeId, nbProfiles) = ExtractSeries(s);
-
-                if (nbRuntimeId != null && runtimeIdSerie != null)
-                {
-                    Assert.Fail("There must be only one 'ssi_heuristic.number_of_runtime_id' serie'");
-                }
-
-                runtimeIdSerie = nbRuntimeId;
-                nbProfilesSeries.AddRange(nbProfiles);
-            };
-
-            runner.Run(agent);
-
-            runtimeIdSerie.Should().NotBeNull();
-            var expectedTags = new[] { "has_sent_profiles:true", "heuristic_hypothetical_decision:triggered", "installation:ssi", "enablement_choice:ssi_enabled" };
-            runtimeIdSerie.Tags.Should().BeEquivalentTo(expectedTags);
-
-            var hasTriggeredSeries = false;
-            nbProfilesSeries.Should().AllSatisfy(s =>
-            {
-                s.Metric.Should().Be("ssi_heuristic.number_of_profiles");
-                s.Tags.Should().HaveCount(4).And.OnlyHaveUniqueItems().And.Contain("installation:ssi", "enablement_choice:ssi_enabled");
-                if (s.Tags.Contains("has_sent_profiles:true"))
-                {
-                    s.Tags.Should().Contain("heuristic_hypothetical_decision:triggered");
                     hasTriggeredSeries = true;
                 }
             });
@@ -794,79 +418,6 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
                 else
                 {
                     var decisionTag = tm.Tags.FirstOrDefault(x => x.Item1.StartsWith("heuristic_hypothetical_decision"));
-                    if (decisionTag != null)
-                    {
-                        Assert.Fail($"Unrecognized {decisionTag}");
-                    }
-                    else
-                    {
-                        Assert.Fail("Missing heuristic_hypothetical_decision tag");
-                    }
-                }
-            });
-
-            hasNotSentProfiles.Should().BeTrue("We must have some short lived serie(s)");
-            hasTriggeredSeries.Should().BeTrue("We must have some triggered serie(s)");
-        }
-
-        [TestAppFact("Samples.BuggyBits")]
-        public void CheckSsiAndProfilingSsiEnabled_Delayed(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false, enableTracer: true);
-
-            // deployed and enabled with SSI
-            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
-            // simulate long lived
-            runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, TimeSpan.FromSeconds(6).TotalMilliseconds.ToString());
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            List<Serie> nbProfilesSeries = [];
-            Serie runtimeIdSerie = null;
-            agent.TelemetryMetricsRequestReceived += (_, ctx) =>
-            {
-                var s = GetRequestText(ctx.Value.Request);
-
-                var (nbRuntimeId, nbProfiles) = ExtractSeries(s);
-
-                if (nbRuntimeId != null && runtimeIdSerie != null)
-                {
-                    Assert.Fail("There must be only one 'ssi_heuristic.number_of_runtime_id' serie'");
-                }
-
-                runtimeIdSerie ??= nbRuntimeId;
-                nbProfilesSeries.AddRange(nbProfiles);
-            };
-
-            runner.Run(agent);
-
-            runtimeIdSerie.Should().NotBeNull();
-            runtimeIdSerie.Tags.Should().Contain("has_sent_profiles:true", "heuristic_hypothetical_decision:triggered", "installation:ssi", "enablement_choice:ssi_enabled");
-
-            nbProfilesSeries.Should().NotBeEmpty();
-            var hasNotSentProfiles = false;
-            var hasTriggeredSeries = false;
-            nbProfilesSeries.Should().AllSatisfy(s =>
-            {
-                s.Metric.Should().Be("ssi_heuristic.number_of_profiles");
-                s.Tags.Should().HaveCount(4).And.OnlyHaveUniqueItems().And.Contain("installation:ssi", "enablement_choice:ssi_enabled");
-                // we need to check for no_span in case of the timer finished after the first call (flakiness)
-                if (
-                    s.Tags.Contains("heuristic_hypothetical_decision:short_lived") ||
-                    s.Tags.Contains("heuristic_hypothetical_decision:no_span") ||
-                    s.Tags.Contains("heuristic_hypothetical_decision:no_span_short_lived"))
-                {
-                    s.Tags.Should().Contain("has_sent_profiles:false");
-                    hasNotSentProfiles = true;
-                }
-                else if (s.Tags.Contains("heuristic_hypothetical_decision:triggered"))
-                {
-                    // it is possible that the final profile was not sent because the providers were stopped
-                    hasTriggeredSeries = true;
-                }
-                else
-                {
-                    var decisionTag = s.Tags.FirstOrDefault(x => x.StartsWith("heuristic_hypothetical_decision"));
                     if (decisionTag != null)
                     {
                         Assert.Fail($"Unrecognized {decisionTag}");
