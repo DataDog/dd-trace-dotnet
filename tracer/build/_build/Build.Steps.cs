@@ -1009,7 +1009,7 @@ partial class Build
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
-            var filter = string.IsNullOrWhiteSpace(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)" : Filter;
+            var filter = string.IsNullOrWhiteSpace(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter;
             var exceptions = new List<Exception>();
             try
             {
@@ -1424,7 +1424,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True&Category!=AzureFunctions" : Filter)
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1494,7 +1494,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "RunOnWindows=True&Category=AzureFunctions" : Filter)
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(Category=AzureFunctions)&(SkipInCI!=True)" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1535,7 +1535,7 @@ partial class Build
                     .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions" : Filter)
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1587,7 +1587,7 @@ partial class Build
                                 .SetFramework(Framework)
                                 .EnableNoRestore()
                                 .EnableNoBuild()
-                                .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&LoadFromGAC=True&Category!=AzureFunctions" : Filter)
+                                .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(LoadFromGAC=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
                                 .SetTestTargetPlatform(TargetPlatform)
                                 .SetIsDebugRun(isDebugRun)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1626,7 +1626,7 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&MSI=True&Category!=AzureFunctions" : Filter)
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(MSI=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1683,8 +1683,6 @@ partial class Build
                 "Samples.WebRequest.NetFramework20",
                 "DogStatsD.RaceCondition",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
-                "Samples.OracleMDA", // We don't test these yet
-                "Samples.OracleMDA.Core", // We don't test these yet
                 "MismatchedTracerVersions",
                 "IBM.Data.DB2.DBCommand",
                 "Sandbox.AutomaticInstrumentation", // Doesn't run on Linux
@@ -1927,7 +1925,7 @@ partial class Build
             var filter = string.IsNullOrWhiteSpace(Filter) switch
             {
                 false => $"({Filter}){dockerFilter}{armFilter}",
-                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
+                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
             };
 
             try
@@ -2008,7 +2006,7 @@ partial class Build
             var filter = string.IsNullOrWhiteSpace(Filter) switch
             {
                 false => Filter,
-                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
+                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
             };
 
             var targetPlatform = IsArm64 ? (MSBuildTargetPlatform)"arm64" : TargetPlatform;

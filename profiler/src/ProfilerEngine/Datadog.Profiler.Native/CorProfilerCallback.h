@@ -54,6 +54,7 @@ class StackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
 class RuntimeIdStore;
+class TimerCreateCpuProfiler;
 
 #ifdef LINUX
 class SystemCallsShield;
@@ -250,6 +251,7 @@ private :
     RuntimeIdStore* _pRuntimeIdStore = nullptr;
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
+    TimerCreateCpuProfiler* _pCpuProfiler = nullptr;
 #endif
 
     std::vector<std::unique_ptr<IService>> _services;

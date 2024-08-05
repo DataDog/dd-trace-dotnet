@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
 
@@ -74,8 +75,7 @@ public class DirectoryAspect
     [AspectMethodInsertBefore("System.IO.Directory::SetCurrentDirectory(System.String)")]
     public static string ReviewPath(string path)
     {
-        IastModule.OnPathTraversal(path);
-        RaspModule.OnLfi(path);
+        VulnerabilitiesModule.OnPathTraversal(path);
         return path;
     }
 }

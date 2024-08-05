@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -689,7 +689,7 @@
     SpanId: Id_29,
     Name: MyServiceName.internal,
     Resource: StartRootSpan,
-    Service: CustomServiceName,
+    Service: MyServiceName,
     Type: custom,
     ParentId: Id_26,
     Tags: {
@@ -698,12 +698,14 @@
       otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
-      runtime-id: Guid_2,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
       span.kind: internal,
-      version: 1.0.x
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version,
+      _dd.base_service: CustomServiceName
     }
   },
   {
@@ -948,6 +950,33 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
   {
     TraceId: Id_40,
     SpanId: Id_41,
+    Name: MissingServiceName.internal,
+    Resource: service.name should be the DefaultServiceName value,
+    Service: CustomServiceName,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MissingServiceName,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_7,
+      runtime-id: Guid_2,
+      service.name: CustomServiceName,
+      span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_42,
+    SpanId: Id_43,
     Name: AdditionalActivitySource.internal,
     Resource: Transform,
     Service: CustomServiceName,
@@ -957,7 +986,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       language: dotnet,
       otel.library.name: AdditionalActivitySource,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_7,
+      otel.trace_id: Guid_8,
       runtime-id: Guid_2,
       span.kind: internal
     },

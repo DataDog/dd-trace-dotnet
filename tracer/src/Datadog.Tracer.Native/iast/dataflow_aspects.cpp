@@ -495,7 +495,7 @@ namespace iast
 
                     if (_aspect->_boxParam[instructionToProcess.paramIndex])
                     {
-                        //Retrieve type of the valueType in target argument
+                        // Retrieve type of the valueType in target argument
                         auto paramType = _targetParamTypeToken[instructionToProcess.paramIndex];
                         processor->InsertBefore(aspectInstruction, processor->NewILInstr(CEE_BOX, paramType));
                         inserted = processor->InsertAfter(aspectInstruction, processor->NewILInstr(CEE_UNBOX_ANY, paramType));
@@ -526,6 +526,18 @@ namespace iast
                             {
                                 auto paramType = _targetParamTypeToken[x];
                                 processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_BOX, paramType));
+
+                                // Figure out if param is byref
+                                if (iInfo->IsArgument())
+                                {
+                                    auto sig = method->GetSignature();
+                                    auto param = sig->_params[iInfo->_instruction->m_Arg32];
+                                    if (param->IsByRef())
+                                    {
+                                        processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_LDOBJ, paramType));
+                                    }
+                                }
+
                                 iInfo->ConvertToNonAddressLoad();
                             }
                         }

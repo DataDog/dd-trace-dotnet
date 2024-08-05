@@ -1,0 +1,2101 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: RunAllAsync<TCommand>,
+    Resource: RunAllAsync<TCommand>,
+    Service: Samples.OracleMDA,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: command,
+    Resource: OracleCommand,
+    Service: Samples.OracleMDA,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: command,
+    Resource: DbCommand,
+    Service: Samples.OracleMDA,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: command,
+    Resource: IDbCommand,
+    Service: Samples.OracleMDA,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_6,
+    Name: command,
+    Resource: IDbCommandGenericConstraint<OracleCommand>,
+    Service: Samples.OracleMDA,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_7,
+    Name: command,
+    Resource: DbCommand-netstandard,
+    Service: Samples.OracleMDA,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_8,
+    Name: command,
+    Resource: IDbCommand-netstandard,
+    Service: Samples.OracleMDA,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_9,
+    Name: command,
+    Resource: IDbCommandGenericConstraint<OracleCommand>-netstandard,
+    Service: Samples.OracleMDA,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_10,
+    Name: sync,
+    Resource: OracleCommand,
+    Service: Samples.OracleMDA,
+    ParentId: Id_3,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_11,
+    Name: async,
+    Resource: OracleCommand,
+    Service: Samples.OracleMDA,
+    ParentId: Id_3,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_12,
+    Name: async-with-cancellation,
+    Resource: OracleCommand,
+    Service: Samples.OracleMDA,
+    ParentId: Id_3,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_13,
+    Name: sync,
+    Resource: DbCommand,
+    Service: Samples.OracleMDA,
+    ParentId: Id_4,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_14,
+    Name: async,
+    Resource: DbCommand,
+    Service: Samples.OracleMDA,
+    ParentId: Id_4,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_15,
+    Name: async-with-cancellation,
+    Resource: DbCommand,
+    Service: Samples.OracleMDA,
+    ParentId: Id_4,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_16,
+    Name: sync,
+    Resource: IDbCommand,
+    Service: Samples.OracleMDA,
+    ParentId: Id_5,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_17,
+    Name: sync,
+    Resource: IDbCommandGenericConstraint<OracleCommand>,
+    Service: Samples.OracleMDA,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_18,
+    Name: sync,
+    Resource: DbCommand-netstandard,
+    Service: Samples.OracleMDA,
+    ParentId: Id_7,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_19,
+    Name: async,
+    Resource: DbCommand-netstandard,
+    Service: Samples.OracleMDA,
+    ParentId: Id_7,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_20,
+    Name: async-with-cancellation,
+    Resource: DbCommand-netstandard,
+    Service: Samples.OracleMDA,
+    ParentId: Id_7,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_21,
+    Name: sync,
+    Resource: IDbCommand-netstandard,
+    Service: Samples.OracleMDA,
+    ParentId: Id_8,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_22,
+    Name: sync,
+    Resource: IDbCommandGenericConstraint<OracleCommand>-netstandard,
+    Service: Samples.OracleMDA,
+    ParentId: Id_9,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_23,
+    Name: oracle.query,
+    Resource: create table oracletest{rand} (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_10,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_24,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand} (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_10,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_25,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand} WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_10,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_26,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand} SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_10,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_27,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand} WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_10,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_28,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand} WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_10,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_29,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand} WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_10,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_30,
+    Name: oracle.query,
+    Resource: create table oracletest{rand}0 (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_11,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_31,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand}0 (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_11,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_32,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand}0 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_11,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_33,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand}0 SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_11,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_34,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}0 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_11,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_35,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}0 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_11,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_36,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand}0 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_11,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_37,
+    Name: oracle.query,
+    Resource: create table oracletest{rand}1 (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_12,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_38,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand}1 (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_12,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_39,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand}1 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_12,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_40,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand}1 SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_12,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_41,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}1 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_12,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_42,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}1 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_12,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_43,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand}1 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_12,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_44,
+    Name: oracle.query,
+    Resource: create table oracletest{rand}2 (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_13,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_45,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand}2 (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_13,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_46,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand}2 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_13,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_47,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand}2 SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_13,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_48,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}2 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_13,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_49,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}2 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_13,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_50,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand}2 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_13,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_51,
+    Name: oracle.query,
+    Resource: create table oracletest{rand}3 (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_14,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_52,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand}3 (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_14,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_53,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand}3 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_14,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_54,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand}3 SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_14,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_55,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}3 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_14,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_56,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}3 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_14,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_57,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand}3 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_14,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_58,
+    Name: oracle.query,
+    Resource: create table oracletest{rand}4 (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_15,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_59,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand}4 (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_15,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_60,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand}4 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_15,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_61,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand}4 SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_15,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_62,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}4 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_15,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_63,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}4 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_15,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_64,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand}4 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_15,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_65,
+    Name: oracle.query,
+    Resource: create table oracletest{rand}5 (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_16,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_66,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand}5 (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_16,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_67,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand}5 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_16,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_68,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand}5 SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_16,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_69,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}5 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_16,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_70,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}5 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_16,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_71,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand}5 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_16,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_72,
+    Name: oracle.query,
+    Resource: create table oracletest{rand}6 (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_17,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_73,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand}6 (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_17,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_74,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand}6 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_17,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_75,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand}6 SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_17,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_76,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}6 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_17,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_77,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}6 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_17,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_78,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand}6 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_17,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_79,
+    Name: oracle.query,
+    Resource: create table oracletest{rand}7 (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_18,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_80,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand}7 (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_18,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_81,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand}7 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_18,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_82,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand}7 SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_18,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_83,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}7 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_18,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_84,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}7 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_18,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_85,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand}7 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_18,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_86,
+    Name: oracle.query,
+    Resource: create table oracletest{rand}8 (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_19,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_87,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand}8 (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_19,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_88,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand}8 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_19,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_89,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand}8 SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_19,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_90,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}8 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_19,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_91,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}8 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_19,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_92,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand}8 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_19,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_93,
+    Name: oracle.query,
+    Resource: create table oracletest{rand}9 (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_20,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_94,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand}9 (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_20,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_95,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand}9 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_20,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_96,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand}9 SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_20,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_97,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}9 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_20,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_98,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}9 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_20,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_99,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand}9 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_20,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_100,
+    Name: oracle.query,
+    Resource: create table oracletest{rand}10 (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_101,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand}10 (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_102,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand}10 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_103,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand}10 SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_104,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}10 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_105,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}10 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_106,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand}10 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_107,
+    Name: oracle.query,
+    Resource: create table oracletest{rand}11 (Id number(10) not null, Name varchar2(100) not null),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_22,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_108,
+    Name: oracle.query,
+    Resource: INSERT INTO oracletest{rand}11 (Id, Name) VALUES (:Id, :Name),
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_22,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_109,
+    Name: oracle.query,
+    Resource: SELECT Name FROM oracletest{rand}11 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_22,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_110,
+    Name: oracle.query,
+    Resource: UPDATE oracletest{rand}11 SET Name=:Name WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_22,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_111,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}11 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_22,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_112,
+    Name: oracle.query,
+    Resource: SELECT * FROM oracletest{rand}11 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_22,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_113,
+    Name: oracle.query,
+    Resource: DELETE FROM oracletest{rand}11 WHERE Id=:Id,
+    Service: Samples.OracleMDA,
+    Type: sql,
+    ParentId: Id_22,
+    Tags: {
+      component: Oracle,
+      db.type: oracle,
+      db.user: system,
+      env: integration_tests,
+      out.host: host:1521/FREE,
+      peer.service: host:1521/FREE,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  }
+]

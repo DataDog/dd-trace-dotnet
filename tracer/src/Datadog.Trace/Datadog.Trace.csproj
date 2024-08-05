@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>2.54.0</Version>
+    <Version>2.55.0</Version>
     <Title>Datadog APM</Title>
     <Description>Instrumentation library for Datadog APM.</Description>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -145,9 +145,5 @@
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);ENABLE_IL2CPP</DefineConstants>
   </PropertyGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="folder_locator.json" />
-  </ItemGroup>
 
 </Project>

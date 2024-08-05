@@ -12,6 +12,7 @@
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
+#include "CpuProfilerType.h"
 #include "ISsiLifetime.h"
 #include "ISsiManager.h"
 #include "Sample.h"
@@ -75,6 +76,8 @@ public:
     MOCK_METHOD(EnablementStatus, GetEnablementStatus, (), (const override));
     MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
     MOCK_METHOD(bool, IsEtwLoggingEnabled, (), (const override));
+    MOCK_METHOD(CpuProfilerType, GetCpuProfilerType, (), (const override));
+    MOCK_METHOD(std::chrono::milliseconds, GetCpuProfilingInterval, (), (const override));
     MOCK_METHOD(std::chrono::milliseconds, GetSsiLongLivedThreshold, (), (const override));
     MOCK_METHOD(bool, IsTelemetryToDiskEnabled, (), (const override));
 };

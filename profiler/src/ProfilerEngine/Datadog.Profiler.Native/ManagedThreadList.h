@@ -43,6 +43,7 @@ public:
     HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
     std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId) override;
     bool TryGetThreadInfo(uint32_t osThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
+    void ForEach(std::function<void (ManagedThreadInfo*)> callback) override;
 
 private:
     const char* _serviceName = "ManagedThreadList";

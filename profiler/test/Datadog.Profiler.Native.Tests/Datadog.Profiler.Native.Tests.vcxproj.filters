@@ -166,6 +166,9 @@
     <ClCompile Include="ServiceBaseTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="CpuProfilerTypeTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="SsiManagerTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>

@@ -63,7 +63,7 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
     IConfiguration const* const pConfiguration,
     CallstackProvider* callstackProvider)
 {
-    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration, callstackProvider, LibrariesInfoCache::Get());
+    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider, LibrariesInfoCache::Get());
 }
 
 // https://linux.die.net/man/5/proc

@@ -34,12 +34,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsCosmosDb(metadataSchemaVersion);
 
-        [SkippableTheory(Skip = "Cosmos emulator is too flaky at the moment")]
+        [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
         [Trait("Category", "ArmUnsupported")]
+        [Trait("SkipInCI", "True")] // Cosmos emulator is too flaky in CI at the moment
         public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
         {
             var expectedSpanCount = 14;

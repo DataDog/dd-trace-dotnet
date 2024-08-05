@@ -2497,19 +2497,24 @@ void DebuggerMethodRewriter::AdjustExceptionHandlingClauses(ILInstr* pFromInstr,
     {
         if (ehClauses[ehIndex].m_pTryBegin == pFromInstr)
         {
-            // TODO log
+            ehClauses[ehIndex].m_pTryBegin = pToInstr;
+        }
+        else if (ehClauses[ehIndex].m_pTryEnd == pFromInstr)
+        {
             ehClauses[ehIndex].m_pTryEnd = pToInstr;
         }
 
         if (ehClauses[ehIndex].m_pHandlerBegin == pFromInstr)
         {
-            // TODO log
             ehClauses[ehIndex].m_pHandlerBegin = pToInstr;
+        }
+        else if (ehClauses[ehIndex].m_pHandlerEnd == pFromInstr)
+        {
+            ehClauses[ehIndex].m_pHandlerEnd = pToInstr;
         }
 
         if (ehClauses[ehIndex].m_pFilter == pFromInstr)
         {
-            // TODO log
             ehClauses[ehIndex].m_pFilter = pToInstr;
         }
     }

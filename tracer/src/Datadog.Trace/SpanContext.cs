@@ -199,7 +199,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the span id.
         /// </summary>
-        public ulong SpanId { get; }
+        public ulong SpanId { get; internal set; }
 
         /// <summary>
         /// Gets or sets the service name to propagate to child spans.
@@ -251,10 +251,14 @@ namespace Datadog.Trace
         internal string RawTraceId => _rawTraceId ??= HexString.ToHexString(TraceId128);
 
         /// <summary>
-        /// Gets the span id as a hexadecimal string of length 16,
+        /// Gets or sets the span id as a hexadecimal string of length 16,
         /// padded with zeros to the left if needed.
         /// </summary>
-        internal string RawSpanId => _rawSpanId ??= HexString.ToHexString(SpanId);
+        internal string RawSpanId
+        {
+            get => _rawSpanId ??= HexString.ToHexString(SpanId);
+            set => _rawSpanId = value;
+        }
 
         /// <summary>
         /// Gets or sets additional key/value pairs from an upstream "tracestate" W3C header that we will propagate downstream.

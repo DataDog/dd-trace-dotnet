@@ -58,7 +58,7 @@ namespace Datadog.Trace.Propagators
 
         // zero value (16 zeroes) for when there isn't a last parent (`p`)
         // this value indicates that the backend can make this span as the root span if necessary of a trace
-        private const string ZeroLastParent = "0000000000000000";
+        internal const string ZeroLastParent = "0000000000000000";
 
         private static readonly KeyValuePair<char, char>[] InjectOriginReplacements =
         {

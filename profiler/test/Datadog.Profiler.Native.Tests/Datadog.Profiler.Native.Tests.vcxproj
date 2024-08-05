@@ -57,6 +57,7 @@
     <ClCompile Include="ApplicationStoreTest.cpp" />
     <ClCompile Include="CallstackTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
+    <ClCompile Include="CpuProfilerTypeTest.cpp" />
     <ClCompile Include="EnabledProfilersTest.cpp" />
     <ClCompile Include="EnvironmentHelper.cpp" />
     <ClCompile Include="ErrorCodeTest.cpp" />

@@ -165,9 +165,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             integration.Error.Should().BeNullOrEmpty();
         }
 
-        internal static IEnumerable<(string[] Tags, int Value, long Timestamp)> GetMetricData(ICollection<TelemetryData> allData, string metricName, string tag1 = null, string tag2 = null, string tag3 = null)
+        internal static IEnumerable<(string[] Tags, int Value, long Timestamp)> GetMetricData(ICollection<TelemetryData> allData, string metricName, string tag1 = null, string tag2 = null, string tag3 = null, bool singleAppClosing = true)
         {
-            allData.Should().ContainSingle(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+            if (singleAppClosing)
+            {
+                allData.Should().ContainSingle(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+            }
+            else
+            {
+                allData.Should().Contain(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+            }
 
             var metricPayloads = allData
                                 .OrderByDescending(x => x.SeqId)

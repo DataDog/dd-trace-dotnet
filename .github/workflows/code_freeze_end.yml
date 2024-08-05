@@ -15,10 +15,6 @@ jobs:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     steps:
-    - uses: GitHubSecurityLab/actions-permissions/monitor@v1
-      with:
-        config: ${{ vars.PERMISSIONS_CONFIG }}
-
     - name: Clone dd-trace-dotnet repository
       uses: actions/checkout@v3
 
@@ -52,6 +48,13 @@ jobs:
       name: 'Unfreeze 25 PRs'
       with:
         page_number: 3
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        end_freeze: "true"
+
+    - uses: ./.github/actions/code-freeze
+      name: 'Unfreeze 25 PRs'
+      with:
+        page_number: 5
         github_token: ${{ secrets.GITHUB_TOKEN }}
         end_freeze: "true"
 

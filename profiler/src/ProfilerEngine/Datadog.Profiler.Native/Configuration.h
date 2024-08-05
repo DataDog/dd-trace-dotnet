@@ -8,12 +8,15 @@
 
 #include "DeploymentMode.h"
 #include "EnablementStatus.h"
+#include "CpuProfilerType.h"
 #include "IConfiguration.h"
 #include "TagsHelper.h"
 #include "shared/src/native-src/string.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
+
+using namespace std::literals::chrono_literals;
 
 class Configuration final : public IConfiguration
 {
@@ -74,12 +77,15 @@ public:
     DeploymentMode GetDeploymentMode() const override;
     std::chrono::milliseconds GetSsiLongLivedThreshold() const override;
     bool IsTelemetryToDiskEnabled() const override;
+    CpuProfilerType GetCpuProfilerType() const override;
+    std::chrono::milliseconds GetCpuProfilingInterval() const override;
 
 private:
     static tags ExtractUserTags();
     static std::string GetDefaultSite();
     static std::string ExtractSite();
     static std::chrono::seconds ExtractUploadInterval();
+    static std::chrono::milliseconds ExtractCpuProfilingInterval(std::chrono::milliseconds minimum = DefaultCpuProfilingInterval);
     static fs::path GetDefaultLogDirectoryPath();
     static fs::path GetApmBaseDirectory();
     static fs::path ExtractLogDirectory();
@@ -108,6 +114,7 @@ private:
     static int32_t const DefaultAgentPort;
     static std::chrono::seconds const DefaultDevUploadInterval;
     static std::chrono::seconds const DefaultProdUploadInterval;
+    static std::chrono::milliseconds const DefaultCpuProfilingInterval;
 
     bool _isProfilingEnabled;
     bool _isCpuProfilingEnabled;
@@ -164,4 +171,6 @@ private:
     EnablementStatus _enablementStatus;
     std::chrono::milliseconds _ssiLongLivedThreshold;
     bool _isTelemetryToDiskEnabled;
+    CpuProfilerType _cpuProfilerType;
+    std::chrono::milliseconds _cpuProfilingInterval;
 };

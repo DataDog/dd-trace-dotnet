@@ -12,8 +12,6 @@ internal class TrackingNames
     public const string Diagnostics = nameof(Diagnostics);
     public const string ValidValues = nameof(ValidValues);
     public const string Collected = nameof(Collected);
-    public const string Placeholder = nameof(Placeholder);
-    public const string Tfm = nameof(Tfm);
 
     // Tag generator
     public const string TagResults = nameof(TagResults);

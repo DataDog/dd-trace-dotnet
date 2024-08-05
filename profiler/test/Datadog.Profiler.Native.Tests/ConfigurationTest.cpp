@@ -911,7 +911,7 @@ TEST(ConfigurationTest, CheckSsiIsActivatedIfEnvVarConstainsProfiler)
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
 }
 
-TEST(ConfigurationTest, CheckSsiIsNotActivatedIfEnvVarDoesNotContainProfiler)
+TEST(ConfigurationTest, CheckSsiIsDisableddIfEnvVarDoesNotContainProfiler)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("tracer"));
     auto configuration = Configuration{};
@@ -986,6 +986,67 @@ TEST(ConfigurationTest, CheckEtwLoggingIsEnabledIfEnvVarSetToTrue)
         true;
 #endif
     ASSERT_THAT(configuration.IsEtwLoggingEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckDefaultCpuProfilerType)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr(""));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+}
+
+TEST(ConfigurationTest, CheckDefaultCpuProfilerTypeWhenEnvVarNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+}
+
+TEST(ConfigurationTest, CheckUnknownCpuProfilerType)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("UnknownCpuProfilerType"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+}
+
+TEST(ConfigurationTest, CheckManualCpuProfilerType)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("ManualCpuTime"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+}
+
+TEST(ConfigurationTest, CheckTimerCreateCpuProfilerType)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    auto configuration = Configuration{};
+    auto expected =
+#ifdef LINUX
+        CpuProfilerType::TimerCreate;
+#else
+        CpuProfilerType::ManualCpuTime;
+#endif
+    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
+}
+
+TEST(ConfigurationTest, CheckDefaultCpuProfilingInterval)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingInterval, WStr(""));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 9ms);
+}
+
+TEST(ConfigurationTest, CheckCpuProfilingIntervalSetInEnvVar)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingInterval, WStr("42"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 42ms);
+}
+
+TEST(ConfigurationTest, CheckCpuProfilingIntervalIsNotBelowDefault)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingInterval, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCpuProfilingInterval(), 9ms);
 }
 
 TEST(ConfigurationTest, CheckLongLivedThresholdWhenEnvVarNotSet)

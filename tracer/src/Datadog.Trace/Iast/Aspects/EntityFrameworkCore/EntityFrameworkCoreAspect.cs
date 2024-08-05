@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 
@@ -12,7 +14,7 @@ namespace Datadog.Trace.Iast.Aspects;
 
 #if !NETFRAMEWORK
 /// <summary> EntityFrameworkCoreAspect class aspect </summary>
-[AspectClass("Microsoft.EntityFrameworkCore.Relational")]
+[AspectClass("Microsoft.EntityFrameworkCore.Relational", AspectType.RaspIastSink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class EntityFrameworkCoreAspect
@@ -30,7 +32,7 @@ public class EntityFrameworkCoreAspect
     [AspectMethodInsertBefore("Microsoft.EntityFrameworkCore.RelationalQueryableExtensions::FromSqlRaw(Microsoft.EntityFrameworkCore.DbSet`1<!!0>,System.String,System.Object[])", 1)]
     public static object ReviewSqlString(string sqlAsString)
     {
-        IastModule.OnSqlQuery(sqlAsString, IntegrationId.SqlClient);
+        VulnerabilitiesModule.OnSqlQuery(sqlAsString, IntegrationId.SqlClient);
         return sqlAsString;
     }
 }
