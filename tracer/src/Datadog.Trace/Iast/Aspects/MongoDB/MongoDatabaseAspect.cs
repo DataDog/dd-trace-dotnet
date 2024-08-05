@@ -31,13 +31,13 @@ public class MongoDatabaseAspect
     [AspectMethodInsertBefore("MongoDB.Driver.IMongoCollectionExtensions::FindAsync(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions`2<!!0,!!0>,System.Threading.CancellationToken)", 2)]
     public static object? AnalyzeCommand(object? command)
     {
-        if (command == null || !Iast.Instance.Settings.Enabled)
-        {
-            return command;
-        }
-
         try
         {
+            if (command == null || !Iast.Instance.Settings.Enabled)
+            {
+                return command;
+            }
+
             var commandType = command.GetType().Name;
             switch (commandType)
             {
@@ -50,12 +50,13 @@ public class MongoDatabaseAspect
                     MongoDbHelper.AnalyzeJsonCommand(command);
                     break;
             }
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Failed to analyze the command");
-        }
 
-        return command;
+            return command;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Warning(ex, $"Error invoking {nameof(MongoDatabaseAspect)}.{nameof(AnalyzeCommand)}");
+            return command;
+        }
     }
 }
