@@ -68,6 +68,8 @@ public:
     std::uintptr_t* begin() const;
     std::uintptr_t* end() const;
 
+    void CopyFrom(Callstack const& other);
+
 private:
     shared::pmr::memory_resource* _memoryResource;
     shared::span<std::uintptr_t> _buffer;
