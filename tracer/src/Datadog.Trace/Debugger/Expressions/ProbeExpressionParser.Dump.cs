@@ -13,6 +13,7 @@ using System.Text;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Util;
 using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
+using Enumerable = System.Linq.Enumerable;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
@@ -125,14 +126,21 @@ internal partial class ProbeExpressionParser<T>
     {
         const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
         var getTypeMethod = GetMethodByReflection(typeof(object), nameof(object.GetType), Type.EmptyTypes);
-        var getFieldsMethod = GetMethodByReflection(typeof(Type), nameof(Type.GetFields), new[] { typeof(BindingFlags) });
-        var getFields = Expression.Call(Expression.Call(expression, getTypeMethod), getFieldsMethod, Expression.Constant(flags));
-        var stringBuilderAppend = GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.Append), new[] { typeof(string) });
+        var getFieldsMethod = GetMethodByReflection(typeof(Type), nameof(Type.GetFields), [typeof(BindingFlags)]);
+        var orderByMethod = GetMethodByReflection(typeof(System.Linq.Enumerable), nameof(System.Linq.Enumerable.OrderBy), [typeof(IEnumerable<>), typeof(Func<,>)], [typeof(FieldInfo), typeof(int)]);
+        var toArray = GetMethodByReflection(typeof(System.Linq.Enumerable), nameof(System.Linq.Enumerable.ToArray), [typeof(IEnumerable<>)], [typeof(FieldInfo)]);
+
+        ParameterExpression parameterExp = Expression.Parameter(typeof(FieldInfo), "fieldInfo");
+        MemberExpression propertyExp = Expression.Property(parameterExp, "MetadataToken");
+        Expression<Func<FieldInfo, int>> lambdaExp = Expression.Lambda<Func<FieldInfo, int>>(propertyExp, parameterExp);
+        var fieldInfoArray = Expression.Call(Expression.Call(expression, getTypeMethod), getFieldsMethod, Expression.Constant(flags));
+        var fieldInfoOrderedArray = Expression.Call(null, toArray, Expression.Call(null, orderByMethod, fieldInfoArray, lambdaExp));
+        var stringBuilderAppend = GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.Append), [typeof(string)]);
         var expressions = new List<Expression>();
 
         var fields = Expression.Variable(typeof(FieldInfo[]), "fieldsArray");
         scopeMembers.Add(fields);
-        expressions.Add(Expression.Assign(fields, getFields));
+        expressions.Add(Expression.Assign(fields, fieldInfoOrderedArray));
 
         var result = Expression.Variable(typeof(StringBuilder), "fieldValues");
         scopeMembers.Add(result);
