@@ -139,11 +139,21 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (allParticipatingFramesFlattened.Length == 0)
             {
+                if (rootSpan != null)
+                {
+                    SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.NoFramesToInstrument);
+                }
+
                 return;
             }
 
             if (!ShouldReportException(exception, allParticipatingFramesFlattened))
             {
+                if (rootSpan != null)
+                {
+                    SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.NotSupportedExceptionType);
+                }
+
                 Log.Information(exception, "Skipping the processing of an exception by Exception Debugging.");
                 return;
             }
@@ -163,6 +173,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (trackedExceptionCase.IsDone)
             {
+                if (rootSpan != null)
+                {
+                    SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.NonCachedDoneExceptionCase);
+                }
             }
             else if (trackedExceptionCase.IsInvalidated)
             {
@@ -254,6 +268,18 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         Log.Information("Invalidating the exception case of the empty stack tree since none of the methods were instrumented, for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
                         trackedExceptionCase.InvalidateCase();
                         _invalidatedCases.Add(exception.ToString());
+
+                        if (rootSpan != null)
+                        {
+                            SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.InvalidatedCase);
+                        }
+                    }
+                    else
+                    {
+                        if (rootSpan != null)
+                        {
+                            SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.EmptyCallStackTreeWhileCollecting);
+                        }
                     }
 
                     return;
@@ -361,6 +387,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 Log.Information("New exception case occurred, initiating data collection for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
                 trackedExceptionCase.Instrument();
+
+                if (rootSpan != null)
+                {
+                    SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.NewCase);
+                }
             }
         }
 
