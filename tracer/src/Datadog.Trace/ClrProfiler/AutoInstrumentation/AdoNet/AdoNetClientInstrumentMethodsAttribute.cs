@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// as string. Avoid changing the name and/or namespace of this class.
     /// </remarks>
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-    internal class AdoNetClientInstrumentMethodsAttribute : Attribute
+    internal sealed class AdoNetClientInstrumentMethodsAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the name of the assembly that contains the target method to be intercepted.
