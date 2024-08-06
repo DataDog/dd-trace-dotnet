@@ -7,6 +7,7 @@
 using System;
 using System.Web;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 

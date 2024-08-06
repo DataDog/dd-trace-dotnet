@@ -9,6 +9,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using FluentAssertions;

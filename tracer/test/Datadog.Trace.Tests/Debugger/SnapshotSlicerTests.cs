@@ -9,6 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Internal.Configuration;
 using Newtonsoft.Json.Linq;
 using VerifyXunit;
 using Xunit;

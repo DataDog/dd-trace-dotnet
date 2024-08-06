@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Processors;
 
 namespace Benchmarks.Trace

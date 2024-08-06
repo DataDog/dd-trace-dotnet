@@ -12,6 +12,7 @@ using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 

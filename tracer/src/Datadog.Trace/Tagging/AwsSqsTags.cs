@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -22,17 +23,17 @@ namespace Datadog.Trace.Tagging
         }
 
 #pragma warning disable CS0618 // Duplicate of QueueName
-        [Tag(Trace.Tags.AwsQueueName)]
+        [Tag(Internal.Tags.AwsQueueName)]
 #pragma warning restore CS0618
         public string AwsQueueName => QueueName;
 
-        [Tag(Trace.Tags.QueueName)]
+        [Tag(Internal.Tags.QueueName)]
         public string QueueName { get; set; }
 
-        [Tag(Trace.Tags.AwsQueueUrl)]
+        [Tag(Internal.Tags.AwsQueueUrl)]
         public string QueueUrl { get; set; }
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Internal.Tags.SpanKind)]
         public override string SpanKind { get; }
     }
 
@@ -59,7 +60,7 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Internal.Tags.PeerService)]
         public string PeerService
         {
             get
@@ -74,7 +75,7 @@ namespace Datadog.Trace.Tagging
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
@@ -86,7 +87,7 @@ namespace Datadog.Trace.Tagging
 
                 return _peerServiceOverride is not null
                            ? "peer.service"
-                           : Trace.Tags.QueueName;
+                           : Internal.Tags.QueueName;
             }
         }
     }

@@ -11,7 +11,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Tools.dd_dotnet;
 
 // ReSharper disable once CheckNamespace - Needed for compatiblity with linked files
-namespace Datadog.Trace.Configuration;
+namespace Datadog.Trace.Internal.Configuration;
 
 /// <summary>
 /// Lightweight version of ExporterSettings for the tool

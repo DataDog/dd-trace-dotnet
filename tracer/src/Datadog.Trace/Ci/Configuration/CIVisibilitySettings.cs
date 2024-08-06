@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 

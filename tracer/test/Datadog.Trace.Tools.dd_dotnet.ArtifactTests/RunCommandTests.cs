@@ -5,6 +5,7 @@
 
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Internal;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;

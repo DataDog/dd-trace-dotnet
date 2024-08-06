@@ -5,6 +5,8 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;

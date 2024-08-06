@@ -9,6 +9,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.Internal.Configuration;
 
 namespace Datadog.Trace.Telemetry
 {

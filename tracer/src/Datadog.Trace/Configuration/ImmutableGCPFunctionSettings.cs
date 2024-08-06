@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration;
 
 namespace Datadog.Trace.Configuration
 {

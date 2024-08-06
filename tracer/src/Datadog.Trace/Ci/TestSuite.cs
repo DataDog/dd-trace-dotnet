@@ -11,6 +11,8 @@ using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Ci;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -20,7 +22,7 @@ namespace Datadog.Trace.Ci;
 /// <summary>
 /// CI Visibility test suite
 /// </summary>
-public sealed class TestSuite
+internal sealed class TestSuite
 {
     private static readonly AsyncLocal<TestSuite?> CurrentSuite = new();
     private static readonly HashSet<TestSuite> OpenedTestSuites = new();
@@ -136,11 +138,11 @@ public sealed class TestSuite
     {
         var span = _span;
         span.Error = true;
-        span.SetTag(Trace.Tags.ErrorType, type);
-        span.SetTag(Trace.Tags.ErrorMsg, message);
+        span.SetTag(Internal.Tags.ErrorType, type);
+        span.SetTag(Internal.Tags.ErrorMsg, message);
         if (callStack is not null)
         {
-            span.SetTag(Trace.Tags.ErrorStack, callStack);
+            span.SetTag(Internal.Tags.ErrorStack, callStack);
         }
     }
 

@@ -5,8 +5,8 @@
 #nullable enable
 
 using System.ComponentModel;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.AppSec;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -31,7 +31,7 @@ public class EventTrackingSdkTrackCustomEventMetadataIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(string eventName, System.Collections.Generic.IDictionary<string, string> metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackCustomEvent_Metadata);
-        EventTrackingSdk.TrackCustomEvent(eventName, metadata, Datadog.Trace.Tracer.Instance);
+        EventTrackingSdk.TrackCustomEvent(eventName, metadata, Internal.Tracer.Instance);
         return CallTargetState.GetDefault();
     }
 }

@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// A Span represents a logical unit of work in the system. It may be
@@ -57,7 +57,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the span's span context
         /// </summary>
-        ISpanContext Context { get;  }
+        ISpanContext Context { get; }
 
         /// <summary>
         /// Add a the specified tag to this span.

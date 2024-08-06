@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Tools.dd_dotnet.Checks;
 using Datadog.Trace.Tools.Shared;
 using FluentAssertions;

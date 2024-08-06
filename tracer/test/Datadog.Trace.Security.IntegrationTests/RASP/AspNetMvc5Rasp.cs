@@ -13,6 +13,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Telemetry;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -75,13 +77,13 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
         DisableObfuscationQueryString();
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, "rasp-rule-set.json");
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, "rasp-rule-set.json");
 
         _iisFixture = iisFixture;
         _classicMode = classicMode;
         _enableIast = enableIast;
 
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
     }
 
     [SkippableTheory]

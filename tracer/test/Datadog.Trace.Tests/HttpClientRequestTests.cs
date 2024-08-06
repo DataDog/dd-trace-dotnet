@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Internal;
 using Xunit;
 
 namespace Datadog.Trace.Tests

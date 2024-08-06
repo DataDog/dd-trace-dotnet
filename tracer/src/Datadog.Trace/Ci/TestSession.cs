@@ -10,12 +10,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -23,12 +25,12 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
-namespace Datadog.Trace.Ci;
+namespace Datadog.Trace.Internal.Ci;
 
 /// <summary>
 /// CI Visibility test session
 /// </summary>
-public sealed class TestSession
+internal sealed class TestSession
 {
     private static readonly AsyncLocal<TestSession?> CurrentSession = new();
     private static readonly HashSet<TestSession> OpenedTestSessions = new();
@@ -274,11 +276,11 @@ public sealed class TestSession
     {
         var span = _span;
         span.Error = true;
-        span.SetTag(Trace.Tags.ErrorType, type);
-        span.SetTag(Trace.Tags.ErrorMsg, message);
+        span.SetTag(Internal.Tags.ErrorType, type);
+        span.SetTag(Internal.Tags.ErrorMsg, message);
         if (callStack is not null)
         {
-            span.SetTag(Trace.Tags.ErrorStack, callStack);
+            span.SetTag(Internal.Tags.ErrorStack, callStack);
         }
     }
 

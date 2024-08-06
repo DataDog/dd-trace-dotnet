@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Text;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 

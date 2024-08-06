@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Globalization;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using FluentAssertions;

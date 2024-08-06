@@ -6,8 +6,8 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Ci;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 

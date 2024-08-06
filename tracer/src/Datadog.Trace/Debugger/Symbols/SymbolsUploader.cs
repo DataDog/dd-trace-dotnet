@@ -19,6 +19,7 @@ using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Util;

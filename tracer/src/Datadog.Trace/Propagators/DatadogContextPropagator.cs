@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Globalization;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;

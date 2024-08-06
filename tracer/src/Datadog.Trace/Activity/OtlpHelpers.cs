@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;

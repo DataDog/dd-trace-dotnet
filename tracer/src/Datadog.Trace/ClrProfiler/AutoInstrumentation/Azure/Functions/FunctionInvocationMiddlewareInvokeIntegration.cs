@@ -8,6 +8,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Microsoft.AspNetCore.Http;

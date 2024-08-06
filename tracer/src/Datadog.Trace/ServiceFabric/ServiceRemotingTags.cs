@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
@@ -18,45 +19,45 @@ namespace Datadog.Trace.ServiceFabric
             SpanKind = spanKind;
         }
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Internal.Tags.SpanKind)]
         public override string SpanKind { get; }
 
         // general Service Fabric
-        [Tag(Trace.Tags.ServiceFabricApplicationId)]
+        [Tag(Internal.Tags.ServiceFabricApplicationId)]
         public string? ApplicationId { get; set; }
 
-        [Tag(Trace.Tags.ServiceFabricApplicationName)]
+        [Tag(Internal.Tags.ServiceFabricApplicationName)]
         public string? ApplicationName { get; set; }
 
-        [Tag(Trace.Tags.ServiceFabricPartitionId)]
+        [Tag(Internal.Tags.ServiceFabricPartitionId)]
         public string? PartitionId { get; set; }
 
-        [Tag(Trace.Tags.ServiceFabricNodeId)]
+        [Tag(Internal.Tags.ServiceFabricNodeId)]
         public string? NodeId { get; set; }
 
-        [Tag(Trace.Tags.ServiceFabricNodeName)]
+        [Tag(Internal.Tags.ServiceFabricNodeName)]
         public string? NodeName { get; set; }
 
-        [Tag(Trace.Tags.ServiceFabricServiceName)]
+        [Tag(Internal.Tags.ServiceFabricServiceName)]
         public string? ServiceName { get; set; }
 
         // Service Remoting
-        [Tag(Trace.Tags.ServiceRemotingUri)]
+        [Tag(Internal.Tags.ServiceRemotingUri)]
         public string? RemotingUri { get; set; }
 
-        [Tag(Trace.Tags.ServiceRemotingServiceName)]
+        [Tag(Internal.Tags.ServiceRemotingServiceName)]
         public string? RemotingServiceName { get; set; }
 
-        [Tag(Trace.Tags.ServiceRemotingMethodName)]
+        [Tag(Internal.Tags.ServiceRemotingMethodName)]
         public string? RemotingMethodName { get; set; }
 
-        [Tag(Trace.Tags.ServiceRemotingMethodId)]
+        [Tag(Internal.Tags.ServiceRemotingMethodId)]
         public string? RemotingMethodId { get; set; }
 
-        [Tag(Trace.Tags.ServiceRemotingInterfaceId)]
+        [Tag(Internal.Tags.ServiceRemotingInterfaceId)]
         public string? RemotingInterfaceId { get; set; }
 
-        [Tag(Trace.Tags.ServiceRemotingInvocationId)]
+        [Tag(Internal.Tags.ServiceRemotingInvocationId)]
         public string? RemotingInvocationId { get; set; }
     }
 
@@ -90,14 +91,14 @@ namespace Datadog.Trace.ServiceFabric
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Internal.Tags.PeerService)]
         public string? PeerService
         {
             get => _peerServiceOverride ?? RemotingServiceName ?? RemotingUri;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Internal.Tags.PeerServiceSource)]
         public string? PeerServiceSource
         {
             get
@@ -105,9 +106,9 @@ namespace Datadog.Trace.ServiceFabric
                 return _peerServiceOverride is not null
                         ? "peer.service"
                         : RemotingServiceName is not null
-                            ? Trace.Tags.ServiceRemotingServiceName
+                            ? Internal.Tags.ServiceRemotingServiceName
                             : RemotingUri is not null
-                                ? Trace.Tags.ServiceRemotingUri
+                                ? Internal.Tags.ServiceRemotingUri
                                 : null;
             }
         }

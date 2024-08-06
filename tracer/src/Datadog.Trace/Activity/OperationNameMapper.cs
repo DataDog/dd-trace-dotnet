@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Activity

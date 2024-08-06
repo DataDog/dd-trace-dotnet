@@ -13,6 +13,8 @@ using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
 using SecurityCoordinator = Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
+using Datadog.Trace.Internal;
+
 #if NETFRAMEWORK
 using System.Web;
 

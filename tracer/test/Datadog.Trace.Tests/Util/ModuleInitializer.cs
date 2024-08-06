@@ -7,6 +7,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 

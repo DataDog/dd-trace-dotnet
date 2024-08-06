@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Processors

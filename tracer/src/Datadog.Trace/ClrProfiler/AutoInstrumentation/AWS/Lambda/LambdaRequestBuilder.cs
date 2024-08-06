@@ -7,6 +7,7 @@ using System;
 using System.Globalization;
 using System.Net;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Util;
 #pragma warning disable CS0618 // WebRequest, HttpWebRequest, ServicePoint, and WebClient are obsolete. Use HttpClient instead.
 

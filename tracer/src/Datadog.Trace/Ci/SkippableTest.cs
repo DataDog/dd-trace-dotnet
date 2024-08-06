@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.Internal.Ci;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;

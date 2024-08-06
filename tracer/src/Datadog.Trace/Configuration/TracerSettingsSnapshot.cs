@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerSettingsSnapshot.cs" company="Datadog">
+// <copyright file="TracerSettingsSnapshot.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,9 +7,11 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.Configuration;
+namespace Datadog.Trace.Internal.Configuration;
 
 /// <summary>
 /// Holds a snapshot of the mutable <see cref="TracerSettings"/> values after

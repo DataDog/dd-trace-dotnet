@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;

@@ -10,6 +10,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxie
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 

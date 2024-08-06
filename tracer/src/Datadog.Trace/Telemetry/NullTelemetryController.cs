@@ -6,6 +6,7 @@
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.Internal.Configuration;
 
 namespace Datadog.Trace.Telemetry
 {

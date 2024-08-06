@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -28,31 +29,31 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Tags.SpanKind)]
         public override string SpanKind { get; }
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
-        [Tag(Trace.Tags.AmqpCommand)]
+        [Tag(Tags.AmqpCommand)]
         public string Command { get; set; }
 
-        [Tag(Trace.Tags.AmqpDeliveryMode)]
+        [Tag(Tags.AmqpDeliveryMode)]
         public string DeliveryMode { get; set; }
 
-        [Tag(Trace.Tags.AmqpExchange)]
+        [Tag(Tags.AmqpExchange)]
         public string Exchange { get; set; }
 
-        [Tag(Trace.Tags.AmqpRoutingKey)]
+        [Tag(Tags.AmqpRoutingKey)]
         public string RoutingKey { get; set; }
 
-        [Tag(Trace.Tags.MessageSize)]
+        [Tag(Tags.MessageSize)]
         public string MessageSize { get; set; }
 
-        [Tag(Trace.Tags.AmqpQueue)]
+        [Tag(Tags.AmqpQueue)]
         public string Queue { get; set; }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Tags.OutHost)]
         public string OutHost { get; set; }
     }
 
@@ -75,14 +76,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? OutHost;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

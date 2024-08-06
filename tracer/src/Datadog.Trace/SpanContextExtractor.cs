@@ -16,7 +16,7 @@ using Datadog.Trace.Telemetry.Metrics;
 
 #nullable enable
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// The <see cref="SpanContextExtractor"/> is responsible for extracting <see cref="ISpanContext"/> in the rare cases

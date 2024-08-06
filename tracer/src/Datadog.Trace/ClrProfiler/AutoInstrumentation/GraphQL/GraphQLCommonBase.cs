@@ -8,6 +8,7 @@ using System.Collections;
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -45,9 +46,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             if (errorCount > 0)
             {
                 span.Error = true;
+
+/* Unmerged change from project 'Datadog.Trace (netstandard2.0)'
+Before:
                 span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
                 span.SetTag(Trace.Tags.ErrorType, errorType);
                 span.SetTag(Trace.Tags.ErrorStack, errors);
+            }
+After:
+                span.SetTag(Tags.ErrorMsg, $"{errorCount} error(s)");
+                span.SetTag(Tags.ErrorType, errorType);
+                span.SetTag(Tags.ErrorStack, errors);
+            }
+*/
+                span.SetTag(Internal.Tags.ErrorMsg, $"{errorCount} error(s)");
+                span.SetTag(Internal.Tags.ErrorType, errorType);
+                span.SetTag(Internal.Tags.ErrorStack, errors);
             }
         }
 

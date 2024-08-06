@@ -35,7 +35,7 @@ public class StartActiveImplementationIntegration
         // parent should _normally_ be a manual span, unless they've created a "custom" ISpanContext
         var parentContext = SpanContextHelper.GetContext(parent);
 
-        var tracer = (Datadog.Trace.Tracer)instance.AutomaticTracer;
+        var tracer = (Internal.Tracer)instance.AutomaticTracer;
         var scope = tracer.StartActiveInternal(
             operationName,
             parent: parentContext,

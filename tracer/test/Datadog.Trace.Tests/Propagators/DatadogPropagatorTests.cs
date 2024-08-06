@@ -9,6 +9,8 @@ using System.Globalization;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using FluentAssertions;

@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
@@ -16,19 +17,19 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Internal.Tags.SpanKind)]
         public override string SpanKind { get; }
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName => nameof(IntegrationId.Remoting);
 
-        [Tag(Trace.Tags.RpcMethod)]
+        [Tag(Internal.Tags.RpcMethod)]
         public string MethodName { get; set; }
 
-        [Tag(Trace.Tags.RpcService)]
+        [Tag(Internal.Tags.RpcService)]
         public string MethodService { get; set; }
 
-        [Tag(Trace.Tags.RpcSystem)]
+        [Tag(Internal.Tags.RpcSystem)]
         public string RpcSystem => "dotnet_remoting";
     }
 
@@ -54,14 +55,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? MethodService;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

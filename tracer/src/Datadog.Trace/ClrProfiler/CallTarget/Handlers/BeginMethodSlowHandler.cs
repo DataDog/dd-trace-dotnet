@@ -6,6 +6,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 

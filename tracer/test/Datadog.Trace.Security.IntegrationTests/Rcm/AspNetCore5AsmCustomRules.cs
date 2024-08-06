@@ -11,6 +11,7 @@ using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Xunit;
@@ -65,7 +66,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmActionsConfiguration))
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
         }
 
         [SkippableFact]

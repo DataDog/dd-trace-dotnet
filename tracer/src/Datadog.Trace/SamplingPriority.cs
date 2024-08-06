@@ -5,7 +5,9 @@
 
 #nullable enable
 
-namespace Datadog.Trace
+using Datadog;
+
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// Sampling "priorities" indicate whether a trace should be kept (sampled) or dropped (not sampled).

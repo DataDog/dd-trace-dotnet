@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using Datadog.Trace.Internal;
+
 namespace Datadog.Trace.Propagators
 {
     internal interface IContextInjector

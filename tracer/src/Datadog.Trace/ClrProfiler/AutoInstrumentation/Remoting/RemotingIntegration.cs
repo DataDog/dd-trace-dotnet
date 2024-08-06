@@ -10,6 +10,7 @@
 using System;
 using System.Runtime.Remoting.Messaging;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 

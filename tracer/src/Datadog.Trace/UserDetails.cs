@@ -4,9 +4,10 @@
 // </copyright>
 #nullable enable
 
+using Datadog;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// A data container class for the users details

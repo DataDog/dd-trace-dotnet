@@ -1,4 +1,4 @@
-﻿// <copyright file="InstrumentationTests.cs" company="Datadog">
+// <copyright file="InstrumentationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Internal;
 using FluentAssertions;
 using Xunit;
 using ManualInstrumented = DatadogTraceManual::Datadog.Trace.SourceGenerators.InstrumentedAttribute;
@@ -83,7 +84,7 @@ public abstract class InstrumentationTests<T>
 
     private static IEnumerable<(Type Type, InstrumentMethodAttribute Attribute)> GetAllInstrumentations(string assemblyName)
     {
-        return typeof(Datadog.Trace.Tracer)
+        return typeof(Tracer)
               .Assembly
               .GetTypes()
               .SelectMany(t => t.GetCustomAttributes(typeof(InstrumentMethodAttribute), false)

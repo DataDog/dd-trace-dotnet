@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;

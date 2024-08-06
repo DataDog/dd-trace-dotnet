@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using System.Text;
 using BenchmarkDotNet.Attributes;
-using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using ServiceStack.Redis;
 
 namespace Benchmarks.Trace

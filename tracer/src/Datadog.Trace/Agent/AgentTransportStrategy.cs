@@ -10,6 +10,7 @@ using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Agent;

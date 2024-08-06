@@ -10,6 +10,7 @@ using System.Reflection;
 using AgileObjects.NetStandardPolyfills;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.SourceGenerators;
 using FluentAssertions;
 using FluentAssertions.Execution;

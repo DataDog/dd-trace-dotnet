@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;

@@ -1,4 +1,4 @@
-﻿// <copyright file="ExceptionRedactorTests.cs" company="Datadog">
+// <copyright file="ExceptionRedactorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging.Internal;
 using FluentAssertions;
 using Xunit;
@@ -232,9 +233,9 @@ public class ExceptionRedactorTests
         public static List<object> MethodsToNotRedact() =>
         [
             typeof(ExceptionRedactorTests.TestData).GetMethod(nameof(NoParameters)),
-            typeof(Datadog.Trace.Tracer).GetMethod(nameof(Tracer.UnsafeSetTracerInstance), BindingFlags.Static | BindingFlags.NonPublic),
-            typeof(Datadog.Trace.Tracer).GetProperty(nameof(Tracer.Instance))?.GetMethod,
-            typeof(Datadog.Trace.Tracer).GetProperty(nameof(Tracer.Instance))?.SetMethod,
+            typeof(Tracer).GetMethod(nameof(Tracer.UnsafeSetTracerInstance), BindingFlags.Static | BindingFlags.NonPublic),
+            typeof(Tracer).GetProperty(nameof(Tracer.Instance))?.GetMethod,
+            typeof(Tracer).GetProperty(nameof(Tracer.Instance))?.SetMethod,
             typeof(Datadog.Trace.Vendors.Serilog.Log).GetProperty(nameof(Serilog.Log.Logger))?.GetMethod,
             typeof(Datadog.Trace.Vendors.Serilog.Log).GetProperty(nameof(Serilog.Log.Logger))?.SetMethod,
             typeof(Datadog.Trace.Vendors.Serilog.Log).GetMethod(nameof(Serilog.Log.CloseAndFlush)),

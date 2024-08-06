@@ -10,6 +10,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
 namespace Datadog.Trace.Ci.Agent
 {

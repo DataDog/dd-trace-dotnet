@@ -6,6 +6,8 @@
 using Castle.Core.Internal;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Sampling;
 using Moq;
 using Xunit;

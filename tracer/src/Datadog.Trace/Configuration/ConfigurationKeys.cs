@@ -7,7 +7,7 @@
 using System;
 using Datadog.Trace.Telemetry;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     /// <summary>
     /// String constants for standard Datadog configuration keys.

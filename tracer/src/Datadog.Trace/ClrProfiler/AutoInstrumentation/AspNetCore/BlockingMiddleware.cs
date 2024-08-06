@@ -9,6 +9,7 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 

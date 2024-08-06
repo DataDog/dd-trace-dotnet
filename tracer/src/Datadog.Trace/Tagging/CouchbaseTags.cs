@@ -5,6 +5,7 @@
 
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -12,28 +13,28 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class CouchbaseTags : InstrumentationTags
     {
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName => nameof(IntegrationId.Couchbase);
 
-        [Tag(Trace.Tags.CouchbaseSeedNodes)]
+        [Tag(Internal.Tags.CouchbaseSeedNodes)]
         public string SeedNodes { get; set; }
 
-        [Tag(Trace.Tags.CouchbaseOperationCode)]
+        [Tag(Internal.Tags.CouchbaseOperationCode)]
         public string OperationCode { get; set; }
 
-        [Tag(Trace.Tags.CouchbaseOperationBucket)]
+        [Tag(Internal.Tags.CouchbaseOperationBucket)]
         public string Bucket { get; set; }
 
-        [Tag(Trace.Tags.CouchbaseOperationKey)]
+        [Tag(Internal.Tags.CouchbaseOperationKey)]
         public string Key { get; set; }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Internal.Tags.OutHost)]
         public string Host { get; set; }
 
-        [Tag(Trace.Tags.OutPort)]
+        [Tag(Internal.Tags.OutPort)]
         public string Port { get; set; }
     }
 
@@ -46,14 +47,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? SeedNodes ?? Host;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
@@ -61,8 +62,8 @@ namespace Datadog.Trace.Tagging
                 return _peerServiceOverride is not null
                         ? "peer.service"
                         : SeedNodes is not null
-                            ? Trace.Tags.CouchbaseSeedNodes
-                            : Trace.Tags.OutHost;
+                            ? Internal.Tags.CouchbaseSeedNodes
+                            : Internal.Tags.OutHost;
             }
         }
     }

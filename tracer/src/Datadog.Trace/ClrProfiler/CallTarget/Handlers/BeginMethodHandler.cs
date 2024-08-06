@@ -6,6 +6,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Internal;
 
 #pragma warning disable SA1649 // File name must match first type name
 

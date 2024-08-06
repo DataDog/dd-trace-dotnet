@@ -6,6 +6,7 @@
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Internal.Configuration;
 using FluentAssertions;
 using Xunit;
 

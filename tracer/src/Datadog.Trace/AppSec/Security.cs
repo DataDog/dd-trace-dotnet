@@ -20,11 +20,14 @@ using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
+using Tags = Datadog.Trace.Internal.Tags;
 
 namespace Datadog.Trace.AppSec
 {

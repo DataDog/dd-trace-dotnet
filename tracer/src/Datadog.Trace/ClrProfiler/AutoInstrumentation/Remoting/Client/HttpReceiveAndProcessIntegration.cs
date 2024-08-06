@@ -14,6 +14,7 @@ using System.Net;
 using System.Runtime.Remoting.Channels;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
 {

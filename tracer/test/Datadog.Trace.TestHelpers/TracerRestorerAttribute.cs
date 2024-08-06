@@ -6,6 +6,7 @@
 using System;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Internal;
 using Xunit.Sdk;
 
 namespace Datadog.Trace.TestHelpers

@@ -17,6 +17,7 @@ using System.Text;
 using System.Web;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 

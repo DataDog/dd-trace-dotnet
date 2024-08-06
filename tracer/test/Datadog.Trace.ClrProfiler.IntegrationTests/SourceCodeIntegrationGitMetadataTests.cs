@@ -5,6 +5,7 @@
 
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Internal;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -37,12 +38,12 @@ public class SourceCodeIntegrationGitMetadataTests : TestHelper
         foreach (var trace in spans.GroupBy(s => s.TraceId))
         {
             // Only a single tagging per trace
-            trace.Should().ContainSingle(s => s.Tags.ContainsKey(Trace.Tags.GitCommitSha));
-            trace.Should().ContainSingle(s => s.Tags.ContainsKey(Trace.Tags.GitRepositoryUrl));
+            trace.Should().ContainSingle(s => s.Tags.ContainsKey(Tags.GitCommitSha));
+            trace.Should().ContainSingle(s => s.Tags.ContainsKey(Tags.GitRepositoryUrl));
 
             // Must be the first span of the trace
-            trace.First().Tags.Should().ContainKey(Trace.Tags.GitCommitSha);
-            trace.First().Tags.Should().ContainKey(Trace.Tags.GitRepositoryUrl);
+            trace.First().Tags.Should().ContainKey(Tags.GitCommitSha);
+            trace.First().Tags.Should().ContainKey(Tags.GitRepositoryUrl);
         }
     }
 

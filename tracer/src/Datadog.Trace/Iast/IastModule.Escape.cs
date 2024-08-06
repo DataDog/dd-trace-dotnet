@@ -9,6 +9,7 @@ using System;
 using System.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Helpers;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.Iast;
 

@@ -13,7 +13,7 @@ using Datadog.Trace.Telemetry.Metrics;
 
 #nullable enable
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// The SpanContextInjector is responsible for injecting SpanContext in the rare cases where the Tracer couldn't propagate it itself.

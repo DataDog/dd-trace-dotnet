@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 

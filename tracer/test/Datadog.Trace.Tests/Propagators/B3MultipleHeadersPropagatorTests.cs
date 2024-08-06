@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Headers;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
 using Moq;

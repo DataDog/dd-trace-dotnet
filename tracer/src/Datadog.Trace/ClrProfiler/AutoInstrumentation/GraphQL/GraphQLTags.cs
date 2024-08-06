@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
@@ -19,19 +20,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             InstrumentationName = instrumentationName;
         }
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName { get; }
 
-        [Tag(Trace.Tags.GraphQLSource)]
+        [Tag(Internal.Tags.GraphQLSource)]
         public string Source { get; set; }
 
-        [Tag(Trace.Tags.GraphQLOperationName)]
+        [Tag(Internal.Tags.GraphQLOperationName)]
         public string OperationName { get; set; }
 
-        [Tag(Trace.Tags.GraphQLOperationType)]
+        [Tag(Internal.Tags.GraphQLOperationType)]
         public string OperationType { get; set; }
     }
 }

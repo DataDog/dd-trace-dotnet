@@ -9,6 +9,7 @@ using System;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis

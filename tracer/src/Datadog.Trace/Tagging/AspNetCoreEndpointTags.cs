@@ -9,7 +9,7 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class AspNetCoreEndpointTags : AspNetCoreTags
     {
-        [Tag(Trace.Tags.AspNetCoreEndpoint)]
+        [Tag(Internal.Tags.AspNetCoreEndpoint)]
         public string AspNetCoreEndpoint { get; set; }
     }
 }

@@ -31,7 +31,7 @@ public class InstrumentationTestsBase : IDisposable
     private static readonly Type _spanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
     private static readonly Type _arrayBuilderType = Type.GetType("Datadog.Trace.Util.ArrayBuilder`1, Datadog.Trace");
     private static readonly Type _arrayBuilderOfSpanType = _arrayBuilderType.MakeGenericType(new Type[] { _spanType });
-    private static readonly Type _spanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
+    private static readonly Type _spanContextType = Type.GetType("Datadog.Trace.Internal.SpanContext, Datadog.Trace");
     private static readonly Type _traceContextType = Type.GetType("Datadog.Trace.TraceContext, Datadog.Trace");
     private static readonly Type _sourceType = Type.GetType("Datadog.Trace.Iast.Source, Datadog.Trace");
     private static readonly Type _markType = Type.GetType("Datadog.Trace.Iast.SecureMarks, Datadog.Trace");

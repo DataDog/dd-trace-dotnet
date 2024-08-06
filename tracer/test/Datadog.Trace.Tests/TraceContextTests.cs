@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
@@ -49,9 +51,9 @@ namespace Datadog.Trace.Tests
         {
             var tracer = new Mock<IDatadogTracer>();
 
-            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            tracer.Setup(t => t.Settings).Returns(new TracerSettings
             {
-                Exporter = new Trace.Configuration.ExporterSettings()
+                Exporter = new ExporterSettings()
                 {
                     PartialFlushEnabled = partialFlush,
                     PartialFlushMinSpans = 5
@@ -129,9 +131,9 @@ namespace Datadog.Trace.Tests
 
             var tracer = new Mock<IDatadogTracer>();
 
-            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            tracer.Setup(t => t.Settings).Returns(new TracerSettings
             {
-                Exporter = new Trace.Configuration.ExporterSettings()
+                Exporter = new ExporterSettings()
                 {
                     PartialFlushEnabled = true,
                     PartialFlushMinSpans = partialFlushThreshold
@@ -181,9 +183,9 @@ namespace Datadog.Trace.Tests
 
             var tracer = new Mock<IDatadogTracer>();
 
-            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            tracer.Setup(t => t.Settings).Returns(new TracerSettings
             {
-                Exporter = new Trace.Configuration.ExporterSettings()
+                Exporter = new ExporterSettings()
                 {
                     PartialFlushEnabled = true,
                     PartialFlushMinSpans = partialFlushThreshold

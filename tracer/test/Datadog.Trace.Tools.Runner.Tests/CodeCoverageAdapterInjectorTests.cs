@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using FluentAssertions.Execution;

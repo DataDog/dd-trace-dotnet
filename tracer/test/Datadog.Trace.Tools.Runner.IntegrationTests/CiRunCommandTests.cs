@@ -10,6 +10,8 @@ using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Util;
@@ -22,14 +24,14 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
     [Collection(nameof(ConsoleTestsCollection))]
     [EnvironmentVariablesCleaner(
-        Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath,
-        Configuration.ConfigurationKeys.AgentUri,
-        Configuration.ConfigurationKeys.AgentHost,
-        Configuration.ConfigurationKeys.AgentPort,
-        Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled,
-        Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy,
-        Configuration.ConfigurationKeys.CIVisibility.CodeCoverage,
-        Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath)]
+        ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath,
+        ConfigurationKeys.AgentUri,
+        ConfigurationKeys.AgentHost,
+        ConfigurationKeys.AgentPort,
+        ConfigurationKeys.CIVisibility.GitUploadEnabled,
+        ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy,
+        ConfigurationKeys.CIVisibility.CodeCoverage,
+        ConfigurationKeys.CIVisibility.CodeCoveragePath)]
     public class CiRunCommandTests : BaseRunCommandTests
     {
         public CiRunCommandTests()
@@ -57,7 +59,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         private void RunExternalCoverageTest(string filePath)
         {
             CIVisibility.Reset();
-            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
             string command = null;
             string arguments = null;
             Dictionary<string, string> environmentVariables = null;
@@ -97,7 +99,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 }
             };
 
-            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath, filePath);
+            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath, filePath);
 
             var agentUrl = $"http://localhost:{agent.Port}";
             var commandLine = $"{CommandPrefix} test.exe --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl} --set-env VAR1=A --set-env VAR2=B";

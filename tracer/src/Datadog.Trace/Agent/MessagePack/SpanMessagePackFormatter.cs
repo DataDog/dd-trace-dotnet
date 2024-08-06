@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -50,21 +51,21 @@ namespace Datadog.Trace.Agent.MessagePack
         // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
 
-        private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
+        private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.Language);
         private readonly byte[] _languageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
 
-        private readonly byte[] _runtimeIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
+        private readonly byte[] _runtimeIdNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.RuntimeId);
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
 
-        private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
+        private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.Env);
 
-        private readonly byte[] _gitCommitShaNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.GitCommitSha);
-        private readonly byte[] _gitRepositoryUrlNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.GitRepositoryUrl);
+        private readonly byte[] _gitCommitShaNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.GitCommitSha);
+        private readonly byte[] _gitRepositoryUrlNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.GitRepositoryUrl);
 
-        private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
+        private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.Version);
 
-        private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
-        private readonly byte[] _lastParentIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.LastParentId);
+        private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.Origin);
+        private readonly byte[] _lastParentIdBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.LastParentId);
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
@@ -454,7 +455,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
                 if (model.IsLocalRoot || model.IsChunkOrphan)
                 {
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesSiteKind, azureAppServiceSettings.SiteKind);
+                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Internal.Tags.AzureAppServicesSiteKind, azureAppServiceSettings.SiteKind);
                     if (tagBytes is not null)
                     {
                         count++;
@@ -462,7 +463,7 @@ namespace Datadog.Trace.Agent.MessagePack
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesResourceGroup, azureAppServiceSettings.ResourceGroup);
+                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Internal.Tags.AzureAppServicesResourceGroup, azureAppServiceSettings.ResourceGroup);
                     if (tagBytes is not null)
                     {
                         count++;
@@ -470,7 +471,7 @@ namespace Datadog.Trace.Agent.MessagePack
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesSubscriptionId, azureAppServiceSettings.SubscriptionId);
+                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Internal.Tags.AzureAppServicesSubscriptionId, azureAppServiceSettings.SubscriptionId);
                     if (tagBytes is not null)
                     {
                         count++;
@@ -478,7 +479,7 @@ namespace Datadog.Trace.Agent.MessagePack
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesResourceId, azureAppServiceSettings.ResourceId);
+                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Internal.Tags.AzureAppServicesResourceId, azureAppServiceSettings.ResourceId);
                     if (tagBytes is not null)
                     {
                         count++;
@@ -486,7 +487,7 @@ namespace Datadog.Trace.Agent.MessagePack
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesInstanceId, azureAppServiceSettings.InstanceId);
+                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Internal.Tags.AzureAppServicesInstanceId, azureAppServiceSettings.InstanceId);
                     if (tagBytes is not null)
                     {
                         count++;
@@ -494,7 +495,7 @@ namespace Datadog.Trace.Agent.MessagePack
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesInstanceName, azureAppServiceSettings.InstanceName);
+                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Internal.Tags.AzureAppServicesInstanceName, azureAppServiceSettings.InstanceName);
                     if (tagBytes is not null)
                     {
                         count++;
@@ -502,7 +503,7 @@ namespace Datadog.Trace.Agent.MessagePack
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesOperatingSystem, azureAppServiceSettings.OperatingSystem);
+                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Internal.Tags.AzureAppServicesOperatingSystem, azureAppServiceSettings.OperatingSystem);
                     if (tagBytes is not null)
                     {
                         count++;
@@ -510,7 +511,7 @@ namespace Datadog.Trace.Agent.MessagePack
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesRuntime, azureAppServiceSettings.Runtime);
+                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Internal.Tags.AzureAppServicesRuntime, azureAppServiceSettings.Runtime);
 
                     if (tagBytes is not null)
                     {
@@ -519,7 +520,7 @@ namespace Datadog.Trace.Agent.MessagePack
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesExtensionVersion, azureAppServiceSettings.SiteExtensionVersion);
+                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Internal.Tags.AzureAppServicesExtensionVersion, azureAppServiceSettings.SiteExtensionVersion);
                     if (tagBytes is not null)
                     {
                         count++;
@@ -528,7 +529,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     }
                 }
 
-                tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesSiteName, azureAppServiceSettings.SiteName);
+                tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Internal.Tags.AzureAppServicesSiteName, azureAppServiceSettings.SiteName);
                 // the front-end identify AAS spans using aas.site.name and aas.site.type, so we need them on all spans
                 if (tagBytes is not null)
                 {
@@ -537,7 +538,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
                 }
 
-                tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesSiteType, azureAppServiceSettings.SiteType);
+                tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Internal.Tags.AzureAppServicesSiteType, azureAppServiceSettings.SiteType);
                 if (tagBytes is not null)
                 {
                     count++;
@@ -697,17 +698,17 @@ namespace Datadog.Trace.Agent.MessagePack
             if (_aasSiteNameTagNameBytes == null)
             {
                 // AAS Tags are all computed from environment variables, they shouldn't change during the life of the process
-                _aasSiteNameTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesSiteName);
-                _aasSiteKindTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesSiteKind);
-                _aasSiteTypeTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesSiteType);
-                _aasResourceGroupTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesResourceGroup);
-                _aasSubscriptionIdTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesSubscriptionId);
-                _aasResourceIdTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesResourceId);
-                _aasInstanceIdTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesInstanceId);
-                _aasInstanceNameTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesInstanceName);
-                _aasOperatingSystemTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesOperatingSystem);
-                _aasRuntimeTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesRuntime);
-                _aasExtensionVersionTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesExtensionVersion);
+                _aasSiteNameTagNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.AzureAppServicesSiteName);
+                _aasSiteKindTagNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.AzureAppServicesSiteKind);
+                _aasSiteTypeTagNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.AzureAppServicesSiteType);
+                _aasResourceGroupTagNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.AzureAppServicesResourceGroup);
+                _aasSubscriptionIdTagNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.AzureAppServicesSubscriptionId);
+                _aasResourceIdTagNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.AzureAppServicesResourceId);
+                _aasInstanceIdTagNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.AzureAppServicesInstanceId);
+                _aasInstanceNameTagNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.AzureAppServicesInstanceName);
+                _aasOperatingSystemTagNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.AzureAppServicesOperatingSystem);
+                _aasRuntimeTagNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.AzureAppServicesRuntime);
+                _aasExtensionVersionTagNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.AzureAppServicesExtensionVersion);
             }
         }
 

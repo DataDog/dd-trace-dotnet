@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 

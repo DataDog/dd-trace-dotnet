@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
@@ -15,13 +16,13 @@ namespace Datadog.Trace.Tagging
         public IbmMqTags(string spanKind) => SpanKind = spanKind;
 
         /// <inheritdoc/>
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Internal.Tags.SpanKind)]
         public override string SpanKind { get; }
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName => "ibmmq";
 
-        [Tag(Trace.Tags.TopicName)]
+        [Tag(Internal.Tags.TopicName)]
         public string? TopicName { get; set; }
     }
 }

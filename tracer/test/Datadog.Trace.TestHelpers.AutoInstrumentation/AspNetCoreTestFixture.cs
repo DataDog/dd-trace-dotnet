@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Internal;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers

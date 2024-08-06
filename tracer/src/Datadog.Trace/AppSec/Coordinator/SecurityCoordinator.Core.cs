@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;

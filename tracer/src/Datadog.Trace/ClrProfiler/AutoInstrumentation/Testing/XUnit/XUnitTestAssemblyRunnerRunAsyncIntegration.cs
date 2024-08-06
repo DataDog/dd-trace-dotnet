@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.Ci;
 using Datadog.Trace.Tagging;
 using CommonTags = Datadog.Trace.Ci.Tags.CommonTags;
 

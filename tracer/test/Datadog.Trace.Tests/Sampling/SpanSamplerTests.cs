@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 using FluentAssertions;

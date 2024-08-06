@@ -16,6 +16,8 @@ using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Reports;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Configuration;
 
 namespace Datadog.Trace.BenchmarkDotNet;
 
@@ -35,7 +37,7 @@ internal class DatadogExporter : IExporter
     {
         try
         {
-            Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
         }
         catch
         {

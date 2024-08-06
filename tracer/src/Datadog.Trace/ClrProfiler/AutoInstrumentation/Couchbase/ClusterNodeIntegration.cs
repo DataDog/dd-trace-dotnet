@@ -92,7 +92,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
                 if ((int)(object)returnValue != 0)
                 {
                     span.Error = true;
+
+/* Unmerged change from project 'Datadog.Trace (netstandard2.0)'
+Before:
                     span.SetTag(Trace.Tags.ErrorMsg, returnValue.ToString());
+                }
+After:
+                    span.SetTag(Tags.ErrorMsg, returnValue.ToString());
+                }
+*/
+                    span.SetTag(Internal.Tags.ErrorMsg, returnValue.ToString());
                 }
             }
 

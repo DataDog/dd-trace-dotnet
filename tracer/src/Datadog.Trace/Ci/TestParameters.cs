@@ -7,12 +7,12 @@
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Ci
+namespace Datadog.Trace.Internal.Ci
 {
     /// <summary>
     /// Test parameters
     /// </summary>
-    public class TestParameters
+    internal class TestParameters
     {
         /// <summary>
         /// Gets or sets the test parameters metadata

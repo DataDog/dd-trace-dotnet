@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 #nullable enable
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;

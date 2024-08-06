@@ -19,6 +19,7 @@ using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.SensitiveData;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Iast.Telemetry;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;

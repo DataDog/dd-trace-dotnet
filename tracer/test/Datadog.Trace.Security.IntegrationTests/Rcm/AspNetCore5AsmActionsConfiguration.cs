@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,7 +31,7 @@ public class AspNetCore5AsmActionsConfiguration : RcmBase
         : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmActionsConfiguration))
     {
         SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
     }
 
     [SkippableTheory]

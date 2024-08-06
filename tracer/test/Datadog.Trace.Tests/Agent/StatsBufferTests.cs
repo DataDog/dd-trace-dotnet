@@ -6,6 +6,7 @@
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Internal;
 using Datadog.Trace.TestHelpers.Stats;
 using FluentAssertions;
 using MessagePack;
