@@ -5,11 +5,10 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
-using static Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Iast.Aspects.NHibernate;
 
@@ -28,7 +27,15 @@ public class ISessionAspect
     [AspectMethodInsertBefore("NHibernate.ISession::CreateSQLQuery(System.String)", 0)]
     public static object AnalyzeQuery(string query)
     {
-        VulnerabilitiesModule.OnSqlQuery(query, IntegrationId.NHibernate);
-        return query;
+        try
+        {
+            VulnerabilitiesModule.OnSqlQuery(query, IntegrationId.NHibernate);
+            return query;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(ISessionAspect)}.{nameof(AnalyzeQuery)}");
+            return query;
+        }
     }
 }

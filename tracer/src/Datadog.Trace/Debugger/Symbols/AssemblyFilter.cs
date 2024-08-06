@@ -5,10 +5,10 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Logging;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
@@ -16,7 +16,7 @@ namespace Datadog.Trace.Debugger.Symbols
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AssemblyFilter));
 
-        internal static bool ShouldSkipAssembly(Assembly assembly, HashSet<string>? excludeList = null, HashSet<string>? includeList = null)
+        internal static bool ShouldSkipAssembly(Assembly assembly, ImmutableHashSet<string>? thirdPartyExcludes, ImmutableHashSet<string>? thirdPartyIncludes)
         {
             var assemblyName = assembly.GetName().Name;
 
@@ -30,12 +30,12 @@ namespace Datadog.Trace.Debugger.Symbols
                 return true;
             }
 
-            if (IsInExcludeList(assemblyName!, excludeList))
+            if (IsInExcludeList(assemblyName!, thirdPartyExcludes))
             {
                 return false;
             }
 
-            if (IsInIncludeList(assemblyName!, includeList))
+            if (IsInIncludeList(assemblyName!, thirdPartyIncludes))
             {
                 return true;
             }
@@ -53,12 +53,12 @@ namespace Datadog.Trace.Debugger.Symbols
             return assemblyName?.StartsWith("datadog.", StringComparison.OrdinalIgnoreCase) == true;
         }
 
-        private static bool IsInIncludeList(string assemblyName, HashSet<string>? includeList)
+        private static bool IsInIncludeList(string assemblyName, ImmutableHashSet<string>? includeList)
         {
             return includeList?.Contains(assemblyName) == true;
         }
 
-        private static bool IsInExcludeList(string assemblyName, HashSet<string>? excludeList)
+        private static bool IsInExcludeList(string assemblyName, ImmutableHashSet<string>? excludeList)
         {
             return excludeList?.Contains(assemblyName) == true;
         }

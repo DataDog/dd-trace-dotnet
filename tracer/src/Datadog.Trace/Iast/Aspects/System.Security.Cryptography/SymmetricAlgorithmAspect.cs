@@ -44,7 +44,15 @@ public class SymmetricAlgorithmAspect
     public static DESCryptoServiceProvider InitDES()
     {
         var target = new DESCryptoServiceProvider();
-        ProcessCipherClassCreation(target);
+        try
+        {
+            ProcessCipherClassCreation(target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitDES)}");
+        }
+
         return target;
     }
 
@@ -56,7 +64,15 @@ public class SymmetricAlgorithmAspect
     public static RC2CryptoServiceProvider InitRC2()
     {
         var target = new RC2CryptoServiceProvider();
-        ProcessCipherClassCreation(target);
+        try
+        {
+            ProcessCipherClassCreation(target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitRC2)}");
+        }
+
         return target;
     }
 
@@ -68,7 +84,15 @@ public class SymmetricAlgorithmAspect
     public static TripleDESCryptoServiceProvider InitTripleDES()
     {
         var target = new TripleDESCryptoServiceProvider();
-        ProcessCipherClassCreation(target);
+        try
+        {
+            ProcessCipherClassCreation(target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitTripleDES)}");
+        }
+
         return target;
     }
 
@@ -80,7 +104,15 @@ public class SymmetricAlgorithmAspect
     public static RijndaelManaged InitRijndaelManaged()
     {
         var target = new RijndaelManaged();
-        ProcessCipherClassCreation(target);
+        try
+        {
+            ProcessCipherClassCreation(target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitRijndaelManaged)}");
+        }
+
         return target;
     }
 
@@ -92,7 +124,15 @@ public class SymmetricAlgorithmAspect
     public static AesCryptoServiceProvider InitAesCryptoServiceProvider()
     {
         var target = new AesCryptoServiceProvider();
-        ProcessCipherClassCreation(target);
+        try
+        {
+            ProcessCipherClassCreation(target);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitAesCryptoServiceProvider)}");
+        }
+
         return target;
     }
 
@@ -113,8 +153,16 @@ public class SymmetricAlgorithmAspect
     [AspectMethodInsertAfter($"System.Security.Cryptography.Aes::Create({ClrNames.String})")]
     public static SymmetricAlgorithm Create(SymmetricAlgorithm target)
     {
-        ProcessCipherClassCreation(target);
-        return target;
+        try
+        {
+            ProcessCipherClassCreation(target);
+            return target;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(Create)}");
+            return target;
+        }
     }
 }
 #endif
