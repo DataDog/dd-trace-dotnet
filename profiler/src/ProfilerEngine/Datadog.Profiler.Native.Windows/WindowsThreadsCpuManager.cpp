@@ -94,7 +94,7 @@ void ThreadsCpuManager::LogCpuTimes()
                 builder << std::setw(6) << threadEntry.th32ThreadID << " | ";
                 builder << std::setw(8) << ThreadMs << " ms [";
                 builder << std::setw(5) << std::setprecision(2) << percent << " %]  ";
-                auto name = element->second->GetName();
+                auto* name = element->second->GetName();
                 if (name == nullptr || name->empty())
                 {
                     builder << " ";
