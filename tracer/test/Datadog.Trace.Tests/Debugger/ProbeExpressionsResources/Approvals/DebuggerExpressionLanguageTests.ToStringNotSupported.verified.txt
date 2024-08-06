@@ -24,15 +24,21 @@ Expressions:
     var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[5].Value;
     var NullLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[6].Value;
     var BooleanValue = (bool)scopeMemberArray[7].Value;
-    var IntArg = (int)scopeMemberArray[8].Value;
-    var DoubleArg = (double)scopeMemberArray[9].Value;
-    var StringArg = (string)scopeMemberArray[10].Value;
-    var CollectionArg = (List<string>)scopeMemberArray[11].Value;
-    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[12].Value;
+    var Char = (char)scopeMemberArray[8].Value;
+    var AnotherChar = (char)scopeMemberArray[9].Value;
+    var IntArg = (int)scopeMemberArray[10].Value;
+    var DoubleArg = (double)scopeMemberArray[11].Value;
+    var StringArg = (string)scopeMemberArray[12].Value;
+    var CollectionArg = (List<string>)scopeMemberArray[13].Value;
+    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[14].Value;
     var $dd_el_result =
     {
-        var fieldsArray = this.Nested.GetType().GetFields(
-            BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+        var fieldsArray = this.Nested
+            .GetType()
+            .GetFields(
+                BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+            .OrderBy(fieldInfo => fieldInfo.MetadataToken)
+            .ToArray();
         var fieldValues = new StringBuilder();
         var index = 0;
         while (true)
@@ -68,4 +74,4 @@ Expressions:
 
     return $dd_el_result;
 }
-Result: The result of the expression is: _parentPrivateMember=Hello from parent private member, _circleRef=Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct+NestedObject, _timeSpan=00:00:00, {[one, 1], [two, 2], [three, 3], ...}, _ienumerable=System.Collections.Generic.IEnumerable`1[[System.Int32, Culture=neutral]], ...
+Result: The result of the expression is: ParentProtectedStaticMember=Hello from parent protected static member, _parentPrivateMember=Hello from parent private member, _circleRef=Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct+NestedObject, _timeSpan=00:00:00, {[one, 1], [two, 2], [three, 3], ...}, ...

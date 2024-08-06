@@ -337,7 +337,8 @@ public class InstrumentationTestsBase : IDisposable
         foreach (var range in rangesList)
         {
             var start = (int)_StartProperty.Invoke(range, Array.Empty<object>());
-            result = result.Insert(start + (int)_lengthProperty.Invoke(range, Array.Empty<object>()), "-+:");
+            var length = (int)_LengthProperty.Invoke(range, Array.Empty<object>());
+            result = result.Insert(start + length, "-+:");
             result = result.Insert(start, ":+-");
         }
 

@@ -6,6 +6,8 @@
 #nullable enable
 
 using System;
+using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -48,10 +50,11 @@ internal static partial class IastModule
     private const string OperationNameSessionTimeout = "session_timeout";
     private const string OperationNameEmailHtmlInjection = "email_html_injection";
     private const string ReferrerHeaderName = "Referrer";
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
+    internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static IastSettings iastSettings = Iast.Instance.Settings;
+    private static ConcurrentDictionary<string, Exception> errors = new ConcurrentDictionary<string, Exception>();
 
     static IastModule()
     {
@@ -110,13 +113,13 @@ internal static partial class IastModule
             return true;
         }
 
-        if (!Iast.Instance.Settings.Enabled)
-        {
-            return IastModuleResponse.Empty;
-        }
-
         try
         {
+            if (!Iast.Instance.Settings.Enabled)
+            {
+                return IastModuleResponse.Empty;
+            }
+
             OnExecutedSinkTelemetry(IastInstrumentedSinks.UnvalidatedRedirect);
             return GetScope(evidence, integrationId, VulnerabilityTypeName.UnvalidatedRedirect, OperationNameUnvalidatedRedirect, HasInvalidOrigin);
         }
@@ -129,13 +132,13 @@ internal static partial class IastModule
 
     internal static IastModuleResponse OnTrustBoundaryViolation(string name)
     {
-        if (!Iast.Instance.Settings.Enabled)
-        {
-            return IastModuleResponse.Empty;
-        }
-
         try
         {
+            if (!Iast.Instance.Settings.Enabled)
+            {
+                return IastModuleResponse.Empty;
+            }
+
             OnExecutedSinkTelemetry(IastInstrumentedSinks.TrustBoundaryViolation);
             return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, Always);
         }
@@ -148,13 +151,13 @@ internal static partial class IastModule
 
     internal static IastModuleResponse OnLdapInjection(string evidence)
     {
-        if (!Iast.Instance.Settings.Enabled)
-        {
-            return IastModuleResponse.Empty;
-        }
-
         try
         {
+            if (!Iast.Instance.Settings.Enabled)
+            {
+                return IastModuleResponse.Empty;
+            }
+
             OnExecutedSinkTelemetry(IastInstrumentedSinks.LdapInjection);
             return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, Always);
         }

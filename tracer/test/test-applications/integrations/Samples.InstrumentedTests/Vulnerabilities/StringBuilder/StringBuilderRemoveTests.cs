@@ -5,7 +5,7 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringBuilderPropagatio
 public class StringBuilderRemoveTests : InstrumentationTestsBase
 {
     private string _taintedValue = "tainted";
-    private StringBuilder _taintedStringBuilder = new StringBuilder("TaintedStringBuilder");
+    //private StringBuilder _taintedStringBuilder = new StringBuilder("TaintedStringBuilder");
     private string _taintedString = "TaintedString";
     private string _untaintedString = "UntaintedString";
 
@@ -13,55 +13,79 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
     {
         AddTainted(_taintedValue);
         AddTainted(_taintedString);
-        AddTainted(_taintedStringBuilder);
+        //AddTainted(_taintedStringBuilder);
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted()
     {
+        var check = new StringBuilder("TaintedStringBuilder");
+        var tainted = new StringBuilder("TaintedStringBuilder");
+        AddTainted(tainted);
+
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedBuilder-+:", 
-            _taintedStringBuilder.Remove(7, 6), 
-            () => _taintedStringBuilder.Remove(7, 6));
+            tainted.Remove(7, 6), 
+            () => check.Remove(7, 6));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted2()
     {
-        StringBuilder strb = _taintedStringBuilder.Append(_untaintedString);
+        var check = new StringBuilder("TaintedStringBuilder");
+        var tainted = new StringBuilder("TaintedStringBuilder");
+        AddTainted(tainted);
+
+        tainted.Append(_untaintedString);
+        check.Append(_untaintedString);
+
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedBuilder-+:UntaintedString", 
-            strb.Remove(7, 6), 
-            () => strb.Remove(7, 6));
+            tainted.Remove(7, 6), 
+            () => check.Remove(7, 6));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted3()
     {
-        StringBuilder strb = _taintedStringBuilder.Append(_taintedString);
+        var check = new StringBuilder("TaintedStringBuilder");
+        var tainted = new StringBuilder("TaintedStringBuilder");
+        AddTainted(tainted);
+
+        tainted.Append(_taintedString);
+        check.Append(_taintedString);
+
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedBuilder-+::+-TaintedString-+:", 
-            strb.Remove(7, 6), 
-            () => strb.Remove(7, 6));
+            tainted.Remove(7, 6), 
+            () => check.Remove(7, 6));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted4()
     {
-        StringBuilder strb = _taintedStringBuilder.Append(_untaintedString);
-        strb = strb.Append(_taintedString);
+        var check = new StringBuilder("TaintedStringBuilder");
+        var tainted = new StringBuilder("TaintedStringBuilder");
+        AddTainted(tainted);
+
+        tainted.Append(_untaintedString).Append(_taintedString);
+        check.Append(_untaintedString).Append(_taintedString);
 
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+:Untainted:+-TaintedString-+:", 
-            strb.Remove(29, 6), 
-            () => strb.Remove(29, 6));
+            tainted.Remove(29, 6), 
+            () => check.Remove(29, 6));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted5()
     {
-        StringBuilder strb = _taintedStringBuilder.Append(_untaintedString);
-        strb = strb.Append(_taintedString);
+        var check = new StringBuilder("TaintedStringBuilder");
+        var tainted = new StringBuilder("TaintedStringBuilder");
+        AddTainted(tainted);
+
+        tainted.Append(_untaintedString).Append(_taintedString);
+        check.Append(_untaintedString).Append(_taintedString);
 
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedBuilder-+:UntaintedString:+-TaintedString-+:", 
-            strb.Remove(7, 6), 
-            () => strb.Remove(7, 6));
+            tainted.Remove(7, 6), 
+            () => check.Remove(7, 6));
     }
 
     [Fact]

@@ -253,6 +253,49 @@ const bool DebuggerRejitPreprocessor::SupportsSelectiveEnablement()
     return false;
 }
 
+bool DebuggerRejitPreprocessor::CheckExactSignatureMatch(ComPtr<IMetaDataImport2>& metadataImport,
+    const FunctionInfo& functionInfo, const MethodReference& targetMethod)
+{
+    const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
+    const auto isStatic = !(functionInfo.method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
+    const auto thisArg = isStatic ? 0 : 1;
+    const auto numOfArgsTargetMethod = targetMethod.signature_types.size();
+
+    // Compare if the current mdMethodDef contains the same number of arguments as the
+    // instrumentation target
+    if (numOfArgs != numOfArgsTargetMethod - thisArg)
+    {
+        Logger::Info("    * Skipping ", functionInfo.type.name, ".", functionInfo.name,
+                     ": the methoddef doesn't have the right number of arguments (", numOfArgs, " arguments).");
+        return false;
+    }
+
+    // Compare each mdMethodDef argument type to the instrumentation target
+    bool argumentsMismatch = false;
+    const auto& methodArguments = functionInfo.method_signature.GetMethodArguments();
+
+    Logger::Debug("    * Comparing signature for method: ", functionInfo.type.name, ".", functionInfo.name);
+    for (unsigned int i = 0; i < numOfArgs && (i + thisArg) < numOfArgsTargetMethod; i++)
+    {
+        const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadataImport);
+        const auto integrationArgumentTypeName = targetMethod.signature_types[i + thisArg];
+        Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
+        if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
+        {
+            argumentsMismatch = true;
+            break;
+        }
+    }
+    if (argumentsMismatch)
+    {
+        Logger::Info("    * Skipping ", targetMethod.method_name,
+                     ": the methoddef doesn't have the right type of arguments.");
+        return false;
+    }
+
+    return true;
+}
+
 
 const std::unique_ptr<RejitHandlerModuleMethod>
 DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,

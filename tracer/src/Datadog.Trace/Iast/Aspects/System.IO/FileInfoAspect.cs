@@ -5,8 +5,8 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
@@ -33,7 +33,15 @@ public class FileInfoAspect
     [AspectMethodInsertBefore("System.IO.FileInfo::Replace(System.String,System.String,System.Boolean)", new int[] { 1, 2 })]
     public static string ReviewPath(string path)
     {
-        VulnerabilitiesModule.OnPathTraversal(path);
-        return path;
+        try
+        {
+            VulnerabilitiesModule.OnPathTraversal(path);
+            return path;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(FileInfoAspect)}.{nameof(ReviewPath)}");
+            return path;
+        }
     }
 }

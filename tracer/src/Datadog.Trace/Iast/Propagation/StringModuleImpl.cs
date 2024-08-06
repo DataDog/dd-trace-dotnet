@@ -140,7 +140,7 @@ internal static class StringModuleImpl
         return result;
     }
 
-    public static string OnStringJoin(string result, IEnumerable<object> values, int startIndex = 0, int count = -1)
+    public static string OnStringJoin<T>(string result, IEnumerable<T> values, int startIndex = 0, int count = -1)
     {
         try
         {
@@ -184,7 +184,12 @@ internal static class StringModuleImpl
         return result;
     }
 
-    public static string OnStringJoin(string result, string delimiter, IEnumerable<object> values, int startIndex = 0, int count = -1)
+    public static string OnStringJoin<T>(string result, char delimiter, IEnumerable<T> values, int startIndex = 0, int count = -1)
+    {
+        return OnStringJoin(result, delimiter.ToString(), values, startIndex, count);
+    }
+
+    public static string OnStringJoin<T>(string result, string delimiter, IEnumerable<T> values, int startIndex = 0, int count = -1)
     {
         try
         {
@@ -496,7 +501,7 @@ internal static class StringModuleImpl
     /// <param name="parameters"> StringConcat params struct </param>
     /// <param name="result"> Result </param>
     /// <returns> result </returns>
-    public static string OnStringConcat(IEnumerable parameters, string result)
+    public static string OnStringConcat<T>(IEnumerable<T> parameters, string result)
     {
         try
         {

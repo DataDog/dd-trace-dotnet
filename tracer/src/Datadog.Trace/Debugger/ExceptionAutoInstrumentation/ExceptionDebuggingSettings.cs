@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionDebuggingSettings
     {
-        public const int DefaultMaxFramesToCapture = 3;
+        public const int DefaultMaxFramesToCapture = 4;
         public const int DefaultRateLimitSeconds = 60 * 60; // 1 hour
         public const int DefaultMaxExceptionAnalysisLimit = 100;
 
