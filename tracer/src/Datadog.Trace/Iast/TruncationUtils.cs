@@ -33,4 +33,22 @@ internal static class TruncationUtils
             writer.WriteValue(value);
         }
     }
+
+    public static void InsertTruncableValue(Dictionary<string, object> dict, string key, string? value, int maxValueLength)
+    {
+        if (value is null)
+        {
+            return;
+        }
+
+        if (value.Length > maxValueLength && maxValueLength > 0)
+        {
+            dict[key] = value.Substring(0, maxValueLength);
+            dict[TRUNCATED] = RIGHT;
+        }
+        else
+        {
+            dict[key] = value;
+        }
+    }
 }

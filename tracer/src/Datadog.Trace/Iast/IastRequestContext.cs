@@ -45,11 +45,21 @@ internal class IastRequestContext
 
             if (_vulnerabilityBatch != null)
             {
-                span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
-
-                if (_vulnerabilityBatch.IsTruncated())
+                if (Iast.Instance.IsMetaStructSupported())
                 {
-                    span.Tags.SetTag(Tags.IastJsonTagSizeExceeded, "1");
+                    span.SetMetaStruct(IastModule.IastMetaStructKey, _vulnerabilityBatch.ToMessagePack());
+                    if (_vulnerabilityBatch.IsTruncated())
+                    {
+                        span.Tags.SetTag(Tags.IastMetaStructTagSizeExceeded, "1");
+                    }
+                }
+                else
+                {
+                    span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
+                    if (_vulnerabilityBatch.IsTruncated())
+                    {
+                        span.Tags.SetTag(Tags.IastJsonTagSizeExceeded, "1");
+                    }
                 }
             }
 

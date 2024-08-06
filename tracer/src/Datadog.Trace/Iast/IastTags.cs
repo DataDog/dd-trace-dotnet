@@ -19,6 +19,9 @@ internal partial class IastTags : CommonTags
     [Tag(Tags.IastJsonTagSizeExceeded)]
     public string? IastJsonTagSizeExceeded { get; set; }
 
+    [Tag(Tags.IastMetaStructTagSizeExceeded)]
+    public string? IastMetaStructTagSizeExceeded { get; set; }
+
     [Tag(Tags.IastEnabled)]
     public string? IastEnabled { get; set; }
 }

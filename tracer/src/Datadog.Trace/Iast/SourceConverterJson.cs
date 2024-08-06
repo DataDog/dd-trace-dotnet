@@ -1,4 +1,4 @@
-// <copyright file="SourceConverter.cs" company="Datadog">
+// <copyright file="SourceConverterJson.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,19 +6,15 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
-using Datadog.Trace.Iast.SensitiveData;
-using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Iast;
 
 /// <summary>
 /// Custom JSON serializer for <see cref="Datadog.Trace.Iast.Source"/> struct
 /// </summary>
-internal class SourceConverter : JsonConverter<Source>
+internal class SourceConverterJson : JsonConverter<Source>
 {
     // When not redacted output is:
     // { "origin": "http.request.parameter.name", "name": "name", "value": "value" }
@@ -28,7 +24,7 @@ internal class SourceConverter : JsonConverter<Source>
 
     private int _maxValueLength;
 
-    public SourceConverter(int maxValueLength)
+    public SourceConverterJson(int maxValueLength)
     {
         _maxValueLength = maxValueLength;
     }
