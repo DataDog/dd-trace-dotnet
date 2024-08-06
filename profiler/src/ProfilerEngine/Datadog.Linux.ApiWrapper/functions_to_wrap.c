@@ -465,7 +465,7 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
     // Copy the remaining arguments and replace datadog_crashtracking by the original name if needed
     size_t idx = 0;
     size_t new_idx = 2;
-    while (idx < argc)
+    while (argv[idx] != NULL)
     {
         if (strncmp(argv[idx], "--name", strlen("--name")) == 0)
         {
@@ -473,7 +473,6 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
             {
                 newArgv[new_idx++] = "--name";
                 newArgv[new_idx++] = originalMiniDumpName; // no need to check for datadog_crashtracking, this was done in ShouldCallOurOwnCreatedump
-                new_idx += 2;
             }
 
             idx += 2;
