@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryMetricGeneratorTests.cs" company="Datadog">
+// <copyright file="TelemetryMetricGeneratorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ public class TelemetryMetricGeneratorTests
     public void CanGenerateExtensionWithNoMembers()
     {
         const string input = """
-            using Datadog.Trace.SourceGenerators;
+            using Datadog.Trace.Internal.SourceGenerators;
             namespace MyTests.TestMetricNameSpace;
 
             [TelemetryMetricType("count")]
@@ -73,7 +73,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedCollector = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class MetricsTelemetryCollector
             {
                 private const int TestMetricLength = 0;
@@ -99,14 +99,14 @@ public class TelemetryMetricGeneratorTests
         const string expectedCiVisibility = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
             }
             """;
 
         const string expectedInterface = Constants.FileHeader + """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {}
             """;
@@ -114,7 +114,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedNull = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class NullMetricsTelemetryCollector
             {
             }
@@ -125,10 +125,10 @@ public class TelemetryMetricGeneratorTests
             using System.Collections.Generic;
             using System.Linq;
             using System.Threading;
-            using Datadog.Trace.Telemetry.Metrics;
-            using Datadog.Trace.Util;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Util;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
 
             internal partial class MetricsTelemetryCollector
             {
@@ -280,10 +280,10 @@ public class TelemetryMetricGeneratorTests
             using System.Collections.Generic;
             using System.Linq;
             using System.Threading;
-            using Datadog.Trace.Telemetry.Metrics;
-            using Datadog.Trace.Util;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Util;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
 
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
@@ -430,7 +430,7 @@ public class TelemetryMetricGeneratorTests
         var expectedTestMetricCollector = Constants.FileHeader + $$"""
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class MetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestMetricBuffers()}}
@@ -462,7 +462,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestMetricCiVisibility = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
 
@@ -485,7 +485,7 @@ public class TelemetryMetricGeneratorTests
             """;
 
         const string expectedTestMetricInterface = Constants.FileHeader + """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {
                 public void RecordTestMetricZeroTagMetric(int increment = 1);
@@ -501,7 +501,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestMetricNull = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class NullMetricsTelemetryCollector
             {
 
@@ -526,7 +526,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestCiMetricCollector = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class MetricsTelemetryCollector
             {
 
@@ -547,7 +547,7 @@ public class TelemetryMetricGeneratorTests
         var expectedTestCiMetricCiVisibility = Constants.FileHeader + $$"""
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestCiMetricBuffers()}}
@@ -572,7 +572,7 @@ public class TelemetryMetricGeneratorTests
             """;
 
         const string expectedTestCiMetricInterface = Constants.FileHeader + """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {
                 public void RecordTestCiMetricCiZeroTagMetric(int increment = 1);
@@ -586,7 +586,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestCiMetricNull = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class NullMetricsTelemetryCollector
             {
 
@@ -607,7 +607,7 @@ public class TelemetryMetricGeneratorTests
         var expectedTestSharedMetricCollector = Constants.FileHeader + $$"""
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class MetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestSharedMetricBuffers()}}
@@ -634,7 +634,7 @@ public class TelemetryMetricGeneratorTests
         var expectedTestSharedMetricCiVisibility = Constants.FileHeader + $$"""
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestSharedMetricBuffers()}}
@@ -659,7 +659,7 @@ public class TelemetryMetricGeneratorTests
             """;
 
         const string expectedTestSharedMetricInterface = Constants.FileHeader + """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {
                 public void RecordTestSharedMetricSharedZeroTagMetric(int increment = 1);
@@ -673,7 +673,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestSharedMetricNull = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class NullMetricsTelemetryCollector
             {
 
@@ -723,7 +723,7 @@ public class TelemetryMetricGeneratorTests
         var expectedTestMetricCollector = Constants.FileHeader + $$"""
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class MetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestMetricBuffers()}}
@@ -755,7 +755,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestMetricCiVisibility = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
 
@@ -778,7 +778,7 @@ public class TelemetryMetricGeneratorTests
             """;
 
         const string expectedTestMetricInterface = Constants.FileHeader + """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {
                 public void RecordTestMetricZeroTagMetric(int value);
@@ -794,7 +794,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestMetricNull = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class NullMetricsTelemetryCollector
             {
 
@@ -820,7 +820,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestCiMetricCollector = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class MetricsTelemetryCollector
             {
 
@@ -841,7 +841,7 @@ public class TelemetryMetricGeneratorTests
         var expectedTestCiMetricCiVisibility = Constants.FileHeader + $$"""
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestCiMetricBuffers()}}
@@ -866,7 +866,7 @@ public class TelemetryMetricGeneratorTests
             """;
 
         const string expectedTestCiMetricInterface = Constants.FileHeader + """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {
                 public void RecordTestCiMetricCiZeroTagMetric(int value);
@@ -880,7 +880,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestCiMetricNull = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class NullMetricsTelemetryCollector
             {
 
@@ -902,7 +902,7 @@ public class TelemetryMetricGeneratorTests
         var expectedTestSharedMetricCollector = Constants.FileHeader + $$"""
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class MetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestSharedMetricBuffers()}}
@@ -929,7 +929,7 @@ public class TelemetryMetricGeneratorTests
         var expectedTestSharedMetricCiVisibility = Constants.FileHeader + $$"""
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestSharedMetricBuffers()}}
@@ -954,7 +954,7 @@ public class TelemetryMetricGeneratorTests
             """;
 
         const string expectedTestSharedMetricInterface = Constants.FileHeader + """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {
                 public void RecordTestSharedMetricSharedZeroTagMetric(int value);
@@ -968,7 +968,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestSharedMetricNull = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class NullMetricsTelemetryCollector
             {
 
@@ -1018,7 +1018,7 @@ public class TelemetryMetricGeneratorTests
         var expectedTestMetricCollector = Constants.FileHeader + $$"""
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class MetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestMetricBuffers(isDistribution: true)}}
@@ -1050,7 +1050,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestMetricCiVisibility = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
 
@@ -1073,7 +1073,7 @@ public class TelemetryMetricGeneratorTests
             """;
 
         const string expectedTestMetricInterface = Constants.FileHeader + """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {
                 public void RecordTestMetricZeroTagMetric(double value);
@@ -1089,7 +1089,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestMetricNull = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class NullMetricsTelemetryCollector
             {
 
@@ -1115,7 +1115,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestCiMetricCollector = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class MetricsTelemetryCollector
             {
 
@@ -1136,7 +1136,7 @@ public class TelemetryMetricGeneratorTests
         var expectedTestCiMetricCiVisibility = Constants.FileHeader + $$"""
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestCiMetricBuffers(isDistribution: true)}}
@@ -1161,7 +1161,7 @@ public class TelemetryMetricGeneratorTests
             """;
 
         const string expectedTestCiMetricInterface = Constants.FileHeader + """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {
                 public void RecordTestCiMetricCiZeroTagMetric(double value);
@@ -1175,7 +1175,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestCiMetricNull = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class NullMetricsTelemetryCollector
             {
 
@@ -1197,7 +1197,7 @@ public class TelemetryMetricGeneratorTests
         var expectedTestSharedMetricCollector = Constants.FileHeader + $$"""
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class MetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestSharedMetricBuffers(isDistribution: true)}}
@@ -1224,7 +1224,7 @@ public class TelemetryMetricGeneratorTests
         var expectedTestSharedMetricCiVisibility = Constants.FileHeader + $$"""
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
             {{StandardGeneratedSource.GetTestSharedMetricBuffers(isDistribution: true)}}
@@ -1249,7 +1249,7 @@ public class TelemetryMetricGeneratorTests
             """;
 
         const string expectedTestSharedMetricInterface = Constants.FileHeader + """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {
                 public void RecordTestSharedMetricSharedZeroTagMetric(double value);
@@ -1263,7 +1263,7 @@ public class TelemetryMetricGeneratorTests
         const string expectedTestSharedMetricNull = Constants.FileHeader + """
             using System.Threading;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial class NullMetricsTelemetryCollector
             {
 
@@ -1310,7 +1310,7 @@ public class TelemetryMetricGeneratorTests
     public void CantUseAnEmptyMetricType(string metricType)
     {
         var input = $$"""
-            using Datadog.Trace.SourceGenerators;
+            using Datadog.Trace.Internal.SourceGenerators;
             namespace MyTests.TestMetricNameSpace;
 
             [TelemetryMetricType({{metricType}})]
@@ -1335,7 +1335,7 @@ public class TelemetryMetricGeneratorTests
     public void CantUseAnEmptyMetricName(string name)
     {
         var input = $$"""
-            using Datadog.Trace.SourceGenerators;
+            using Datadog.Trace.Internal.SourceGenerators;
             namespace MyTests.TestMetricNameSpace;
 
             [TelemetryMetricType("Count")]
@@ -1359,7 +1359,7 @@ public class TelemetryMetricGeneratorTests
     public void CantUseDuplicateValues(string metricDefinition)
     {
         var input = $$"""
-            using Datadog.Trace.SourceGenerators;
+            using Datadog.Trace.Internal.SourceGenerators;
             using System.ComponentModel;
 
             namespace MyTests.TestMetricNameSpace;
@@ -1546,10 +1546,10 @@ public class TelemetryMetricGeneratorTests
             using System.Collections.Generic;
             using System.Linq;
             using System.Threading;
-            using Datadog.Trace.Telemetry.Metrics;
-            using Datadog.Trace.Util;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Util;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
 
             internal partial class MetricsTelemetryCollector
             {
@@ -1723,10 +1723,10 @@ public class TelemetryMetricGeneratorTests
             using System.Collections.Generic;
             using System.Linq;
             using System.Threading;
-            using Datadog.Trace.Telemetry.Metrics;
-            using Datadog.Trace.Util;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Util;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
 
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
@@ -1900,10 +1900,10 @@ public class TelemetryMetricGeneratorTests
             using System.Collections.Generic;
             using System.Linq;
             using System.Threading;
-            using Datadog.Trace.Telemetry.Metrics;
-            using Datadog.Trace.Util;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Util;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
 
             internal partial class MetricsTelemetryCollector
             {
@@ -2089,10 +2089,10 @@ public class TelemetryMetricGeneratorTests
             using System.Collections.Generic;
             using System.Linq;
             using System.Threading;
-            using Datadog.Trace.Telemetry.Metrics;
-            using Datadog.Trace.Util;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Util;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
 
             internal partial class CiVisibilityMetricsTelemetryCollector
             {
@@ -2409,7 +2409,7 @@ public class TelemetryMetricGeneratorTests
 
         public static string GetStandardEnums(string metricType)
             =>  $$"""
-            using Datadog.Trace.SourceGenerators;
+            using Datadog.Trace.Internal.SourceGenerators;
             using System.ComponentModel;
 
             namespace MyTests.TestMetricNameSpace;

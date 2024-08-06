@@ -1,4 +1,4 @@
-﻿// <copyright file="EnumExtensionsGeneratorTests.cs" company="Datadog">
+// <copyright file="EnumExtensionsGeneratorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ public class EnumExtensionsGeneratorTests
     public void CanGenerateEnumExtensionsInChildNamespace()
     {
         const string input = """
-            using Datadog.Trace.SourceGenerators;
+            using Datadog.Trace.Internal.SourceGenerators;
 
             namespace MyTestNameSpace;
 
@@ -100,7 +100,7 @@ public class EnumExtensionsGeneratorTests
     public void CanGenerateEnumExtensionsInNestedClass()
     {
         const string input = """
-            using Datadog.Trace.SourceGenerators;
+            using Datadog.Trace.Internal.SourceGenerators;
 
             namespace MyTestNameSpace;
 
@@ -186,7 +186,7 @@ public class EnumExtensionsGeneratorTests
     public void CanGenerateEnumExtensionsWithDescription()
     {
         const string input = """
-            using Datadog.Trace.SourceGenerators;
+            using Datadog.Trace.Internal.SourceGenerators;
             using System.ComponentModel;
 
             namespace MyTestNameSpace;
@@ -299,7 +299,7 @@ public class EnumExtensionsGeneratorTests
     public void CanGenerateEnumExtensionsWithDuplicateDescription()
     {
         const string input = """
-            using Datadog.Trace.SourceGenerators;
+            using Datadog.Trace.Internal.SourceGenerators;
             using System.ComponentModel;
 
             namespace MyTestNameSpace;

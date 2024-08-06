@@ -13,9 +13,9 @@ namespace Datadog.Trace.SourceGenerators.Tests
         public void DoesNotGenerateDefinitionsIfThereAreNone()
         {
             const string input = """
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
 namespace MyTests;
 public class TestList 
@@ -29,7 +29,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
@@ -55,9 +55,9 @@ namespace Datadog.Trace.ClrProfiler
         public void CanGenerateAspectsDefinitionForSimpleClass()
         {
             const string input = """
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
 namespace MyTests;
 
@@ -83,7 +83,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
@@ -111,9 +111,9 @@ namespace Datadog.Trace.ClrProfiler
         public void CanGenerateAspectsDefinitionWithMultipleAspects()
         {
             const string input = """
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
 namespace MyTests;
 
@@ -135,7 +135,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
@@ -163,9 +163,9 @@ namespace Datadog.Trace.ClrProfiler
         public void CanGenerateAspectsDefinitionForTwoClasses()
         {
             const string input = """
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
 namespace MyTests;
 
@@ -206,7 +206,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
@@ -237,9 +237,9 @@ namespace Datadog.Trace.ClrProfiler
         public void CanGenerateClassAspectsDefinitionWithAllOptions()
         {
             const string input = """
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
 namespace MyTests;
 
@@ -269,7 +269,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
@@ -298,9 +298,9 @@ namespace Datadog.Trace.ClrProfiler
         public void CanGenerateAspectsDefinitionWithArrayParam()
         {
             const string input = """
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
 namespace MyTests;
 
@@ -321,7 +321,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
@@ -348,9 +348,9 @@ namespace Datadog.Trace.ClrProfiler
         public void CanGenerateAspectsDefinitionForTwoClassesRasp()
         {
             const string input = """
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
 namespace MyTests;
 
@@ -391,7 +391,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
@@ -425,9 +425,9 @@ namespace Datadog.Trace.ClrProfiler
         public void CanGenerateClassAspectsDefinitionWithAllOptionsRasp()
         {
             const string input = """
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
 namespace MyTests;
 
@@ -457,7 +457,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal static partial class AspectDefinitions
     {
@@ -495,9 +495,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Iast.Helpers;
+using Datadog.Trace.Internal.Iast.Helpers;
 
-namespace Datadog.Trace.Iast.Dataflow
+namespace Datadog.Trace.Internal.Iast.Dataflow
 {
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
 internal abstract class AspectAttribute : Attribute
@@ -791,7 +791,7 @@ internal enum AspectType
 }
 }
 
-namespace Datadog.Trace.Iast
+namespace Datadog.Trace.Internal.Iast
 {
 internal enum VulnerabilityType
 {

@@ -1,4 +1,4 @@
-﻿// <copyright file="PublicApiGeneratorTests.cs" company="Datadog">
+// <copyright file="PublicApiGeneratorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,9 +20,9 @@ public class PublicApiGeneratorTests
     public void CanGenerateReadOnlyProperty(string definition)
     {
         var input = $$"""
-            using Datadog.Trace.Configuration;
-            using Datadog.Trace.SourceGenerators;
-            using Datadog.Trace.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Configuration;
+            using Datadog.Trace.Internal.SourceGenerators;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
 
             #nullable enable
             namespace MyTests.TestMetricNameSpace;
@@ -45,13 +45,13 @@ public class PublicApiGeneratorTests
                 /// Gets the default environment name applied to all spans.
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
-                [Datadog.Trace.SourceGenerators.PublicApi]
+                [Datadog.Trace.Internal.SourceGenerators.PublicApi]
                 public string? Environment
                 {
                     get
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)0);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)0);
                         return _Environment;
                     }
                 }
@@ -67,13 +67,13 @@ public class PublicApiGeneratorTests
     [Theory]
     [InlineData("GeneratePublicApi")]
     [InlineData("GeneratePublicApiAttribute")]
-    [InlineData("Datadog.Trace.SourceGenerators.GeneratePublicApiAttribute")]
+    [InlineData("Datadog.Trace.Internal.SourceGenerators.GeneratePublicApiAttribute")]
     public void CanGenerateReadWriteProperty(string attributeName)
     {
         var input = $$"""
-            using Datadog.Trace.Configuration;
-            using Datadog.Trace.SourceGenerators;
-            using Datadog.Trace.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Configuration;
+            using Datadog.Trace.Internal.SourceGenerators;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
 
             #nullable enable
             namespace MyTests.TestMetricNameSpace;
@@ -96,19 +96,19 @@ public class PublicApiGeneratorTests
                 /// Gets the default environment name applied to all spans.
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
-                [Datadog.Trace.SourceGenerators.PublicApi]
+                [Datadog.Trace.Internal.SourceGenerators.PublicApi]
                 public string? Environment
                 {
                     get
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)0);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)0);
                         return _Environment;
                     }
                     set
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)1);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)1);
                         _Environment = value;
                     }
                 }
@@ -125,9 +125,9 @@ public class PublicApiGeneratorTests
     public void CanGenerateMultipleProperties()
     {
         const string input = """
-            using Datadog.Trace.Configuration;
-            using Datadog.Trace.SourceGenerators;
-            using Datadog.Trace.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Configuration;
+            using Datadog.Trace.Internal.SourceGenerators;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
 
             #nullable enable
             namespace MyTests.TestMetricNameSpace;
@@ -157,19 +157,19 @@ public class PublicApiGeneratorTests
                 /// Gets the default environment name applied to all spans.
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
-                [Datadog.Trace.SourceGenerators.PublicApi]
+                [Datadog.Trace.Internal.SourceGenerators.PublicApi]
                 public string? Environment
                 {
                     get
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)0);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)0);
                         return _Environment;
                     }
                     set
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)1);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)1);
                         _Environment = value;
                     }
                 }
@@ -178,13 +178,13 @@ public class PublicApiGeneratorTests
                 /// Gets the default service name applied to all spans.
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Service"/>
-                [Datadog.Trace.SourceGenerators.PublicApi]
+                [Datadog.Trace.Internal.SourceGenerators.PublicApi]
                 public HashSet<string> ServiceName
                 {
                     get
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)2);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)2);
                         return ServiceNameInternal;
                     }
                 }
@@ -205,9 +205,9 @@ public class PublicApiGeneratorTests
     {
         var input = $$"""
             using System;
-            using Datadog.Trace.Configuration;
-            using Datadog.Trace.SourceGenerators;
-            using Datadog.Trace.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Configuration;
+            using Datadog.Trace.Internal.SourceGenerators;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
 
             #nullable enable
             namespace MyTests.TestMetricNameSpace;
@@ -258,19 +258,19 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
                 [System.Obsolete]
-                [Datadog.Trace.SourceGenerators.PublicApi]
+                [Datadog.Trace.Internal.SourceGenerators.PublicApi]
                 public string? NoArgs
                 {
                     get
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)0);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)0);
                         return NoArgsInternal;
                     }
                     set
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)1);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)1);
                         NoArgsInternal = value;
                     }
                 }
@@ -280,19 +280,19 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Service"/>
                 [System.Obsolete("some reason")]
-                [Datadog.Trace.SourceGenerators.PublicApi]
+                [Datadog.Trace.Internal.SourceGenerators.PublicApi]
                 public string? OneArg
                 {
                     get
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)0);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)0);
                         return OneArgInternal;
                     }
                     set
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)1);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)1);
                         OneArgInternal = value;
                     }
                 }
@@ -302,19 +302,19 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Service"/>
                 [System.Obsolete("some reason")]
-                [Datadog.Trace.SourceGenerators.PublicApi]
+                [Datadog.Trace.Internal.SourceGenerators.PublicApi]
                 public string? OneArg2
                 {
                     get
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)0);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)0);
                         return OneArg2Internal;
                     }
                     set
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)1);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)1);
                         OneArg2Internal = value;
                     }
                 }
@@ -324,19 +324,19 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Service"/>
                 [System.Obsolete("some reason")]
-                [Datadog.Trace.SourceGenerators.PublicApi]
+                [Datadog.Trace.Internal.SourceGenerators.PublicApi]
                 public string? TwoArgs
                 {
                     get
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)0);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)0);
                         return TwoArgsInternal;
                     }
                     set
                     {
-                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                            (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)1);
+                        Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                            (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage)1);
                         TwoArgsInternal = value;
                     }
                 }
@@ -355,9 +355,9 @@ public class PublicApiGeneratorTests
     public void CanNotGenerateForStruct(string type)
     {
         var input = $$"""
-            using Datadog.Trace.Configuration;
-            using Datadog.Trace.SourceGenerators;
-            using Datadog.Trace.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Configuration;
+            using Datadog.Trace.Internal.SourceGenerators;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
 
             #nullable enable
             namespace MyTests.TestMetricNameSpace;
@@ -383,9 +383,9 @@ public class PublicApiGeneratorTests
     public void CanNotGenerateSetterForReadOnlyProperty(string definition)
     {
         var input = $$"""
-            using Datadog.Trace.Configuration;
-            using Datadog.Trace.SourceGenerators;
-            using Datadog.Trace.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Configuration;
+            using Datadog.Trace.Internal.SourceGenerators;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
 
             #nullable enable
             namespace MyTests.TestMetricNameSpace;
@@ -408,9 +408,9 @@ public class PublicApiGeneratorTests
     public void ErrorsWhenCantDetermineName()
     {
         var input = """
-            using Datadog.Trace.Configuration;
-            using Datadog.Trace.SourceGenerators;
-            using Datadog.Trace.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Configuration;
+            using Datadog.Trace.Internal.SourceGenerators;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
 
             #nullable enable
             namespace MyTests.TestMetricNameSpace;
@@ -433,9 +433,9 @@ public class PublicApiGeneratorTests
     public void AddsDiagnosticWhenPartialModifierMissing()
     {
         var input = """
-            using Datadog.Trace.Configuration;
-            using Datadog.Trace.SourceGenerators;
-            using Datadog.Trace.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Configuration;
+            using Datadog.Trace.Internal.SourceGenerators;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
 
             #nullable enable
             namespace MyTests.TestMetricNameSpace;
@@ -456,7 +456,7 @@ public class PublicApiGeneratorTests
 
     private static string GetPublicApiAttribute()
         => """
-            namespace Datadog.Trace.Telemetry.Metrics;
+            namespace Datadog.Trace.Internal.Telemetry.Metrics;
             public enum PublicApiUsage 
             {
                 Environment_Get,
