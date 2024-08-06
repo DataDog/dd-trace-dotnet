@@ -31,6 +31,7 @@ public class JavaScriptSerializerAspects
     /// <returns> The target url </returns>
     [AspectMethodReplace("System.Web.Script.Serialization.JavaScriptSerializer::DeserializeObject(System.String)")]
     public static object? DeserializeObject(object instance, string input)
+#pragma warning disable DD0005
     {
         IJavaScriptSerializer? serializer;
         try
@@ -63,6 +64,7 @@ public class JavaScriptSerializerAspects
 
         return result;
     }
+#pragma warning restore DD0005
 
     private static void TaintObject(object obj, TaintedObjects taintedObjects)
     {
