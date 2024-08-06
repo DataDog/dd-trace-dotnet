@@ -5,7 +5,7 @@
 
 using System.Collections;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 {
     /// <summary>
     /// BatchRequest interface for duck typing.

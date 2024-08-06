@@ -9,7 +9,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
-using Datadog.Trace.Util.Http;
+using Datadog.Trace.Internal.Util.Http;
 using FluentAssertions;
 using Xunit;
 

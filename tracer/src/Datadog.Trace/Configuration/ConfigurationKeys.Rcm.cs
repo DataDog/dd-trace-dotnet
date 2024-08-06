@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     internal static partial class ConfigurationKeys
     {

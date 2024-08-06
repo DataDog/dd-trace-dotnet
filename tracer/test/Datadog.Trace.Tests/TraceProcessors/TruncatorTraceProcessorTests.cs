@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
 
             static string TruncateUTF8(string value, int limit)
             {
-                Trace.Processors.TraceUtil.TruncateUTF8(ref value, limit);
+                Internal.Processors.TraceUtil.TruncateUTF8(ref value, limit);
                 return value;
             }
         }
@@ -34,10 +34,10 @@ namespace Datadog.Trace.Tests.TraceProcessors
         [Fact]
         public void TruncateResourceTest()
         {
-            Assert.Equal("resource", Trace.Processors.TruncatorTraceProcessor.TruncateResource("resource"));
+            Assert.Equal("resource", Internal.Processors.TruncatorTraceProcessor.TruncateResource("resource"));
 
-            var s = new string('a', Trace.Processors.TruncatorTraceProcessor.MaxResourceLen);
-            Assert.Equal(s, Trace.Processors.TruncatorTraceProcessor.TruncateResource(s + "extra string"));
+            var s = new string('a', Internal.Processors.TruncatorTraceProcessor.MaxResourceLen);
+            Assert.Equal(s, Internal.Processors.TruncatorTraceProcessor.TruncateResource(s + "extra string"));
         }
     }
 }

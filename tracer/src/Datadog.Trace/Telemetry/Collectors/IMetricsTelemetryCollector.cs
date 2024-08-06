@@ -5,9 +5,9 @@
 
 #nullable enable
 using System.Threading.Tasks;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 internal partial interface IMetricsTelemetryCollector
 {

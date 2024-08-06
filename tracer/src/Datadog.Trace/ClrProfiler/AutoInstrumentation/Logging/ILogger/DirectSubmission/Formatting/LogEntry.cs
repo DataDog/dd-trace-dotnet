@@ -6,7 +6,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting
 {
     internal readonly struct LogEntry<TState>
     {

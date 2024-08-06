@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Logging.TracerFlare;
+namespace Datadog.Trace.Internal.Logging.TracerFlare;
 
 internal class NullTracerFlareManager : ITracerFlareManager
 {

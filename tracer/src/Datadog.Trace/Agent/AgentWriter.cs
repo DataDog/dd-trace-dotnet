@@ -8,15 +8,15 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.DogStatsd;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal.Agent.MessagePack;
+using Datadog.Trace.Internal.DogStatsd;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Internal.Agent
 {
     internal class AgentWriter : IAgentWriter
     {

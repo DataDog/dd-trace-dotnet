@@ -6,10 +6,10 @@
 
 using System.ComponentModel;
 using System.Net;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.Selenium;
 
 /// <summary>
 /// System.Void OpenQA.Selenium.Remote.HttpCommandExecutor::OnSendingRemoteHttpRequest(OpenQA.Selenium.Remote.SendingRemoteHttpRequestEventArgs) calltarget instrumentation

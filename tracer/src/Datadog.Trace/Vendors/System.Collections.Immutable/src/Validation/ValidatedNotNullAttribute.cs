@@ -12,7 +12,7 @@
 
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable
 {
   [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
   internal sealed class ValidatedNotNullAttribute : Attribute

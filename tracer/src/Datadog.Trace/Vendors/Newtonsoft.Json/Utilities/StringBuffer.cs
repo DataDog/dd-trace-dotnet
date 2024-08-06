@@ -32,7 +32,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities
 {
     /// <summary>
     /// Builds a string. Unlike <see cref="System.Text.StringBuilder"/> this class lets you reuse its internal buffer.

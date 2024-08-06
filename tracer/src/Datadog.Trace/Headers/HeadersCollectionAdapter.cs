@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
 
-namespace Datadog.Trace.Headers
+namespace Datadog.Trace.Internal.Headers
 {
     internal readonly struct HeadersCollectionAdapter : IHeadersCollection
     {

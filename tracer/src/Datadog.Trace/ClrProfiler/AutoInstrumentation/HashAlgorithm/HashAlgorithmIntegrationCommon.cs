@@ -6,11 +6,11 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.HashAlgorithm;
 
 internal class HashAlgorithmIntegrationCommon
 {

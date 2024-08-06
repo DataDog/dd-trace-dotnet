@@ -13,12 +13,12 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal
 {
     [DebuggerDisplay("{GetDebuggerDisplay(),nq}")]
   internal readonly struct MemoryBlock

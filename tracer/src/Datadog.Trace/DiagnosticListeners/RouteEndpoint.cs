@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.DiagnosticListeners
+namespace Datadog.Trace.Internal.DiagnosticListeners
 {
     /// <summary>
     /// Endpoint for duck typing

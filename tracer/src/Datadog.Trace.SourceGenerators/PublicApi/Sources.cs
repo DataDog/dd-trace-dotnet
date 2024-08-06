@@ -12,7 +12,7 @@ namespace Datadog.Trace.SourceGenerators.PublicApi;
 internal class Sources
 {
     public const string Attributes = Constants.FileHeader + """
-        namespace Datadog.Trace.SourceGenerators;
+        namespace Datadog.Trace.Internal.SourceGenerators;
 
         /// <summary>
         /// Used to generate a public property for a decorated field,
@@ -29,8 +29,8 @@ internal class Sources
             /// <param name="getApiUsage">Gets the name of the public API used for the property getter</param>
             /// <param name="setApiUsage">Gets the name of the public API used for the property setter</param>
             public GeneratePublicApiAttribute(
-                Datadog.Trace.Telemetry.Metrics.PublicApiUsage getApiUsage,
-                Datadog.Trace.Telemetry.Metrics.PublicApiUsage setApiUsage)
+                Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage getApiUsage,
+                Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage setApiUsage)
             {
                 Getter = getApiUsage;
                 Setter = setApiUsage;
@@ -41,7 +41,7 @@ internal class Sources
             /// Adds a getter only.
             /// </summary>
             /// <param name="getApiUsage">Gets the name of the public API used for the property getter. If null, no getter will be generated.</param>
-            public GeneratePublicApiAttribute(Datadog.Trace.Telemetry.Metrics.PublicApiUsage getApiUsage)
+            public GeneratePublicApiAttribute(Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage getApiUsage)
             {
                 Getter = getApiUsage;
             }
@@ -49,12 +49,12 @@ internal class Sources
             /// <summary>
             /// Gets the name of the public API used for the getter
             /// </summary>
-            public Datadog.Trace.Telemetry.Metrics.PublicApiUsage Getter { get; }
+            public Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage Getter { get; }
 
             /// <summary>
             /// Gets the name of the public API used for the setter
             /// </summary>
-            public Datadog.Trace.Telemetry.Metrics.PublicApiUsage? Setter { get; }
+            public Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage? Setter { get; }
         }
 
         /// <summary>
@@ -110,13 +110,13 @@ internal class Sources
 
             sb.AppendLine(
                 $$"""
-                    [Datadog.Trace.SourceGenerators.PublicApi]
+                    [Datadog.Trace.Internal.SourceGenerators.PublicApi]
                     public {{property.ReturnType}} {{property.PropertyName}}
                     {
                         get
                         {
-                            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage){{property.PublicApiGetter}});
+                            Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                                (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage){{property.PublicApiGetter}});
                             return {{property.FieldName}};
                         }
                 """);
@@ -126,8 +126,8 @@ internal class Sources
                     $$"""
                         set
                         {
-                            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage){{property.PublicApiSetter}});
+                            Datadog.Trace.Internal.Telemetry.TelemetryFactory.Metrics.Record(
+                                (Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage){{property.PublicApiSetter}});
                             {{property.FieldName}} = value;
                         }
                 """);

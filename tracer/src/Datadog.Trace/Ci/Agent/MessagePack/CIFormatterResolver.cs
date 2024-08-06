@@ -4,14 +4,14 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Ci.Agent.Payloads;
-using Datadog.Trace.Ci.Coverage.Models.Tests;
-using Datadog.Trace.Ci.EventModel;
-using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.MessagePack.Formatters;
-using Datadog.Trace.Vendors.MessagePack.Resolvers;
+using Datadog.Trace.Internal.Ci.Agent.Payloads;
+using Datadog.Trace.Internal.Ci.Coverage.Models.Tests;
+using Datadog.Trace.Internal.Ci.EventModel;
+using Datadog.Trace.Internal.Vendors.MessagePack;
+using Datadog.Trace.Internal.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Internal.Vendors.MessagePack.Resolvers;
 
-namespace Datadog.Trace.Ci.Agent.MessagePack;
+namespace Datadog.Trace.Internal.Ci.Agent.MessagePack;
 
 internal class CIFormatterResolver : IFormatterResolver
 {

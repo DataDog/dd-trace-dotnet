@@ -32,7 +32,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization
 {
     /// <summary>
     /// Provides information surrounding an error.

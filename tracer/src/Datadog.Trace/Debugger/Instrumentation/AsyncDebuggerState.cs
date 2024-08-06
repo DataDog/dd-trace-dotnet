@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Debugger.Instrumentation
+namespace Datadog.Trace.Internal.Debugger.Instrumentation
 {
     /// <summary>
     /// A state that is used in async continuation

@@ -6,10 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Transports;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Transports;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
 

@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol.Tuf
 {
     internal class TufRoot
     {

@@ -24,7 +24,7 @@
 
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis
 {
   [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.ReturnValue, Inherited = false)]
   internal sealed class NotNullAttribute : Attribute

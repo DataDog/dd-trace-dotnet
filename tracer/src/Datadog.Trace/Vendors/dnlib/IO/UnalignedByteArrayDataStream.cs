@@ -9,7 +9,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Datadog.Trace.Vendors.dnlib.IO {
+namespace Datadog.Trace.Internal.Vendors.dnlib.IO {
 	sealed unsafe class UnalignedByteArrayDataStream : DataStream {
 		readonly byte[] data;
 

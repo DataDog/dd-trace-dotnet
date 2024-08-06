@@ -9,14 +9,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Iast.Helpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Iast.Helpers;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 /// <summary>
-/// Custom JSON serializer for <see cref="Datadog.Trace.Iast.Evidence"/> struct
+/// Custom JSON serializer for <see cref="Datadog.Trace.Internal.Iast.Evidence"/> struct
 /// </summary>
 internal class EvidenceConverter : JsonConverter<Evidence?>
 {

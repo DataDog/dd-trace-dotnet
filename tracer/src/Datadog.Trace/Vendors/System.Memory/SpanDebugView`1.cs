@@ -11,9 +11,9 @@
 // MVID: 805945F3-27B0-47AD-B8F6-389D9D8F82C3
 
 using System.Diagnostics;
-using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Diagnostics;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System
 {
     internal sealed class SpanDebugView<T>
   {

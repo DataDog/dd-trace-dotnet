@@ -33,7 +33,7 @@
 using System;
 using System.Threading;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json
 {
     /// <summary>
     /// The default JSON name table implementation.

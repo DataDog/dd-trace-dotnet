@@ -9,23 +9,23 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.DiagnosticListeners;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Processors;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.ServiceFabric;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Debugger;
+using Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.DiagnosticListeners;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.ServiceFabric;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     /// <summary>
     /// Provides access to the profiler CLSID and whether it is attached to the process.

@@ -8,11 +8,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.Vendors.dnlib.IO;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Type of resource
 	/// </summary>

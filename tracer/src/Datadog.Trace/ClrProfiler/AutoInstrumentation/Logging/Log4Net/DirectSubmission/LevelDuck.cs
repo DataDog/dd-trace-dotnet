@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission
 {
     /// <summary>
     /// Duck type for Level

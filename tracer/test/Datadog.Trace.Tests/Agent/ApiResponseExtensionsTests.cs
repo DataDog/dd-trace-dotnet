@@ -1,4 +1,4 @@
-﻿// <copyright file="ApiResponseExtensionsTests.cs" company="Datadog">
+// <copyright file="ApiResponseExtensionsTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,8 +7,8 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Util;
 using FluentAssertions;
 using Xunit;
 
@@ -130,7 +130,7 @@ public class ApiResponseExtensionsTests
         content.Headers.ContentType = parsed;
         httpClientResponse.Content = content;
 
-        var response = new Datadog.Trace.Agent.Transports.HttpClientResponse(httpClientResponse);
+        var response = new Datadog.Trace.Internal.Agent.Transports.HttpClientResponse(httpClientResponse);
         response.GetCharsetEncoding()
                 .Should()
                 .BeSameAs(expected, $"content-type {rawContentType} should be extracted as encoding {expected.EncodingName}");

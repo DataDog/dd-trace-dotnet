@@ -8,9 +8,9 @@
 using System;
 using System.Collections;
 using System.Text;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Iast.Propagation;
+namespace Datadog.Trace.Internal.Iast.Propagation;
 
 internal static class StringBuilderModuleImpl
 {

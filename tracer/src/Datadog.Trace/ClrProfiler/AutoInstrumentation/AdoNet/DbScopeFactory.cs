@@ -11,16 +11,16 @@ using System.Data;
 using System.Data.SqlTypes;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DatabaseMonitoring;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Rasp;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DatabaseMonitoring;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AdoNet
 {
     internal static class DbScopeFactory
     {

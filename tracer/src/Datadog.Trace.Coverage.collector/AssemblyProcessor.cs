@@ -13,11 +13,11 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.Ci.Coverage.Metadata;
-using Datadog.Trace.Ci.Coverage.Util;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Ci.Coverage;
+using Datadog.Trace.Internal.Ci.Coverage.Util;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using CallSite = Mono.Cecil.CallSite;
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Coverage.Collector
 
             if (!File.Exists(Path.ChangeExtension(filePath, ".pdb")))
             {
-                Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
+                Internal.Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
             }
         }
 
@@ -179,12 +179,12 @@ namespace Datadog.Trace.Coverage.Collector
                     }
                     else if (tracerTarget == TracerTarget.Net461)
                     {
-                        _logger.Warning($"Assembly: {FilePath}, is a net461 signed assembly, a .snk file is required ({Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
+                        _logger.Warning($"Assembly: {FilePath}, is a net461 signed assembly, a .snk file is required ({Internal.Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
                         return;
                     }
                     else if (hasInternalsVisibleAttribute)
                     {
-                        _logger.Warning($"Assembly: {FilePath}, is a signed assembly with the InternalsVisibleTo attribute. A .snk file is required ({Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
+                        _logger.Warning($"Assembly: {FilePath}, is a signed assembly with the InternalsVisibleTo attribute. A .snk file is required ({Internal.Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
                         return;
                     }
                 }
@@ -740,11 +740,11 @@ namespace Datadog.Trace.Coverage.Collector
             }
             catch (SymbolsNotFoundException)
             {
-                Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
+                Internal.Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
             }
             catch (SymbolsNotMatchingException)
             {
-                Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
+                Internal.Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
             }
         }
 

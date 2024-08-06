@@ -1,4 +1,4 @@
-﻿// <copyright file="Sources.cs" company="Datadog">
+// <copyright file="Sources.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -85,7 +85,7 @@ internal partial class Sources
         sb.Append(Constants.FileHeader);
         sb.Append(
             """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {
             """);
@@ -141,7 +141,7 @@ internal partial class Sources
         sb.Append(Constants.FileHeader);
         sb.Append(
             """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {
             """);
@@ -197,7 +197,7 @@ internal partial class Sources
         sb.Append(Constants.FileHeader);
         sb.Append(
             """
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
             internal partial interface IMetricsTelemetryCollector
             {
             """);
@@ -272,10 +272,10 @@ internal partial class Sources
             using System.Collections.Generic;
             using System.Linq;
             using System.Threading;
-            using Datadog.Trace.Telemetry.Metrics;
-            using Datadog.Trace.Util;
+            using Datadog.Trace.Internal.Telemetry.Metrics;
+            using Datadog.Trace.Internal.Util;
 
-            namespace Datadog.Trace.Telemetry;
+            namespace Datadog.Trace.Internal.Telemetry;
 
             internal partial class {{GetCollectorName(type)}}
             {
@@ -710,7 +710,7 @@ internal partial class Sources
             $$"""
               using System.Threading;
 
-              namespace Datadog.Trace.Telemetry;
+              namespace Datadog.Trace.Internal.Telemetry;
               internal partial class {{collectorName}}
               {
 
@@ -810,7 +810,7 @@ internal partial class Sources
             $$"""
               using System.Threading;
 
-              namespace Datadog.Trace.Telemetry;
+              namespace Datadog.Trace.Internal.Telemetry;
               internal partial class {{collectorName}}
               {
 
@@ -909,7 +909,7 @@ internal partial class Sources
             $$"""
               using System.Threading;
 
-              namespace Datadog.Trace.Telemetry;
+              namespace Datadog.Trace.Internal.Telemetry;
               internal partial class {{collectorName}}
               {
 

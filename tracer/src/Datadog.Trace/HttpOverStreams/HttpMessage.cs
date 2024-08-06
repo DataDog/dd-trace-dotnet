@@ -5,11 +5,11 @@
 
 using System;
 using System.Text;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.HttpOverStreams
+namespace Datadog.Trace.Internal.HttpOverStreams
 {
     internal abstract class HttpMessage
     {

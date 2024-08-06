@@ -34,10 +34,10 @@
 using System;
 using System.Globalization;
 using System.Runtime.Serialization;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization
 {
     internal class JsonFormatterConverter : IFormatterConverter
     {

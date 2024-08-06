@@ -6,11 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.SensitiveData;
+namespace Datadog.Trace.Internal.Iast.SensitiveData;
 
 internal class EvidenceRedactor
 {

@@ -8,11 +8,11 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Security.Claims;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 {
     /// <summary>
     /// The ASP.NET Core middleware integration.

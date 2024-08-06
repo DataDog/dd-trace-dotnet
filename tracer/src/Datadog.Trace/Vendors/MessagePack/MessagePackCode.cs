@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Datadog.Trace.Vendors.MessagePack
+namespace Datadog.Trace.Internal.Vendors.MessagePack
 {
     /// <summary>
     /// https://github.com/msgpack/msgpack/blob/master/spec.md#serialization-type-to-format-conversion

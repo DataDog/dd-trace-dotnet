@@ -4,10 +4,10 @@
 //------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.StatsdClient.Bufferize;
-using Datadog.Trace.Vendors.StatsdClient.Statistic;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Bufferize;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Statistic;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Aggregator
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Aggregator
 {
     /// <summary>
     /// AggregatorFlusher is responsible for flushing the aggregated `MetricStats` instances.

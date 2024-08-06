@@ -6,10 +6,10 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Elasticsearch.V6
 {
     /// <summary>
     /// Elasticsearch.Net.RequestPipeline.CallElasticsearchAsync&lt;T&gt; calltarget instrumentation

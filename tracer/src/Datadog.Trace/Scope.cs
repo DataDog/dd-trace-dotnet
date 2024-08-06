@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// A scope is a handle used to manage the concept of an active span.

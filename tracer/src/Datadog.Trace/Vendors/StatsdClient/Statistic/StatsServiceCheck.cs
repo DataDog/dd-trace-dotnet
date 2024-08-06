@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 using System;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Statistic
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Statistic
 {
     /// <summary>
     /// Store the data for a service check.

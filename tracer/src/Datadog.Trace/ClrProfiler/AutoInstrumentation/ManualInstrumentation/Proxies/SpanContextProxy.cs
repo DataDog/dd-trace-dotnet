@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 
 /// <summary>
 /// Duck type for the SpanContext and ReadOnlySpanContext types in Datadog.Trace.Manual

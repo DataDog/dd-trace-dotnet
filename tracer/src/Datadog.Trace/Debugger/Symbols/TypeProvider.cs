@@ -5,10 +5,10 @@
 #nullable enable
 
 using System.Text;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata;
 
-namespace Datadog.Trace.Debugger.Symbols
+namespace Datadog.Trace.Internal.Debugger.Symbols
 {
     internal sealed class TypeProvider : ISignatureTypeProvider<string, int>
     {

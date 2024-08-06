@@ -32,7 +32,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json
 {
     /// <summary>
     /// Instructs the <see cref="JsonSerializer"/> how to serialize the collection.

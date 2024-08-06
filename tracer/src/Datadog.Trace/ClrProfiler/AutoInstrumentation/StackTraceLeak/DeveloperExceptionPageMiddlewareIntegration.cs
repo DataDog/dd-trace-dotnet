@@ -9,11 +9,11 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
 using Microsoft.AspNetCore.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.StackTraceLeak;
 
 /// <summary>
 /// DeveloperExceptionPageMiddleware integration

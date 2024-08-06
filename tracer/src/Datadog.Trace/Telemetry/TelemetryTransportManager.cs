@@ -7,12 +7,12 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Transports;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry.Transports;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 internal class TelemetryTransportManager : IDisposable
 {

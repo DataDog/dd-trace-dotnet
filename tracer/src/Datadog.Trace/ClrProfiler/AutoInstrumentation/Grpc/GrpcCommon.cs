@@ -6,10 +6,10 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc
 {
     internal static class GrpcCommon
     {

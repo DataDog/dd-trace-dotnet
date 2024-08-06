@@ -11,22 +11,22 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.Debugger.PInvoke;
-using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Debugger.Symbols;
-using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.Vendors.Serilog.Events;
-using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
-using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
+using Datadog.Trace.Internal.Debugger.Expressions;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Models;
+using Datadog.Trace.Internal.Debugger.PInvoke;
+using Datadog.Trace.Internal.Debugger.Sink;
+using Datadog.Trace.Internal.Debugger.Sink.Models;
+using Datadog.Trace.Internal.Debugger.Snapshots;
+using Datadog.Trace.Internal.Debugger.Symbols;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using ProbeInfo = Datadog.Trace.Internal.Debugger.Expressions.ProbeInfo;
+using ProbeLocation = Datadog.Trace.Internal.Debugger.Expressions.ProbeLocation;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionTrackManager
     {

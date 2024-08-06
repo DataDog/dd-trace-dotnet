@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.Debugger.RateLimiting
+namespace Datadog.Trace.Internal.Debugger.RateLimiting
 {
     internal interface IAdaptiveSampler
     {

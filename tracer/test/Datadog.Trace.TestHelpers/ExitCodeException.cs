@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.TestHelpers;
 

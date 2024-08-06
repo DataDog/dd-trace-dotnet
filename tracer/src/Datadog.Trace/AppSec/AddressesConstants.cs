@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.AppSec
+namespace Datadog.Trace.Internal.AppSec
 {
     internal static class AddressesConstants
     {

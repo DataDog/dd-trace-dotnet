@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 
 #nullable enable
 
-namespace Datadog.Trace.Sampling;
+namespace Datadog.Trace.Internal.Sampling;
 
 internal static class RegexBuilder
 {

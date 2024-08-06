@@ -6,9 +6,9 @@
 #if !NETFRAMEWORK
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
 /// <summary>
 /// Azure Function calltarget instrumentation

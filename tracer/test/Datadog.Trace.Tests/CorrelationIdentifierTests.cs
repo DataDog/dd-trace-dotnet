@@ -5,9 +5,9 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Sampling;
 using Datadog.Trace.TestHelpers;
 using Moq;
 using Xunit;

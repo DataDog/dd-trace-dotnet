@@ -7,9 +7,9 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Pdb.SourceLink
+namespace Datadog.Trace.Internal.Pdb.SourceLink
 {
     internal abstract class SourceLinkUrlParser
     {

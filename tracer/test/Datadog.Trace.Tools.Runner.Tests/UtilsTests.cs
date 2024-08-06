@@ -6,7 +6,7 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 using FluentAssertions;
 using Xunit;
 

@@ -35,7 +35,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities
 {
     internal class BidirectionalDictionary<TFirst, TSecond>
         where TFirst : notnull

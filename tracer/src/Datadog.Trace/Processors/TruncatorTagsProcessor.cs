@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Processors
+namespace Datadog.Trace.Internal.Processors
 {
     internal class TruncatorTagsProcessor : ITagProcessor
     {

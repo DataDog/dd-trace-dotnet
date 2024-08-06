@@ -6,9 +6,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Util;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Util;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling

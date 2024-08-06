@@ -11,11 +11,11 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.RateLimiting;
+using Datadog.Trace.Internal.Debugger.Expressions;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.RateLimiting;
 
-namespace Datadog.Trace.Debugger.Instrumentation.Collections
+namespace Datadog.Trace.Internal.Debugger.Instrumentation.Collections
 {
     /// Acts as a registry of indexed <see cref="ProbeData"/>.
     /// Each instrumented probe is given an index (hard-coded into the instrumented bytecode),

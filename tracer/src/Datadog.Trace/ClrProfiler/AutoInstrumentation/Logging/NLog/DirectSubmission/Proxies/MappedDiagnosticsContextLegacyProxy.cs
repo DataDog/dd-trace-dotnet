@@ -5,7 +5,7 @@
 
 using System.Collections;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
 {
     /// <summary>
     /// Duck type for MappedDiagnosticsContextProxy for NLog &lt; 4.3

@@ -6,10 +6,10 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission
 {
     /// <summary>
     /// LoggerFactory() calltarget instrumentation for direct log submission

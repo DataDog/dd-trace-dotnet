@@ -12,7 +12,7 @@
 
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
   [Flags]
   internal enum MetadataStreamOptions

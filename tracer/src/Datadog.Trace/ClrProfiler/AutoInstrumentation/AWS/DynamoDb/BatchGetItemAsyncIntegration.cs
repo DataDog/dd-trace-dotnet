@@ -6,11 +6,11 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 {
     /// <summary>
     /// AWSSDK.DynamoDBv2 BatchGetItemAsync CallTarget instrumentation

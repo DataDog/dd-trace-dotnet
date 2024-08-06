@@ -6,11 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Vendors.Datadog.Sketches;
-using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Vendors.Datadog.Sketches;
+using Datadog.Trace.Internal.Vendors.MessagePack;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Internal.Agent
 {
     internal class StatsBuffer
     {

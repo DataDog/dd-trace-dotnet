@@ -39,9 +39,9 @@ using System.Threading;
 using System.Numerics;
 #endif
 using System.Threading.Tasks;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json
 {
     internal abstract partial class JsonWriter
 #if HAVE_ASYNC_DISPOSABLE

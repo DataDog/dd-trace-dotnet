@@ -6,10 +6,10 @@
 
 using System;
 using System.Text;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Sink;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission
 {
     internal class Log4NetDirectSubmissionLogEvent : DirectSubmissionLogEvent
     {

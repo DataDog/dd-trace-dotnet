@@ -12,10 +12,10 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal
 {
   /// <summary>
   /// Represents a disposable blob of memory accessed via unsafe pointer.

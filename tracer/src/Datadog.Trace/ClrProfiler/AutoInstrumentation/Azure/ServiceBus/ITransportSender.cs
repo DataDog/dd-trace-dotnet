@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
 internal interface ITransportSender
 {

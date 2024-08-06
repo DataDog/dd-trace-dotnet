@@ -9,11 +9,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Globalization;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Propagators
+namespace Datadog.Trace.Internal.Propagators
 {
     internal class ParseUtility
     {

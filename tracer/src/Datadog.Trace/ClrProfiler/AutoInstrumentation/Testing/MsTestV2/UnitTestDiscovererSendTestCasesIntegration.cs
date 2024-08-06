@@ -7,9 +7,9 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Linq;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
 /// <summary>
 /// System.Void Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.UnitTestDiscoverer::SendTestCases(System.String,System.Collections.Generic.IEnumerable`1[Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement],Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.ITestCaseDiscoverySink,Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IDiscoveryContext,Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger) calltarget instrumentation

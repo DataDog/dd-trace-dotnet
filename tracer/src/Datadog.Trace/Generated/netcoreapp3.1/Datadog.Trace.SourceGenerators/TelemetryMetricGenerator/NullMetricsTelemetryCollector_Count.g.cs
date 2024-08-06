@@ -8,15 +8,15 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 internal partial class NullMetricsTelemetryCollector
 {
 
-    public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
+    public void RecordCountLogCreated(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
     }
 
-    public void RecordCountSpanCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag, int increment = 1)
+    public void RecordCountSpanCreated(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IntegrationName tag, int increment = 1)
     {
     }
 
@@ -24,23 +24,23 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountSpanEnqueuedForSerialization(Datadog.Trace.Telemetry.Metrics.MetricTags.SpanEnqueueReason tag, int increment = 1)
+    public void RecordCountSpanEnqueuedForSerialization(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.SpanEnqueueReason tag, int increment = 1)
     {
     }
 
-    public void RecordCountSpanDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1)
+    public void RecordCountSpanDropped(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1)
     {
     }
 
-    public void RecordCountTraceSegmentCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.TraceContinuation tag, int increment = 1)
+    public void RecordCountTraceSegmentCreated(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.TraceContinuation tag, int increment = 1)
     {
     }
 
-    public void RecordCountTraceChunkEnqueued(Datadog.Trace.Telemetry.Metrics.MetricTags.TraceChunkEnqueueReason tag, int increment = 1)
+    public void RecordCountTraceChunkEnqueued(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.TraceChunkEnqueueReason tag, int increment = 1)
     {
     }
 
-    public void RecordCountTraceChunkDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1)
+    public void RecordCountTraceChunkDropped(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1)
     {
     }
 
@@ -56,23 +56,23 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountTraceApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
+    public void RecordCountTraceApiResponses(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
     }
 
-    public void RecordCountTraceApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
+    public void RecordCountTraceApiErrors(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
     }
 
-    public void RecordCountTracePartialFlush(Datadog.Trace.Telemetry.Metrics.MetricTags.PartialFlushReason tag, int increment = 1)
+    public void RecordCountTracePartialFlush(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.PartialFlushReason tag, int increment = 1)
     {
     }
 
-    public void RecordCountContextHeaderStyleInjected(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderStyle tag, int increment = 1)
+    public void RecordCountContextHeaderStyleInjected(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.ContextHeaderStyle tag, int increment = 1)
     {
     }
 
-    public void RecordCountContextHeaderStyleExtracted(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderStyle tag, int increment = 1)
+    public void RecordCountContextHeaderStyleExtracted(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.ContextHeaderStyle tag, int increment = 1)
     {
     }
 
@@ -80,23 +80,23 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountStatsApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
+    public void RecordCountStatsApiResponses(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
     }
 
-    public void RecordCountStatsApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
+    public void RecordCountStatsApiErrors(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
     }
 
-    public void RecordCountTelemetryApiRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag, int increment = 1)
+    public void RecordCountTelemetryApiRequests(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag, int increment = 1)
     {
     }
 
-    public void RecordCountTelemetryApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag2, int increment = 1)
+    public void RecordCountTelemetryApiResponses(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.StatusCode tag2, int increment = 1)
     {
     }
 
-    public void RecordCountTelemetryApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag2, int increment = 1)
+    public void RecordCountTelemetryApiErrors(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.ApiError tag2, int increment = 1)
     {
     }
 
@@ -108,7 +108,7 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountDirectLogLogs(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag, int increment = 1)
+    public void RecordCountDirectLogLogs(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IntegrationName tag, int increment = 1)
     {
     }
 
@@ -116,11 +116,11 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountDirectLogApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
+    public void RecordCountDirectLogApiResponses(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
     }
 
-    public void RecordCountDirectLogApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
+    public void RecordCountDirectLogApiErrors(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
     }
 
@@ -132,27 +132,27 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1)
+    public void RecordCountWafRequests(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1)
     {
     }
 
-    public void RecordCountInputTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.TruncationReason tag, int increment = 1)
+    public void RecordCountInputTruncated(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.TruncationReason tag, int increment = 1)
     {
     }
 
-    public void RecordCountRaspRuleEval(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
+    public void RecordCountRaspRuleEval(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
     }
 
-    public void RecordCountRaspRuleMatch(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
+    public void RecordCountRaspRuleMatch(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
     }
 
-    public void RecordCountRaspTimeout(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
+    public void RecordCountRaspTimeout(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
     }
 
-    public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1)
+    public void RecordCountIastExecutedSources(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1)
     {
     }
 
@@ -160,7 +160,7 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1)
+    public void RecordCountIastExecutedSinks(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1)
     {
     }
 

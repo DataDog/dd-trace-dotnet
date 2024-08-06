@@ -8,7 +8,7 @@
 
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 

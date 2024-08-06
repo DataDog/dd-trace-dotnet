@@ -6,11 +6,11 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization;
 
-namespace Datadog.Trace.Ci.Ipc;
+namespace Datadog.Trace.Internal.Ci.Ipc;
 
 internal abstract class IpcDualChannel : IDisposable
 {

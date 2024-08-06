@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol
 {
     internal class RcmFile
     {

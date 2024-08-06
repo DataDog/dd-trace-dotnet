@@ -7,7 +7,7 @@
 
 using System.Diagnostics;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Portable {
 	static class ImportDefinitionKindUtils {
 		public const PdbImportDefinitionKind UNKNOWN_IMPORT_KIND = (PdbImportDefinitionKind)(-1);
 

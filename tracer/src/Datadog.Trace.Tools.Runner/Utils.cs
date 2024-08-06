@@ -15,11 +15,12 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner

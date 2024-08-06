@@ -7,9 +7,9 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     /// <summary>
     /// AWSSDK.SQS ReceiveMessage calltarget instrumentation

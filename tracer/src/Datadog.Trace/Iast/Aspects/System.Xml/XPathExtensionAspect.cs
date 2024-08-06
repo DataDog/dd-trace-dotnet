@@ -4,9 +4,9 @@
 // </copyright>
 #nullable enable
 
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
-namespace Datadog.Trace.Iast.Aspects;
+namespace Datadog.Trace.Internal.Iast.Aspects;
 
 /// <summary> Xpath inection class aspect </summary>
 [AspectClass("System.Xml.XPath.XDocument,System.Xml.Linq", AspectType.Sink, VulnerabilityType.XPathInjection)]

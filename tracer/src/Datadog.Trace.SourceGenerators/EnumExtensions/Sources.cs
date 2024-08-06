@@ -1,4 +1,4 @@
-﻿// <copyright file="Sources.cs" company="Datadog">
+// <copyright file="Sources.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ namespace Datadog.Trace.SourceGenerators.EnumExtensions;
 internal class Sources
 {
     public const string Attributes = Constants.FileHeader + """
-        namespace Datadog.Trace.SourceGenerators;
+        namespace Datadog.Trace.Internal.SourceGenerators;
 
         /// <summary>
         /// Add to enums to indicate that extension methods should be generated for the type

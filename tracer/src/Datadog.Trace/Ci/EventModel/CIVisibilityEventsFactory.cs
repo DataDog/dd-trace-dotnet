@@ -4,10 +4,10 @@
 // </copyright>
 #nullable enable
 
-using Datadog.Trace.Ci.Tagging;
-using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Internal.Ci.Tagging;
+using Datadog.Trace.Internal.Ci.Tags;
 
-namespace Datadog.Trace.Ci.EventModel;
+namespace Datadog.Trace.Internal.Ci.EventModel;
 
 internal static class CIVisibilityEventsFactory
 {

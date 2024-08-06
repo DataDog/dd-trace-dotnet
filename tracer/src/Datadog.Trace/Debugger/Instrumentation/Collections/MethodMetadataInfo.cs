@@ -5,9 +5,9 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Helpers;
 
-namespace Datadog.Trace.Debugger.Instrumentation.Collections
+namespace Datadog.Trace.Internal.Debugger.Instrumentation.Collections
 {
     /// <summary>
     /// Holds data needed during Debugger instrumentation execution.

@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Custom attribute interface. Implemented by <see cref="SecurityAttribute"/> and
 	/// <see cref="CustomAttribute"/>

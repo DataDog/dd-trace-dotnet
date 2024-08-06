@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection
 {
     /// <summary>
     /// Duck type for IScopeContextSetterProxy in NLog 5.0+

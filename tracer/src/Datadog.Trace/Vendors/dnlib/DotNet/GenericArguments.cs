@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	readonly struct GenericArgumentsStack {
 		readonly List<IList<TypeSig>> argsStack;
 		readonly bool isTypeVar;

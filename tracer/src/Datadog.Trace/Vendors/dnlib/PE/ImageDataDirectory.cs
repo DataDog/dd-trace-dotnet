@@ -7,9 +7,9 @@
 
 using System;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.PE {
+namespace Datadog.Trace.Internal.Vendors.dnlib.PE {
 	/// <summary>
 	/// Represents the IMAGE_DATA_DIRECTORY PE section
 	/// </summary>

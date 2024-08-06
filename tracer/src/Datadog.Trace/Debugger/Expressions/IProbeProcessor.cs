@@ -4,12 +4,12 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Instrumentation.Collections;
-using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Instrumentation.Collections;
+using Datadog.Trace.Internal.Debugger.Snapshots;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.Expressions
+namespace Datadog.Trace.Internal.Debugger.Expressions
 {
     internal interface IProbeProcessor
     {

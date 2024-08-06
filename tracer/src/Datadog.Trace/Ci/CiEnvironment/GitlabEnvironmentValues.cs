@@ -7,7 +7,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Ci.CiEnvironment;
+namespace Datadog.Trace.Internal.Ci.CiEnvironment;
 
 internal sealed class GitlabEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
@@ -58,7 +58,7 @@ internal sealed class GitlabEnvironmentValues<TValueProvider>(TValueProvider val
         {
             try
             {
-                NodeLabels = Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(runnerTags);
+                NodeLabels = Datadog.Trace.Internal.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(runnerTags);
             }
             catch (Exception ex)
             {

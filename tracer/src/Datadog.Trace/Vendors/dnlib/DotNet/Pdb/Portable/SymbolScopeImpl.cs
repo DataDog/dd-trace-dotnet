@@ -8,10 +8,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Portable {
 	sealed class SymbolScopeImpl : SymbolScope {
 		readonly PortablePdbReader owner;
 		internal SymbolMethod method;

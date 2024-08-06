@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Internal;
+
 namespace Datadog.Trace.Tools.Runner.Crank
 {
     internal readonly struct NumberResultConverter : IResultConverter

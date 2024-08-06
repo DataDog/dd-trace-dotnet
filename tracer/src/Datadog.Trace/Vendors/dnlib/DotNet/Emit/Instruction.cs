@@ -7,9 +7,9 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Emit {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit {
 	/// <summary>
 	/// A CIL instruction (opcode + operand)
 	/// </summary>

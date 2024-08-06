@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 using System;
 
-namespace Datadog.Trace.Vendors.StatsdClient
+namespace Datadog.Trace.Internal.Vendors.StatsdClient
 {
     /// <summary>
     /// The advanced configuration options for DogStatsdService.

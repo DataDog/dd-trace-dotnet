@@ -8,10 +8,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     internal partial class RabbitMQTags : InstrumentationTags
     {
@@ -28,31 +28,31 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Trace.Internal.Tags.SpanKind)]
         public override string SpanKind { get; }
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Internal.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
-        [Tag(Trace.Tags.AmqpCommand)]
+        [Tag(Trace.Internal.Tags.AmqpCommand)]
         public string Command { get; set; }
 
-        [Tag(Trace.Tags.AmqpDeliveryMode)]
+        [Tag(Trace.Internal.Tags.AmqpDeliveryMode)]
         public string DeliveryMode { get; set; }
 
-        [Tag(Trace.Tags.AmqpExchange)]
+        [Tag(Trace.Internal.Tags.AmqpExchange)]
         public string Exchange { get; set; }
 
-        [Tag(Trace.Tags.AmqpRoutingKey)]
+        [Tag(Trace.Internal.Tags.AmqpRoutingKey)]
         public string RoutingKey { get; set; }
 
-        [Tag(Trace.Tags.MessageSize)]
+        [Tag(Trace.Internal.Tags.MessageSize)]
         public string MessageSize { get; set; }
 
-        [Tag(Trace.Tags.AmqpQueue)]
+        [Tag(Trace.Internal.Tags.AmqpQueue)]
         public string Queue { get; set; }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Trace.Internal.Tags.OutHost)]
         public string OutHost { get; set; }
     }
 
@@ -75,14 +75,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Trace.Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? OutHost;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Trace.Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

@@ -8,14 +8,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     internal static class ContextPropagation
     {

@@ -4,7 +4,7 @@
 // </copyright>
 #if !NETFRAMEWORK
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     /// <summary>
     /// duck copy of bindingsource

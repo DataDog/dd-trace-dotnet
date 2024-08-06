@@ -37,13 +37,13 @@ using System.Text;
 using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
 #if !HAVE_LINQ
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.LinqBridge;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities.LinqBridge;
 #else
 using System.Linq;
 #endif
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities
 {
     internal static class StringUtils
     {

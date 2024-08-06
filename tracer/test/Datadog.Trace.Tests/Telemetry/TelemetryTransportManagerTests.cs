@@ -6,8 +6,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Transports;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Transports;
 using Datadog.Trace.Tests.Agent;
 using FluentAssertions;
 using Xunit;

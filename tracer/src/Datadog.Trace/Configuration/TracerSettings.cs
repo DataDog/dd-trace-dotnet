@@ -11,22 +11,23 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.ClrProfiler;
+using Datadog.Trace.Internal.ClrProfiler.ServerlessInstrumentation;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     /// <summary>
     /// Contains Tracer settings.

@@ -6,12 +6,12 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Vendors.Serilog;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.IbmMq;
 
 internal static class IbmMqHelper
 {

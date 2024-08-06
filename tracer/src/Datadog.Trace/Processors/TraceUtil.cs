@@ -6,9 +6,9 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Processors
+namespace Datadog.Trace.Internal.Processors
 {
     internal class TraceUtil
     {

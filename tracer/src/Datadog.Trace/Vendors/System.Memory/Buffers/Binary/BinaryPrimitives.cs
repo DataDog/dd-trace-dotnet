@@ -12,10 +12,10 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers.Binary
 {
     internal static class BinaryPrimitives
   {

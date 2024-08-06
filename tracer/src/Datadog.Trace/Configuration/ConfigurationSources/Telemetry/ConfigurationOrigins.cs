@@ -6,9 +6,9 @@
 #nullable enable
 
 using System.ComponentModel;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace.Configuration.Telemetry;
+namespace Datadog.Trace.Internal.Configuration.Telemetry;
 
 [EnumExtensions]
 internal enum ConfigurationOrigins

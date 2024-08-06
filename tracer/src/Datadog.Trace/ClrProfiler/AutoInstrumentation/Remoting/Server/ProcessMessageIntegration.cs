@@ -12,11 +12,11 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Messaging;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Propagators;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Remoting.Server
 {
     /// <summary>
     /// System.Runtime.Remoting.Channels.IServerChannelSink.ProcessMessage calltarget instrumentation

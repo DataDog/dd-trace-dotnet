@@ -17,14 +17,14 @@ using System.IO.MemoryMappedFiles;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
 using Microsoft.Win32.SafeHandles;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
     /// <summary>
     /// Reads metadata as defined byte the ECMA 335 CLI specification.

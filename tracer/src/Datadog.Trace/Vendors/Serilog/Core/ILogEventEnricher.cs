@@ -16,9 +16,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Vendors.Serilog.Core
+namespace Datadog.Trace.Internal.Vendors.Serilog.Core
 {
     /// <summary>
     /// Applied during logging to add additional information to log events.

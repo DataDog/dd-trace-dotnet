@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Debugger.Helpers
+namespace Datadog.Trace.Internal.Debugger.Helpers
 {
     internal readonly struct DisposableEnumerable<T> : IDisposable
         where T : IDisposable

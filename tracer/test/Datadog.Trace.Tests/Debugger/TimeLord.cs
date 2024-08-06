@@ -7,7 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions.Common;
-using IClock = Datadog.Trace.Util.IClock;
+using IClock = Datadog.Trace.Internal.Util.IClock;
 
 namespace Datadog.Trace.Tests.Debugger;
 

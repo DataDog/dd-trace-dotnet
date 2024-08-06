@@ -5,7 +5,7 @@
 
 using System.Numerics;
 
-namespace Datadog.Trace.RemoteConfigurationManagement
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement
 {
     internal static class RcmCapabilitiesIndices
     {

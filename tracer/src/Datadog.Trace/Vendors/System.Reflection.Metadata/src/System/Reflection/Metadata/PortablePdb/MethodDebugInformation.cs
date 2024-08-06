@@ -11,7 +11,7 @@
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
   /// <summary>
   /// Debug information associated with a method definition. Stored in debug metadata.

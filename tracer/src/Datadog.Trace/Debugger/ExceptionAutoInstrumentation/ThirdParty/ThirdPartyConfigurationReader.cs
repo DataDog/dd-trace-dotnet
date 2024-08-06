@@ -7,12 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation.ThirdParty
 {
     internal class ThirdPartyConfigurationReader
     {

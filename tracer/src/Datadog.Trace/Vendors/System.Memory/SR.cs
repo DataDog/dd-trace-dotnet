@@ -16,7 +16,7 @@ using System.Runtime.CompilerServices;
 #pragma warning disable CS0168
 #pragma warning disable CS8625
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Memory
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Memory
 {
     internal static class SR
     {

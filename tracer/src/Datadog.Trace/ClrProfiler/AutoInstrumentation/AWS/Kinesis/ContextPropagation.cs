@@ -8,12 +8,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     internal static class ContextPropagation
     {

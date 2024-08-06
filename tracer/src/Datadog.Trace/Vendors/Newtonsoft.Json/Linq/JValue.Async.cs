@@ -39,9 +39,9 @@ using System.Numerics;
 #endif
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Linq
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq
 {
     internal partial class JValue
     {

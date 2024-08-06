@@ -8,10 +8,10 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 using Microsoft.Win32;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     internal partial class FrameworkDescription
     {

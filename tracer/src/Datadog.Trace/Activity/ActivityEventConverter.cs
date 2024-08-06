@@ -6,12 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Activity.DuckTypes;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.Activity;
+namespace Datadog.Trace.Internal.Activity;
 
 internal class ActivityEventConverter : JsonConverter<ActivityEvent>
 {

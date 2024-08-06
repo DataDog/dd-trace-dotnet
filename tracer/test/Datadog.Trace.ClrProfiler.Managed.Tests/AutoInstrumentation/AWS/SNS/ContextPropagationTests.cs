@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Amazon.SimpleNotificationService.Model;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SNS;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 

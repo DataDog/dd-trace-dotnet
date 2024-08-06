@@ -5,10 +5,11 @@
 
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 using Moq;
 
 namespace Datadog.Trace.TestHelpers

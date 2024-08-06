@@ -5,9 +5,9 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Debugger.Instrumentation.Collections;
+using Datadog.Trace.Internal.Debugger.Instrumentation.Collections;
 
-namespace Datadog.Trace.Debugger.Instrumentation
+namespace Datadog.Trace.Internal.Debugger.Instrumentation
 {
     /// <summary>
     /// AsyncMethodDebuggerInvoker for multiple probes scenario (where there are more than one _method_ probe).

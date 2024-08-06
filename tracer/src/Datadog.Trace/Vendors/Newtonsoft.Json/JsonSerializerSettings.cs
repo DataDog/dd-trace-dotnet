@@ -35,17 +35,17 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.Serialization.Formatters;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization;
 using System.Runtime.Serialization;
 using System.Diagnostics;
 using System.Runtime;
 #if !HAVE_LINQ
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.LinqBridge;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities.LinqBridge;
 #else
 using System.Linq;
 #endif
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json
 {
     /// <summary>
     /// Specifies the settings on a <see cref="JsonSerializer"/> object.

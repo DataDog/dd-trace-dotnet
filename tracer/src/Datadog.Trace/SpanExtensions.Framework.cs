@@ -10,10 +10,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Coordinator;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// Extension methods for the <see cref="ISpan"/> interface

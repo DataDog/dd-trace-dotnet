@@ -33,9 +33,9 @@
 #if HAVE_ADO_NET
 using System;
 using System.Data;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Converters
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Converters
 {
     /// <summary>
     /// Converts a <see cref="DataSet"/> to and from JSON.

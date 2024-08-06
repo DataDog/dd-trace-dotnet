@@ -5,7 +5,7 @@
 
 using System;
 using System.Linq;
-using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
 using FluentAssertions;
 using Xunit;
 

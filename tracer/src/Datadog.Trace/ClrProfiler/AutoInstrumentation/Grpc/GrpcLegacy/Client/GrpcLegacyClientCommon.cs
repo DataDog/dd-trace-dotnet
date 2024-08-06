@@ -6,17 +6,17 @@
 #nullable enable
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util.Http;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Util.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 {
     internal static class GrpcLegacyClientCommon
     {

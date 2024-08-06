@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Ci.Coverage.Util;
+using Datadog.Trace.Internal.Ci.Coverage.Util;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Coverage;

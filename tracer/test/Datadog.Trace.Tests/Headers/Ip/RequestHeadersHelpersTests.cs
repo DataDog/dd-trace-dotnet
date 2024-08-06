@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Headers.Ip;
+using Datadog.Trace.Internal.Headers.Ip;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;

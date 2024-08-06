@@ -14,12 +14,12 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal;
 #pragma warning disable CS8625
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
 {
     internal sealed class VirtualHeap : CriticalDisposableObject
   {

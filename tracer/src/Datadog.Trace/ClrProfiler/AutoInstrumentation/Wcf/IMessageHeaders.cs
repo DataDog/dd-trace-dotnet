@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Wcf
 {
     /// <summary>
     /// System.ServiceModel.Channels.MessageHeaders interface for duck-typing

@@ -6,10 +6,10 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.Ci;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 
 /// <summary>
 /// System.Int32 Microsoft.DotNet.Tools.Test.TestCommand::Run(System.CommandLine.ParseResult or string[]) calltarget instrumentation

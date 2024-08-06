@@ -7,9 +7,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Iast.Helpers;
+using Datadog.Trace.Internal.Iast.Helpers;
 
-namespace Datadog.Trace.Iast.Dataflow;
+namespace Datadog.Trace.Internal.Iast.Dataflow;
 
 [AttributeUsage(AttributeTargets.Class)]
 internal sealed class AspectClassAttribute : Attribute

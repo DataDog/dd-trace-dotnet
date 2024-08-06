@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Elasticsearch.V5
 {
     internal static class ElasticsearchV5Constants
     {

@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;

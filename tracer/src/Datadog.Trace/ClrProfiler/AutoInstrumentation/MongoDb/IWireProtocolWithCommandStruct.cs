@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb
 {
     /// <summary>
     /// MongoDB.Driver.Core.IWireProtocol interface for duck-typing

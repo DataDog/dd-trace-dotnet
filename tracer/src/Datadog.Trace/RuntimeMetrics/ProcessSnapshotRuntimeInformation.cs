@@ -8,9 +8,9 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.RuntimeMetrics;
+namespace Datadog.Trace.Internal.RuntimeMetrics;
 
 // ReSharper disable InconsistentNaming UnusedMember.Local
 internal class ProcessSnapshotRuntimeInformation

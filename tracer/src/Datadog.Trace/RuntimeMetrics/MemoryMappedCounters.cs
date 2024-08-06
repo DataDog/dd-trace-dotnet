@@ -8,11 +8,11 @@
 using System;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 
-namespace Datadog.Trace.RuntimeMetrics
+namespace Datadog.Trace.Internal.RuntimeMetrics
 {
     internal class MemoryMappedCounters : IRuntimeMetricsListener
     {

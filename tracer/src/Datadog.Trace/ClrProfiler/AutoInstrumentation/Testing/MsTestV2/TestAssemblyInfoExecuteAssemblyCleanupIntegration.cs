@@ -5,10 +5,10 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.Ci;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
 /// <summary>
 /// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo.ExecuteAssemblyCleanup() calltarget instrumentation

@@ -7,9 +7,9 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.RuntimeMetrics
+namespace Datadog.Trace.Internal.RuntimeMetrics
 {
     internal class PerformanceCounterWrapper : IDisposable
     {

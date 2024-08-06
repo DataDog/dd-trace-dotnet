@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.Telemetry
+namespace Datadog.Trace.Internal.Telemetry
 {
     /// <summary>
     /// Using a record as used as dictionary key so getting equality comparison for free

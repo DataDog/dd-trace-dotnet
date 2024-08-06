@@ -5,7 +5,7 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 using Xunit.Sdk;
 
 namespace Datadog.Trace.TestHelpers

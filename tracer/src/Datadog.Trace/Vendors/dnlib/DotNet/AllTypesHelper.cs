@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Returns types without getting stuck in an infinite loop
 	/// </summary>

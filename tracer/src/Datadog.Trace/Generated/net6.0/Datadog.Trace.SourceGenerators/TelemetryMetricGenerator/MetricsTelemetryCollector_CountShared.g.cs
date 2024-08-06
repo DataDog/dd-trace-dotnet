@@ -8,13 +8,13 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
     private const int CountSharedLength = 225;
 
     /// <summary>
-    /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountShared" /> values.
+    /// Creates the buffer for the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.CountShared" /> values.
     /// </summary>
     private static AggregatedMetric[] GetCountSharedBuffer()
         => new AggregatedMetric[]
@@ -248,14 +248,14 @@ internal partial class MetricsTelemetryCollector
         };
 
     /// <summary>
-    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Telemetry.Metrics.CountShared" />.
+    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.CountShared" />.
     /// Each value represents the number of unique entries in the buffer returned by <see cref="GetCountSharedBuffer()" />
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountSharedEntryCounts { get; }
         = new int[]{ 225, };
 
-    public void RecordCountSharedIntegrationsError(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationError tag2, int increment = 1)
+    public void RecordCountSharedIntegrationsError(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IntegrationName tag1, Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.InstrumentationError tag2, int increment = 1)
     {
         var index = 0 + ((int)tag1 * 3) + (int)tag2;
         Interlocked.Add(ref _buffer.CountShared[index], increment);

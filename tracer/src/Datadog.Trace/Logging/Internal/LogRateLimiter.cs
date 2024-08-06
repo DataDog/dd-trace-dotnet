@@ -8,9 +8,9 @@
 using System;
 using System.Collections.Concurrent;
 
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Logging
+namespace Datadog.Trace.Internal.Logging
 {
     internal class LogRateLimiter : ILogRateLimiter
     {

@@ -10,11 +10,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Propagators;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Propagators;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
     internal static class ContextPropagation
     {

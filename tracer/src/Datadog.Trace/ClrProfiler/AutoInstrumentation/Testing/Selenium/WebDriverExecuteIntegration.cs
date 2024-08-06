@@ -7,9 +7,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.Selenium;
 
 #pragma warning disable SA1201
 

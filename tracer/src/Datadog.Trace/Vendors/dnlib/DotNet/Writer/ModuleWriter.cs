@@ -7,11 +7,11 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
-using Datadog.Trace.Vendors.dnlib.PE;
-using Datadog.Trace.Vendors.dnlib.W32Resources;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.PE;
+using Datadog.Trace.Internal.Vendors.dnlib.W32Resources;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Writer {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer {
 	/// <summary>
 	/// <see cref="ModuleWriter"/> options
 	/// </summary>

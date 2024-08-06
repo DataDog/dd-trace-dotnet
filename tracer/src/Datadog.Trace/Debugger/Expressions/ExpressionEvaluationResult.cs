@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Internal.Debugger.Models;
 
-namespace Datadog.Trace.Debugger.Expressions;
+namespace Datadog.Trace.Internal.Debugger.Expressions;
 
 internal ref struct ExpressionEvaluationResult
 {

@@ -6,10 +6,10 @@
 #nullable enable
 
 using System.Linq;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
     /// <summary>
     /// Base class for redis integration.

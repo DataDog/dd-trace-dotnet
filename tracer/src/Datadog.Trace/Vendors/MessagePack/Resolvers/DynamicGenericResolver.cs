@@ -5,9 +5,9 @@
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 #if !UNITY_WSA
 
-using Datadog.Trace.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Internal.Vendors.MessagePack.Formatters;
 using System.Linq;
-using Datadog.Trace.Vendors.MessagePack.Internal;
+using Datadog.Trace.Internal.Vendors.MessagePack.Internal;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -18,7 +18,7 @@ using System.Collections;
 using System.Threading.Tasks;
 #endif
 
-namespace Datadog.Trace.Vendors.MessagePack.Resolvers
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Resolvers
 {
     internal sealed class DynamicGenericResolver : IFormatterResolver
     {
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Resolvers
     }
 }
 
-namespace Datadog.Trace.Vendors.MessagePack.Internal
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Internal
 {
     internal static class DynamicGenericResolverGetFormatterHelper
     {

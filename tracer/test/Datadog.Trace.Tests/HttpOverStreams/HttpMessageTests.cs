@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.Text;
-using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Internal.HttpOverStreams;
 using FluentAssertions;
 using Xunit;
 

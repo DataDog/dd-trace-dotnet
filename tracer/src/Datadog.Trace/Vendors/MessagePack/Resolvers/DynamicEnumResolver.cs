@@ -7,13 +7,13 @@
 #if !NET_STANDARD_2_0
 
 using System;
-using Datadog.Trace.Vendors.MessagePack.Formatters;
-using Datadog.Trace.Vendors.MessagePack.Internal;
+using Datadog.Trace.Internal.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Internal.Vendors.MessagePack.Internal;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
 
-namespace Datadog.Trace.Vendors.MessagePack.Resolvers
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Resolvers
 {
     /// <summary>
     /// EnumResolver by dynamic code generation, serialized underlying type.

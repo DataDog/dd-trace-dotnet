@@ -7,12 +7,12 @@
 using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util.Http;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util.Http;
 
-namespace Datadog.Trace.Logging.DirectSubmission.Sink
+namespace Datadog.Trace.Internal.Logging.DirectSubmission.Sink
 {
     internal class LogsApi : ILogsApi
     {

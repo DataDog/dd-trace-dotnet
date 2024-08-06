@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.GraphQL
 {
     /// <summary>
     /// A proxy enum for GraphQL.Language.AST.OperationType.

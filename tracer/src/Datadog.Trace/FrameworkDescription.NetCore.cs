@@ -9,7 +9,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     internal partial class FrameworkDescription
     {
@@ -46,15 +46,15 @@ namespace Datadog.Trace
 
                 if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
                 {
-                    osPlatform = Trace.OSPlatformName.Windows;
+                    osPlatform = Trace.Internal.OSPlatformName.Windows;
                 }
                 else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
                 {
-                    osPlatform = Trace.OSPlatformName.Linux;
+                    osPlatform = Trace.Internal.OSPlatformName.Linux;
                 }
                 else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
                 {
-                    osPlatform = Trace.OSPlatformName.MacOS;
+                    osPlatform = Trace.Internal.OSPlatformName.MacOS;
                 }
 
                 osArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();

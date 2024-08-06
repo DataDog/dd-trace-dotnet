@@ -5,8 +5,8 @@
 
 using System.Collections.Generic;
 using System.Globalization;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Tagging;
 using FluentAssertions;
 using Moq;
 using Xunit;

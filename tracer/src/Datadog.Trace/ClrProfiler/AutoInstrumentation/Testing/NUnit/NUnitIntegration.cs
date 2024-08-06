@@ -9,13 +9,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     internal static class NUnitIntegration
     {
@@ -62,11 +62,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             switch (testResult.ResultState.Status)
             {
                 case TestStatus.Skipped or TestStatus.Inconclusive:
-                    test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, resultMessage);
+                    test.Close(Datadog.Trace.Ci.TestStatus.Skip, TimeSpan.Zero, resultMessage);
                     break;
                 case TestStatus.Failed:
                     test.SetErrorInfo(exceptionType, resultMessage, testResult.StackTrace);
-                    test.Close(Ci.TestStatus.Fail);
+                    test.Close(Datadog.Trace.Ci.TestStatus.Fail);
                     break;
                 default:
                     if (!string.IsNullOrEmpty(resultMessage))
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                         test.SetTag(TestTags.Message, resultMessage);
                     }
 
-                    test.Close(Ci.TestStatus.Pass);
+                    test.Close(Datadog.Trace.Ci.TestStatus.Pass);
                     break;
             }
         }
@@ -301,7 +301,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             // Skip tests
             if (skipReason is not null)
             {
-                test.Close(Ci.TestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
+                test.Close(Datadog.Trace.Ci.TestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
                 return test;
             }
 

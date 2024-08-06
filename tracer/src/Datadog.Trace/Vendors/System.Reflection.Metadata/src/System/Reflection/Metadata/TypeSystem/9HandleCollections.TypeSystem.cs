@@ -15,7 +15,7 @@ using System.Collections.Generic;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
     /// <summary>Collection of parameters of a specified method.</summary>
     internal readonly struct ParameterHandleCollection : 

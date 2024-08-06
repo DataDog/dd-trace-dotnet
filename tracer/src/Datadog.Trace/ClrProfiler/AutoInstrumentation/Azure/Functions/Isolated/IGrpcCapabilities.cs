@@ -6,7 +6,7 @@
 #if !NETFRAMEWORK
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
 /// <summary>
 /// Duck type for https://github.com/Azure/azure-functions-host/blob/8ceb05a89a4337f07264d4991545538a3e8b58a0/src/WebJobs.Script.Grpc/Channel/GrpcCapabilities.cs

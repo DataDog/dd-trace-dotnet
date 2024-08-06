@@ -7,9 +7,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger.Sink;
+namespace Datadog.Trace.Internal.Debugger.Sink;
 
 internal abstract class DebuggerUploaderBase : IDebuggerUploader
 {

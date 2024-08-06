@@ -6,10 +6,10 @@
 // dnlib: See LICENSE.txt for more info
 
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.dnlib.PE;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Internal.Vendors.dnlib.PE;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Interface to decrypt methods
 	/// </summary>

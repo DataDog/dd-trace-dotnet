@@ -13,7 +13,7 @@
 #nullable enable
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
   internal readonly struct ModuleReferenceHandle : IEquatable<ModuleReferenceHandle>
   {

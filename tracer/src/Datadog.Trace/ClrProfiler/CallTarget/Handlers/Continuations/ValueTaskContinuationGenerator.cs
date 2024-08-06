@@ -7,9 +7,9 @@
 #if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers.Continuations;
 
 internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn> : ContinuationGenerator<TTarget, TReturn>
 {

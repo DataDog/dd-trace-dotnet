@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
 {
     /// <summary>
     /// Duck type for all implementations of IServerCallHandler

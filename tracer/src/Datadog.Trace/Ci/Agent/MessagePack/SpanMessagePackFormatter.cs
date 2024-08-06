@@ -6,16 +6,16 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Ci.Tagging;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Internal.Ci.Tagging;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.MessagePack;
+using Datadog.Trace.Internal.Vendors.MessagePack.Formatters;
 
-namespace Datadog.Trace.Ci.Agent.MessagePack
+namespace Datadog.Trace.Internal.Ci.Agent.MessagePack
 {
     internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
     {
@@ -41,14 +41,14 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
 
-        private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
+        private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Internal.Tags.Language);
         private readonly byte[] _languageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
 
-        private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
+        private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Internal.Tags.Env);
 
-        private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
+        private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Internal.Tags.Version);
 
-        private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
+        private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Internal.Tags.Origin);
         private readonly byte[] _originValueBytes = StringEncoding.UTF8.GetBytes(TestTags.CIAppTestOriginName);
 
         // numeric tags
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
         private readonly byte[][] _samplingPriorityValueBytes;
 
-        private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
+        private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Internal.Metrics.ProcessId);
         private readonly byte[] _processIdValueBytes;
 
         private SpanMessagePackFormatter()

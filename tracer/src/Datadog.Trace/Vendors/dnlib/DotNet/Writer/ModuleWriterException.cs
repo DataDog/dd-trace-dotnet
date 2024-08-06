@@ -8,7 +8,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Writer {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer {
 	/// <summary>
 	/// Thrown when the module writer encounters an unrecoverable error
 	/// </summary>

@@ -7,7 +7,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
  // !                                         ██
  //                                         ██░░██

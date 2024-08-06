@@ -5,7 +5,7 @@
 
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.Ipc;
+using Datadog.Trace.Internal.Ci.Ipc;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;

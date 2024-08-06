@@ -8,10 +8,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol.Tuf;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers

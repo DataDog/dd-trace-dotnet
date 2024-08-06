@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -143,9 +143,9 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("value", null, Trace.PlatformHelpers.AzureContext.AzureFunctions)]
-        [InlineData(null, "value", Trace.PlatformHelpers.AzureContext.AzureFunctions)]
-        [InlineData(null, null, Trace.PlatformHelpers.AzureContext.AzureAppService)]
+        [InlineData("value", null, Internal.PlatformHelpers.AzureContext.AzureFunctions)]
+        [InlineData(null, "value", Internal.PlatformHelpers.AzureContext.AzureFunctions)]
+        [InlineData(null, null, Internal.PlatformHelpers.AzureContext.AzureAppService)]
         public void AzureContext(string functionsWorkerRuntime, string functionsExtensionVersion, object expected)
         {
             var source = CreateConfigurationSource(

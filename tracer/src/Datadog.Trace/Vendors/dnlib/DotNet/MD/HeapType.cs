@@ -5,7 +5,7 @@
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, SYSLIB0011,SYSLIB0032
 // dnlib: See LICENSE.txt for more info
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.MD {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD {
 	/// <summary>
 	/// Heap type. The values are set in stone by MS. Don't change.
 	/// </summary>

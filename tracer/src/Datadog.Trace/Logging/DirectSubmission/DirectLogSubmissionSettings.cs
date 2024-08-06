@@ -8,12 +8,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.PlatformHelpers;
 
-namespace Datadog.Trace.Logging.DirectSubmission
+namespace Datadog.Trace.Internal.Logging.DirectSubmission
 {
     /// <summary>
     /// Contains settings for Direct Log Submission.

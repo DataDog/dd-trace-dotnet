@@ -5,10 +5,10 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Pdb;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Pdb;
 
-namespace Datadog.Trace.Ci.CiEnvironment;
+namespace Datadog.Trace.Internal.Ci.CiEnvironment;
 
 internal sealed class UnsupportedCIEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider

@@ -8,7 +8,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.MD {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD {
 	/// <summary>
 	/// Initializes .NET table row sizes
 	/// </summary>

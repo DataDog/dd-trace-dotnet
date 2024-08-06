@@ -9,10 +9,10 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.PlatformHelpers
+namespace Datadog.Trace.Internal.PlatformHelpers
 {
     /// <summary>
     /// Utility class with methods to interact with container hosts.

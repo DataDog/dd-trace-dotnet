@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-namespace Datadog.Trace.Ci.EventModel;
+namespace Datadog.Trace.Internal.Ci.EventModel;
 
 internal class TestEvent : CIVisibilityEvent<Span>
 {

@@ -30,13 +30,13 @@
 #endregion
 
 using System;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Bson;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Bson;
 using System.Globalization;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 
 #nullable disable
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Converters
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Converters
 {
     /// <summary>
     /// Converts a <see cref="BsonObjectId"/> to and from JSON and BSON.

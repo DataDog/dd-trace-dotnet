@@ -7,13 +7,13 @@
 using System;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger.Upload
+namespace Datadog.Trace.Internal.Debugger.Upload
 {
     internal class SymbolUploadApi : DebuggerUploadApiBase
     {

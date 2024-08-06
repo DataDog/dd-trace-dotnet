@@ -8,10 +8,10 @@
 #if !NET461
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 using Microsoft.AspNetCore.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer
 {
     /// <summary>
     /// Grpc.Net.Client.Internal.GrpcCall calltarget instrumentation

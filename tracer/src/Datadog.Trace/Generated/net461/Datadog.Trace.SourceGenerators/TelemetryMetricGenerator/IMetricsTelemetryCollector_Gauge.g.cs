@@ -6,12 +6,12 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 internal partial interface IMetricsTelemetryCollector
 {
     public void RecordGaugeStatsBuckets(int value);
 
-    public void RecordGaugeInstrumentations(Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationComponent tag, int value);
+    public void RecordGaugeInstrumentations(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.InstrumentationComponent tag, int value);
 
     public void RecordGaugeDirectLogQueue(int value);
 }

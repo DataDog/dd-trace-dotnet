@@ -6,12 +6,12 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission
 {
     /// <summary>
     /// AppenderCollection.ToArray() calltarget instrumentation

@@ -8,7 +8,7 @@
 using System;
 using System.Diagnostics.SymbolStore;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Dss {
 	sealed class SymbolDocumentWriter : ISymbolDocumentWriter {
 		readonly ISymUnmanagedDocumentWriter writer;
 		public ISymUnmanagedDocumentWriter SymUnmanagedDocumentWriter => writer;

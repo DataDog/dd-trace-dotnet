@@ -7,9 +7,9 @@
 
 using System.IO;
 using System.Runtime.Serialization;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Resources {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Resources {
 	/// <summary>
 	/// Base class of all user data
 	/// </summary>

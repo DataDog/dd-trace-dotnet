@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace;
+namespace Datadog.Trace.Internal;
 
 internal class TaggingUtils
 {

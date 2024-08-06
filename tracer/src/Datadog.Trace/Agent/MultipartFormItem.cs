@@ -7,10 +7,10 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Internal.Agent
 {
     internal readonly struct MultipartFormItem
     {

@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace.Ci.Tagging;
+namespace Datadog.Trace.Internal.Ci.Tagging;
 
 internal partial class TestSuiteSpanTags : TestModuleSpanTags
 {

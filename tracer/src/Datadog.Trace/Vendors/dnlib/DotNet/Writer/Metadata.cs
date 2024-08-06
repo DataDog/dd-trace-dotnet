@@ -11,14 +11,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable;
-using Datadog.Trace.Vendors.dnlib.IO;
-using Datadog.Trace.Vendors.dnlib.PE;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Portable;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.PE;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Writer {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer {
 	/// <summary>
 	/// <see cref="Metadata"/> flags
 	/// </summary>

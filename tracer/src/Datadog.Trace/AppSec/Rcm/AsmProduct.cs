@@ -6,10 +6,10 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Rcm.Models.Asm;
-using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.Asm;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
 
-namespace Datadog.Trace.AppSec.Rcm;
+namespace Datadog.Trace.Internal.AppSec.Rcm;
 
 internal class AsmProduct : IAsmConfigUpdater
 {

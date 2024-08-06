@@ -12,14 +12,14 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
 #nullable enable
 
-namespace Datadog.Trace.AppSec
+namespace Datadog.Trace.Internal.AppSec
 {
     internal static class ObjectExtractor
     {

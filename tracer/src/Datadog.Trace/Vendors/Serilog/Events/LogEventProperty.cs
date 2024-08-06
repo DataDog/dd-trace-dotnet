@@ -19,7 +19,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Vendors.Serilog.Events
+namespace Datadog.Trace.Internal.Vendors.Serilog.Events
 {
     /// <summary>
     /// A property associated with a <see cref="LogEvent"/>.

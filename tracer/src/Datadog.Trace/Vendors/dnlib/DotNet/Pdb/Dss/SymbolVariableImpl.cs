@@ -6,10 +6,10 @@
 // dnlib: See LICENSE.txt for more info
 
 using System;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.WindowsPdb;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.WindowsPdb;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Dss {
 	sealed class SymbolVariableImpl : SymbolVariable {
 		readonly ISymUnmanagedVariable variable;
 

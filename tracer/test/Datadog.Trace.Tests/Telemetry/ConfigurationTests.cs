@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using FluentAssertions;
 using Newtonsoft.Json;
 using Xunit;
@@ -25,7 +25,7 @@ public class ConfigurationTests
         "_DD_EXTENSION_PATH",
         // mini agent uses this directly from env var, and no reason to think that will change
         "DD_MINI_AGENT_PATH",
-        "DD_ENTITY_ID", // Datadog.Trace.Vendors.StatsdClient.StatsdConfig.EntityIdEnvVar (we don't use this, it was just vendored in)
+        "DD_ENTITY_ID", // Datadog.Trace.Internal.Vendors.StatsdClient.StatsdConfig.EntityIdEnvVar (we don't use this, it was just vendored in)
         // CIapp extracts  directly from env var, and no reason to think that will change
         "DD_CUSTOM_TRACE_ID",
         "DD_GIT_BRANCH",
@@ -70,7 +70,7 @@ public class ConfigurationTests
         // Extract user strings from assembly, based on:
         // https://gist.github.com/vbelcik/01d0f803b9db6ec9b90e8693e4b0493b#file-extractexenetstrings-cs
         // Crude, but easier than regex-ing the source code etc
-        var assemblyStrings = ReadAllUserStrings(typeof(Datadog.Trace.Tracer).Assembly);
+        var assemblyStrings = ReadAllUserStrings(typeof(Datadog.Trace.Internal.Tracer).Assembly);
         assemblyStrings.Should().NotBeNullOrEmpty();
 
         // we know that we generally store config keys in `ConfigurationKeys` so examine all those

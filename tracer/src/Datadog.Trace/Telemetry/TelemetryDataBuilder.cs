@@ -8,11 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.DTOs;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry.DTOs;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 internal class TelemetryDataBuilder
 {

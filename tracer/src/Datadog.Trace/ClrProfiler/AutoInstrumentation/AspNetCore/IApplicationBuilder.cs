@@ -7,10 +7,10 @@ using System;
 using System.ComponentModel;
 #if !NETFRAMEWORK
 using System.Collections.Generic;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 using Microsoft.AspNetCore.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     /// <summary>
     /// aspnet core IApplicationBuilder

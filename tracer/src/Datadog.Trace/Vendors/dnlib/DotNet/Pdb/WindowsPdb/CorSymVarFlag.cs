@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.WindowsPdb {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.WindowsPdb {
 	[Flags]
 	enum CorSymVarFlag : uint {
 		VAR_IS_COMP_GEN			= 0x00000001,

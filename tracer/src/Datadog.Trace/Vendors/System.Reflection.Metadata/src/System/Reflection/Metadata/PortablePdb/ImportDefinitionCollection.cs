@@ -12,12 +12,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
     internal readonly struct ImportDefinitionCollection : IEnumerable<ImportDefinition>, IEnumerable
   {

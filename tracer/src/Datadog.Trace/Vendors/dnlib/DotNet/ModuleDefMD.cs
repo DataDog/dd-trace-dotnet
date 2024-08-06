@@ -12,19 +12,19 @@ using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading;
-using Datadog.Trace.Vendors.dnlib.PE;
-using Datadog.Trace.Vendors.dnlib.Utils;
-using Datadog.Trace.Vendors.dnlib.IO;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
-using Datadog.Trace.Vendors.dnlib.W32Resources;
+using Datadog.Trace.Internal.Vendors.dnlib.PE;
+using Datadog.Trace.Internal.Vendors.dnlib.Utils;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb;
+using Datadog.Trace.Internal.Vendors.dnlib.W32Resources;
 
-using DNW = Datadog.Trace.Vendors.dnlib.DotNet.Writer;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
+using DNW = Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Created from a row in the Module table
 	/// </summary>

@@ -4,8 +4,8 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 using FluentAssertions;
 using Xunit;
 

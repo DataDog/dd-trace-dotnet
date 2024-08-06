@@ -4,10 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Kafka
 {
     internal static class CachedMessageHeadersHelper<TMarkerType>
     {

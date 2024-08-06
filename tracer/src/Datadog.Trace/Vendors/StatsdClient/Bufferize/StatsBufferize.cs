@@ -4,10 +4,10 @@
 //------------------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Vendors.StatsdClient.Statistic;
-using Datadog.Trace.Vendors.StatsdClient.Worker;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Statistic;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Worker;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Bufferize
 {
     /// <summary>
     /// StatsBufferize bufferizes metrics before sending them.

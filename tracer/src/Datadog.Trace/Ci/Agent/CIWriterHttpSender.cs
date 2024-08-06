@@ -9,17 +9,17 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Ci.Agent.Payloads;
-using Datadog.Trace.Ci.Telemetry;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Util.Http;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.Ci.Agent.Payloads;
+using Datadog.Trace.Internal.Ci.Telemetry;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Util.Http;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Ci.Agent
+namespace Datadog.Trace.Internal.Ci.Agent
 {
     internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
     {

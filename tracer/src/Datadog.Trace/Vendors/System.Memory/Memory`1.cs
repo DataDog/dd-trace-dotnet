@@ -15,13 +15,13 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
-using MemoryMarshal = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices.MemoryMarshal;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+using Unsafe = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+using MemoryMarshal = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices.MemoryMarshal;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System
 {
     [DebuggerTypeProxy(typeof(MemoryDebugView<>))]
     [DebuggerDisplay("{ToString(),raw}")]

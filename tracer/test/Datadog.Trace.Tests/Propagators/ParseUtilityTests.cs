@@ -5,8 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Propagators;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Propagators;
 using FluentAssertions;
 using Xunit;
 

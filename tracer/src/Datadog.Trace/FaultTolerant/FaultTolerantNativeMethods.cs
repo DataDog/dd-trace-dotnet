@@ -6,10 +6,10 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Debugger.ProbeStatuses;
-using Datadog.Trace.Debugger.Sink.Models;
+using Datadog.Trace.Internal.Debugger.ProbeStatuses;
+using Datadog.Trace.Internal.Debugger.Sink.Models;
 
-namespace Datadog.Trace.FaultTolerant
+namespace Datadog.Trace.Internal.FaultTolerant
 {
     // ReSharper disable MemberHidesStaticFromOuterClass
     internal static class FaultTolerantNativeMethods

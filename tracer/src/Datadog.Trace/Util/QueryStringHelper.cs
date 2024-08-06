@@ -6,14 +6,14 @@
 #if NETFRAMEWORK
 using System.Collections.Specialized;
 using System.Web;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 #else
 using Microsoft.AspNetCore.Http;
 #endif
 
 #nullable enable
 
-namespace Datadog.Trace.Util;
+namespace Datadog.Trace.Internal.Util;
 
 internal static class QueryStringHelper
 {

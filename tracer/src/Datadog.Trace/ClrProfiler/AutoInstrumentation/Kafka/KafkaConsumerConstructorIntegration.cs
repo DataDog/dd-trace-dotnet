@@ -5,11 +5,11 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Util.Delegates;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Util.Delegates;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
 /// Confluent.Kafka Consumer() calltarget instrumentation

@@ -14,7 +14,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 // ReSharper disable InconsistentNaming
 
-namespace Datadog.Trace.DuckTyping
+namespace Datadog.Trace.Internal.DuckTyping
 {
     /// <summary>
     /// Duck Type

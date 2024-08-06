@@ -5,12 +5,12 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Schema;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Elasticsearch;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Redis;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Schema;
+using Datadog.Trace.Internal.Tagging;
 using FluentAssertions;
 using Xunit;
 

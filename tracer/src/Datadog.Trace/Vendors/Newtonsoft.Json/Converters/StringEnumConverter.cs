@@ -37,16 +37,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.Serialization;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization;
 #if !HAVE_LINQ
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.LinqBridge;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities.LinqBridge;
 #else
 using System.Linq;
 
 #endif
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Converters
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Converters
 {
     /// <summary>
     /// Converts an <see cref="Enum"/> to and from its name string value.

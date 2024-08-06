@@ -7,12 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.CiEnvironment;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Spectre.Console;
 
 #pragma warning disable SA1201 // Elements should appear in the correct order

@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Reflection;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     /// <summary>
     /// DuckTyping interface for NUnit.Framework.Internal.Test

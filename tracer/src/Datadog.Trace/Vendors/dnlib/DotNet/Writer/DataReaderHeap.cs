@@ -6,10 +6,10 @@
 // dnlib: See LICENSE.txt for more info
 
 using System;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Writer {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer {
 	/// <summary>
 	/// Copies existing data to a new metadata heap
 	/// </summary>

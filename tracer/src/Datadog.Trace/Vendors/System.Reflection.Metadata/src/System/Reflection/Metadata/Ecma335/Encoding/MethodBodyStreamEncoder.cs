@@ -13,7 +13,7 @@
 #nullable enable
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
 {
   /// <summary>Encodes method body stream.</summary>
   internal readonly struct MethodBodyStreamEncoder

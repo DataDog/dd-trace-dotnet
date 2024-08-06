@@ -10,9 +10,9 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Resources {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Resources {
 	/// <summary>
 	/// Thrown by <see cref="ResourceReader"/>
 	/// </summary>

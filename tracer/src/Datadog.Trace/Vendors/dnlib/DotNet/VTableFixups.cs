@@ -8,9 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.PE;
+using Datadog.Trace.Internal.Vendors.dnlib.PE;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// All native vtables
 	/// </summary>

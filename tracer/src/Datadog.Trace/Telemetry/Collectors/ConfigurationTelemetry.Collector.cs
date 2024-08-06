@@ -9,9 +9,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Telemetry;
 
-namespace Datadog.Trace.Configuration.Telemetry
+namespace Datadog.Trace.Internal.Configuration.Telemetry
 {
     // This is the "collector" implementation
     internal partial class ConfigurationTelemetry

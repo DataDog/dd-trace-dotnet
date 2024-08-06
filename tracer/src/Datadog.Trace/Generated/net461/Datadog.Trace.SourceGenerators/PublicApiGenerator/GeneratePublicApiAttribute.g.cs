@@ -6,7 +6,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.SourceGenerators;
+namespace Datadog.Trace.Internal.SourceGenerators;
 
 /// <summary>
 /// Used to generate a public property for a decorated field,
@@ -23,8 +23,8 @@ internal class GeneratePublicApiAttribute : System.Attribute
     /// <param name="getApiUsage">Gets the name of the public API used for the property getter</param>
     /// <param name="setApiUsage">Gets the name of the public API used for the property setter</param>
     public GeneratePublicApiAttribute(
-        Datadog.Trace.Telemetry.Metrics.PublicApiUsage getApiUsage,
-        Datadog.Trace.Telemetry.Metrics.PublicApiUsage setApiUsage)
+        Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage getApiUsage,
+        Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage setApiUsage)
     {
         Getter = getApiUsage;
         Setter = setApiUsage;
@@ -35,7 +35,7 @@ internal class GeneratePublicApiAttribute : System.Attribute
     /// Adds a getter only.
     /// </summary>
     /// <param name="getApiUsage">Gets the name of the public API used for the property getter. If null, no getter will be generated.</param>
-    public GeneratePublicApiAttribute(Datadog.Trace.Telemetry.Metrics.PublicApiUsage getApiUsage)
+    public GeneratePublicApiAttribute(Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage getApiUsage)
     {
         Getter = getApiUsage;
     }
@@ -43,12 +43,12 @@ internal class GeneratePublicApiAttribute : System.Attribute
     /// <summary>
     /// Gets the name of the public API used for the getter
     /// </summary>
-    public Datadog.Trace.Telemetry.Metrics.PublicApiUsage Getter { get; }
+    public Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage Getter { get; }
 
     /// <summary>
     /// Gets the name of the public API used for the setter
     /// </summary>
-    public Datadog.Trace.Telemetry.Metrics.PublicApiUsage? Setter { get; }
+    public Datadog.Trace.Internal.Telemetry.Metrics.PublicApiUsage? Setter { get; }
 }
 
 /// <summary>

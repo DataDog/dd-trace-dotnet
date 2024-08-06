@@ -22,7 +22,7 @@ using Microsoft.CodeAnalysis.Text;
 [Generator]
 public class PublicApiGenerator : IIncrementalGenerator
 {
-    private const string GeneratePublicApiAttribute = "Datadog.Trace.SourceGenerators.GeneratePublicApiAttribute";
+    private const string GeneratePublicApiAttribute = "Datadog.Trace.Internal.SourceGenerators.GeneratePublicApiAttribute";
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)

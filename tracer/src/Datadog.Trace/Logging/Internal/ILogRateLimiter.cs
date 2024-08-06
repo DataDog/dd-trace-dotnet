@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Logging
+namespace Datadog.Trace.Internal.Logging
 {
     internal interface ILogRateLimiter
     {

@@ -8,7 +8,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.RabbitMQ;
 
 internal class QueueHelper
 {

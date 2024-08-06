@@ -5,11 +5,11 @@
 
 #nullable enable
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 
 /// <summary>
 /// Datadog.Trace.IScope Datadog.Trace.Tracer::StartActive(System.String,Datadog.Trace.SpanCreationSettings) calltarget instrumentation

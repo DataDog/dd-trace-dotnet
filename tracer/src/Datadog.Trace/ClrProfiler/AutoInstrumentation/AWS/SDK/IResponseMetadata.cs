@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     /// <summary>
     /// ResponseMetadata interface for ducktyping

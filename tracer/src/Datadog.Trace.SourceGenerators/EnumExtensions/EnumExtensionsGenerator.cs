@@ -1,4 +1,4 @@
-﻿// <copyright file="EnumExtensionsGenerator.cs" company="Datadog">
+// <copyright file="EnumExtensionsGenerator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,7 +18,7 @@ using Microsoft.CodeAnalysis.Text;
 public class EnumExtensionsGenerator : IIncrementalGenerator
 {
     private const string DescriptionAttribute = "System.ComponentModel.DescriptionAttribute";
-    private const string EnumExtensionsAttribute = "Datadog.Trace.SourceGenerators.EnumExtensionsAttribute";
+    private const string EnumExtensionsAttribute = "Datadog.Trace.Internal.SourceGenerators.EnumExtensionsAttribute";
     private const string FlagsAttribute = "System.FlagsAttribute";
 
     /// <inheritdoc />

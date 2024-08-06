@@ -30,7 +30,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json
 {
     /// <summary>
     /// Specifies how strings are escaped when writing JSON text.

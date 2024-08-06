@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.IbmMq
 {
     internal static class IbmMqConstants
     {

@@ -11,7 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace Datadog.Trace.Vendors.MessagePack.Internal
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Internal
 {
     internal struct ArgumentField
     {

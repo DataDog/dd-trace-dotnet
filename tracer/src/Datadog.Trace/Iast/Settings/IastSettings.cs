@@ -5,13 +5,13 @@
 
 #nullable enable
 
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Iast.Telemetry;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Iast.Telemetry;
+using Datadog.Trace.Internal.Telemetry;
 
-namespace Datadog.Trace.Iast.Settings;
+namespace Datadog.Trace.Internal.Iast.Settings;
 
 internal class IastSettings
 {

@@ -6,11 +6,11 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Helpers;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using Datadog.Trace.Internal.Iast.Helpers;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Iast.Aspects.MongoDB;
+namespace Datadog.Trace.Internal.Iast.Aspects.MongoDB;
 
 /// <summary> MongoDB Driver class aspect </summary>
 [AspectClass("MongoDB.Driver", AspectType.Sink, VulnerabilityType.NoSqlMongoDbInjection)]

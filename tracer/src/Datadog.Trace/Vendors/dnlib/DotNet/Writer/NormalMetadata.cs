@@ -6,9 +6,9 @@
 // dnlib: See LICENSE.txt for more info
 
 using System.Linq;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Writer {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer {
 	/// <summary>
 	/// Does not preserve metadata tokens
 	/// </summary>

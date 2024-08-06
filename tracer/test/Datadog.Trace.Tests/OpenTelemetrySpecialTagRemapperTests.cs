@@ -5,11 +5,11 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Activity;
-using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Activity;
+using Datadog.Trace.Internal.Activity.DuckTypes;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Sampling;
 using Moq;
 using Xunit;
 

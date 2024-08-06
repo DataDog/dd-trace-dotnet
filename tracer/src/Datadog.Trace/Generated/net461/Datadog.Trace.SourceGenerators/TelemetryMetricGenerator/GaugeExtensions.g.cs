@@ -6,11 +6,11 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Telemetry.Metrics;
+namespace Datadog.Trace.Internal.Telemetry.Metrics;
 internal static partial class GaugeExtensions
 {
     /// <summary>
-    /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Gauge" /> metric.
+    /// The number of separate metrics in the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.Gauge" /> metric.
     /// </summary>
     public const int Length = 3;
 
@@ -19,12 +19,12 @@ internal static partial class GaugeExtensions
     /// </summary>
     /// <param name="metric">The metric to get the name for</param>
     /// <returns>The datadog metric name</returns>
-    public static string GetName(this Datadog.Trace.Telemetry.Metrics.Gauge metric)
+    public static string GetName(this Datadog.Trace.Internal.Telemetry.Metrics.Gauge metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.Gauge.StatsBuckets => "stats_buckets",
-            Datadog.Trace.Telemetry.Metrics.Gauge.Instrumentations => "instrumentations",
-            Datadog.Trace.Telemetry.Metrics.Gauge.DirectLogQueue => "direct_log_queue.length",
+            Datadog.Trace.Internal.Telemetry.Metrics.Gauge.StatsBuckets => "stats_buckets",
+            Datadog.Trace.Internal.Telemetry.Metrics.Gauge.Instrumentations => "instrumentations",
+            Datadog.Trace.Internal.Telemetry.Metrics.Gauge.DirectLogQueue => "direct_log_queue.length",
             _ => null!,
         };
 
@@ -33,11 +33,11 @@ internal static partial class GaugeExtensions
     /// </summary>
     /// <param name="metric">The metric to check</param>
     /// <returns>True if the metric is a "common" metric, used by all languages</returns>
-    public static bool IsCommon(this Datadog.Trace.Telemetry.Metrics.Gauge metric)
+    public static bool IsCommon(this Datadog.Trace.Internal.Telemetry.Metrics.Gauge metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.Gauge.Instrumentations => false,
-            Datadog.Trace.Telemetry.Metrics.Gauge.DirectLogQueue => false,
+            Datadog.Trace.Internal.Telemetry.Metrics.Gauge.Instrumentations => false,
+            Datadog.Trace.Internal.Telemetry.Metrics.Gauge.DirectLogQueue => false,
             _ => true,
         };
 
@@ -46,7 +46,7 @@ internal static partial class GaugeExtensions
     /// </summary>
     /// <param name="metric">The metric to get the name for</param>
     /// <returns>The datadog metric name</returns>
-    public static string? GetNamespace(this Datadog.Trace.Telemetry.Metrics.Gauge metric)
+    public static string? GetNamespace(this Datadog.Trace.Internal.Telemetry.Metrics.Gauge metric)
         => metric switch
         {
             _ => null,

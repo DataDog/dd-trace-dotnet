@@ -1,4 +1,4 @@
-﻿// <copyright file="StartSpanIntegration.cs" company="Datadog">
+// <copyright file="StartSpanIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,11 +6,11 @@
 #nullable enable
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 
 /// <summary>
 /// Datadog.Trace.ISpan Datadog.Trace.Tracer::Datadog.Trace.IDatadogOpenTracingTracer.StartSpan(System.String,Datadog.Trace.ISpanContext,System.String,System.Nullable`1[System.DateTimeOffset],System.Boolean) calltarget instrumentation
@@ -36,7 +36,7 @@ public class StartSpanIntegration
         // parent should _normally_ be a manual span, unless they've created a "custom" ISpanContext
         var parentContext = SpanContextHelper.GetContext(parent);
 
-        var tracer = (Datadog.Trace.Tracer)instance.AutomaticTracer;
+        var tracer = (Datadog.Trace.Internal.Tracer)instance.AutomaticTracer;
         var span = ((IDatadogOpenTracingTracer)tracer).StartSpan(operationName, parentContext, serviceName, startTime, ignoreActiveScope);
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(ManualInstrumentationConstants.Id);
 

@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Propagators;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Propagators;
 using Xunit;
 
 namespace Datadog.Trace.Tests

@@ -13,7 +13,7 @@
 #nullable enable
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
   /// <summary>#UserString heap handle.</summary>
   /// <remarks>The handle is 32-bit wide.</remarks>

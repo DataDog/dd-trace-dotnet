@@ -6,10 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.DTOs;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.PlatformHelpers;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.DTOs;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;

@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.RemoteConfigurationManagement
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement
 {
     internal interface IRemoteConfigurationManager : IDisposable
     {

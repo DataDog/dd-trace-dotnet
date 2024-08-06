@@ -12,7 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.dd_dotnet

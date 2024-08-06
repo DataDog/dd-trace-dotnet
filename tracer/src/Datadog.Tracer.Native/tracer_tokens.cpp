@@ -15,11 +15,11 @@ const int signatureBufferSize = 500;
  * TRACER CONSTANTS
  **/
 
-static const shared::WSTRING managed_profiler_calltarget_type = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
-static const shared::WSTRING managed_profiler_calltarget_statetype = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
-static const shared::WSTRING managed_profiler_calltarget_returntype = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn");
-static const shared::WSTRING managed_profiler_calltarget_returntype_generics = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
-static const shared::WSTRING managed_profiler_calltarget_refstruct = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetRefStruct");
+static const shared::WSTRING managed_profiler_calltarget_type = WStr("Datadog.Trace.Internal.ClrProfiler.CallTarget.CallTargetInvoker");
+static const shared::WSTRING managed_profiler_calltarget_statetype = WStr("Datadog.Trace.Internal.ClrProfiler.CallTarget.CallTargetState");
+static const shared::WSTRING managed_profiler_calltarget_returntype = WStr("Datadog.Trace.Internal.ClrProfiler.CallTarget.CallTargetReturn");
+static const shared::WSTRING managed_profiler_calltarget_returntype_generics = WStr("Datadog.Trace.Internal.ClrProfiler.CallTarget.CallTargetReturn`1");
+static const shared::WSTRING managed_profiler_calltarget_refstruct = WStr("Datadog.Trace.Internal.ClrProfiler.CallTarget.CallTargetRefStruct");
 
 static const shared::WSTRING managed_profiler_calltarget_beginmethod_name = WStr("BeginMethod");
 static const shared::WSTRING managed_profiler_calltarget_endmethod_name = WStr("EndMethod");

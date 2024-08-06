@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.Agent.Payloads;
+using Datadog.Trace.Internal.Ci.Agent.Payloads;
 
-namespace Datadog.Trace.Ci.Agent
+namespace Datadog.Trace.Internal.Ci.Agent
 {
     internal interface ICIVisibilityProtocolWriterSender
     {

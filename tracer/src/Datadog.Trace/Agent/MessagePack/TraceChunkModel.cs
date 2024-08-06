@@ -8,10 +8,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.Agent.MessagePack;
+namespace Datadog.Trace.Internal.Agent.MessagePack;
 
 /// <summary>
 /// Contains one of more spans (a trace chunk) that belong to the same trace

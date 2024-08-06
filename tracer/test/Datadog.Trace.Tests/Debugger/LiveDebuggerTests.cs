@@ -7,17 +7,17 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.Configurations;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.Debugger.ProbeStatuses;
-using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Debugger;
+using Datadog.Trace.Internal.Debugger.Configurations;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Models;
+using Datadog.Trace.Internal.Debugger.ProbeStatuses;
+using Datadog.Trace.Internal.Debugger.Sink;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
 using Xunit;
 
@@ -41,7 +41,7 @@ public class LiveDebuggerTests
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, symbolsUploader, probeStatusPoller, updater, new Internal.DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         probeStatusPoller.Called.Should().BeTrue();
@@ -66,7 +66,7 @@ public class LiveDebuggerTests
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, symbolsUploader, probeStatusPoller, updater, new Internal.DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         lineProbeResolver.Called.Should().BeFalse();

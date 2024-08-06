@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Sink;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;

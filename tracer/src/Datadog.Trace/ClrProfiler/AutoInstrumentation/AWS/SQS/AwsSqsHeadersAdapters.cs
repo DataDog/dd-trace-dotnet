@@ -9,11 +9,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SQS;
 
 internal class AwsSqsHeadersAdapters
 {

@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc
 {
     /// <summary>
     /// Duck type for Grpc.Core.Method{TRequest, TResponse}

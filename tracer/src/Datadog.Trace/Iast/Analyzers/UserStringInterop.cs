@@ -5,9 +5,9 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Debugger.Sink.Models;
+using Datadog.Trace.Internal.Debugger.Sink.Models;
 
-namespace Datadog.Trace.Iast.Analyzers;
+namespace Datadog.Trace.Internal.Iast.Analyzers;
 
 [StructLayout(LayoutKind.Sequential)]
 internal struct UserStringInterop

@@ -197,7 +197,7 @@ namespace UpdateVendors
                         // Special Newtonsoft.Json processing
                         if (originalNamespace.Equals("Newtonsoft.Json"))
                         {
-                            builder.Replace($"using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs", "using ErrorEventArgs = Datadog.Trace.Vendors.Newtonsoft.Json.Serialization.ErrorEventArgs");
+                            builder.Replace($"using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs", "using ErrorEventArgs = Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization.ErrorEventArgs");
 
                             if (content.Contains("using Newtonsoft.Json.Serialization;"))
                             {
@@ -281,7 +281,7 @@ namespace UpdateVendors
                         // want to take any risk of calling it, ever, so replace it with a noop.
                         builder.Replace("Debugger.Break();", "{}");
 
-                        string datadogVendoredNamespace = originalNamespace.StartsWith("System") ? "Datadog.Trace.VendoredMicrosoftCode." : "Datadog.Trace.Vendors.";
+                        string datadogVendoredNamespace = originalNamespace.StartsWith("System") ? "Datadog.Trace.Internal.VendoredMicrosoftCode." : "Datadog.Trace.Internal.Vendors.";
 
                         // Prevent namespace conflicts
                         builder.Replace($"using {originalNamespace}", $"using {datadogVendoredNamespace}{originalNamespace}");
@@ -291,7 +291,7 @@ namespace UpdateVendors
                         // Fix namespace conflicts in `using alias` directives. For example, transform:
                         //      using Foo = dnlib.A.B.C;
                         // To:
-                        //      using Foo = Datadog.Trace.Vendors.dnlib.A.B.C;
+                        //      using Foo = Datadog.Trace.Internal.Vendors.dnlib.A.B.C;
                         string result =
                             Regex.Replace(
                                 builder.ToString(),

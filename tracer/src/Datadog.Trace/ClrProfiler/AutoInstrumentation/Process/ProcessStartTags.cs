@@ -4,28 +4,28 @@
 // </copyright>
 
 using System.Collections.ObjectModel;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     internal partial class ProcessCommandStartTags : InstrumentationTags
     {
-        [Tag(Trace.Tags.ProcessComponent)]
+        [Tag(Trace.Internal.Tags.ProcessComponent)]
         public static string Component => "process";
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Trace.Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Internal;
 
-        [Tag(Trace.Tags.ProcessEnvironmentVariables)]
+        [Tag(Trace.Internal.Tags.ProcessEnvironmentVariables)]
         public string EnvironmentVariables { get; set; }
 
-        [Tag(Trace.Tags.ProcessCommandExec)]
+        [Tag(Trace.Internal.Tags.ProcessCommandExec)]
         public string CommandExec { get; set; }
 
-        [Tag(Trace.Tags.ProcessCommandShell)]
+        [Tag(Trace.Internal.Tags.ProcessCommandShell)]
         public string CommandShell { get; set; }
 
-        [Tag(Trace.Tags.ProcessTruncated)]
+        [Tag(Trace.Internal.Tags.ProcessTruncated)]
         public string Truncated { get; set; }
     }
 }

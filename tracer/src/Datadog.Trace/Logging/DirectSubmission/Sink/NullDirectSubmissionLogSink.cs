@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 #nullable enable
 
-namespace Datadog.Trace.Logging.DirectSubmission.Sink
+namespace Datadog.Trace.Internal.Logging.DirectSubmission.Sink
 {
     internal class NullDirectSubmissionLogSink : IDirectSubmissionLogSink
     {

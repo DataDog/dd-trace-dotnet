@@ -30,7 +30,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities
 {
     internal static class JsonTokenUtils
     {

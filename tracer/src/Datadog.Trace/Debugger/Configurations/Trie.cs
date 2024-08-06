@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Datadog.Trace.Debugger.Configurations
+namespace Datadog.Trace.Internal.Debugger.Configurations
 {
     /// <summary>
     /// This Trie implementation is a direct translation of the Java debugger-agent implementation.

@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes
 {
     /// <summary>
     /// Duck type for CallOptions

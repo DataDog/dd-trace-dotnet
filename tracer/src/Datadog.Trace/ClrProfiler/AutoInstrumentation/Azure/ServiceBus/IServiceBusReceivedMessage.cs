@@ -8,7 +8,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
 internal interface IServiceBusReceivedMessage : IServiceBusMessage
 {

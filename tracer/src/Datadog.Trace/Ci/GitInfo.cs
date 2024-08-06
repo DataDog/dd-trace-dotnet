@@ -10,9 +10,9 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Ci
+namespace Datadog.Trace.Internal.Ci
 {
     /// <summary>
     /// Git information class

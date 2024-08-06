@@ -9,9 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Searches for a type according to custom attribute search rules: first try the
 	/// current assembly, and if that fails, try mscorlib

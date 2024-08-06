@@ -5,11 +5,11 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
 internal class CIVisibilityTestCommand
 {

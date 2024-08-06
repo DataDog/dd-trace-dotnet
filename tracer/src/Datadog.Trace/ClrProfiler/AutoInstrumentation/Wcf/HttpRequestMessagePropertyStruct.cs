@@ -6,9 +6,9 @@
 #nullable enable
 
 using System.Net;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Wcf
 {
     /// <summary>
     /// System.ServiceModel.Channels.HttpRequestMessageProperty interface for duck-typing

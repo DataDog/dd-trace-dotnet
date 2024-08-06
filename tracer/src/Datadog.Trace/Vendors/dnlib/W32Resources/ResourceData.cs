@@ -6,9 +6,9 @@
 // dnlib: See LICENSE.txt for more info
 
 using System;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.W32Resources {
+namespace Datadog.Trace.Internal.Vendors.dnlib.W32Resources {
 	/// <summary>
 	/// A resource blob
 	/// </summary>

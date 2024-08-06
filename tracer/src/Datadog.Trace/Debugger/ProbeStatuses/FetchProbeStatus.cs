@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.PInvoke;
+using Datadog.Trace.Internal.Debugger.PInvoke;
 
-namespace Datadog.Trace.Debugger.ProbeStatuses
+namespace Datadog.Trace.Internal.Debugger.ProbeStatuses
 {
     internal record FetchProbeStatus(string ProbeId, int ProbeVersion, ProbeStatus ProbeStatus)
     {

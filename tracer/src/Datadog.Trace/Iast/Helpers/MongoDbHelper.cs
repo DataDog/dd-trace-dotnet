@@ -6,11 +6,11 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Iast.Aspects.MongoDB.DuckTyping;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Iast.Aspects.MongoDB.DuckTyping;
 
-namespace Datadog.Trace.Iast.Helpers;
+namespace Datadog.Trace.Internal.Iast.Helpers;
 
 internal static class MongoDbHelper
 {

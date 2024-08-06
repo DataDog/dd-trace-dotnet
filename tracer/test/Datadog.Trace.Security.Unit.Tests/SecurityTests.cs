@@ -5,8 +5,8 @@
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rcm.Models.Asm;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.Asm;
 using FluentAssertions;
 using Xunit;
 
@@ -17,7 +17,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void DefaultBehavior()
         {
-            var target = new AppSec.Security();
+            var target = new Internal.AppSec.Security();
             var action = target.GetBlockingAction(new[] { "wrong" }, null, null);
             action.StatusCode.Should().Be(403);
             action.ResponseContent.Should().Be(SecurityConstants.BlockedJsonTemplate);
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData(BlockingAction.RedirectRequestType, "", 303, null, 403, "application/json", SecurityConstants.BlockedJsonTemplate)]
         public void CustomActions(string type, string location, int statusCode, string contentType, int expectedStatusCode, string expectedContentType, string expectedContent)
         {
-            var target = new AppSec.Security();
+            var target = new Internal.AppSec.Security();
             var blockInfo = CreateBlockParameters(type, location, statusCode, contentType);
             var action = target.GetBlockingAction(new[] { "application/json" }, type == BlockingAction.BlockRequestType ? blockInfo : null, type == BlockingAction.RedirectRequestType ? blockInfo : null);
             action.StatusCode.Should().Be(expectedStatusCode);
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData(BlockingAction.RedirectRequestType, "/toto", 302, null, 302, null, null)]
         public void CustomActionsWithBlockInfo(string type, string location, int statusCode, string contentType, int expectedStatusCode, string expectedContentType, string expectedContent)
         {
-            var target = new AppSec.Security();
+            var target = new Internal.AppSec.Security();
             var blockInfo = CreateBlockParameters(type, location, statusCode, contentType);
 
             var action = target.GetBlockingAction(new[] { "application/json" }, type == BlockingAction.BlockRequestType ? blockInfo : null, type == BlockingAction.RedirectRequestType ? blockInfo : null);

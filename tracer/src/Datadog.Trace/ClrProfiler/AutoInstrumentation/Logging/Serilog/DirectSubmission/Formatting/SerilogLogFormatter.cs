@@ -6,14 +6,14 @@
 
 using System.Collections;
 using System.Text;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting
 {
     internal static class SerilogLogFormatter
     {

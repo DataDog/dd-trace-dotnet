@@ -9,10 +9,10 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Symbols;
-using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.Internal.Debugger.Symbols;
+using Datadog.Trace.Internal.Debugger.Symbols.Model;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
@@ -120,7 +120,7 @@ public class SymbolExtractorTest
 
         return JsonConvert.SerializeObject(root, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
-        void SanitizeScopeToVerify(ref Trace.Debugger.Symbols.Model.Scope scope)
+        void SanitizeScopeToVerify(ref Internal.Debugger.Symbols.Model.Scope scope)
         {
             if (scope == default)
             {

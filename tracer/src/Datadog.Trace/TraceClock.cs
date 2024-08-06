@@ -9,9 +9,9 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace;
+namespace Datadog.Trace.Internal;
 
 internal sealed class TraceClock
 {

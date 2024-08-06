@@ -5,30 +5,30 @@
 
 using System;
 using System.Linq;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     internal partial class CosmosDbTags : InstrumentationTags
     {
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Trace.Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Internal.Tags.InstrumentationName)]
         public string InstrumentationName => nameof(IntegrationId.CosmosDb);
 
-        [Tag(Trace.Tags.DbType)]
+        [Tag(Trace.Internal.Tags.DbType)]
         public string DbType => "cosmosdb";
 
-        [Tag(Trace.Tags.CosmosDbContainer)]
+        [Tag(Trace.Internal.Tags.CosmosDbContainer)]
         public string ContainerId { get; set; }
 
-        [Tag(Trace.Tags.DbName)]
+        [Tag(Trace.Internal.Tags.DbName)]
         public string DatabaseId { get; set; }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Trace.Internal.Tags.OutHost)]
         public string Host { get; set; }
 
         public virtual void SetEndpoint(Uri endpoint)
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tagging
     {
         private string _peerServiceOverride = null;
 
-        [Tag(Trace.Tags.OutPort)]
+        [Tag(Trace.Internal.Tags.OutPort)]
         public string Port { get; set; }
 
         // Use a private setter for setting the "peer.service" tag so we avoid
@@ -49,14 +49,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Trace.Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? DatabaseId ?? Host;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Trace.Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

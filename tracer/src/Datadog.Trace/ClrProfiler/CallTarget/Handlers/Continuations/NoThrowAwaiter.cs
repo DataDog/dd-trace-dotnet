@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 #pragma warning disable SA1649 // File name must match first type name
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers.Continuations;
 
 internal struct NoThrowAwaiter : ICriticalNotifyCompletion
 {

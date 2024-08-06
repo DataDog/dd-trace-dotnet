@@ -6,9 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Transports;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Transports;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;

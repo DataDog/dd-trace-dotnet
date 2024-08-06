@@ -7,9 +7,9 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.AppSec;
+using Datadog.Trace.Internal.AppSec;
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers;
 
 internal static class EndMethodHandler<TIntegration, TTarget>
 {

@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// Defines a tracer that cannot be replaced once is setted in the singleton

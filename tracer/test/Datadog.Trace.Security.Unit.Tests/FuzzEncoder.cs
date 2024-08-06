@@ -8,16 +8,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.AppSec.WafEncoding;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.AppSec.WafEncoding;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
-using Encoder = Datadog.Trace.AppSec.WafEncoding.Encoder;
+using Encoder = Datadog.Trace.Internal.AppSec.WafEncoding.Encoder;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 

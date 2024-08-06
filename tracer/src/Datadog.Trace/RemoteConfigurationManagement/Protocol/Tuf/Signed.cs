@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol.Tuf
 {
     internal class Signed
     {

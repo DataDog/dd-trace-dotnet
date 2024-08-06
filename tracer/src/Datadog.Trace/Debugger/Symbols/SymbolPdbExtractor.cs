@@ -6,15 +6,15 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Debugger.Symbols.Model;
-using Datadog.Trace.Pdb;
-using Datadog.Trace.VendoredMicrosoftCode.System;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using Datadog.Trace.Internal.Debugger.Symbols.Model;
+using Datadog.Trace.Internal.Pdb;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices;
 
-namespace Datadog.Trace.Debugger.Symbols;
+namespace Datadog.Trace.Internal.Debugger.Symbols;
 
 internal class SymbolPdbExtractor : SymbolExtractor
 {
@@ -120,7 +120,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                 return null;
             }
 
-            var notGeneratedMethodName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(generatedMethodName, 1, generatedMethodName.IndexOf('>') - 1);
+            var notGeneratedMethodName = Datadog.Trace.Internal.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(generatedMethodName, 1, generatedMethodName.IndexOf('>') - 1);
             methodName = MetadataReader.GetString(method.Name);
             if (!methodName.Equals(notGeneratedMethodName.ToString()))
             {
@@ -137,7 +137,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
     private Model.Scope[]? GetLocalSymbols(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, Model.Scope methodScope)
     {
         List<Model.Scope>? scopes = null;
-        var generatedClassPrefix = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(GeneratedClassPrefix);
+        var generatedClassPrefix = Datadog.Trace.Internal.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(GeneratedClassPrefix);
 
         if (DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(rowId).StateMachineHoistedLocal && DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(rowId)).GetDeclaringType().RowId))
         {
@@ -151,13 +151,13 @@ internal class SymbolPdbExtractor : SymbolExtractor
             {
                 var field = MetadataReader.GetFieldDefinition(fieldHandle);
                 var fieldName = MetadataReader.GetString(field.Name);
-                var span = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
-                if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(span, generatedClassPrefix, StringComparison.Ordinal) == 0)
+                var span = Datadog.Trace.Internal.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
+                if (Datadog.Trace.Internal.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(span, generatedClassPrefix, StringComparison.Ordinal) == 0)
                 {
                     continue;
                 }
 
-                var localName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(field.Name));
+                var localName = Datadog.Trace.Internal.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(field.Name));
                 if (localName[0] != '<')
                 {
                     continue;
@@ -216,8 +216,8 @@ internal class SymbolPdbExtractor : SymbolExtractor
             int localIndex = 0;
             foreach (var local in localScope.Locals)
             {
-                var nameAsSpan = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(local.Name);
-                if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(nameAsSpan, generatedClassPrefix, StringComparison.Ordinal) > 0)
+                var nameAsSpan = Datadog.Trace.Internal.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(local.Name);
+                if (Datadog.Trace.Internal.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(nameAsSpan, generatedClassPrefix, StringComparison.Ordinal) > 0)
                 {
                     var cdi = DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(rowId);
                     if (cdi.EncLambdaAndClosureMap || cdi.LocalSlot)
@@ -232,8 +232,8 @@ internal class SymbolPdbExtractor : SymbolExtractor
                             }
 
                             var name = nestedHandle.FullName(MetadataReader);
-                            if (!Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(local.Type).SequenceEqual(
-                                    Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(name)))
+                            if (!Datadog.Trace.Internal.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(local.Type).SequenceEqual(
+                                    Datadog.Trace.Internal.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(name)))
                             {
                                 continue;
                             }
@@ -258,8 +258,8 @@ internal class SymbolPdbExtractor : SymbolExtractor
                                 }
 
                                 var fieldName = MetadataReader.GetString(field.Name);
-                                var fieldNameAsSpan = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
-                                if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(fieldNameAsSpan, generatedClassPrefix, StringComparison.Ordinal) == 0)
+                                var fieldNameAsSpan = Datadog.Trace.Internal.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
+                                if (Datadog.Trace.Internal.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(fieldNameAsSpan, generatedClassPrefix, StringComparison.Ordinal) == 0)
                                 {
                                     continue;
                                 }

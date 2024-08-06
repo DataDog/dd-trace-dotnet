@@ -13,10 +13,10 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.ClrProfiler;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -108,7 +108,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
             if (processed > 0)
             {
-                var tracerAssembly = typeof(Datadog.Trace.Tracer).Assembly.Location;
+                var tracerAssembly = typeof(Datadog.Trace.Internal.Tracer).Assembly.Location;
                 File.Copy(tracerAssembly, Path.Combine(outputFolder, Path.GetFileName(Path.GetFileName(tracerAssembly))), true);
 
                 AnsiConsole.WriteLine("Patching deps.json file");

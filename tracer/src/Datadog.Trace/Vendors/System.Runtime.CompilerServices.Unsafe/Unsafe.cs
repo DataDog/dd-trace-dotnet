@@ -7,15 +7,15 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.Versioning;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.Versioning;
 using InlineIL;
 using static InlineIL.IL.Emit;
 
 // System.Runtime.CompilerServices.Unsafe does not have nullable reference type annotations
 #nullable disable
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe
 {
     [SuppressMessage("ReSharper", "UnusedType.Global")]
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
@@ -473,7 +473,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Un
     }
 }
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.Versioning
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.Versioning
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Constructor | AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
     internal sealed class NonVersionableAttribute : Attribute
@@ -503,9 +503,9 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.Versioning
 
 
 
-//using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.Versioning;
+//using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.Versioning;
 
-//namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe
+//namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe
 //{
 //      internal static partial class Unsafe
 //    {

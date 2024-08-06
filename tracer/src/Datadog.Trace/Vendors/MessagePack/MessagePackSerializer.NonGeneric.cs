@@ -11,7 +11,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Datadog.Trace.Vendors.MessagePack
+namespace Datadog.Trace.Internal.Vendors.MessagePack
 {
     // NonGeneric API
     internal static partial class MessagePackSerializer

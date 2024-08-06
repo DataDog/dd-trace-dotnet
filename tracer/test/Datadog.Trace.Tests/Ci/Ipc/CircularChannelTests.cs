@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
 using System.Threading;
-using Datadog.Trace.Ci.Ipc;
+using Datadog.Trace.Internal.Ci.Ipc;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;

@@ -6,14 +6,14 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Couchbase
 {
     internal static class CouchbaseCommon
     {

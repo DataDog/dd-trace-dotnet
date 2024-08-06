@@ -4,11 +4,11 @@
 // </copyright>
 
 using System.Threading.Tasks;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes
 {
     /// <summary>
     /// Duck Type for AsyncCall

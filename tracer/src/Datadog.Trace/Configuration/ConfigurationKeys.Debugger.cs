@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
+using Datadog.Trace.Internal.Debugger;
+using Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     internal static partial class ConfigurationKeys
     {

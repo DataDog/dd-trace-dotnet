@@ -6,10 +6,10 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Ci.Coverage.Models.Global;
+namespace Datadog.Trace.Internal.Ci.Coverage.Models.Global;
 
 internal abstract class CoverageInfo
 {

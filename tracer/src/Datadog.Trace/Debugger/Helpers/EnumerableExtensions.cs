@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.Debugger.Helpers
+namespace Datadog.Trace.Internal.Debugger.Helpers
 {
     internal static class EnumerableExtensions
     {

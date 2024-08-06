@@ -4,9 +4,9 @@
 // </copyright>
 #nullable enable
 
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Ci.Ipc.Messages;
+namespace Datadog.Trace.Internal.Ci.Ipc.Messages;
 
 internal class SessionCodeCoverageMessage
 {

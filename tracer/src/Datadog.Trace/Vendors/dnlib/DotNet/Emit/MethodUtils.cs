@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Emit {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit {
 	/// <summary>
 	/// Instruction utility methods
 	/// </summary>

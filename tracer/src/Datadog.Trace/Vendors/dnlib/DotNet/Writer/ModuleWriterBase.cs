@@ -8,17 +8,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.Vendors.dnlib.IO;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
-using Datadog.Trace.Vendors.dnlib.PE;
-using Datadog.Trace.Vendors.dnlib.W32Resources;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb;
+using Datadog.Trace.Internal.Vendors.dnlib.PE;
+using Datadog.Trace.Internal.Vendors.dnlib.W32Resources;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.WindowsPdb;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.WindowsPdb;
 using System.Text;
 using System.IO.Compression;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Writer {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer {
 	/// <summary>
 	/// Module writer event args
 	/// </summary>

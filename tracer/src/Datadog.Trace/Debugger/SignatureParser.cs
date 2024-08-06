@@ -6,11 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
 
 #nullable enable
-namespace Datadog.Trace.Debugger
+namespace Datadog.Trace.Internal.Debugger
 {
     internal static class SignatureParser
     {

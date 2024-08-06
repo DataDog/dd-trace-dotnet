@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
     internal readonly struct TraceAnnotationInfo
     {

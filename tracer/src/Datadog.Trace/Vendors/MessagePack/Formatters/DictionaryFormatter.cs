@@ -12,7 +12,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Concurrent;
 #endif
 
-namespace Datadog.Trace.Vendors.MessagePack.Formatters
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Formatters
 {
 #if NETSTANDARD || NETFRAMEWORK
 

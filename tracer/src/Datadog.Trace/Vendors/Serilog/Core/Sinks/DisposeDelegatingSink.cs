@@ -16,10 +16,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 using System;
 
-namespace Datadog.Trace.Vendors.Serilog.Core.Sinks
+namespace Datadog.Trace.Internal.Vendors.Serilog.Core.Sinks
 {
     class DisposeDelegatingSink : ILogEventSink, IDisposable
     {

@@ -7,13 +7,13 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Pdb.SourceLink;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Pdb.SourceLink;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
 #nullable enable
 
-namespace Datadog.Trace.Pdb;
+namespace Datadog.Trace.Internal.Pdb;
 
 internal static class SourceLinkInformationExtractor
 {

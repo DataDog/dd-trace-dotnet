@@ -6,10 +6,10 @@
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 /// <summary>
 /// Xunit.Sdk.TestAssemblyRunner`1.BeforeTestAssemblyFinishedAsync calltarget instrumentation

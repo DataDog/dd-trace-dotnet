@@ -12,18 +12,18 @@ using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.Debugger.Symbols;
-using Datadog.Trace.Debugger.Symbols.Model;
-using Datadog.Trace.Debugger.Upload;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Debugger;
+using Datadog.Trace.Internal.Debugger.Sink;
+using Datadog.Trace.Internal.Debugger.Symbols;
+using Datadog.Trace.Internal.Debugger.Symbols.Model;
+using Datadog.Trace.Internal.Debugger.Upload;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Tests.Agent;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger.SymbolsTests;
@@ -104,7 +104,7 @@ public class SymbolUploaderTest
         _enablementService.Update(new Dictionary<string, List<RemoteConfiguration>> { { RcmProducts.LiveDebuggingSymbolDb, new List<RemoteConfiguration> { new(null, content, 1, null, 1) } } }, new());
     }
 
-    private async Task<bool> UploadClasses(Root root, IEnumerable<Trace.Debugger.Symbols.Model.Scope?> classes)
+    private async Task<bool> UploadClasses(Root root, IEnumerable<Trace.Internal.Debugger.Symbols.Model.Scope?> classes)
     {
         var uploadClassesMethod = ((SymbolsUploader)_uploader).GetType().GetMethod("UploadClasses", BindingFlags.Instance | BindingFlags.NonPublic);
         if (uploadClassesMethod == null)
@@ -126,7 +126,7 @@ public class SymbolUploaderTest
                Select(JsonConvert.DeserializeObject<Root>).ToArray();
     }
 
-    private (Root Root, IEnumerable<Trace.Debugger.Symbols.Model.Scope?> Classes) GenerateSymbolString(int numberOfTypes)
+    private (Root Root, IEnumerable<Trace.Internal.Debugger.Symbols.Model.Scope?> Classes) GenerateSymbolString(int numberOfTypes)
     {
         var root = new Root
         {
@@ -134,13 +134,13 @@ public class SymbolUploaderTest
             Language = "dotnet",
             Service = nameof(SymbolUploaderTest),
             Version = "0",
-            Scopes = new List<Trace.Debugger.Symbols.Model.Scope> { new() { ScopeType = ScopeType.Assembly, Scopes = null } }
+            Scopes = new List<Trace.Internal.Debugger.Symbols.Model.Scope> { new() { ScopeType = ScopeType.Assembly, Scopes = null } }
         };
 
-        var scopes = new List<Trace.Debugger.Symbols.Model.Scope?>();
+        var scopes = new List<Trace.Internal.Debugger.Symbols.Model.Scope?>();
         for (var i = 0; i < numberOfTypes; i++)
         {
-            scopes.Add(new Trace.Debugger.Symbols.Model.Scope
+            scopes.Add(new Trace.Internal.Debugger.Symbols.Model.Scope
             {
                 Name = $"type: {i}",
                 ScopeType = ScopeType.Class,

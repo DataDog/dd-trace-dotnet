@@ -4,12 +4,12 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     // Re-implement InstrumentationTags so the built-in Activity can copy over SpanKind
     // without being limited by our tags infrastructure
@@ -17,16 +17,16 @@ namespace Datadog.Trace.Tagging
     {
         private string _spanKind;
 
-        [Metric(Trace.Tags.Analytics)]
+        [Metric(Trace.Internal.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
 
-        [Tag(Trace.Tags.MessagingSourceName)]
+        [Tag(Trace.Internal.Tags.MessagingSourceName)]
         public string MessagingSourceName { get; set; }
 
-        [Tag(Trace.Tags.MessagingDestinationName)]
+        [Tag(Trace.Internal.Tags.MessagingDestinationName)]
         public string MessagingDestinationName { get; set; }
 
-        [Tag(Trace.Tags.LegacyMessageBusDestination)]
+        [Tag(Trace.Internal.Tags.LegacyMessageBusDestination)]
         public string LegacyMessageBusDestination { get; set; }
 
         public override string SpanKind
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tagging
             set => _spanKind = value;
         }
 
-        [Metric(Trace.Metrics.MessageQueueTimeMs)]
+        [Metric(Trace.Internal.Metrics.MessageQueueTimeMs)]
         public double? MessageQueueTimeMs { get; set; }
 
         public void SetAnalyticsSampleRate(IntegrationId integration, ImmutableTracerSettings settings, bool enabledWithGlobalSetting)
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Trace.Internal.Tags.PeerService)]
         public string PeerService
         {
             get
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Tagging
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Trace.Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
@@ -90,8 +90,8 @@ namespace Datadog.Trace.Tagging
                 return _peerServiceOverride is not null
                             ? "peer.service"
                             : MessagingDestinationName is not null
-                                ? Trace.Tags.MessagingDestinationName
-                                : Trace.Tags.LegacyMessageBusDestination;
+                                ? Trace.Internal.Tags.MessagingDestinationName
+                                : Trace.Internal.Tags.LegacyMessageBusDestination;
             }
         }
     }

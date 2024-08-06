@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using FluentAssertions;
 using Xunit;
 

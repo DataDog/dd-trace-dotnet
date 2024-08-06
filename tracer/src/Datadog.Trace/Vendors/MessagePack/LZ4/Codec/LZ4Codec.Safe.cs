@@ -36,7 +36,7 @@ using System.Diagnostics;
 // ReSharper disable CheckNamespace
 // ReSharper disable InconsistentNaming
 
-namespace Datadog.Trace.Vendors.MessagePack.LZ4
+namespace Datadog.Trace.Internal.Vendors.MessagePack.LZ4
 {
     /// <summary>Safe LZ4 codec.</summary>
     internal static partial class LZ4Codec

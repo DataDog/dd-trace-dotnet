@@ -19,7 +19,7 @@ CallingConventionSig
 	GenericInstMethodSig
 */
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Base class for sigs with a calling convention
 	/// </summary>

@@ -3,7 +3,7 @@
 
 namespace trace
 {
-// Matches Datadog.Trace.FaultTolerant.InstrumentingProducts
+// Matches Datadog.Trace.Internal.FaultTolerant.InstrumentingProducts
 enum class InstrumentingProducts : int
 {
     Tracer = 1,

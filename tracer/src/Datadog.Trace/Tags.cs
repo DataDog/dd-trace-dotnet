@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// Standard Datadog span tags.
@@ -180,14 +180,14 @@ namespace Datadog.Trace
         /// <summary>
         /// The git commit hash of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
-        /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Agent.MessagePack.TraceChunkModel.GitCommitSha"/>.
+        /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Internal.Agent.MessagePack.TraceChunkModel.GitCommitSha"/>.
         /// </summary>
         internal const string GitCommitSha = "_dd.git.commit.sha";
 
         /// <summary>
         /// The git repository URL of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
-        /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Agent.MessagePack.TraceChunkModel.GitRepositoryUrl"/>.
+        /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Internal.Agent.MessagePack.TraceChunkModel.GitRepositoryUrl"/>.
         /// </summary>
         internal const string GitRepositoryUrl = "_dd.git.repository_url";
 
@@ -712,7 +712,7 @@ namespace Datadog.Trace
         {
             /// <summary>
             /// Tag used to propagate the sampling mechanism used to make a sampling decision.
-            /// See <see cref="Datadog.Trace.Sampling.SamplingMechanism"/>.
+            /// See <see cref="Datadog.Trace.Internal.Sampling.SamplingMechanism"/>.
             /// </summary>
             /// <remarks>
             /// This tag was originally meant to carry the name of the service that made the sampling decision,

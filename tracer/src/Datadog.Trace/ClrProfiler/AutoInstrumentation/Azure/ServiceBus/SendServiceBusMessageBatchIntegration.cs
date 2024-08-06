@@ -8,12 +8,12 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
     /// <summary>
     /// Azure.Messaging.ServiceBus.ServiceBusMessageBatch calltarget instrumentation

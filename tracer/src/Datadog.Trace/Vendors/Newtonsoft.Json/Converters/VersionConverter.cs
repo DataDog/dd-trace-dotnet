@@ -32,9 +32,9 @@
 
 using System;
 using System.Globalization;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Converters
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Converters
 {
     /// <summary>
     /// Converts a <see cref="Version"/> to and from a string (e.g. <c>"1.2.3.4"</c>).

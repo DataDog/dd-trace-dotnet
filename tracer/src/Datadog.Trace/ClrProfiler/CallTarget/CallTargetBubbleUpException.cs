@@ -6,7 +6,7 @@
 #nullable enable
 using System;
 
-namespace Datadog.Trace.ClrProfiler.CallTarget;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
 /// <summary>
 /// Initializes a new instance of the <see cref="CallTargetBubbleUpException"/> class.

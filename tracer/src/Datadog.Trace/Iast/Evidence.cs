@@ -7,9 +7,9 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal.ExtensionMethods;
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 internal readonly struct Evidence
 {

@@ -6,9 +6,9 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration.Telemetry;
 
-namespace Datadog.Trace.Configuration;
+namespace Datadog.Trace.Internal.Configuration;
 
 internal class DictionaryConfigurationSource : StringConfigurationSource
 {

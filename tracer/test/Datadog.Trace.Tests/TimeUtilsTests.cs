@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal.ExtensionMethods;
 using Xunit;
 
 namespace Datadog.Trace.Tests

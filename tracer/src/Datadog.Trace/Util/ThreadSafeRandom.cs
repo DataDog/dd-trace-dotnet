@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.Util;
+namespace Datadog.Trace.Internal.Util;
 
 internal static class ThreadSafeRandom
 {

@@ -9,7 +9,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Internal.Agent.Transports;
 using Xunit;
 
 namespace Datadog.Trace.Tests

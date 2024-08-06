@@ -9,9 +9,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Configuration;
+namespace Datadog.Trace.Internal.Configuration;
 
 internal static class EntryAssemblyLocator
 {

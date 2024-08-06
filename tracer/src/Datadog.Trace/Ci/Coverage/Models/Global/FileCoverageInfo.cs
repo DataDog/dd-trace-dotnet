@@ -8,10 +8,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Ci.Coverage.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Ci.Coverage.Util;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Ci.Coverage.Models.Global;
+namespace Datadog.Trace.Internal.Ci.Coverage.Models.Global;
 
 internal sealed class FileCoverageInfo(string? path) : CoverageInfo
 {

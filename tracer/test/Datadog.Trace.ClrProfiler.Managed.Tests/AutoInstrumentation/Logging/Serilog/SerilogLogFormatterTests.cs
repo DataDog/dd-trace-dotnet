@@ -1,4 +1,4 @@
-﻿// <copyright file="SerilogLogFormatterTests.cs" company="Datadog">
+// <copyright file="SerilogLogFormatterTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,17 +7,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Serilog;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.Vendors.Serilog;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Parsing;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Serilog;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Parsing;
 using FluentAssertions;
 using Xunit;
 

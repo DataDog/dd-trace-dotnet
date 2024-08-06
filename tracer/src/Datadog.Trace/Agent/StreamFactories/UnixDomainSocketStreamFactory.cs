@@ -9,10 +9,10 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Agent.StreamFactories
+namespace Datadog.Trace.Internal.Agent.StreamFactories
 {
     internal class UnixDomainSocketStreamFactory : IStreamFactory
     {

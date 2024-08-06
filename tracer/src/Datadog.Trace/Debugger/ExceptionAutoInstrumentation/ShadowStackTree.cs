@@ -12,12 +12,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Datadog.Trace.Debugger.Instrumentation.Collections;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Debugger.Instrumentation.Collections;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     internal class ShadowStackTree
     {

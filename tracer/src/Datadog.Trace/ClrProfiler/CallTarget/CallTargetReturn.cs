@@ -7,7 +7,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.ClrProfiler.CallTarget;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
 /// <summary>
 /// Call target return value

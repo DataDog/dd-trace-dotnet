@@ -7,12 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
@@ -1095,12 +1095,12 @@ namespace Datadog.Trace.Tests.Configuration
             var values = new List<(string, string)>();
             if (profilingValue is not null)
             {
-                values.Add((Datadog.Trace.ContinuousProfiler.ConfigurationKeys.ProfilingEnabled, profilingValue));
+                values.Add((Datadog.Trace.Internal.ContinuousProfiler.ConfigurationKeys.ProfilingEnabled, profilingValue));
             }
 
             if (ssiValue is not null)
             {
-                values.Add((Datadog.Trace.ContinuousProfiler.ConfigurationKeys.SsiDeployed, ssiValue));
+                values.Add((Datadog.Trace.Internal.ContinuousProfiler.ConfigurationKeys.SsiDeployed, ssiValue));
             }
 
             var source = CreateConfigurationSource(values.ToArray());

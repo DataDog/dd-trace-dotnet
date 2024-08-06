@@ -6,7 +6,7 @@
 
 using System.Net;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 
 internal interface ILambdaExtensionRequest
 {

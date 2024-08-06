@@ -4,10 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 #pragma warning disable SA1300
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Dss
 {
     internal sealed partial class SymbolReaderImpl
     {

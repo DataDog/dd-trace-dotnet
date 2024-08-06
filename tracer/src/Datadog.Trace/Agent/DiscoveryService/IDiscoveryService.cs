@@ -8,7 +8,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Agent.DiscoveryService
+namespace Datadog.Trace.Internal.Agent.DiscoveryService
 {
     /// <summary>
     /// Queries datadog-agent and discovers which version we are running against and what endpoints it supports.

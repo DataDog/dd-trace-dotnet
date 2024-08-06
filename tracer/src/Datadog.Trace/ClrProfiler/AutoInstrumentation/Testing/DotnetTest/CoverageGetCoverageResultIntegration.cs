@@ -5,15 +5,15 @@
 #nullable enable
 using System;
 using System.ComponentModel;
-using Datadog.Trace.Ci.Ipc;
-using Datadog.Trace.Ci.Ipc.Messages;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Ci.Ipc;
+using Datadog.Trace.Internal.Ci.Ipc.Messages;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 
 #pragma warning disable SA1201
 

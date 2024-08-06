@@ -7,7 +7,7 @@ using System;
 using System.Threading;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     /// <summary>
     /// None: Initialization has not been started (yet)

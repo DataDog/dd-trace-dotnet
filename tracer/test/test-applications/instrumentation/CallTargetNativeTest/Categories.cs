@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 using CallTargetNativeTest.NoOp;
-using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Internal.ClrProfiler;
 
 namespace CallTargetNativeTest;
 

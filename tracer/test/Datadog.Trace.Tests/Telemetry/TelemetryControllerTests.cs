@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryControllerTests.cs" company="Datadog">
+// <copyright file="TelemetryControllerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,14 +11,14 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Collectors;
-using Datadog.Trace.Telemetry.Transports;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Collectors;
+using Datadog.Trace.Internal.Telemetry.Transports;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;

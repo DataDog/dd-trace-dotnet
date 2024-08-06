@@ -6,9 +6,9 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
 
-namespace Datadog.Trace.Debugger.Configurations
+namespace Datadog.Trace.Internal.Debugger.Configurations
 {
     internal class ProbeConfigurationComparer
     {

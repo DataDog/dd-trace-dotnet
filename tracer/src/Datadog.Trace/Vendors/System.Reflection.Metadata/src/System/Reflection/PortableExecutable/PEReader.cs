@@ -16,15 +16,15 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata;
 #pragma warning disable CS0168
 #pragma warning disable CS8625
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.PortableExecutable
 {
     /// <summary>Portable Executable format reader.</summary>
     /// <remarks>

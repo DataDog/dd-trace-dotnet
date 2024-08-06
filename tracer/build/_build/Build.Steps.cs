@@ -2402,7 +2402,7 @@ partial class Build
                             // We need to check both properties `AssemblyName` and `AssemblyNames`
                             // because the actual data is embedded to the argument parameter in the assembly
                             // (doesn't work as a normally property works at runtime)
-                            if (attr.AttributeType.FullName == "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute")
+                            if (attr.AttributeType.FullName == "Datadog.Trace.Internal.ClrProfiler.InstrumentMethodAttribute")
                             {
                                 foreach (var prp in attr.Properties)
                                 {
@@ -2433,7 +2433,7 @@ partial class Build
                 {
                     foreach (var attr in asmDefinition.MainModule.Assembly.CustomAttributes)
                     {
-                        if (attr.AttributeType.FullName == "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute")
+                        if (attr.AttributeType.FullName == "Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute")
                         {
                             foreach (var prp in attr.Properties)
                             {
@@ -2908,8 +2908,8 @@ partial class Build
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.SkipAutoProps=true")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura")
                              .Add($"DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.StrongNameKey=\"{strongNameKeyPath}\"")
-                             .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=\"[*]Datadog.Trace.Vendors.*,[Datadog.Trace]System.*,[Datadog.Trace]Mono.*\",")
-                             .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=\"[Datadog.Trace.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*\""));
+                             .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=\"[*]Datadog.Trace.Internal.Vendors.*,[Datadog.Trace]System.*,[Datadog.Trace]Mono.*\",")
+                             .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=\"[Datadog.Trace.Internal.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*\""));
     }
 
     protected override void OnTargetRunning(string target)

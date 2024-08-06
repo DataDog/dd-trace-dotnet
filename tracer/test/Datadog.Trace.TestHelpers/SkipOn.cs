@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Runtime.InteropServices;
+using Datadog.Trace.Internal;
 using Xunit;
 
 namespace Datadog.Trace.TestHelpers;

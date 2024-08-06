@@ -8,8 +8,8 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast.Telemetry;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.Security.IntegrationTests.Rcm;
 using Datadog.Trace.TestHelpers;

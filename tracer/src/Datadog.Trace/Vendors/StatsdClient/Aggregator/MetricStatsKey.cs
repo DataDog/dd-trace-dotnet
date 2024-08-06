@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Aggregator
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Aggregator
 {
     /// <summary>
     /// Dictionary Key for `MetricStats`.

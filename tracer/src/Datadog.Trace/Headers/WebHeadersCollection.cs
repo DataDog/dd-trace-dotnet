@@ -9,9 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Headers
+namespace Datadog.Trace.Internal.Headers
 {
     internal readonly struct WebHeadersCollection : IHeadersCollection
     {

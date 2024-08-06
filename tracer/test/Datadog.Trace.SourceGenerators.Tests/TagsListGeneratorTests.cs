@@ -14,7 +14,7 @@ namespace Datadog.Trace.SourceGenerators.Tests
         [Fact]
         public void CanGenerateTagsListWithTag()
         {
-            const string input = @"using Datadog.Trace.SourceGenerators;
+            const string input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 
@@ -23,8 +23,8 @@ namespace MyTests.TestListNameSpace
     	public string Id { get; set; }
     }
 }";
-            const string expected = Constants.FileHeader + @"using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
+            const string expected = Constants.FileHeader + @"using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Tagging;
 using System;
 
 namespace MyTests.TestListNameSpace
@@ -89,7 +89,7 @@ namespace MyTests.TestListNameSpace
         [Fact]
         public void CanGenerateTagsListWithMetric()
         {
-            const string input = @"using Datadog.Trace.SourceGenerators;
+            const string input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 
@@ -98,8 +98,8 @@ namespace MyTests.TestListNameSpace
     	public double? Id { get; set; }
     }
 }";
-            const string expected = Constants.FileHeader + @"using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
+            const string expected = Constants.FileHeader + @"using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Tagging;
 using System;
 
 namespace MyTests.TestListNameSpace
@@ -164,7 +164,7 @@ namespace MyTests.TestListNameSpace
         [Fact]
         public void CanGenerateTagsListWithMultipleTags()
         {
-            const string input = @"using Datadog.Trace.SourceGenerators;
+            const string input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 
@@ -176,8 +176,8 @@ namespace MyTests.TestListNameSpace
     	public string Name { get; set; }
     }
 }";
-            const string expected = Constants.FileHeader + @"using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
+            const string expected = Constants.FileHeader + @"using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Tagging;
 using System;
 
 namespace MyTests.TestListNameSpace
@@ -259,7 +259,7 @@ namespace MyTests.TestListNameSpace
         [Fact]
         public void CanGenerateTagsListWithMultipleMetrics()
         {
-            const string input = @"using Datadog.Trace.SourceGenerators;
+            const string input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 
@@ -271,8 +271,8 @@ namespace MyTests.TestListNameSpace
     	public double? Name { get; set; }
     }
 }";
-            const string expected = Constants.FileHeader + @"using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
+            const string expected = Constants.FileHeader + @"using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Tagging;
 using System;
 
 namespace MyTests.TestListNameSpace
@@ -354,7 +354,7 @@ namespace MyTests.TestListNameSpace
         [Fact]
         public void CanGenerateTagsListForReadOnlyTag()
         {
-            const string input = @"using Datadog.Trace.SourceGenerators;
+            const string input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 
@@ -369,8 +369,8 @@ namespace MyTests.TestListNameSpace
     	public string Name => ""Some Name"";
     }
 }";
-            const string expected = Constants.FileHeader + @"using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
+            const string expected = Constants.FileHeader + @"using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Tagging;
 using System;
 
 namespace MyTests.TestListNameSpace
@@ -468,7 +468,7 @@ namespace MyTests.TestListNameSpace
         [Fact]
         public void CanGenerateTagsListForReadOnlyMetric()
         {
-            const string input = @"using Datadog.Trace.SourceGenerators;
+            const string input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 
@@ -483,8 +483,8 @@ namespace MyTests.TestListNameSpace
     	public double? Name => ""Some Name"";
     }
 }";
-            const string expected = Constants.FileHeader + @"using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
+            const string expected = Constants.FileHeader + @"using Datadog.Trace.Internal.Processors;
+using Datadog.Trace.Internal.Tagging;
 using System;
 
 namespace MyTests.TestListNameSpace
@@ -582,7 +582,7 @@ namespace MyTests.TestListNameSpace
         [Fact]
         public void CanNotGenerateTagsListWithTagThatContainsOrigin()
         {
-            const string input = @"using Datadog.Trace.SourceGenerators;
+            const string input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 
@@ -601,7 +601,7 @@ namespace MyTests.TestListNameSpace
         [Fact]
         public void CanNotGenerateTagsListWithTagThatContainsLanguage()
         {
-            const string input = @"using Datadog.Trace.SourceGenerators;
+            const string input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 
@@ -622,7 +622,7 @@ namespace MyTests.TestListNameSpace
         [InlineData("\"\"")]
         public void CantUseAnEmptyTagName(string key)
         {
-            var input = @"using Datadog.Trace.SourceGenerators;
+            var input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 
@@ -640,7 +640,7 @@ namespace MyTests.TestListNameSpace
         [InlineData("\"\"")]
         public void CantUseAnEmptyMetricName(string key)
         {
-            var input = @"using Datadog.Trace.SourceGenerators;
+            var input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 
@@ -656,7 +656,7 @@ namespace MyTests.TestListNameSpace
         [Fact]
         public void CantUseBothMetricNameAndTagName()
         {
-            var input = @"using Datadog.Trace.SourceGenerators;
+            var input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 
@@ -676,7 +676,7 @@ namespace MyTests.TestListNameSpace
         [InlineData("SomeOtherType")]
         public void CantUseWrongTypeForTagProperty(string returnType)
         {
-            var input = @"using Datadog.Trace.SourceGenerators;
+            var input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 
@@ -697,7 +697,7 @@ namespace MyTests.TestListNameSpace
         [InlineData("SomeOtherType")]
         public void CantUseWrongTypeForMetricProperty(string returnType)
         {
-            var input = @"using Datadog.Trace.SourceGenerators;
+            var input = @"using Datadog.Trace.Internal.SourceGenerators;
 namespace MyTests.TestListNameSpace
 {
     public class TestList 

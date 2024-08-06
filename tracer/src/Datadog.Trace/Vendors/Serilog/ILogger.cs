@@ -19,10 +19,10 @@
 using System;
 using System.Collections.Generic;
 
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Core;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Vendors.Serilog
+namespace Datadog.Trace.Internal.Vendors.Serilog
 {
     /// <summary>
     /// The core Serilog logging API, used for writing log events.

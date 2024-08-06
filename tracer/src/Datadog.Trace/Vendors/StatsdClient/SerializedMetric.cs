@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 using System.Text;
 
-namespace Datadog.Trace.Vendors.StatsdClient
+namespace Datadog.Trace.Internal.Vendors.StatsdClient
 {
     internal class SerializedMetric
     {

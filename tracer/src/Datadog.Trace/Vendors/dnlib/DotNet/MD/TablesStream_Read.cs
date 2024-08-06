@@ -7,7 +7,7 @@
 
 using System.Diagnostics;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.MD {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD {
 	internal partial class TablesStream {
 		/// <summary>
 		/// Reads a raw <c>Module</c> row or returns false if the row doesn't exist

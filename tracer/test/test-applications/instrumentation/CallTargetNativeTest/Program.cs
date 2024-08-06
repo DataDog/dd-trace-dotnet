@@ -7,8 +7,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using CallTargetNativeTest.NoOp;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
 namespace CallTargetNativeTest
 {

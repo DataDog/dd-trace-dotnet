@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.MessagePack.Formatters
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Formatters
 {
 
     internal sealed class TupleFormatter<T1> : IMessagePackFormatter<Tuple<T1>>

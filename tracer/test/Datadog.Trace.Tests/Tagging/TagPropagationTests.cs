@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Tagging;
 using FluentAssertions;
 using Xunit;
 

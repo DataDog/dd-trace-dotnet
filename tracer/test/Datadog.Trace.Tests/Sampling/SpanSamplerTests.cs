@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Util;
 using FluentAssertions;
 using Xunit;
 

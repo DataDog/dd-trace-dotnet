@@ -8,14 +8,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
-using Datadog.Trace.Vendors.dnlib.PE;
-using Datadog.Trace.Vendors.dnlib.Threading;
-using Datadog.Trace.Vendors.dnlib.W32Resources;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb;
+using Datadog.Trace.Internal.Vendors.dnlib.PE;
+using Datadog.Trace.Internal.Vendors.dnlib.Threading;
+using Datadog.Trace.Internal.Vendors.dnlib.W32Resources;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	readonly struct ModuleLoader {
 		readonly ModuleDef module;
 		readonly ICancellationToken cancellationToken;

@@ -8,12 +8,12 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 /// <summary>
 /// Xunit.Sdk.TestRunner`1.RunAsync calltarget instrumentation

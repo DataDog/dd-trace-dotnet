@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.AppSec.WafEncoding;
+using Datadog.Trace.Internal.AppSec.WafEncoding;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 

@@ -5,9 +5,9 @@
 #nullable enable
 
 using System.Text;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Formatting;
 
-namespace Datadog.Trace.Logging.DirectSubmission.Sink
+namespace Datadog.Trace.Internal.Logging.DirectSubmission.Sink
 {
     internal abstract class DirectSubmissionLogEvent
     {

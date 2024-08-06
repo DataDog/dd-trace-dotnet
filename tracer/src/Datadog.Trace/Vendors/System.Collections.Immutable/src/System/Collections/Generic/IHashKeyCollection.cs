@@ -12,9 +12,9 @@
 
 #nullable enable
 using System.Collections.Generic;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Generic;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Generic
 {
   internal interface IHashKeyCollection<in TKey>
   {

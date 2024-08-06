@@ -5,10 +5,10 @@
 
 #nullable enable
 
-using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Activity.DuckTypes;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Activity.Handlers
+namespace Datadog.Trace.Internal.Activity.Handlers
 {
     /// <summary>
     /// Ignore Activity Handler catches existing integrations that also emits activities.

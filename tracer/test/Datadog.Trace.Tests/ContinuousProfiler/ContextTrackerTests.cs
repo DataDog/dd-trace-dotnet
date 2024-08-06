@@ -4,10 +4,10 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.ContinuousProfiler;
+using Datadog.Trace.Internal.Sampling;
 using FluentAssertions;
 using Moq;
 using Xunit;

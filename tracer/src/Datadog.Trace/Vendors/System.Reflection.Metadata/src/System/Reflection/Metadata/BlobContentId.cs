@@ -13,12 +13,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
     internal readonly struct BlobContentId : IEquatable<BlobContentId>
   {

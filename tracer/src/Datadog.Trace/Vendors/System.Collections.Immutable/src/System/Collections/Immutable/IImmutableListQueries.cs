@@ -12,11 +12,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Generic;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable
 {
     internal interface IImmutableListQueries<T> : 
     IReadOnlyList<T>,

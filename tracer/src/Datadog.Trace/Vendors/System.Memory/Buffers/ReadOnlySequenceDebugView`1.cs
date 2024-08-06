@@ -12,9 +12,9 @@
 
 using System;
 using System.Diagnostics;
-using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Diagnostics;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers
 {
     internal sealed class ReadOnlySequenceDebugView<T>
   {

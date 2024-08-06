@@ -7,7 +7,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.ContinuousProfiler
+namespace Datadog.Trace.Internal.ContinuousProfiler
 {
     internal class NativeInterop
     {

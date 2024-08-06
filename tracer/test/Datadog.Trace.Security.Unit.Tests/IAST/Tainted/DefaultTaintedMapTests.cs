@@ -6,10 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.Iast;
+using Datadog.Trace.Internal.Iast;
 using FluentAssertions;
 using Xunit;
-using Range = Datadog.Trace.Iast.Range;
+using Range = Datadog.Trace.Internal.Iast.Range;
 
 namespace Datadog.Trace.Security.Unit.Tests.Iast.Tainted;
 

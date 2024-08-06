@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Util

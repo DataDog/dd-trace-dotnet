@@ -5,7 +5,7 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Internal.Agent
 {
     internal class ClientStatsPayload
     {

@@ -17,10 +17,10 @@
 // limitations under the License.
 
 using System.Linq;
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Core;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Vendors.Serilog.Policies
+namespace Datadog.Trace.Internal.Vendors.Serilog.Policies
 {
     // Byte arrays, when logged, need to be copied so that they are
     // safe from concurrent modification when written to asynchronous

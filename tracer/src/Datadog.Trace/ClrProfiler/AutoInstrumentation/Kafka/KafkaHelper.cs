@@ -7,14 +7,14 @@
 
 using System;
 using System.Text;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DataStreamsMonitoring.Utils;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Utils;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Kafka
 {
     internal static class KafkaHelper
     {
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 // Producer spans should always be measured
-                span.SetMetric(Trace.Tags.Measured, 1.0);
+                span.SetMetric(Trace.Internal.Tags.Measured, 1.0);
 
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, settings, enabledWithGlobalSetting: false);

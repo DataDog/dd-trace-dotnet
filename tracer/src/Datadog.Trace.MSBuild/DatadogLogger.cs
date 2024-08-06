@@ -9,17 +9,18 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.CiEnvironment;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Microsoft.Build.Framework;
 
 namespace Datadog.Trace.MSBuild
@@ -39,7 +40,7 @@ namespace Datadog.Trace.MSBuild
         {
             try
             {
-                Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
+                Environment.SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
             }
             catch
             {

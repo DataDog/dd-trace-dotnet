@@ -9,11 +9,11 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Iast.Aspects.System.Web.Extensions;
+namespace Datadog.Trace.Internal.Iast.Aspects.System.Web.Extensions;
 
 /// <summary> JavaScriptSerializer class aspect </summary>
 [AspectClass("System.Web.Extensions")]

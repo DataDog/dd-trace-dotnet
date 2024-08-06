@@ -5,10 +5,10 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Helpers;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     internal static class MD5HashProvider
     {

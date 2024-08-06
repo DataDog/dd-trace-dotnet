@@ -7,7 +7,7 @@
 
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Vendors.MessagePack.Internal
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Internal
 {
     internal static class FarmHash
     {

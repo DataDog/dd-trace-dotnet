@@ -10,10 +10,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient
 {
     internal readonly struct HttpResponseHeadersCollection : IHeadersCollection
     {

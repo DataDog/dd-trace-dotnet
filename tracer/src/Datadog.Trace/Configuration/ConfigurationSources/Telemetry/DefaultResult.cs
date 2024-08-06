@@ -6,7 +6,7 @@
 #nullable enable
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+namespace Datadog.Trace.Internal.Configuration.ConfigurationSources.Telemetry;
 
 internal readonly record struct DefaultResult<T>
 {

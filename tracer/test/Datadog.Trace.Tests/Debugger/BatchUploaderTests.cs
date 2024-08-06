@@ -9,8 +9,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.Debugger.Upload;
+using Datadog.Trace.Internal.Debugger.Sink;
+using Datadog.Trace.Internal.Debugger.Upload;
 using FluentAssertions;
 using Xunit;
 

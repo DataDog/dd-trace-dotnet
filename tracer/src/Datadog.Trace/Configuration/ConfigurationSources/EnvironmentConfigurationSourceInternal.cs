@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.Configuration;
+namespace Datadog.Trace.Internal.Configuration;
 
 internal class EnvironmentConfigurationSourceInternal : EnvironmentConfigurationSource
 {

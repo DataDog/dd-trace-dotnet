@@ -4,10 +4,10 @@
 // </copyright>
 
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.ContinuousProfiler;
 
-namespace Datadog.Trace.Telemetry
+namespace Datadog.Trace.Internal.Telemetry
 {
     internal class NullTelemetryController : ITelemetryController
     {

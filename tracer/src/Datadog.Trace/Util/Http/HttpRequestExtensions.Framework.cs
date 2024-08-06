@@ -6,10 +6,10 @@
 #if NETFRAMEWORK
 
 using System.Web;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNet;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Util.Http
+namespace Datadog.Trace.Internal.Util.Http
 {
     internal static partial class HttpRequestExtensions
     {

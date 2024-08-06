@@ -6,7 +6,7 @@
 #nullable enable
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 internal class MetricData
 {

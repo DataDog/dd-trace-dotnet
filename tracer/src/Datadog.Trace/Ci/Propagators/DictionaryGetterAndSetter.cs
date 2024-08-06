@@ -9,9 +9,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal.ExtensionMethods;
 
-namespace Datadog.Trace.Propagators;
+namespace Datadog.Trace.Internal.Propagators;
 
 internal readonly struct DictionaryGetterAndSetter : ICarrierGetter<IDictionary>, ICarrierSetter<IDictionary>
 {

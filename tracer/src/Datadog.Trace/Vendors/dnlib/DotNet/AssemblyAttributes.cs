@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Assembly flags from Assembly.Flags column.
 	/// </summary>

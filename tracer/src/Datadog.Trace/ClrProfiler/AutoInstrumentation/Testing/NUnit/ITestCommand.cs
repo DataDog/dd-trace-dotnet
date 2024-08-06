@@ -4,9 +4,9 @@
 // </copyright>
 #nullable enable
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
 internal interface ITestCommand : IDuckType
 {

@@ -4,13 +4,13 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.CosmosDb
 {
     internal static class CosmosCommon
     {

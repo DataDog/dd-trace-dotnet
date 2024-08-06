@@ -7,7 +7,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Internal.Agent
 {
     internal interface IStreamFactory
     {

@@ -7,10 +7,10 @@
 
 using System.IO;
 using System.Text;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
-using Datadog.Trace.Vendors.dnlib.DotNet.Writer;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Portable {
 	interface IPortablePdbCustomDebugInfoWriterHelper : IWriterError {
 	}
 

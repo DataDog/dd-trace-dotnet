@@ -21,12 +21,12 @@
 using System;
 using System.IO;
 using System.Text;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Formatting;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Formatting;
 using System.Threading;
-using Datadog.Trace.Vendors.Serilog.Debugging;
+using Datadog.Trace.Internal.Vendors.Serilog.Debugging;
 
-namespace Datadog.Trace.Vendors.Serilog.Sinks.File
+namespace Datadog.Trace.Internal.Vendors.Serilog.Sinks.File
 {
     /// <summary>
     /// Write log events to a disk file.

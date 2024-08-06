@@ -6,9 +6,9 @@
 #nullable enable
 
 using System.Net;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb
 {
     /// <summary>
     /// MongoDB.Driver.Core.IConnection interface for duck-typing

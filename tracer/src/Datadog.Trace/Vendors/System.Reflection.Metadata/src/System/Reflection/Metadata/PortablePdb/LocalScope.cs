@@ -11,7 +11,7 @@
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
   /// <summary>
   /// Scope of local variables and constants. Stored in debug metadata.

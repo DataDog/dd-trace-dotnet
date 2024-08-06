@@ -10,17 +10,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Vendors.MessagePack;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.AppSec.Coordinator;
+namespace Datadog.Trace.Internal.AppSec.Coordinator;
 
 /// <summary>
 /// Bridge class between security components and http transport classes, that calls security and is responsible for reporting

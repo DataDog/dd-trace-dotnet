@@ -6,7 +6,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.Debugger.PInvoke
+namespace Datadog.Trace.Internal.Debugger.PInvoke
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     internal struct NativeMethodProbeDefinition : IDisposable

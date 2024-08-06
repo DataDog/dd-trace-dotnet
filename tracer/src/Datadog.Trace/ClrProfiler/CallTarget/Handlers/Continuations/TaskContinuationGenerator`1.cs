@@ -8,11 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
 #pragma warning disable SA1649 // File name must match first type name
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers.Continuations;
 
 internal class TaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn, TResult>
 {

@@ -6,11 +6,11 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.PlatformHelpers;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     /// <summary>
     /// Settings class for gathering metadata about the execution context in Azure App Services.

@@ -5,9 +5,9 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Couchbase
 {
     /// <summary>
     /// Couchbase clusterNode 3.2 calltarget instrumentation
@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
                 if ((int)(object)returnValue != 0)
                 {
                     span.Error = true;
-                    span.SetTag(Trace.Tags.ErrorMsg, returnValue.ToString());
+                    span.SetTag(Trace.Internal.Tags.ErrorMsg, returnValue.ToString());
                 }
             }
 

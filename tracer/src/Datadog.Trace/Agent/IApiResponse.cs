@@ -8,11 +8,11 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Util;
-using Datadog.Trace.Util.Streams;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Util.Streams;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Internal.Agent
 {
     internal interface IApiResponse : IDisposable
     {

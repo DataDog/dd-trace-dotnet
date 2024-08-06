@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.RemoteConfigurationManagement
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement
 {
     internal interface ISubscription
     {

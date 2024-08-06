@@ -7,9 +7,9 @@
 
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.Vendors.dnlib.DotNet.Writer;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Portable {
 	// https://github.com/dotnet/corefx/blob/master/src/System.Reflection.Metadata/specs/PortablePdb-Metadata.md#imports-blob
 	readonly struct ImportScopeBlobWriter {
 		readonly IWriterError helper;

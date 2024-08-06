@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
     /// <summary>
     /// HttpRequestMessage interface for ducktyping

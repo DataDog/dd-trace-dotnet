@@ -12,17 +12,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Versioning;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.Versioning;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.Versioning;
 #pragma warning disable CS1711
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable
 {
     /// <summary>Represents an array that is immutable; meaning it cannot be changed once it is created.
     /// 

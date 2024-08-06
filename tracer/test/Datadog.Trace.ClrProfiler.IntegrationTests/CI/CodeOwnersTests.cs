@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.IO;
-using Datadog.Trace.Ci;
+using Datadog.Trace.Internal.Ci;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI

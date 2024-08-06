@@ -6,9 +6,9 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration.Telemetry;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     /// <summary>
     /// Settings class for gathering metadata about the execution context in Google Cloud Functions

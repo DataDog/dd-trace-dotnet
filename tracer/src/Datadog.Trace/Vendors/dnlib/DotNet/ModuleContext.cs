@@ -6,9 +6,9 @@
 // dnlib: See LICENSE.txt for more info
 
 using System.Threading;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// <see cref="ModuleDef"/> context
 	/// </summary>

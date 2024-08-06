@@ -12,10 +12,10 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
 {
     internal sealed class MetadataAggregator
     {

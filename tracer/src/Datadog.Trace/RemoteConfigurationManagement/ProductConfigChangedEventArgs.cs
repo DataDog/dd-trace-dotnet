@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Datadog.Trace.RemoteConfigurationManagement
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement
 {
     internal class ProductConfigChangedEventArgs : EventArgs
     {

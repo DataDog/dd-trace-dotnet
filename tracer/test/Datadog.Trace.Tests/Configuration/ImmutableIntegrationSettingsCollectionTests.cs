@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using FluentAssertions;
 using Xunit;
 

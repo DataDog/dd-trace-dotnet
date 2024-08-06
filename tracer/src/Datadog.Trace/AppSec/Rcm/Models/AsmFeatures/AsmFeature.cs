@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
+namespace Datadog.Trace.Internal.AppSec.Rcm.Models.AsmFeatures;
 
 internal class AsmFeature
 {

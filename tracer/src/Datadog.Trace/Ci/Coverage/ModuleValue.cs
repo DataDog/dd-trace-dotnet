@@ -9,9 +9,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Ci.Coverage.Metadata;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+using Unsafe = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
-namespace Datadog.Trace.Ci.Coverage;
+namespace Datadog.Trace.Internal.Ci.Coverage;
 
 internal class ModuleValue : IDisposable
 {

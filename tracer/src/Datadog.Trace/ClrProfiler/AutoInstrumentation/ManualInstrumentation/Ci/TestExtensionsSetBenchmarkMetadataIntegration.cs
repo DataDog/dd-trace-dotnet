@@ -7,11 +7,12 @@
 
 using System.ComponentModel;
 using Datadog.Trace.Ci;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci;
 
 /// <summary>
 /// Datadog.Trace.Ci.TestExtensions::SetBenchmarkMetadata() calltarget instrumentation

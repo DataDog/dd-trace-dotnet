@@ -4,9 +4,9 @@
 // </copyright>
 
 #nullable enable
-using Datadog.Trace.Telemetry.Collectors;
+using Datadog.Trace.Internal.Telemetry.Collectors;
 
-namespace Datadog.Trace.Logging.Internal.Configuration;
+namespace Datadog.Trace.Internal.Logging.Internal.Configuration;
 
 internal class RedactedErrorLoggingConfiguration
 {

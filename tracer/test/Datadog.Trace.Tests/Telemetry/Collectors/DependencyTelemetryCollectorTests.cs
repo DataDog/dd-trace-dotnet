@@ -7,11 +7,11 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Parsing;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Parsing;
 using FluentAssertions;
 using Xunit;
 

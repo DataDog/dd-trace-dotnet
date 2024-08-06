@@ -7,13 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -22,14 +23,14 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
     [Collection(nameof(ConsoleTestsCollection))]
     [EnvironmentVariablesCleaner(
-        Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath,
-        Configuration.ConfigurationKeys.AgentUri,
-        Configuration.ConfigurationKeys.AgentHost,
-        Configuration.ConfigurationKeys.AgentPort,
-        Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled,
-        Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy,
-        Configuration.ConfigurationKeys.CIVisibility.CodeCoverage,
-        Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath)]
+        Internal.Configuration.ConfigurationKeys.AgentUri,
+        Internal.Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath,
+        Internal.Configuration.ConfigurationKeys.AgentHost,
+        Internal.Configuration.ConfigurationKeys.AgentPort,
+        Internal.Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled,
+        Internal.Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy,
+        Internal.Configuration.ConfigurationKeys.CIVisibility.CodeCoverage,
+        Internal.Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath)]
     public class CiRunCommandTests : BaseRunCommandTests
     {
         public CiRunCommandTests()
@@ -57,7 +58,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         private void RunExternalCoverageTest(string filePath)
         {
             CIVisibility.Reset();
-            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+            EnvironmentHelpers.SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.DebugEnabled, "1");
             string command = null;
             string arguments = null;
             Dictionary<string, string> environmentVariables = null;
@@ -97,7 +98,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 }
             };
 
-            EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath, filePath);
+            EnvironmentHelpers.SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath, filePath);
 
             var agentUrl = $"http://localhost:{agent.Port}";
             var commandLine = $"{CommandPrefix} test.exe --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl} --set-env VAR1=A --set-env VAR2=B";

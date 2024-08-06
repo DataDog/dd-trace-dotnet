@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.Util;
+namespace Datadog.Trace.Internal.Util;
 
 /// <summary>
 /// Beware that this type is not thread safe and should be used with [ThreadStatic]

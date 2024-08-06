@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
     /// <summary>
     /// Interface for ducktyping AmazonSNSRequest implementations with the TopicArn property

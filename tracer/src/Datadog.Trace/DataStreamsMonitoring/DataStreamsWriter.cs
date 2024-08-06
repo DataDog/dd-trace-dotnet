@@ -9,15 +9,15 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring.Aggregation;
-using Datadog.Trace.DataStreamsMonitoring.Transport;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Aggregation;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Transport;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.DataStreamsMonitoring;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring;
 
 internal class DataStreamsWriter : IDataStreamsWriter
 {

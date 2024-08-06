@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.RuntimeMetrics
+namespace Datadog.Trace.Internal.RuntimeMetrics
 {
     internal static class MetricsNames
     {

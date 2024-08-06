@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 internal static class IastUtils
 {

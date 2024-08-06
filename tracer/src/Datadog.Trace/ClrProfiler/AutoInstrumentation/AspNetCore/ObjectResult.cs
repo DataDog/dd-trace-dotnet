@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore;
 
 [DuckTyping.DuckCopy]
 internal struct ObjectResult

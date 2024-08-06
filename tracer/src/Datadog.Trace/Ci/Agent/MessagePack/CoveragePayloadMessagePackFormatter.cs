@@ -4,10 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Ci.Agent.Payloads;
-using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Internal.Ci.Agent.Payloads;
+using Datadog.Trace.Internal.Vendors.MessagePack;
 
-namespace Datadog.Trace.Ci.Agent.MessagePack;
+namespace Datadog.Trace.Internal.Ci.Agent.MessagePack;
 
 internal class CoveragePayloadMessagePackFormatter : EventMessagePackFormatter<CICodeCoveragePayload.CoveragePayload>
 {

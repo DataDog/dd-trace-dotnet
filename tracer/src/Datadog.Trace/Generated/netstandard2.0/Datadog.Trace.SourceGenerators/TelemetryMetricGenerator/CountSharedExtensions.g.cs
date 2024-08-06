@@ -6,11 +6,11 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Telemetry.Metrics;
+namespace Datadog.Trace.Internal.Telemetry.Metrics;
 internal static partial class CountSharedExtensions
 {
     /// <summary>
-    /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.CountShared" /> metric.
+    /// The number of separate metrics in the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.CountShared" /> metric.
     /// </summary>
     public const int Length = 1;
 
@@ -19,10 +19,10 @@ internal static partial class CountSharedExtensions
     /// </summary>
     /// <param name="metric">The metric to get the name for</param>
     /// <returns>The datadog metric name</returns>
-    public static string GetName(this Datadog.Trace.Telemetry.Metrics.CountShared metric)
+    public static string GetName(this Datadog.Trace.Internal.Telemetry.Metrics.CountShared metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.CountShared.IntegrationsError => "integration_errors",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountShared.IntegrationsError => "integration_errors",
             _ => null!,
         };
 
@@ -31,7 +31,7 @@ internal static partial class CountSharedExtensions
     /// </summary>
     /// <param name="metric">The metric to check</param>
     /// <returns>True if the metric is a "common" metric, used by all languages</returns>
-    public static bool IsCommon(this Datadog.Trace.Telemetry.Metrics.CountShared metric)
+    public static bool IsCommon(this Datadog.Trace.Internal.Telemetry.Metrics.CountShared metric)
         => metric switch
         {
             _ => true,
@@ -42,7 +42,7 @@ internal static partial class CountSharedExtensions
     /// </summary>
     /// <param name="metric">The metric to get the name for</param>
     /// <returns>The datadog metric name</returns>
-    public static string? GetNamespace(this Datadog.Trace.Telemetry.Metrics.CountShared metric)
+    public static string? GetNamespace(this Datadog.Trace.Internal.Telemetry.Metrics.CountShared metric)
         => metric switch
         {
             _ => null,

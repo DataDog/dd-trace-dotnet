@@ -8,13 +8,13 @@
 using System;
 using System.IO;
 using System.Text;
-using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Debugger.Sink;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using DatadogDebugger.Util;
 
-namespace Datadog.Trace.Debugger.Snapshots
+namespace Datadog.Trace.Internal.Debugger.Snapshots
 {
     internal class SnapshotSlicer
     {

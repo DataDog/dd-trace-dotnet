@@ -8,17 +8,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.AppSec.Rcm.Models.Asm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmData;
-using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
-using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
-using Datadog.Trace.AppSec.Waf.Initialization;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.Asm;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.AsmData;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.AsmDd;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.AsmFeatures;
+using Datadog.Trace.Internal.AppSec.Waf.Initialization;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
+using Action = Datadog.Trace.Internal.AppSec.Rcm.Models.Asm.Action;
 
-namespace Datadog.Trace.AppSec.Rcm;
+namespace Datadog.Trace.Internal.AppSec.Rcm;
 
 /// <summary>
 /// This class represents the state of RCM for ASM.

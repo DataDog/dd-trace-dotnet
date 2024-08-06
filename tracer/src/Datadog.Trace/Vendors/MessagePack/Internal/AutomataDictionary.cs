@@ -11,7 +11,7 @@ using System.Linq;
 using System.Reflection.Emit;
 using System.Reflection;
 
-namespace Datadog.Trace.Vendors.MessagePack.Internal
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Internal
 {
     // Key = long, Value = int for UTF8String Dictionary
 

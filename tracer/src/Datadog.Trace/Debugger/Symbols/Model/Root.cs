@@ -5,9 +5,9 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Debugger.Symbols.Model
+namespace Datadog.Trace.Internal.Debugger.Symbols.Model
 {
     internal enum SymbolType
     {

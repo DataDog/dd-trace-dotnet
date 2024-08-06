@@ -11,9 +11,9 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Util.Streams;
+using Datadog.Trace.Internal.Util.Streams;
 
-namespace Datadog.Trace.Logging.TracerFlare;
+namespace Datadog.Trace.Internal.Logging.TracerFlare;
 
 internal static class DebugLogReader
 {

@@ -12,7 +12,7 @@
 
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers
 {
   internal interface IMemoryOwner<T> : IDisposable
   {

@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
 namespace Datadog.Trace.Security.Unit.Tests.Iast
 {

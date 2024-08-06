@@ -5,11 +5,11 @@
 
 #nullable enable
 
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Rasp;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
-namespace Datadog.Trace.Iast.Aspects;
+namespace Datadog.Trace.Internal.Iast.Aspects;
 
 /// <summary> StreamWriterAspect class aspects </summary>
 [AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.RaspIastSink, VulnerabilityType.PathTraversal)]

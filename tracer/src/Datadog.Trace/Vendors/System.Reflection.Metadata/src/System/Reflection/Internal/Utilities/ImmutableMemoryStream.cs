@@ -11,11 +11,11 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
 #pragma warning disable CS0168
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal
 {
     internal sealed class ImmutableMemoryStream : Stream
   {

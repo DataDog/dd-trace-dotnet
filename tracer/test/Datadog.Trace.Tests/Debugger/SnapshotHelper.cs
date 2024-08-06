@@ -5,10 +5,10 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Debugger;
+using Datadog.Trace.Internal.Debugger.Expressions;
+using Datadog.Trace.Internal.Debugger.Snapshots;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Tests.Debugger;
 

@@ -7,7 +7,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+namespace Datadog.Trace.Internal.Configuration.ConfigurationSources.Telemetry;
 
 internal readonly record struct ConfigurationResult<T>
 {

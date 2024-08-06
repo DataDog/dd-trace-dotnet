@@ -7,7 +7,7 @@ using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Datadog.Trace.RuntimeMetrics;
+using Datadog.Trace.Internal.RuntimeMetrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;

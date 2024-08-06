@@ -12,10 +12,10 @@
 
 using System.Diagnostics;
 using System.Text;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 #pragma warning disable CS0169
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System
 {
     internal ref struct NumberBuffer
   {

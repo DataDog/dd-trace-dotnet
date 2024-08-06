@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.Helpers
+namespace Datadog.Trace.Internal.ClrProfiler.Helpers
 {
     internal static class HttpBypassHelper
     {

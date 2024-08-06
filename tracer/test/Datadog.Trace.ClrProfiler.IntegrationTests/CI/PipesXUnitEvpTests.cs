@@ -5,7 +5,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;

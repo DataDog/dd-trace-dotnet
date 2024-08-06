@@ -7,15 +7,15 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
-using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Debugger.Upload;
-using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation.ThirdParty;
+using Datadog.Trace.Internal.Debugger.Sink;
+using Datadog.Trace.Internal.Debugger.Snapshots;
+using Datadog.Trace.Internal.Debugger.Upload;
+using Datadog.Trace.Internal.HttpOverStreams;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionDebugging
     {

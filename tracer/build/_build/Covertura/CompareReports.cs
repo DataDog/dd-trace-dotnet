@@ -19,9 +19,9 @@ namespace Covertura
         // These classes change from run to run, so don't list them in expected changes
         static readonly string[] IgnoredClassPrefixes =
         {
-            "Datadog.Trace.Logging.LogRateLimiter",
-            "Datadog.Trace.RuntimeMetrics.",
-            "Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations.TaskContinuationGenerator",
+            "Datadog.Trace.Internal.Logging.LogRateLimiter",
+            "Datadog.Trace.Internal.RuntimeMetrics.",
+            "Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers.Continuations.TaskContinuationGenerator",
         };
 
         public static CoverturaReport ReadReport(AbsolutePath path)

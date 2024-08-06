@@ -4,11 +4,11 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.RemoteConfigurationManagement.Json;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Json;
+using Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol.Tuf;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol
 {
     internal class GetRcmResponse
     {

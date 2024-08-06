@@ -5,7 +5,7 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.RuntimeMetrics
+namespace Datadog.Trace.Internal.RuntimeMetrics
 {
     internal class Timing
     {

@@ -8,9 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Dss {
 	sealed class SymbolScopeImpl : SymbolScope {
 		readonly ISymUnmanagedScope scope;
 		readonly SymbolMethod method;

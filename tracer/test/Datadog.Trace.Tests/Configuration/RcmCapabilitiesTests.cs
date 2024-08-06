@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
 using FluentAssertions;
 using Xunit;
 

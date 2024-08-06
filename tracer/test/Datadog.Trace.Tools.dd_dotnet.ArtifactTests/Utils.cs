@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Internal;
 using Datadog.Trace.TestHelpers;
 
 namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests;

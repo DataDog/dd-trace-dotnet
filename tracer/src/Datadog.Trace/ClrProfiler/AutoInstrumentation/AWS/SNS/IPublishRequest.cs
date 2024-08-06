@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
     /// <summary>
     /// PublishRequest interface for ducktyping

@@ -6,7 +6,7 @@
 #nullable enable
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 /// <summary>
 /// This event will be used as a failsafe if there are any catastrophic data failure.

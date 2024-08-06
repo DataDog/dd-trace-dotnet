@@ -12,7 +12,7 @@ using System.Threading;
 #pragma warning disable CS8619
 #pragma warning disable CS8625
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers
 {
     /// <summary>
     /// Provides an ArrayPool implementation meant to be used as the singleton returned from ArrayPool.Shared.

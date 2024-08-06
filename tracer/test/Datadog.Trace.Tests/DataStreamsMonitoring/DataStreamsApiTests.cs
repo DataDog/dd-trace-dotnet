@@ -5,7 +5,7 @@
 
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.DataStreamsMonitoring.Transport;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Transport;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using FluentAssertions;
 using Xunit;

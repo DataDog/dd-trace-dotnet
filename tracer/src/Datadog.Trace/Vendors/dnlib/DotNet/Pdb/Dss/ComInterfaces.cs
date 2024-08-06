@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 
 // Dss = Diagnostics Symbol Store = http://msdn.microsoft.com/en-us/library/ms404519.aspx
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Dss {
 	[ComVisible(true),
 	ComImport,
 	Guid("969708D2-05E5-4861-A3B0-96E473CDF63F"),

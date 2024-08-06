@@ -1,4 +1,4 @@
-﻿// <copyright file="ILoggerDuckTypingTests.cs" company="Datadog">
+// <copyright file="ILoggerDuckTypingTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,19 +6,19 @@
 #if NETCOREAPP
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.Logging.DirectSubmission.Sink;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 using Xunit;
-using IExternalScopeProvider = Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.IExternalScopeProvider;
-using ILoggerFactory = Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.ILoggerFactory;
+using IExternalScopeProvider = Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.IExternalScopeProvider;
+using ILoggerFactory = Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.ILoggerFactory;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.ILogger
 {

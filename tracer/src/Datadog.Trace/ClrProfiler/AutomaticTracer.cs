@@ -6,12 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal class AutomaticTracer : CommonTracer, IAutomaticTracer, IDistributedTracer
     {

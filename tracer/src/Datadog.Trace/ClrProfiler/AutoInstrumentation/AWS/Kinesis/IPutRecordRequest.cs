@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     /// <summary>
     /// PutRecordRequest interface for duck typing.

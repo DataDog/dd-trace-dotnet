@@ -16,7 +16,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Datadog.Trace.Vendors.Serilog.Parsing
+namespace Datadog.Trace.Internal.Vendors.Serilog.Parsing
 {
     /// <summary>
     /// Defines the direction of the alignment.

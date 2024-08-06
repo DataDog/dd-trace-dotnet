@@ -7,9 +7,9 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     internal interface IReceiveMessageResponse : IDuckType
     {

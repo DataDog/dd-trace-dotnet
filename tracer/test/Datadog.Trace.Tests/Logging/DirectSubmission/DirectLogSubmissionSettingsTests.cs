@@ -5,10 +5,10 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;

@@ -6,9 +6,9 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.Headers;
+using Datadog.Trace.Internal.Headers;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.IbmMq;
 
 /// <summary>
 /// Noop adapter used to disable context propagation

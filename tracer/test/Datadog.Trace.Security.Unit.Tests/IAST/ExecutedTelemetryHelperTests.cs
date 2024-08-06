@@ -5,11 +5,11 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Iast.Telemetry;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Iast.Telemetry;
+using Datadog.Trace.Internal.Tagging;
 using FluentAssertions;
 using Xunit;
-using static Datadog.Trace.Telemetry.Metrics.MetricTags;
+using static Datadog.Trace.Internal.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Security.Unit.Tests.IAST;
 

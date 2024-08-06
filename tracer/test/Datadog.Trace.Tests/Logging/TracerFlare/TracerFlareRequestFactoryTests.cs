@@ -6,7 +6,7 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.Internal.Logging.TracerFlare;
 using FluentAssertions;
 using Xunit;
 

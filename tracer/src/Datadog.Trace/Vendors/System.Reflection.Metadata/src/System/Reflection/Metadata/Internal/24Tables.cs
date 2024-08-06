@@ -11,10 +11,10 @@
 // MVID: 2EB35F4B-CF50-496F-AFB8-CC6F6F79CB72
 
 using System.Reflection;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
-using MethodSemanticsAttributes = Datadog.Trace.Vendors.dnlib.DotNet.MethodSemanticsAttributes;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal;
+using MethodSemanticsAttributes = Datadog.Trace.Internal.Vendors.dnlib.DotNet.MethodSemanticsAttributes;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
 {
   internal readonly struct MethodSemanticsTableReader
   {

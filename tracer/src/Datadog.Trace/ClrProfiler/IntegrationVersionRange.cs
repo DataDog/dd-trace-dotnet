@@ -5,7 +5,7 @@
 
 using System.ComponentModel;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     /// <summary>
     /// Specifies a safe version range for an integration.

@@ -6,9 +6,9 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
 /// <summary>
 /// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TypeCache::GetTestMethodInfo(Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod,Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.ITestContext,System.Boolean) calltarget instrumentation

@@ -8,7 +8,7 @@
 using System;
 using System.Text;
 
-namespace Datadog.Trace.ServiceFabric
+namespace Datadog.Trace.Internal.ServiceFabric
 {
     internal static class ServiceRemotingRequestMessageHeaderExtensions
     {

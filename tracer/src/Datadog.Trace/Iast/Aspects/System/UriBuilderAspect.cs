@@ -4,12 +4,12 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Propagation;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using Datadog.Trace.Internal.Iast.Propagation;
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Aspects.System;
+namespace Datadog.Trace.Internal.Iast.Aspects.System;
 
 /// <summary> UriBuilder class aspects </summary>
 [AspectClass("System,netstandard,System.Runtime.Extensions,System.Runtime")]

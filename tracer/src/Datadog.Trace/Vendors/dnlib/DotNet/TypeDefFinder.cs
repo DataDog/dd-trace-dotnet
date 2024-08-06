@@ -8,9 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.Vendors.dnlib.Threading;
+using Datadog.Trace.Internal.Vendors.dnlib.Threading;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Finds <see cref="TypeDef"/>s
 	/// </summary>

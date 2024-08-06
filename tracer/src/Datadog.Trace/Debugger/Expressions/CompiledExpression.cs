@@ -5,9 +5,9 @@
 
 using System;
 using System.Linq.Expressions;
-using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Internal.Debugger.Models;
 
-namespace Datadog.Trace.Debugger.Expressions
+namespace Datadog.Trace.Internal.Debugger.Expressions
 {
     internal readonly record struct CompiledExpression<T>
     {

@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace Datadog.Trace.DuckTyping
+namespace Datadog.Trace.Internal.DuckTyping
 {
     // ReSharper disable once InconsistentNaming
     internal class LazyILGenerator

@@ -4,14 +4,14 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Util;
 
 #nullable enable
 
-namespace Datadog.Trace.DatabaseMonitoring
+namespace Datadog.Trace.Internal.DatabaseMonitoring
 {
     internal static class DatabaseMonitoringPropagator
     {

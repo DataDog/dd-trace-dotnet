@@ -10,15 +10,15 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Web;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AspNet;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AspNet;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// System.Web.Http.ApiController.ExecuteAsync calltarget instrumentation

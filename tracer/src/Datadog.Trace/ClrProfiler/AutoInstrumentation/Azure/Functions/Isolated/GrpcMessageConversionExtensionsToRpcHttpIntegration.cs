@@ -8,10 +8,10 @@
 #nullable enable
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 using Microsoft.AspNetCore.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
 /// <summary>
 /// Azure Function calltarget instrumentation for

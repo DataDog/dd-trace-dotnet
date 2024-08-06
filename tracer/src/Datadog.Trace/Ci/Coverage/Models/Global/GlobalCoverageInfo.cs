@@ -7,9 +7,9 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Ci.Coverage.Models.Global;
+namespace Datadog.Trace.Internal.Ci.Coverage.Models.Global;
 
 internal sealed class GlobalCoverageInfo : CoverageInfo
 {

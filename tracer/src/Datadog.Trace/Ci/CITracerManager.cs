@@ -5,22 +5,22 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Ci.Agent;
-using Datadog.Trace.Ci.EventModel;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.TracerFlare;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RuntimeMetrics;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Ci.Agent;
+using Datadog.Trace.Internal.Ci.EventModel;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DataStreamsMonitoring;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Logging.TracerFlare;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.RuntimeMetrics;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 
-namespace Datadog.Trace.Ci
+namespace Datadog.Trace.Internal.Ci
 {
     internal class CITracerManager : TracerManager
     {
@@ -64,22 +64,22 @@ namespace Datadog.Trace.Ci
         {
         }
 
-        private static Trace.Processors.ITraceProcessor[] GetProcessors(bool partialFlushEnabled, bool isCiVisibilityProtocol)
+        private static Trace.Internal.Processors.ITraceProcessor[] GetProcessors(bool partialFlushEnabled, bool isCiVisibilityProtocol)
         {
             if (isCiVisibilityProtocol)
             {
-                return new Trace.Processors.ITraceProcessor[]
+                return new Trace.Internal.Processors.ITraceProcessor[]
                 {
-                    new Trace.Processors.NormalizerTraceProcessor(),
-                    new Trace.Processors.TruncatorTraceProcessor(),
+                    new Trace.Internal.Processors.NormalizerTraceProcessor(),
+                    new Trace.Internal.Processors.TruncatorTraceProcessor(),
                     new Processors.OriginTagTraceProcessor(partialFlushEnabled, true),
                 };
             }
 
-            return new Trace.Processors.ITraceProcessor[]
+            return new Trace.Internal.Processors.ITraceProcessor[]
             {
-                new Trace.Processors.NormalizerTraceProcessor(),
-                new Trace.Processors.TruncatorTraceProcessor(),
+                new Trace.Internal.Processors.NormalizerTraceProcessor(),
+                new Trace.Internal.Processors.TruncatorTraceProcessor(),
                 new Processors.TestSuiteVisibilityProcessor(),
                 new Processors.OriginTagTraceProcessor(partialFlushEnabled, false),
             };

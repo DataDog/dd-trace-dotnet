@@ -5,9 +5,9 @@
 
 #nullable enable
 using System;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.Activity
+namespace Datadog.Trace.Internal.Activity
 {
     /// <summary>
     /// Helper class to map <see cref="SpanKinds"/> and various tags on an <c>Activity</c> or OpenTelemetry Span to a <see cref="Span.OperationName"/>.

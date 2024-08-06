@@ -7,10 +7,10 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     /// <summary>
     /// RabbitMQ.Client.IAsyncBasicConsumer.BasicDeliver calltarget instrumentation

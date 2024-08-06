@@ -9,13 +9,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Util.Http;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace Datadog.Trace.AppSec.Coordinator;
+namespace Datadog.Trace.Internal.AppSec.Coordinator;
 
 internal readonly partial struct SecurityCoordinator
 {

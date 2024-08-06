@@ -10,15 +10,15 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util.Http;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.PlatformHelpers;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util.Http;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization;
 
-namespace Datadog.Trace.Telemetry.Transports
+namespace Datadog.Trace.Internal.Telemetry.Transports
 {
     internal abstract class JsonTelemetryTransport : ITelemetryTransport
     {

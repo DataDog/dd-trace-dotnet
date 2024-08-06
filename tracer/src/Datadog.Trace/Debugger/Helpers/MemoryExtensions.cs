@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
 
-namespace Datadog.Trace.Debugger.Helpers
+namespace Datadog.Trace.Internal.Debugger.Helpers
 {
     internal static class MemoryExtensions
     {

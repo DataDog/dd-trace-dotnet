@@ -6,7 +6,7 @@
 
 using System.ComponentModel;
 
-namespace Datadog.Trace.ClrProfiler;
+namespace Datadog.Trace.Internal.ClrProfiler;
 
 /// <summary>
 /// Instrumentation Loader

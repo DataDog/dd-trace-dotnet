@@ -6,12 +6,12 @@
 using System;
 using System.Collections;
 using System.Text;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.GraphQL
 {
     internal abstract class GraphQLCommonBase
     {
@@ -45,9 +45,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             if (errorCount > 0)
             {
                 span.Error = true;
-                span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
-                span.SetTag(Trace.Tags.ErrorType, errorType);
-                span.SetTag(Trace.Tags.ErrorStack, errors);
+                span.SetTag(Trace.Internal.Tags.ErrorMsg, $"{errorCount} error(s)");
+                span.SetTag(Trace.Internal.Tags.ErrorType, errorType);
+                span.SetTag(Trace.Internal.Tags.ErrorStack, errors);
             }
         }
 

@@ -8,10 +8,10 @@
 using System.Collections.Generic;
 using System.Diagnostics.SymbolStore;
 using System.Threading;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Dss {
 	sealed class SymbolMethodImpl : SymbolMethod {
 		readonly SymbolReaderImpl reader;
 		readonly ISymUnmanagedMethod method;

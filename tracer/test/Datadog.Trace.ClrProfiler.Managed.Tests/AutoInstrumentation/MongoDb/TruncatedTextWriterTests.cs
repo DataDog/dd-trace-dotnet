@@ -5,7 +5,7 @@
 
 using System;
 using System.Text;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 using FluentAssertions;
 using Xunit;
 

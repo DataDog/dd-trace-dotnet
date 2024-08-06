@@ -7,11 +7,11 @@ using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TransportHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 

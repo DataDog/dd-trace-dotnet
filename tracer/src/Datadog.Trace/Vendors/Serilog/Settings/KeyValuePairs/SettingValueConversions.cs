@@ -22,7 +22,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-namespace Datadog.Trace.Vendors.Serilog.Settings.KeyValuePairs
+namespace Datadog.Trace.Internal.Vendors.Serilog.Settings.KeyValuePairs
 {
     class SettingValueConversions
     {

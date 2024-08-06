@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// System.Web.Http.ExceptionHandling.ExceptionContext interface for ducktyping

@@ -7,9 +7,9 @@
 
 using System;
 using System.Text;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Converters;
 
-namespace Datadog.Trace.Telemetry.DTOs;
+namespace Datadog.Trace.Internal.Telemetry.DTOs;
 
 internal class LogMessageData
 {

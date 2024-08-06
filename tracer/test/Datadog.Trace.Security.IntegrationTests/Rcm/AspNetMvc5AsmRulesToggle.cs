@@ -10,14 +10,14 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rcm.Models.Asm;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.Asm;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
-using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
+using Action = Datadog.Trace.Internal.AppSec.Rcm.Models.Asm.Action;
 
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name

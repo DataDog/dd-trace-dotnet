@@ -8,9 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.AppSec.Waf.NativeBindings
+namespace Datadog.Trace.Internal.AppSec.Waf.NativeBindings
 {
     [StructLayout(LayoutKind.Explicit)]
     internal struct DdwafObjectStruct

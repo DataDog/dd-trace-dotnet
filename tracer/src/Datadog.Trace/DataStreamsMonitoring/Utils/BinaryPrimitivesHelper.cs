@@ -7,9 +7,9 @@ using System;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.DataStreamsMonitoring.Utils;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Utils;
 
 internal static class BinaryPrimitivesHelper
 {

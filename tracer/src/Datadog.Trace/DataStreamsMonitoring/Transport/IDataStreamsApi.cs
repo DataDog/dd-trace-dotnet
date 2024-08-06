@@ -7,7 +7,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.DataStreamsMonitoring.Transport;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Transport;
 
 internal interface IDataStreamsApi
 {

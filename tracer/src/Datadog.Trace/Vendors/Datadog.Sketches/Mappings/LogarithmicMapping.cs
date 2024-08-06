@@ -11,9 +11,9 @@
 #pragma warning disable SA1600 // Elements should be documented
 
 using System;
-using Datadog.Trace.Vendors.Datadog.Sketches.Serialization;
+using Datadog.Trace.Internal.Vendors.Datadog.Sketches.Serialization;
 
-namespace Datadog.Trace.Vendors.Datadog.Sketches.Mappings;
+namespace Datadog.Trace.Internal.Vendors.Datadog.Sketches.Mappings;
 
 /// <summary>
 /// LogarithmicMapping is an IndexMapping that is memory-optimal,

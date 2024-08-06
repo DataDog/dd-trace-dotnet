@@ -10,7 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 
 #pragma warning disable CS1570
 
-namespace Datadog.Trace.Pdb.SourceLink;
+namespace Datadog.Trace.Internal.Pdb.SourceLink;
 
 internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
 {

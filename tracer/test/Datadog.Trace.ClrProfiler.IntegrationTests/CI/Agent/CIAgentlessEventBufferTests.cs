@@ -6,7 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Ci.EventModel;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Ci.EventModel;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
@@ -18,9 +19,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [InlineData(50, 50, true)]
         public void SerializeSpans(int traceCount, int spanCount, bool resizeExpected)
         {
-            var buffer = new Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>(10 * 1024 * 1024, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
+            var buffer = new Internal.Ci.Agent.Payloads.EventsBuffer<Internal.Ci.IEvent>(10 * 1024 * 1024, Internal.Ci.Agent.MessagePack.CIFormatterResolver.Instance);
 
-            var events = new List<Ci.IEvent>();
+            var events = new List<Internal.Ci.IEvent>();
 
             for (int i = 0; i < traceCount; i++)
             {
@@ -40,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             Assert.Equal(traceCount * spanCount, buffer.Count);
 
             var content = buffer.Data;
-            var resized = content.Count > Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.InitialBufferSize;
+            var resized = content.Count > Internal.Ci.Agent.Payloads.EventsBuffer<Internal.Ci.IEvent>.InitialBufferSize;
 
             // We want to test the case where the buffer is big enough from the start, and the case where it has to be resized
             // Make sure that the span/trace count assumptions are correct to test the scenario
@@ -50,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public void Overflow()
         {
-            var buffer = new Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>(10, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
+            var buffer = new Internal.Ci.Agent.Payloads.EventsBuffer<Internal.Ci.IEvent>(10, Internal.Ci.Agent.MessagePack.CIFormatterResolver.Instance);
 
             Assert.False(buffer.IsFull);
 
@@ -68,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
             var actualBuffer = innerBuffer.Skip(innerBuffer.Offset).Take(innerBuffer.Count).ToArray();
 
-            Assert.True(actualBuffer.Skip(Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.HeaderSize).All(b => b == 0x0), "No data should have been written to the buffer");
+            Assert.True(actualBuffer.Skip(Internal.Ci.Agent.Payloads.EventsBuffer<Internal.Ci.IEvent>.HeaderSize).All(b => b == 0x0), "No data should have been written to the buffer");
 
             buffer.Clear();
 
@@ -78,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public void LockingBuffer()
         {
-            var buffer = new Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>(10 * 1024 * 1024, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
+            var buffer = new Internal.Ci.Agent.Payloads.EventsBuffer<Internal.Ci.IEvent>(10 * 1024 * 1024, Internal.Ci.Agent.MessagePack.CIFormatterResolver.Instance);
             var spanEvent = new SpanEvent(new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow));
 
             Assert.True(buffer.TryWrite(spanEvent));
@@ -95,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public void ClearingBuffer()
         {
-            var buffer = new Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>(10 * 1024 * 1024, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
+            var buffer = new Internal.Ci.Agent.Payloads.EventsBuffer<Internal.Ci.IEvent>(10 * 1024 * 1024, Internal.Ci.Agent.MessagePack.CIFormatterResolver.Instance);
             var spanEvent = new SpanEvent(new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow));
 
             Assert.True(buffer.TryWrite(spanEvent));
@@ -109,13 +110,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             buffer.Lock();
 
             var innerBuffer = buffer.Data;
-            Assert.Equal(Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.HeaderSize, innerBuffer.Count);
+            Assert.Equal(Internal.Ci.Agent.Payloads.EventsBuffer<Internal.Ci.IEvent>.HeaderSize, innerBuffer.Count);
         }
 
         [Fact]
         public void InvalidSize()
         {
-            Assert.Throws<ArgumentException>(() => new Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>(4, Ci.Agent.MessagePack.CIFormatterResolver.Instance));
+            Assert.Throws<ArgumentException>(() => new Internal.Ci.Agent.Payloads.EventsBuffer<Internal.Ci.IEvent>(4, Internal.Ci.Agent.MessagePack.CIFormatterResolver.Instance));
         }
     }
 }

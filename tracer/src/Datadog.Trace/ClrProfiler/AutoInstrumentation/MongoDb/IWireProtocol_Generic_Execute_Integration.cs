@@ -8,9 +8,9 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb
 {
     /// <summary>
     /// MongoDB.Driver.Core.WireProtocol.IWireProtocol&lt;TResult&gt; instrumentation

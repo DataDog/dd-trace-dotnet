@@ -3,11 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
-using Datadog.Trace.ServiceFabric;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Elasticsearch;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Redis;
+using Datadog.Trace.Internal.ServiceFabric;
+using Datadog.Trace.Internal.Tagging;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using FluentAssertions;
 using Xunit;
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.BootstrapServers = bootstrapServer;
 
             tags.PeerService.Should().Be(bootstrapServer);
-            tags.PeerServiceSource.Should().Be(Trace.Tags.KafkaBootstrapServers);
+            tags.PeerServiceSource.Should().Be(Internal.Tags.KafkaBootstrapServers);
         }
 
         [Fact]
@@ -115,7 +115,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.Host = host;
 
             tags.PeerService.Should().Be(host);
-            tags.PeerServiceSource.Should().Be(Trace.Tags.OutHost);
+            tags.PeerServiceSource.Should().Be(Internal.Tags.OutHost);
         }
 
         [Fact]

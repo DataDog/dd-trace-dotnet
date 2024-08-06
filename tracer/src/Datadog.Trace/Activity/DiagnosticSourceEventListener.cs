@@ -9,12 +9,12 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
-using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Activity.DuckTypes;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Activity
+namespace Datadog.Trace.Internal.Activity
 {
     internal class DiagnosticSourceEventListener : IObserver<KeyValuePair<string, object>>
     {

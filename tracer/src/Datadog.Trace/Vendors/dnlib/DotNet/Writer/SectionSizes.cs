@@ -8,7 +8,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Writer {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer {
 	readonly struct SectionSizeInfo {
 		/// <summary>
 		/// Length of section

@@ -9,9 +9,9 @@
 
 using System.ComponentModel;
 using System.Net;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Remoting.Client
 {
     /// <summary>
     /// System.Runtime.Remoting.Channels.Http.HttpClientTransportSink.ProcessResponseException calltarget instrumentation

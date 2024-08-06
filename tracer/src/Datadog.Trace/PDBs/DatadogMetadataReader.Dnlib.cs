@@ -7,18 +7,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.Debugger.Symbols;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-using Datadog.Trace.Vendors.dnlib.DotNet;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
+using Datadog.Trace.Internal.Debugger.Symbols;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Dss;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Managed;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Portable;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 #nullable enable
-namespace Datadog.Trace.Pdb
+namespace Datadog.Trace.Internal.Pdb
 {
     internal partial class DatadogMetadataReader : IDisposable
     {
@@ -158,7 +158,7 @@ namespace Datadog.Trace.Pdb
                         }
                     }
 
-                    Datadog.Trace.Vendors.dnlib.DotNet.Emit.Local? local = null;
+                    Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit.Local? local = null;
                     for (var i = 0; i < methodLocals.Count; i++)
                     {
                         if (methodLocals[i].Index != localSymbol.Index)
@@ -200,7 +200,7 @@ namespace Datadog.Trace.Pdb
         private CustomDebugInfoAsyncAndClosure GetAsyncAndClosureCustomDebugInfoDnlib(int methodRid)
         {
             CustomDebugInfoAsyncAndClosure cdiAsyncAndClosure = default;
-            Datadog.Trace.Vendors.dnlib.DotNet.MethodDef? method = GetMethodDefDnlib((uint)methodRid);
+            Datadog.Trace.Internal.Vendors.dnlib.DotNet.MethodDef? method = GetMethodDefDnlib((uint)methodRid);
             if (method is not { HasCustomDebugInfos: true })
             {
                 return cdiAsyncAndClosure;

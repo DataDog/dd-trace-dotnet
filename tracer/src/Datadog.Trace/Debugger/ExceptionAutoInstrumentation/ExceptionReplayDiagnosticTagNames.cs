@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     /// <summary>
     /// Assigned as a tag on incoming spans by <see cref="ExceptionTrackManager"/> for diagnostics purposes.

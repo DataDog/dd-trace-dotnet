@@ -12,10 +12,10 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.ClrProfiler;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Logging.Internal;
+namespace Datadog.Trace.Internal.Logging.Internal;
 
 internal static class ExceptionRedactor
 {

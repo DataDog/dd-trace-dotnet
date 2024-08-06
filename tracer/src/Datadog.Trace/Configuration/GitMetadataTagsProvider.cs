@@ -6,16 +6,16 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Pdb;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.ContinuousProfiler;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Pdb;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Util;
 
 #nullable enable
 
-namespace Datadog.Trace.Configuration;
+namespace Datadog.Trace.Internal.Configuration;
 
 internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
 {

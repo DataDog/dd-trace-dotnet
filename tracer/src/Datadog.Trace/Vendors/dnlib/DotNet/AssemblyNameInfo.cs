@@ -8,7 +8,7 @@
 using System;
 using System.Reflection;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Stores assembly name information
 	/// </summary>

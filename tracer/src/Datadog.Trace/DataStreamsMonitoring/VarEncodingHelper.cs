@@ -8,7 +8,7 @@
 using System;
 using System.IO;
 
-namespace Datadog.Trace.DataStreamsMonitoring;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring;
 
 internal static class VarEncodingHelper
 {

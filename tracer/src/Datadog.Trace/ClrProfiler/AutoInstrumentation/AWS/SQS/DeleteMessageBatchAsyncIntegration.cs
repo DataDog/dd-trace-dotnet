@@ -8,11 +8,11 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     /// <summary>
     /// AWSSDK.SQS DeleteMessageBatchAsync calltarget instrumentation

@@ -6,12 +6,12 @@
 #if NETFRAMEWORK
 
 using System;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 
-namespace Datadog.Trace.RuntimeMetrics
+namespace Datadog.Trace.Internal.RuntimeMetrics
 {
     internal class AzureAppServicePerformanceCounters : IRuntimeMetricsListener
     {

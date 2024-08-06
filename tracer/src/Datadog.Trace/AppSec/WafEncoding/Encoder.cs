@@ -12,18 +12,18 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Linq;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.StatsdClient.Utils;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Utils;
 
-namespace Datadog.Trace.AppSec.WafEncoding
+namespace Datadog.Trace.Internal.AppSec.WafEncoding
 {
     internal class Encoder : IEncoder
     {

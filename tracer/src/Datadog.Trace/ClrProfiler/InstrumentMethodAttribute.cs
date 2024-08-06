@@ -5,9 +5,9 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     /// <summary>
     /// Attribute that indicates that the decorated class is meant to intercept a method

@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-namespace Datadog.Trace.Ci.Ipc;
+namespace Datadog.Trace.Internal.Ci.Ipc;
 
 internal class CircularChannelSettings
 {

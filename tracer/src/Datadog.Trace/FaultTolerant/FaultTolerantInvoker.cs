@@ -6,9 +6,9 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.FaultTolerant
+namespace Datadog.Trace.Internal.FaultTolerant
 {
     /// <summary>
     /// FaultTolerantInvoker

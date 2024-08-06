@@ -4,8 +4,8 @@
 // </copyright>
 
 using System.Linq;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Debugger.IntegrationTests.Helpers;
 

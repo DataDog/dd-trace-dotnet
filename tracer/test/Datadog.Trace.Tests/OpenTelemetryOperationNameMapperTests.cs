@@ -5,8 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Activity;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Activity;
+using Datadog.Trace.Internal.Tagging;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 

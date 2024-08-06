@@ -6,11 +6,11 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Telemetry.Metrics;
+namespace Datadog.Trace.Internal.Telemetry.Metrics;
 internal static partial class CountCIVisibilityExtensions
 {
     /// <summary>
-    /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> metric.
+    /// The number of separate metrics in the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility" /> metric.
     /// </summary>
     public const int Length = 29;
 
@@ -19,38 +19,38 @@ internal static partial class CountCIVisibilityExtensions
     /// </summary>
     /// <param name="metric">The metric to get the name for</param>
     /// <returns>The datadog metric name</returns>
-    public static string GetName(this Datadog.Trace.Telemetry.Metrics.CountCIVisibility metric)
+    public static string GetName(this Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventCreated => "event_created",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventFinished => "event_finished",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageStarted => "code_coverage_started",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageFinished => "code_coverage_finished",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ManualApiEvent => "manual_api_events",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventsEnqueueForSerialization => "events_enqueued_for_serialization",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EndpointPayloadRequests => "endpoint_payload.requests",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EndpointPayloadRequestsErrors => "endpoint_payload.requests_errors",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EndpointPayloadDropped => "endpoint_payload.dropped",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitCommand => "git.command",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitCommandErrors => "git.command_errors",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsSearchCommits => "git_requests.search_commits",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsSearchCommitsErrors => "git_requests.search_commits_errors",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsObjectsPack => "git_requests.objects_pack",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsObjectsPackErrors => "git_requests.objects_pack_errors",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsSettings => "git_requests.settings",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsSettingsErrors => "git_requests.settings_errors",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsSettingsResponse => "git_requests.settings_response",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsRequest => "itr_skippable_tests.request",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsRequestErrors => "itr_skippable_tests.request_errors",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsResponseTests => "itr_skippable_tests.response_tests",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsResponseSuites => "itr_skippable_tests.response_suites",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRSkipped => "itr_skipped",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRUnskippable => "itr_unskippable",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRForcedRun => "itr_forced_run",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageIsEmpty => "code_coverage.is_empty",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageErrors => "code_coverage.errors",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequest => "early_flake_detection.request",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequestErrors => "early_flake_detection.request_errors",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EventCreated => "event_created",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EventFinished => "event_finished",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.CodeCoverageStarted => "code_coverage_started",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.CodeCoverageFinished => "code_coverage_finished",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ManualApiEvent => "manual_api_events",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EventsEnqueueForSerialization => "events_enqueued_for_serialization",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EndpointPayloadRequests => "endpoint_payload.requests",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EndpointPayloadRequestsErrors => "endpoint_payload.requests_errors",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EndpointPayloadDropped => "endpoint_payload.dropped",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitCommand => "git.command",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitCommandErrors => "git.command_errors",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsSearchCommits => "git_requests.search_commits",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsSearchCommitsErrors => "git_requests.search_commits_errors",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsObjectsPack => "git_requests.objects_pack",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsObjectsPackErrors => "git_requests.objects_pack_errors",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsSettings => "git_requests.settings",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsSettingsErrors => "git_requests.settings_errors",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsSettingsResponse => "git_requests.settings_response",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsRequest => "itr_skippable_tests.request",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsRequestErrors => "itr_skippable_tests.request_errors",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsResponseTests => "itr_skippable_tests.response_tests",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsResponseSuites => "itr_skippable_tests.response_suites",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRSkipped => "itr_skipped",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRUnskippable => "itr_unskippable",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRForcedRun => "itr_forced_run",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.CodeCoverageIsEmpty => "code_coverage.is_empty",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.CodeCoverageErrors => "code_coverage.errors",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequest => "early_flake_detection.request",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequestErrors => "early_flake_detection.request_errors",
             _ => null!,
         };
 
@@ -59,7 +59,7 @@ internal static partial class CountCIVisibilityExtensions
     /// </summary>
     /// <param name="metric">The metric to check</param>
     /// <returns>True if the metric is a "common" metric, used by all languages</returns>
-    public static bool IsCommon(this Datadog.Trace.Telemetry.Metrics.CountCIVisibility metric)
+    public static bool IsCommon(this Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility metric)
         => metric switch
         {
             _ => true,
@@ -70,38 +70,38 @@ internal static partial class CountCIVisibilityExtensions
     /// </summary>
     /// <param name="metric">The metric to get the name for</param>
     /// <returns>The datadog metric name</returns>
-    public static string? GetNamespace(this Datadog.Trace.Telemetry.Metrics.CountCIVisibility metric)
+    public static string? GetNamespace(this Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventCreated => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventFinished => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageStarted => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageFinished => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ManualApiEvent => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventsEnqueueForSerialization => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EndpointPayloadRequests => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EndpointPayloadRequestsErrors => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EndpointPayloadDropped => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitCommand => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitCommandErrors => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsSearchCommits => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsSearchCommitsErrors => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsObjectsPack => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsObjectsPackErrors => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsSettings => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsSettingsErrors => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsSettingsResponse => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsRequest => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsRequestErrors => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsResponseTests => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsResponseSuites => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRSkipped => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRUnskippable => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ITRForcedRun => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageIsEmpty => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageErrors => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequest => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequestErrors => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EventCreated => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EventFinished => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.CodeCoverageStarted => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.CodeCoverageFinished => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ManualApiEvent => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EventsEnqueueForSerialization => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EndpointPayloadRequests => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EndpointPayloadRequestsErrors => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EndpointPayloadDropped => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitCommand => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitCommandErrors => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsSearchCommits => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsSearchCommitsErrors => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsObjectsPack => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsObjectsPackErrors => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsSettings => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsSettingsErrors => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.GitRequestsSettingsResponse => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsRequest => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsRequestErrors => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsResponseTests => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRSkippableTestsResponseSuites => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRSkipped => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRUnskippable => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.ITRForcedRun => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.CodeCoverageIsEmpty => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.CodeCoverageErrors => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequest => "civisibility",
+            Datadog.Trace.Internal.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequestErrors => "civisibility",
             _ => null,
         };
 }

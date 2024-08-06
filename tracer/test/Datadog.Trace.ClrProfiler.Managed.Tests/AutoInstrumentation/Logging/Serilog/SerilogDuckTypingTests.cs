@@ -6,15 +6,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Vendors.Serilog;
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Parsing;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Serilog;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging.DirectSubmission;
+using Datadog.Trace.Internal.Vendors.Serilog;
+using Datadog.Trace.Internal.Vendors.Serilog.Core;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Parsing;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Se
         [Fact]
         public void CanDuckTypeMessageTemplate()
         {
-            var instance = new Vendors.Serilog.Events.MessageTemplate("Some text", Enumerable.Empty<MessageTemplateToken>());
+            var instance = new Internal.Vendors.Serilog.Events.MessageTemplate("Some text", Enumerable.Empty<MessageTemplateToken>());
             instance.TryDuckCast(out MessageTemplateProxy duck).Should().BeTrue();
             duck.Should().NotBeNull();
             duck.Text.Should().Be(instance.Text);
@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Se
                 DateTimeOffset.UtcNow,
                 LogEventLevel.Error,
                 new Exception(),
-                new Vendors.Serilog.Events.MessageTemplate("Some text", Enumerable.Empty<MessageTemplateToken>()),
+                new Internal.Vendors.Serilog.Events.MessageTemplate("Some text", Enumerable.Empty<MessageTemplateToken>()),
                 new[] { new LogEventProperty("SomeProp", new ScalarValue(123)) });
 
             instance.TryDuckCast(out ILogEvent duck).Should().BeTrue();

@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
 #if NETFRAMEWORK
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// Duck type for https://github.com/aspnet/AspNetWebStack/blob/main/src/System.Web.Http/Controllers/HttpRequestContext.cs

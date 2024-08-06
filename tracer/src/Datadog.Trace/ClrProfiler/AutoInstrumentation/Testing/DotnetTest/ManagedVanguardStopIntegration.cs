@@ -8,14 +8,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using Datadog.Trace.Ci.Ipc;
-using Datadog.Trace.Ci.Ipc.Messages;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Ci.Ipc;
+using Datadog.Trace.Internal.Ci.Ipc.Messages;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 
 /// <summary>
 /// System.Void Microsoft.VisualStudio.TraceCollector.VanguardCollector.ManagedVanguard::Stop() calltarget instrumentation

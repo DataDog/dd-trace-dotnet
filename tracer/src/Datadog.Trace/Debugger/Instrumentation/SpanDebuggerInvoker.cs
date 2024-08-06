@@ -6,19 +6,19 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Instrumentation.Collections;
-using Datadog.Trace.Debugger.RateLimiting;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.TraceAnnotations;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Expressions;
+using Datadog.Trace.Internal.Debugger.Instrumentation.Collections;
+using Datadog.Trace.Internal.Debugger.RateLimiting;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.Debugger.Instrumentation
+namespace Datadog.Trace.Internal.Debugger.Instrumentation
 {
     /// <summary>
     /// SpanDebuggerInvoker for Async / Non-Async methods.

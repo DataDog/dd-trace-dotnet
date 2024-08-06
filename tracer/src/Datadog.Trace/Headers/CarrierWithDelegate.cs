@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.Headers;
+namespace Datadog.Trace.Internal.Headers;
 
 /// <summary>
 /// Builds an IHeadersCollection from a carrier and a delegate to get or set data.

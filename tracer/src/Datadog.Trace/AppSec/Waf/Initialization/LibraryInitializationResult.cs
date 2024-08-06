@@ -4,9 +4,9 @@
 // </copyright>
 
 #nullable enable
-using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
 
-namespace Datadog.Trace.AppSec.Waf.Initialization;
+namespace Datadog.Trace.Internal.AppSec.Waf.Initialization;
 
 internal class LibraryInitializationResult
 {

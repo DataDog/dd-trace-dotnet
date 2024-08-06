@@ -7,7 +7,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Datadog.Trace.Vendors.MessagePack.Internal
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Internal
 {
     internal static class ExpressionUtility
     {

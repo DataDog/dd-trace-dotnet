@@ -11,13 +11,13 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection
 {
     internal static class Throw
     {

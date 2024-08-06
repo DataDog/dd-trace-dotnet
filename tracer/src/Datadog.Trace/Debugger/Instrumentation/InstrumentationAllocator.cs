@@ -11,7 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Debugger.Instrumentation
+namespace Datadog.Trace.Internal.Debugger.Instrumentation
 {
     /// <summary>
     /// Used by instrumentation code to allocate objects on the heap.

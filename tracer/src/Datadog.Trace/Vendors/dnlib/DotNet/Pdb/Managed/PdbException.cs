@@ -8,7 +8,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Managed {
 	/// <summary>
 	/// Exception that is thrown when <see cref="PdbReader"/> encounters an error.
 	/// </summary>

@@ -7,10 +7,10 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging;
-using VendoredUnsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+using Datadog.Trace.Internal.Logging;
+using VendoredUnsafe = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers.Continuations;
 
 internal abstract class ContinuationGenerator<TTarget, TReturn>
 {

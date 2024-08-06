@@ -7,11 +7,11 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.Configuration.ConfigurationSources
+namespace Datadog.Trace.Internal.Configuration.ConfigurationSources
 {
     internal class DynamicConfigConfigurationSource : JsonConfigurationSource
     {

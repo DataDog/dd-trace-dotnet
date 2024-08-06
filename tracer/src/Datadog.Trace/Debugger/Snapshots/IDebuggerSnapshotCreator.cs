@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Internal.Debugger.Expressions;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.Snapshots
+namespace Datadog.Trace.Internal.Debugger.Snapshots
 {
     internal interface IDebuggerSnapshotCreator
     {

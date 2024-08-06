@@ -10,13 +10,13 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.HttpOverStreams;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Agent.Transports
+namespace Datadog.Trace.Internal.Agent.Transports
 {
     internal class HttpClientRequest : IApiRequest
     {

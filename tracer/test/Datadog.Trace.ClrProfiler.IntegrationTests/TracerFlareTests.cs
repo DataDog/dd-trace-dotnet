@@ -6,9 +6,9 @@
 using System;
 using System.IO.Compression;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging.TracerFlare;
-using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging.TracerFlare;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using HttpMultipartParser;

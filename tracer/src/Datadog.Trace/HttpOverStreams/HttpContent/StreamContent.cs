@@ -6,9 +6,9 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.HttpOverStreams.HttpContent
+namespace Datadog.Trace.Internal.HttpOverStreams.HttpContent
 {
     internal class StreamContent : IHttpContent
     {

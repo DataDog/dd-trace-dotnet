@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Tagging;
 using FluentAssertions;
 using Moq;
 using Xunit;

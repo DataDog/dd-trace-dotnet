@@ -6,11 +6,11 @@
 #nullable enable
 
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions;
 
 /// <summary>
 /// System.Void Datadog.Trace.SpanExtensions::SetUser(Datadog.Trace.ISpan,System.String,System.String,System.String,System.Boolean,System.String,System.String,System.String) calltarget instrumentation

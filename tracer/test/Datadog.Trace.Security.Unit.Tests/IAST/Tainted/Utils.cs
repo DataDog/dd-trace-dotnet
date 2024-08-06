@@ -5,11 +5,11 @@
 
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.SensitiveData;
-using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Iast.SensitiveData;
+using Datadog.Trace.Internal.Iast.Settings;
 using Datadog.Trace.Security.Unit.Tests.Iast;
 using Xunit;
 

@@ -8,15 +8,15 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Activity.DuckTypes;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Activity.Handlers
+namespace Datadog.Trace.Internal.Activity.Handlers
 {
     internal class ActivityHandlerCommon
     {

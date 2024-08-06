@@ -12,7 +12,7 @@
 
 using System.Reflection;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection
 {
   internal static class TypeAttributesExtensions
   {

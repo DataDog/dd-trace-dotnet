@@ -10,9 +10,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
-using Datadog.Trace.Vendors.dnlib.Threading;
+using Datadog.Trace.Internal.Vendors.dnlib.Threading;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Resolves assemblies
 	/// </summary>

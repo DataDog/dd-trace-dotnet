@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Sampling
+namespace Datadog.Trace.Internal.Sampling
 {
     /// <summary>
     ///     Represents the functionality to sample individual spans instead of entire traces.

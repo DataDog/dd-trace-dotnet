@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.Tagging;
+namespace Datadog.Trace.Internal.Tagging;
 
 internal readonly ref struct TagItem<T>
 {

@@ -10,9 +10,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Text;
-using Datadog.Trace.Vendors.dnlib.DotNet.Writer;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer;
 
-namespace Datadog.Trace.Vendors.dnlib.IO {
+namespace Datadog.Trace.Internal.Vendors.dnlib.IO {
 	/// <summary>
 	/// Thrown by a <see cref="DataReader"/> when it can't read data or if the caller tries to set an invalid offset
 	/// </summary>

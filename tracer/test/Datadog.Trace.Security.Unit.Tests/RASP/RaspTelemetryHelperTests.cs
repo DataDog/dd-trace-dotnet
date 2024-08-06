@@ -4,8 +4,9 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Rasp;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.AppSec.Rasp;
+using Datadog.Trace.Internal.Tagging;
 using FluentAssertions;
 using Moq;
 using Xunit;

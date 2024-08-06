@@ -10,10 +10,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.Vendors.dnlib.IO;
-using Datadog.Trace.Vendors.dnlib.PE;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.PE;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.MD {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD {
 	/// <summary>
 	/// Common base class for #~ and #- metadata classes
 	/// </summary>

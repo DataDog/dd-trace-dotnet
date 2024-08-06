@@ -12,7 +12,7 @@
 
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System
 {
   internal static class NotImplemented
   {

@@ -8,9 +8,9 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
-using Datadog.Trace.Vendors.dnlib.DotNet;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet;
 
-namespace Datadog.Trace.Vendors.dnlib.Utils {
+namespace Datadog.Trace.Internal.Vendors.dnlib.Utils {
 	/// <summary>
 	/// A readonly list that gets initialized lazily
 	/// </summary>

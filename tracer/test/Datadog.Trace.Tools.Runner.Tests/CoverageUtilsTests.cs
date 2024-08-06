@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.Ci.Coverage.Models.Global;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Ci.Coverage.Models.Global;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 

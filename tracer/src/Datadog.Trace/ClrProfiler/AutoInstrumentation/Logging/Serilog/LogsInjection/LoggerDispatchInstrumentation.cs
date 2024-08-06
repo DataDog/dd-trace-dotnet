@@ -5,10 +5,10 @@
 
 using System.Collections;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection
 {
     /// <summary>
     /// LoggerFactoryScopeProvider.ForEach&lt;TState&gt; calltarget instrumentation

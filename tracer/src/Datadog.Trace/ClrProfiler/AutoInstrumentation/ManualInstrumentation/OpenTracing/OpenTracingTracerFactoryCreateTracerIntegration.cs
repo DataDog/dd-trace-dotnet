@@ -6,11 +6,11 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenTracing;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenTracing;
 
 /// <summary>
 /// OpenTracing.ITracer Datadog.Trace.OpenTracing.OpenTracingTracerFactory::CreateTracer(System.Uri,System.String,System.Boolean) calltarget instrumentation

@@ -7,12 +7,12 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
 
 #if !NETFRAMEWORK
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 
 /// <summary>
 /// this integration is for a first entry point password sign in method, and we only wanna track the failed result. Indeed if it succeeds,

@@ -34,12 +34,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 using System;
 using System.Data;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Converters
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Converters
 {
     /// <summary>
     /// Converts a <see cref="DataTable"/> to and from JSON.

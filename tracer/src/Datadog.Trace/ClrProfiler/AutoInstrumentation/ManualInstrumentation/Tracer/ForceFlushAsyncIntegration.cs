@@ -1,4 +1,4 @@
-﻿// <copyright file="ForceFlushAsyncIntegration.cs" company="Datadog">
+// <copyright file="ForceFlushAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,12 +7,12 @@
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 
 /// <summary>
 /// System.Threading.Tasks.Task Datadog.Trace.Tracer::ForceFlushAsync() calltarget instrumentation
@@ -35,7 +35,7 @@ public class ForceFlushAsyncIntegration
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_ForceFlushAsync);
 
-        var tracer = (Datadog.Trace.Tracer)instance.AutomaticTracer;
+        var tracer = (Datadog.Trace.Internal.Tracer)instance.AutomaticTracer;
         return new CallTargetReturn<Task>(tracer.FlushAsync());
     }
 }

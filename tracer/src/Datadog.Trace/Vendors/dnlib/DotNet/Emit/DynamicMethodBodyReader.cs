@@ -10,10 +10,10 @@ using System.Collections.Generic;
 using SR = System.Reflection;
 using System.Reflection.Emit;
 using System.IO;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Emit {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit {
 	/// <summary>
 	/// <see cref="DynamicMethodBodyReader"/> options
 	/// </summary>

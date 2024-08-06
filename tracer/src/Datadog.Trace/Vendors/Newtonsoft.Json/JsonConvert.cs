@@ -36,11 +36,11 @@ using System.Globalization;
 #if HAVE_BIG_INTEGER
 using System.Numerics;
 #endif
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 using System.Xml;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Converters;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization;
 using System.Text;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -49,7 +49,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Xml.Linq;
 #endif
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json
 {
     /// <summary>
     /// Provides methods for converting between .NET types and JSON types.

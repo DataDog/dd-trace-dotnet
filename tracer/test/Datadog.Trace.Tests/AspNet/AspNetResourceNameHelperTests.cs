@@ -5,7 +5,7 @@
 
 #if NETFRAMEWORK
 using System.Web.Routing;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNet;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;

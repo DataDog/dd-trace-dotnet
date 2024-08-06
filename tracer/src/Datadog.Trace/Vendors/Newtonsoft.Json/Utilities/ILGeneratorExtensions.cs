@@ -35,7 +35,7 @@ using System;
 using System.Reflection.Emit;
 using System.Reflection;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities
 {
     internal static class ILGeneratorExtensions
     {

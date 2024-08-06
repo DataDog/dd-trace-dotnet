@@ -11,11 +11,11 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Generic;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable
 {
     /// <summary>Represents a set of elements that can only be modified by creating a new instance of the set.
     /// 

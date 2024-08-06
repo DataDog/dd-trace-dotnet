@@ -5,10 +5,10 @@
 using System;
 using System.Net;
 using Mono.Unix;
-using Datadog.Trace.Vendors.StatsdClient.Aggregator;
-using Datadog.Trace.Vendors.StatsdClient.Transport;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Aggregator;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Transport;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Bufferize
 {
     internal class StatsBufferizeFactory : IStatsBufferizeFactory
     {

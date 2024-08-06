@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.FaultTolerant
+namespace Datadog.Trace.Internal.FaultTolerant
 {
     /// <summary>
     /// Describes the instrumenting products used in Fault-Tolerant instrumentation.

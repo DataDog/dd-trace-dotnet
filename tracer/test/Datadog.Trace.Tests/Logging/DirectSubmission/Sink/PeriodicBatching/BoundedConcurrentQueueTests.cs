@@ -5,7 +5,7 @@
 // Based on https://github.com/serilog/serilog-sinks-periodicbatching/blob/66a74768196758200bff67077167cde3a7e346d5/test/Serilog.Sinks.PeriodicBatching.Tests/BoundedConcurrentQueueTests.cs
 
 using System;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 using FluentAssertions;
 using Xunit;
 

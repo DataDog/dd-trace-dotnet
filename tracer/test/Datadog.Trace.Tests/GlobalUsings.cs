@@ -5,6 +5,8 @@
 
 #nullable enable
 
+global using Datadog.Trace.Internal;
+
 #if !NETCOREAPP3_1_OR_GREATER
-global using Datadog.Trace.VendoredMicrosoftCode.System;
+global using Datadog.Trace.Internal.VendoredMicrosoftCode.System;
 #endif

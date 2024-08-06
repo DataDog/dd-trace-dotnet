@@ -4,8 +4,8 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Tagging;
 using FluentAssertions;
 using Xunit;
 

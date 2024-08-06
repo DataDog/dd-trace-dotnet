@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.Sampling;
+namespace Datadog.Trace.Internal.Sampling;
 
 /// <summary>
 ///     Represents a sampler for single span ingestion.

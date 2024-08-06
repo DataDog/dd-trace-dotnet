@@ -4,7 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// HttpControllerContext interface for ducktyping

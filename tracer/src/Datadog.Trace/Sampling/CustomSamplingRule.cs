@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace Datadog.Trace.Sampling
+namespace Datadog.Trace.Internal.Sampling
 {
     internal abstract class CustomSamplingRule : ISamplingRule
     {

@@ -7,9 +7,9 @@
 
 using System;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.PE;
+using Datadog.Trace.Internal.Vendors.dnlib.PE;
 
-namespace Datadog.Trace.Vendors.dnlib.IO {
+namespace Datadog.Trace.Internal.Vendors.dnlib.IO {
 	/// <summary>
 	/// Creates <see cref="DataStream"/>s
 	/// </summary>

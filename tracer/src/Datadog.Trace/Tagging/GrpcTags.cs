@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Configuration;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
 #pragma warning disable SA1402 // File must contain single type
     internal abstract partial class GrpcTags : InstrumentationTags
@@ -16,28 +16,28 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Trace.Internal.Tags.SpanKind)]
         public override string SpanKind { get; }
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Internal.Tags.InstrumentationName)]
         public string InstrumentationName => nameof(IntegrationId.Grpc);
 
-        [Tag(Trace.Tags.GrpcMethodKind)]
+        [Tag(Trace.Internal.Tags.GrpcMethodKind)]
         public string MethodKind { get; set; }
 
-        [Tag(Trace.Tags.GrpcMethodName)]
+        [Tag(Trace.Internal.Tags.GrpcMethodName)]
         public string MethodName { get; set; }
 
-        [Tag(Trace.Tags.GrpcMethodPath)]
+        [Tag(Trace.Internal.Tags.GrpcMethodPath)]
         public string MethodPath { get; set; }
 
-        [Tag(Trace.Tags.GrpcMethodPackage)]
+        [Tag(Trace.Internal.Tags.GrpcMethodPackage)]
         public string MethodPackage { get; set; }
 
-        [Tag(Trace.Tags.GrpcMethodService)]
+        [Tag(Trace.Internal.Tags.GrpcMethodService)]
         public string MethodService { get; set; }
 
-        [Tag(Trace.Tags.GrpcStatusCode)]
+        [Tag(Trace.Internal.Tags.GrpcStatusCode)]
         public string StatusCode { get; set; }
     }
 
@@ -56,10 +56,10 @@ namespace Datadog.Trace.Tagging
         {
         }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Trace.Internal.Tags.OutHost)]
         public string Host { get; set; }
 
-        [Tag(Trace.Tags.PeerHostname)]
+        [Tag(Trace.Internal.Tags.PeerHostname)]
         public string PeerHostname => Host;
     }
 
@@ -77,14 +77,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Trace.Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? MethodService ?? Host;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Trace.Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

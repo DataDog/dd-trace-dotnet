@@ -6,10 +6,10 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
+namespace Datadog.Trace.Internal.AppSec.Waf.ReturnTypes.Managed
 {
     internal class UpdateResult
     {

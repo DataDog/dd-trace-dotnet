@@ -6,9 +6,9 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Logging;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
@@ -16,7 +16,7 @@ using Microsoft.Net.Http.Headers;
 using System.Web;
 #endif
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 internal static class CookieAnalyzer
 {

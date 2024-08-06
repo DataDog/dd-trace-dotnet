@@ -7,11 +7,11 @@
 
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.DataStreamsMonitoring.Transport;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Transport;
 
 internal class DataStreamsApi : IDataStreamsApi
 {

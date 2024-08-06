@@ -9,11 +9,11 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Snapshots;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Debugger.Expressions;
+namespace Datadog.Trace.Internal.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {

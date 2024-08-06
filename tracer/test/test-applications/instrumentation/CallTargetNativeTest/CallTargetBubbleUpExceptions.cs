@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
 namespace CallTargetNativeTest;
 

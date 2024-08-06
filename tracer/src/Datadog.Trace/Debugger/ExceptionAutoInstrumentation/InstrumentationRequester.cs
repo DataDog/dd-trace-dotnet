@@ -9,11 +9,11 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.PInvoke;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.PInvoke;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     internal class InstrumentationRequester
     {

@@ -7,9 +7,9 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// The table row can be referenced by a MD token
 	/// </summary>

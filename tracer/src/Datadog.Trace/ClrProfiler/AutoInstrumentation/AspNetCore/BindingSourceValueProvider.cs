@@ -6,7 +6,7 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore
 {
     /// <summary>
     /// IBindingSourceValueProvider

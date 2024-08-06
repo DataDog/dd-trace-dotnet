@@ -9,9 +9,9 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
 
-namespace Datadog.Trace.Util.Streams;
+namespace Datadog.Trace.Internal.Util.Streams;
 
 /// <summary>
 /// A stream that only buffers a portion of the initial stream in memory, so that it can be

@@ -7,7 +7,7 @@
 
 using System.Diagnostics;
 
-namespace Datadog.Trace.Vendors.dnlib.IO {
+namespace Datadog.Trace.Internal.Vendors.dnlib.IO {
 	/// <summary>
 	/// Base class for classes needing to implement IFileSection
 	/// </summary>

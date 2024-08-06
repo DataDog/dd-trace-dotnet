@@ -6,10 +6,10 @@
 #if DEBUG
 
 using System;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
-namespace Datadog.Trace.Iast.Aspects;
+namespace Datadog.Trace.Internal.Iast.Aspects;
 
 /// <summary> String class aspects </summary>
 internal class DebugAspects

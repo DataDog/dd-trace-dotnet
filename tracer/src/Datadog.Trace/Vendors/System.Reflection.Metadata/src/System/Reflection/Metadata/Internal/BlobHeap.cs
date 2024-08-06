@@ -11,11 +11,11 @@
 
 using System;
 using System.Text;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
 {
     internal struct BlobHeap
   {

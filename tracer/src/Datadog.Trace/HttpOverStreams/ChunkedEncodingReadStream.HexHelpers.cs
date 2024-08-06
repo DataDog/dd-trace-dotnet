@@ -6,10 +6,10 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers.Text;
 
-namespace Datadog.Trace.HttpOverStreams;
+namespace Datadog.Trace.Internal.HttpOverStreams;
 
 internal partial class ChunkedEncodingReadStream
 {

@@ -11,7 +11,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Internal.ClrProfiler;
 using Datadog.Trace.SourceGenerators.Helpers;
 using Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
 using Datadog.Trace.SourceGenerators.InstrumentationDefinitions.Diagnostics;
@@ -23,8 +23,8 @@ using Microsoft.CodeAnalysis.Text;
 [Generator]
 public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
 {
-    private const string InstrumentedMethodAttribute = "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute";
-    private const string AdoNetInstrumentAttribute = "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute";
+    private const string InstrumentedMethodAttribute = "Datadog.Trace.Internal.ClrProfiler.InstrumentMethodAttribute";
+    private const string AdoNetInstrumentAttribute = "Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute";
     private const string AdoNetTargetSignatureAttribute = AdoNetInstrumentAttribute + ".AdoNetTargetSignatureAttribute";
 
     /// <inheritdoc />

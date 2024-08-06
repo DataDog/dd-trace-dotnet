@@ -3,14 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.ContinuousProfiler;
 
-namespace Datadog.Trace.Telemetry
+namespace Datadog.Trace.Internal.Telemetry
 {
     internal interface ITelemetryController
     {

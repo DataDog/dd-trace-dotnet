@@ -6,12 +6,12 @@
 using System;
 using System.Collections.Specialized;
 using System.Linq;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
 using FluentAssertions;
 using Xunit;
-using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
+using MetricsTransportType = Datadog.Trace.Internal.Vendors.StatsdClient.Transport.TransportType;
 
 namespace Datadog.Trace.Tests.Configuration
 {

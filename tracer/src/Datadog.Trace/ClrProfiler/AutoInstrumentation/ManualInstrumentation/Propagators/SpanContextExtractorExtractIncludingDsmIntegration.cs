@@ -8,13 +8,13 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Propagators;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Propagators;
 
 /// <summary>
 /// Instrumentation for <see cref="SpanContextExtractor.ExtractIncludingDsm{TCarrier}"/>

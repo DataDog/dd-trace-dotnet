@@ -4,11 +4,11 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 {
     internal static class AwsDynamoDbCommon
     {

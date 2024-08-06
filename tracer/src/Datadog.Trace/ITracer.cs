@@ -5,10 +5,10 @@
 
 #nullable enable
 
-using Datadog.Trace.Configuration;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// The tracer is responsible for creating spans and flushing them to the Datadog agent

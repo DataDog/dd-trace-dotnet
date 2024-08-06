@@ -8,11 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Sampling;
 
-namespace Datadog.Trace.AppSec;
+namespace Datadog.Trace.Internal.AppSec;
 
 internal class ApiSecurity
 {

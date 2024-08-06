@@ -15,7 +15,7 @@ using System.Linq;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable
 {
     /// <summary>Provides a set of initialization methods for instances of the <see cref="T:System.Collections.Immutable.ImmutableDictionary`2" /> class.
     /// 

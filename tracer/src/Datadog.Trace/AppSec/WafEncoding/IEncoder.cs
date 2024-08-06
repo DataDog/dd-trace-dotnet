@@ -4,9 +4,9 @@
 // </copyright>
 
 #nullable enable
-using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec.Waf;
 
-namespace Datadog.Trace.AppSec.WafEncoding;
+namespace Datadog.Trace.Internal.AppSec.WafEncoding;
 
 internal interface IEncoder
 {

@@ -34,7 +34,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities
 {
     internal class DynamicProxy<T>
     {

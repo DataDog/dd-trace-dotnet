@@ -8,9 +8,9 @@
 #if !NET461
 
 using System.Net.Http.Headers;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient
 {
     /// <summary>
     /// Duck type for HttpResponse. Required to access TrailingHeaders in .NET Core 3.0+

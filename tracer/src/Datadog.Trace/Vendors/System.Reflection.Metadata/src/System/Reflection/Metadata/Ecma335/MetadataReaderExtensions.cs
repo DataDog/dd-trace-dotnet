@@ -11,11 +11,11 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
 {
     /// <summary>
     /// Provides extension methods for working with certain raw elements of the ECMA-335 metadata tables and heaps.

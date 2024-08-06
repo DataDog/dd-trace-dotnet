@@ -7,7 +7,7 @@
 
 using System.Collections;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
     /// <summary>
     /// MessageAttributes interface for ducktyping

@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.ServiceFabric
+namespace Datadog.Trace.Internal.ServiceFabric
 {
     internal static class ServiceRemotingConstants
     {

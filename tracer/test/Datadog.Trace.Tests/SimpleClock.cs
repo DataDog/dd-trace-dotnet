@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
 namespace Datadog.Trace.Tests
 {

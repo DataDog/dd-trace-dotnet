@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Helpers;
 
-namespace Datadog.Trace.Debugger.Configurations.Models
+namespace Datadog.Trace.Internal.Debugger.Configurations.Models
 {
     internal class FilterList : IEquatable<FilterList>
     {

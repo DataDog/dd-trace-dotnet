@@ -8,15 +8,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Datadog.Trace.Debugger.Symbols.Model;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Pdb;
-using Datadog.Trace.VendoredMicrosoftCode.System;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.Internal.Debugger.Symbols.Model;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Pdb;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata;
 
-namespace Datadog.Trace.Debugger.Symbols
+namespace Datadog.Trace.Internal.Debugger.Symbols
 {
     internal class SymbolExtractor : IDisposable
     {
@@ -378,7 +378,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     continue;
                 }
 
-                var fieldName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(fieldDef.Name));
+                var fieldName = Datadog.Trace.Internal.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(fieldDef.Name));
                 if (fieldName[0] == '<')
                 {
                     // properties

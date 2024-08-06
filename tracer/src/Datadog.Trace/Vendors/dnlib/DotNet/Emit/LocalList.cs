@@ -7,10 +7,10 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.Utils;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
+using Datadog.Trace.Internal.Vendors.dnlib.Utils;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Emit {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit {
 	/// <summary>
 	/// A collection of <see cref="Local"/>s
 	/// </summary>

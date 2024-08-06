@@ -7,9 +7,9 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Internal.Configuration.ConfigurationSources.Telemetry;
 
-namespace Datadog.Trace.Configuration.Telemetry;
+namespace Datadog.Trace.Internal.Configuration.Telemetry;
 
 /// <summary>
 /// A version of <see cref="IConfigurationSource"/> that also allows reports the source of the telemetry

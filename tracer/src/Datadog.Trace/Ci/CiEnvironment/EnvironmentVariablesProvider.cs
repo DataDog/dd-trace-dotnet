@@ -5,9 +5,9 @@
 #nullable enable
 
 using System.Collections;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Ci.CiEnvironment;
+namespace Datadog.Trace.Internal.Ci.CiEnvironment;
 
 internal readonly struct EnvironmentVariablesProvider : IValueProvider
 {

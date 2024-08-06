@@ -7,7 +7,7 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD;
 
 /*
 All TypeSig classes:
@@ -39,7 +39,7 @@ TypeSig								base class
 		ModuleSig					Module (undocumented/not implemented by the CLR so don't use it)
 */
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Type sig base class
 	/// </summary>

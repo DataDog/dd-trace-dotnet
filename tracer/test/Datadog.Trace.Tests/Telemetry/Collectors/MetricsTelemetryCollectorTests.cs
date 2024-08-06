@@ -7,13 +7,13 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
 using Xunit.Abstractions;
-using NS = Datadog.Trace.Telemetry.MetricNamespaceConstants;
+using NS = Datadog.Trace.Internal.Telemetry.MetricNamespaceConstants;
 
 namespace Datadog.Trace.Tests.Telemetry.Collectors;
 

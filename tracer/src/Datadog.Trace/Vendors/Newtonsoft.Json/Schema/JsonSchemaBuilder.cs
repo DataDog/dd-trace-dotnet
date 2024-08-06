@@ -31,19 +31,19 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization;
 #if !HAVE_LINQ
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities.LinqBridge;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities.LinqBridge;
 #else
 using System.Linq;
 #endif
 using System.Globalization;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
 #nullable disable
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Schema
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Schema
 {
     [Obsolete("JSON Schema validation has been moved to its own package. See https://www.newtonsoft.com/jsonschema for more details.")]
     internal class JsonSchemaBuilder

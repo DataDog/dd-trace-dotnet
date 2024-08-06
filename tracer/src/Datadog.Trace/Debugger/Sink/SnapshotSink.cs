@@ -5,10 +5,10 @@
 
 #nullable enable
 using System.Collections.Generic;
-using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Debugger.Snapshots;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Debugger.Sink
+namespace Datadog.Trace.Internal.Debugger.Sink
 {
     internal class SnapshotSink
     {

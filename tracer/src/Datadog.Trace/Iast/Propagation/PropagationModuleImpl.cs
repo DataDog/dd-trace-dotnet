@@ -9,10 +9,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Logging;
-using static Datadog.Trace.Telemetry.Metrics.MetricTags;
+using Datadog.Trace.Internal.Logging;
+using static Datadog.Trace.Internal.Telemetry.Metrics.MetricTags;
 
-namespace Datadog.Trace.Iast.Propagation;
+namespace Datadog.Trace.Internal.Iast.Propagation;
 
 internal static class PropagationModuleImpl
 {

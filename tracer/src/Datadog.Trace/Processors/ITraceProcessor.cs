@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.Processors
+namespace Datadog.Trace.Internal.Processors
 {
     internal interface ITraceProcessor
     {

@@ -7,12 +7,12 @@
 #if !NETFRAMEWORK
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.AppSec.Coordinator;
+using Datadog.Trace.Internal.Logging;
 using Microsoft.AspNetCore.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore;
 
 internal class BlockingMiddleware
 {

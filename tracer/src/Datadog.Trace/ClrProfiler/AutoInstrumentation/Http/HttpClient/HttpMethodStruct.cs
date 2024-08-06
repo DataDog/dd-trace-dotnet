@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
     /// <summary>
     /// Http method struct copy target for ducktyping

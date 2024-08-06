@@ -7,14 +7,14 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Instrumentation.Collections;
-using Datadog.Trace.Debugger.RateLimiting;
-using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Debugger.Expressions;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Instrumentation.Collections;
+using Datadog.Trace.Internal.Debugger.RateLimiting;
+using Datadog.Trace.Internal.Debugger.Snapshots;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger.Instrumentation
+namespace Datadog.Trace.Internal.Debugger.Instrumentation
 {
     /// <summary>
     /// AsyncMethodDebuggerInvoker is responsible for the managed side of async method instrumentation,

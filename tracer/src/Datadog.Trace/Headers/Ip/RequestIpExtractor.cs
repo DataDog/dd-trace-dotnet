@@ -5,10 +5,10 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.Headers.Ip
+namespace Datadog.Trace.Internal.Headers.Ip
 {
     internal static class RequestIpExtractor
     {

@@ -7,9 +7,9 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers;
 
-namespace Datadog.Trace.ClrProfiler.CallTarget;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
 /// <summary>
 /// CallTarget Invoker

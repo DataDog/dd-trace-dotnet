@@ -3,12 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
 #nullable enable
 
-namespace Datadog.Trace.Iast.Aspects.System.Web;
+namespace Datadog.Trace.Internal.Iast.Aspects.System.Web;
 
 /// <summary> HttpControllerAspect class aspect </summary>
 [AspectClass("System.Web.Mvc", AspectType.Sink, VulnerabilityType.UnvalidatedRedirect)]

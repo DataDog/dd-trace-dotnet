@@ -7,9 +7,9 @@
 
 using System;
 using System.Threading;
-using Datadog.Trace.Propagators;
+using Datadog.Trace.Internal.Propagators;
 
-namespace Datadog.Trace.ServiceFabric
+namespace Datadog.Trace.Internal.ServiceFabric
 {
     /// <summary>
     /// Provides tracing of ServiceRemotingClientEvents.

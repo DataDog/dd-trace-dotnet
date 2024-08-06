@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.Util
+namespace Datadog.Trace.Internal.Util
 {
     /// <summary>
     /// Dedicated helper class for consistently referencing Process and AppDomain information.

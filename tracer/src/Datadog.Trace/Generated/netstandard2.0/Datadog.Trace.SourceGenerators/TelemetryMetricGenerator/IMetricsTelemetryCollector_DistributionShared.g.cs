@@ -6,8 +6,8 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 internal partial interface IMetricsTelemetryCollector
 {
-    public void RecordDistributionSharedInitTime(Datadog.Trace.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value);
+    public void RecordDistributionSharedInitTime(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value);
 }

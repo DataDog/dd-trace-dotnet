@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Collections;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes
 {
     /// <summary>
     /// Duck type for Grpc.Core.Internal.ClientSideStatus

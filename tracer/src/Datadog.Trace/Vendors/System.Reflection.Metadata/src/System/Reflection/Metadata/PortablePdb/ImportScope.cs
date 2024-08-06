@@ -11,7 +11,7 @@
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
   /// <summary>
   /// Lexical scope within which a group of imports are available. Stored in debug metadata.

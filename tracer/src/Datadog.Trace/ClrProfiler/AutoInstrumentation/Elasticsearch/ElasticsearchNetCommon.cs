@@ -7,11 +7,11 @@
 
 using System;
 using System.Threading;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util.Http;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util.Http;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     internal static class ElasticsearchNetCommon
     {

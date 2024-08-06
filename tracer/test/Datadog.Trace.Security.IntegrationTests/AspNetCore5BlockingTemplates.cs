@@ -1,4 +1,4 @@
-﻿// <copyright file="AspNetCore5BlockingTemplates.cs" company="Datadog">
+// <copyright file="AspNetCore5BlockingTemplates.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,8 +8,8 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.AppSec;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using VerifyTests;

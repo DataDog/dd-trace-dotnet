@@ -5,10 +5,10 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 #pragma warning disable SA1300
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Managed
 {
     internal partial class PdbReader
     {

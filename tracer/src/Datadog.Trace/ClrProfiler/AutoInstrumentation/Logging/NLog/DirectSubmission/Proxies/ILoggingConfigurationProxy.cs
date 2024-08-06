@@ -4,9 +4,9 @@
 // </copyright>
 
 using System.Collections;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
 {
     /// <summary>
     /// Duck type for LoggingConfiguration for NLog 4.5+

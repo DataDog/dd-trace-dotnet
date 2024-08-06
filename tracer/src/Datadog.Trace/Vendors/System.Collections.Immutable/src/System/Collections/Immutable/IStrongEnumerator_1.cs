@@ -11,7 +11,7 @@
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable
 {
   internal interface IStrongEnumerator<T>
   {

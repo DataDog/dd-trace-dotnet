@@ -8,12 +8,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Propagation;
-using Datadog.Trace.Logging;
-using static Datadog.Trace.Iast.Propagation.StringModuleImpl;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using Datadog.Trace.Internal.Iast.Propagation;
+using Datadog.Trace.Internal.Logging;
+using static Datadog.Trace.Internal.Iast.Propagation.StringModuleImpl;
 
-namespace Datadog.Trace.Iast.Aspects.System;
+namespace Datadog.Trace.Internal.Iast.Aspects.System;
 
 /// <summary> String class aspects </summary>
 [AspectClass("mscorlib,netstandard,System.Private.CoreLib,System.Runtime", [AspectFilter.StringOptimization])]

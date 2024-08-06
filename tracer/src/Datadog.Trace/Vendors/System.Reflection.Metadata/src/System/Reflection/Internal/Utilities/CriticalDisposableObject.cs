@@ -13,7 +13,7 @@
 using System;
 using System.Runtime.ConstrainedExecution;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal
 {
     internal abstract class CriticalDisposableObject : CriticalFinalizerObject, IDisposable
   {

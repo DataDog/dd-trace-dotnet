@@ -15,12 +15,12 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Web;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.AppSec.Coordinator;
+namespace Datadog.Trace.Internal.AppSec.Coordinator;
 
 internal readonly partial struct SecurityCoordinator
 {

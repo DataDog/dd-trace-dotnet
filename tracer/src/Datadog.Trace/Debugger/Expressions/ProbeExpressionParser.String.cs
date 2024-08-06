@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Debugger.Expressions;
+namespace Datadog.Trace.Internal.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {

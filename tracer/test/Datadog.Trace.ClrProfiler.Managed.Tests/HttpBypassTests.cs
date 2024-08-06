@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ClrProfiler.Helpers;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Internal.ClrProfiler.Helpers;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.PlatformHelpers;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests

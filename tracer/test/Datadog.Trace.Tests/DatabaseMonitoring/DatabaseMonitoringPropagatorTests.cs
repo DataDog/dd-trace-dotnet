@@ -4,13 +4,13 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.DatabaseMonitoring;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.DatabaseMonitoring;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Tagging;
 using FluentAssertions;
 using Moq;
 using Xunit;

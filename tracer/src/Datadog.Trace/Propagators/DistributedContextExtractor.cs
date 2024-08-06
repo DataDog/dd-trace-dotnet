@@ -6,10 +6,10 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Propagators
+namespace Datadog.Trace.Internal.Propagators
 {
     internal class DistributedContextExtractor : IContextExtractor
     {

@@ -4,17 +4,17 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     internal abstract partial class InstrumentationTags : CommonTags
     {
         public abstract string SpanKind { get; }
 
-        [Metric(Trace.Tags.Analytics)]
+        [Metric(Trace.Internal.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
 
         public void SetAnalyticsSampleRate(IntegrationId integration, ImmutableTracerSettings settings, bool enabledWithGlobalSetting)

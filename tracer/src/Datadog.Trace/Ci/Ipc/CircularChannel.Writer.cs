@@ -7,7 +7,7 @@
 using System;
 using System.Threading;
 
-namespace Datadog.Trace.Ci.Ipc;
+namespace Datadog.Trace.Internal.Ci.Ipc;
 
 internal partial class CircularChannel
 {

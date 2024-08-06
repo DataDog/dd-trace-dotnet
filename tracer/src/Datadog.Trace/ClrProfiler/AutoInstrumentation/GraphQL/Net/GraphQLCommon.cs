@@ -5,11 +5,11 @@
 
 using System;
 using System.Text;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
     internal class GraphQLCommon : GraphQLCommonBase
     {

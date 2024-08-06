@@ -9,15 +9,15 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.IO.Compression;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.AppSec.Coordinator;
+namespace Datadog.Trace.Internal.AppSec.Coordinator;
 
 internal readonly partial struct SecurityCoordinator
 {

@@ -7,8 +7,8 @@ using System;
 using System.Reflection;
 using System.Text;
 using Confluent.Kafka;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Kafka;
+using Datadog.Trace.Internal.DuckTyping;
 using FluentAssertions;
 using Xunit;
 

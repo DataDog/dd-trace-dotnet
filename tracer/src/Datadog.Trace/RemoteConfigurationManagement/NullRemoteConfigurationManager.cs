@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.RemoteConfigurationManagement;
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement;
 
 internal class NullRemoteConfigurationManager : IRemoteConfigurationManager
 {

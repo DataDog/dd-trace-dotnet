@@ -7,13 +7,13 @@
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers;
 
 internal static class IntegrationOptions<TIntegration, TTarget>
 {

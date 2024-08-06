@@ -7,7 +7,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Logging.DirectSubmission.Sink
+namespace Datadog.Trace.Internal.Logging.DirectSubmission.Sink
 {
     internal interface IDirectSubmissionLogSink
     {

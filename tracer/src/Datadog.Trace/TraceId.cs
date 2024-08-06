@@ -5,11 +5,11 @@
 
 using System;
 using System.Diagnostics.Contracts;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
 #nullable enable
 
-namespace Datadog.Trace;
+namespace Datadog.Trace.Internal;
 
 internal readonly record struct TraceId(ulong Upper, ulong Lower) : IComparable<TraceId>, IComparable
 {

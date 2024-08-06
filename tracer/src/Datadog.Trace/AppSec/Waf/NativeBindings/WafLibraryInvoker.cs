@@ -6,11 +6,11 @@
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Datadog.Trace.AppSec.Waf.Initialization;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.AppSec.Waf.Initialization;
+using Datadog.Trace.Internal.Logging;
 #pragma warning disable SA1401
 
-namespace Datadog.Trace.AppSec.Waf.NativeBindings
+namespace Datadog.Trace.Internal.AppSec.Waf.NativeBindings
 {
     internal class WafLibraryInvoker
     {

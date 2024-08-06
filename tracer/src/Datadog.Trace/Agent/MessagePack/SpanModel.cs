@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Agent.MessagePack;
+namespace Datadog.Trace.Internal.Agent.MessagePack;
 
 /// <summary>
 /// Contains a reference to a <see cref="Span"/> and additional context needed for serialization.

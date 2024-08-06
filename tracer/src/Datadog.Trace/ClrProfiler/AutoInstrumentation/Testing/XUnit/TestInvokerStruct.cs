@@ -6,9 +6,9 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 /// <summary>
 /// TestInvoker`1 structure

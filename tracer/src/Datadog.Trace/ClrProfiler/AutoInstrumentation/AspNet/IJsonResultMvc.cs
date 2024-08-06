@@ -8,7 +8,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// IJsonResult interface for duck typing of System.Web.Mvc.JsonResult (mvc, netfx)

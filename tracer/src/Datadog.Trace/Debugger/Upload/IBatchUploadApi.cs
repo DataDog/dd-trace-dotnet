@@ -7,7 +7,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Debugger.Upload
+namespace Datadog.Trace.Internal.Debugger.Upload
 {
     internal interface IBatchUploadApi
     {

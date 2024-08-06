@@ -6,12 +6,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.WafEncoding;
+using Datadog.Trace.Internal.AppSec.Waf;
+using Datadog.Trace.Internal.AppSec.WafEncoding;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using FluentAssertions;
 using Xunit;
-using Encoder = Datadog.Trace.AppSec.WafEncoding.Encoder;
+using Encoder = Datadog.Trace.Internal.AppSec.WafEncoding.Encoder;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 

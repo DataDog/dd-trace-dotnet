@@ -10,13 +10,13 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Propagators
+namespace Datadog.Trace.Internal.Propagators
 {
     // https://www.w3.org/TR/trace-context/
     internal class W3CTraceContextPropagator : IContextInjector, IContextExtractor

@@ -9,13 +9,13 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
 internal static class MsTestIntegration
 {

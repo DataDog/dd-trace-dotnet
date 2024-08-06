@@ -3,34 +3,34 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     internal partial class HttpTags : InstrumentationTags, IHasStatusCode
     {
         private const string HttpClientHandlerTypeKey = "http-client-handler-type";
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Trace.Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Internal.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
-        [Tag(Trace.Tags.HttpMethod)]
+        [Tag(Trace.Internal.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
 
-        [Tag(Trace.Tags.HttpUrl)]
+        [Tag(Trace.Internal.Tags.HttpUrl)]
         public string HttpUrl { get; set; }
 
         [Tag(HttpClientHandlerTypeKey)]
         public string HttpClientHandlerType { get; set; }
 
-        [Tag(Trace.Tags.HttpStatusCode)]
+        [Tag(Trace.Internal.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Trace.Internal.Tags.OutHost)]
         public string Host { get; set; }
     }
 
@@ -43,14 +43,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Trace.Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? Host;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Trace.Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

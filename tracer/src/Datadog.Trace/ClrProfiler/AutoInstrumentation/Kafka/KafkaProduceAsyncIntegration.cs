@@ -6,11 +6,11 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Kafka
 {
     /// <summary>
     /// Confluent.Kafka Producer.Produce calltarget instrumentation

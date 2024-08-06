@@ -6,7 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Telemetry;
 using FluentAssertions;
 using Xunit;
 

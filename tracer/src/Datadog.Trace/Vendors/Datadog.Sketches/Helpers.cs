@@ -8,7 +8,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Vendors.Datadog.Sketches;
+namespace Datadog.Trace.Internal.Vendors.Datadog.Sketches;
 
 internal static class Helpers
 {

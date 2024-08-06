@@ -5,24 +5,24 @@
 
 #nullable enable
 using System;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Debugger.Configurations;
-using Datadog.Trace.Debugger.ProbeStatuses;
-using Datadog.Trace.Debugger.Sink;
-using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Debugger.Symbols;
-using Datadog.Trace.Debugger.Upload;
-using Datadog.Trace.DogStatsd;
-using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.StatsdClient;
-using Datadog.Trace.Vendors.StatsdClient.Transport;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Debugger.Configurations;
+using Datadog.Trace.Internal.Debugger.ProbeStatuses;
+using Datadog.Trace.Internal.Debugger.Sink;
+using Datadog.Trace.Internal.Debugger.Snapshots;
+using Datadog.Trace.Internal.Debugger.Symbols;
+using Datadog.Trace.Internal.Debugger.Upload;
+using Datadog.Trace.Internal.DogStatsd;
+using Datadog.Trace.Internal.HttpOverStreams;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Transport;
 
-namespace Datadog.Trace.Debugger;
+namespace Datadog.Trace.Internal.Debugger;
 
 internal class LiveDebuggerFactory
 {

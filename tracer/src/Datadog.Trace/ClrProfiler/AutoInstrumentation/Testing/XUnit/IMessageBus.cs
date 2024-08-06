@@ -6,7 +6,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 /// <summary>
 /// IMessageBus

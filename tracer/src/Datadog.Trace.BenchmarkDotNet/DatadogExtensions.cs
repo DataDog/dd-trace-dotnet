@@ -4,9 +4,9 @@
 // </copyright>
 
 using BenchmarkDotNet.Configs;
-using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.ContinuousProfiler;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Util;
 
 namespace Datadog.Trace.BenchmarkDotNet;
 

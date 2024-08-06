@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.Helpers
+namespace Datadog.Trace.Internal.Debugger.Helpers
 {
     internal static class ExceptionExtensions
     {

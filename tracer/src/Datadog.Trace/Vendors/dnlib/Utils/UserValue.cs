@@ -7,9 +7,9 @@
 
 using System;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.Threading;
+using Datadog.Trace.Internal.Vendors.dnlib.Threading;
 
-namespace Datadog.Trace.Vendors.dnlib.Utils {
+namespace Datadog.Trace.Internal.Vendors.dnlib.Utils {
 	/// <summary>
 	/// Lazily returns the original value if the user hasn't overwritten the value
 	/// </summary>

@@ -6,13 +6,13 @@
 using System;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.Logging.Internal;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Collectors;
-using Datadog.Trace.Telemetry.DTOs;
+using Datadog.Trace.Internal.Logging.Internal;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Collectors;
+using Datadog.Trace.Internal.Telemetry.DTOs;
 using FluentAssertions;
 using Xunit;
-using JsonConvert = Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert;
+using JsonConvert = Datadog.Trace.Internal.Vendors.Newtonsoft.Json.JsonConvert;
 
 namespace Datadog.Trace.Tests.Telemetry.Collectors;
 

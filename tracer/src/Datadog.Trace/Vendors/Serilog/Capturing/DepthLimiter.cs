@@ -18,12 +18,12 @@
 
 using System;
 
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Debugging;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Parsing;
+using Datadog.Trace.Internal.Vendors.Serilog.Core;
+using Datadog.Trace.Internal.Vendors.Serilog.Debugging;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Parsing;
 
-namespace Datadog.Trace.Vendors.Serilog.Capturing
+namespace Datadog.Trace.Internal.Vendors.Serilog.Capturing
 {
     partial class PropertyValueConverter
     {

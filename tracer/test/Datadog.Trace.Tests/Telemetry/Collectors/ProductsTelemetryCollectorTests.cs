@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.Linq;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Telemetry;
 using FluentAssertions;
 using Xunit;
 

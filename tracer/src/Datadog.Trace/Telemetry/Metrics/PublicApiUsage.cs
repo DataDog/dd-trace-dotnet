@@ -6,9 +6,9 @@
 #nullable enable
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.SourceGenerators;
 
-namespace Datadog.Trace.Telemetry.Metrics;
+namespace Datadog.Trace.Internal.Telemetry.Metrics;
 
 [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1134:Attributes should not share line", Justification = "It's easier to read")]
 [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "It's easier to read")]

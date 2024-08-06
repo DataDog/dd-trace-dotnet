@@ -6,13 +6,13 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Instrumentation.Collections;
-using Datadog.Trace.Debugger.RateLimiting;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Debugger.Expressions;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Instrumentation.Collections;
+using Datadog.Trace.Internal.Debugger.RateLimiting;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger.Instrumentation
+namespace Datadog.Trace.Internal.Debugger.Instrumentation
 {
     /// <summary>
     /// LineDebuggerInvoker Invoker

@@ -5,11 +5,11 @@
 #nullable enable
 
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 /// <summary>
 /// System.Boolean Xunit.Sdk.TestFrameworkDiscoverer::ReportDiscoveredTestCase(Xunit.Abstractions.ITestCase,System.Boolean,Xunit.Sdk.IMessageBus) calltarget instrumentation

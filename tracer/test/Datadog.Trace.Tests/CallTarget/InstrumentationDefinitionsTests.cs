@@ -6,12 +6,12 @@
 using System;
 using System.Data;
 using System.Data.Common;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.ClrProfiler;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AdoNet;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+using Datadog.Trace.Internal.Configuration;
 using FluentAssertions;
 using Xunit;
 

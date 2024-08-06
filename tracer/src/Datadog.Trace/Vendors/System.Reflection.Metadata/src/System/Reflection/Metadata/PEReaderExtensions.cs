@@ -11,11 +11,11 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
   internal static class PEReaderExtensions

@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
+using Datadog.Trace.Internal.Agent;
 
 namespace Datadog.Trace.TestHelpers
 {

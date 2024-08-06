@@ -9,11 +9,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Propagation;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using Datadog.Trace.Internal.Iast.Propagation;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Iast.Aspects.System.Text;
+namespace Datadog.Trace.Internal.Iast.Aspects.System.Text;
 
 /// <summary> StringBuilder class aspects </summary>
 [AspectClass("mscorlib,netstandard,System.Runtime")]

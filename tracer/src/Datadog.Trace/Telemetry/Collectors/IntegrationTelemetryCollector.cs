@@ -7,9 +7,9 @@
 
 using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.Telemetry
+namespace Datadog.Trace.Internal.Telemetry
 {
     internal class IntegrationTelemetryCollector
     {

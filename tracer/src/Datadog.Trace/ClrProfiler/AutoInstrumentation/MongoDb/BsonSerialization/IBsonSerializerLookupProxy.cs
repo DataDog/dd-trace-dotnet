@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 
 /// <summary>
 /// Proxy for static class https://github.com/mongodb/mongo-csharp-driver/blob/master/src/MongoDB.Bson/Serialization/BsonSerializer.cs

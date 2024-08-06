@@ -7,11 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.AppSec.Waf.Initialization
+namespace Datadog.Trace.Internal.AppSec.Waf.Initialization
 {
     internal static class LibraryLocationHelper
     {

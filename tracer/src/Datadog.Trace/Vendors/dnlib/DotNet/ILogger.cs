@@ -7,9 +7,9 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.Vendors.dnlib.DotNet.Writer;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// <see cref="ILogger"/> events
 	/// </summary>

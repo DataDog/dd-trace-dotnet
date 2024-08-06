@@ -9,12 +9,12 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 using SD = System.Diagnostics;
 
-namespace Datadog.Trace.ClrProfiler;
+namespace Datadog.Trace.Internal.ClrProfiler;
 
 // Based on: https://github.com/microsoft/vstest/blob/main/src/Microsoft.TestPlatform.Execution.Shared/DebuggerBreakpoint.cs#L25
 internal static class TracerDebugger

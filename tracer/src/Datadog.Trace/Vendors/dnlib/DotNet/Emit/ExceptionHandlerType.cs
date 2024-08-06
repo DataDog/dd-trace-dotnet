@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Emit {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit {
 	/// <summary>
 	/// Type of exception handler. See CorHdr.h/CorExceptionFlag
 	/// </summary>

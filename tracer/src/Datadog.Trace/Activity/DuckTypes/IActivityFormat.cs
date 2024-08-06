@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Activity.DuckTypes
+namespace Datadog.Trace.Internal.Activity.DuckTypes
 {
     // Using interface instead of [DuckCopy] struct as we need to set values too
     internal interface IActivityFormat

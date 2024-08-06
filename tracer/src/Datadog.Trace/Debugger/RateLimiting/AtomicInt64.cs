@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace Datadog.Trace.Debugger.RateLimiting
+namespace Datadog.Trace.Internal.Debugger.RateLimiting
 {
     /// <summary>
     /// Vendored in from https://github.com/dotnet/dotNext/blob/b77e140ce8291ee8f6d090673efcc045b361559a/src/DotNext/Threading/AtomicInt64.cs

@@ -4,10 +4,10 @@
 // </copyright>
 #nullable disable
 
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Models;
 
-namespace Datadog.Trace.Debugger
+namespace Datadog.Trace.Internal.Debugger
 {
     /// <summary>
     /// Matches a source file path with the assembly and pdb files that correlate to it,

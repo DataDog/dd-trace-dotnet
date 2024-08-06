@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 // ReSharper disable SA1310
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Kafka
 {
     /// <summary>
     /// Partition for duck-typing

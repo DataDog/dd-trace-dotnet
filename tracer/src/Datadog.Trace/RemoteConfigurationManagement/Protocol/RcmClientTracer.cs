@@ -4,11 +4,11 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
 #nullable enable
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
+namespace Datadog.Trace.Internal.RemoteConfigurationManagement.Protocol
 {
     internal class RcmClientTracer
     {

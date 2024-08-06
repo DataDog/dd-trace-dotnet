@@ -4,10 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Propagators;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Util;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 using SD = System.Diagnostics;
@@ -206,12 +206,12 @@ namespace Datadog.Trace.Tests
 
             public ActivityFixture()
             {
-                Activity.ActivityListener.Initialize();
+                Internal.Activity.ActivityListener.Initialize();
             }
 
             public void Dispose()
             {
-                Activity.ActivityListener.StopListeners();
+                Internal.Activity.ActivityListener.StopListeners();
             }
 
             public void StartActivity(SD.Activity activity)

@@ -8,14 +8,14 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Telemetry;
 using FluentAssertions;
 using Newtonsoft.Json;
 using Xunit;
-using Entry = Datadog.Trace.Configuration.Telemetry.ConfigurationTelemetry.ConfigurationTelemetryEntry;
+using Entry = Datadog.Trace.Internal.Configuration.Telemetry.ConfigurationTelemetry.ConfigurationTelemetryEntry;
 
 namespace Datadog.Trace.Tests.Configuration;
 

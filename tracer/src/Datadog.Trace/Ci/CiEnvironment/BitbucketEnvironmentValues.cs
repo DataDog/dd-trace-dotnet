@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-namespace Datadog.Trace.Ci.CiEnvironment;
+namespace Datadog.Trace.Internal.Ci.CiEnvironment;
 
 internal sealed class BitbucketEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider

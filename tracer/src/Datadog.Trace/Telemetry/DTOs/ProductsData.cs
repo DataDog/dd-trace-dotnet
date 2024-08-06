@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 /// <summary>
 /// V2 Products object

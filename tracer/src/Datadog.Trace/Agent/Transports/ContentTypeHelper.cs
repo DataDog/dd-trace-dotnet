@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Agent.Transports;
+namespace Datadog.Trace.Internal.Agent.Transports;
 
 internal static class ContentTypeHelper
 {

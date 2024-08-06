@@ -4,11 +4,11 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util.Http.QueryStringObfuscation;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util.Http.QueryStringObfuscation;
 
-namespace Datadog.Trace.Util.Http
+namespace Datadog.Trace.Internal.Util.Http
 {
     internal class QueryStringManager
     {

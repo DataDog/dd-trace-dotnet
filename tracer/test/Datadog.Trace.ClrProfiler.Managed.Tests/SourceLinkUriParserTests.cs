@@ -8,7 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Datadog.Trace.Pdb.SourceLink;
+using Datadog.Trace.Internal.Pdb.SourceLink;
 using FluentAssertions;
 using Xunit;
 

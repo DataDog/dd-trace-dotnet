@@ -9,10 +9,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
-using Datadog.Trace.Vendors.dnlib.IO;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols;
+using Datadog.Trace.Internal.Vendors.dnlib.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Managed {
 	sealed class DbiScope : SymbolScope {
 		readonly SymbolMethod method;
 		readonly SymbolScope parent;

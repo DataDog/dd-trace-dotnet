@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.ILogger
 {
     internal static class LoggerIntegrationCommon
     {

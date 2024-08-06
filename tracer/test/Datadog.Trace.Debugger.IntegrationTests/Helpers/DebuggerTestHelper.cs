@@ -10,10 +10,11 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Pdb;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Pdb;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Samples.Probes.TestRuns;
 using Xunit;
@@ -243,7 +244,7 @@ internal static class DebuggerTestHelper
 
     private static LogProbe WithSampling(this LogProbe snapshot, double snapshotsPerSeconds = 1000000)
     {
-        snapshot.Sampling = new Configurations.Models.Sampling { SnapshotsPerSecond = snapshotsPerSeconds };
+        snapshot.Sampling = new Sampling { SnapshotsPerSecond = snapshotsPerSeconds };
         return snapshot;
     }
 

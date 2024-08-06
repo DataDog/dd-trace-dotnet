@@ -33,9 +33,9 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization
 {
     /// <summary>
     /// Provides methods to get attributes from a <see cref="System.Type"/>, <see cref="MemberInfo"/>, <see cref="ParameterInfo"/> or <see cref="Assembly"/>.

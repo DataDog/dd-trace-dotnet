@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.TraceAnnotations
 {
     internal readonly struct RuntimeHandleTuple : IEquatable<RuntimeHandleTuple>
     {

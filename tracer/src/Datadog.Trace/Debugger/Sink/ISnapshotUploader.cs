@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.Debugger.Sink;
+namespace Datadog.Trace.Internal.Debugger.Sink;
 
 internal interface ISnapshotUploader : IDebuggerUploader
 {

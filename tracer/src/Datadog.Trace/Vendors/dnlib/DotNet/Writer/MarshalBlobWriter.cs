@@ -8,7 +8,7 @@
 using System;
 using System.IO;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Writer {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer {
 	/// <summary>
 	/// Writes field marshal blobs
 	/// </summary>

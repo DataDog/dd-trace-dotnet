@@ -4,11 +4,11 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
 #pragma warning disable CS1591
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 
 /// <summary>
 /// Duck Typing interface proxy for: https://github.com/mongodb/mongo-csharp-driver/blob/v2.8.x/src/MongoDB.Bson/IO/IBsonWriter.cs

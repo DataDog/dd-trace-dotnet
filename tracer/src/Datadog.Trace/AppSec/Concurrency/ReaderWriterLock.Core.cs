@@ -6,7 +6,7 @@
 #if !NETFRAMEWORK
 using System;
 
-namespace Datadog.Trace.AppSec.Concurrency;
+namespace Datadog.Trace.Internal.AppSec.Concurrency;
 
 internal partial class ReaderWriterLock : IDisposable
 {

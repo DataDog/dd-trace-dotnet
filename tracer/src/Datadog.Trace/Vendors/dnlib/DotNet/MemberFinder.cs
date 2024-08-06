@@ -7,9 +7,9 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet {
 	/// <summary>
 	/// Finds types, fields, methods, etc in a module. If nothing has been added to the module, it's
 	/// faster to call ResolveMethodDef(), ResolveTypeRef() etc.

@@ -9,7 +9,8 @@
 
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
@@ -239,7 +240,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
 
             // Disable the MVC part, so we can't back propagate any details to the tracing module
-            SetEnvironmentVariable(ConfigurationKeys.DisabledIntegrations, nameof(Configuration.IntegrationId.AspNetMvc));
+            SetEnvironmentVariable(ConfigurationKeys.DisabledIntegrations, nameof(Internal.Configuration.IntegrationId.AspNetMvc));
 
             _classicMode = classicMode;
             _iisFixture = iisFixture;

@@ -6,8 +6,8 @@
 using System;
 using System.Reflection;
 using System.Text;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission;
+using Datadog.Trace.Internal.DuckTyping;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using log4net.Core;

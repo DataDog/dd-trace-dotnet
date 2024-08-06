@@ -8,7 +8,7 @@ using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget.Handlers.Continuations;
 
 internal static class ContinuationsHelper
 {

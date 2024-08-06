@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 
-namespace Datadog.Trace.Agent.Transports
+namespace Datadog.Trace.Internal.Agent.Transports
 {
     internal class SocketHandlerRequestFactory : HttpClientRequestFactory
     {

@@ -4,11 +4,11 @@
 // </copyright>
 
 #nullable enable
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.Debugger.Upload
+namespace Datadog.Trace.Internal.Debugger.Upload
 {
     internal static class DebuggerUploadApiFactory
     {

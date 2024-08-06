@@ -36,7 +36,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Serialization
 {
     internal class TraceJsonReader : JsonReader, IJsonLineInfo
     {

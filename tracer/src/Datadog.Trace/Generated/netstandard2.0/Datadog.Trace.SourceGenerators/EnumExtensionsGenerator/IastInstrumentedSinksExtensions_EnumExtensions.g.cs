@@ -6,10 +6,10 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Telemetry.Metrics;
+namespace Datadog.Trace.Internal.Telemetry.Metrics;
 
 /// <summary>
-/// Extension methods for <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" />
+/// Extension methods for <see cref="Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" />
 /// </summary>
 internal static partial class IastInstrumentedSinksExtensions
 {
@@ -20,130 +20,130 @@ internal static partial class IastInstrumentedSinksExtensions
     public const int Length = 26;
 
     /// <summary>
-    /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks"/> value.
+    /// Returns the string representation of the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks"/> value.
     /// If the attribute is decorated with a <c>[Description]</c> attribute, then
     /// uses the provided value. Otherwise uses the name of the member, equivalent to
     /// calling <c>ToString()</c> on <paramref name="value"/>.
     /// </summary>
     /// <param name="value">The value to retrieve the string value for</param>
     /// <returns>The string representation of the value</returns>
-    public static string ToStringFast(this Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks value)
+    public static string ToStringFast(this Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks value)
         => value switch
         {
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.None => "vulnerability_type:none",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakCipher => "vulnerability_type:weak_cipher",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakHash => "vulnerability_type:weak_hash",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SqlInjection => "vulnerability_type:sql_injection",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.CommandInjection => "vulnerability_type:command_injection",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.PathTraversal => "vulnerability_type:path_traversal",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.LdapInjection => "vulnerability_type:ldap_injection",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Ssrf => "vulnerability_type:ssrf",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.UnvalidatedRedirect => "vulnerability_type:unvalidated_redirect",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureCookie => "vulnerability_type:insecure_cookie",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoHttpOnlyCookie => "vulnerability_type:no_httponly_cookie",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSameSiteCookie => "vulnerability_type:no_samesite_cookie",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakRandomness => "vulnerability_type:weak_randomness",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HardcodedSecret => "vulnerability_type:hardcoded_secret",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing => "vulnerability_type:xcontenttype_header_missing",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation => "vulnerability_type:trust_boundary_violation",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing => "vulnerability_type:hsts_header_missing",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection => "vulnerability_type:header_injection",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak => "vulnerability_type:stacktrace_leak",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection => "vulnerability_type:nosql_mongodb_injection",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection => "vulnerability_type:xpath_injection",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.ReflectionInjection => "vulnerability_type:reflection_injection",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureAuthProtocol => "vulnerability_type:insecure_auth_protocol",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss => "vulnerability_type:xss",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.DirectoryListingLeak => "vulnerability_type:directory_listing_leak",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SessionTimeout => "vulnerability_type:session_timeout",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.None => "vulnerability_type:none",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakCipher => "vulnerability_type:weak_cipher",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakHash => "vulnerability_type:weak_hash",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SqlInjection => "vulnerability_type:sql_injection",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.CommandInjection => "vulnerability_type:command_injection",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.PathTraversal => "vulnerability_type:path_traversal",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.LdapInjection => "vulnerability_type:ldap_injection",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Ssrf => "vulnerability_type:ssrf",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.UnvalidatedRedirect => "vulnerability_type:unvalidated_redirect",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureCookie => "vulnerability_type:insecure_cookie",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoHttpOnlyCookie => "vulnerability_type:no_httponly_cookie",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSameSiteCookie => "vulnerability_type:no_samesite_cookie",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakRandomness => "vulnerability_type:weak_randomness",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HardcodedSecret => "vulnerability_type:hardcoded_secret",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing => "vulnerability_type:xcontenttype_header_missing",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation => "vulnerability_type:trust_boundary_violation",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing => "vulnerability_type:hsts_header_missing",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection => "vulnerability_type:header_injection",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak => "vulnerability_type:stacktrace_leak",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection => "vulnerability_type:nosql_mongodb_injection",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection => "vulnerability_type:xpath_injection",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.ReflectionInjection => "vulnerability_type:reflection_injection",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureAuthProtocol => "vulnerability_type:insecure_auth_protocol",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss => "vulnerability_type:xss",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.DirectoryListingLeak => "vulnerability_type:directory_listing_leak",
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SessionTimeout => "vulnerability_type:session_timeout",
             _ => value.ToString(),
         };
 
     /// <summary>
     /// Retrieves an array of the values of the members defined in
-    /// <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" />.
+    /// <see cref="Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" />.
     /// Note that this returns a new array with every invocation, so
     /// should be cached if appropriate.
     /// </summary>
-    /// <returns>An array of the values defined in <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" /></returns>
-    public static Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks[] GetValues()
+    /// <returns>An array of the values defined in <see cref="Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" /></returns>
+    public static Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks[] GetValues()
         => new []
         {
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.None,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakCipher,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakHash,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SqlInjection,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.CommandInjection,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.PathTraversal,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.LdapInjection,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Ssrf,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.UnvalidatedRedirect,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureCookie,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoHttpOnlyCookie,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSameSiteCookie,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakRandomness,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HardcodedSecret,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.ReflectionInjection,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureAuthProtocol,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.DirectoryListingLeak,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SessionTimeout,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.None,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakCipher,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakHash,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SqlInjection,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.CommandInjection,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.PathTraversal,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.LdapInjection,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Ssrf,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.UnvalidatedRedirect,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureCookie,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoHttpOnlyCookie,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSameSiteCookie,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakRandomness,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HardcodedSecret,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.ReflectionInjection,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureAuthProtocol,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.DirectoryListingLeak,
+            Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SessionTimeout,
         };
 
     /// <summary>
     /// Retrieves an array of the names of the members defined in
-    /// <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" />.
+    /// <see cref="Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" />.
     /// Note that this returns a new array with every invocation, so
     /// should be cached if appropriate.
     /// Ignores <c>[Description]</c> definitions.
     /// </summary>
-    /// <returns>An array of the names of the members defined in <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" /></returns>
+    /// <returns>An array of the names of the members defined in <see cref="Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" /></returns>
     public static string[] GetNames()
         => new []
         {
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.None),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakCipher),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakHash),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SqlInjection),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.CommandInjection),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.PathTraversal),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.LdapInjection),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Ssrf),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.UnvalidatedRedirect),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureCookie),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoHttpOnlyCookie),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSameSiteCookie),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakRandomness),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HardcodedSecret),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.ReflectionInjection),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureAuthProtocol),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.DirectoryListingLeak),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SessionTimeout),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.None),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakCipher),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakHash),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SqlInjection),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.CommandInjection),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.PathTraversal),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.LdapInjection),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Ssrf),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.UnvalidatedRedirect),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureCookie),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoHttpOnlyCookie),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSameSiteCookie),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakRandomness),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HardcodedSecret),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XContentTypeHeaderMissing),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.TrustBoundaryViolation),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HstsHeaderMissing),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HeaderInjection),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.StackTraceLeak),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSqlMongoDbInjection),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.XPathInjection),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.ReflectionInjection),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.InsecureAuthProtocol),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.DirectoryListingLeak),
+            nameof(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SessionTimeout),
         };
 
     /// <summary>
     /// Retrieves an array of the names of the members defined in
-    /// <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" />.
+    /// <see cref="Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" />.
     /// Note that this returns a new array with every invocation, so
     /// should be cached if appropriate.
     /// Uses <c>[Description]</c> definition if available, otherwise uses the name of the property
     /// </summary>
-    /// <returns>An array of the names of the members defined in <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" /></returns>
+    /// <returns>An array of the names of the members defined in <see cref="Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.IastInstrumentedSinks" /></returns>
     public static string[] GetDescriptions()
         => new []
         {

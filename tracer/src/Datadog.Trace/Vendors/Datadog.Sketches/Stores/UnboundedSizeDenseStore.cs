@@ -10,7 +10,7 @@
 
 #pragma warning disable SA1600 // Elements should be documented
 
-namespace Datadog.Trace.Vendors.Datadog.Sketches.Stores;
+namespace Datadog.Trace.Internal.Vendors.Datadog.Sketches.Stores;
 
 /// <summary>
 /// A dense store implementation with unbounded size.

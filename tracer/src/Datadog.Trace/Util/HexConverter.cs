@@ -14,7 +14,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Util;
+namespace Datadog.Trace.Internal.Util;
 
 internal static class HexConverter
 {

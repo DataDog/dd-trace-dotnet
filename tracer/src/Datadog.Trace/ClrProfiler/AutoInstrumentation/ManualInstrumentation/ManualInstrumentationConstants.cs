@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 
 internal class ManualInstrumentationConstants
 {

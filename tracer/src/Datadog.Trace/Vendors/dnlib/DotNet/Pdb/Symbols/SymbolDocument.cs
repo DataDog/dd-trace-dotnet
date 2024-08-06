@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols {
 	/// <summary>
 	/// A document
 	/// </summary>

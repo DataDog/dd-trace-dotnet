@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Util
+namespace Datadog.Trace.Internal.Util
 {
     internal class StopwatchHelpers
     {

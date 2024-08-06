@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-namespace Datadog.Trace.Ci.Tags;
+namespace Datadog.Trace.Internal.Ci.Tags;
 
 internal static class TestSuiteVisibilityTags
 {

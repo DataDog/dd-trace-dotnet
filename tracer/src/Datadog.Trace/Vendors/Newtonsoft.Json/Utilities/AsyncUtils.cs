@@ -37,7 +37,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Vendors.Newtonsoft.Json.Utilities
+namespace Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Utilities
 {
     internal static class AsyncUtils
     {

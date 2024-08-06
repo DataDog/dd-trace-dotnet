@@ -6,10 +6,10 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 [JsonConverter(typeof(MetricSeriesJsonConverter))]
 internal class MetricSeries : List<MetricDataPoint>

@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.Collections.Specialized;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Xunit;
 
 namespace Datadog.Trace.TestHelpers

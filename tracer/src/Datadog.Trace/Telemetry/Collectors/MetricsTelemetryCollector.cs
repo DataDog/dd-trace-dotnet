@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 
 internal partial class MetricsTelemetryCollector : MetricsTelemetryCollectorBase, IMetricsTelemetryCollector
 {

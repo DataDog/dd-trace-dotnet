@@ -18,7 +18,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.Serilog.Debugging
+namespace Datadog.Trace.Internal.Vendors.Serilog.Debugging
 {
     /// <summary>
     /// May be thrown by log event sinks when a failure occurs. Should not be used in cases

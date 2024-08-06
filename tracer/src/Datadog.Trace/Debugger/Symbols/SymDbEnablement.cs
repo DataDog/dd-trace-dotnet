@@ -4,9 +4,9 @@
 // </copyright>
 #nullable enable
 
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Debugger.Symbols
+namespace Datadog.Trace.Internal.Debugger.Symbols
 {
     internal class SymDbEnablement
     {

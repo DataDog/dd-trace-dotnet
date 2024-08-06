@@ -8,14 +8,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission
 {
     internal static class NLogCommon<TTarget>
     {
@@ -321,7 +321,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
             // Have to create a logging rule the hard way
             var instance = _createLoggingRuleFunc();
-            var ruleProxy = instance.DuckCast<Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43.ILoggingRuleProxy>();
+            var ruleProxy = instance.DuckCast<Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43.ILoggingRuleProxy>();
 
             ruleProxy.LoggerNamePattern = "**";
             ruleProxy.Targets.Add(targetProxy);

@@ -8,14 +8,14 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Util.Http;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Util.Http;
 
-namespace Datadog.Trace.AppSec
+namespace Datadog.Trace.Internal.AppSec
 {
     internal class SecuritySettings
     {

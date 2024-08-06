@@ -14,7 +14,7 @@ using System.Diagnostics.CodeAnalysis;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
   /// <summary>
   /// <see cref="T:System.Reflection.Metadata.BlobHandle" /> representing a blob on #Blob heap in Portable PDB

@@ -4,11 +4,11 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.MessagePack.Formatters;
-using Datadog.Trace.Vendors.MessagePack.Resolvers;
+using Datadog.Trace.Internal.Vendors.MessagePack;
+using Datadog.Trace.Internal.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Internal.Vendors.MessagePack.Resolvers;
 
-namespace Datadog.Trace.Agent.MessagePack
+namespace Datadog.Trace.Internal.Agent.MessagePack
 {
     internal class SpanFormatterResolver : IFormatterResolver
     {

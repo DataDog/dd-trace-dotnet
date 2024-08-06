@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Internal.Iast.Dataflow;
 
-namespace Datadog.Trace.Iast.Aspects.System.DirectoryServices;
+namespace Datadog.Trace.Internal.Iast.Aspects.System.DirectoryServices;
 
 /// <summary> DirectorySearcher class aspects </summary>
 [AspectClass("System.DirectoryServices.AccountManagement", [AspectFilter.StringOptimization])]

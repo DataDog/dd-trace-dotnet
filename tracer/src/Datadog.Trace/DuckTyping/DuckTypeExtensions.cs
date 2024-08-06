@@ -8,9 +8,9 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.DuckTyping
+namespace Datadog.Trace.Internal.DuckTyping
 {
     /// <summary>
     /// Duck type extensions

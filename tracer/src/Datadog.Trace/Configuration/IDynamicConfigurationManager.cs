@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     internal interface IDynamicConfigurationManager : IDisposable
     {

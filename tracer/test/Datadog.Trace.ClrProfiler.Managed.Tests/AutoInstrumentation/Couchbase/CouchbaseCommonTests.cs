@@ -5,8 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Couchbase;
+using Datadog.Trace.Internal.DuckTyping;
 using FluentAssertions;
 using Xunit;
 

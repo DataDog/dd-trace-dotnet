@@ -6,13 +6,13 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Agent.StreamFactories;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Agent.StreamFactories;
+using Datadog.Trace.Internal.Agent.Transports;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.HttpOverStreams;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Agent;
+namespace Datadog.Trace.Internal.Agent;
 
 internal static class AgentTransportStrategy
 {

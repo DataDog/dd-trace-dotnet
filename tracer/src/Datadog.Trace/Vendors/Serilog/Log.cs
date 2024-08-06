@@ -19,11 +19,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Core.Pipeline;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Core;
+using Datadog.Trace.Internal.Vendors.Serilog.Core.Pipeline;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Vendors.Serilog
+namespace Datadog.Trace.Internal.Vendors.Serilog
 {
     /// <summary>
     /// An optional static entry point for logging that can be easily referenced

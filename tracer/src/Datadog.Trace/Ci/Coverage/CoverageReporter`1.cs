@@ -8,11 +8,11 @@ using System;
 using System.ComponentModel;
 using System.Reflection;
 using Datadog.Trace.Ci.Coverage.Metadata;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
 #pragma warning disable SA1649 // File name must match first type name
 
-namespace Datadog.Trace.Ci.Coverage;
+namespace Datadog.Trace.Internal.Ci.Coverage;
 
 /// <summary>
 /// Coverage Reporter by ModuleCoverageMetadata type

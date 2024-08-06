@@ -5,9 +5,9 @@
 
 #nullable enable
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 
 /// <summary>
 /// Proxy for https://github.com/mongodb/mongo-csharp-driver/blob/master/src/MongoDB.Bson/IO/JsonWriterSettings.cs

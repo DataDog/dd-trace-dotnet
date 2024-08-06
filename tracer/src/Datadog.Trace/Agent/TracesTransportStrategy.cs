@@ -4,10 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.HttpOverStreams;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Internal.Agent
 {
     internal static class TracesTransportStrategy
     {

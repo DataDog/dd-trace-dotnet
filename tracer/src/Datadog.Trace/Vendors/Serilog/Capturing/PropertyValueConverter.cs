@@ -21,14 +21,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Debugging;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Parsing;
-using Datadog.Trace.Vendors.Serilog.Policies;
+using Datadog.Trace.Internal.Vendors.Serilog.Core;
+using Datadog.Trace.Internal.Vendors.Serilog.Debugging;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Parsing;
+using Datadog.Trace.Internal.Vendors.Serilog.Policies;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Vendors.Serilog.Capturing
+namespace Datadog.Trace.Internal.Vendors.Serilog.Capturing
 {
     // Values in Serilog are simplified down into a lowest-common-denominator internal
     // type system so that there is a better chance of code written with one sink in

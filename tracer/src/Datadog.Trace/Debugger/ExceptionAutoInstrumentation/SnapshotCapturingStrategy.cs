@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation;
 
 internal enum SnapshotCapturingStrategy
 {

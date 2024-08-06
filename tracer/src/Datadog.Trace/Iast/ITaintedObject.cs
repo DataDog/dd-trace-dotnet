@@ -6,7 +6,7 @@
 using System;
 #nullable enable
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.Internal.Iast;
 
 internal interface ITaintedObject
 {

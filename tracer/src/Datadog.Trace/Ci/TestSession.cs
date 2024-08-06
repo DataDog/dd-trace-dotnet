@@ -10,20 +10,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Ipc;
-using Datadog.Trace.Ci.Ipc.Messages;
-using Datadog.Trace.Ci.Tagging;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Ci.Telemetry;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Ci;
+using Datadog.Trace.Internal.Ci.CiEnvironment;
+using Datadog.Trace.Internal.Ci.Ipc;
+using Datadog.Trace.Internal.Ci.Ipc.Messages;
+using Datadog.Trace.Internal.Ci.Tagging;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Ci.Telemetry;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.Serilog;
 
-namespace Datadog.Trace.Ci;
+namespace Datadog.Trace.Internal.Ci;
 
 /// <summary>
 /// CI Visibility test session
@@ -274,11 +275,11 @@ public sealed class TestSession
     {
         var span = _span;
         span.Error = true;
-        span.SetTag(Trace.Tags.ErrorType, type);
-        span.SetTag(Trace.Tags.ErrorMsg, message);
+        span.SetTag(Trace.Internal.Tags.ErrorType, type);
+        span.SetTag(Trace.Internal.Tags.ErrorMsg, message);
         if (callStack is not null)
         {
-            span.SetTag(Trace.Tags.ErrorStack, callStack);
+            span.SetTag(Trace.Internal.Tags.ErrorStack, callStack);
         }
     }
 

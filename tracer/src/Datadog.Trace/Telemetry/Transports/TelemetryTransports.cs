@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.Telemetry.Transports;
+namespace Datadog.Trace.Internal.Telemetry.Transports;
 
 internal class TelemetryTransports
 {

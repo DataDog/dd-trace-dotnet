@@ -1,4 +1,4 @@
-﻿// <copyright file="CoverageUtils.cs" company="Datadog">
+// <copyright file="CoverageUtils.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,13 +8,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Datadog.Trace.Ci.Coverage.Models.Global;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Ci.Coverage.Models.Global;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
 internal static class CoverageUtils
 {
-    internal static readonly IDatadogLogger Log = Datadog.Trace.Ci.CIVisibility.Log;
+    internal static readonly IDatadogLogger Log = Datadog.Trace.Internal.Ci.CIVisibility.Log;
 
     public static bool TryCombineAndGetTotalCoverage(string inputFolder, string outputFile)
     {

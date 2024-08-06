@@ -5,11 +5,11 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ContinuousProfiler
+namespace Datadog.Trace.Internal.ContinuousProfiler
 {
     internal class ProfilerStatus : IProfilerStatus
     {

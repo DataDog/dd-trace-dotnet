@@ -8,8 +8,8 @@
 
 using System;
 using System.Linq;
-using Datadog.Trace.Vendors.MessagePack.Formatters;
-using Datadog.Trace.Vendors.MessagePack.Internal;
+using Datadog.Trace.Internal.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Internal.Vendors.MessagePack.Internal;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 
-namespace Datadog.Trace.Vendors.MessagePack.Resolvers
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Resolvers
 {
     /// <summary>
     /// ObjectResolver by dynamic code generation.
@@ -282,7 +282,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Resolvers
     }
 }
 
-namespace Datadog.Trace.Vendors.MessagePack.Internal
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Internal
 {
     internal static class DynamicObjectTypeBuilder
     {

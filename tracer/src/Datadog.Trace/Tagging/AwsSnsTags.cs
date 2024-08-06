@@ -4,10 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Internal.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     internal partial class AwsSnsTags : AwsSdkTags
     {
@@ -22,17 +22,17 @@ namespace Datadog.Trace.Tagging
         }
 
 #pragma warning disable CS0618 // Duplicate of TopicName
-        [Tag(Trace.Tags.AwsTopicName)]
+        [Tag(Trace.Internal.Tags.AwsTopicName)]
 #pragma warning restore CS0618
         public string AwsTopicName => TopicName;
 
-        [Tag(Trace.Tags.TopicName)]
+        [Tag(Trace.Internal.Tags.TopicName)]
         public string TopicName { get; set; }
 
-        [Tag(Trace.Tags.AwsTopicArn)]
+        [Tag(Trace.Internal.Tags.AwsTopicArn)]
         public string TopicArn { get; set; }
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Trace.Internal.Tags.SpanKind)]
         public override string SpanKind { get; }
     }
 
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Trace.Internal.Tags.PeerService)]
         public string PeerService
         {
             get
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tagging
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Trace.Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Tagging
 
                 return _peerServiceOverride is not null
                            ? "peer.service"
-                           : Trace.Tags.TopicName;
+                           : Trace.Internal.Tags.TopicName;
             }
         }
     }

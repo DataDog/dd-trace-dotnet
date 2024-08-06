@@ -8,13 +8,13 @@
 
 using System.Threading;
 
-namespace Datadog.Trace.Telemetry;
+namespace Datadog.Trace.Internal.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
     private const int DistributionSharedLength = 13;
 
     /// <summary>
-    /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionShared" /> values.
+    /// Creates the buffer for the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.DistributionShared" /> values.
     /// </summary>
     private static AggregatedDistribution[] GetDistributionSharedBuffer()
         => new AggregatedDistribution[]
@@ -36,14 +36,14 @@ internal partial class MetricsTelemetryCollector
         };
 
     /// <summary>
-    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionShared" />.
+    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.DistributionShared" />.
     /// Each value represents the number of unique entries in the buffer returned by <see cref="GetDistributionSharedBuffer()" />
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] DistributionSharedEntryCounts { get; }
         = new int[]{ 13, };
 
-    public void RecordDistributionSharedInitTime(Datadog.Trace.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value)
+    public void RecordDistributionSharedInitTime(Datadog.Trace.Internal.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value)
     {
         var index = 0 + (int)tag;
         _buffer.DistributionShared[index].TryEnqueue(value);

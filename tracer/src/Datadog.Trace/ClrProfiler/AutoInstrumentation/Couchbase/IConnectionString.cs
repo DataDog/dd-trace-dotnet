@@ -7,9 +7,9 @@
 
 using System;
 using System.Collections;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Couchbase
 {
     /// <summary>
     /// Ducktyping of Couchbase.ConnectionString

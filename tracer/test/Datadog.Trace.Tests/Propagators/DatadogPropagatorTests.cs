@@ -6,11 +6,11 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Propagators;
+using Datadog.Trace.Internal.Tagging;
 using FluentAssertions;
 using Moq;
 using Xunit;

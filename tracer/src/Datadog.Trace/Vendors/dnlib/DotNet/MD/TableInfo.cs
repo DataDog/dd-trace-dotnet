@@ -7,7 +7,7 @@
 
 using System.Diagnostics;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.MD {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.MD {
 	/// <summary>
 	/// Info about one MD table
 	/// </summary>

@@ -9,12 +9,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Internal.Ci.Tags;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Logging.DirectSubmission.Formatting
+namespace Datadog.Trace.Internal.Logging.DirectSubmission.Formatting
 {
     internal class LogFormatter
     {
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 return string.IsNullOrEmpty(globalTags) ? null : globalTags;
             }
 
-            var aasTags = $"{Trace.Tags.AzureAppServicesResourceId}{KeyValueTagSeparator}{aasSettings.ResourceId}";
+            var aasTags = $"{Trace.Internal.Tags.AzureAppServicesResourceId}{KeyValueTagSeparator}{aasSettings.ResourceId}";
 
             return string.IsNullOrEmpty(globalTags) ? aasTags : aasTags + TagSeparator + globalTags;
         }
@@ -227,7 +227,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         }
 
         /// <summary>
-        /// Format the log, based on <see cref="Datadog.Trace.Vendors.Serilog.Formatting.Json.JsonFormatter"/>
+        /// Format the log, based on <see cref="Datadog.Trace.Internal.Vendors.Serilog.Formatting.Json.JsonFormatter"/>
         /// and CompactFormatter
         /// </summary>
         /// <typeparam name="T">The type of state being formatted</typeparam>
@@ -363,7 +363,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             var service = _service;
             if (span is not null)
             {
-                if (span.GetTag(Trace.Tags.Env) is { } spanEnv && spanEnv != env)
+                if (span.GetTag(Trace.Internal.Tags.Env) is { } spanEnv && spanEnv != env)
                 {
                     ddTags = GetCIVisiblityDDTagsString(spanEnv);
                 }

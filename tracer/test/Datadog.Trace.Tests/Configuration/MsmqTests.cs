@@ -6,11 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Agent;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Sampling;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Msmq;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Configuration.Telemetry;
+using Datadog.Trace.Internal.Sampling;
 using FluentAssertions;
 using Moq;
 using Xunit;

@@ -12,7 +12,7 @@
 
 using System;
 
-namespace Datadog.Trace.Vendors.Datadog.Sketches.Stores;
+namespace Datadog.Trace.Internal.Vendors.Datadog.Sketches.Stores;
 
 internal abstract class CollapsingDenseStore : DenseStore
 {

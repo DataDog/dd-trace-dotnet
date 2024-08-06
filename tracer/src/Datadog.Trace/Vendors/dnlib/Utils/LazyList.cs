@@ -9,9 +9,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.Threading;
+using Datadog.Trace.Internal.Vendors.dnlib.Threading;
 
-namespace Datadog.Trace.Vendors.dnlib.Utils {
+namespace Datadog.Trace.Internal.Vendors.dnlib.Utils {
 	/// <summary>
 	/// Gets notified of list events
 	/// </summary>

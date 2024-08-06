@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 #nullable enable
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal class DynamicInstrumentationHelper
     {

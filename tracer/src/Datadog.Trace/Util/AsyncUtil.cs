@@ -7,7 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Util;
+namespace Datadog.Trace.Internal.Util;
 
 /*
  * This code based on:

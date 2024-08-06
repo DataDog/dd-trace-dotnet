@@ -8,7 +8,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Activity.DuckTypes
+namespace Datadog.Trace.Internal.Activity.DuckTypes
 {
     internal interface IActivity5 : IW3CActivity
     {

@@ -8,10 +8,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Headers;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
 internal readonly struct ServiceBusHeadersCollectionAdapter : IHeadersCollection
 {

@@ -7,21 +7,21 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Activity.Handlers;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging.TracerFlare;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal.Activity.Handlers;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Agent.DiscoveryService;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging.TracerFlare;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.SourceGenerators;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// The tracer is responsible for creating spans and flushing them to the Datadog agent

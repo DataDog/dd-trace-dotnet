@@ -5,15 +5,15 @@
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 using System;
 using System.Linq;
-using Datadog.Trace.Vendors.MessagePack.Formatters;
-using Datadog.Trace.Vendors.MessagePack.Internal;
+using Datadog.Trace.Internal.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Internal.Vendors.MessagePack.Internal;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace Datadog.Trace.Vendors.MessagePack.Resolvers
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Resolvers
 {
 #if !UNITY_WSA
 #if !NET_STANDARD_2_0
@@ -487,7 +487,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Resolvers
 #endif
 }
 
-namespace Datadog.Trace.Vendors.MessagePack.Internal
+namespace Datadog.Trace.Internal.Vendors.MessagePack.Internal
 {
     // RuntimeTypeHandle can embed directly by OpCodes.Ldtoken
     // It does not implements IEquatable<T>(but GetHashCode and Equals is implemented) so needs this to avoid boxing.

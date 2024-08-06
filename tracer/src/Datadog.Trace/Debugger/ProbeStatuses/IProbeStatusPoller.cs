@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.Debugger.ProbeStatuses
+namespace Datadog.Trace.Internal.Debugger.ProbeStatuses
 {
     internal interface IProbeStatusPoller : IDisposable
     {

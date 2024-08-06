@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Headers;
+using Datadog.Trace.Internal.Headers;
 
 namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 

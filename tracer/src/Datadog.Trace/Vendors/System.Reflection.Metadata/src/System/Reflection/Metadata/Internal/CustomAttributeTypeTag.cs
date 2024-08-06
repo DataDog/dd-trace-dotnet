@@ -12,7 +12,7 @@
 
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335
 {
     internal static class CustomAttributeTypeTag
   {

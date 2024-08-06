@@ -8,9 +8,9 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Logging.TracerFlare;
+namespace Datadog.Trace.Internal.Logging.TracerFlare;
 
 internal class TracerFlareRequestFactory
 {

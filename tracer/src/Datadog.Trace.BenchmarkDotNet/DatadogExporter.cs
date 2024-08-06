@@ -15,7 +15,8 @@ using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Reports;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Internal.Ci;
+using Datadog.Trace.Internal.Ci.Tags;
 
 namespace Datadog.Trace.BenchmarkDotNet;
 
@@ -35,7 +36,7 @@ internal class DatadogExporter : IExporter
     {
         try
         {
-            Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
         }
         catch
         {
@@ -151,7 +152,7 @@ internal class DatadogExporter : IExporter
                                 var testParameters = new TestParameters { Arguments = new Dictionary<string, object>(), Metadata = new Dictionary<string, object>() };
                                 foreach (var parameter in benchmarkCase.Parameters.Items)
                                 {
-                                    var parameterValue = ClrProfiler.AutoInstrumentation.Testing.Common.GetParametersValueData(parameter.Value);
+                                    var parameterValue = Internal.ClrProfiler.AutoInstrumentation.Testing.Common.GetParametersValueData(parameter.Value);
                                     if (testParameters.Arguments.TryGetValue(parameter.Name, out var currentValue))
                                     {
                                         testParameters.Arguments[parameter.Name] += $"{currentValue}, {parameterValue}";

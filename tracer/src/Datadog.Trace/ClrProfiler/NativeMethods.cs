@@ -5,11 +5,11 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Debugger.PInvoke;
-using Datadog.Trace.Iast.Analyzers;
+using Datadog.Trace.Internal.Debugger.PInvoke;
+using Datadog.Trace.Internal.Iast.Analyzers;
 
 // ReSharper disable MemberHidesStaticFromOuterClass
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     internal static class NativeMethods
     {

@@ -6,11 +6,11 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Telemetry.Metrics;
+namespace Datadog.Trace.Internal.Telemetry.Metrics;
 internal static partial class DistributionSharedExtensions
 {
     /// <summary>
-    /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionShared" /> metric.
+    /// The number of separate metrics in the <see cref="Datadog.Trace.Internal.Telemetry.Metrics.DistributionShared" /> metric.
     /// </summary>
     public const int Length = 1;
 
@@ -19,10 +19,10 @@ internal static partial class DistributionSharedExtensions
     /// </summary>
     /// <param name="metric">The metric to get the name for</param>
     /// <returns>The datadog metric name</returns>
-    public static string GetName(this Datadog.Trace.Telemetry.Metrics.DistributionShared metric)
+    public static string GetName(this Datadog.Trace.Internal.Telemetry.Metrics.DistributionShared metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.InitTime => "init_time",
+            Datadog.Trace.Internal.Telemetry.Metrics.DistributionShared.InitTime => "init_time",
             _ => null!,
         };
 
@@ -31,7 +31,7 @@ internal static partial class DistributionSharedExtensions
     /// </summary>
     /// <param name="metric">The metric to check</param>
     /// <returns>True if the metric is a "common" metric, used by all languages</returns>
-    public static bool IsCommon(this Datadog.Trace.Telemetry.Metrics.DistributionShared metric)
+    public static bool IsCommon(this Datadog.Trace.Internal.Telemetry.Metrics.DistributionShared metric)
         => metric switch
         {
             _ => true,
@@ -42,10 +42,10 @@ internal static partial class DistributionSharedExtensions
     /// </summary>
     /// <param name="metric">The metric to get the name for</param>
     /// <returns>The datadog metric name</returns>
-    public static string? GetNamespace(this Datadog.Trace.Telemetry.Metrics.DistributionShared metric)
+    public static string? GetNamespace(this Datadog.Trace.Internal.Telemetry.Metrics.DistributionShared metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.DistributionShared.InitTime => "general",
+            Datadog.Trace.Internal.Telemetry.Metrics.DistributionShared.InitTime => "general",
             _ => null,
         };
 }

@@ -11,9 +11,9 @@
 // MVID: 805945F3-27B0-47AD-B8F6-389D9D8F82C3
 
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers.Text
 {
     internal static class ParserHelpers
   {

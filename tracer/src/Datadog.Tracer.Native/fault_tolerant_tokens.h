@@ -27,7 +27,7 @@ namespace fault_tolerant
 
 static const WSTRING managed_profiler_should_heal_name = WStr("ShouldHeal");
 static const WSTRING managed_profiler_report_successful_instrumentation = WStr("ReportSuccessfulInstrumentation");
-static const WSTRING managed_profiler_fault_tolerant_invoker_type = WStr("Datadog.Trace.FaultTolerant.FaultTolerantInvoker");
+static const WSTRING managed_profiler_fault_tolerant_invoker_type = WStr("Datadog.Trace.Internal.FaultTolerant.FaultTolerantInvoker");
 static const WSTRING not_implemented;
 
 class FaultTolerantTokens : public CallTargetTokens

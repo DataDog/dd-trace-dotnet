@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerFlareApiTests.cs" company="Datadog">
+// <copyright file="TracerFlareApiTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,8 +7,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging.TracerFlare;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using HttpMultipartParser;

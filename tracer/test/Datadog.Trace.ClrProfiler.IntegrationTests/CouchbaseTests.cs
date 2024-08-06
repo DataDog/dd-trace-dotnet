@@ -6,8 +6,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;

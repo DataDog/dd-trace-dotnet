@@ -7,9 +7,9 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Logging
+namespace Datadog.Trace.Internal.Logging
 {
     internal interface IDatadogLogger
     {

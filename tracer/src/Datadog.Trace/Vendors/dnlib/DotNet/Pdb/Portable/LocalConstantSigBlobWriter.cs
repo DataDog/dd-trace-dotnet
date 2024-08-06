@@ -7,9 +7,9 @@
 
 using System;
 using System.Text;
-using Datadog.Trace.Vendors.dnlib.DotNet.Writer;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Portable {
 	readonly struct LocalConstantSigBlobWriter {
 		readonly IWriterError helper;
 		readonly Metadata systemMetadata;

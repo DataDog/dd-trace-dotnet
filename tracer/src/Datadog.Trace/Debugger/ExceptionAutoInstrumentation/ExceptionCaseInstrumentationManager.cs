@@ -11,21 +11,21 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.PInvoke;
-using Datadog.Trace.Debugger.RateLimiting;
-using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Debugger.Symbols;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Expressions;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.PInvoke;
+using Datadog.Trace.Internal.Debugger.RateLimiting;
+using Datadog.Trace.Internal.Debugger.Sink.Models;
+using Datadog.Trace.Internal.Debugger.Symbols;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionCaseInstrumentationManager
     {

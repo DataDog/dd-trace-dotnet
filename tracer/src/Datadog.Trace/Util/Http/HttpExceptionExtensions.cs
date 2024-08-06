@@ -8,7 +8,7 @@
 using System;
 using System.Net.Sockets;
 
-namespace Datadog.Trace.Util.Http;
+namespace Datadog.Trace.Internal.Util.Http;
 
 internal static class HttpExceptionExtensions
 {

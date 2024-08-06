@@ -10,7 +10,7 @@ using System.Linq;
 using System.Reflection;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
+namespace Datadog.Trace.Internal.Debugger.ExceptionAutoInstrumentation
 {
     internal readonly record struct MethodUniqueIdentifier(Guid Mvid, int MethodToken, MethodBase Method)
     {

@@ -3,11 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
 #pragma warning disable CS0649 // Field is never assigned to
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
 [DuckCopy]
 internal struct TestContextStruct

@@ -13,7 +13,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
@@ -252,7 +252,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
 
             // Disable the WebApi2 part, so we can't back propagate any details to the tracing module
-            SetEnvironmentVariable(ConfigurationKeys.DisabledIntegrations, nameof(Configuration.IntegrationId.AspNetWebApi2));
+            SetEnvironmentVariable(ConfigurationKeys.DisabledIntegrations, nameof(Internal.Configuration.IntegrationId.AspNetWebApi2));
 
             _classicMode = classicMode;
             _iisFixture = iisFixture;

@@ -4,9 +4,9 @@
 // </copyright>
 
 #nullable enable
-using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Internal.Ci.CiEnvironment;
 
-namespace Datadog.Trace.Configuration;
+namespace Datadog.Trace.Internal.Configuration;
 
 internal class GitMetadata
 {

@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 #nullable enable
 
-namespace Datadog.Trace.AppSec.Waf;
+namespace Datadog.Trace.Internal.AppSec.Waf;
 
 internal interface IContext : IDisposable
 {

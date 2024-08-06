@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Ci.Coverage.Models.Tests;
-using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Internal.Ci.Coverage.Models.Tests;
+using Datadog.Trace.Internal.Vendors.MessagePack;
 
-namespace Datadog.Trace.Ci.Agent.MessagePack;
+namespace Datadog.Trace.Internal.Ci.Agent.MessagePack;
 
 internal class TestCoverageMessagePackFormatter : EventMessagePackFormatter<TestCoverage>
 {

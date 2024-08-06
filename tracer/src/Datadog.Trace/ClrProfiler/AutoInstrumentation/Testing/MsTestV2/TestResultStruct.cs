@@ -5,11 +5,11 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
 #pragma warning disable CS0649 // Field is never assigned to
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
 /// <summary>
 /// TestResult ducktype struct

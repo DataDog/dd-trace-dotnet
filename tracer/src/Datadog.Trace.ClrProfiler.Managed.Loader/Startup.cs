@@ -64,13 +64,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 {
                     // With V3, pretty much all scenarios require the trace-agent and dogstatsd, so we enable them by default
                     StartupLogger.Log("Invoking managed method to start external processes.");
-                    TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
+                    TryInvokeManagedMethod("Datadog.Trace.Internal.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
                 }
 
                 // We need to invoke the managed tracer regardless of whether tracing is enabled
                 // because other products rely on it
                 StartupLogger.Log("Invoking managed tracer.");
-                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
+                TryInvokeManagedMethod("Datadog.Trace.Internal.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
             }
             catch (Exception ex)
             {

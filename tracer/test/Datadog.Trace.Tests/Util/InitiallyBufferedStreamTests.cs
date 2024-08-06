@@ -9,8 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Util;
-using Datadog.Trace.Util.Streams;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Util.Streams;
 using FluentAssertions;
 using Xunit;
 

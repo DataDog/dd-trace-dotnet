@@ -6,7 +6,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.CallTarget;
+namespace Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
 internal class CallTargetInvokerException : Exception
 {

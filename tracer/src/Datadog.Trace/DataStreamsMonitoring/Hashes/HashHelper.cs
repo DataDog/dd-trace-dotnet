@@ -6,10 +6,10 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.DataStreamsMonitoring.Utils;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.DataStreamsMonitoring.Utils;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.DataStreamsMonitoring.Hashes;
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Hashes;
 
 internal static class HashHelper
 {

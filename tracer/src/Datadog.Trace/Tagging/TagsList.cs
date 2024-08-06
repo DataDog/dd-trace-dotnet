@@ -7,10 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Internal.Tagging
 {
     internal abstract class TagsList : ITags
     {

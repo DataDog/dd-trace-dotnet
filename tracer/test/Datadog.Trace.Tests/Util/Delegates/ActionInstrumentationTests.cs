@@ -6,8 +6,8 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Util.Delegates;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Util.Delegates;
 using FluentAssertions;
 using Xunit;
 

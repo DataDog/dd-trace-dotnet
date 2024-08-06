@@ -4,7 +4,7 @@
 // </copyright>
 
 #if !NETFRAMEWORK
-using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Internal.PlatformHelpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;

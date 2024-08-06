@@ -8,7 +8,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Datadog.Trace.Vendors.dnlib.IO {
+namespace Datadog.Trace.Internal.Vendors.dnlib.IO {
 	/// <summary>
 	/// Creates <see cref="DataReader"/>s that can read its data.
 	/// 

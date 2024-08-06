@@ -8,11 +8,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Vendors.Datadog.Sketches;
-using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Vendors.Datadog.Sketches;
+using Datadog.Trace.Internal.Vendors.MessagePack;
 
-namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
+namespace Datadog.Trace.Internal.DataStreamsMonitoring.Aggregation
 {
     internal class DataStreamsMessagePackFormatter
     {

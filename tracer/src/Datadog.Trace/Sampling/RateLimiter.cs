@@ -6,9 +6,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Sampling
+namespace Datadog.Trace.Internal.Sampling
 {
     internal abstract class RateLimiter : IRateLimiter
     {

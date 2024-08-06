@@ -10,7 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 
 #nullable enable
-namespace Datadog.Trace.Debugger.Helpers
+namespace Datadog.Trace.Internal.Debugger.Helpers
 {
     /// <summary>
     /// Provides extension methods for <see cref="StackTrace"/>.

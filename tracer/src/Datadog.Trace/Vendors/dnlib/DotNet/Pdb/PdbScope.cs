@@ -7,9 +7,9 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
+using Datadog.Trace.Internal.Vendors.dnlib.DotNet.Emit;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb {
 	/// <summary>
 	/// A PDB scope
 	/// </summary>

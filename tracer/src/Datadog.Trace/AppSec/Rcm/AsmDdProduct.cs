@@ -6,11 +6,11 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
-using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal.AppSec.Rcm.Models.AsmDd;
+using Datadog.Trace.Internal.RemoteConfigurationManagement;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.AppSec.Rcm;
+namespace Datadog.Trace.Internal.AppSec.Rcm;
 
 internal class AsmDdProduct : IAsmConfigUpdater
 {

@@ -23,7 +23,7 @@ public abstract class AspNetCoreIpCollectionTests : AspNetCoreMvcTestBase
         : base(sampleName, fixture, output, enableRouteTemplateResourceNames: true)
     {
         _testName = GetTestName(sampleName);
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.IpHeaderEnabled, "1");
+        SetEnvironmentVariable(Internal.Configuration.ConfigurationKeys.IpHeaderEnabled, "1");
     }
 
     public static TheoryData<string, int> IpData() => new()

@@ -4,12 +4,12 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.StackTraceLeak;
 
 #nullable enable
 internal static class StackTraceLeakIntegrationCommon

@@ -7,12 +7,12 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
 
-namespace Datadog.Trace.AppSec.Coordinator;
+namespace Datadog.Trace.Internal.AppSec.Coordinator;
 
 internal static class SecurityCoordinatorHelpers
 {

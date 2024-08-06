@@ -6,10 +6,10 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Internal.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Internal.Vendors.Serilog;
 
-namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+namespace Datadog.Trace.Internal.AppSec.Waf.ReturnTypes.Managed;
 
 #pragma warning disable SA1402 // File may only contain a single type
 

@@ -7,7 +7,7 @@
 
 using System;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// A Span represents a logical unit of work in the system. It may be

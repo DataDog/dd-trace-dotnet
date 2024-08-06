@@ -4,12 +4,12 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Agent;
+using Datadog.Trace.Internal.Ci.Configuration;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Ci.Agent.Payloads
+namespace Datadog.Trace.Internal.Ci.Agent.Payloads
 {
     /// <summary>
     /// Event-platform payload

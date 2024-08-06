@@ -17,11 +17,11 @@
 // limitations under the License.
 
 using System;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Internal.Vendors.Serilog.Events;
 
 // ReSharper disable VirtualMemberNeverOverridden.Global
 
-namespace Datadog.Trace.Vendors.Serilog.Data
+namespace Datadog.Trace.Internal.Vendors.Serilog.Data
 {
     /// <summary>
     /// An abstract base class for visitors that walk data in the

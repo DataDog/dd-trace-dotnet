@@ -10,11 +10,11 @@
 // MVID: 2EB35F4B-CF50-496F-AFB8-CC6F6F79CB72
 
 using System;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata
 {
   internal sealed class PooledBlobBuilder : BlobBuilder
   {

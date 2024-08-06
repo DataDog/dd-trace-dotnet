@@ -8,7 +8,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Writer {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Writer {
 	/// <summary>
 	/// Contains a list of <see cref="IChunk"/>s
 	/// </summary>

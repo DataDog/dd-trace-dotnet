@@ -21,8 +21,8 @@ using Microsoft.CodeAnalysis.Text;
 [Generator]
 public class TagListGenerator : IIncrementalGenerator
 {
-    private const string TagAttributeFullName = "Datadog.Trace.SourceGenerators.TagAttribute";
-    private const string MetricAttributeFullName = "Datadog.Trace.SourceGenerators.MetricAttribute";
+    private const string TagAttributeFullName = "Datadog.Trace.Internal.SourceGenerators.TagAttribute";
+    private const string MetricAttributeFullName = "Datadog.Trace.Internal.SourceGenerators.MetricAttribute";
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)

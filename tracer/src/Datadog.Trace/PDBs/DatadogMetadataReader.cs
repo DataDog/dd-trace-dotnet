@@ -10,16 +10,16 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Symbols;
-using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Symbols;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
 
-namespace Datadog.Trace.Pdb
+namespace Datadog.Trace.Internal.Pdb
 {
     /// <summary>
     /// Reads metadata as well as both Windows and Portable PDBs.
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Pdb
         private readonly bool _isDnlibPdbReader;
         private bool _disposed;
 
-        private DatadogMetadataReader(PEReader peReader, MetadataReader metadataReader, MetadataReader? pdbReader, string? pdbFullPath, Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols.SymbolReader? dnlibPdbReader, Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD? dnlibModule)
+        private DatadogMetadataReader(PEReader peReader, MetadataReader metadataReader, MetadataReader? pdbReader, string? pdbFullPath, Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.Symbols.SymbolReader? dnlibPdbReader, Datadog.Trace.Internal.Vendors.dnlib.DotNet.ModuleDefMD? dnlibModule)
         {
             MetadataReader = metadataReader;
             PdbReader = pdbReader;
@@ -84,9 +84,9 @@ namespace Datadog.Trace.Pdb
                 return new DatadogMetadataReader(peReader, metadataReader, null, null, null, null);
             }
 
-            var module = Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD.Load(assembly.ManifestModule, new Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions { TryToLoadPdbFromDisk = false });
-            var pdbStream = Datadog.Trace.Vendors.dnlib.IO.DataReaderFactoryFactory.Create(pdbFullPath, false);
-            var dnlibReader = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory.Create(Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions.DefaultPdbReaderOptions, module.Metadata, pdbStream);
+            var module = Datadog.Trace.Internal.Vendors.dnlib.DotNet.ModuleDefMD.Load(assembly.ManifestModule, new Datadog.Trace.Internal.Vendors.dnlib.DotNet.ModuleCreationOptions { TryToLoadPdbFromDisk = false });
+            var pdbStream = Datadog.Trace.Internal.Vendors.dnlib.IO.DataReaderFactoryFactory.Create(pdbFullPath, false);
+            var dnlibReader = Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory.Create(Datadog.Trace.Internal.Vendors.dnlib.DotNet.ModuleCreationOptions.DefaultPdbReaderOptions, module.Metadata, pdbStream);
             if (dnlibReader == null)
             {
                 return new DatadogMetadataReader(peReader, metadataReader, null, null, null, null);

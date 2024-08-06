@@ -5,9 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using Datadog.Trace.Vendors.StatsdClient.Statistic;
+using Datadog.Trace.Internal.Vendors.StatsdClient.Statistic;
 
-namespace Datadog.Trace.Vendors.StatsdClient
+namespace Datadog.Trace.Internal.Vendors.StatsdClient
 {
     internal class MetricSerializer
     {

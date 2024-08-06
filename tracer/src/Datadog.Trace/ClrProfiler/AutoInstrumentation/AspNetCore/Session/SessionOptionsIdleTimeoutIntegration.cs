@@ -8,12 +8,12 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Session;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNetCore.Session;
 
 /// <summary>
 /// System.Void Microsoft.AspNetCore.Builder.SessionOptions::set_IdleTimeout(System.TimeSpan) calltarget instrumentation

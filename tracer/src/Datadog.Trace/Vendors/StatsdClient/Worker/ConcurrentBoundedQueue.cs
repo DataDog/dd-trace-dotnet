@@ -5,7 +5,7 @@
 using System.Collections.Concurrent;
 using System.Threading;
 
-namespace Datadog.Trace.Vendors.StatsdClient.Worker
+namespace Datadog.Trace.Internal.Vendors.StatsdClient.Worker
 {
     /// <summary>
     /// ConcurrentBoundedQueue is a ConcurrentQueue with a bounded number of items.

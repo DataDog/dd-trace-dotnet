@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     /// <summary>
     /// Version-agnostic interface for Elasticsearch RequestData

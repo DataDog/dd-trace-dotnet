@@ -6,10 +6,10 @@
 #if !NETFRAMEWORK
 #nullable enable
 using System;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.DuckTyping;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     internal static class NullableStringHelper<TMarkerType>
     {

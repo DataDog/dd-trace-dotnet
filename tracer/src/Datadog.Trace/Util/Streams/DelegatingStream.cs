@@ -10,7 +10,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Util.Streams;
+namespace Datadog.Trace.Internal.Util.Streams;
 
 /// <summary>
 /// A simple <see cref="Stream"/> implementation that delegates to an inner stream implementation

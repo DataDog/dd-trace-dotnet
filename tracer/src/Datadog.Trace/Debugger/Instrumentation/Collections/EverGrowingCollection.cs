@@ -6,10 +6,10 @@
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Internal.Debugger.Helpers;
+using Datadog.Trace.Internal.Logging;
 
-namespace Datadog.Trace.Debugger.Instrumentation.Collections
+namespace Datadog.Trace.Internal.Debugger.Instrumentation.Collections
 {
     /// <summary>
     /// A very fast, lock free, ordered collection to which items can be added, but never removed.

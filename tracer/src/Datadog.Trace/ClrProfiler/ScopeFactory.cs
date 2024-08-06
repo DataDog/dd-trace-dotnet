@@ -4,15 +4,15 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ClrProfiler.Helpers;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Util.Http;
+using Datadog.Trace.Internal.ClrProfiler.Helpers;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Sampling;
+using Datadog.Trace.Internal.Tagging;
+using Datadog.Trace.Internal.Util;
+using Datadog.Trace.Internal.Util.Http;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Internal.ClrProfiler
 {
     /// <summary>
     /// Convenience class that creates scopes and populates them with some standard details.

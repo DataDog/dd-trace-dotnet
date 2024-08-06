@@ -6,11 +6,11 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Telemetry;
+using Datadog.Trace.Internal.Telemetry.Metrics;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Propagators
+namespace Datadog.Trace.Internal.Propagators
 {
     internal class B3SingleHeaderContextPropagator : IContextInjector, IContextExtractor
     {

@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Agent.DiscoveryService;
+namespace Datadog.Trace.Internal.Agent.DiscoveryService;
 
 internal record AgentConfiguration
 {

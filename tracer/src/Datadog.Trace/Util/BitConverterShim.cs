@@ -9,10 +9,10 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+using Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using Unsafe = Datadog.Trace.Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
-namespace Datadog.Trace.Util;
+namespace Datadog.Trace.Internal.Util;
 
 internal class BitConverterShim
 {

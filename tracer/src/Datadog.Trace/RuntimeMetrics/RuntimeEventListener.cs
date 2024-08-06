@@ -9,10 +9,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.Tracing;
 using System.Threading;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.StatsdClient;
+using Datadog.Trace.Internal.Logging;
+using Datadog.Trace.Internal.Vendors.StatsdClient;
 
-namespace Datadog.Trace.RuntimeMetrics
+namespace Datadog.Trace.Internal.RuntimeMetrics
 {
     internal class RuntimeEventListener : EventListener, IRuntimeMetricsListener
     {

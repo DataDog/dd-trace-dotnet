@@ -5,9 +5,9 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Internal.Debugger.Helpers;
 
-namespace Datadog.Trace.Debugger.Expressions;
+namespace Datadog.Trace.Internal.Debugger.Expressions;
 
 internal readonly ref struct CaptureInfo<TCapture>
 {

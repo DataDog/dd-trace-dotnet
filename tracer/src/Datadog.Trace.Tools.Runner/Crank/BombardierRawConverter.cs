@@ -4,7 +4,8 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Tools.Runner.Crank
 {

@@ -13,7 +13,7 @@ using System.IO;
 
 
 #nullable enable
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.Internal
 {
     /// <summary>Represents raw memory owned by an external object.</summary>
     internal sealed class ExternalMemoryBlockProvider : MemoryBlockProvider

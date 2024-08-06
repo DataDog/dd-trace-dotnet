@@ -7,9 +7,9 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.DuckTyping;
 
-namespace Datadog.Trace.Activity.DuckTypes;
+namespace Datadog.Trace.Internal.Activity.DuckTypes;
 
 // https://github.com/dotnet/runtime/blob/f2a9ef8d392b72e6f039ec0b87f3eae4307c6cae/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/ActivityContext.cs#L13
 

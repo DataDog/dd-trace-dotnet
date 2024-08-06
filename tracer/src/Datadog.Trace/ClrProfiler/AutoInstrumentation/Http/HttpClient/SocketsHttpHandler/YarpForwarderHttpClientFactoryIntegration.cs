@@ -9,10 +9,10 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.Configuration;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler;
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler;
 
 /// <summary>
 /// System.Void Yarp.ReverseProxy.Forwarder.ForwarderHttpClientFactory::ConfigureHandler(Yarp.ReverseProxy.Forwarder.ForwarderHttpClientContext,System.Net.Http.SocketsHttpHandler) calltarget instrumentation

@@ -5,11 +5,11 @@
 
 #nullable enable
 
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Helpers;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal.Iast.Dataflow;
+using Datadog.Trace.Internal.Iast.Helpers;
 
-namespace Datadog.Trace.Iast.Aspects.MongoDB;
+namespace Datadog.Trace.Internal.Iast.Aspects.MongoDB;
 
 /// <summary> BsonAspect class aspect </summary>
 [AspectClass("MongoDB.Bson", AspectType.Sink, VulnerabilityType.NoSqlMongoDbInjection)]

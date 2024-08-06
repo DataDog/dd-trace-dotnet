@@ -12,7 +12,7 @@
 
 using System;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable
+namespace Datadog.Trace.Internal.VendoredMicrosoftCode.System.Reflection.PortableExecutable
 {
   /// <summary>COR20Flags</summary>
   [Flags]

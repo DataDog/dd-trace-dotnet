@@ -7,7 +7,7 @@
 using System.Collections;
 using System.IO;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
+namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     /// <summary>
     /// MessageAttributes interface for ducktyping

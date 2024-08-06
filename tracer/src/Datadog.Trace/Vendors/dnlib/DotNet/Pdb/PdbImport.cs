@@ -8,7 +8,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb {
+namespace Datadog.Trace.Internal.Vendors.dnlib.DotNet.Pdb {
 	/// <summary>
 	/// Import scope
 	/// </summary>

@@ -1,4 +1,4 @@
-﻿// <copyright file="ErrorHelpers.cs" company="Datadog">
+// <copyright file="ErrorHelpers.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,8 +10,8 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Internal.ExtensionMethods;
+using Datadog.Trace.Internal.Tagging;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -74,7 +74,7 @@ public static class ErrorHelpers
         var srcBranch = Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH");
 
         var tags = $$"""
-                         "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
+                         "os.platform:{{SanitizeTagValue(Internal.FrameworkDescription.Instance.OSPlatform)}}",
                          "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
                          "target.framework:{{SanitizeTagValue(environmentHelper.GetTargetFramework())}}",
                          "test.name:{{SanitizeTagValue(testFullName)}}",

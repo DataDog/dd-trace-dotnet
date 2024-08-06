@@ -8,9 +8,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Datadog.Trace.Util;
+using Datadog.Trace.Internal.Util;
 
-namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
+namespace Datadog.Trace.Internal.Logging.DirectSubmission.Sink.PeriodicBatching
 {
     internal abstract class BatchingSink<T>
     {

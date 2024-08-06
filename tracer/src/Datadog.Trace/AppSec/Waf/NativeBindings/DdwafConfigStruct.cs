@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace.AppSec.Waf.NativeBindings
+namespace Datadog.Trace.Internal.AppSec.Waf.NativeBindings
 {
     internal struct DdwafConfigStruct
     {

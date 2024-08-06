@@ -9,7 +9,7 @@ using System;
 using System.Runtime.Serialization;
 using System.Threading;
 
-namespace Datadog.Trace.Vendors.dnlib.Threading {
+namespace Datadog.Trace.Internal.Vendors.dnlib.Threading {
 #if THREAD_SAFE
 	[Serializable]
 	class LockException : Exception {
