@@ -795,28 +795,21 @@ internal static partial class IastModule
             return;
         }
 
-        try
+        OnExecutedSinkTelemetry(IastInstrumentedSinks.EmailHtmlInjection);
+
+        if (message is null)
         {
-            OnExecutedSinkTelemetry(IastInstrumentedSinks.EmailHtmlInjection);
-
-            if (message is null)
-            {
-                return;
-            }
-
-            var messageDuck = message.DuckCast<IMailMessage>();
-
-            if (messageDuck?.IsBodyHtml is not true || string.IsNullOrEmpty(messageDuck.Body))
-            {
-                return;
-            }
-
-            // We use the same secure marks as XSS
-            GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, exclusionSecureMarks: SecureMarks.Xss);
+            return;
         }
-        catch (Exception ex)
+
+        var messageDuck = message.DuckCast<IMailMessage>();
+
+        if (messageDuck?.IsBodyHtml is not true || string.IsNullOrEmpty(messageDuck.Body))
         {
-            Log.Error(ex, "Error while checking for email html injection.");
+            return;
         }
+
+        // We use the same secure marks as XSS
+        GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, exclusionSecureMarks: SecureMarks.Xss);
     }
 }
