@@ -48,7 +48,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private string _version = null;
         private bool _isKnownAddressesSuported = false;
 
-        private WafLibraryInvoker(IntPtr libraryHandle)
+        private WafLibraryInvoker(IntPtr libraryHandle, string libVersion = null)
         {
             ExportErrorHappened = false;
             _initField = GetDelegateForNativeFunction<InitDelegate>(libraryHandle, "ddwaf_init");
@@ -78,7 +78,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             // setup logging
             _setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
             // Get know addresses
-            if (IsKnowAddressesSuported())
+            if (IsKnowAddressesSuported(libVersion))
             {
                 _getKnownAddresses = GetDelegateForNativeFunction<GetKnownAddressesDelegate>(libraryHandle, "ddwaf_known_addresses");
             }
@@ -184,7 +184,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 return LibraryInitializationResult.FromPlatformNotSupported();
             }
 
-            var wafLibraryInvoker = new WafLibraryInvoker(libraryHandle);
+            var wafLibraryInvoker = new WafLibraryInvoker(libraryHandle, libVersion);
             if (wafLibraryInvoker.ExportErrorHappened)
             {
                 Log.Error("Waf library couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
@@ -268,9 +268,14 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return knownAddresses;
         }
 
-        internal bool IsKnowAddressesSuported()
+        internal bool IsKnowAddressesSuported(string libVersion = null)
         {
-            if (_version == null)
+            if (_version is null && libVersion is not null)
+            {
+                _version = libVersion;
+            }
+
+            if (_version is null)
             {
                 GetVersion();
                 _isKnownAddressesSuported = !string.IsNullOrEmpty(_version) && new Version(_version) >= new Version("1.19.0");
