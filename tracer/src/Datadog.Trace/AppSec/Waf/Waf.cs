@@ -120,6 +120,11 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
+        public bool IsKnowAddressesSuported()
+        {
+            return _wafLibraryInvoker.IsKnowAddressesSuported();
+        }
+
         public string[] GetKnownAddresses()
         {
             return _wafLibraryInvoker.GetKnownAddresses(_wafHandle);

@@ -21,5 +21,7 @@ namespace Datadog.Trace.AppSec.Waf
         UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus);
 
         public string[] GetKnownAddresses();
+
+        public bool IsKnowAddressesSuported();
     }
 }

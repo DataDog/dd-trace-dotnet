@@ -46,6 +46,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly UpdateDelegate _updateField;
         private readonly GetKnownAddressesDelegate _getKnownAddresses;
         private string _version = null;
+        private bool _isKnownAddressesSuported = false;
 
         private WafLibraryInvoker(IntPtr libraryHandle)
         {
@@ -77,7 +78,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             // setup logging
             _setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
             // Get know addresses
-            _getKnownAddresses = GetDelegateForNativeFunction<GetKnownAddressesDelegate>(libraryHandle, "ddwaf_known_addresses");
+            if (IsKnowAddressesSuported())
+            {
+                _getKnownAddresses = GetDelegateForNativeFunction<GetKnownAddressesDelegate>(libraryHandle, "ddwaf_known_addresses");
+            }
+
             // convert to a delegate and attempt to pin it by assigning it to  field
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
         }
@@ -238,6 +243,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal string[] GetKnownAddresses(IntPtr wafHandle)
         {
+            if (!IsKnowAddressesSuported())
+            {
+                return Array.Empty<string>();
+            }
+
             uint size = 0;
             IntPtr result = _getKnownAddresses(wafHandle, ref size);
 
@@ -256,6 +266,17 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
 
             return knownAddresses;
+        }
+
+        internal bool IsKnowAddressesSuported()
+        {
+            if (_version == null)
+            {
+                GetVersion();
+                _isKnownAddressesSuported = !string.IsNullOrEmpty(_version) && new Version(_version) >= new Version("1.19.0");
+            }
+
+            return _isKnownAddressesSuported;
         }
 
         internal string GetVersion()
