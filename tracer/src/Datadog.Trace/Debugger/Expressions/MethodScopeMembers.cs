@@ -5,12 +5,15 @@
 
 using System;
 using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
 internal class MethodScopeMembers
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MethodScopeMembers));
+
     private readonly int _initialSize;
     private int _index;
 
@@ -47,6 +50,7 @@ internal class MethodScopeMembers
             Members = Members.EnlargeBuffer(_index);
         }
 
+        Log.Debug("Adding {Kind} member {Name}: {Type} = {Value}", member.ElementType, member.Name, member.Type, member.Value);
         Members[_index] = member;
         _index++;
     }

@@ -12,6 +12,7 @@ using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Serilog.Events;
 using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
 
 namespace Datadog.Trace.Debugger.Expressions;
@@ -453,6 +454,8 @@ internal partial class ProbeExpressionParser<T>
             var variable = Expression.Variable(argOrLocal.Type, argOrLocal.Name);
             scopeMembers.Add(variable);
 
+            Log.Debug("Adding argOrLocal {Type}:{Name}", argOrLocal.Type, argOrLocal.Name);
+
             expressions.Add(
                 Expression.Assign(
                     variable,
@@ -482,6 +485,29 @@ internal partial class ProbeExpressionParser<T>
                 thisType?.FullName ?? "type is null");
 
             throw ex;
+        }
+
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            foreach (var scopeMember in methodScopeMembers.Members)
+            {
+                Log.Debug("{Member}: {Type}={Value}", scopeMember.ElementType, scopeMember.Type, scopeMember.Value);
+            }
+
+            if (methodScopeMembers.Return.Type != null)
+            {
+                Log.Debug("Return: {Type}={Value}", methodScopeMembers.Return.Type, methodScopeMembers.Return.Value);
+            }
+
+            if (methodScopeMembers.Exception != null)
+            {
+                Log.Debug("Exception: {}", methodScopeMembers.Exception.ToString());
+            }
+
+            if (methodScopeMembers.Duration.Type != null)
+            {
+                Log.Debug("Duration: {Type}={Value}", methodScopeMembers.Duration.Type, methodScopeMembers.Duration.Value);
+            }
         }
 
         var scopeMembers = new List<ParameterExpression>();

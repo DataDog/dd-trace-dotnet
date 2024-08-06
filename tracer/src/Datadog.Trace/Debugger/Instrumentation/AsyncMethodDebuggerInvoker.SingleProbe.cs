@@ -238,6 +238,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return asyncState.ProbeData.Processor.Process(ref localInfo, asyncState.SnapshotCreator, in probeData);
             }
 
+            Log.Debug(
+                "Local '{Local}' in method '{Method}'/'{Kickoff}' is: '{Value}'. We consider it unreachable",
+                localName,
+                (asyncState.MethodMetadataInfo.DeclaringType?.FullName ?? asyncState.MethodMetadataInfo.DeclaringType?.Name ?? "Unknown") + "." + asyncState.MethodMetadataInfo.Method.Name,
+                (asyncState.MethodMetadataInfo.KickoffInvocationTargetType?.FullName ?? asyncState.MethodMetadataInfo.KickoffInvocationTargetType?.Name ?? "Unknown") + "." + asyncState.MethodMetadataInfo.KickoffMethod.Name,
+                local);
+
             var unreachableLocal = new DebuggerSnapshotSerializer.UnreachableLocal(DebuggerSnapshotSerializer.UnreachableLocalReason.NotHoistedLocalInAsyncMethod);
             var captureInfo = new CaptureInfo<DebuggerSnapshotSerializer.UnreachableLocal>(asyncState.MethodMetadataIndex, value: unreachableLocal, type: typeof(TLocal), methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
             return asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator, in probeData);
