@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests
             throw new Xunit.SkipException("This test requires RELEASE mode and will fail in DEBUG mode on some target frameworks");
 #else
             var originalType = typeof(System.Runtime.CompilerServices.Unsafe);
-            var vendoredType = typeof(VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe);
+            var vendoredType = typeof(Internal.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe);
 
             var framework = Assembly.GetExecutingAssembly().GetCustomAttribute<TargetFrameworkAttribute>()!.FrameworkDisplayName;
             var frameworks = new[] { ".NET Framework 4.6.2", ".NET 5.0", ".NET 6.0", ".NET Core 3.1" };

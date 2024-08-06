@@ -5,9 +5,10 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
-using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Internal.Debugger;
+using Datadog.Trace.Internal.Debugger.Configurations.Models;
+using Datadog.Trace.Internal.Debugger.Models;
 using FluentAssertions;
 using Samples.Probes.TestRuns.SmokeTests;
 using Xunit;

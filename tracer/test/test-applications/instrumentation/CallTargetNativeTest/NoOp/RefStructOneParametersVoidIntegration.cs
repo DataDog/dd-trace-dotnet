@@ -1,5 +1,5 @@
 using System;
-using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.ClrProfiler.CallTarget;
 
 namespace CallTargetNativeTest.NoOp;
 
