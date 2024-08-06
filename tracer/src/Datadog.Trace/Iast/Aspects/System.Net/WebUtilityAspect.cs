@@ -26,6 +26,19 @@ public class WebUtilityAspect
     [AspectMethodReplace("System.Net.WebUtility::HtmlEncode(System.String)")]
     public static string? Review(string? parameter)
     {
-        return IastModule.OnXssEscape(parameter);
+        var result = WebUtility.HtmlEncode(parameter);
+        try
+        {
+            if (parameter is not null && result is not null)
+            {
+                return IastModule.OnXssEscape(parameter, result);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(WebUtilityAspect)}.{nameof(Review)}");
+        }
+
+        return result;
     }
 }

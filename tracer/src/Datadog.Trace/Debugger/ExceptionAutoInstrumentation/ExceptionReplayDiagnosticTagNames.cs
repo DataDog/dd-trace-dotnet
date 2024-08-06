@@ -17,7 +17,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     /// </summary>
     internal static class ExceptionReplayDiagnosticTagNames
     {
-        public const string None = nameof(None);
         public const string Eligible = nameof(Eligible);
         public const string EmptyShadowStack = nameof(EmptyShadowStack);
         public const string ExceptionTrackManagerNotInitialized = nameof(ExceptionTrackManagerNotInitialized);
@@ -27,5 +26,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public const string CachedDoneExceptionCase = nameof(CachedDoneExceptionCase);
         public const string InvalidatedExceptionCase = nameof(InvalidatedExceptionCase);
         public const string CircuitBreakerIsOpen = nameof(CircuitBreakerIsOpen);
+        public const string NonCachedDoneExceptionCase = nameof(NonCachedDoneExceptionCase);
+        public const string NotSupportedExceptionType = nameof(NotSupportedExceptionType);
+        public const string NoFramesToInstrument = nameof(NoFramesToInstrument);
+        public const string EmptyCallStackTreeWhileCollecting = nameof(EmptyCallStackTreeWhileCollecting);
+        public const string InvalidatedCase = nameof(InvalidatedCase);
+        public const string NewCase = nameof(NewCase);
     }
 }

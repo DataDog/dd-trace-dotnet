@@ -6,6 +6,8 @@
 #include <cassert>
 #include <utility>
 
+#include <string.h>
+
 Callstack::Callstack() :
     Callstack(nullptr)
 {
@@ -89,4 +91,10 @@ std::uintptr_t* Callstack::begin() const
 std::uintptr_t* Callstack::end() const
 {
     return _buffer.data() + _count;
+}
+
+void Callstack::CopyFrom(Callstack const& other)
+{
+    memcpy(_buffer.data(), other._buffer.data(), other._count * sizeof(uintptr_t));
+    _count = other._count;
 }
