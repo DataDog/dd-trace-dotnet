@@ -249,7 +249,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
 
             uint size = 0;
-            IntPtr result = _getKnownAddresses(wafHandle, ref size);
+            var result = _getKnownAddresses(wafHandle, ref size);
 
             if (size == 0)
             {
@@ -261,7 +261,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             for (uint i = 0; i < size; i++)
             {
                 // Calculate the pointer to each string
-                IntPtr stringPtr = Marshal.ReadIntPtr(result, (int)i * IntPtr.Size);
+                var stringPtr = Marshal.ReadIntPtr(result, (int)i * IntPtr.Size);
                 knownAddresses[i] = Marshal.PtrToStringAnsi(stringPtr);
             }
 

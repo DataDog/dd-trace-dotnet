@@ -44,7 +44,7 @@ public class AspNetCore5RaspEnabledIastDisabled : AspNetCore5Rasp
     public async Task TestRaspRequest_ThenDisableRule_ThenEnableAgain(string url, string exploit)
     {
         var ruleId = "rasp-001-001";
-        var testName = "RaspRCM.RuleEnable.AspNetCore5";
+        var testName = "RaspRCM.RuleEnableDisableEnable.AspNetCore5";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
@@ -72,7 +72,6 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         EnableRasp();
         SetSecurity(true);
         EnableIast(enableIast);
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
