@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using System;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
@@ -29,7 +31,15 @@ public class SmtpClientAspect
 #endif
     public static object? Send(object? message)
     {
-        IastModule.OnEmailHtmlInjection(message);
-        return message;
+        try
+        {
+            IastModule.OnEmailHtmlInjection(message);
+            return message;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(SmtpClientAspect)}.{nameof(Send)}");
+            return message;
+        }
     }
 }
