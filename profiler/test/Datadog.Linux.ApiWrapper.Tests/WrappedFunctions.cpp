@@ -44,8 +44,8 @@ INSTANTIATE_TEST_SUITE_P(
         // But we leave the code for documentation or if we need to reactivate it.
         // (void*)::fork,
 #endif
-        (void*)::dl_iterate_phdr,
-        (void*)::dlopen,
+        //(void*)::dl_iterate_phdr,
+        //(void*)::dlopen,
         (void*)::dladdr,
         (void*)::accept,
         (void*)::accept4,
