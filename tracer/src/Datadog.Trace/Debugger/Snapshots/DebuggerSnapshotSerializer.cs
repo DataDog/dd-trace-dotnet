@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -398,7 +399,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return match.Success ? match.Groups[1].Value : fieldName;
         }
 
-        internal static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value, out Type type)
+        internal static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value, [NotNullWhen(true)] out Type type)
         {
             value = null;
             type = null;
@@ -418,6 +419,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                             if (source != null || field.IsStatic)
                             {
+                                type = field.FieldType;
                                 value = field.GetValue(source);
                                 return true;
                             }
@@ -442,6 +444,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                                     return false;
                                 }
 
+                                type = property.PropertyType;
                                 value = property.GetMethod?.Invoke(source, Array.Empty<object>());
                                 return true;
                             }
@@ -458,7 +461,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
             catch (Exception e)
             {
-                Log.Error(e, nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue) + "Can't get value of {Member} from {Source}", GetMemberInfo(fieldOrProp), source?.GetType().FullName);
+                Log.Error(e, nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue) + ": Can't get value of {Member} from {Source}", GetMemberInfo(fieldOrProp), source?.GetType().FullName);
             }
 
             return false;
