@@ -1,4 +1,4 @@
-﻿// <copyright file="ReplaceAspectAnalyzer.cs" company="Datadog">
+// <copyright file="ReplaceAspectAnalyzer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,7 +28,7 @@ public class ReplaceAspectAnalyzer : DiagnosticAnalyzer
     /// <summary>
     /// The severity of the diagnostic
     /// </summary>
-    public const DiagnosticSeverity Severity = DiagnosticSeverity.Info;
+    public const DiagnosticSeverity Severity = DiagnosticSeverity.Error;
 
 #pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
     private static readonly DiagnosticDescriptor MissingTryCatchRule = new(
@@ -92,6 +92,9 @@ public class ReplaceAspectAnalyzer : DiagnosticAnalyzer
         }
 
         var bodyBlock = methodDeclaration.Body;
+        var isVoidMethod = methodDeclaration.ReturnType is PredefinedTypeSyntax { Keyword.Text: "void" };
+        int expectedStatements = isVoidMethod ? 2 : 3;
+
         if (bodyBlock is null)
         {
             // If we don't have a bodyBlock, it's probably a lambda or expression bodied member
@@ -107,15 +110,15 @@ public class ReplaceAspectAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (bodyBlock.Statements.Count != 3)
+        if (bodyBlock.Statements.Count != expectedStatements)
         {
-            // We require exactly 3 statements, so this must be an error
+            // We require exactly a predefined amount of statements, so this must be an error
             context.ReportDiagnostic(Diagnostic.Create(MissingTryCatchRule, bodyBlock.GetLocation()));
             return;
         }
 
         // check the first statement
-        if (bodyBlock.Statements[0] is not LocalDeclarationStatementSyntax localDeclaration)
+        if (!isVoidMethod && bodyBlock.Statements[0] is not LocalDeclarationStatementSyntax)
         {
             // this is an error, and we can't go much further
             context.ReportDiagnostic(Diagnostic.Create(MissingTryCatchRule, bodyBlock.GetLocation()));
@@ -180,25 +183,29 @@ public class ReplaceAspectAnalyzer : DiagnosticAnalyzer
         }
 
         // final check, do we return the variable?
-        if (bodyBlock.Statements[2] is not ReturnStatementSyntax returnStatement)
+        if (!isVoidMethod)
         {
-            context.ReportDiagnostic(Diagnostic.Create(MissingTryCatchRule, bodyBlock.GetLocation()));
-            return;
-        }
+            if (bodyBlock.Statements[2] is not ReturnStatementSyntax returnStatement)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(MissingTryCatchRule, bodyBlock.GetLocation()));
+                return;
+            }
 
-        // should be returning the variable
-        if (returnStatement.Expression is not IdentifierNameSyntax identifierName)
-        {
-            context.ReportDiagnostic(Diagnostic.Create(MissingTryCatchRule, bodyBlock.GetLocation()));
-            return;
-        }
+            // should be returning the variable
+            if (returnStatement.Expression is not IdentifierNameSyntax identifierName)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(MissingTryCatchRule, bodyBlock.GetLocation()));
+                return;
+            }
 
-        if (!localDeclaration.Declaration.Variables.Any()
-         || localDeclaration.Declaration.Variables[0] is not { } variable
-         || variable.Identifier.ToString() != identifierName.Identifier.ToString())
-        {
-            // not returning the right thing
-            context.ReportDiagnostic(Diagnostic.Create(MissingTryCatchRule, bodyBlock.GetLocation()));
+            LocalDeclarationStatementSyntax localDeclaration = (LocalDeclarationStatementSyntax)bodyBlock.Statements[0];
+            if (!localDeclaration.Declaration.Variables.Any()
+             || localDeclaration.Declaration.Variables[0] is not { } variable
+             || variable.Identifier.ToString() != identifierName.Identifier.ToString())
+            {
+                // not returning the right thing
+                context.ReportDiagnostic(Diagnostic.Create(MissingTryCatchRule, bodyBlock.GetLocation()));
+            }
         }
     }
 }
