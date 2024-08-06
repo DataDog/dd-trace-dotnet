@@ -56,7 +56,7 @@ namespace Datadog.Trace.Internal.ClrProfiler.AutoInstrumentation.AspNet
 
             try
             {
-                HttpApplication.RegisterModule(typeof(TracingHttpModule));
+                HttpApplication.RegisterModule(typeof(Datadog.Trace.AspNet.TracingHttpModule));
             }
             catch
             {

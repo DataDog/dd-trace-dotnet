@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Web;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Internal.AppSec;
 using Datadog.Trace.Internal.AppSec.Coordinator;
 using Datadog.Trace.Internal.Configuration;
@@ -23,7 +24,7 @@ using Datadog.Trace.Internal.Tagging;
 using Datadog.Trace.Internal.Util;
 using Datadog.Trace.Internal.Util.Http;
 
-namespace Datadog.Trace.Internal.AspNet
+namespace Datadog.Trace.AspNet
 {
     /// <summary>
     ///     IHttpModule used to trace within an ASP.NET HttpApplication request
@@ -161,7 +162,7 @@ namespace Datadog.Trace.Internal.AspNet
 
                 if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
                 {
-                    Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => httpRequest.Headers[key], tracer.Settings.IpHeader, tags);
+                    Internal.Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => httpRequest.Headers[key], tracer.Settings.IpHeader, tags);
                 }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
@@ -198,7 +199,7 @@ namespace Datadog.Trace.Internal.AspNet
                     securityCoordinator.BlockAndReport(args);
                 }
 
-                var iastInstance = Iast.Iast.Instance;
+                var iastInstance = Iast.Instance;
                 if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
                 {
                     var traceContext = scope.Span?.Context?.TraceContext;
@@ -273,7 +274,7 @@ namespace Datadog.Trace.Internal.AspNet
                             securityContextCleaned = true;
                         }
 
-                        if (Iast.Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
+                        if (Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
                         {
                             if (rootSpan is not null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
                             {
@@ -329,7 +330,7 @@ namespace Datadog.Trace.Internal.AspNet
                             }
                         }
 
-                        if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
+                        if (app.Context.Items[Datadog.Trace.Internal.AspNet.SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
                          && !string.IsNullOrEmpty(resourceName))
                         {
                             scope.Span.ResourceName = resourceName;
@@ -387,7 +388,7 @@ namespace Datadog.Trace.Internal.AspNet
                 {
                     AddHeaderTagsFromHttpResponse(httpContext, scope);
 
-                    if (exception != null && !is404 && exception is not AppSec.BlockException)
+                    if (exception != null && !is404 && exception is not Internal.AppSec.BlockException)
                     {
                         scope.Span.SetException(exception);
                         if (!HttpRuntime.UsingIntegratedPipeline)
