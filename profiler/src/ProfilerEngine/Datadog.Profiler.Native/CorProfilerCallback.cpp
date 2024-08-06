@@ -1512,7 +1512,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         return S_OK;
     }
 
-    // ETW listening is not started in SSI deployment mode
+    // Since SSI deployment mode is Linux only, only start the ETW communication if the profiler is manually enabled
+    // TODO: when SSI will be supported on Windows, we will need to start the ETW communication like the other services that are delayed start
+    //       -> Look at OnStartDelayedProfiling()
     if (_pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled && !_isETWStarted && (_pEtwEventsManager != nullptr))
     {
         StartEtwCommunication();
