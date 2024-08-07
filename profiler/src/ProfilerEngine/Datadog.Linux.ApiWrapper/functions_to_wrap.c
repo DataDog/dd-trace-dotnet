@@ -323,8 +323,13 @@ void initLibrary(void)
             setenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", "0", 1);
         }
 
-        originalMiniDumpName = getenv("COMPlus_DbgMiniDumpName");
+        originalMiniDumpName = getenv("DOTNET_DbgMiniDumpName");
+        if (originalMiniDumpName == NULL)
+        {
+            originalMiniDumpName = getenv("COMPlus_DbgMiniDumpName");
+        }
         setenv("COMPlus_DbgMiniDumpName", datadogCrashMarker, 1);
+        setenv("DOTNET_DbgMiniDumpName", datadogCrashMarker, 1);
     }
 }
 
@@ -425,12 +430,14 @@ int ShouldCallCustomCreatedump(const char* pathname, char* const argv[])
     }
 
     // datadog_crashtracking is set to identify actual crash to dump generation requests (ex: dotnet-dump)
+    int previousWasNameOpt = 0;
     for (int i = 0; argv[i] != NULL; i++)
     {
-        if (strncmp(argv[i], datadogCrashMarker, strlen(datadogCrashMarker)) == 0)
+        if (previousWasNameOpt != 0 && strncmp(argv[i], datadogCrashMarker, strlen(datadogCrashMarker)) == 0)
         {
             return 1;
         }
+        previousWasNameOpt = strncmp(argv[i], "--name", strlen("--name")) == 0;
     }
 
     return 0;
