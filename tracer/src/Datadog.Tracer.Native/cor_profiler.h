@@ -172,14 +172,8 @@ public:
     // ReJIT Methods
     //
 
-    HRESULT STDMETHODCALLTYPE ReJITCompilationStarted(FunctionID functionId, ReJITID rejitId,
-                                                      BOOL fIsSafeToBlock) override;
-
     HRESULT STDMETHODCALLTYPE GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                                  ICorProfilerFunctionControl* pFunctionControl) override;
-
-    HRESULT STDMETHODCALLTYPE ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus,
-                                                       BOOL fIsSafeToBlock) override;
 
     HRESULT STDMETHODCALLTYPE ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId,
                                          HRESULT hrStatus) override;
