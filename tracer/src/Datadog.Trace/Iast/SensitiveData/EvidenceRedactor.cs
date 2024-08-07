@@ -41,7 +41,8 @@ internal class EvidenceRedactor
             { VulnerabilityTypeName.UnvalidatedRedirect, urlTokenizer },
             { VulnerabilityTypeName.HeaderInjection, new HeaderInjectionTokenizer(_timeout) },
             { VulnerabilityTypeName.NoSqlMongoDbInjection, new JsonTokenizer(_timeout) },
-            { VulnerabilityTypeName.Xss, new TaintedRangeBasedTokenizer(_timeout) },
+            { VulnerabilityTypeName.Xss, new TaintedRangeBasedTokenizer() },
+            { VulnerabilityTypeName.EmailHtmlInjection, new TaintedRangeBasedTokenizer() }
         };
     }
 

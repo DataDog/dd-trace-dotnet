@@ -3,19 +3,18 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aspnet_core.request,
-    Resource: GET /iast/customattribute,
-    Service: Samples.Security.AspNetCore5,
+    Resource: GET /iast/sendemail,
+    Service: Samples.Security.AspNetCore2,
     Type: web,
     Tags: {
-      aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.IastController.CustomAttribute (Samples.Security.AspNetCore5),
-      aspnet_core.route: iast/customattribute,
+      aspnet_core.route: iast/sendemail,
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: iast/customattribute,
+      http.route: iast/sendemail,
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/CustomAttribute?userName=Vicent,
+      http.url: http://localhost:00000/Iast/SendEmail?email=alice@aliceland.com&name=Alice&lastname=Stevens&escape=false,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
@@ -25,19 +24,31 @@
 {
   "vulnerabilities": [
     {
-      "type": "PATH_TRAVERSAL",
-      "hash": -2017497883,
+      "type": "EMAIL_HTML_INJECTION",
+      "hash": -543813396,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
-        "method": "GetCustomString"
+        "method": "SendMailAux"
       },
       "evidence": {
         "valueParts": [
           {
-            "redacted": true,
-            "pattern": "abcdef",
+            "value": "Hi "
+          },
+          {
+            "value": "Alice",
             "source": 0
+          },
+          {
+            "value": " "
+          },
+          {
+            "value": "Stevens",
+            "source": 1
+          },
+          {
+            "value": ", <br />We appreciate you subscribing to our newsletter. To complete your subscription, kindly click the link below. <br /><a href=\"https://localhost/confirm?token=435345\">Complete your subscription</a>"
           }
         ]
       }
@@ -46,9 +57,13 @@
   "sources": [
     {
       "origin": "http.request.parameter",
-      "name": "userName",
-      "redacted": true,
-      "pattern": "abcdef"
+      "name": "name",
+      "value": "Alice"
+    },
+    {
+      "origin": "http.request.parameter",
+      "name": "lastname",
+      "value": "Stevens"
     }
   ]
 }
@@ -64,31 +79,18 @@
     TraceId: Id_1,
     SpanId: Id_3,
     Name: aspnet_core_mvc.request,
-    Resource: GET /iast/customattribute,
-    Service: Samples.Security.AspNetCore5,
+    Resource: GET /iast/sendemail,
+    Service: Samples.Security.AspNetCore2,
     Type: web,
     ParentId: Id_2,
     Tags: {
-      aspnet_core.action: customattribute,
+      aspnet_core.action: sendemail,
       aspnet_core.controller: iast,
-      aspnet_core.route: iast/customattribute,
+      aspnet_core.route: iast/sendemail,
       component: aspnet_core,
       env: integration_tests,
       language: dotnet,
       span.kind: server
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_4,
-    Name: span.custom.attribute,
-    Resource: IastController.GetCustomString,
-    Service: Samples.Security.AspNetCore5,
-    ParentId: Id_3,
-    Tags: {
-      component: trace,
-      env: integration_tests,
-      language: dotnet
     }
   }
 ]
