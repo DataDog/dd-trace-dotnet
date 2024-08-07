@@ -40,6 +40,11 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
+      - name: "Check GitLab status"
+        run: ./tracer/build.sh VerifyReleaseReadiness
+        env:
+          CommitSha: "${{ steps.set_sha.outputs.sha }}"
+
       - name: "Get current version"
         id: versions
         run: ./tracer/build.sh OutputCurrentVersionToGitHub
