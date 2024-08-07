@@ -20,7 +20,7 @@ internal partial class ProbeExpressionParser<T>
     private const BindingFlags GetMemberFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy;
 
     // https://learn.microsoft.com/en-us/dotnet/standard/base-types/conversion-tables
-    private static Type GetWiderType(Type left, Type right)
+    private static Type GetWiderNumericType(Type left, Type right)
     {
         if (left == right)
         {

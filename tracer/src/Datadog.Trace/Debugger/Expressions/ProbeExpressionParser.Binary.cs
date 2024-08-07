@@ -96,7 +96,7 @@ internal partial class ProbeExpressionParser<T>
 
         if (left.Type.IsNumeric() && right.Type.IsNumeric())
         {
-            var type = GetWiderType(left.Type, right.Type);
+            var type = GetWiderNumericType(left.Type, right.Type);
             left = Expression.Convert(left, type);
             right = Expression.Convert(right, type);
         }
