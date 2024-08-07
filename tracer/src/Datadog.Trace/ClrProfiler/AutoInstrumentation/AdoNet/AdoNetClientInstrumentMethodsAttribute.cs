@@ -1,4 +1,4 @@
-﻿// <copyright file="AdoNetClientInstrumentMethodsAttribute.cs" company="Datadog">
+// <copyright file="AdoNetClientInstrumentMethodsAttribute.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -282,6 +282,54 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(CommandExecuteScalarWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class CommandExecuteScalarWithBehaviorAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.Read,
+            ReturnTypeName = ClrNames.Bool,
+            CallTargetType = typeof(ReaderReadIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class ReaderReadAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ReadAsync,
+            ReturnTypeName = AdoNetConstants.TypeNames.ObjectTaskType,
+            ParameterTypeNames = new[] { ClrNames.CancellationToken },
+            CallTargetType = typeof(ReaderReadAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class ReaderReadAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.Close,
+            ReturnTypeName = ClrNames.Void,
+            CallTargetType = typeof(ReaderCloseIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class ReaderCloseAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.GetString,
+            ReturnTypeName = ClrNames.String,
+            ParameterTypeNames = new[] { ClrNames.Int32 },
+            CallTargetType = typeof(ReaderGetStringIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class ReaderGetStringAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.GetValue,
+            ReturnTypeName = ClrNames.Object,
+            ParameterTypeNames = new[] { ClrNames.Int32 },
+            CallTargetType = typeof(ReaderGetStringIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class ReaderGetValueAttribute : Attribute
         {
         }
     }
