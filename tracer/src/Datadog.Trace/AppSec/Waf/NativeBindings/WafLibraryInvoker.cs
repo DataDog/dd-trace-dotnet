@@ -243,45 +243,61 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal string[] GetKnownAddresses(IntPtr wafHandle)
         {
-            if (!IsKnowAddressesSuported())
+            try
             {
+                if (!IsKnowAddressesSuported())
+                {
+                    return Array.Empty<string>();
+                }
+
+                uint size = 0;
+                var result = _getKnownAddresses(wafHandle, ref size);
+
+                if (size == 0)
+                {
+                    return Array.Empty<string>();
+                }
+
+                string[] knownAddresses = new string[size];
+
+                for (uint i = 0; i < size; i++)
+                {
+                    // Calculate the pointer to each string
+                    var stringPtr = Marshal.ReadIntPtr(result, (int)i * IntPtr.Size);
+                    knownAddresses[i] = Marshal.PtrToStringAnsi(stringPtr);
+                }
+
+                return knownAddresses;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while getting known addresses");
                 return Array.Empty<string>();
             }
-
-            uint size = 0;
-            var result = _getKnownAddresses(wafHandle, ref size);
-
-            if (size == 0)
-            {
-                return Array.Empty<string>();
-            }
-
-            string[] knownAddresses = new string[size];
-
-            for (uint i = 0; i < size; i++)
-            {
-                // Calculate the pointer to each string
-                var stringPtr = Marshal.ReadIntPtr(result, (int)i * IntPtr.Size);
-                knownAddresses[i] = Marshal.PtrToStringAnsi(stringPtr);
-            }
-
-            return knownAddresses;
         }
 
         internal bool IsKnowAddressesSuported(string libVersion = null)
         {
-            if (_version is null && libVersion is not null)
+            try
             {
-                _version = libVersion;
-            }
+                if (_version is null && libVersion is not null)
+                {
+                    _version = libVersion;
+                }
 
-            if (_version is null)
+                if (_version is null)
+                {
+                    GetVersion();
+                    _isKnownAddressesSuported = !string.IsNullOrEmpty(_version) && new Version(_version) >= new Version("1.19.0");
+                }
+
+                return _isKnownAddressesSuported;
+            }
+            catch (Exception ex)
             {
-                GetVersion();
-                _isKnownAddressesSuported = !string.IsNullOrEmpty(_version) && new Version(_version) >= new Version("1.19.0");
+                Log.Error(ex, "Error while checking if known addresses are supported");
+                return false;
             }
-
-            return _isKnownAddressesSuported;
         }
 
         internal string GetVersion()
