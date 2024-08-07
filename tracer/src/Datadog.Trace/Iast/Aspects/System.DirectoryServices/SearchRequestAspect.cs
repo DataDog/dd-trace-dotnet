@@ -23,11 +23,19 @@ public partial class SearchRequestAspect
     [AspectMethodInsertBefore("System.DirectoryServices.Protocols.SearchRequest::set_Filter(System.Object)")]
     public static object Init(object path)
     {
-        if (path is string pathString)
+        try
         {
-            IastModule.OnLdapInjection(pathString);
-        }
+            if (path is string pathString)
+            {
+                IastModule.OnLdapInjection(pathString);
+            }
 
-        return path;
+            return path;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(SearchRequestAspect)}.{nameof(Init)}");
+            return path;
+        }
     }
 }

@@ -113,8 +113,16 @@ public class SymmetricAlgorithmAspect
     [AspectMethodInsertAfter($"System.Security.Cryptography.Aes::Create({ClrNames.String})")]
     public static SymmetricAlgorithm Create(SymmetricAlgorithm target)
     {
-        ProcessCipherClassCreation(target);
-        return target;
+        try
+        {
+            ProcessCipherClassCreation(target);
+            return target;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(Create)}");
+            return target;
+        }
     }
 }
 #endif
