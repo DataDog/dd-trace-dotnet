@@ -207,7 +207,6 @@ namespace Datadog.Trace.Tests.Debugger
             scope.AddMember(new ScopeMember("NullableNotNullValueLocal", typeof(Guid?), TestObject.NullableNotNullValue, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("NullableNullValueLocal", typeof(Guid?), TestObject.NullableNullValue, ScopeMemberKind.Local));
 
-
             // Add arguments
             scope.AddMember(new ScopeMember("IntArg", TestObject.IntNumber.GetType(), TestObject.IntNumber, ScopeMemberKind.Argument));
             scope.AddMember(new ScopeMember("DoubleArg", TestObject.DoubleNumber.GetType(), TestObject.DoubleNumber, ScopeMemberKind.Argument));
