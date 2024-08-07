@@ -54,14 +54,10 @@ internal static partial class IastModule
     private const string OperationNameEmailHtmlInjection = "email_html_injection";
     private const string ReferrerHeaderName = "Referrer";
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
-    private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
+    private static readonly IastSettings IastSettings = Iast.Instance.Settings;
+    private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy = new Lazy<EvidenceRedactor?>(() => CreateRedactor(IastSettings));
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
-    private static IastSettings iastSettings = Iast.Instance.Settings;
     private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
-
-    static IastModule()
-    {
-    }
 
     internal static string? OnUnvalidatedRedirect(string? evidence)
     {
