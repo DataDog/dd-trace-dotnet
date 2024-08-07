@@ -1541,11 +1541,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     dupOsThreadHandle = origOsThreadHandle;
 #endif
 
-#ifdef LINUX
     auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
     // CurrentThreadInfo relies on the assumption that the native thread calling ThreadAssignedToOSThread/ThreadDestroyed
     // is the same native thread assigned to the managed thread.
     ManagedThreadInfo::CurrentThreadInfo = threadInfo;
+
+#ifdef LINUX
 
     if (_pCpuProfiler != nullptr)
     {

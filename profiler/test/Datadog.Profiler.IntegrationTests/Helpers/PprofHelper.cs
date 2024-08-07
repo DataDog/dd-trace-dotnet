@@ -37,6 +37,15 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 });
         }
 
+        public static string[] SampleType(this Perftools.Profiles.Profile profile)
+        {
+            return profile.SampleType.Select(
+                sampleType =>
+                {
+                    return profile.StringTable[(int)sampleType.Type];
+                }).ToArray();
+        }
+
         public static StackTrace StackTrace(this Perftools.Profiles.Sample sample, Profile profile)
         {
             return new StackTrace(
