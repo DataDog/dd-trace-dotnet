@@ -620,6 +620,14 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     dependsOn: []
+    strategy:
+      matrix:
+        x64:
+          baseImage: debian
+          artifactSuffix: linux-arm64
+        alpine:
+          baseImage: alpine
+          artifactSuffix: linux-musl-arm64
     pool:
       name: aws-arm64-auto-scaling
     workspace:
@@ -633,21 +641,21 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: debian
+        baseImage: $(baseImage)
         command: "Clean CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
-      artifact: linux-tracer-home-linux-arm64
+      artifact: linux-tracer-home-$(artifactSuffix)
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
-      artifact: build-linux-arm64-working-directory
+      artifact: build-$(artifactSuffix)-working-directory
 
     - publish: $(symbols)
       displayName: Upload linux tracer symbols
-      artifact: linux-tracer-symbols-linux-arm64
+      artifact: linux-tracer-symbols-$(artifactSuffix)
 
 - stage: build_arm64_profiler
   dependsOn: [merge_commit_id]
