@@ -622,7 +622,7 @@ stages:
     dependsOn: []
     strategy:
       matrix:
-        x64:
+        arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
         alpine:
@@ -670,6 +670,14 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     dependsOn: []
+    strategy:
+      matrix:
+        arm64:
+          baseImage: debian
+          artifactSuffix: linux-arm64
+        alpine:
+          baseImage: alpine
+          artifactSuffix: linux-musl-arm64
     pool:
       name: aws-arm64-auto-scaling
     workspace:
@@ -683,21 +691,21 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: debian
+        baseImage: $(baseImage)
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
       displayName: Uploading linux profiler output build folder
-      artifact: linux-profiler-binaries-linux-arm64
+      artifact: linux-profiler-binaries-$(artifactSuffix)
 
     - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
-      artifact: linux-profiler-home-linux-arm64
+      artifact: linux-profiler-home-$(artifactSuffix)
 
     - publish: $(symbols)
       displayName: Upload linux profiler symbols
-      artifact: linux-profiler-symbols-linux-arm64
+      artifact: linux-profiler-symbols-$(artifactSuffix)
 
 - stage: build_arm64_universal
   dependsOn: [merge_commit_id]
@@ -752,6 +760,14 @@ stages:
   - job: package
     dependsOn: []
     timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        arm64:
+          baseImage: debian
+          artifactSuffix: linux-arm64
+        alpine:
+          baseImage: alpine
+          artifactSuffix: linux-musl-arm64
     pool:
       name: aws-arm64-auto-scaling
 
@@ -760,27 +776,52 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-
+      
+      # Download _both_ musl and glibc if we're building the universal package
+      # but only the musl package if we're building alpine package
     - task: DownloadPipelineArtifact@2
       displayName: Download tracer arm64 native binary
+      condition: eq(variables['artifactSuffix'], 'linux-arm64')
       inputs:
         artifact: linux-tracer-home-linux-arm64
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler arm64 native binary
+      condition: eq(variables['artifactSuffix'], 'linux-arm64')
       inputs:
         artifact: linux-profiler-home-linux-arm64
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download dd-dotnet linux-arm64
+      condition: eq(variables['artifactSuffix'], 'linux-arm64')
       inputs:
         artifact: dd-dotnet-linux-arm64
         path: $(monitoringHome)/linux-arm64
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tracer linux-musl-arm64 native binary
+      inputs:
+        artifact: linux-tracer-home-linux-musl-arm64
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download profiler linux-musl-arm64 native binary
+      inputs:
+        artifact: linux-profiler-home-linux-musl-arm64
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet linux-musl-arm64
+      inputs:
+        artifact: dd-dotnet-linux-musl-arm64
+        path: $(monitoringHome)/linux-musl-arm64
+
     - script: |
-        chmod +x $(monitoringHome)/linux-arm64/dd-dotnet
+        chmod +x $(monitoringHome)/linux-musl-arm64/dd-dotnet
+        # don't panic if the file doesn't exist
+        chmod +x $(monitoringHome)/linux-arm64/dd-dotnet | :
       displayName: chmod dd-dotnet
 
     - task: DownloadPipelineArtifact@2
@@ -793,17 +834,17 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: debian
+        baseImage: $(baseImage)
         command: "ZipMonitoringHome"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-arm64
       displayName: Upload arm64 packages
-      artifact: linux-packages-linux-arm64
+      artifact: linux-packages-$(artifactSuffix)
 
     - publish: $(monitoringHome)
       displayName: Upload arm64 monitoring home
-      artifact: linux-monitoring-home-linux-arm64
+      artifact: linux-monitoring-home-$(artifactSuffix)
 
 - stage: build_macos
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -1026,8 +1067,6 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    baseImage: debian
-    artifactSuffix: linux-arm64
     targetFramework: net8.0
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1036,6 +1075,14 @@ stages:
 
   - job: linux
     timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        x64:
+          baseImage: debian
+          artifactSuffix: linux-arm64
+        alpine:
+          baseImage: alpine
+          artifactSuffix: linux-musl-arm64
 
     pool:
       name: aws-arm64-auto-scaling
