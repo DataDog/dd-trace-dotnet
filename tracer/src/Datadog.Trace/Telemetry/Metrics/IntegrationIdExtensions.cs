@@ -83,6 +83,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.DatadogTraceManual => MetricTags.IntegrationName.DatadogTraceManual,
             IntegrationId.DirectoryListingLeak => MetricTags.IntegrationName.DirectoryListingLeak,
             IntegrationId.SessionTimeout => MetricTags.IntegrationName.SessionTimeout,
+            IntegrationId.EmailHtmlInjection => MetricTags.IntegrationName.EmailHtmlInjection,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

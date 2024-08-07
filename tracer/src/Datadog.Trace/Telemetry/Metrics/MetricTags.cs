@@ -228,6 +228,7 @@ internal static class MetricTags
         [Description("integration_name:directorylistingleak")] DirectoryListingLeak,
         [Description("integration_name:sessiontimeout")] SessionTimeout,
         [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
+        [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection
     }
 
     public enum InstrumentationError
@@ -312,6 +313,7 @@ internal static class MetricTags
         [Description("vulnerability_type:xss")] Xss = 23,
         [Description("vulnerability_type:directory_listing_leak")] DirectoryListingLeak = 24,
         [Description("vulnerability_type:session_timeout")] SessionTimeout = 25,
+        [Description("vulnerability_type:email_html_injection")] EmailHtmlInjection = 26,
     }
 
     public enum CIVisibilityTestFramework
